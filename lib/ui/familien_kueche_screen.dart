@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/models/family_recipe.dart';
+import 'package:parentpeak/models/shopping_item.dart';
 
 /// Familien-Kueche — 1-Tap Rezept-Inspiration + Eltern-Tipps.
 ///
@@ -260,31 +261,50 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         // Action Buttons
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(children: [
-            Expanded(
-                child: OutlinedButton.icon(
-              onPressed: _saveRecipe,
-              icon: const Icon(Icons.favorite_border_rounded, size: 18),
-              label: const Text('Speichern'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+          child: Column(children: [
+            Row(children: [
+              Expanded(
+                  child: OutlinedButton.icon(
+                onPressed: _saveRecipe,
+                icon: const Icon(Icons.favorite_border_rounded, size: 18),
+                label: const Text('Speichern'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+              )),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: FilledButton.icon(
+                onPressed: _generateNew,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Andere Idee'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFF97316),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+              )),
+            ]),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _showIngredientPicker(context),
+                icon: const Icon(Icons.shopping_cart_rounded, size: 16),
+                label: const Text('Zutaten auf Einkaufsliste'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF16A34A),
+                  side: BorderSide(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.4)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
               ),
-            )),
-            const SizedBox(width: 10),
-            Expanded(
-                child: FilledButton.icon(
-              onPressed: _generateNew,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Andere Idee'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFF97316),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-              ),
-            )),
+            ),
           ]),
         ),
       ]),
@@ -509,6 +529,170 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           ]),
         ),
       ),
+    );
+  }
+
+  // ─── Zutaten-Auswahl fuer Einkaufsliste ───────────────────────────────────
+
+  void _showIngredientPicker(BuildContext context) {
+    if (_currentRecipe == null) return;
+    final recipe = _currentRecipe!;
+    final theme = Theme.of(context);
+    final shopping = ShoppingListService.instance;
+
+    // Fuer jedes Item: ist es ein Basis-Item? Ist es schon auf der Liste?
+    final selections = recipe.ingredients.map((ing) {
+      final isBasic = ShoppingListService.isBasicItem(ing);
+      final parsed = ShoppingItem.fromInput(ing);
+      final alreadyOnList = shopping.isAlreadyOnList(parsed.name);
+      return _IngredientSelection(
+        ingredient: ing,
+        parsedName: parsed.name,
+        isSelected: !isBasic && !alreadyOnList,
+        isBasic: isBasic,
+        alreadyOnList: alreadyOnList,
+      );
+    }).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _IngredientPickerSheet(
+        selections: selections,
+        theme: theme,
+        onConfirm: (selected) async {
+          await shopping.load();
+          await shopping.addItemsFromRecipe(selected);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  '\u{2705} ${selected.length} Zutaten auf die Einkaufsliste gesetzt'),
+            ));
+          }
+        },
+      ),
+    );
+  }
+}
+
+// ─── Ingredient Selection Data ───────────────────────────────────────────────
+
+class _IngredientSelection {
+  final String ingredient;
+  final String parsedName;
+  bool isSelected;
+  final bool isBasic;
+  final bool alreadyOnList;
+
+  _IngredientSelection({
+    required this.ingredient,
+    required this.parsedName,
+    required this.isSelected,
+    required this.isBasic,
+    required this.alreadyOnList,
+  });
+}
+
+// ─── Ingredient Picker Bottom Sheet ──────────────────────────────────────────
+
+class _IngredientPickerSheet extends StatefulWidget {
+  final List<_IngredientSelection> selections;
+  final ThemeData theme;
+  final Future<void> Function(List<String>) onConfirm;
+
+  const _IngredientPickerSheet({
+    required this.selections,
+    required this.theme,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_IngredientPickerSheet> createState() => _IngredientPickerSheetState();
+}
+
+class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    final selectedCount = widget.selections.where((s) => s.isSelected).length;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+                color: theme.colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 14),
+        Text('\u{1F6D2} Was brauchst du noch?',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text('Waehle nur was du wirklich kaufen musst.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.outline)),
+        const SizedBox(height: 14),
+        // Liste
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 350),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: widget.selections.length,
+            itemBuilder: (_, i) {
+              final sel = widget.selections[i];
+              return CheckboxListTile(
+                value: sel.isSelected,
+                onChanged: (v) => setState(() => sel.isSelected = v ?? false),
+                title: Text(sel.ingredient,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: sel.alreadyOnList
+                    ? Text('\u{2714} Schon auf deiner Liste',
+                        style: TextStyle(
+                            fontSize: 10, color: const Color(0xFF16A34A)))
+                    : sel.isBasic
+                        ? Text('\u{1F3E0} Hast du wahrscheinlich zuhause',
+                            style: TextStyle(
+                                fontSize: 10, color: theme.colorScheme.outline))
+                        : null,
+                dense: true,
+                controlAffinity: ListTileControlAffinity.leading,
+                activeColor: const Color(0xFF16A34A),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: selectedCount == 0
+                  ? null
+                  : () {
+                      final selected = widget.selections
+                          .where((s) => s.isSelected)
+                          .map((s) => s.ingredient)
+                          .toList();
+                      Navigator.pop(context);
+                      widget.onConfirm(selected);
+                    },
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: Text('$selectedCount Zutaten hinzufuegen'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF16A34A),
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            )),
+      ]),
     );
   }
 }
