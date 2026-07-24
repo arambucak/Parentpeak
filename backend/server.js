@@ -8063,6 +8063,219 @@ app.post("/api/referral/redeem", (req, res) => {
   res.json({ success: true, remainingCoins: tracker.coins });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMMUNITY EVENTS — Eltern & Partner koennen Events eintragen
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/events — Events nach Stadt laden
+app.get('/api/events', async (req, res) => {
+  const city = (req.query.city || '').toString().trim().toLowerCase();
+  const limit = Math.min(Math.max(Number.parseInt(req.query.limit || '20', 10), 1), 50);
+  const category = (req.query.category || '').toString().trim();
+
+  try {
+    const where = {
+      isHidden: false,
+      eventDate: { gte: new Date() },
+      ...(city ? { city: { contains: city, mode: 'insensitive' } } : {}),
+      ...(category ? { category } : {}),
+    };
+
+    const events = await prisma.communityEvent.findMany({
+      where,
+      orderBy: [{ isVerified: 'desc' }, { eventDate: 'asc' }],
+      take: limit,
+    });
+
+    const result = events.map(e => ({
+      ...e,
+      ageGroups: safeJsonParse(e.ageGroups, []),
+      accessibility: safeJsonParse(e.accessibility, []),
+    }));
+
+    return res.json(result);
+  } catch (error) {
+    console.error('GET /api/events error:', error.message);
+    return res.json([]);
+  }
+});
+
+// POST /api/events — Neues Event erstellen
+app.post('/api/events', async (req, res) => {
+  const body = req.body;
+
+  // Pflichtfelder Validierung
+  if (!body.title || !body.location || !body.eventDate || !body.creatorId) {
+    return res.status(400).json({ error: 'title, location, eventDate und creatorId sind Pflichtfelder.' });
+  }
+
+  // Rate-Limit: Max 3 pro Tag pro User
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  try {
+    const todayCount = await prisma.communityEvent.count({
+      where: {
+        creatorId: body.creatorId,
+        createdAt: { gte: today },
+      },
+    });
+    if (todayCount >= 3) {
+      return res.status(429).json({ error: 'Tageslimit erreicht (max. 3 Events pro Tag).' });
+    }
+  } catch (_) { /* In-Memory Fallback */ }
+
+  // Spam-Filter: Einfache Keyword-Pruefung
+  const spamKeywords = ['viagra', 'casino', 'crypto', 'mlm', 'schnell reich', 'abnehmen'];
+  const textToCheck = `${body.title} ${body.description}`.toLowerCase();
+  if (spamKeywords.some(kw => textToCheck.includes(kw))) {
+    return res.status(400).json({ error: 'Dein Event wurde als unangemessen erkannt.' });
+  }
+
+  try {
+    const event = await prisma.communityEvent.create({
+      data: {
+        title: body.title.substring(0, 200),
+        description: (body.description || '').substring(0, 1000),
+        category: body.category || 'sonstiges',
+        ageGroups: JSON.stringify(body.ageGroups || ['alle']),
+        venue: body.venue || 'beides',
+        location: body.location.substring(0, 300),
+        city: (body.city || '').substring(0, 100),
+        lat: body.lat || null,
+        lon: body.lon || null,
+        isPrivateAddress: body.isPrivateAddress || false,
+        eventDate: new Date(body.eventDate),
+        eventEndDate: body.eventEndDate ? new Date(body.eventEndDate) : null,
+        isRecurring: body.isRecurring || false,
+        recurringNote: body.recurringNote || null,
+        rainPlan: body.rainPlan || null,
+        price: (body.price || 'kostenlos').substring(0, 50),
+        isFree: body.isFree !== undefined ? body.isFree : true,
+        url: body.url || null,
+        imageUrl: body.imageUrl || null,
+        organizer: (body.organizer || 'Eltern-Tipp').substring(0, 200),
+        creatorType: body.creatorType || 'eltern',
+        contactName: body.contactName || null,
+        contactPhone: body.contactPhone || null,
+        contactEmail: body.contactEmail || null,
+        accessibility: JSON.stringify(body.accessibility || []),
+        eventLanguage: body.eventLanguage || 'de',
+        source: body.source || 'community',
+        isVerified: false,
+        creatorId: body.creatorId,
+      },
+    });
+
+    return res.status(201).json({
+      ...event,
+      ageGroups: safeJsonParse(event.ageGroups, []),
+      accessibility: safeJsonParse(event.accessibility, []),
+    });
+  } catch (error) {
+    console.error('POST /api/events error:', error.message);
+    return res.status(500).json({ error: 'Event konnte nicht erstellt werden.' });
+  }
+});
+
+// POST /api/events/:id/flag — Event melden
+app.post('/api/events/:id/flag', async (req, res) => {
+  const { id } = req.params;
+  const { userId, reason } = req.body;
+
+  if (!userId || !reason) {
+    return res.status(400).json({ error: 'userId und reason sind Pflichtfelder.' });
+  }
+
+  try {
+    // Flag erstellen (unique pro User+Event)
+    await prisma.communityEventFlag.create({
+      data: { eventId: id, userId, reason },
+    });
+
+    // Flag-Count erhoehen
+    const flagCount = await prisma.communityEventFlag.count({ where: { eventId: id } });
+
+    // Auto-Hide bei 3+ Flags
+    await prisma.communityEvent.update({
+      where: { id },
+      data: {
+        flagCount,
+        isHidden: flagCount >= 3,
+      },
+    });
+
+    return res.json({ success: true, flagCount, isHidden: flagCount >= 3 });
+  } catch (error) {
+    if (error.code === 'P2002') {
+      return res.status(409).json({ error: 'Du hast dieses Event bereits gemeldet.' });
+    }
+    console.error('POST /api/events/:id/flag error:', error.message);
+    return res.status(500).json({ error: 'Meldung fehlgeschlagen.' });
+  }
+});
+
+// POST /api/events/:id/interest — Interesse zeigen
+app.post('/api/events/:id/interest', async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId ist Pflichtfeld.' });
+  }
+
+  try {
+    await prisma.communityEventInterest.create({
+      data: { eventId: id, userId },
+    });
+
+    const interestCount = await prisma.communityEventInterest.count({ where: { eventId: id } });
+
+    await prisma.communityEvent.update({
+      where: { id },
+      data: { interestCount },
+    });
+
+    return res.json({ success: true, interestCount });
+  } catch (error) {
+    if (error.code === 'P2002') {
+      return res.status(409).json({ error: 'Du hast bereits Interesse gezeigt.' });
+    }
+    console.error('POST /api/events/:id/interest error:', error.message);
+    return res.status(500).json({ error: 'Aktion fehlgeschlagen.' });
+  }
+});
+
+// DELETE /api/events/:id — Eigenes Event loeschen
+app.delete('/api/events/:id', async (req, res) => {
+  const { id } = req.params;
+  const userId = req.query.userId || req.body?.userId;
+
+  try {
+    const event = await prisma.communityEvent.findUnique({ where: { id } });
+    if (!event) {
+      return res.status(404).json({ error: 'Event nicht gefunden.' });
+    }
+    if (event.creatorId !== userId) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann dieses Event loeschen.' });
+    }
+
+    await prisma.communityEvent.delete({ where: { id } });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('DELETE /api/events/:id error:', error.message);
+    return res.status(500).json({ error: 'Loeschen fehlgeschlagen.' });
+  }
+});
+
+// Helper: Sicheres JSON-Parsing
+function safeJsonParse(str, fallback) {
+  try {
+    return typeof str === 'string' ? JSON.parse(str) : (str || fallback);
+  } catch (_) {
+    return fallback;
+  }
+}
+
 // Server starten
 app.listen(PORT, '0.0.0.0', () => {
   if (allowedOrigins.length > 0) {

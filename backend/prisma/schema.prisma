@@ -679,3 +679,77 @@ model RecipeReport {
   @@index([reportedById])
   @@index([status])
 }
+
+
+// ─── Community Events ────────────────────────────────────────────────────────
+
+model CommunityEvent {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  category        String   // theater, kino, sport, musik, natur, etc.
+  ageGroups       String   // JSON array: ["baby","kita","grundschule"]
+  venue           String   @default("beides") // indoor, outdoor, beides
+  location        String
+  city            String
+  lat             Float?
+  lon             Float?
+  isPrivateAddress Boolean @default(false)
+  eventDate       DateTime
+  eventEndDate    DateTime?
+  isRecurring     Boolean  @default(false)
+  recurringNote   String?
+  rainPlan        String?
+  price           String   @default("kostenlos")
+  isFree          Boolean  @default(true)
+  url             String?
+  imageUrl        String?
+  organizer       String
+  creatorType     String   @default("eltern") // eltern, verein, institution, unternehmen
+  contactName     String?
+  contactPhone    String?
+  contactEmail    String?
+  accessibility   String   @default("[]") // JSON array
+  eventLanguage   String   @default("de")
+  source          String   @default("community") // community, partner, kiAgent
+  isVerified      Boolean  @default(false)
+  creatorId       String
+  interestCount   Int      @default(0)
+  flagCount       Int      @default(0)
+  isHidden        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  flags           CommunityEventFlag[]
+  interests       CommunityEventInterest[]
+
+  @@index([city])
+  @@index([creatorId])
+  @@index([eventDate])
+  @@index([category])
+  @@index([isHidden])
+}
+
+model CommunityEventFlag {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  reason    String   // spam, fake, unsafe, inappropriate
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+}
+
+model CommunityEventInterest {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}

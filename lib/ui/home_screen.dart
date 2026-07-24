@@ -23,6 +23,7 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/ui/widgets/home/daily_tip_card.dart';
 import 'package:parentpeak/ui/widgets/home/next_event_widget.dart';
 import 'package:parentpeak/ui/widgets/home/quick_activity_card.dart';
+import 'package:parentpeak/ui/widgets/home/events_carousel_widget.dart';
 import 'package:parentpeak/ui/widgets/home/mood_check_widget.dart';
 import 'package:parentpeak/ui/widgets/home/bedtime_timer_card.dart';
 import 'package:parentpeak/ui/widgets/home/weekly_progress_widget.dart';
@@ -746,6 +747,12 @@ class _HomeScreenState extends State<HomeScreen>
                     padding: EdgeInsets.fromLTRB(
                         horizontalPadding, 0, horizontalPadding, 8),
                     child: const QuickActivityCard(),
+                  ),
+                ),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 4, bottom: 12),
+                    child: EventsCarouselWidget(),
                   ),
                 ),
                 SliverToBoxAdapter(

@@ -108,8 +108,8 @@ class FeatureFlagService extends ChangeNotifier {
     FeatureDefinition(
       id: 'events_aktivitaeten',
       label: 'Events & Aktivitäten',
-      phase: LaunchPhase.phase2,
-      availableInFreeTier: false,
+      phase: LaunchPhase.phase1,
+      availableInFreeTier: true,
     ),
 
     // Phase 3 — Marktplatz, braucht Angebot UND Nachfrage
