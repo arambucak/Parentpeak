@@ -121,9 +121,9 @@ class FeatureFlagService extends ChangeNotifier {
     ),
     FeatureDefinition(
       id: 'gemeinsam_satt',
-      label: 'GemeinsamSatt',
-      phase: LaunchPhase.phase3,
-      availableInFreeTier: false,
+      label: 'Familien-Kueche',
+      phase: LaunchPhase.phase1,
+      availableInFreeTier: true,
     ),
     FeatureDefinition(
       id: 'finanzen_budget',
