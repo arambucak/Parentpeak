@@ -16,6 +16,7 @@ import 'package:parentpeak/models/child_development_data.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:parentpeak/ui/widgets/eltern_wissen_widget.dart';
 
 /// Impulse & Entwicklung — vereinfacht, elternfreundlich, modern.
 ///
@@ -57,7 +58,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 2,
+      length: 3,
       vsync: this,
       initialIndex: widget.initialTabIndex.clamp(0, 1),
     );
@@ -148,6 +149,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   Tab(
                       text: AppStringsManager.getString(
                           languageService.currentLanguage, 'development')),
+                  const Tab(text: 'Wissen'),
                 ],
               ),
             ),
@@ -159,6 +161,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               children: [
                 _buildImpulseTab(theme),
                 _buildDevelopmentTab(theme),
+                _buildWissenTab(theme),
               ],
             ),
           ),
@@ -1315,5 +1318,20 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
           Text(_aiReport ?? '',
               style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
         ]));
+  }
+
+  // ─── TAB 3: WISSEN ────────────────────────────────────────────────────────
+  Widget _buildWissenTab(ThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      child: ElternWissenWidget(
+        onOpenChat: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChatScreen()),
+          );
+        },
+      ),
+    );
   }
 }
