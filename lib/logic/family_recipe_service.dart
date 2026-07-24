@@ -174,13 +174,32 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown):
     }
   }
 
+  int _fallbackIndex = 0;
+
   FamilyRecipe _fallbackRecipe() {
-    final recipes = [
-      FamilyRecipe(
-        id: 'fallback_1',
+    final recipe =
+        _allFallbackRecipes[_fallbackIndex % _allFallbackRecipes.length];
+    _fallbackIndex++;
+    return FamilyRecipe(
+      id: 'fallback_${DateTime.now().millisecondsSinceEpoch}_$_fallbackIndex',
+      title: recipe.title,
+      description: recipe.description,
+      prepMinutes: recipe.prepMinutes,
+      costPerPortion: recipe.costPerPortion,
+      minChildAge: recipe.minChildAge,
+      ingredients: recipe.ingredients,
+      steps: recipe.steps,
+      allergensFree: recipe.allergensFree,
+      season: _currentSeason(),
+      tip: recipe.tip,
+    );
+  }
+
+  static const _allFallbackRecipes = [
+    FamilyRecipe(
+        id: '',
         title: 'Nudeln mit versteckter Gemuese-Sauce',
-        description:
-            'Karotten und Zucchini verschwinden in der Tomatensauce — kein Kind merkt es.',
+        description: 'Karotten und Zucchini verschwinden in der Tomatensauce.',
         prepMinutes: 25,
         costPerPortion: 1.50,
         minChildAge: 1,
@@ -189,8 +208,7 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown):
           '2 Karotten',
           '1 Zucchini',
           '400ml Passata',
-          '1 EL Olivenoel',
-          'Salz'
+          '1 EL Olivenoel'
         ],
         steps: [
           'Gemuese fein raspeln.',
@@ -200,14 +218,13 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown):
           'Mit Nudeln servieren.'
         ],
         allergensFree: ['nuesse', 'ei', 'laktose'],
-        season: _currentSeason(),
+        season: '',
         tip:
-            'Lass dein Kind die Karotten waschen — wer mithilft, probiert eher.',
-      ),
-      FamilyRecipe(
-        id: 'fallback_2',
+            'Lass dein Kind die Karotten waschen — wer mithilft, probiert eher.'),
+    FamilyRecipe(
+        id: '',
         title: 'Pfannkuchen mit Apfelmus',
-        description: 'Suess, schnell, beliebt bei JEDEM Kind. Geht immer.',
+        description: 'Suess, schnell, beliebt bei JEDEM Kind.',
         prepMinutes: 15,
         costPerPortion: 0.80,
         minChildAge: 1,
@@ -216,48 +233,147 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown):
           '2 Eier',
           '300ml Milch',
           '1 Prise Salz',
-          'Butter zum Braten',
+          'Butter',
           'Apfelmus'
         ],
         steps: [
-          'Mehl, Eier, Milch, Salz glatt ruehren.',
+          'Teig glatt ruehren.',
           'Pfanne erhitzen, Butter rein.',
           'Duenn ausgiessen, goldbraun wenden.',
           'Mit Apfelmus servieren.'
         ],
         allergensFree: ['nuesse'],
-        season: _currentSeason(),
+        season: '',
         tip:
-            'Pfannkuchen eignen sich perfekt zum gemeinsam Wenden-Ueben ab 4 Jahren.',
-      ),
-      FamilyRecipe(
-        id: 'fallback_3',
+            'Pfannkuchen eignen sich perfekt zum gemeinsam Wenden-Ueben ab 4 Jahren.'),
+    FamilyRecipe(
+        id: '',
         title: 'Reis mit Brokkoli-Kaese-Sauce',
-        description:
-            'Der Kaese macht den Brokkoli unwiderstehlich — auch fuer Gemuese-Verweigerer.',
+        description: 'Kaese macht Brokkoli unwiderstehlich.',
         prepMinutes: 20,
         costPerPortion: 1.20,
         minChildAge: 1,
-        ingredients: [
-          '250g Reis',
-          '300g Brokkoli',
-          '100ml Sahne',
-          '80g geriebener Kaese',
-          'Salz, Muskat'
-        ],
+        ingredients: ['250g Reis', '300g Brokkoli', '100ml Sahne', '80g Kaese'],
         steps: [
-          'Reis nach Packung kochen.',
-          'Brokkoli in Roeschen 8 Min daempfen.',
-          'Sahne + Kaese erhitzen bis cremig.',
-          'Brokkoli unterheben.',
-          'Ueber Reis geben.'
+          'Reis kochen.',
+          'Brokkoli daempfen.',
+          'Sahne + Kaese erhitzen.',
+          'Alles vermischen.'
         ],
         allergensFree: ['nuesse', 'ei'],
-        season: _currentSeason(),
+        season: '',
         tip:
-            'Nenne die Brokkoli-Roeschen "kleine Baeume" — Kinder essen lieber was einen lustigen Namen hat.',
-      ),
-    ];
-    return recipes[DateTime.now().second % recipes.length];
-  }
+            'Nenne Brokkoli "kleine Baeume" — Kinder essen lieber was lustig klingt.'),
+    FamilyRecipe(
+        id: '',
+        title: 'Kartoffel-Wedges mit Quark-Dip',
+        description: 'Knusprig wie Pommes, aber aus dem Ofen.',
+        prepMinutes: 30,
+        costPerPortion: 1.00,
+        minChildAge: 1,
+        ingredients: [
+          '800g Kartoffeln',
+          '2 EL Olivenoel',
+          'Paprikapulver',
+          '200g Quark',
+          '1 Gurke'
+        ],
+        steps: [
+          'Kartoffeln in Spalten schneiden.',
+          'Mit Oel + Paprika mischen.',
+          '25 Min bei 200 Grad backen.',
+          'Gurke in Quark raspeln.'
+        ],
+        allergensFree: ['nuesse', 'ei'],
+        season: '',
+        tip:
+            'Kinder duerfen die Kartoffeln mit Haenden einoelen — matschen erlaubt!'),
+    FamilyRecipe(
+        id: '',
+        title: 'Milchreis mit Zimt und Beeren',
+        description: 'Cremig, suess, troestend. Perfekt am Abend.',
+        prepMinutes: 25,
+        costPerPortion: 0.90,
+        minChildAge: 1,
+        ingredients: [
+          '200g Milchreis',
+          '800ml Milch',
+          '2 EL Zucker',
+          'Zimt',
+          '150g Beeren'
+        ],
+        steps: [
+          'Milch aufkochen.',
+          'Reis einruehren, 25 Min koecheln.',
+          'Zucker rein.',
+          'Mit Zimt + Beeren servieren.'
+        ],
+        allergensFree: ['nuesse', 'ei'],
+        season: '',
+        tip:
+            'Gemeinsam ruehren: Ab 3 Jahren mit langem Loeffel helfen lassen.'),
+    FamilyRecipe(
+        id: '',
+        title: 'Gemuesesticks mit Hummus',
+        description: 'Kein Kochen noetig! Bunt, gesund, fingerfood.',
+        prepMinutes: 10,
+        costPerPortion: 1.30,
+        minChildAge: 1,
+        ingredients: ['2 Karotten', '1 Gurke', '1 Paprika', '200g Hummus'],
+        steps: [
+          'Gemuese in Sticks schneiden.',
+          'Hummus in Schale.',
+          'Bunt anrichten.',
+          'Zusammen dippen!'
+        ],
+        allergensFree: ['nuesse', 'ei', 'laktose'],
+        season: '',
+        tip: 'Kinder essen mehr Gemuese wenn sie es selbst dippen duerfen.'),
+    FamilyRecipe(
+        id: '',
+        title: 'Wraps mit Frischkaese',
+        description: 'Rollen, fuellen, reinbeissen. Kinder bauen selbst.',
+        prepMinutes: 10,
+        costPerPortion: 1.40,
+        minChildAge: 2,
+        ingredients: [
+          '4 Wraps',
+          '200g Frischkaese',
+          '1 Karotte',
+          '1/2 Gurke',
+          'Salat'
+        ],
+        steps: [
+          'Wraps mit Frischkaese bestreichen.',
+          'Gemuese drauf verteilen.',
+          'Einrollen.',
+          'Halbieren.'
+        ],
+        allergensFree: ['nuesse', 'ei'],
+        season: '',
+        tip:
+            'Jedes Kind fuellt seinen Wrap selbst — das macht eigenstaendig + stolz.'),
+    FamilyRecipe(
+        id: '',
+        title: 'Bananen-Hafer-Kekse (ohne Zucker)',
+        description: '3 Zutaten, 15 Min, gesund und suess.',
+        prepMinutes: 15,
+        costPerPortion: 0.50,
+        minChildAge: 1,
+        ingredients: [
+          '2 reife Bananen',
+          '150g Haferflocken',
+          'Optional: Kakao oder Rosinen'
+        ],
+        steps: [
+          'Bananen zerquetschen.',
+          'Haferflocken untermischen.',
+          'Kleine Haufen aufs Blech.',
+          '12 Min bei 180 Grad backen.'
+        ],
+        allergensFree: ['nuesse', 'ei', 'laktose'],
+        season: '',
+        tip:
+            'Kinder ab 2 koennen Bananen matschen — perfekt zum gemeinsam Backen.'),
+  ];
 }
