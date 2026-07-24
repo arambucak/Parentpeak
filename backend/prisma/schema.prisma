@@ -743,11 +743,13 @@ model CommunityEventFlag {
 }
 
 model CommunityEventInterest {
-  id        String   @id @default(cuid())
-  eventId   String
-  event     CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  userId    String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  eventId     String
+  event       CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId      String
+  displayName String   @default("Elternteil")
+  message     String?
+  createdAt   DateTime @default(now())
 
   @@unique([eventId, userId])
   @@index([eventId])

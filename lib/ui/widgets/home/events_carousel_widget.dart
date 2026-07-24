@@ -5,6 +5,7 @@ import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/create_community_event_screen.dart';
 import 'package:parentpeak/ui/events_activities_screen.dart';
+import 'package:parentpeak/ui/widgets/event_attendees_widget.dart';
 
 /// Home-Widget: Events in deiner Naehe — Carousel + "Event eintragen" CTA.
 ///
@@ -186,14 +187,11 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                       color: const Color(0xFFEA580C))),
             const Spacer(),
             if (event.interestCount > 0) ...[
-              const Icon(Icons.favorite_rounded,
-                  size: 12, color: Color(0xFFEC4899)),
-              const SizedBox(width: 3),
-              Text('${event.interestCount}',
-                  style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFEC4899))),
+              EventAttendeesWidget(
+                eventId: event.id,
+                initialCount: event.interestCount,
+                compact: true,
+              ),
             ],
           ]),
           const SizedBox(height: 4),

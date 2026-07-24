@@ -8214,10 +8214,10 @@ app.post('/api/events/:id/flag', async (req, res) => {
   }
 });
 
-// POST /api/events/:id/interest — Interesse zeigen
+// POST /api/events/:id/interest — Interesse zeigen (mit Name + optionaler Nachricht)
 app.post('/api/events/:id/interest', async (req, res) => {
   const { id } = req.params;
-  const { userId } = req.body;
+  const { userId, displayName, message } = req.body;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId ist Pflichtfeld.' });
@@ -8225,7 +8225,12 @@ app.post('/api/events/:id/interest', async (req, res) => {
 
   try {
     await prisma.communityEventInterest.create({
-      data: { eventId: id, userId },
+      data: {
+        eventId: id,
+        userId,
+        displayName: (displayName || 'Elternteil').substring(0, 50),
+        message: message ? message.substring(0, 100) : null,
+      },
     });
 
     const interestCount = await prisma.communityEventInterest.count({ where: { eventId: id } });
@@ -8242,6 +8247,32 @@ app.post('/api/events/:id/interest', async (req, res) => {
     }
     console.error('POST /api/events/:id/interest error:', error.message);
     return res.status(500).json({ error: 'Aktion fehlgeschlagen.' });
+  }
+});
+
+// GET /api/events/:id/attendees — Wer ist dabei?
+app.get('/api/events/:id/attendees', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const attendees = await prisma.communityEventInterest.findMany({
+      where: { eventId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: {
+        userId: true,
+        displayName: true,
+        message: true,
+        createdAt: true,
+      },
+    });
+
+    const total = await prisma.communityEventInterest.count({ where: { eventId: id } });
+
+    return res.json({ attendees, total });
+  } catch (error) {
+    console.error('GET /api/events/:id/attendees error:', error.message);
+    return res.json({ attendees: [], total: 0 });
   }
 });
 

@@ -4,6 +4,7 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_cache_service.dart';
 import 'package:parentpeak/models/community_event.dart';
+import 'package:parentpeak/models/event_attendee.dart';
 
 /// Service fuer Community-Events — verbindet App mit Backend.
 ///
@@ -59,8 +60,7 @@ class CommunityEventService extends ChangeNotifier {
         );
         if (response is List) {
           final communityEvents = response
-              .map((e) =>
-                  CommunityEvent.fromJson(e as Map<String, dynamic>))
+              .map((e) => CommunityEvent.fromJson(e as Map<String, dynamic>))
               .where((e) => e.isVisible)
               .toList();
           allEvents.addAll(communityEvents);
@@ -174,15 +174,19 @@ class CommunityEventService extends ChangeNotifier {
     }
   }
 
-  /// Zeigt Interesse an einem Event.
-  Future<bool> showInterest(String eventId) async {
+  /// Zeigt Interesse an einem Event (mit Name + optionaler Nachricht).
+  Future<bool> showInterest(String eventId, {String? message}) async {
     _ensureApi();
     try {
       final uid = AuthService.instance.currentUser?.uid ?? 'guest';
+      final name =
+          AuthService.instance.currentUser?.displayName ?? 'Elternteil';
 
       if (_api != null) {
         await _api!.postJson('/api/events/$eventId/interest', {
           'userId': uid,
+          'displayName': name,
+          'message': message,
         });
       }
 
@@ -201,6 +205,32 @@ class CommunityEventService extends ChangeNotifier {
     } catch (e) {
       debugPrint('CommunityEventService.showInterest: $e');
       return false;
+    }
+  }
+
+  /// Laedt die Teilnehmer-Liste eines Events.
+  Future<EventAttendeesResult> getAttendees(String eventId) async {
+    _ensureApi();
+    try {
+      if (_api == null)
+        return const EventAttendeesResult(attendees: [], total: 0);
+
+      final response = await _api!.getJson('/api/events/$eventId/attendees');
+      final list = (response['attendees'] as List? ?? [])
+          .map((e) => EventAttendee.fromJson(e as Map<String, dynamic>))
+          .toList();
+      final total = response['total'] as int? ?? list.length;
+
+      // Netzwerk-Kontakte markieren (TODO: echte Freundes-Liste abgleichen)
+      // Fuer jetzt: alle zeigen, Netzwerk-Highlight kommt mit Messaging-Feature
+      return EventAttendeesResult(
+        attendees: list,
+        total: total,
+        networkContacts: [], // Wird spaeter mit echtem Netzwerk-Abgleich gefuellt
+      );
+    } catch (e) {
+      debugPrint('CommunityEventService.getAttendees: $e');
+      return const EventAttendeesResult(attendees: [], total: 0);
     }
   }
 
