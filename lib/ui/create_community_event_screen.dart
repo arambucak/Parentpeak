@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
+import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/community_event.dart';
 
 /// Event erstellen — moderner 3-Schritt Wizard.
@@ -523,24 +524,13 @@ class _CreateCommunityEventScreenState
           ),
         const SizedBox(height: 12),
         // Ort
-        TextField(
-          controller: _locationCtrl,
-          decoration: InputDecoration(
-            labelText: 'Ort / Adresse *',
-            hintText: 'z.B. Volkspark Friedrichshain',
-            prefixIcon: const Icon(Icons.location_on_rounded, size: 20),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-          onChanged: (v) async {
-            if (v.trim().length >= 3) {
-              final results = await LocationAutocompleteService.instance
-                  .searchImmediate(v.trim());
-              if (results.isNotEmpty && mounted) {
-                _city = results.first.city;
-                _lat = results.first.lat;
-                _lon = results.first.lon;
-              }
-            }
+        LocationPickerWidget(
+          hint: 'Ort / Adresse waehlen *',
+          onLocationPicked: (loc) {
+            _locationCtrl.text = loc.displayName;
+            _city = loc.city;
+            _lat = loc.lat;
+            _lon = loc.lon;
           },
         ),
         const SizedBox(height: 8),

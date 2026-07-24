@@ -9,6 +9,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
+import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 
 class ElternNetzwerkScreen extends StatefulWidget {
@@ -973,12 +974,10 @@ class _ProfileFormState extends State<_ProfileForm> {
           _inputField(_nameCtrl, 'Euer Vorname / Spitzname',
               'z.B. Sarah, Die Muellers', Icons.person_rounded),
           const SizedBox(height: 14),
-          _LocationAutocompleteField(
-            controller: _districtCtrl,
-            onSelected: (suggestion) {
-              setState(() {
-                _districtCtrl.text = suggestion.shortLabel;
-              });
+          LocationPickerWidget(
+            hint: 'Euer Stadtteil / PLZ waehlen',
+            onLocationPicked: (loc) {
+              _districtCtrl.text = loc.displayName;
             },
           ),
           const SizedBox(height: 20),
