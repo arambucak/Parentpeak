@@ -127,9 +127,9 @@ class FeatureFlagService extends ChangeNotifier {
     ),
     FeatureDefinition(
       id: 'finanzen_budget',
-      label: 'Finanzen & Budget',
-      phase: LaunchPhase.phase3,
-      availableInFreeTier: false,
+      label: 'Familien-Geld',
+      phase: LaunchPhase.phase1,
+      availableInFreeTier: true,
     ),
   ];
 

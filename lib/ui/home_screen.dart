@@ -15,6 +15,7 @@ import 'package:parentpeak/ui/entwicklung_impulse_screen.dart';
 import 'package:parentpeak/ui/parent_matching_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:parentpeak/ui/finance_budget_screen.dart';
+import 'package:parentpeak/ui/familien_geld_screen.dart';
 import 'package:parentpeak/ui/gemeinsam_satt_screen.dart';
 import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
@@ -655,11 +656,11 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'gemeinsam_satt',
       ),
       _FeatureAction(
-        label: 'Finanzen & Budget',
-        description: 'Ausgaben fair teilen und smarter sparen',
-        icon: Icons.account_balance_wallet_rounded,
-        color: const Color(0xFF1D4ED8),
-        builder: (_) => const FinanceBudgetScreen(),
+        label: 'Familien-Geld',
+        description: 'Leistungen, Kosten und Meilensteine im Blick',
+        icon: Icons.savings_rounded,
+        color: const Color(0xFF16A34A),
+        builder: (_) => const FamilienGeldScreen(),
         featureId: 'finanzen_budget',
       ),
     ];
