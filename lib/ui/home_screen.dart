@@ -11,6 +11,7 @@ import 'package:parentpeak/ui/calendar_screen.dart';
 import 'package:parentpeak/ui/events_activities_screen.dart';
 import 'package:parentpeak/ui/event_invitations_screen.dart';
 import 'package:parentpeak/ui/organization_screen.dart';
+import 'package:parentpeak/ui/familien_zentrale_screen.dart';
 import 'package:parentpeak/ui/entwicklung_impulse_screen.dart';
 import 'package:parentpeak/ui/parent_matching_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
@@ -641,11 +642,11 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'ki_elternberatung',
       ),
       _FeatureAction(
-        label: 'Organisation',
-        description: 'To-do und Einkauf in einem Bereich',
-        icon: Icons.fact_check_rounded,
-        color: const Color(0xFF16A34A),
-        builder: (_) => const OrganizationScreen(),
+        label: 'Familien-Zentrale',
+        description: 'Einkauf, To-do und Kind-Infos an einem Ort',
+        icon: Icons.home_rounded,
+        color: const Color(0xFF2563EB),
+        builder: (_) => const FamilienZentraleScreen(),
         featureId: 'organisation',
       ),
       _FeatureAction(
