@@ -85,89 +85,153 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Coin Card
+        // ─── ParentCoin Card ─────────────────────────────────────────────
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-                colors: [Color(0xFF0EA5A4), Color(0xFF06B6D4)]),
-            borderRadius: BorderRadius.circular(22),
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFFFF7ED),
+                  Color(0xFFFFF1E6),
+                  Color(0xFFFFEDD5)
+                ]),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+                color: const Color(0xFFFDBA74).withValues(alpha: 0.4)),
             boxShadow: [
               BoxShadow(
-                  color: const Color(0xFF0EA5A4).withValues(alpha: 0.2),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6))
+                  color: const Color(0xFFF97316).withValues(alpha: 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8))
             ],
           ),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
+              // Custom ParentCoin Icon
               Container(
-                  width: 44,
-                  height: 44,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(14)),
+                      gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFF97316), Color(0xFFFB923C)]),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                            color:
+                                const Color(0xFFF97316).withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3))
+                      ]),
                   child: const Center(
                       child:
-                          Text('\u{1FA99}', style: TextStyle(fontSize: 24)))),
+                          Text('\u{1F9E1}', style: TextStyle(fontSize: 26)))),
               const SizedBox(width: 14),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    Text('${coins.balance} ParentCoins',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                            color: Colors.white, fontWeight: FontWeight.w800)),
-                    Text('${coins.coinsUntilFreePremium} bis Gratis-Premium',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8))),
+                    Row(children: [
+                      Text('${coins.balance}',
+                          style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFFC2410C))),
+                      const SizedBox(width: 6),
+                      const Text('ParentCoins',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFEA580C))),
+                    ]),
+                    const SizedBox(height: 2),
+                    Text(
+                        'Noch ${coins.coinsUntilFreePremium} bis Gratis-Premium \u{1F381}',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF9A3412)
+                                .withValues(alpha: 0.7))),
                   ])),
               if (coins.hasCommunityBadge)
                 Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8)),
+                        gradient: const LinearGradient(
+                            colors: [Color(0xFFF97316), Color(0xFFEAB308)]),
+                        borderRadius: BorderRadius.circular(10)),
                     child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                      SizedBox(width: 4),
+                      Icon(Icons.star_rounded, size: 13, color: Colors.white),
+                      SizedBox(width: 3),
                       Text('Community',
                           style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
                               color: Colors.white))
                     ])),
             ]),
-            const SizedBox(height: 16),
-            ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                    value: coins.progressToFreePremium.clamp(0, 1),
-                    minHeight: 8,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(Colors.white))),
-            const SizedBox(height: 8),
-            Text('${coins.successfulInvites} Einladungen erfolgreich',
-                style: TextStyle(
-                    fontSize: 11, color: Colors.white.withValues(alpha: 0.75))),
+            const SizedBox(height: 18),
+            // Progress mit Coin-Steps
+            Row(
+                children:
+                    List.generate(ParentCoinService.coinsForFreePremium, (i) {
+              final filled = i < coins.balance;
+              return Expanded(
+                  child: Container(
+                margin: EdgeInsets.only(
+                    right:
+                        i < ParentCoinService.coinsForFreePremium - 1 ? 4 : 0),
+                height: 8,
+                decoration: BoxDecoration(
+                  color: filled
+                      ? const Color(0xFFF97316)
+                      : const Color(0xFFFDBA74).withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ));
+            })),
+            const SizedBox(height: 10),
+            Row(children: [
+              Text('${coins.successfulInvites} Einladungen erfolgreich',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF9A3412).withValues(alpha: 0.6))),
+              const Spacer(),
+              Text('1 Coin = 1\u{20AC}',
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFF97316).withValues(alpha: 0.7))),
+            ]),
             if (coins.balance >= ParentCoinService.coinsForFreePremium) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
+                  child: FilledButton.icon(
                       onPressed: () async {
                         await coins.redeemForPremium();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('\u{1F389} Premium freigeschaltet!')),
+                          );
+                        }
                       },
+                      icon: const Icon(Icons.card_giftcard_rounded, size: 18),
+                      label: const Text('Premium einloesen'),
                       style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF0EA5A4),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor: const Color(0xFFF97316),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12))),
-                      child: const Text('Premium einloesen')))
+                              borderRadius: BorderRadius.circular(14)))))
             ],
           ]),
         ),
