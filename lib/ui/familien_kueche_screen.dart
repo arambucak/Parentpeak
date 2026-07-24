@@ -55,6 +55,19 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     }
   }
 
+  Future<void> _rateRecipe(bool liked) async {
+    if (_currentRecipe == null) return;
+    await _service.rateRecipe(_currentRecipe!.title, liked);
+    if (mounted) {
+      HapticFeedback.lightImpact();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(liked
+            ? '\u{2B50} Super! Kommt auf die Kinder-Hits Liste.'
+            : '\u{1F44D} Okay, merken wir uns.'),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -304,6 +317,56 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                       borderRadius: BorderRadius.circular(14)),
                 ),
               ),
+            ),
+            const SizedBox(height: 8),
+            // Bewertung: Hat es geschmeckt?
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                Text('\u{1F36D}', style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text('Hat es geschmeckt?',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF9A3412)))),
+                GestureDetector(
+                  onTap: () => _rateRecipe(true),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: const Text('\u{1F44D} Ja!',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF16A34A))),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () => _rateRecipe(false),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: const Text('\u{1F44E} Nee',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFDC2626))),
+                  ),
+                ),
+              ]),
             ),
           ]),
         ),

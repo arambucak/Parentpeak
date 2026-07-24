@@ -68,35 +68,38 @@ class FamilyRecipeService {
                 : 'Schulkind ($_childAge Jahre, alles)';
 
     final prompt = '''
-Generiere EIN kinderfreundliches Familien-Rezept.
+Generiere EIN kinderfreundliches Familien-Rezept auf Deutsch.
 
 Kontext:
 - Juengstes Kind: $ageText
 - Saison: $season (nutze saisonale Zutaten)
 - $allergyText
-- Budget: guenstig (unter 3 EUR pro Portion)
+- Budget: guenstig (unter 4 EUR pro Portion)
 - Zeit: maximal 35 Minuten
 - Portionen: 4
 
 Regeln:
+- VIELFALT: Wechsle zwischen Fleisch (Haehnchen, Hackfleisch, Schnitzel), Fisch (Lachs, Fischstaebchen), und vegetarisch. NICHT immer das gleiche.
 - Das Rezept MUSS fuer das angegebene Kindesalter sicher und geeignet sein
 - Einfache Zutaten die man im Supermarkt bekommt
 - Kinder muessen es MOEGEN (nicht zu scharf, nicht zu bitter)
+- Beliebt bei Kindern: Nudeln, Reis, Kartoffeln, Chicken Nuggets, Pizza, Pfannkuchen, Fischstaebchen, Bolognese, Schnitzel, Mac&Cheese
 - Gib einen konkreten Eltern-Tipp (picky eater trick, gemeinsam kochen, etc.)
+- allergensFree: nur auflisten wenn das Rezept tatsaechlich FREI von Allergenen ist. Wenn Milch drin ist, NICHT "laktose" listen.
 
-Antworte NUR mit einem JSON-Objekt (kein Markdown):
+Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/danach):
 {
   "title": "Name des Gerichts",
-  "description": "1 Satz: Warum Kinder das moegen",
+  "description": "1 Satz warum Kinder das lieben",
   "prepMinutes": 25,
   "costPerPortion": 1.80,
   "portions": 4,
   "minChildAge": 2,
-  "ingredients": ["500g Nudeln", "200g Brokkoli", "100ml Sahne"],
-  "steps": ["Nudeln kochen.", "Brokkoli daempfen.", "Alles vermischen."],
-  "allergensFree": ["nuesse", "ei"],
+  "ingredients": ["500g Nudeln", "300g Hackfleisch", "1 Dose Tomaten"],
+  "steps": ["Hack anbraten.", "Tomaten dazu.", "Mit Nudeln servieren."],
+  "allergensFree": [],
   "season": "$season",
-  "tip": "Lass dein Kind den Brokkoli in kleine Baeume brechen - dann essen sie ihn lieber."
+  "tip": "Lass dein Kind das Hack kruemeln - wer mithilft isst lieber."
 }
 ''';
 
@@ -135,6 +138,33 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown):
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         _savedKey, jsonEncode(_savedRecipes.map((r) => r.toJson()).toList()));
+  }
+
+  /// Bewertet ein Rezept: Hat es den Kindern geschmeckt?
+  Future<void> rateRecipe(String title, bool liked) async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawHits = prefs.getString('familykueche.hits') ?? '[]';
+    final rawFlops = prefs.getString('familykueche.flops') ?? '[]';
+    List<String> hits = List<String>.from(jsonDecode(rawHits));
+    List<String> flops = List<String>.from(jsonDecode(rawFlops));
+    if (liked) {
+      if (!hits.contains(title)) hits.insert(0, title);
+      flops.remove(title);
+    } else {
+      if (!flops.contains(title)) flops.insert(0, title);
+      hits.remove(title);
+    }
+    if (hits.length > 50) hits = hits.take(50).toList();
+    if (flops.length > 30) flops = flops.take(30).toList();
+    await prefs.setString('familykueche.hits', jsonEncode(hits));
+    await prefs.setString('familykueche.flops', jsonEncode(flops));
+  }
+
+  /// Gibt die "Kinder-Hits" Liste.
+  Future<List<String>> getKinderHits() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('familykueche.hits') ?? '[]';
+    return List<String>.from(jsonDecode(raw));
   }
 
   /// Setzt Allergien (einmal im Profil).
@@ -196,31 +226,181 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown):
   }
 
   static const _allFallbackRecipes = [
+    // FLEISCH
     FamilyRecipe(
         id: '',
-        title: 'Nudeln mit versteckter Gemuese-Sauce',
-        description: 'Karotten und Zucchini verschwinden in der Tomatensauce.',
-        prepMinutes: 25,
-        costPerPortion: 1.50,
+        title: 'Spaghetti Bolognese',
+        description: 'DER Klassiker — Kinder-Liebling Nr. 1 weltweit.',
+        prepMinutes: 30,
+        costPerPortion: 2.00,
         minChildAge: 1,
         ingredients: [
           '400g Spaghetti',
-          '2 Karotten',
-          '1 Zucchini',
-          '400ml Passata',
-          '1 EL Olivenoel'
+          '300g Hackfleisch',
+          '1 Dose Tomaten',
+          '1 Karotte',
+          '1 Zwiebel',
+          'Olivenoel'
         ],
         steps: [
-          'Gemuese fein raspeln.',
-          'In Oel anbraten bis weich.',
-          'Passata dazu, 10 Min koecheln.',
-          'Puerieren bis glatt.',
-          'Mit Nudeln servieren.'
+          'Zwiebel + Karotte fein hacken, in Oel anbraten.',
+          'Hack dazu, kruemelig braten.',
+          'Tomaten dazu, 15 Min koecheln.',
+          'Nudeln kochen, servieren.'
         ],
-        allergensFree: ['nuesse', 'ei', 'laktose'],
+        allergensFree: ['nuesse'],
         season: '',
         tip:
-            'Lass dein Kind die Karotten waschen — wer mithilft, probiert eher.'),
+            'Lass dein Kind das Hackfleisch kruemeln — wer mithilft isst lieber.'),
+    FamilyRecipe(
+        id: '',
+        title: 'Haehnchen-Nuggets aus dem Ofen',
+        description: 'Knusprig wie aus dem Restaurant aber gesunder.',
+        prepMinutes: 25,
+        costPerPortion: 2.20,
+        minChildAge: 1,
+        ingredients: [
+          '500g Haenchenbrust',
+          '100g Semmelbrösel',
+          '1 Ei',
+          'Paprikapulver',
+          'Salz'
+        ],
+        steps: [
+          'Haehnchen in Stuecke schneiden.',
+          'In Ei wenden, dann in Semmelbrösel.',
+          '15 Min bei 200 Grad backen.',
+          'Mit Ketchup oder Gurkensticks servieren.'
+        ],
+        allergensFree: ['nuesse'],
+        season: '',
+        tip:
+            'Kinder ab 3 koennen beim Panieren helfen — Haende eintauchen macht Spass!'),
+    FamilyRecipe(
+        id: '',
+        title: 'Mini-Schnitzel mit Kartoffelpueree',
+        description: 'Schnell, saftig, und das Pueree ist wie eine Umarmung.',
+        prepMinutes: 30,
+        costPerPortion: 2.50,
+        minChildAge: 1,
+        ingredients: [
+          '4 kleine Schweineschnitzel',
+          '100g Semmelbrösel',
+          '1 Ei',
+          '600g Kartoffeln',
+          '50ml Milch',
+          'Butter'
+        ],
+        steps: [
+          'Kartoffeln kochen, stampfen mit Milch + Butter.',
+          'Schnitzel klopfen, in Ei + Brösel wenden.',
+          'In Pfanne goldbraun braten.',
+          'Mit Pueree + Gurkensalat servieren.'
+        ],
+        allergensFree: ['nuesse'],
+        season: '',
+        tip:
+            'Kleine Schnitzel die in Kinderhaende passen wirken einladender als grosse.'),
+    // FISCH
+    FamilyRecipe(
+        id: '',
+        title: 'Selbstgemachte Fischstaebchen',
+        description: 'Besser als TK — und in 20 Min fertig.',
+        prepMinutes: 20,
+        costPerPortion: 2.30,
+        minChildAge: 1,
+        ingredients: [
+          '400g Fischfilet (Kabeljau/Seelachs)',
+          '80g Semmelbrösel',
+          '1 Ei',
+          'Zitrone',
+          'Salz'
+        ],
+        steps: [
+          'Fisch in Staebchen schneiden.',
+          'In Ei, dann Semmelbrösel wenden.',
+          'In Pfanne mit wenig Oel 3-4 Min pro Seite braten.',
+          'Mit Zitrone und Kartoffeln servieren.'
+        ],
+        allergensFree: ['nuesse', 'laktose'],
+        season: '',
+        tip:
+            'Fischstaebchen-Form macht Fisch fuer Kinder attraktiver als ein ganzes Filet.'),
+    FamilyRecipe(
+        id: '',
+        title: 'Lachs-Nudeln mit Sahne-Sauce',
+        description: 'Cremig, mild, reich an Omega-3 fuer kleine Gehirne.',
+        prepMinutes: 20,
+        costPerPortion: 3.00,
+        minChildAge: 2,
+        ingredients: [
+          '300g Pasta',
+          '200g Lachsfilet',
+          '150ml Sahne',
+          '1 EL Butter',
+          'Dill',
+          'Salz'
+        ],
+        steps: [
+          'Nudeln kochen.',
+          'Lachs in Stuecke schneiden, in Butter anbraten.',
+          'Sahne dazu, kurz aufkochen.',
+          'Mit Nudeln vermischen, Dill drauf.'
+        ],
+        allergensFree: ['nuesse', 'ei'],
+        season: '',
+        tip:
+            'Lachs ist mild genug fuer Kinder die keinen Fischgeschmack moegen.'),
+    // VEGETARISCH
+    FamilyRecipe(
+        id: '',
+        title: 'Pizza vom Blech (mit Kindern belegt)',
+        description: 'Jedes Kind belegt seine eigene Ecke — Spass garantiert.',
+        prepMinutes: 30,
+        costPerPortion: 1.50,
+        minChildAge: 1,
+        ingredients: [
+          '1 Fertig-Pizzateig (oder 500g Mehl + Hefe)',
+          '200ml Tomatensauce',
+          '200g Kaese',
+          'Belag nach Wunsch: Mais, Salami, Paprika'
+        ],
+        steps: [
+          'Teig ausrollen auf Blech.',
+          'Sauce verteilen.',
+          'Kinder belegen lassen!',
+          '12-15 Min bei 220 Grad backen.'
+        ],
+        allergensFree: ['nuesse'],
+        season: '',
+        tip: 'Jedes Familienmitglied bekommt ein Viertel zum Selbst-Belegen.'),
+    FamilyRecipe(
+        id: '',
+        title: 'Mac and Cheese (Nudeln mit Kaese)',
+        description:
+            'Cremig, kaesig, geht immer. Comfort-Food fuer die ganze Familie.',
+        prepMinutes: 20,
+        costPerPortion: 1.30,
+        minChildAge: 1,
+        ingredients: [
+          '400g Makkaroni',
+          '200ml Milch',
+          '150g geriebener Kaese',
+          '1 EL Butter',
+          '1 EL Mehl',
+          'Muskat'
+        ],
+        steps: [
+          'Nudeln kochen.',
+          'Butter schmelzen, Mehl einruehren.',
+          'Milch dazu, glatt ruehren.',
+          'Kaese unterheben bis cremig.',
+          'Nudeln in Sauce wenden.'
+        ],
+        allergensFree: ['nuesse', 'ei'],
+        season: '',
+        tip:
+            'Kaese-Faeden ziehen finden Kinder faszinierend — das ist Teil des Spassses!'),
     FamilyRecipe(
         id: '',
         title: 'Pfannkuchen mit Apfelmus',
@@ -232,7 +412,6 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown):
           '200g Mehl',
           '2 Eier',
           '300ml Milch',
-          '1 Prise Salz',
           'Butter',
           'Apfelmus'
         ],
@@ -248,132 +427,52 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown):
             'Pfannkuchen eignen sich perfekt zum gemeinsam Wenden-Ueben ab 4 Jahren.'),
     FamilyRecipe(
         id: '',
-        title: 'Reis mit Brokkoli-Kaese-Sauce',
-        description: 'Kaese macht Brokkoli unwiderstehlich.',
-        prepMinutes: 20,
-        costPerPortion: 1.20,
+        title: 'Kartoffelsuppe mit Wuerstchen',
+        description:
+            'Waermt von innen. Kinder lieben die Wuerstchen-Stuecke drin.',
+        prepMinutes: 25,
+        costPerPortion: 1.40,
         minChildAge: 1,
-        ingredients: ['250g Reis', '300g Brokkoli', '100ml Sahne', '80g Kaese'],
+        ingredients: [
+          '600g Kartoffeln',
+          '1 Karotte',
+          '500ml Bruehe',
+          '2 Wiener Wuerstchen',
+          '100ml Sahne'
+        ],
+        steps: [
+          'Kartoffeln + Karotte wuerfeln, in Bruehe kochen.',
+          'Puerieren (nicht ganz glatt — Stuecke lassen).',
+          'Sahne einruehren.',
+          'Wuerstchen in Scheiben schneiden, dazu geben.'
+        ],
+        allergensFree: ['nuesse', 'ei'],
+        season: '',
+        tip: 'Lass dein Kind die Wuerstchen mit dem Kindermesser schneiden.'),
+    FamilyRecipe(
+        id: '',
+        title: 'Reis-Pfanne mit Haehnchen und Gemuese',
+        description: 'Bunt, schnell, alles in einer Pfanne.',
+        prepMinutes: 25,
+        costPerPortion: 2.00,
+        minChildAge: 1,
+        ingredients: [
+          '250g Reis',
+          '300g Haenchenbrust',
+          '1 Paprika',
+          '1 kleine Zucchini',
+          '2 EL Sojasauce',
+          'Oel'
+        ],
         steps: [
           'Reis kochen.',
-          'Brokkoli daempfen.',
-          'Sahne + Kaese erhitzen.',
-          'Alles vermischen.'
-        ],
-        allergensFree: ['nuesse', 'ei'],
-        season: '',
-        tip:
-            'Nenne Brokkoli "kleine Baeume" — Kinder essen lieber was lustig klingt.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Kartoffel-Wedges mit Quark-Dip',
-        description: 'Knusprig wie Pommes, aber aus dem Ofen.',
-        prepMinutes: 30,
-        costPerPortion: 1.00,
-        minChildAge: 1,
-        ingredients: [
-          '800g Kartoffeln',
-          '2 EL Olivenoel',
-          'Paprikapulver',
-          '200g Quark',
-          '1 Gurke'
-        ],
-        steps: [
-          'Kartoffeln in Spalten schneiden.',
-          'Mit Oel + Paprika mischen.',
-          '25 Min bei 200 Grad backen.',
-          'Gurke in Quark raspeln.'
-        ],
-        allergensFree: ['nuesse', 'ei'],
-        season: '',
-        tip:
-            'Kinder duerfen die Kartoffeln mit Haenden einoelen — matschen erlaubt!'),
-    FamilyRecipe(
-        id: '',
-        title: 'Milchreis mit Zimt und Beeren',
-        description: 'Cremig, suess, troestend. Perfekt am Abend.',
-        prepMinutes: 25,
-        costPerPortion: 0.90,
-        minChildAge: 1,
-        ingredients: [
-          '200g Milchreis',
-          '800ml Milch',
-          '2 EL Zucker',
-          'Zimt',
-          '150g Beeren'
-        ],
-        steps: [
-          'Milch aufkochen.',
-          'Reis einruehren, 25 Min koecheln.',
-          'Zucker rein.',
-          'Mit Zimt + Beeren servieren.'
-        ],
-        allergensFree: ['nuesse', 'ei'],
-        season: '',
-        tip:
-            'Gemeinsam ruehren: Ab 3 Jahren mit langem Loeffel helfen lassen.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Gemuesesticks mit Hummus',
-        description: 'Kein Kochen noetig! Bunt, gesund, fingerfood.',
-        prepMinutes: 10,
-        costPerPortion: 1.30,
-        minChildAge: 1,
-        ingredients: ['2 Karotten', '1 Gurke', '1 Paprika', '200g Hummus'],
-        steps: [
-          'Gemuese in Sticks schneiden.',
-          'Hummus in Schale.',
-          'Bunt anrichten.',
-          'Zusammen dippen!'
-        ],
-        allergensFree: ['nuesse', 'ei', 'laktose'],
-        season: '',
-        tip: 'Kinder essen mehr Gemuese wenn sie es selbst dippen duerfen.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Wraps mit Frischkaese',
-        description: 'Rollen, fuellen, reinbeissen. Kinder bauen selbst.',
-        prepMinutes: 10,
-        costPerPortion: 1.40,
-        minChildAge: 2,
-        ingredients: [
-          '4 Wraps',
-          '200g Frischkaese',
-          '1 Karotte',
-          '1/2 Gurke',
-          'Salat'
-        ],
-        steps: [
-          'Wraps mit Frischkaese bestreichen.',
-          'Gemuese drauf verteilen.',
-          'Einrollen.',
-          'Halbieren.'
-        ],
-        allergensFree: ['nuesse', 'ei'],
-        season: '',
-        tip:
-            'Jedes Kind fuellt seinen Wrap selbst — das macht eigenstaendig + stolz.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Bananen-Hafer-Kekse (ohne Zucker)',
-        description: '3 Zutaten, 15 Min, gesund und suess.',
-        prepMinutes: 15,
-        costPerPortion: 0.50,
-        minChildAge: 1,
-        ingredients: [
-          '2 reife Bananen',
-          '150g Haferflocken',
-          'Optional: Kakao oder Rosinen'
-        ],
-        steps: [
-          'Bananen zerquetschen.',
-          'Haferflocken untermischen.',
-          'Kleine Haufen aufs Blech.',
-          '12 Min bei 180 Grad backen.'
+          'Haehnchen in Streifen schneiden, anbraten.',
+          'Gemuese dazu, 5 Min braten.',
+          'Reis unterheben, Sojasauce drueber.'
         ],
         allergensFree: ['nuesse', 'ei', 'laktose'],
         season: '',
         tip:
-            'Kinder ab 2 koennen Bananen matschen — perfekt zum gemeinsam Backen.'),
+            'Wenn Kinder das Gemuese in lustigen Formen schneiden hilft das beim Probieren.'),
   ];
 }
