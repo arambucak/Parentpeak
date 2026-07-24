@@ -20,13 +20,9 @@ import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
-import 'package:parentpeak/ui/widgets/home/daily_tip_card.dart';
-import 'package:parentpeak/ui/widgets/home/next_event_widget.dart';
-import 'package:parentpeak/ui/widgets/home/quick_activity_card.dart';
+import 'package:parentpeak/ui/widgets/home/context_home_card.dart';
+import 'package:parentpeak/ui/widgets/home/quick_actions_row.dart';
 import 'package:parentpeak/ui/widgets/home/events_carousel_widget.dart';
-import 'package:parentpeak/ui/widgets/home/mood_check_widget.dart';
-import 'package:parentpeak/ui/widgets/home/bedtime_timer_card.dart';
-import 'package:parentpeak/ui/widgets/home/weekly_progress_widget.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 
 class _FeatureAction {
@@ -673,21 +669,10 @@ class _HomeScreenState extends State<HomeScreen>
       if (action.featureId == null) return true;
       return !FeatureFlagService.instance.isHidden(action.featureId!);
     }).toList();
-    final actionByLabel = <String, _FeatureAction>{
-      for (final action in visibleGridActions) action.label: action,
-    };
-    final recentActions = _recentTileLabels
-        .map((label) => actionByLabel[label])
-        .whereType<_FeatureAction>()
-        .toList();
 
     final displayName =
         AuthService.instance.currentUser?.displayName.trim() ?? '';
     final lang = languageService.currentLanguage;
-    final greetingTime = _getTimeGreeting(lang);
-    final familyGreeting = displayName.isEmpty
-        ? '$greetingTime${AppStringsManager.getString(lang, 'greeting_family')} \u{1F44B}'
-        : '$greetingTime $displayName \u{1F44B}';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -697,104 +682,98 @@ class _HomeScreenState extends State<HomeScreen>
             constraints: BoxConstraints(maxWidth: contentMaxWidth),
             child: CustomScrollView(
               slivers: [
+                // ─── Context Card (Tageszeit-basiert) ────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 10, horizontalPadding, 8),
-                    child: _buildHeroCard(
-                      theme,
-                      familyGreeting,
-                      showResetTileOrder: _customTileOrderLabels.isNotEmpty,
-                      onResetTileOrder: _resetTileOrder,
-                    ),
-                  ),
-                ),
-                // ─── Smart Home Widgets ──────────────────────────
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 4, horizontalPadding, 8),
-                    child: DailyTipCard(
-                      onExpandTip: (tipText) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatScreen(
-                              initialMessage: '___TIP_EXPAND___$tipText',
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 8),
-                    child: NextEventWidget(
-                      onTap: () {
-                        final calAction = visibleGridActions
-                            .where((a) => a.featureId == 'kalender')
-                            .firstOrNull;
-                        if (calAction != null) _openFeature(calAction);
-                      },
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 8),
-                    child: const QuickActivityCard(),
-                  ),
-                ),
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 4, bottom: 12),
-                    child: EventsCarouselWidget(),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 8),
-                    child: MoodCheckWidget(
-                      onNeedSupport: () {
+                        horizontalPadding, 10, horizontalPadding, 16),
+                    child: ContextHomeCard(
+                      onExpandTip: () {
                         final chatAction = visibleGridActions
                             .where((a) => a.featureId == 'ki_elternberatung')
                             .firstOrNull;
                         if (chatAction != null) _openFeature(chatAction);
                       },
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 8),
-                    child: BedtimeTimerCard(
                       onOpenChat: () {
                         final chatAction = visibleGridActions
                             .where((a) => a.featureId == 'ki_elternberatung')
                             .firstOrNull;
                         if (chatAction != null) _openFeature(chatAction);
                       },
+                      onOpenCalendar: () {
+                        final calAction = visibleGridActions
+                            .where((a) => a.featureId == 'kalender')
+                            .firstOrNull;
+                        if (calAction != null) _openFeature(calAction);
+                      },
+                      onOpenActivity: () {
+                        final impulsAction = visibleGridActions
+                            .where((a) => a.featureId == 'impulse_entwicklung')
+                            .firstOrNull;
+                        if (impulsAction != null) _openFeature(impulsAction);
+                      },
+                      onMoodSelected: (mood) {
+                        // Mood speichern fuer Profil-Tracker
+                        SharedPreferences.getInstance().then((prefs) {
+                          prefs.setString('mood.today', mood);
+                          prefs.setString('mood.today_date',
+                              DateTime.now().toIso8601String());
+                        });
+                      },
                     ),
                   ),
                 ),
+                // ─── Quick Actions (5 Buttons) ───────────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 12),
-                    child: const WeeklyProgressWidget(),
+                        horizontalPadding, 0, horizontalPadding, 16),
+                    child: QuickActionsRow(
+                      onChat: () {
+                        final a = visibleGridActions
+                            .where((a) => a.featureId == 'ki_elternberatung')
+                            .firstOrNull;
+                        if (a != null) _openFeature(a);
+                      },
+                      onCalendar: () {
+                        final a = visibleGridActions
+                            .where((a) => a.featureId == 'kalender')
+                            .firstOrNull;
+                        if (a != null) _openFeature(a);
+                      },
+                      onEvents: () {
+                        final a = visibleGridActions
+                            .where((a) => a.featureId == 'events_aktivitaeten')
+                            .firstOrNull;
+                        if (a != null) _openFeature(a);
+                      },
+                      onImpulse: () {
+                        final a = visibleGridActions
+                            .where((a) => a.featureId == 'impulse_entwicklung')
+                            .firstOrNull;
+                        if (a != null) _openFeature(a);
+                      },
+                      onNetzwerk: () {
+                        final a = visibleGridActions
+                            .where((a) => a.featureId == 'eltern_match')
+                            .firstOrNull;
+                        if (a != null) _openFeature(a);
+                      },
+                    ),
                   ),
                 ),
-                // ─── Kacheln ─────────────────────────────────────
+                // ─── Events Teaser (kompakt) ─────────────────────
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: EventsCarouselWidget(),
+                  ),
+                ),
+                // ─── Alle Funktionen ─────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 2, horizontalPadding, 10),
+                        horizontalPadding, 4, horizontalPadding, 10),
                     child: Text(
                       AppStringsManager.getString(
                           languageService.currentLanguage, 'all_features'),
@@ -803,30 +782,6 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                   ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                      horizontalPadding, 14, horizontalPadding, 24),
-                  sliver: recentActions.isEmpty
-                      ? const SliverToBoxAdapter(child: SizedBox.shrink())
-                      : SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final action in recentActions)
-                                  ActionChip(
-                                    avatar: Icon(action.icon,
-                                        size: 16, color: action.color),
-                                    label: Text(action.label),
-                                    onPressed: () => _openFeature(action),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
                 ),
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(
