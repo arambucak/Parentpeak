@@ -341,7 +341,8 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                     children: [
                       TileLayer(
                           urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'de.parentpeak.app'),
                       MarkerLayer(markers: [
                         Marker(
                           point: _pinPosition,
