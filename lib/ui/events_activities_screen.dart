@@ -10,6 +10,7 @@ import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/create_event_screen.dart';
 import 'package:parentpeak/ui/event_detail_screen.dart';
 import 'package:parentpeak/ui/event_invitations_screen.dart';
+import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 
 class EventsActivitiesScreen extends StatefulWidget {
   const EventsActivitiesScreen({super.key});
@@ -733,24 +734,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.location_on_rounded, color: Color(0xFF0EA5A4)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _cityController,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _refreshFeed(),
-              decoration: const InputDecoration(
-                isDense: true,
-                hintText: 'Standort eingeben (z.B. Berlin)',
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-          FilledButton.icon(
-            onPressed: _refreshFeed,
-            icon: const Icon(Icons.auto_awesome_rounded),
-            label: const Text('Suchen'),
+          LocationPickerWidget(
+            hint: 'Standort waehlen',
+            onLocationPicked: (loc) {
+              _cityController.text = loc.displayName;
+              _refreshFeed();
+            },
           ),
         ],
       ),
