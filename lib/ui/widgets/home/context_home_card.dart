@@ -17,6 +17,7 @@ class ContextHomeCard extends StatefulWidget {
   final VoidCallback? onOpenCalendar;
   final VoidCallback? onOpenActivity;
   final void Function(String mood)? onMoodSelected;
+  final VoidCallback? onShuffleActivity; // NEU: Spielidee shufflen
 
   const ContextHomeCard({
     super.key,
@@ -25,6 +26,7 @@ class ContextHomeCard extends StatefulWidget {
     this.onOpenCalendar,
     this.onOpenActivity,
     this.onMoodSelected,
+    this.onShuffleActivity,
   });
 
   @override
@@ -41,6 +43,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   String? _nextEvent;
   int _childAgeHint = 3;
   bool _moodDone = false;
+  int _tipIndex = 0;
 
   @override
   void initState() {
@@ -113,25 +116,48 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
     }
   }
 
+  void _shuffleTip() {
+    _tipIndex++;
+    setState(() => _tip = _getTipByIndex(_childAgeHint, _tipIndex));
+  }
+
   String _getTip(int age) {
+    return _getTipByIndex(age, DateTime.now().day * 7 + DateTime.now().hour);
+  }
+
+  String _getTipByIndex(int age, int index) {
     final tips = age < 2
         ? [
-            'Babys lernen durch Wiederholung. Heute: Peekaboo spielen!',
-            'Hautkontakt beruhigt. 10 Minuten kuscheln wirkt Wunder.',
-            'Singe deinem Baby vor — egal wie. Deine Stimme ist Musik.',
+            'Versteckspiel mit Tuechern: Du versteckst, Baby sucht. Foerdert Objektpermanenz.',
+            'Krabbelwettrennen: Kriecht zusammen durch die Wohnung. Lachen garantiert.',
+            'Topf-Orchester: Toepfe + Kochloeffel = Musik! Rhythmus foerdert Gehirnentwicklung.',
+            'Seifenblasen jagen: Draussen oder drinnen. Trainiert Hand-Augen-Koordination.',
+            'Fingerspiele mit Gesang: Alle meine Entchen mit Fingerbewegungen.',
+            'Turmbauen und umwerfen: Baue einen Turm aus Bechern — Kind darf umhauen!',
           ]
         : age < 5
             ? [
-                'Kinder brauchen keine perfekten Eltern, sondern echte.',
-                'Langeweile ist kreativ. Lass 10 Minuten ungeplant.',
-                'Gemeinsam Steine sammeln: Sortieren foerdert Mathe-Denken.',
+                'Schatzsuche im Wohnzimmer: Verstecke 5 Dinge, zeichne eine Schatzkarte.',
+                'Verkleiden aus dem Schrank: Alte Klamotten, Huete, Tuecher — Theater spielen!',
+                'Barfuss-Parcours: Kissen, Handtuecher, Plastikfolie — verschiedene Texturen fuehlen.',
+                'Steine bemalen: Draussen sammeln, drinnen mit Wasserfarben verzieren.',
+                'Karton-Burg: Grosse Kartons werden zu Haeusern, Autos, Raketen.',
+                'Knetmasse selber machen: Mehl + Salz + Wasser + Lebensmittelfarbe = Spass!',
+                'Pfuetzen-Springen: Nach dem Regen raus — Gummistiefel an und los!',
+                'Kuchenbaeckerei: Zusammen einen einfachen Ruehrkuchen backen.',
               ]
             : [
-                'Schulkinder brauchen nach der Schule 30 Min Ruhe ohne Fragen.',
-                'Zusammen kochen: Abwiegen, Zaehlen, Schmecken — Lernen pur.',
-                'Frag heute: Was war das Lustigste in deinem Tag?',
+                'Schnitzeljagd im Park: Hinweise schreiben, Route planen, Schatz verstecken.',
+                'Familien-Quiz: Jeder schreibt 5 Fragen ueber sich — wer kennt wen am besten?',
+                'Geocaching: Kostenlose App, draussen Schaetze suchen — echtes Abenteuer.',
+                'Comic zeichnen: Zusammen eine kurze Geschichte als Comic erzaehlen.',
+                'Fotosafari: Handy-Kamera und eine Liste: Finde etwas Rotes, Rundes, Weiches...',
+                'Experimente: Backpulver + Essig Vulkan, Geheimschrift mit Zitrone, Ei in Essig.',
+                'Lager im Wohnzimmer: Decken, Kissen, Lichterkette — Uebernachtung im Zelt.',
+                'Brettspiel-Turnier: 3 Spiele hintereinander, Familien-Champion kueeren.',
               ];
-    return tips[DateTime.now().day % tips.length];
+    // Rotiert basierend auf index
+    return tips[index % tips.length];
   }
 
   @override
@@ -256,15 +282,15 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             theme,
             '\u{1F3B2} Spielidee',
             const Color(0xFF16A34A),
-            widget.onOpenActivity,
+            _shuffleTip,
           )),
           const SizedBox(width: 8),
           Expanded(
               child: _miniButton(
             theme,
-            '\u{2728} Neue Idee',
+            '\u{1F504} Nochmal',
             const Color(0xFF8B5CF6),
-            widget.onOpenActivity,
+            _shuffleTip,
           )),
         ]),
       ]),
