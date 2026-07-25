@@ -212,47 +212,33 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   }
 
   Widget _shoppingItemTile(ThemeData theme, ShoppingItem item, bool isDone) {
-    return Dismissible(
-      key: Key(item.id),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) async {
-        await _shopping.removeItem(item.id);
-        setState(() {});
-      },
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16),
-        color: theme.colorScheme.error.withValues(alpha: 0.1),
-        child: Icon(Icons.delete_rounded,
-            color: theme.colorScheme.error, size: 20),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
       child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-        leading: GestureDetector(
-          onTap: () async {
-            await _shopping.toggleDone(item.id);
-            setState(() {});
-          },
-          child: Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: isDone
-                  ? const Color(0xFF16A34A).withValues(alpha: 0.1)
-                  : Colors.transparent,
-              shape: BoxShape.circle,
-              border: Border.all(
-                  color: isDone
-                      ? const Color(0xFF16A34A)
-                      : theme.colorScheme.outline,
-                  width: 1.5),
-            ),
-            child: isDone
-                ? const Icon(Icons.check_rounded,
-                    size: 16, color: Color(0xFF16A34A))
-                : null,
+        onTap: () async {
+          await _shopping.toggleDone(item.id);
+          setState(() {});
+        },
+        leading: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: isDone
+                ? const Color(0xFF16A34A).withValues(alpha: 0.1)
+                : Colors.transparent,
+            shape: BoxShape.circle,
+            border: Border.all(
+                color: isDone
+                    ? const Color(0xFF16A34A)
+                    : theme.colorScheme.outline,
+                width: 1.5),
           ),
+          child: isDone
+              ? const Icon(Icons.check_rounded,
+                  size: 16, color: Color(0xFF16A34A))
+              : null,
         ),
         title: Text(
           '${item.emoji} ${item.name}',
@@ -262,8 +248,9 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             color: isDone ? theme.colorScheme.outline : null,
           ),
         ),
-        trailing: item.quantity != null
-            ? Container(
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (item.quantity != null)
+            Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                     color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
@@ -272,8 +259,17 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                     style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF8B5CF6))))
-            : null,
+                        color: Color(0xFF8B5CF6)))),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: () async {
+              await _shopping.removeItem(item.id);
+              setState(() {});
+            },
+            child: Icon(Icons.close_rounded,
+                size: 16, color: theme.colorScheme.outline),
+          ),
+        ]),
       ),
     );
   }
