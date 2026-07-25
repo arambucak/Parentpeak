@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 
@@ -79,7 +80,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
     // User-Name
     String name = prefs.getString('user.displayName') ?? '';
     if (name.isEmpty && profile != null) name = profile.displayName;
-    if (name.isEmpty) name = 'du';
+    if (name.isEmpty) name = '';
 
     // Kinder-Alter fuer Personalisierung
     int ageHint = 3;
@@ -385,7 +386,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                Text('$_greeting, $_userName!',
+                Text(_userName.isNotEmpty ? 'Hallo $_userName!' : 'Hallo ihr!',
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 Text('Was macht ihr heute zusammen?',
@@ -543,19 +544,30 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
 
   Widget _miniButton(
       ThemeData theme, String label, Color color, VoidCallback? onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap != null
+            ? () {
+                HapticFeedback.lightImpact();
+                onTap();
+              }
+            : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+          ),
+          child: Center(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: color))),
         ),
-        child: Center(
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w700, color: color))),
       ),
     );
   }
