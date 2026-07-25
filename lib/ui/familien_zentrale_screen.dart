@@ -41,24 +41,32 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   }
 
   Future<void> _load() async {
-    await _shopping.load();
-    await _dossierService.load();
-    if (_dossierService.dossiers.isEmpty) await _initDossiersFromProfile();
-    _loadTodos();
+    try {
+      await _shopping.load();
+      await _dossierService.load();
+      if (_dossierService.dossiers.isEmpty) await _initDossiersFromProfile();
+      await _loadTodos();
+    } catch (e) {
+      debugPrint('FamilienZentrale._load() Fehler: $e');
+    }
     if (mounted) setState(() => _loaded = true);
   }
 
   Future<void> _initDossiersFromProfile() async {
-    final profile = await FamilyMatchProfile.load();
-    if (profile != null && profile.children.isNotEmpty) {
-      for (final child in profile.children) {
-        final exams = UExaminationData.generateForChild(child.ageMonths);
-        await _dossierService.addOrUpdate(KindDossier(
-          childName: child.name.isNotEmpty ? child.name : 'Kind',
-          ageMonths: child.ageMonths,
-          uExams: exams,
-        ));
+    try {
+      final profile = await FamilyMatchProfile.load();
+      if (profile != null && profile.children.isNotEmpty) {
+        for (final child in profile.children) {
+          final exams = UExaminationData.generateForChild(child.ageMonths);
+          await _dossierService.addOrUpdate(KindDossier(
+            childName: child.name.isNotEmpty ? child.name : 'Kind',
+            ageMonths: child.ageMonths,
+            uExams: exams,
+          ));
+        }
       }
+    } catch (e) {
+      debugPrint('FamilienZentrale._initDossiersFromProfile() Fehler: $e');
     }
   }
 
@@ -81,8 +89,12 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    if (!_loaded)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (!_loaded) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Familien-Zentrale')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
