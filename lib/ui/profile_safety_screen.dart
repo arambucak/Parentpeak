@@ -10,6 +10,7 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
+import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
 
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
 class ProfileSafetyScreen extends StatefulWidget {
@@ -468,6 +469,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   icon: Icons.mail_rounded,
                   title: 'Kontakt & Support',
                   onTap: () => _openUrl(APIConfig.getContactSupportUrl())),
+              const SizedBox(height: 20),
+
+              // ─── Beta-Feedback ─────────────────────────────────
+              const BetaFeedbackWidget(),
               const SizedBox(height: 20),
 
               // ─── Logout & Delete ───────────────────────────────────
