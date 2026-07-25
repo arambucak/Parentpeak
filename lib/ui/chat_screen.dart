@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 
@@ -232,14 +233,25 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _scrollToBottom();
 
-      // Sende einen smarten Prompt an die KI
+      // Sende einen smarten Prompt an die KI mit Kind-Alter-Kontext
+      int childAge = 3;
+      try {
+        final profile = await FamilyMatchProfile.load();
+        if (profile != null && profile.children.isNotEmpty) {
+          childAge =
+              (profile.children.first.ageMonths / 12).round().clamp(0, 16);
+        }
+      } catch (_) {}
+
       final smartPrompt =
-          'WICHTIG: Das ist eine PRAKTISCHE FRAGE (Typ A). Antworte KURZ und DIREKT. '
-          'Keine Empathie-Einleitung, kein "Ein Blick auf euren Alltag", kein "Was dahintersteckt". '
-          'Einfach: Was ist es, warum ist es gut, 3 konkrete Ideen zum sofort Umsetzen.\n\n'
-          'Die Frage: "$tipText"\n\n'
-          'Antworte in maximal 8 Zeilen. Bullet Points. Fertig.';
-      'Frage am Ende: "Möchtest du wissen wie das bei einem bestimmten Alter funktioniert?" oder eine ähnliche weiterführende Frage.';
+          'KONTEXT: Das Kind des Elternteils ist $childAge Jahre alt.\n\n'
+          'Der Elternteil hat diesen Tipp gelesen und will MEHR dazu wissen:\n'
+          '"$tipText"\n\n'
+          'Antworte SPEZIFISCH fuer ein $childAge-jaehriges Kind:\n'
+          '1. Warum ist das bei $childAge-Jaehrigen besonders relevant? (2 Saetze)\n'
+          '2. 3 konkrete Alltagsbeispiele/Situationen\n'
+          '3. 1 Uebung die der Elternteil HEUTE ausprobieren kann\n\n'
+          'Kurz, praktisch, kein Theorievortrag. Max 12 Zeilen.';
 
       try {
         final stream = _chatBackend!.streamReply(

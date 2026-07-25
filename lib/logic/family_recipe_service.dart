@@ -104,9 +104,16 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
 ''';
 
     try {
+      final modelName = APIConfig.getGeminiModelName();
+      debugPrint(
+          'FamilyRecipeService: Verwende Modell=$modelName, Key-Laenge=${apiKey.length}');
+
       final model = GenerativeModel(
-        model: APIConfig.getGeminiModelName(),
+        model: modelName,
         apiKey: apiKey,
+        systemInstruction: Content.text(
+            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gueltigem JSON. '
+            'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.'),
         generationConfig: GenerationConfig(
           temperature: 0.9,
           maxOutputTokens: 1024,
@@ -115,9 +122,22 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
       final response = await model.generateContent([Content.text(prompt)]);
       final raw = response.text ?? '';
-      return _parseRecipe(raw);
-    } catch (e) {
+      debugPrint('FamilyRecipeService: Gemini Antwort (${raw.length} Zeichen)');
+
+      if (raw.isEmpty) {
+        debugPrint('FamilyRecipeService: Leere Antwort von Gemini!');
+        return _fallbackRecipe();
+      }
+
+      final recipe = _parseRecipe(raw);
+      if (recipe != null) return recipe;
+      debugPrint(
+          'FamilyRecipeService: Parsing fehlgeschlagen, Antwort: ${raw.substring(0, raw.length.clamp(0, 200))}');
+      return _fallbackRecipe();
+    } catch (e, stack) {
       debugPrint('FamilyRecipeService: KI-Fehler: $e');
+      debugPrint(
+          'FamilyRecipeService: Stack: ${stack.toString().split('\n').take(3).join('\n')}');
       return _fallbackRecipe();
     }
   }

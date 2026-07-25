@@ -52,14 +52,117 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
     setState(() => _results = results);
   }
 
+  static const _topicCards = [
+    {
+      'emoji': '\u{1F4A2}',
+      'label': 'Wut & Trotz',
+      'hint': 'Wutanfaelle, Hauen',
+      'search': 'wut',
+      'color': '0xFFDC2626'
+    },
+    {
+      'emoji': '\u{1F634}',
+      'label': 'Schlafen',
+      'hint': 'Einschlafen, Nacht',
+      'search': 'schlafen',
+      'color': '0xFF8B5CF6'
+    },
+    {
+      'emoji': '\u{1F6AB}',
+      'label': 'Grenzen',
+      'hint': 'Nein sagen, Regeln',
+      'search': 'grenzen',
+      'color': '0xFF2563EB'
+    },
+    {
+      'emoji': '\u{1F35D}',
+      'label': 'Essen',
+      'hint': 'Picky Eater',
+      'search': 'essen',
+      'color': '0xFFF97316'
+    },
+    {
+      'emoji': '\u{1F46B}',
+      'label': 'Geschwister',
+      'hint': 'Streit, Eifersucht',
+      'search': 'geschwister',
+      'color': '0xFF0EA5A4'
+    },
+    {
+      'emoji': '\u{1F4F1}',
+      'label': 'Medien',
+      'hint': 'Bildschirmzeit',
+      'search': 'bildschirm',
+      'color': '0xFF6B21A8'
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     if (!_initialized) return const SizedBox.shrink();
     final theme = Theme.of(context);
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      // Impuls des Tages
+      // Impuls des Tages (personalisiert)
       if (_impuls != null && _results.isEmpty) _impulsCard(theme, _impuls!),
+      // Themen-Karten Carousel (3-5 Karten horizontal)
+      if (_results.isEmpty) ...[
+        const SizedBox(height: 14),
+        Text('\u{1F4DA} Haeufige Themen',
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 100,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _topicCards.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (_, i) {
+              final topic = _topicCards[i];
+              return GestureDetector(
+                onTap: () {
+                  _searchCtrl.text = topic['search']!;
+                  _onSearch(topic['search']!);
+                },
+                child: Container(
+                  width: 130,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(int.parse(topic['color']!))
+                            .withValues(alpha: 0.08),
+                        Color(int.parse(topic['color']!))
+                            .withValues(alpha: 0.03),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: Color(int.parse(topic['color']!))
+                            .withValues(alpha: 0.2)),
+                  ),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(topic['emoji']!,
+                            style: const TextStyle(fontSize: 22)),
+                        const Spacer(),
+                        Text(topic['label']!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700, fontSize: 11)),
+                        Text(topic['hint']!,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.outline, fontSize: 9)),
+                      ]),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
       const SizedBox(height: 14),
       // Suchfeld
       TextField(
