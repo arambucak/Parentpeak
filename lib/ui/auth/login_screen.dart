@@ -647,19 +647,31 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final googleProvider = GoogleAuthProvider();
       googleProvider.addScope('email');
-      final result =
-          await FirebaseAuth.instance.signInWithPopup(googleProvider);
+
+      // signInWithPopup funktioniert auf Desktop-Browsern
+      // signInWithRedirect als Fallback fuer Mobile
+      UserCredential? result;
+      try {
+        result = await FirebaseAuth.instance.signInWithPopup(googleProvider);
+      } catch (popupError) {
+        // Popup blockiert (Mobile) -> Redirect verwenden
+        await FirebaseAuth.instance.signInWithRedirect(googleProvider);
+        return; // Redirect laedt die Seite neu
+      }
+
       if (result.user != null && mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        await AuthService.instance.initialize();
+        if (mounted) Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
       if (mounted) {
+        final msg = e.toString().contains('null')
+            ? 'Bitte versuche es erneut oder nutze E-Mail + Passwort.'
+            : e.toString().split(']').last.trim();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'Google-Login fehlgeschlagen: ${e.toString().split(']').last.trim()}'),
-            behavior: SnackBarBehavior.floating,
-          ),
+              content: Text('Google-Login: $msg'),
+              behavior: SnackBarBehavior.floating),
         );
       }
     }
