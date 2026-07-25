@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -20,19 +19,20 @@ class NotificationService {
 
   bool get _isRunningOnIOSSimulator {
     if (kIsWeb) return false;
-    if (!Platform.isIOS) return false;
-    final version = Platform.operatingSystemVersion.toLowerCase();
-    return version.contains('simulator') ||
-        Platform.environment.containsKey('SIMULATOR_DEVICE_NAME') ||
-        Platform.environment.containsKey('SIMULATOR_UDID');
+    if (defaultTargetPlatform != TargetPlatform.iOS) return false;
+    return false; // Cannot detect simulator on web-safe code
   }
 
   Future<void> initialize() async {
     if (_initialized) return;
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Berlin'));
 
-    if (kIsWeb || (kDebugMode && Platform.isIOS)) {
+    if (kDebugMode && defaultTargetPlatform == TargetPlatform.iOS) {
       _initialized = true;
       return;
     }
@@ -71,7 +71,7 @@ class NotificationService {
   /// Wire up FCM: request permission, get token, register with backend,
   /// and handle foreground messages as local notifications.
   Future<void> initFcm({BackendApiClient? apiClient, String? userId}) async {
-    if (kIsWeb || (kDebugMode && Platform.isIOS)) {
+    if (kIsWeb || (kDebugMode && defaultTargetPlatform == TargetPlatform.iOS)) {
       return;
     }
 

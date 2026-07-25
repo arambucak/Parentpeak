@@ -124,7 +124,9 @@ Future<void> _startApp() async {
   await ErrorReportingService.instance.initialize();
 
   await BackgroundSyncManager.initialize();
-  await NotificationService.instance.initialize();
+  if (!kIsWeb) {
+    await NotificationService.instance.initialize();
+  }
   await AuthService.instance.initialize();
   await FeatureFlagService.instance.initialize();
   await EntitlementService.instance.initialize();
@@ -145,7 +147,7 @@ Future<void> _startApp() async {
 
   // Wire FCM push notifications for the already-authenticated user.
   final currentUser = AuthService.instance.currentUser;
-  if (currentUser != null) {
+  if (currentUser != null && !kIsWeb) {
     final apiClient = BackendServiceFactory.createApiClient();
     unawaited(
       NotificationService.instance.initFcm(
