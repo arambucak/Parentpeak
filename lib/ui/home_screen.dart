@@ -731,7 +731,7 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
                         horizontalPadding, 0, horizontalPadding, 12),
-                    child: GestureDetector(
+                    child: GestureDetector(behavior: HitTestBehavior.opaque, 
                       onTap: () {
                         final a = visibleGridActions
                             .where((a) => a.featureId == 'ki_elternberatung')
@@ -780,7 +780,7 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
                         horizontalPadding, 0, horizontalPadding, 14),
-                    child: GestureDetector(
+                    child: GestureDetector(behavior: HitTestBehavior.opaque, 
                       onTap: () {
                         final a = visibleGridActions
                             .where((a) => a.featureId == 'events_aktivitaeten')

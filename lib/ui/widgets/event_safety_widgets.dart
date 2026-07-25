@@ -30,7 +30,7 @@ class EventDisclaimerBanner extends StatelessWidget {
                   style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF92400E)))),
-          GestureDetector(
+          GestureDetector(behavior: HitTestBehavior.opaque, 
             onTap: onDismiss,
             child: Icon(Icons.close_rounded,
                 size: 18,
@@ -213,7 +213,7 @@ class _EventInterestButtonState extends State<EventInterestButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return GestureDetector(behavior: HitTestBehavior.opaque, 
       onTap: _tapped ? null : _onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

@@ -400,7 +400,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                           overflow: TextOverflow.ellipsis)
                     ])),
                 Row(mainAxisSize: MainAxisSize.min, children: [
-                  GestureDetector(
+                  GestureDetector(behavior: HitTestBehavior.opaque, 
                       onTap: () async {
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.remove('spielfreunde.profile');
@@ -412,7 +412,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.primary))),
                   const SizedBox(width: 12),
-                  GestureDetector(
+                  GestureDetector(behavior: HitTestBehavior.opaque, 
                       onTap: () => _confirmDeleteProfile(theme),
                       child: Text('Loeschen',
                           style: TextStyle(
@@ -497,7 +497,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               ['Offen', 'Spontan'],
               'Vormittags \u{2022} DE, AR'),
           const SizedBox(height: 20),
-          GestureDetector(
+          GestureDetector(behavior: HitTestBehavior.opaque, 
               onTap: () => _tabs.animateTo(0),
               child: Container(
                   padding: const EdgeInsets.all(14),

@@ -120,7 +120,7 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
             separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (_, i) {
               final topic = _topicCards[i];
-              return GestureDetector(
+              return GestureDetector(behavior: HitTestBehavior.opaque, 
                 onTap: () {
                   _searchCtrl.text = topic['search']!;
                   _onSearch(topic['search']!);
@@ -340,7 +340,7 @@ class _ExpandableResultCardState extends State<_ExpandableResultCard> {
           ]),
         ),
         // "Mehr erfahren" Toggle
-        GestureDetector(
+        GestureDetector(behavior: HitTestBehavior.opaque, 
           onTap: () => setState(() => _expanded = !_expanded),
           child: Container(
             width: double.infinity,

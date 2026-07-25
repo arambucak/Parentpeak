@@ -199,7 +199,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         // Zubereitung (ausklappbar)
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-          child: GestureDetector(
+          child: GestureDetector(behavior: HitTestBehavior.opaque, 
             onTap: () => setState(() => _showSteps = !_showSteps),
             child: Row(children: [
               Text('\u{1F373} Zubereitung',
@@ -335,7 +335,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF9A3412)))),
-                GestureDetector(
+                GestureDetector(behavior: HitTestBehavior.opaque, 
                   onTap: () => _rateRecipe(true),
                   child: Container(
                     padding:
@@ -351,7 +351,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                GestureDetector(
+                GestureDetector(behavior: HitTestBehavior.opaque, 
                   onTap: () => _rateRecipe(false),
                   child: Container(
                     padding:

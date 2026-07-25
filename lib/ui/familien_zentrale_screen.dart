@@ -261,7 +261,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF8B5CF6)))),
           const SizedBox(width: 4),
-          GestureDetector(
+          GestureDetector(behavior: HitTestBehavior.opaque, 
             onTap: () async {
               await _shopping.removeItem(item.id);
               setState(() {});
@@ -348,7 +348,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     return ListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: GestureDetector(
+      leading: GestureDetector(behavior: HitTestBehavior.opaque, 
         onTap: () {
           todo['done'] = !(todo['done'] ?? false);
           _saveTodos();

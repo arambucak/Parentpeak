@@ -106,7 +106,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
   }
 
   Widget _eventCard(ThemeData theme, CommunityEvent event) {
-    return GestureDetector(
+    return GestureDetector(behavior: HitTestBehavior.opaque, 
       onTap: () => Navigator.push(context,
           MaterialPageRoute(builder: (_) => const EventsActivitiesScreen())),
       child: Container(
@@ -209,7 +209,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
   }
 
   Widget _createEventCard(ThemeData theme) {
-    return GestureDetector(
+    return GestureDetector(behavior: HitTestBehavior.opaque, 
       onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
