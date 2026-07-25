@@ -710,10 +710,10 @@ class _HomeScreenState extends State<HomeScreen>
                         if (calAction != null) _openFeature(calAction);
                       },
                       onOpenActivity: () {
-                        final impulsAction = visibleGridActions
-                            .where((a) => a.featureId == 'impulse_entwicklung')
+                        final impulseAction = visibleGridActions
+                            .where((a) => a.featureId == 'gemeinsam_satt')
                             .firstOrNull;
-                        if (impulsAction != null) _openFeature(impulsAction);
+                        if (impulseAction != null) _openFeature(impulseAction);
                       },
                       onMoodSelected: (mood) {
                         // Mood speichern fuer Profil-Tracker

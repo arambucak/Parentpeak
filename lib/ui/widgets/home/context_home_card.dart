@@ -56,7 +56,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
       _greeting = 'Guten Morgen';
     } else if (hour >= 11 && hour < 17) {
       _context = _TimeContext.afternoon;
-      _greeting = 'Hey';
+      _greeting = 'Schoen dass ihr da seid';
     } else if (hour >= 17 && hour < 23) {
       _context = _TimeContext.evening;
       _greeting = 'Guten Abend';
@@ -240,7 +240,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 Text('$_greeting, $_userName!',
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w800)),
-                Text('Was macht ihr heute?',
+                Text('Was macht ihr heute zusammen?',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: const Color(0xFF16A34A))),
               ])),
@@ -254,15 +254,17 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           Expanded(
               child: _miniButton(
             theme,
-            '\u{1F4A1} Neue Idee',
+            '\u{1F3B2} Spielidee',
             const Color(0xFF16A34A),
             widget.onOpenActivity,
           )),
           const SizedBox(width: 8),
           Expanded(
               child: _miniButton(
-            theme, '\u{1F389} Events', const Color(0xFF8B5CF6),
-            null, // Events handled via Quick-Actions
+            theme,
+            '\u{2728} Neue Idee',
+            const Color(0xFF8B5CF6),
+            widget.onOpenActivity,
           )),
         ]),
       ]),
