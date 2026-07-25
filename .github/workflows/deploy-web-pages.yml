@@ -43,6 +43,7 @@ jobs:
           CONTACT_SUPPORT_URL: ${{ vars.CONTACT_SUPPORT_URL }}
           STRIPE_PUBLISHABLE_KEY: ${{ vars.STRIPE_PUBLISHABLE_KEY }}
           GEMINI_MODEL_NAME: ${{ vars.GEMINI_MODEL_NAME }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           set -o pipefail
           BACKEND_BASE_URL="${BACKEND_BASE_URL:-https://parentpeak.onrender.com}"
@@ -50,8 +51,10 @@ jobs:
           TERMS_OF_SERVICE_URL="${TERMS_OF_SERVICE_URL:-https://parentpeak.de/terms}"
           CONTACT_EMAIL="${CONTACT_EMAIL:-parentpeakapp@gmail.com}"
           CONTACT_SUPPORT_URL="${CONTACT_SUPPORT_URL:-https://parentpeak.de}"
+          GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME:-gemini-3.1-pro-preview}"
 
           flutter build web --release \
+            --base-href "/" \
             --dart-define=BACKEND_BASE_URL="$BACKEND_BASE_URL" \
             --dart-define=PRIVACY_POLICY_URL="$PRIVACY_POLICY_URL" \
             --dart-define=TERMS_OF_SERVICE_URL="$TERMS_OF_SERVICE_URL" \
@@ -59,6 +62,7 @@ jobs:
             --dart-define=CONTACT_SUPPORT_URL="$CONTACT_SUPPORT_URL" \
             --dart-define=STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \
             --dart-define=GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME}" \
+            --dart-define=GEMINI_API_KEY="${GEMINI_API_KEY}" \
             2>&1 | tee flutter-build.log
 
       - name: Upload build log on failure
