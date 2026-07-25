@@ -69,19 +69,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     });
 
     try {
-      final viewerUserId = AuthService.instance.currentUser?.uid;
-      if (viewerUserId == null || viewerUserId.trim().isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _aiEvents = const [];
-          _communityEvents = const [];
-          _invitations = const [];
-          _eventTitlesById = const {};
-          _errorMessage = 'Bitte melde dich an, um Events zu sehen.';
-          _isLoading = false;
-        });
-        return;
-      }
+      final viewerUserId = AuthService.instance.currentUser?.uid ?? 'guest';
       final coords = _coordsForCity(city);
       final aiFuture = _agent.discoverEvents(
         city: city,
