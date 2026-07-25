@@ -51,7 +51,8 @@ class FamilyRecipeService {
   Future<FamilyRecipe?> generateRecipe() async {
     final apiKey = APIConfig.getGeminiApiKey();
     if (apiKey == null || apiKey.isEmpty) {
-      debugPrint('FamilyRecipeService: Kein Gemini API-Key.');
+      debugPrint(
+          '\u{274C} FamilyRecipeService: KEIN API-Key! .env nicht geladen?');
       return _fallbackRecipe();
     }
 
@@ -114,10 +115,6 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         systemInstruction: Content.text(
             'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gueltigem JSON. '
             'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.'),
-        generationConfig: GenerationConfig(
-          temperature: 0.9,
-          maxOutputTokens: 1024,
-        ),
       );
 
       final response = await model.generateContent([Content.text(prompt)]);
