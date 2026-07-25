@@ -54,6 +54,8 @@ class ShoppingItem {
             : null,
       );
 
+  static int _idCounter = 0;
+
   /// Parst Eingabe wie "3x Milch", "Milch 500g", "2 Butter" in Name + Menge.
   static ShoppingItem fromInput(String input) {
     final trimmed = input.trim();
@@ -83,8 +85,9 @@ class ShoppingItem {
       }
     }
 
+    _idCounter++;
     return ShoppingItem(
-      id: 'shop_${DateTime.now().millisecondsSinceEpoch}',
+      id: 'shop_${DateTime.now().millisecondsSinceEpoch}_$_idCounter',
       name: name,
       quantity: quantity,
       emoji: _guessEmoji(name),
