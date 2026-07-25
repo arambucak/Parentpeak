@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/ui/auth/register_screen.dart';
 
@@ -620,7 +621,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _SocialButton(
           icon: 'G',
           label: 'Mit Google anmelden',
-          onTap: () => _showComingSoon('Google'),
+          onTap: _signInWithGoogle,
         ),
         const SizedBox(height: 12),
         _SocialButton(
@@ -640,6 +641,28 @@ class _LoginScreenState extends State<LoginScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      final googleProvider = GoogleAuthProvider();
+      googleProvider.addScope('email');
+      final result =
+          await FirebaseAuth.instance.signInWithPopup(googleProvider);
+      if (result.user != null && mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Google-Login fehlgeschlagen: ${e.toString().split(']').last.trim()}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildRegisterLink(ThemeData theme) {
