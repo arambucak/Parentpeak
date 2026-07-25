@@ -40,10 +40,13 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   String _greeting = '';
   String _userName = '';
   String _tip = '';
+  String _tipMaterials = '';
+  String _tipDuration = '';
   String? _nextEvent;
   int _childAgeHint = 3;
   bool _moodDone = false;
   int _tipIndex = 0;
+  bool _showMaterials = false;
 
   @override
   void initState() {
@@ -118,46 +121,165 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
 
   void _shuffleTip() {
     _tipIndex++;
-    setState(() => _tip = _getTipByIndex(_childAgeHint, _tipIndex));
+    _showMaterials = false;
+    final data = _getTipData(_childAgeHint, _tipIndex);
+    setState(() {
+      _tip = data['tip']!;
+      _tipMaterials = data['materials']!;
+      _tipDuration = data['duration']!;
+    });
   }
 
   String _getTip(int age) {
-    return _getTipByIndex(age, DateTime.now().day * 7 + DateTime.now().hour);
+    final data = _getTipData(age, DateTime.now().day * 7 + DateTime.now().hour);
+    _tipMaterials = data['materials']!;
+    _tipDuration = data['duration']!;
+    return data['tip']!;
   }
 
-  String _getTipByIndex(int age, int index) {
+  Map<String, String> _getTipData(int age, int index) {
     final tips = age < 2
         ? [
-            'Versteckspiel mit Tuechern: Du versteckst, Baby sucht. Foerdert Objektpermanenz.',
-            'Krabbelwettrennen: Kriecht zusammen durch die Wohnung. Lachen garantiert.',
-            'Topf-Orchester: Toepfe + Kochloeffel = Musik! Rhythmus foerdert Gehirnentwicklung.',
-            'Seifenblasen jagen: Draussen oder drinnen. Trainiert Hand-Augen-Koordination.',
-            'Fingerspiele mit Gesang: Alle meine Entchen mit Fingerbewegungen.',
-            'Turmbauen und umwerfen: Baue einen Turm aus Bechern — Kind darf umhauen!',
+            {
+              'tip':
+                  'Versteckspiel mit Tuechern: Du versteckst, Baby sucht. Foerdert Objektpermanenz.',
+              'materials': 'Tuecher, Decke',
+              'duration': '10 Min'
+            },
+            {
+              'tip':
+                  'Krabbelwettrennen: Kriecht zusammen durch die Wohnung. Lachen garantiert.',
+              'materials': 'Nichts noetig',
+              'duration': '10 Min'
+            },
+            {
+              'tip':
+                  'Topf-Orchester: Toepfe + Kochloeffel = Musik! Rhythmus foerdert Gehirnentwicklung.',
+              'materials': 'Toepfe, Kochloeffel',
+              'duration': '15 Min'
+            },
+            {
+              'tip':
+                  'Seifenblasen jagen: Draussen oder drinnen. Trainiert Hand-Augen-Koordination.',
+              'materials': 'Seifenblasen',
+              'duration': '10 Min'
+            },
+            {
+              'tip':
+                  'Fingerspiele mit Gesang: Alle meine Entchen mit Fingerbewegungen.',
+              'materials': 'Nichts noetig',
+              'duration': '5 Min'
+            },
+            {
+              'tip':
+                  'Turmbauen und umwerfen: Baue einen Turm aus Bechern — Kind darf umhauen!',
+              'materials': 'Plastikbecher oder Bauklötze',
+              'duration': '15 Min'
+            },
           ]
         : age < 5
             ? [
-                'Schatzsuche im Wohnzimmer: Verstecke 5 Dinge, zeichne eine Schatzkarte.',
-                'Verkleiden aus dem Schrank: Alte Klamotten, Huete, Tuecher — Theater spielen!',
-                'Barfuss-Parcours: Kissen, Handtuecher, Plastikfolie — verschiedene Texturen fuehlen.',
-                'Steine bemalen: Draussen sammeln, drinnen mit Wasserfarben verzieren.',
-                'Karton-Burg: Grosse Kartons werden zu Haeusern, Autos, Raketen.',
-                'Knetmasse selber machen: Mehl + Salz + Wasser + Lebensmittelfarbe = Spass!',
-                'Pfuetzen-Springen: Nach dem Regen raus — Gummistiefel an und los!',
-                'Kuchenbaeckerei: Zusammen einen einfachen Ruehrkuchen backen.',
+                {
+                  'tip':
+                      'Schatzsuche im Wohnzimmer: Verstecke 5 Dinge, zeichne eine Schatzkarte.',
+                  'materials': 'Papier, Stifte, 5 kleine Gegenstaende',
+                  'duration': '20 Min'
+                },
+                {
+                  'tip':
+                      'Verkleiden aus dem Schrank: Alte Klamotten, Huete, Tuecher — Theater spielen!',
+                  'materials': 'Alte Kleidung, Accessoires',
+                  'duration': '30 Min'
+                },
+                {
+                  'tip':
+                      'Barfuss-Parcours: Kissen, Handtuecher, Plastikfolie — verschiedene Texturen fuehlen.',
+                  'materials': 'Kissen, Handtuecher, Folie, Decken',
+                  'duration': '15 Min'
+                },
+                {
+                  'tip':
+                      'Steine bemalen: Draussen sammeln, drinnen mit Wasserfarben verzieren.',
+                  'materials': 'Steine, Wasserfarben, Pinsel',
+                  'duration': '30 Min'
+                },
+                {
+                  'tip':
+                      'Karton-Burg: Grosse Kartons werden zu Haeusern, Autos, Raketen.',
+                  'materials': 'Grosse Kartons, Klebeband, Stifte',
+                  'duration': '45 Min'
+                },
+                {
+                  'tip':
+                      'Knetmasse selber machen: Mehl + Salz + Wasser + Lebensmittelfarbe = Spass!',
+                  'materials': 'Mehl, Salz, Wasser, Oel, Lebensmittelfarbe',
+                  'duration': '20 Min'
+                },
+                {
+                  'tip':
+                      'Pfuetzen-Springen: Nach dem Regen raus — Gummistiefel an und los!',
+                  'materials': 'Gummistiefel, Regenjacke',
+                  'duration': '20 Min'
+                },
+                {
+                  'tip':
+                      'Kuchenbaeckerei: Zusammen einen einfachen Ruehrkuchen backen.',
+                  'materials': 'Mehl, Eier, Zucker, Butter, Backform',
+                  'duration': '45 Min'
+                },
               ]
             : [
-                'Schnitzeljagd im Park: Hinweise schreiben, Route planen, Schatz verstecken.',
-                'Familien-Quiz: Jeder schreibt 5 Fragen ueber sich — wer kennt wen am besten?',
-                'Geocaching: Kostenlose App, draussen Schaetze suchen — echtes Abenteuer.',
-                'Comic zeichnen: Zusammen eine kurze Geschichte als Comic erzaehlen.',
-                'Fotosafari: Handy-Kamera und eine Liste: Finde etwas Rotes, Rundes, Weiches...',
-                'Experimente: Backpulver + Essig Vulkan, Geheimschrift mit Zitrone, Ei in Essig.',
-                'Lager im Wohnzimmer: Decken, Kissen, Lichterkette — Uebernachtung im Zelt.',
-                'Brettspiel-Turnier: 3 Spiele hintereinander, Familien-Champion kueeren.',
+                {
+                  'tip':
+                      'Schnitzeljagd im Park: Hinweise schreiben, Route planen, Schatz verstecken.',
+                  'materials': 'Papier, Stifte, kleiner Schatz',
+                  'duration': '45 Min'
+                },
+                {
+                  'tip':
+                      'Familien-Quiz: Jeder schreibt 5 Fragen ueber sich — wer kennt wen am besten?',
+                  'materials': 'Papier, Stifte',
+                  'duration': '30 Min'
+                },
+                {
+                  'tip':
+                      'Geocaching: Kostenlose App, draussen Schaetze suchen — echtes Abenteuer.',
+                  'materials': 'Smartphone mit Geocaching-App',
+                  'duration': '60 Min'
+                },
+                {
+                  'tip':
+                      'Comic zeichnen: Zusammen eine kurze Geschichte als Comic erzaehlen.',
+                  'materials': 'Papier, Stifte, Buntstifte',
+                  'duration': '30 Min'
+                },
+                {
+                  'tip':
+                      'Fotosafari: Handy-Kamera und eine Liste: Finde etwas Rotes, Rundes, Weiches...',
+                  'materials': 'Smartphone, ausgedruckte Liste',
+                  'duration': '30 Min'
+                },
+                {
+                  'tip':
+                      'Experimente: Backpulver + Essig Vulkan, Geheimschrift mit Zitrone, Ei in Essig.',
+                  'materials': 'Backpulver, Essig, Zitrone, Ei, Glas',
+                  'duration': '20 Min'
+                },
+                {
+                  'tip':
+                      'Lager im Wohnzimmer: Decken, Kissen, Lichterkette — Uebernachtung im Zelt.',
+                  'materials': 'Decken, Kissen, Lichterkette, Taschenlampe',
+                  'duration': '60 Min'
+                },
+                {
+                  'tip':
+                      'Brettspiel-Turnier: 3 Spiele hintereinander, Familien-Champion kueeren.',
+                  'materials': 'Brettspiele, Snacks',
+                  'duration': '60 Min'
+                },
               ];
-    // Rotiert basierend auf index
-    return tips[index % tips.length];
+    final item = tips[index % tips.length];
+    return item;
   }
 
   @override
@@ -275,7 +397,36 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         Text('\u{1F3A8} $_tip',
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: const Color(0xFF166534), height: 1.4)),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
+        // Dauer + Materialien (kompakt)
+        GestureDetector(
+          onTap: () => setState(() => _showMaterials = !_showMaterials),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              Text('\u{23F1}\u{FE0F} $_tipDuration',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF16A34A))),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(
+                _showMaterials
+                    ? '\u{1F9F0} $_tipMaterials'
+                    : '\u{1F9F0} Was ihr braucht \u{25BC}',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: const Color(0xFF166534)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 10),
         Row(children: [
           Expanded(
               child: _miniButton(
