@@ -73,6 +73,7 @@ Regeln:
 - Bei wiederkehrenden Angeboten: isRecurring = true + recurringNote angeben
 - Altersangaben muessen zur Zielgruppe passen
 - location: Moeglichst mit Strassenname oder bekanntem Ort (damit Eltern es finden)
+- url: Wenn du die Website des Veranstalters kennst, gib sie an. Sonst null.
 
 Antworte NUR mit einem gueltigen JSON-Array (kein Markdown, kein Text):
 
@@ -89,7 +90,7 @@ Antworte NUR mit einem gueltigen JSON-Array (kein Markdown, kein Text):
     "isRecurring": true,
     "recurringNote": "Jeden Dienstag 9:30-11:00 Uhr",
     "price": "kostenlos",
-    "url": null,
+    "url": "https://website-des-veranstalters.de" or null,
     "organizer": "Name der Einrichtung"
   }
 ]

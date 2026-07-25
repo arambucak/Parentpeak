@@ -48,7 +48,10 @@ class EventDetailPage extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
           const SizedBox(height: 20),
           // Info-Karten
-          _infoCard(theme, '\u{1F4C5}', 'Wann',
+          _infoCard(
+              theme,
+              '\u{1F4C5}',
+              'Wann',
               event.isRecurring
                   ? event.recurringNote ?? 'Regelmaessig'
                   : event.eventDate != null
@@ -57,11 +60,10 @@ class EventDetailPage extends StatelessWidget {
           const SizedBox(height: 10),
           _infoCard(theme, '\u{1F4CD}', 'Wo', event.location),
           const SizedBox(height: 10),
-          _infoCard(theme, '\u{1F476}', 'Fuer wen',
-              event.ageLabels.join(', ')),
+          _infoCard(theme, '\u{1F476}', 'Fuer wen', event.ageLabels.join(', ')),
           const SizedBox(height: 10),
-          _infoCard(theme, '\u{1F4B0}', 'Preis',
-              event.price ?? 'Nicht angegeben'),
+          _infoCard(
+              theme, '\u{1F4B0}', 'Preis', event.price ?? 'Nicht angegeben'),
           if (event.organizer != null && event.organizer!.isNotEmpty) ...[
             const SizedBox(height: 10),
             _infoCard(theme, '\u{1F3E2}', 'Veranstalter', event.organizer!),
@@ -84,6 +86,24 @@ class EventDetailPage extends StatelessWidget {
               ),
             ),
           ),
+          // Website-Link
+          if (event.url != null && event.url!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _openUrl(event.url!),
+                icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                label: const Text('Website des Veranstalters'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF0EA5A4),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           // Teilnehmer
           EventAttendeesWidget(
@@ -100,20 +120,18 @@ class EventDetailPage extends StatelessWidget {
                 color: const Color(0xFFFEF3C7),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('\u{2139}\u{FE0F}',
-                        style: TextStyle(fontSize: 14)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: Text(
-                      'Dieses Angebot wurde von unserer KI vorgeschlagen. '
-                      'Bitte bestaetige Termine und Verfuegbarkeit direkt beim Veranstalter.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF92400E), height: 1.3),
-                    )),
-                  ]),
+              child:
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('\u{2139}\u{FE0F}', style: TextStyle(fontSize: 14)),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(
+                  'Dieses Angebot wurde von unserer KI vorgeschlagen. '
+                  'Bitte bestaetige Termine und Verfuegbarkeit direkt beim Veranstalter.',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
+                )),
+              ]),
             ),
           const SizedBox(height: 14),
           // Melden Button
@@ -132,8 +150,7 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _infoCard(
-      ThemeData theme, String emoji, String label, String value) {
+  Widget _infoCard(ThemeData theme, String emoji, String label, String value) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -146,17 +163,16 @@ class EventDetailPage extends StatelessWidget {
         Text(emoji, style: const TextStyle(fontSize: 20)),
         const SizedBox(width: 12),
         Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-              Text(label,
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.outline)),
-              const SizedBox(height: 2),
-              Text(value,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-            ])),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label,
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: theme.colorScheme.outline)),
+          const SizedBox(height: 2),
+          Text(value,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600)),
+        ])),
       ]),
     );
   }
@@ -165,6 +181,13 @@ class EventDetailPage extends StatelessWidget {
     final query = Uri.encodeComponent(location);
     final url = Uri.parse('https://maps.apple.com/?q=$query');
     if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _openUrl(String urlString) async {
+    final url = Uri.tryParse(urlString);
+    if (url != null && await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
