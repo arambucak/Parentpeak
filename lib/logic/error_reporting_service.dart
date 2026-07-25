@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
 import 'package:parentpeak/firebase_options.dart';
 
 class ErrorReportingService {
@@ -26,27 +25,35 @@ class ErrorReportingService {
       return;
     }
 
-    if (Platform.isMacOS) {
-      debugPrint('ErrorReportingService: Crashlytics is disabled on macOS debug builds.');
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS) {
+      debugPrint(
+          'ErrorReportingService: Crashlytics is disabled on macOS debug builds.');
+      return;
+    }
+
+    if (kIsWeb) {
+      debugPrint('ErrorReportingService: Crashlytics is not supported on web.');
       return;
     }
 
     try {
       await _initializeFirebaseIfNeeded();
     } catch (e, st) {
-      debugPrint('ErrorReportingService.initialize(): Firebase init failed: $e');
+      debugPrint(
+          'ErrorReportingService.initialize(): Firebase init failed: $e');
       debugPrint(st.toString());
       return;
     }
 
     try {
-      await FirebaseCrashlytics.instance
-          .setCrashlyticsCollectionEnabled(kReleaseMode || _enableCrashlyticsInDebug);
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+          kReleaseMode || _enableCrashlyticsInDebug);
       await FirebaseCrashlytics.instance
           .setCustomKey('build_mode', kReleaseMode ? 'release' : 'debug');
       _crashlyticsReady = true;
     } catch (e, st) {
-      debugPrint('ErrorReportingService.initialize(): Crashlytics unavailable: $e');
+      debugPrint(
+          'ErrorReportingService.initialize(): Crashlytics unavailable: $e');
       debugPrint(st.toString());
       _crashlyticsReady = false;
     }

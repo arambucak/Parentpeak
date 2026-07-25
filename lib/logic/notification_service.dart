@@ -19,11 +19,12 @@ class NotificationService {
   bool _initialized = false;
 
   bool get _isRunningOnIOSSimulator {
+    if (kIsWeb) return false;
     if (!Platform.isIOS) return false;
     final version = Platform.operatingSystemVersion.toLowerCase();
     return version.contains('simulator') ||
-      Platform.environment.containsKey('SIMULATOR_DEVICE_NAME') ||
-      Platform.environment.containsKey('SIMULATOR_UDID');
+        Platform.environment.containsKey('SIMULATOR_DEVICE_NAME') ||
+        Platform.environment.containsKey('SIMULATOR_UDID');
   }
 
   Future<void> initialize() async {
@@ -31,7 +32,7 @@ class NotificationService {
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Berlin'));
 
-    if (kDebugMode && Platform.isIOS) {
+    if (kIsWeb || (kDebugMode && Platform.isIOS)) {
       _initialized = true;
       return;
     }
@@ -70,7 +71,7 @@ class NotificationService {
   /// Wire up FCM: request permission, get token, register with backend,
   /// and handle foreground messages as local notifications.
   Future<void> initFcm({BackendApiClient? apiClient, String? userId}) async {
-    if (kDebugMode && Platform.isIOS) {
+    if (kIsWeb || (kDebugMode && Platform.isIOS)) {
       return;
     }
 
@@ -208,7 +209,8 @@ class NotificationService {
     final now = DateTime.now();
     if (when.isBefore(now)) return;
 
-    final id = _stableNotificationId('$eventId|$reminderKey|${when.toIso8601String()}');
+    final id = _stableNotificationId(
+        '$eventId|$reminderKey|${when.toIso8601String()}');
     final tzWhen = tz.TZDateTime.from(when, tz.local);
 
     const androidDetails = AndroidNotificationDetails(
