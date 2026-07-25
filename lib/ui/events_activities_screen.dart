@@ -726,23 +726,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   Widget _buildLocationSearch(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          LocationPickerWidget(
-            hint: 'Standort waehlen',
-            onLocationPicked: (loc) {
-              _cityController.text = loc.displayName;
-              _refreshFeed();
-            },
-          ),
-        ],
-      ),
+    return LocationPickerWidget(
+      hint: 'Standort waehlen',
+      onLocationPicked: (loc) {
+        _cityController.text = loc.displayName;
+        _refreshFeed();
+      },
     );
   }
 
