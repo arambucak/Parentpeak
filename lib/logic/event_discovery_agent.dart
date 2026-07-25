@@ -33,7 +33,8 @@ class EventDiscoveryAgent {
   }) async {
     final apiKey = APIConfig.getGeminiApiKey();
     if (apiKey == null || apiKey.isEmpty) {
-      debugPrint('EventDiscoveryAgent: Kein API-Key, nutze leere Ergebnisliste.');
+      debugPrint(
+          'EventDiscoveryAgent: Kein API-Key, nutze leere Ergebnisliste.');
       return <DiscoveredEvent>[];
     }
 
@@ -43,49 +44,53 @@ class EventDiscoveryAgent {
         : 'Kinder im Alter von ${childAges.map(_sanitize).join(', ')}';
 
     final prompt = '''
-Du bist ein Familien-Event-Assistent für die Parentpeak-App in Deutschland.
+Du bist ein lokaler Familien-Experte fuer "$cleanCity" in Deutschland.
 
 Aufgabe:
-Erstelle eine Liste von 8 konkreten und realistischen Aktivitäten, Events oder
-Angeboten für Eltern mit Kindern in und um "$cleanCity" ($radiusHint).
+Erstelle 8 REALISTISCHE Aktivitaeten und Angebote fuer Eltern mit Kindern
+die WIRKLICH in "$cleanCity" und direkter Umgebung existieren.
 Zielgruppe: $agesText.
 
-Kategorien die du abdecken sollst:
-- Kindertheater / Theater
-- Kino (Kinderfilm-Vorstellungen)
-- Familienzentren / Eltern-Kind-Treffs
-- Sport und Outdoor (Wandern, Schwimmen, Radfahren)
-- Museen / Ausstellungen für Kinder
-- Bastel-Workshops / Kreativangebote
-- Musik / Konzerte für Kinder
-- Parks / Spielplätze mit Programm
-- Festivals / Märkte (saisonal passend zu ${DateTime.now().month}. Monat)
-- Bildungsangebote / Sprachkurse
+WICHTIG — Realismus:
+- Nutze ECHTE Einrichtungen die es in "$cleanCity" gibt (Familienzentren, Buechereien, Schwimmbaeder, Museen, Parks mit Namen)
+- Wenn "$cleanCity" ein Stadtteil ist (z.B. "Kreuzberg"), nutze Orte IN diesem Stadtteil
+- Bevorzuge REGELMAESSIGE Angebote (die gibt es wirklich): Offener Treff, Babyschwimmen, Vorlesestunde, Spielgruppe, Kinderturnen
+- Einmalige Events nur wenn saisonal plausibel (Sommer: Freibad/Fest, Winter: Weihnachtsmarkt, Herbst: Laternenfest)
+- Aktuelle Saison: Monat ${DateTime.now().month} (${_currentSeason()})
+
+Kategorien (mindestens 5 verschiedene):
+- familienzentrum: Offener Treff, Eltern-Cafe, Krabbelgruppe, Stillgruppe
+- sport: Babyschwimmen, Kinderturnen, Fussball fuer Kids, Kinderyoga
+- natur: Spielplatz-Treff, Waldgruppe, Naturerlebnis, Bauernhof
+- basteln: Kreativ-Workshop, Toepfern, Malen fuer Kinder
+- musik: Musikalische Frueherziehung, Kinderkonzert, Singkreis
+- theater: Puppentheater, Kindertheater, Maerchenvorstellung
+- museum: Kindermuseum, Mitmach-Ausstellung, Wissenschaft zum Anfassen
+- spielplatz: Spielplatz mit Programm, Wasserspielplatz, Indoor-Spielplatz
 
 Regeln:
-- Nutze reale Orte, Einrichtungen und Anbieter aus der Region "$cleanCity".
-- Wenn du keine genauen aktuellen Daten hast, erstelle plausible, typische Angebote.
-- Preise sollen realistisch sein (0–20€ pro Person).
-- Altersangaben müssen zu den Kindern passen.
-- Verteile Kategorien gleichmäßig.
+- Preise: Realistisch (Familienzentrum = kostenlos, Schwimmbad = 4-8 EUR, Museum = 5-12 EUR)
+- Bei wiederkehrenden Angeboten: isRecurring = true + recurringNote angeben
+- Altersangaben muessen zur Zielgruppe passen
+- location: Moeglichst mit Strassenname oder bekanntem Ort (damit Eltern es finden)
 
-Antworte NUR mit einem gültigen JSON-Array, kein Markdown, keine Erklärung:
+Antworte NUR mit einem gueltigen JSON-Array (kein Markdown, kein Text):
 
 [
   {
-    "id": "uuid-ähnlicher-string",
-    "title": "Name des Events",
-    "description": "Kurzbeschreibung 1-2 Sätze für Eltern",
-    "category": "theater|kino|sport|musik|natur|basteln|familienzentrum|museum|festival|spielplatz|sonstiges",
-    "ageLabels": ["0–3 Jahre", "4–6 Jahre"],
-    "location": "Adresse oder Ort",
+    "id": "evt_1",
+    "title": "Name des Angebots",
+    "description": "Was erwartet Familien? 1-2 Saetze.",
+    "category": "familienzentrum|sport|natur|basteln|musik|theater|museum|spielplatz|sonstiges",
+    "ageLabels": ["0-3 Jahre", "3-6 Jahre"],
+    "location": "Ort/Adresse in $cleanCity",
     "cityHint": "$cleanCity",
-    "eventDate": "2025-06-15T10:00:00" or null,
-    "isRecurring": false,
-    "recurringNote": null or "Jeden Samstag 10–12 Uhr",
-    "price": "kostenlos" or "5 €" or "3–8 €",
+    "eventDate": null,
+    "isRecurring": true,
+    "recurringNote": "Jeden Dienstag 9:30-11:00 Uhr",
+    "price": "kostenlos",
     "url": null,
-    "organizer": "Name der Institution oder Veranstalter"
+    "organizer": "Name der Einrichtung"
   }
 ]
 ''';
@@ -94,10 +99,8 @@ Antworte NUR mit einem gültigen JSON-Array, kein Markdown, keine Erklärung:
       final model = GenerativeModel(
         model: APIConfig.getGeminiModelName(),
         apiKey: apiKey,
-        generationConfig: GenerationConfig(
-          temperature: 0.7,
-          maxOutputTokens: 4096,
-        ),
+        systemInstruction: Content.text(
+            'Du bist ein lokaler Familien-Experte. Antworte IMMER NUR mit gueltigem JSON-Array. Kein Markdown, kein Text davor oder danach.'),
       );
 
       final response = await model.generateContent([Content.text(prompt)]);
@@ -124,7 +127,8 @@ Antworte NUR mit einem gültigen JSON-Array, kein Markdown, keine Erklärung:
       return list.map((item) {
         final map = item as Map<String, dynamic>;
 
-        final categoryStr = (map['category'] as String? ?? 'sonstiges').toLowerCase();
+        final categoryStr =
+            (map['category'] as String? ?? 'sonstiges').toLowerCase();
         final category = _parseCategory(categoryStr);
 
         final ageLabels = (map['ageLabels'] as List<dynamic>?)
@@ -230,6 +234,14 @@ Antworte NUR mit einem gültigen JSON-Array, kein Markdown, keine Erklärung:
 
   String _sanitize(String input) =>
       input.replaceAll(RegExp(r'[<>{}\[\]\\]'), '').trim();
+
+  String _currentSeason() {
+    final month = DateTime.now().month;
+    if (month >= 3 && month <= 5) return 'Fruehling';
+    if (month >= 6 && month <= 8) return 'Sommer';
+    if (month >= 9 && month <= 11) return 'Herbst';
+    return 'Winter';
+  }
 
   String _generateId() =>
       'ev_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
