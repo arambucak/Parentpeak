@@ -726,66 +726,97 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ),
-                // ─── Quick Actions (5 Buttons) ───────────────────
+                // ─── Chat-Zeile (immer sichtbar, 1 Tap) ────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 16),
-                    child: QuickActionsRow(
-                      onChat: () {
+                        horizontalPadding, 0, horizontalPadding, 12),
+                    child: GestureDetector(
+                      onTap: () {
                         final a = visibleGridActions
                             .where((a) => a.featureId == 'ki_elternberatung')
                             .firstOrNull;
                         if (a != null) _openFeature(a);
                       },
-                      onCalendar: () {
-                        final a = visibleGridActions
-                            .where((a) => a.featureId == 'kalender')
-                            .firstOrNull;
-                        if (a != null) _openFeature(a);
-                      },
-                      onEvents: () {
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color:
+                              const Color(0xFF0284C7).withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: const Color(0xFF0284C7)
+                                  .withValues(alpha: 0.15)),
+                        ),
+                        child: Row(children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7)
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.tips_and_updates_rounded,
+                                size: 18, color: Color(0xFF0284C7)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text('Was beschaeftigt dich?',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: const Color(0xFF0284C7),
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              size: 14, color: Color(0xFF0284C7)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+                // ─── Events-Teaser (kompakt, 1 Zeile) ────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        horizontalPadding, 0, horizontalPadding, 14),
+                    child: GestureDetector(
+                      onTap: () {
                         final a = visibleGridActions
                             .where((a) => a.featureId == 'events_aktivitaeten')
                             .firstOrNull;
                         if (a != null) _openFeature(a);
                       },
-                      onImpulse: () {
-                        final a = visibleGridActions
-                            .where((a) => a.featureId == 'impulse_entwicklung')
-                            .firstOrNull;
-                        if (a != null) _openFeature(a);
-                      },
-                      onNetzwerk: () {
-                        final a = visibleGridActions
-                            .where((a) => a.featureId == 'eltern_match')
-                            .firstOrNull;
-                        if (a != null) _openFeature(a);
-                      },
-                    ),
-                  ),
-                ),
-                // ─── Events Teaser (kompakt) ─────────────────────
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: 16),
-                    child: EventsCarouselWidget(),
-                  ),
-                ),
-                // ─── Alle Funktionen ─────────────────────────────
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 4, horizontalPadding, 10),
-                    child: Text(
-                      AppStringsManager.getString(
-                          languageService.currentLanguage, 'all_features'),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color:
+                              const Color(0xFF8B5CF6).withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: const Color(0xFF8B5CF6)
+                                  .withValues(alpha: 0.12)),
+                        ),
+                        child: Row(children: [
+                          const Text('\u{1F389}',
+                              style: TextStyle(fontSize: 16)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text('Events in deiner Naehe',
+                                style: theme.textTheme.bodySmall
+                                    ?.copyWith(fontWeight: FontWeight.w700)),
+                          ),
+                          Text('Alle \u{2192}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  color: const Color(0xFF8B5CF6),
+                                  fontWeight: FontWeight.w700)),
+                        ]),
                       ),
                     ),
                   ),
                 ),
+                // ─── Feature Grid (2x2, sauber) ─────────────────
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(
                       horizontalPadding, 0, horizontalPadding, 24),
