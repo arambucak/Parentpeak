@@ -9,6 +9,7 @@ import 'package:parentpeak/models/discovered_event.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/create_event_screen.dart';
 import 'package:parentpeak/ui/event_detail_screen.dart';
+import 'package:parentpeak/ui/event_detail_page.dart';
 import 'package:parentpeak/ui/event_invitations_screen.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 
@@ -1029,35 +1030,37 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   void _showAiDetails(_UnifiedFeedItem item) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(item.description),
-              const SizedBox(height: 10),
-              Text('Ort: ${item.location}'),
-              if (item.ageLabel != null && item.ageLabel!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text('Altersgruppe: ${item.ageLabel}'),
-              ],
-            ],
+    // Finde das originale DiscoveredEvent
+    final discoveredEvent =
+        _aiEvents.where((e) => e.id == item.eventId).firstOrNull;
+    if (discoveredEvent != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EventDetailPage(event: discoveredEvent),
+        ),
+      );
+    } else {
+      // Fallback: erstelle ein temporaeres DiscoveredEvent
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EventDetailPage(
+            event: DiscoveredEvent(
+              id: item.eventId ??
+                  'temp_${DateTime.now().millisecondsSinceEpoch}',
+              title: item.title,
+              description: item.description,
+              category: DiscoveredEventCategory.sonstiges,
+              ageLabels: item.ageLabel != null ? [item.ageLabel!] : ['Alle'],
+              location: item.location,
+              cityHint: _cityController.text.trim(),
+              discoveredAt: DateTime.now(),
+            ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    }
   }
 }
 
