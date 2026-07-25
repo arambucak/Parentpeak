@@ -625,13 +625,21 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         selections: selections,
         theme: theme,
         onConfirm: (selected) async {
-          await shopping.load();
-          await shopping.addItemsFromRecipe(selected);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(
-                  '\u{2705} ${selected.length} Zutaten auf die Einkaufsliste gesetzt'),
-            ));
+          try {
+            await shopping.load();
+            await shopping.addItemsFromRecipe(selected);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(
+                    '\u{2705} ${selected.length} Zutaten auf die Einkaufsliste gesetzt'),
+              ));
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('Fehler: $e'),
+              ));
+            }
           }
         },
       ),
