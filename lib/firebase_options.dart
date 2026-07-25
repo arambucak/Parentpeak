@@ -64,11 +64,12 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDm0C1wfLPyf93M5HP6LLtBcc6CQnKrYEU',
-    appId: '1:89417219632:web:parentpeak2026web1bf7f5',
+    apiKey: 'AIzaSyAwLIoizIEAVjoM4WWBBSi9DPG5ZJDOFk0',
+    appId: '1:89417219632:web:51b6fa43ffa2b52f1bf7f5',
     messagingSenderId: '89417219632',
     projectId: 'parentpeak-prod-2026',
     authDomain: 'parentpeak-prod-2026.firebaseapp.com',
     storageBucket: 'parentpeak-prod-2026.firebasestorage.app',
+    measurementId: 'G-9R8Z7RXYVP',
   );
 }
