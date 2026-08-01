@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/models_and_widgets/weekly_impulse_feature.dart';
@@ -204,24 +207,127 @@ class WeeklyImpulseService {
     'category',
     'publish_date',
   ];
+  static const String _weeklyImpulseCacheKey = 'pp_weekly_impulse_cache_v1';
+  static const Duration _weeklyImpulseCacheMaxAge = Duration(days: 10);
 
   Future<WeeklyImpulse> fetchWeeklyImpulse({String? viewerUserId}) async {
     if (apiClient == null) {
+      final cached = await _readCachedImpulse();
+      if (cached != null) {
+        return cached;
+      }
       throw StateError('Weekly impulse backend unavailable');
     }
 
     final path = _weeklyImpulsePath(viewerUserId: viewerUserId);
     try {
       final decoded = await apiClient!.getJson(path);
-      final impulse = _parseIfValid(decoded);
+      final impulse = _parseIfValid(_extractImpulsePayload(decoded));
       if (impulse != null) {
+        await _cacheImpulse(impulse);
         return impulse;
+      }
+      final cached = await _readCachedImpulse();
+      if (cached != null) {
+        return cached;
       }
       throw StateError('Weekly impulse payload invalid');
     } catch (e) {
       debugPrint('WeeklyImpulse backend request failed: $e');
+      final cached = await _readCachedImpulse();
+      if (cached != null) {
+        return cached;
+      }
       throw StateError('Weekly impulse unavailable: backend request failed');
     }
+  }
+
+  Future<void> _cacheImpulse(WeeklyImpulse impulse) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final payload = <String, dynamic>{
+        'cached_at': DateTime.now().toUtc().toIso8601String(),
+        'id': impulse.id,
+        'title': impulse.title,
+        'content_body': impulse.contentBody,
+        'practical_tip': impulse.practicalTip,
+        'audio_script': impulse.audioScript,
+        'category': impulse.category.name,
+        'publish_date': impulse.publishDate.toIso8601String(),
+        'hero_headline': impulse.heroHeadline,
+        'hero_description': impulse.heroDescription,
+        'companion_impulses': impulse.companionImpulses
+            .map(
+              (item) => <String, dynamic>{
+                'id': item.id,
+                'title': item.title,
+                'summary': item.summary,
+                'duration_label': item.durationLabel,
+                'format_label': item.formatLabel,
+              },
+            )
+            .toList(),
+        'discussion_prompt': impulse.discussionPrompt == null
+            ? null
+            : <String, dynamic>{
+                'id': impulse.discussionPrompt!.id,
+                'title': impulse.discussionPrompt!.title,
+                'body': impulse.discussionPrompt!.body,
+              },
+      };
+      await prefs.setString(_weeklyImpulseCacheKey, jsonEncode(payload));
+    } catch (e) {
+      debugPrint('WeeklyImpulse cache write skipped: $e');
+    }
+  }
+
+  Future<WeeklyImpulse?> _readCachedImpulse() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_weeklyImpulseCacheKey);
+      if (raw == null || raw.trim().isEmpty) {
+        return null;
+      }
+      final decoded = jsonDecode(raw);
+      if (!_isCachedPayloadFresh(decoded)) {
+        await prefs.remove(_weeklyImpulseCacheKey);
+        debugPrint('WeeklyImpulse cache expired and was cleared');
+        return null;
+      }
+      return _parseIfValid(_extractImpulsePayload(decoded));
+    } catch (e) {
+      debugPrint('WeeklyImpulse cache read skipped: $e');
+      return null;
+    }
+  }
+
+  bool _isCachedPayloadFresh(dynamic decoded) {
+    if (decoded is! Map<String, dynamic>) {
+      return false;
+    }
+
+    final cachedAtRaw = decoded['cached_at'];
+    if (cachedAtRaw is String && cachedAtRaw.trim().isNotEmpty) {
+      final cachedAt = DateTime.tryParse(cachedAtRaw)?.toUtc();
+      if (cachedAt != null) {
+        final cacheAge = DateTime.now().toUtc().difference(cachedAt);
+        return cacheAge <= _weeklyImpulseCacheMaxAge;
+      }
+    }
+
+    final payload = _extractImpulsePayload(decoded);
+    if (payload is Map<String, dynamic>) {
+      final publishDateRaw = payload['publish_date'];
+      if (publishDateRaw is String && publishDateRaw.trim().isNotEmpty) {
+        final publishDate = DateTime.tryParse(publishDateRaw)?.toUtc();
+        if (publishDate != null) {
+          final contentAge = DateTime.now().toUtc().difference(publishDate);
+          return contentAge <= _weeklyImpulseCacheMaxAge;
+        }
+      }
+    }
+
+    return false;
   }
 
   Future<void> createCommunityPost({
@@ -519,6 +625,24 @@ class WeeklyImpulseService {
       debugPrint('WeeklyImpulse parse invalid payload: $e');
       return null;
     }
+  }
+
+  dynamic _extractImpulsePayload(dynamic decoded) {
+    if (decoded is! Map<String, dynamic>) {
+      return decoded;
+    }
+
+    final item = decoded['item'];
+    if (item is Map<String, dynamic>) {
+      return item;
+    }
+
+    final data = decoded['data'];
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    return decoded;
   }
 
   String _weeklyImpulsePath({String? viewerUserId}) {
