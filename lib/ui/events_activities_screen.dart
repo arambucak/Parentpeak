@@ -84,6 +84,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           radiusHint: '$_radiusKm km Umkreis',
           childAges: _selectedAgeGroups.map(_ageGroupLabel).toList(),
         );
+        if (aiEvents.isEmpty) {
+          // AI can return an empty list (for example when key/runtime is missing)
+          // without throwing. Keep the feed useful with local curated events.
+          aiEvents = _buildLocalFallbackAiEvents(city, coords);
+          hadAnyLoadError = true;
+        }
       } catch (e) {
         debugPrint('EventsActivitiesScreen: AI feed fallback aktiv: $e');
         hadAnyLoadError = true;
@@ -121,6 +127,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         if (event != null) {
           titleMap[eventId] = event.title;
         }
+      }
+
+      if (aiEvents.isEmpty && communityEvents.isEmpty) {
+        aiEvents = _buildLocalFallbackAiEvents(city, coords);
+        hadAnyLoadError = true;
       }
 
       if (!mounted) return;
