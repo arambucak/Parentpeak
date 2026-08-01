@@ -45,12 +45,15 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   WeeklyImpulse? _impulse;
   bool _isLoading = true;
   String? _error;
+  bool _isUsingFallbackImpulse = false;
   bool _isPlayingAudio = false;
   int _expandedFormat = -1;
 
   String _t(String key) => AppStringsManager.getString(
       languageService.currentLanguage,
       key); // welches Mini-Format aufgeklappt ist
+
+  static const Duration _impulseStaleThreshold = Duration(days: 10);
 
   // Entwicklung Check-in State — managed in TAB 2 section below
 
@@ -77,6 +80,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     setState(() {
       _isLoading = true;
       _error = null;
+      _isUsingFallbackImpulse = false;
     });
     try {
       final impulse = await _impulseService.fetchWeeklyImpulse(
@@ -86,14 +90,66 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         setState(() {
           _impulse = impulse;
           _isLoading = false;
+          _isUsingFallbackImpulse = false;
         });
     } catch (e) {
+      final fallback = _buildLocalFallbackImpulse();
       if (mounted)
         setState(() {
-          _error = 'Impuls konnte nicht geladen werden.';
+          _impulse = fallback;
+          _error = null;
           _isLoading = false;
+          _isUsingFallbackImpulse = true;
         });
     }
+  }
+
+  WeeklyImpulse _buildLocalFallbackImpulse() {
+    return WeeklyImpulse(
+      id: 'local_fallback_impulse',
+      title: 'Kleine Schritte, große Wirkung',
+      contentBody:
+          'Wenn heute alles zu viel ist: Wähle nur einen ruhigen Moment mit deinem Kind und benenne ein Gefühl wertfrei. Dieser kurze Check-in stärkt Verbindung und Sicherheit.',
+      practicalTip:
+          'Praxis für heute: 3 Minuten gemeinsam atmen, dann frage: "Was war heute leicht für dich?".',
+      category: PedagogicalCategory.gfk,
+      publishDate: DateTime.now(),
+      heroHeadline: 'Offline-Impuls für deinen Alltag',
+      heroDescription:
+          'Der Server antwortet gerade nicht. Du kannst trotzdem direkt mit einem alltagstauglichen Impuls starten.',
+      companionImpulses: const <WeeklyImpulseCompanion>[
+        WeeklyImpulseCompanion(
+          id: 'fallback_verstehen',
+          title: 'Verstehen (2 min)',
+          summary:
+              'Kinder kooperieren besser, wenn sie sich zuerst gesehen fühlen. Verbindung kommt vor Korrektur.',
+          durationLabel: '2 min',
+          formatLabel: 'Verstehen',
+        ),
+        WeeklyImpulseCompanion(
+          id: 'fallback_praxis',
+          title: 'Praxis (3 min)',
+          summary:
+              'Nutze eine Ich-Botschaft: "Ich sehe, du bist gerade frustriert. Wir schaffen das zusammen."',
+          durationLabel: '3 min',
+          formatLabel: 'Praxis',
+        ),
+        WeeklyImpulseCompanion(
+          id: 'fallback_reflexion',
+          title: 'Reflexion (1 min)',
+          summary:
+              'Frage dich am Abend: Was hat heute zwischen uns gut funktioniert?',
+          durationLabel: '1 min',
+          formatLabel: 'Reflexion',
+        ),
+      ],
+      discussionPrompt: const WeeklyImpulseDiscussionPrompt(
+        id: 'fallback_discussion',
+        title: 'Gesprächsimpuls',
+        body:
+            'Welcher kleine Satz hat deinem Kind heute sichtbar gutgetan?',
+      ),
+    );
   }
 
   Future<void> _playAudio(String text) async {
@@ -109,6 +165,19 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     _tts.setCompletionHandler(() {
       if (mounted) setState(() => _isPlayingAudio = false);
     });
+  }
+
+  String _formatDateLabel(DateTime value) {
+    final local = value.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year.toString();
+    return '$day.$month.$year';
+  }
+
+  bool _isImpulseStale(WeeklyImpulse impulse) {
+    final age = DateTime.now().toUtc().difference(impulse.publishDate.toUtc());
+    return age > _impulseStaleThreshold;
   }
 
   @override
@@ -203,6 +272,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
     final impulse = _impulse!;
     final companions = impulse.companionImpulses;
+    final impulseIsStale = _isImpulseStale(impulse);
 
     return RefreshIndicator(
       onRefresh: _loadImpulse,
@@ -212,6 +282,79 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_isUsingFallbackImpulse) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.wifi_off_rounded,
+                      color: theme.colorScheme.onTertiaryContainer,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Offline-Modus aktiv: Dieser Impuls ist lokal geladen.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onTertiaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: impulseIsStale
+                    ? const Color(0xFFFFF4E5)
+                    : const Color(0xFFEAF5FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: impulseIsStale
+                      ? const Color(0xFFFFD79A)
+                      : const Color(0xFFB8DAF6),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    impulseIsStale
+                        ? Icons.schedule_rounded
+                        : Icons.update_rounded,
+                    size: 18,
+                    color: impulseIsStale
+                        ? const Color(0xFF8A4B00)
+                        : const Color(0xFF155E75),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      impulseIsStale
+                          ? 'Stand: ${_formatDateLabel(impulse.publishDate)} - älter als ${_impulseStaleThreshold.inDays} Tage. Bitte Inhalt prüfen.'
+                          : 'Stand: ${_formatDateLabel(impulse.publishDate)}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: impulseIsStale
+                            ? const Color(0xFF8A4B00)
+                            : const Color(0xFF155E75),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             // Thema der Woche
             Container(
               width: double.infinity,
