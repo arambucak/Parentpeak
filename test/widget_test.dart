@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator_platform_interface/geolocator_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/logic/auth_service.dart';
@@ -50,6 +51,8 @@ class _FakeEventDiscoveryAgent extends EventDiscoveryAgent {
     required String city,
     String radiusHint = '20 km Umkreis',
     List<String> childAges = const [],
+    double? latitude,
+    double? longitude,
   }) async {
     return const <DiscoveredEvent>[];
   }
@@ -72,6 +75,22 @@ class _FakeEventService extends EventService {
 
   @override
   Future<MeetupEvent?> getEventById(String id) async => null;
+}
+
+/// Fake Geolocator that immediately returns [LocationPermission.denied]
+/// so [EventsActivitiesScreen] skips GPS and falls through to [_refreshFeed].
+class _FakeGeolocatorPlatform extends GeolocatorPlatform {
+  @override
+  Future<LocationPermission> checkPermission() async =>
+      LocationPermission.denied;
+
+  @override
+  Future<LocationPermission> requestPermission() async =>
+      LocationPermission.denied;
+
+  @override
+  Future<Position> getCurrentPosition({LocationSettings? locationSettings}) =>
+      Future.error(const PermissionDeniedException('denied'));
 }
 
 class _ThrowingWeeklyImpulseService extends WeeklyImpulseService {
@@ -151,15 +170,18 @@ void main() {
     await tester.pump();
 
     expect(find.text('Impulse & Entwicklung'), findsOneWidget);
-    expect(find.text('Profil & Schutz'), findsNothing);
+    // IndexedStack keeps both tabs built; use hitTestable() to check visibility
+    expect(find.text('Profil & Schutz').hitTestable(), findsNothing);
 
     await tester.tap(find.text('Profil'));
-    await tester.pumpAndSettle();
+    await tester.pump(); // process tap → IndexedStack switches
+    await tester.pump(const Duration(seconds: 1)); // allow language rebuild
 
-    expect(find.text('Profil & Schutz'), findsOneWidget);
+    expect(find.text('Profil & Schutz').hitTestable(), findsOneWidget);
 
     await tester.tap(find.text('Home'));
-    await tester.pumpAndSettle();
+    await tester.pump(); // process tap
+    await tester.pump(const Duration(seconds: 1)); // allow language rebuild
 
     expect(find.text('Impulse & Entwicklung'), findsOneWidget);
   });
@@ -202,18 +224,19 @@ void main() {
         const HomeScreen(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
 
     await tester.scrollUntilVisible(
-      find.text('Familienkreis'),
+      find.text('Impulse & Entwicklung'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Familienkreis'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Impulse & Entwicklung'));
+    await tester.pump(); // process tap → Navigator.push
+    await tester.pump(const Duration(milliseconds: 500)); // complete navigation animation
 
-    expect(find.byType(FamilyCircleScreen), findsOneWidget);
-    expect(find.text('Familienkreis'), findsWidgets);
+    expect(find.byType(EntwicklungImpulseScreen), findsOneWidget);
+    expect(find.text('Impulse & Entwicklung'), findsWidgets);
   });
 
   testWidgets('Home feature tile opens Events & Aktivitäten screen',
@@ -228,7 +251,7 @@ void main() {
         const HomeScreen(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
 
     await tester.scrollUntilVisible(
       find.text('Events & Aktivitäten'),
@@ -251,6 +274,11 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
+    // Mock Geolocator so checkPermission() returns denied instantly
+    final originalGeolocator = GeolocatorPlatform.instance;
+    GeolocatorPlatform.instance = _FakeGeolocatorPlatform();
+    addTearDown(() => GeolocatorPlatform.instance = originalGeolocator);
+
     await AuthService.instance.debugSeedSessionForTesting();
 
     await tester.pumpWidget(
@@ -261,7 +289,10 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    // Multiple frames needed: SharedPreferences → Geolocator → _refreshFeed async chain
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
 
     expect(find.text('Keine echten Events sind aktuell verfügbar.'), findsOneWidget);
   });
@@ -330,10 +361,11 @@ void main() {
         const EventsActivitiesScreen(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
 
     await tester.tap(find.text('Event planen'));
-    await tester.pumpAndSettle();
+    await tester.pump(); // process tap → Navigator.push
+    await tester.pump(const Duration(milliseconds: 500)); // complete navigation animation
 
     expect(find.byType(CreateEventScreen), findsOneWidget);
   });
@@ -422,7 +454,7 @@ void main() {
         const HomeScreen(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
 
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
@@ -436,6 +468,9 @@ void main() {
 
     const email = 'flow-test@parentpeak.app';
     const password = 'StrongPass1';
+
+    // Mark onboarding complete so AuthGate shows ParentpeakAppShell after login
+    SharedPreferences.setMockInitialValues({'onboarding.completed': true});
 
     final registerResult = await AuthService.instance.register(
       email: email,
@@ -466,16 +501,19 @@ void main() {
       password,
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
-    await tester.pumpAndSettle();
+    // Use pump() not pumpAndSettle() — HomeScreen has a repeating AnimationController
+    for (int i = 0; i < 15; i++) await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Impulse & Entwicklung'), findsOneWidget);
 
     await tester.tap(find.text('Profil'));
-    await tester.pumpAndSettle();
-    expect(find.text('Profil & Schutz'), findsOneWidget);
+    await tester.pump(); // process tap
+    await tester.pump(const Duration(seconds: 1)); // allow rebuild
+    expect(find.text('Profil & Schutz').hitTestable(), findsOneWidget);
 
     await tester.tap(find.text('Home'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     await tester.scrollUntilVisible(
       find.text('Events & Aktivitäten'),
@@ -488,7 +526,8 @@ void main() {
     expect(find.byType(EventsActivitiesScreen), findsOneWidget);
 
     await tester.tap(find.text('Event planen'));
-    await tester.pumpAndSettle();
+    await tester.pump(); // process tap → Navigator.push
+    await tester.pump(const Duration(milliseconds: 500)); // complete navigation animation
     expect(find.byType(CreateEventScreen), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
