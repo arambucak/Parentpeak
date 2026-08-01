@@ -533,6 +533,56 @@ class AuthService {
   }
 
   // ── Logout ─────────────────────────────────────────────────────────────────
+  Future<String?> sendPasswordReset(String email) async {
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty) {
+      return 'Bitte gib deine E-Mail-Adresse ein.';
+    }
+
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(cleanEmail)) {
+      return 'Bitte gib eine gueltige E-Mail-Adresse ein.';
+    }
+
+    await _ensureFirebaseInitChecked();
+
+    if (!_firebaseReady || _firebaseAuth == null) {
+      debugPrint(
+        'AuthService.sendPasswordReset(): Firebase nicht verfuegbar, kein Mail-Versand moeglich.',
+      );
+      return 'Passwort-Reset ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.';
+    }
+
+    try {
+      await _firebaseAuth!.sendPasswordResetEmail(email: cleanEmail);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      final code = e.code.trim().toLowerCase().replaceAll('_', '-');
+      switch (code) {
+        case 'user-not-found':
+          return 'Kein Konto mit dieser E-Mail gefunden.';
+        case 'invalid-email':
+          return 'Bitte gib eine gueltige E-Mail-Adresse ein.';
+        case 'too-many-requests':
+          return 'Zu viele Versuche. Bitte spaeter erneut versuchen.';
+        case 'network-request-failed':
+          return 'Netzwerkfehler. Bitte pruefe deine Verbindung.';
+        case 'internal-error':
+        case 'app-not-authorized':
+        case 'operation-not-allowed':
+        case 'invalid-api-key':
+          return 'E-Mail-Versand ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.';
+        default:
+          debugPrint(
+            'AuthService.sendPasswordReset(): Firebase Fehler ${e.code}',
+          );
+          return 'Passwort-Reset fehlgeschlagen. Bitte versuche es erneut.';
+      }
+    } catch (e) {
+      _logIgnoredError('AuthService.sendPasswordReset(): unexpected error', e);
+      return 'Passwort-Reset fehlgeschlagen. Bitte versuche es erneut.';
+    }
+  }
+
   void _triggerFcmInit(String userId) {
     Future.microtask(() async {
       try {
