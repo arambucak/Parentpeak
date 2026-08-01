@@ -32,6 +32,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isUsingFallbackFeed = false;
+  DateTime? _lastFeedSyncAt;
   List<DiscoveredEvent> _aiEvents = const [];
   List<MeetupEvent> _communityEvents = const [];
   List<EventInvitation> _invitations = const [];
@@ -67,27 +69,44 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _isUsingFallbackFeed = false;
     });
 
     try {
       final viewerUserId = AuthService.instance.currentUser?.uid ?? 'guest';
       final coords = _coordsForCity(city);
-      final aiFuture = _agent.discoverEvents(
-        city: city,
-        radiusHint: '$_radiusKm km Umkreis',
-        childAges: _selectedAgeGroups.map(_ageGroupLabel).toList(),
-      );
-      final communityFuture = _loadCommunityEventsForCity(coords);
-      final invitationsFuture =
-          _eventService.getInvitationsForUser(viewerUserId);
-      final results = await Future.wait<dynamic>([
-        aiFuture,
-        communityFuture,
-        invitationsFuture,
-      ]);
+      var hadAnyLoadError = false;
 
-      final communityEvents = results[1] as List<MeetupEvent>;
-      final invitations = results[2] as List<EventInvitation>;
+      List<DiscoveredEvent> aiEvents;
+      try {
+        aiEvents = await _agent.discoverEvents(
+          city: city,
+          radiusHint: '$_radiusKm km Umkreis',
+          childAges: _selectedAgeGroups.map(_ageGroupLabel).toList(),
+        );
+      } catch (e) {
+        debugPrint('EventsActivitiesScreen: AI feed fallback aktiv: $e');
+        hadAnyLoadError = true;
+        aiEvents = _buildLocalFallbackAiEvents(city, coords);
+      }
+
+      List<MeetupEvent> communityEvents;
+      try {
+        communityEvents = await _loadCommunityEventsForCity(coords);
+      } catch (e) {
+        debugPrint('EventsActivitiesScreen: community feed fallback aktiv: $e');
+        hadAnyLoadError = true;
+        communityEvents = const <MeetupEvent>[];
+      }
+
+      List<EventInvitation> invitations;
+      try {
+        invitations = await _eventService.getInvitationsForUser(viewerUserId);
+      } catch (e) {
+        debugPrint('EventsActivitiesScreen: invitations load skipped: $e');
+        hadAnyLoadError = true;
+        invitations = const <EventInvitation>[];
+      }
 
       final titleMap = <String, String>{
         for (final event in communityEvents) event.id: event.title,
@@ -106,21 +125,96 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
       if (!mounted) return;
       setState(() {
-        _aiEvents = results[0] as List<DiscoveredEvent>;
+        _aiEvents = aiEvents;
         _communityEvents = communityEvents;
         _invitations = invitations;
         _eventTitlesById = titleMap;
         _isLoading = false;
+        _isUsingFallbackFeed = hadAnyLoadError;
+        _lastFeedSyncAt = DateTime.now();
+        _errorMessage = null;
       });
     } catch (e) {
       debugPrint('EventsActivitiesScreen._refreshFeed(): failed: $e');
       if (!mounted) return;
       setState(() {
-        _errorMessage =
-            'Feed konnte nicht geladen werden. Bitte versuche es erneut.';
+        _aiEvents = _buildLocalFallbackAiEvents(city, _coordsForCity(city));
+        _communityEvents = const <MeetupEvent>[];
+        _invitations = const <EventInvitation>[];
+        _eventTitlesById = const {};
+        _errorMessage = null;
         _isLoading = false;
+        _isUsingFallbackFeed = true;
+        _lastFeedSyncAt = DateTime.now();
       });
     }
+  }
+
+  String _formatLastSyncLabel(DateTime value) {
+    final local = value.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year.toString();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$day.$month.$year, $hour:$minute';
+  }
+
+  List<DiscoveredEvent> _buildLocalFallbackAiEvents(
+    String city,
+    (double, double) coords,
+  ) {
+    final now = DateTime.now();
+    return <DiscoveredEvent>[
+      DiscoveredEvent(
+        id: 'fallback_event_1',
+        title: 'Spielplatz-Treff im Kiez',
+        description:
+            'Offenes Treffen fuer Eltern mit Kindern. Lockeres Kennenlernen mit kurzer Bewegungsrunde.',
+        category: DiscoveredEventCategory.spielplatz,
+        ageLabels: const ['0-3', '4-6'],
+        location: 'Stadtpark Nord',
+        cityHint: city,
+        latitude: coords.$1,
+        longitude: coords.$2,
+        eventDate: now.add(const Duration(days: 1)),
+        price: 'kostenlos',
+        organizer: 'Parentpeak Community',
+        discoveredAt: now,
+      ),
+      DiscoveredEvent(
+        id: 'fallback_event_2',
+        title: 'Kreativnachmittag fuer Familien',
+        description:
+            'Basteln mit Alltagsmaterialien, kleine Mitmachstationen und Zeit fuer Austausch.',
+        category: DiscoveredEventCategory.basteln,
+        ageLabels: const ['4-6', '7-10'],
+        location: 'Familienzentrum Mitte',
+        cityHint: city,
+        latitude: coords.$1 + 0.01,
+        longitude: coords.$2 + 0.01,
+        eventDate: now.add(const Duration(days: 3)),
+        price: 'kostenlos',
+        organizer: 'Lokales Familienzentrum',
+        discoveredAt: now,
+      ),
+      DiscoveredEvent(
+        id: 'fallback_event_3',
+        title: 'Waldspaziergang mit Kindern',
+        description:
+            'Gemeinsamer Spaziergang mit kleinen Naturspielen. Kinderwagenfreundliche Strecke.',
+        category: DiscoveredEventCategory.natur,
+        ageLabels: const ['0-3', '4-6', '7-10'],
+        location: 'Waldpark Treffpunkt Ost',
+        cityHint: city,
+        latitude: coords.$1 - 0.015,
+        longitude: coords.$2 + 0.008,
+        eventDate: now.add(const Duration(days: 5)),
+        price: 'kostenlos',
+        organizer: 'Elterninitiative',
+        discoveredAt: now,
+      ),
+    ];
   }
 
   Future<List<MeetupEvent>> _loadCommunityEventsForCity(
@@ -531,6 +625,76 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             const SizedBox(height: 10),
             _buildAdvancedFilters(theme),
             const SizedBox(height: 14),
+            if (_isUsingFallbackFeed) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF7F4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFB8E2D8)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.wifi_off_rounded, size: 18, color: Color(0xFF2E6D5F)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Offline-Modus aktiv: Einige Event-Daten sind lokal vorbereitet.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF2E6D5F),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (_lastFeedSyncAt != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _isUsingFallbackFeed
+                      ? const Color(0xFFFFF4E5)
+                      : const Color(0xFFEAF5FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _isUsingFallbackFeed
+                        ? const Color(0xFFFFD79A)
+                        : const Color(0xFFB8DAF6),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _isUsingFallbackFeed
+                          ? Icons.schedule_rounded
+                          : Icons.update_rounded,
+                      size: 18,
+                      color: _isUsingFallbackFeed
+                          ? const Color(0xFF8A4B00)
+                          : const Color(0xFF155E75),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _isUsingFallbackFeed
+                            ? 'Event-Stand: ${_formatLastSyncLabel(_lastFeedSyncAt!)} (Fallback aktiv)'
+                            : 'Event-Stand: ${_formatLastSyncLabel(_lastFeedSyncAt!)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: _isUsingFallbackFeed
+                              ? const Color(0xFF8A4B00)
+                              : const Color(0xFF155E75),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             Text(
               'Für dich in der Nähe',
               style: theme.textTheme.titleMedium?.copyWith(
