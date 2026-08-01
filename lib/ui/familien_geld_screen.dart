@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -26,6 +28,22 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   bool _countrySelected = false;
   Map<String, double> _monthlyAmounts = {};
   List<ChildEntry> _children = [];
+
+  // Feature 1: Steuer-Spar
+  bool _showTaxDetail = false;
+
+  // Feature 2: Eligibility Quick-Check
+  bool _eligibilityDone = false;
+  bool _isEmployee = true;
+  bool _isSingleParent = false;
+  int _incomeLevel = 1; // 0=unter 2.000€, 1=2.000–4.000€, 2=ueber 4.000€
+
+  // Feature 3: Spar-Ziel
+  double _monthlySavingsGoal = 0;
+  double _totalSaved = 0;
+
+  // Feature 4: Monat ist eng
+  bool _showKnappSection = false;
 
   @override
   void initState() {
@@ -55,6 +73,17 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     // Kinder aus Profil laden
     final profile = await FamilyMatchProfile.load();
     if (profile != null) _children = profile.children;
+
+    // Feature 2: Eligibility Quick-Check
+    _eligibilityDone = prefs.getBool('famgeld.eligibility_done') ?? false;
+    _isEmployee = prefs.getBool('famgeld.is_employee') ?? true;
+    _isSingleParent = prefs.getBool('famgeld.is_single_parent') ?? false;
+    _incomeLevel = prefs.getInt('famgeld.income_level') ?? 1;
+
+    // Feature 3: Spar-Ziel
+    _monthlySavingsGoal = prefs.getDouble('famgeld.monthly_savings_goal') ?? 0;
+    _totalSaved = prefs.getDouble('famgeld.total_saved') ?? 0;
+
     if (mounted) setState(() {});
   }
 
@@ -66,6 +95,66 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   Future<void> _saveAmounts() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('famgeld.amounts', jsonEncode(_monthlyAmounts));
+  }
+
+  Future<void> _saveEligibility() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('famgeld.eligibility_done', _eligibilityDone);
+    await prefs.setBool('famgeld.is_employee', _isEmployee);
+    await prefs.setBool('famgeld.is_single_parent', _isSingleParent);
+    await prefs.setInt('famgeld.income_level', _incomeLevel);
+  }
+
+  Future<void> _saveSavingsGoal() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('famgeld.monthly_savings_goal', _monthlySavingsGoal);
+    await prefs.setDouble('famgeld.total_saved', _totalSaved);
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  // Feature 5: Uebersicht teilen
+  Future<void> _shareOverview() async {
+    final total = _monthlyAmounts.values.fold(0.0, (a, b) => a + b);
+    final sb = StringBuffer();
+    sb.writeln('${_country.flag} Familien-Geld Uebersicht \u2013 ${_country.name}');
+    sb.writeln('');
+    if (total > 0) {
+      sb.writeln('\u{1F4B0} Monatliche Kinderkosten: ~${_country.formatAmount(total)}/Monat');
+      sb.writeln('   ${_country.formatAmount(total * 12)}/Jahr');
+      sb.writeln('');
+    }
+    sb.writeln('\u{1F4CB} Moegliche Leistungen:');
+    for (final b in _country.benefits) {
+      final symbol = b.status == BenefitStatus.universal
+          ? '\u2705'
+          : b.status == BenefitStatus.incomeDependent
+              ? '\u{1F7E0}'
+              : '\u{1F535}';
+      sb.writeln('$symbol ${b.name}${b.amount != null ? ' \u00B7 ${b.amount}' : ''}');
+    }
+    if (_children.isNotEmpty) {
+      sb.writeln('');
+      sb.writeln('\u{1F3AF} Naechste Meilensteine:');
+      for (final child in _children) {
+        final ageYears = (child.ageMonths / 12).round();
+        final upcoming =
+            _country.milestones.where((m) => m.childAgeYears > ageYears).take(2);
+        for (final m in upcoming) {
+          final years = m.childAgeYears - ageYears;
+          sb.writeln(
+              '${m.emoji} ${m.label} \u00B7 ~${_country.formatAmount(m.estimatedCost)} (in $years J.)');
+        }
+      }
+    }
+    sb.writeln('');
+    sb.writeln('\u{1F4F1} Erstellt mit ParentPeak \u2013 Dein Eltern-Begleiter');
+    await Share.share(sb.toString(), subject: 'Familien-Geld Uebersicht');
   }
 
   @override
@@ -152,6 +241,11 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         ]),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share_rounded, size: 20),
+            tooltip: 'Uebersicht teilen',
+            onPressed: _shareOverview,
+          ),
           IconButton(
             icon: const Icon(Icons.language_rounded, size: 20),
             tooltip: 'Land aendern',
@@ -270,6 +364,14 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 ])),
           ]),
         ),
+        // Feature 1: Steuer-Spar-Berechnung (DE + AT)
+        if (_country.code == 'de' || _country.code == 'at') ...[
+          const SizedBox(height: 12),
+          _buildTaxSavingsHint(theme),
+        ],
+        const SizedBox(height: 12),
+        // Feature 4: Monat ist eng
+        _buildKnappSection(theme),
       ]),
     );
   }
@@ -368,8 +470,11 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ]),
         ),
         const SizedBox(height: 16),
+        // Feature 2: Eligibility Quick-Check
+        _buildEligibilityCheck(theme),
+        const SizedBox(height: 16),
         // Leistungen-Liste
-        ..._country.benefits.map((b) => _benefitCard(theme, b)),
+        ..._filteredBenefits.map((b) => _benefitCard(theme, b)),
         const SizedBox(height: 16),
         // Disclaimer
         Container(
@@ -474,11 +579,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () {
-              // URL oeffnen (TODO: url_launcher)
               HapticFeedback.lightImpact();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Link: ${b.url}')),
-              );
+              _openUrl(b.url!);
             },
             child: Text('\u{1F517} Hier pruefen \u{2192}',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -529,6 +631,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             ),
           ]),
         ),
+        const SizedBox(height: 16),
+        // Feature 3: Spar-Ziel fuer naechsten Meilenstein
+        _buildSavingsGoal(theme),
         const SizedBox(height: 16),
         // Meilensteine pro Kind
         if (_children.isNotEmpty)
@@ -664,5 +769,482 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         ])),
       ]),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEATURE 1: Steuer-Spar-Berechnung
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildTaxSavingsHint(ThemeData theme) {
+    final kitaMonthly = _monthlyAmounts['kita'] ?? 0;
+    if (kitaMonthly == 0) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+        ),
+        child: Row(children: [
+          Text('\u{1F4B0}', style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _country.code == 'de'
+                  ? 'Trag deine Kita-Kosten oben ein \u2013 dann berechne ich deine Steuerersparnis.'
+                  : 'Trag deine Kinderbetreuungskosten ein \u2013 dann zeige ich die Absetzbarkeit.',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ]),
+      );
+    }
+
+    final double deductibleMax = _country.code == 'de' ? 4000.0 : 2300.0;
+    final kitaAnnual = kitaMonthly * 12;
+    final double deductiblePart = _country.code == 'de' ? kitaAnnual * 2 / 3 : kitaAnnual;
+    final double deductible = deductiblePart.clamp(0, deductibleMax);
+    final estimatedSavings = deductible * 0.30; // ~30% Grenzsteuersatz
+
+    return GestureDetector(
+      onTap: () => setState(() => _showTaxDetail = !_showTaxDetail),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFECFDF5),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  'Steuer-Spar-Potenzial',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700, color: const Color(0xFF065F46)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Bis zu ${_country.formatAmount(deductible)} absetzbar \u2192 ca. ${_country.formatAmount(estimatedSavings)} Steuerersparnis/Jahr',
+                  style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF065F46), height: 1.3),
+                ),
+              ]),
+            ),
+            Icon(
+              _showTaxDetail ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+              color: const Color(0xFF10B981),
+              size: 20,
+            ),
+          ]),
+          if (_showTaxDetail) ...[
+            const SizedBox(height: 10),
+            const Divider(color: Color(0xFF10B981), height: 1),
+            const SizedBox(height: 10),
+            _taxDetailRow(theme, 'Kita-Kosten/Jahr', _country.formatAmount(kitaAnnual)),
+            if (_country.code == 'de')
+              _taxDetailRow(theme, 'Davon absetzbar (2/3)', _country.formatAmount(deductiblePart)),
+            _taxDetailRow(theme, 'Max. Sonderausgabe', _country.formatAmount(deductibleMax)),
+            _taxDetailRow(theme, 'Tats\u00e4chlich absetzbar', _country.formatAmount(deductible)),
+            _taxDetailRow(theme, 'Gesch\u00e4tzte Ersparnis (30%)', _country.formatAmount(estimatedSavings), highlight: true),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _openUrl(
+                _country.code == 'de'
+                    ? 'https://www.bundesfinanzministerium.de/Web/DE/Themen/Steuern/Steuerarten/Einkommensteuer/einkommensteuer.html'
+                    : 'https://www.bmf.gv.at/themen/steuern/privatpersonen/kinderbetreuungskosten.html',
+              ),
+              child: Text(
+                '\u{1F517} Mehr Infos beim Finanzamt \u2192',
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF059669), fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  Widget _taxDetailRow(ThemeData theme, String label, String value, {bool highlight = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(children: [
+        Expanded(
+          child: Text(label,
+              style: theme.textTheme.labelSmall?.copyWith(color: const Color(0xFF065F46))),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
+              color: highlight ? const Color(0xFF047857) : const Color(0xFF065F46)),
+        ),
+      ]),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEATURE 2: Eligibility Quick-Check
+  // ═══════════════════════════════════════════════════════════════════════════
+  List<SocialBenefit> get _filteredBenefits {
+    if (!_eligibilityDone) return _country.benefits;
+    return _country.benefits.where((b) {
+      if (b.status == BenefitStatus.universal) return true;
+      if (b.status == BenefitStatus.incomeDependent) return _incomeLevel <= 1;
+      // checkRequired: unterhaltsvorschuss nur fuer Alleinerziehende
+      if (b.id == 'unterhaltsvorschuss') return _isSingleParent;
+      return true;
+    }).toList();
+  }
+
+  Widget _buildEligibilityCheck(ThemeData theme) {
+    if (_eligibilityDone) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F3FF),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+        ),
+        child: Row(children: [
+          const Text('\u{2705}', style: TextStyle(fontSize: 14)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Leistungen gefiltert basierend auf eurer Situation.',
+              style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF5B21B6)),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() {
+              _eligibilityDone = false;
+              _saveEligibility();
+            }),
+            child: Text('Aendern',
+                style: theme.textTheme.labelSmall?.copyWith(
+                    color: const Color(0xFF7C3AED), fontWeight: FontWeight.w700)),
+          ),
+        ]),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F3FF),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
+          const SizedBox(width: 8),
+          Text('Schnell-Pruefung: Was passt zu euch?',
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w700, color: const Color(0xFF4C1D95))),
+        ]),
+        const SizedBox(height: 12),
+        // Frage 1: Berufstaetigkeit
+        Text('Bist du berufstaetig?',
+            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, children: [
+          _eligChip(theme, 'Ja', _isEmployee, () => setState(() => _isEmployee = true)),
+          _eligChip(theme, 'Nein / Elternzeit', !_isEmployee, () => setState(() => _isEmployee = false)),
+        ]),
+        const SizedBox(height: 10),
+        // Frage 2: Alleinerziehend
+        Text('Alleinerziehend?',
+            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, children: [
+          _eligChip(theme, 'Ja', _isSingleParent, () => setState(() => _isSingleParent = true)),
+          _eligChip(theme, 'Nein', !_isSingleParent, () => setState(() => _isSingleParent = false)),
+        ]),
+        const SizedBox(height: 10),
+        // Frage 3: Einkommen
+        Text('Haushaltsnetto/Monat (ca.)?',
+            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, children: [
+          _eligChip(theme, 'Unter 2.000\u20ac', _incomeLevel == 0, () => setState(() => _incomeLevel = 0)),
+          _eligChip(theme, '2.000\u20134.000\u20ac', _incomeLevel == 1, () => setState(() => _incomeLevel = 1)),
+          _eligChip(theme, '\u00dcber 4.000\u20ac', _incomeLevel == 2, () => setState(() => _incomeLevel = 2)),
+        ]),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF7C3AED)),
+            onPressed: () {
+              setState(() => _eligibilityDone = true);
+              _saveEligibility();
+            },
+            child: const Text('Leistungen filtern'),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _eligChip(ThemeData theme, String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF7C3AED) : theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: selected ? const Color(0xFF7C3AED) : theme.colorScheme.outlineVariant),
+        ),
+        child: Text(label,
+            style: theme.textTheme.labelSmall?.copyWith(
+                color: selected ? Colors.white : theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEATURE 3: Spar-Ziel fuer naechsten Meilenstein
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildSavingsGoal(ThemeData theme) {
+    // Naechsten Meilenstein finden
+    MilestoneCost? nextMilestone;
+    int? yearsLeft;
+    if (_children.isNotEmpty) {
+      for (final child in _children) {
+        final ageYears = (child.ageMonths / 12).floor();
+        for (final m in _country.milestones) {
+          if (m.childAgeYears > ageYears) {
+            final yrs = m.childAgeYears - ageYears;
+            if (yearsLeft == null || yrs < yearsLeft) {
+              yearsLeft = yrs;
+              nextMilestone = m;
+            }
+            break;
+          }
+        }
+      }
+    } else {
+      // Ohne Kinderprofil: erstes Meilenstein zeigen
+      if (_country.milestones.isNotEmpty) {
+        nextMilestone = _country.milestones.first;
+        yearsLeft = nextMilestone.childAgeYears;
+      }
+    }
+
+    if (nextMilestone == null) return const SizedBox.shrink();
+
+    final target = nextMilestone.estimatedCost;
+    final monthsLeft = (yearsLeft! * 12).toDouble();
+    final needed = (target - _totalSaved).clamp(0, target);
+    final autoGoal = monthsLeft > 0 ? (needed / monthsLeft) : 0.0;
+    final progress = (_totalSaved / target).clamp(0.0, 1.0);
+
+    final goalController = TextEditingController(
+      text: _monthlySavingsGoal > 0 ? _monthlySavingsGoal.toStringAsFixed(0) : '',
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Text(nextMilestone.emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Spar-Ziel: ${nextMilestone.label}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700, color: const Color(0xFFEA580C))),
+              Text(
+                'In $yearsLeft Jahr${yearsLeft == 1 ? '' : 'en'} \u00b7 ~${_country.formatAmount(target)}',
+                style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF9A3412)),
+              ),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 12),
+        // Fortschrittsbalken
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 10,
+            backgroundColor: const Color(0xFFFFD7B0),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text('Gespart: ${_country.formatAmount(_totalSaved)}',
+              style: theme.textTheme.labelSmall?.copyWith(color: const Color(0xFF9A3412))),
+          Text('Ziel: ${_country.formatAmount(target)}',
+              style: theme.textTheme.labelSmall?.copyWith(color: const Color(0xFF9A3412))),
+        ]),
+        const SizedBox(height: 12),
+        // Eingabe: aktuell gespart
+        Row(children: [
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                labelText: 'Bisher gespart (\u20ac)',
+                isDense: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onSubmitted: (v) {
+                final val = double.tryParse(v) ?? _totalSaved;
+                setState(() => _totalSaved = val);
+                _saveSavingsGoal();
+              },
+              controller: TextEditingController(
+                  text: _totalSaved > 0 ? _totalSaved.toStringAsFixed(0) : ''),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                labelText: 'Spar-Rate/Monat (\u20ac)',
+                isDense: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              controller: goalController,
+              onSubmitted: (v) {
+                final val = double.tryParse(v) ?? _monthlySavingsGoal;
+                setState(() => _monthlySavingsGoal = val);
+                _saveSavingsGoal();
+              },
+            ),
+          ),
+        ]),
+        if (_monthlySavingsGoal > 0 && monthsLeft > 0) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Mit ${_country.formatAmount(_monthlySavingsGoal)}/Monat hast du das Ziel ${_monthlySavingsGoal >= autoGoal ? 'rechtzeitig' : 'fast'} in $yearsLeft Jahr${yearsLeft == 1 ? '' : 'en'} erreicht.',
+            style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF9A3412), fontStyle: FontStyle.italic),
+          ),
+        ] else if (autoGoal > 0) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Empfehlung: ${_country.formatAmount(autoGoal)}/Monat zuruecklegen.',
+            style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF9A3412)),
+          ),
+        ],
+      ]),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEATURE 4: Monat ist eng
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildKnappSection(ThemeData theme) {
+    final resources = _country.code == 'de'
+        ? [
+            ('Lebensmittelhilfe \u2013 Tafel Deutschland', 'https://www.tafel.de/infos-hilfe/tafel-suche/'),
+            ('Bildung & Teilhabe (BuT) beantragen', 'https://www.bmas.de/DE/Arbeit/Grundsicherung/Bildungspaket/bildungspaket.html'),
+            ('Kostenlose Schuldnerberatung (VZ)', 'https://www.verbraucherzentrale.de/themen/geld-versicherungen/kredit-und-schulden/schuldnerberatung'),
+            ('Kleiderkammer \u2013 Caritasverband', 'https://www.caritas.de/hilfeundberatung/onlineberatung/sozialedienste'),
+          ]
+        : _country.code == 'at'
+            ? [
+                ('Lebensmittelhilfe \u2013 Tafel Oesterreich', 'https://www.tafel.at/'),
+                ('Kostenlose Schuldnerberatung', 'https://www.schuldnerberatung.at/'),
+                ('Caritas Beratungsstellen', 'https://www.caritas.at/hilfe-einrichtungen/beratung/'),
+              ]
+            : [
+                ('Lokale Lebensmittelbank finden', 'https://www.foodbankingeurope.org/'),
+                ('Familienhilfe & Beratung', 'https://www.unicef.org/parenting/'),
+              ];
+
+    return Column(children: [
+      GestureDetector(
+        onTap: () => setState(() => _showKnappSection = !_showKnappSection),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: _showKnappSection
+                ? const Color(0xFFFEF2F2)
+                : theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _showKnappSection
+                  ? const Color(0xFFEF4444).withValues(alpha: 0.4)
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(children: [
+            const Text('\u{1F91D}', style: TextStyle(fontSize: 16)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text('Monat ist eng? Hilfe finden',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: _showKnappSection
+                          ? const Color(0xFFB91C1C)
+                          : theme.colorScheme.onSurface)),
+            ),
+            Icon(
+              _showKnappSection
+                  ? Icons.expand_less_rounded
+                  : Icons.expand_more_rounded,
+              size: 18,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ]),
+        ),
+      ),
+      if (_showKnappSection) ...[
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF2F2),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              'Kostenlose Anlaufstellen in ${_country.name}:',
+              style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w700, color: const Color(0xFF991B1B)),
+            ),
+            const SizedBox(height: 10),
+            ...resources.map((r) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GestureDetector(
+                onTap: () => _openUrl(r.$2),
+                child: Row(children: [
+                  const Icon(Icons.link_rounded, size: 14, color: Color(0xFFDC2626)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(r.$1,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFFDC2626),
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                            decorationColor: const Color(0xFFDC2626))),
+                  ),
+                ]),
+              ),
+            )),
+          ]),
+        ),
+      ],
+    ]);
   }
 }
