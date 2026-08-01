@@ -19,6 +19,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/firebase_options.dart';
 import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
@@ -725,12 +726,17 @@ class AuthService {
 
     try {
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       }
       _firebaseAuth = FirebaseAuth.instance;
       _firebaseReady = true;
     } catch (e) {
-      _logIgnoredError('AuthService._tryInitFirebase(): Firebase unavailable', e);
+      _logIgnoredError(
+        'AuthService._tryInitFirebase(): Firebase unavailable',
+        e,
+      );
       _firebaseReady = false;
       _firebaseAuth = null;
     }
