@@ -18,23 +18,25 @@ class BackendApiClient {
   final http.Client _httpClient;
 
   Future<String?> _resolveAuthToken() async {
+    // Prefer per-user Firebase token. Static fallback tokens are shared secrets
+    // and may become stale, which can break authenticated requests.
+    if (authTokenProvider != null) {
+      try {
+        final dynamicToken = await authTokenProvider!();
+        final normalized = dynamicToken?.trim();
+        if (normalized != null && normalized.isNotEmpty) {
+          return normalized;
+        }
+      } catch (e) {
+        debugPrint(
+          'BackendApiClient._resolveAuthToken(): token provider failed: $e',
+        );
+      }
+    }
+
     final staticToken = authToken?.trim();
     if (staticToken != null && staticToken.isNotEmpty) {
       return staticToken;
-    }
-
-    if (authTokenProvider == null) {
-      return null;
-    }
-
-    try {
-      final dynamicToken = await authTokenProvider!();
-      final normalized = dynamicToken?.trim();
-      if (normalized != null && normalized.isNotEmpty) {
-        return normalized;
-      }
-    } catch (e) {
-      debugPrint('BackendApiClient._resolveAuthToken(): token provider failed: $e');
     }
 
     return null;
