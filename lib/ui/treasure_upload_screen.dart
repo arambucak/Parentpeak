@@ -586,60 +586,131 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
     return _SectionFrame(
       title: l10n.t('treasureConditionLabel', fallback: 'Zustand'),
       subtitle: l10n.t('treasureConditionHelper', fallback: 'Ehrlich ist perfekt.'),
-      child: SizedBox(
-        height: 126,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) {
-            final item = conditions[index];
-            final selected = index == _conditionIndex;
-            return GestureDetector(
-              onTap: () {
-                setState(() => _conditionIndex = index);
-                _onDraftChanged();
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 220,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: item.$3,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: selected ? item.$4 : Colors.transparent,
-                    width: 1.6,
+      child: Column(
+        children: List.generate(conditions.length, (index) {
+          final item = conditions[index];
+          final selected = index == _conditionIndex;
+          return Padding(
+            padding: EdgeInsets.only(bottom: index == conditions.length - 1 ? 0 : 10),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () {
+                  setState(() => _conditionIndex = index);
+                  _onDraftChanged();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: selected
+                          ? [item.$3, item.$3.withValues(alpha: 0.92)]
+                          : [const Color(0xFFF8FBFF), Colors.white],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: selected ? item.$4 : const Color(0xFFD9E5F3),
+                      width: selected ? 1.8 : 1.1,
+                    ),
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color: item.$4.withValues(alpha: 0.14),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
+                            ),
+                          ]
+                        : const [
+                            BoxShadow(
+                              color: Color(0x080C2A4D),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? item.$4.withValues(alpha: 0.14)
+                              : item.$4.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(item.$5, color: item.$4, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    item.$1,
+                                    style: TextStyle(
+                                      color: item.$4,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 17,
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                ),
+                                if (selected)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: item.$4.withValues(alpha: 0.14),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      l10n.t('treasureSelectedForHandover', fallback: 'Ausgewählt'),
+                                      style: TextStyle(
+                                        color: item.$4,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.$2,
+                              style: const TextStyle(
+                                color: Color(0xFF40556F),
+                                fontSize: 13.5,
+                                height: 1.3,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Icon(
+                        selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                        color: selected ? item.$4 : const Color(0xFF98A9BC),
+                        size: 22,
+                      ),
+                    ],
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(item.$5, color: item.$4, size: 22),
-                    const SizedBox(height: 12),
-                    Text(
-                      item.$1,
-                      style: TextStyle(
-                        color: item.$4,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.$2,
-                      style: const TextStyle(
-                        color: Color(0xFF40556F),
-                        fontSize: 12.5,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
               ),
-            );
-          },
-          separatorBuilder: (_, __) => const SizedBox(width: 10),
-          itemCount: conditions.length,
-        ),
+            ),
+          );
+        }),
       ),
     );
   }

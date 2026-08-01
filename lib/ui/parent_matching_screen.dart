@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -71,9 +72,27 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
   bool _isRestoring = true;
   bool _requiresProfileSetup = false;
   bool _isSavingProfile = false;
+  bool _saveSuccessFlash = false;
+  bool _setupEntranceVisible = false;
+  bool _showWelcomeMatchHighlight = false;
+  String? _welcomeMatchProfileId;
   final TextEditingController _profileNameController = TextEditingController();
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _otpCodeController = TextEditingController();
+  final FocusNode _profileNameFocusNode = FocusNode();
+  final FocusNode _cityFocusNode = FocusNode();
+  final FocusNode _ageFocusNode = FocusNode();
+  final FocusNode _familyFormFocusNode = FocusNode();
   int _profileAge = 33;
   String _profileFamilyForm = 'Kernfamilie';
+  bool _phoneVerifiedLocal = false;
+  bool _isVerifyingPhone = false;
+  bool _otpRequested = false;
+  String? _otpDevHint;
+  bool _showDiscoveryInviteBanner = false;
+  bool _globalDigitalMode = false;
+  String _discoveryScope = '10km';
+  List<Map<String, String>> _globalRooms = const [];
 
   String? get _currentUserId {
     final value = AuthService.instance.currentUser?.uid.trim();
@@ -86,13 +105,76 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
   @override
   void initState() {
     super.initState();
+    _profileNameFocusNode.addListener(_onSetupFieldFocusChanged);
+    _cityFocusNode.addListener(_onSetupFieldFocusChanged);
+    _ageFocusNode.addListener(_onSetupFieldFocusChanged);
+    _familyFormFocusNode.addListener(_onSetupFieldFocusChanged);
     _bootstrap();
+  }
+
+  void _onSetupFieldFocusChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   @override
   void dispose() {
+    _profileNameFocusNode.removeListener(_onSetupFieldFocusChanged);
+    _cityFocusNode.removeListener(_onSetupFieldFocusChanged);
+    _ageFocusNode.removeListener(_onSetupFieldFocusChanged);
+    _familyFormFocusNode.removeListener(_onSetupFieldFocusChanged);
+    _profileNameFocusNode.dispose();
+    _cityFocusNode.dispose();
+    _ageFocusNode.dispose();
+    _familyFormFocusNode.dispose();
+    _phoneNumberController.dispose();
+    _otpCodeController.dispose();
     _profileNameController.dispose();
     super.dispose();
+  }
+
+  Widget _buildAnimatedInputShell({
+    required bool focused,
+    required Widget child,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: focused
+            ? const [
+                BoxShadow(
+                  color: Color(0x1F1E5CD7),
+                  blurRadius: 14,
+                  offset: Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildAnimatedFieldLabel({
+    required String label,
+    required bool focused,
+  }) {
+    return AnimatedDefaultTextStyle(
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      style: TextStyle(
+        color: focused ? const Color(0xFF1E5CD7) : const Color(0xFF62758C),
+        fontSize: focused ? 12.5 : 12,
+        fontWeight: FontWeight.w700,
+      ),
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(left: focused ? 2 : 0, bottom: 6),
+        child: Text(label),
+      ),
+    );
   }
 
   Future<void> _bootstrap() async {
@@ -116,6 +198,11 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
   Future<bool> _ensureMyProfileExists() async {
     final profile = await _service.fetchMyProfile(userId: _effectiveUserId);
     if (profile != null) {
+      if (_setupEntranceVisible) {
+        _setupEntranceVisible = false;
+      }
+      _phoneVerifiedLocal =
+          profile['phoneVerified'] == true || profile['isPhoneVerified'] == true;
       if (_profileNameController.text.trim().isEmpty) {
         _profileNameController.text = (profile['name'] ?? '').toString();
       }
@@ -123,52 +210,64 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     }
 
     if (!mounted) return false;
-    _profileNameController.text =
-        AuthService.instance.currentUser?.displayName.trim().isNotEmpty == true
-            ? AuthService.instance.currentUser!.displayName.trim()
-            : 'Elternteil';
+    _profileNameController.text = AuthService.instance.currentUser?.displayName.trim().isNotEmpty == true
+        ? AuthService.instance.currentUser!.displayName.trim()
+        : 'Elternteil';
     setState(() {
       _requiresProfileSetup = true;
       _isRestoring = false;
+      _setupEntranceVisible = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_requiresProfileSetup) return;
+      setState(() => _setupEntranceVisible = true);
     });
     return false;
   }
 
   Future<void> _loadProfiles() async {
     try {
-      // Use new smart matching algorithm
-      final matchResults = await _service.findMatches(userId: _effectiveUserId);
+      final discovery = await _service.findMatchesWithFallback(
+        userId: _effectiveUserId,
+        childAges: _childAgeFilter.toList(),
+      );
 
+      final matchResults = discovery.matches;
+      
       // Convert MatchResult objects to internal _ParentProfile format
       final profiles = matchResults.map((result) {
         final profile = result.profile;
         // Convert breakdown map values to doubles
         final breakdownAsDoubles = result.breakdown.map(
-          (key, value) =>
-              MapEntry(key, (value is num) ? value.toDouble() : 0.0),
+          (key, value) => MapEntry(key, (value is num) ? value.toDouble() : 0.0),
         );
         final age = profile.age;
         final familyForm = profile.familyForm;
         return _ParentProfile(
           id: profile.id,
-          name: profile.name ?? 'Unbekannt',
-          age: (age != null) ? age : 30,
+          name: profile.name,
+          age: age ?? 30,
           city: profile.city,
           bio: 'Matching-Score: ${result.score.toStringAsFixed(0)}%',
           interests: profile.interests,
           languages: profile.languages,
           valuesFocus: profile.valuesFocus,
-          familyForm: (familyForm != null) ? familyForm : 'Familie',
+          familyForm: familyForm ?? 'Familie',
           childAges: profile.childAges,
           latitude: profile.latitude,
           longitude: profile.longitude,
-          score: result.score as double?,
+          verificationLevel: _mapVerificationLevel(profile),
+          score: result.score.toDouble(),
           breakdown: breakdownAsDoubles,
         );
       }).toList();
-
+      
       if (!mounted) return;
       setState(() {
+        _showDiscoveryInviteBanner = discovery.showInviteBanner;
+        _globalDigitalMode = discovery.globalDigitalMode;
+        _discoveryScope = discovery.scope;
+        _globalRooms = discovery.globalRooms;
         _allProfiles
           ..clear()
           ..addAll(profiles);
@@ -325,38 +424,37 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     try {
       // Fetch latest matches using smart algorithm
       final matchResults = await _service.findMatches(userId: _effectiveUserId);
-
+      
       // Get connected profile IDs from backend
-      final connectedIds =
-          await _service.fetchConnectedProfileIds(userId: _effectiveUserId);
+      final connectedIds = await _service.fetchConnectedProfileIds(userId: _effectiveUserId);
       final newlyConfirmedIds = connectedIds.difference(_seenMatchedProfileIds);
 
       if (!mounted) return;
-
+      
       // Update both all profiles and matched profiles
       final profiles = matchResults.map((result) {
         final profile = result.profile;
         // Convert breakdown map values to doubles
         final breakdownAsDoubles = result.breakdown.map(
-          (key, value) =>
-              MapEntry(key, (value is num) ? value.toDouble() : 0.0),
+          (key, value) => MapEntry(key, (value is num) ? value.toDouble() : 0.0),
         );
         final age = profile.age;
         final familyForm = profile.familyForm;
         return _ParentProfile(
           id: profile.id,
-          name: profile.name ?? 'Unbekannt',
-          age: (age != null) ? age : 30,
+          name: profile.name,
+          age: age ?? 30,
           city: profile.city,
           bio: 'Matching-Score: ${result.score.toStringAsFixed(0)}%',
           interests: profile.interests,
           languages: profile.languages,
           valuesFocus: profile.valuesFocus,
-          familyForm: (familyForm != null) ? familyForm : 'Familie',
+          familyForm: familyForm ?? 'Familie',
           childAges: profile.childAges,
           latitude: profile.latitude,
           longitude: profile.longitude,
-          score: result.score as double?,
+          verificationLevel: _mapVerificationLevel(profile),
+          score: result.score.toDouble(),
           breakdown: breakdownAsDoubles,
         );
       }).toList();
@@ -365,7 +463,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
         _allProfiles
           ..clear()
           ..addAll(profiles);
-
+        
         _matchedProfiles
           ..clear()
           ..addAll(_allProfiles.where((p) => connectedIds.contains(p.id)));
@@ -656,6 +754,13 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     final profile = _currentProfile;
     if (profile == null) return;
 
+    if (profile.verificationLevel == _VerificationLevel.basic) {
+      final proceed = await _confirmBasicVerification(profile);
+      if (!proceed) {
+        return;
+      }
+    }
+
     if (!_likedProfiles.any((p) => p.id == profile.id)) {
       _likedProfiles.add(profile);
     }
@@ -695,6 +800,45 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
         ),
       );
     }
+  }
+
+  _VerificationLevel _mapVerificationLevel(ParentMatchingProfile profile) {
+    final raw = (profile.verificationLevel ?? '').trim().toLowerCase();
+    if (raw == 'recommended' || raw == 'trusted') {
+      return _VerificationLevel.recommended;
+    }
+    if (raw == 'checked' || raw == 'verified') {
+      return _VerificationLevel.checked;
+    }
+    if (profile.identityVerified || profile.phoneVerified || profile.moderationChecked) {
+      return _VerificationLevel.checked;
+    }
+    return _VerificationLevel.basic;
+  }
+
+  Future<bool> _confirmBasicVerification(_ParentProfile profile) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sicherheits-Check'),
+        content: Text(
+          'Das Profil ${profile.name} ist aktuell nur auf Basisniveau verifiziert. '
+          'Teile keine privaten Kontaktdaten oder genaue Kinder-Standorte im ersten Kontakt. '
+          'Moechtest du trotzdem eine Anfrage senden?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Trotzdem senden'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   void _reportCurrent() {
@@ -760,10 +904,10 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     }
 
     setState(() => _isSavingProfile = true);
-
+    
     // Get city coordinates
     final cityCenter = _cityCenters[_homeCity] ?? _cityCenters['Berlin']!;
-
+    
     final saved = await _service.createProfile(
       userId: _effectiveUserId,
       name: name,
@@ -786,8 +930,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _service.lastSyncError ??
-                'Matching-Profil konnte nicht gespeichert werden.',
+            _service.lastSyncError ?? 'Matching-Profil konnte nicht gespeichert werden.',
           ),
         ),
       );
@@ -796,111 +939,683 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
     setState(() {
       _isSavingProfile = false;
+      _saveSuccessFlash = true;
+    });
+    await HapticFeedback.mediumImpact();
+    await Future<void>.delayed(const Duration(milliseconds: 260));
+    if (!mounted) return;
+    setState(() => _setupEntranceVisible = false);
+    await Future<void>.delayed(const Duration(milliseconds: 240));
+    if (!mounted) return;
+
+    setState(() {
+      _saveSuccessFlash = false;
       _requiresProfileSetup = false;
       _isRestoring = true;
     });
     await _bootstrap();
+    if (!mounted) return;
+    _showWelcomeMatchHighlightOnce();
+    _showProfileSavedToast();
+  }
+
+  Future<void> _requestPhoneOtp() async {
+    final phone = _phoneNumberController.text.trim();
+    if (phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte Telefonnummer eingeben.')),
+      );
+      return;
+    }
+
+    setState(() => _isVerifyingPhone = true);
+    final response = await _service.requestVerificationOtp(
+      userId: _effectiveUserId,
+      phoneNumber: phone,
+    );
+    if (!mounted) return;
+
+    setState(() {
+      _isVerifyingPhone = false;
+      _otpRequested = response != null;
+      _otpDevHint = response?['devCode']?.toString();
+    });
+
+    if (response == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _service.lastSyncError ?? 'OTP konnte nicht angefordert werden.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('OTP gesendet. Bitte Code eingeben.')),
+    );
+  }
+
+  Future<void> _confirmPhoneOtp() async {
+    final code = _otpCodeController.text.trim();
+    if (code.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte 6-stelligen OTP-Code eingeben.')),
+      );
+      return;
+    }
+
+    setState(() => _isVerifyingPhone = true);
+    final ok = await _service.confirmVerificationOtp(
+      userId: _effectiveUserId,
+      code: code,
+    );
+    if (!mounted) return;
+    setState(() => _isVerifyingPhone = false);
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _service.lastSyncError ?? 'OTP-Bestaetigung fehlgeschlagen.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _phoneVerifiedLocal = true;
+      _otpRequested = false;
+      _otpDevHint = null;
+    });
+
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Telefon erfolgreich verifiziert.')),
+    );
+  }
+
+  Future<void> _openPhoneVerificationSheet() async {
+    _otpCodeController.clear();
+    setState(() {
+      _otpRequested = false;
+      _otpDevHint = null;
+    });
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 10,
+            bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Telefon verifizieren',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Zum Schutz im Eltern-Matching wird ein OTP per SMS bestaetigt.',
+                style: TextStyle(
+                  color: Color(0xFF5A6E86),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _phoneNumberController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Telefonnummer',
+                  hintText: '+49 ...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _isVerifyingPhone ? null : _requestPhoneOtp,
+                  child: Text(_isVerifyingPhone ? 'Senden...' : 'OTP anfordern'),
+                ),
+              ),
+              if (_otpRequested) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _otpCodeController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'OTP-Code',
+                    hintText: '6-stellig',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                if (_otpDevHint != null && _otpDevHint!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Dev-Code: $_otpDevHint',
+                    style: const TextStyle(
+                      color: Color(0xFF1E5CD7),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonal(
+                    onPressed: _isVerifyingPhone ? null : _confirmPhoneOtp,
+                    child: Text(
+                      _isVerifyingPhone ? 'Pruefen...' : 'OTP bestaetigen',
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showProfileSavedToast() {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        duration: const Duration(seconds: 2),
+        content: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0B9A74), Color(0xFF0E7F77)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x260A7E63),
+                blurRadius: 12,
+                offset: Offset(0, 5),
+              ),
+            ],
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.verified_rounded, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Profil gespeichert. Deine Matches sind jetzt bereit.',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showWelcomeMatchHighlightOnce() {
+    final profile = _currentProfile;
+    if (profile == null) return;
+
+    setState(() {
+      _welcomeMatchProfileId = profile.id;
+      _showWelcomeMatchHighlight = true;
+    });
+
+    Future<void>.delayed(const Duration(milliseconds: 2400), () {
+      if (!mounted) return;
+      if (_welcomeMatchProfileId != profile.id) return;
+      setState(() => _showWelcomeMatchHighlight = false);
+    });
   }
 
   Widget _buildProfileSetupRequired() {
     return Scaffold(
-      appBar: AppBar(title: const Text('Eltern-Matching einrichten')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            const Text(
-              'Bitte richte zuerst dein Eltern-Matching-Profil ein, damit andere Familien dich finden können.',
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _profileNameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+      backgroundColor: const Color(0xFFF4F7FD),
+      appBar: AppBar(
+        title: const Text(
+          'Eltern-Matching einrichten',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        backgroundColor: const Color(0xFFF4F7FD),
+        elevation: 0,
+        foregroundColor: const Color(0xFF172538),
+      ),
+      body: AnimatedOpacity(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOut,
+        opacity: _setupEntranceVisible ? 1 : 0,
+        child: AnimatedSlide(
+          duration: const Duration(milliseconds: 460),
+          curve: Curves.easeOutCubic,
+          offset: _setupEntranceVisible ? Offset.zero : const Offset(0, 0.02),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 760),
+                curve: Curves.easeOutCubic,
+                builder: (context, progress, _) {
+                  Widget staged({required int index, required Widget child}) {
+                    final start = (index * 0.12).clamp(0.0, 0.72);
+                    final local = ((progress - start) / (1 - start)).clamp(0.0, 1.0);
+                    return Opacity(
+                      opacity: local,
+                      child: Transform.translate(
+                        offset: Offset(0, 14 * (1 - local)),
+                        child: child,
+                      ),
+                    );
+                  }
+
+                  return ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                    children: [
+                  staged(
+                    index: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE9F3FF), Color(0xFFF4EEFF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        border: Border.all(color: const Color(0xFFD6E4F9)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.groups_rounded,
+                                  color: Color(0xFF1E5CD7),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'Mit einem kurzen Profil finden euch Familien schneller und passender.',
+                                  style: TextStyle(
+                                    color: Color(0xFF2D4560),
+                                    fontSize: 14,
+                                    height: 1.35,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _SetupStepChip(icon: Icons.person_rounded, label: 'Profil'),
+                              _SetupStepChip(icon: Icons.location_city_rounded, label: 'Ort'),
+                              _SetupStepChip(icon: Icons.family_restroom_rounded, label: 'Familie'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  staged(
+                    index: 1,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFDDE6F3)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x12000000),
+                            blurRadius: 16,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildAnimatedInputShell(
+                            focused: _profileNameFocusNode.hasFocus,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildAnimatedFieldLabel(
+                                  label: 'Name',
+                                  focused: _profileNameFocusNode.hasFocus,
+                                ),
+                                TextField(
+                                  controller: _profileNameController,
+                                  focusNode: _profileNameFocusNode,
+                                  textInputAction: TextInputAction.next,
+                                  onSubmitted: (_) => _cityFocusNode.requestFocus(),
+                                  decoration: InputDecoration(
+                                    hintText: 'Name',
+                                    filled: true,
+                                    fillColor: const Color(0xFFF4F7FC),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF1E5CD7),
+                                        width: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildAnimatedInputShell(
+                                  focused: _cityFocusNode.hasFocus,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _buildAnimatedFieldLabel(
+                                        label: 'Stadt',
+                                        focused: _cityFocusNode.hasFocus,
+                                      ),
+                                      DropdownButtonFormField<String>(
+                                        focusNode: _cityFocusNode,
+                                        initialValue: _homeCity,
+                                        decoration: InputDecoration(
+                                          hintText: 'Stadt',
+                                          filled: true,
+                                          fillColor: const Color(0xFFF4F7FC),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFF1E5CD7),
+                                              width: 1.4,
+                                            ),
+                                          ),
+                                        ),
+                                        items: _cityCenters.keys
+                                            .map((city) => DropdownMenuItem<String>(
+                                                  value: city,
+                                                  child: Text(city),
+                                                ))
+                                            .toList(),
+                                        onChanged: (value) {
+                                          if (value == null) return;
+                                          setState(() => _homeCity = value);
+                                          _ageFocusNode.requestFocus();
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _buildAnimatedInputShell(
+                                  focused: _ageFocusNode.hasFocus,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _buildAnimatedFieldLabel(
+                                        label: 'Alter',
+                                        focused: _ageFocusNode.hasFocus,
+                                      ),
+                                      DropdownButtonFormField<int>(
+                                        focusNode: _ageFocusNode,
+                                        initialValue: _profileAge,
+                                        decoration: InputDecoration(
+                                          hintText: 'Alter',
+                                          filled: true,
+                                          fillColor: const Color(0xFFF4F7FC),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFF1E5CD7),
+                                              width: 1.4,
+                                            ),
+                                          ),
+                                        ),
+                                        items: List.generate(54, (i) => i + 18)
+                                            .map((age) => DropdownMenuItem<int>(
+                                                  value: age,
+                                                  child: Text('$age'),
+                                                ))
+                                            .toList(),
+                                        onChanged: (value) {
+                                          if (value == null) return;
+                                          setState(() => _profileAge = value);
+                                          _familyFormFocusNode.requestFocus();
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildAnimatedInputShell(
+                            focused: _familyFormFocusNode.hasFocus,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildAnimatedFieldLabel(
+                                  label: 'Familienform',
+                                  focused: _familyFormFocusNode.hasFocus,
+                                ),
+                                DropdownButtonFormField<String>(
+                                  focusNode: _familyFormFocusNode,
+                                  initialValue: _profileFamilyForm,
+                                  decoration: InputDecoration(
+                                    hintText: 'Familienform',
+                                    filled: true,
+                                    fillColor: const Color(0xFFF4F7FC),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF1E5CD7),
+                                        width: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                  items: const [
+                                    'Alleinerziehend',
+                                    'Patchwork',
+                                    'Kernfamilie',
+                                    'Mehrgeneration',
+                                  ]
+                                      .map((form) => DropdownMenuItem<String>(
+                                            value: form,
+                                            child: Text(form),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    setState(() => _profileFamilyForm = value);
+                                    _familyFormFocusNode.unfocus();
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F8FF),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFFCFE0F8)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _phoneVerifiedLocal
+                                      ? Icons.verified_rounded
+                                      : Icons.shield_outlined,
+                                  color: _phoneVerifiedLocal
+                                      ? const Color(0xFF0B9A74)
+                                      : const Color(0xFF1E5CD7),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _phoneVerifiedLocal
+                                        ? 'Telefon verifiziert'
+                                        : 'Verifiziere dein Telefon fuer mehr Sicherheit',
+                                    style: const TextStyle(
+                                      color: Color(0xFF24405E),
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: _phoneVerifiedLocal
+                                      ? null
+                                      : _openPhoneVerificationSheet,
+                                  child: Text(
+                                    _phoneVerifiedLocal ? 'OK' : 'Verifizieren',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          AnimatedScale(
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOutBack,
+                            scale: _saveSuccessFlash ? 1.03 : 1,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeOut,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: _saveSuccessFlash
+                                    ? const [
+                                        BoxShadow(
+                                          color: Color(0x3319A884),
+                                          blurRadius: 16,
+                                          offset: Offset(0, 6),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(50),
+                                  backgroundColor: _saveSuccessFlash
+                                      ? const Color(0xFF0B9A74)
+                                      : const Color(0xFF0E7F77),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                onPressed: _isSavingProfile ? null : _saveMyProfile,
+                                icon: _isSavingProfile
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : Icon(
+                                        _saveSuccessFlash
+                                            ? Icons.verified_rounded
+                                            : Icons.check_rounded,
+                                      ),
+                                label: Text(
+                                  _isSavingProfile
+                                      ? 'Speichern...'
+                                      : _saveSuccessFlash
+                                          ? 'Gespeichert'
+                                          : 'Profil speichern',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  staged(
+                    index: 2,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        'Datenschutz: Nur relevante Profilangaben werden für passende Matches genutzt.',
+                        style: TextStyle(
+                          color: Color(0xFF62758C),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                    ],
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _homeCity,
-                    decoration: const InputDecoration(
-                      labelText: 'Stadt',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: _cityCenters.keys
-                        .map((city) => DropdownMenuItem<String>(
-                              value: city,
-                              child: Text(city),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() => _homeCity = value);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: _profileAge,
-                    decoration: const InputDecoration(
-                      labelText: 'Alter',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: List.generate(54, (i) => i + 18)
-                        .map((age) => DropdownMenuItem<int>(
-                              value: age,
-                              child: Text('$age'),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() => _profileAge = value);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _profileFamilyForm,
-              decoration: const InputDecoration(
-                labelText: 'Familienform',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                'Alleinerziehend',
-                'Patchwork',
-                'Kernfamilie',
-                'Mehrgeneration',
-              ]
-                  .map((form) => DropdownMenuItem<String>(
-                        value: form,
-                        child: Text(form),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() => _profileFamilyForm = value);
-              },
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _isSavingProfile ? null : _saveMyProfile,
-              icon: _isSavingProfile
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.check_rounded),
-              label:
-                  Text(_isSavingProfile ? 'Speichern...' : 'Profil speichern'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1308,6 +2023,13 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final profile = _currentProfile;
+    final compactToolbar = MediaQuery.of(context).size.width < 390;
+    final compactScreen = MediaQuery.of(context).size.width < 390;
+    final infoBannerText = compactScreen
+      ? 'Freundschaft & Playdates · Radius ${_maxDistanceKm.toStringAsFixed(0)} km ab $_homeCity'
+      : 'Nur für Freundschaft, Playdates und Eltern-Austausch · Radius ${_maxDistanceKm.toStringAsFixed(0)} km ab $_homeCity';
+    final pendingSectionTitle =
+      compactScreen ? 'Offene Anfragen' : 'Ausstehende Anfragen';
 
     if (_requiresProfileSetup) {
       return _buildProfileSetupRequired();
@@ -1321,7 +2043,11 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eltern-Matching'),
+        title: Text(
+          compactToolbar ? 'Eltern-Match' : 'Eltern-Matching',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           IconButton(
             tooltip: 'Neue Verbindungen',
@@ -1356,203 +2082,362 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
               ],
             ),
           ),
-          IconButton(
-            tooltip: 'Mein Profil',
-            onPressed: _openPreferenceSheet,
-            icon: const Icon(Icons.tune_rounded),
-          ),
-          IconButton(
-            tooltip: 'Sicherheit',
-            onPressed: _openSafetyInfo,
-            icon: const Icon(Icons.shield_outlined),
-          ),
-          IconButton(
-            tooltip: 'Suche filtern',
-            onPressed: _openFilterSheet,
-            icon: const Icon(Icons.filter_list_rounded),
-          ),
+          if (compactToolbar)
+            PopupMenuButton<String>(
+              tooltip: 'Mehr Optionen',
+              onSelected: (value) {
+                if (value == 'profile') {
+                  _openPreferenceSheet();
+                } else if (value == 'safety') {
+                  _openSafetyInfo();
+                } else if (value == 'filter') {
+                  _openFilterSheet();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem<String>(
+                  value: 'profile',
+                  child: Text('Mein Profil'),
+                ),
+                PopupMenuItem<String>(
+                  value: 'safety',
+                  child: Text('Sicherheit'),
+                ),
+                PopupMenuItem<String>(
+                  value: 'filter',
+                  child: Text('Suche filtern'),
+                ),
+              ],
+              icon: const Icon(Icons.more_horiz_rounded),
+            )
+          else ...[
+            IconButton(
+              tooltip: 'Mein Profil',
+              onPressed: _openPreferenceSheet,
+              icon: const Icon(Icons.tune_rounded),
+            ),
+            IconButton(
+              tooltip: 'Sicherheit',
+              onPressed: _openSafetyInfo,
+              icon: const Icon(Icons.shield_outlined),
+            ),
+            IconButton(
+              tooltip: 'Suche filtern',
+              onPressed: _openFilterSheet,
+              icon: const Icon(Icons.filter_list_rounded),
+            ),
+          ],
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Row(
-              children: [
-                _StatPill(
-                  icon: Icons.group_add_rounded,
-                  label: 'Interesse',
-                  value: _likedProfiles.length,
-                  color: const Color(0xFF0EA5A4),
-                ),
-                const SizedBox(width: 8),
-                _StatPill(
-                  icon: Icons.hourglass_top_rounded,
-                  label: 'Ausstehend',
-                  value: _pendingProfiles.length,
-                  color: const Color(0xFFF59E0B),
-                ),
-                const SizedBox(width: 8),
-                _StatPill(
-                  icon: Icons.handshake_rounded,
-                  label: 'Verbindungen',
-                  value: _matchedProfiles.length,
-                  color: const Color(0xFF2563EB),
-                ),
-                const Spacer(),
-                Text(
-                  '${_filteredProfiles.isEmpty ? 0 : (_currentIndex + 1)}/${_filteredProfiles.length}',
-                  style: theme.textTheme.labelLarge,
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 390;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _StatPill(
+                          icon: Icons.group_add_rounded,
+                          label: compact ? 'Inter.' : 'Interesse',
+                          value: _likedProfiles.length,
+                          color: const Color(0xFF0EA5A4),
+                          compact: compact,
+                        ),
+                        _StatPill(
+                          icon: Icons.hourglass_top_rounded,
+                          label: compact ? 'Anfr.' : 'Ausstehend',
+                          value: _pendingProfiles.length,
+                          color: const Color(0xFFF59E0B),
+                          compact: compact,
+                        ),
+                        _StatPill(
+                          icon: Icons.handshake_rounded,
+                          label: compact ? 'Verb.' : 'Verbindungen',
+                          value: _matchedProfiles.length,
+                          color: const Color(0xFF2563EB),
+                          compact: compact,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '${_filteredProfiles.isEmpty ? 0 : (_currentIndex + 1)}/${_filteredProfiles.length}',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               decoration: BoxDecoration(
                 color: theme.colorScheme.secondaryContainer
                     .withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Nur für Freundschaft, Playdates und Eltern-Austausch · Radius ${_maxDistanceKm.toStringAsFixed(0)} km ab $_homeCity',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.12),
                 ),
               ),
+              child: Text(
+                infoBannerText,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+                maxLines: compactScreen ? 2 : null,
+                overflow: compactScreen ? TextOverflow.ellipsis : TextOverflow.visible,
+              ),
             ),
+            if (_showDiscoveryInviteBanner) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7E8),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFF7D8A5)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.campaign_outlined, color: Color(0xFF9A5A11), size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _discoveryScope == 'global'
+                            ? '🌍 Noch niemand lokal aktiv? Triff Eltern online & bilde dein Netzwerk auf.'
+                            : 'Erweiterte Suche: Suche in $_discoveryScope statt lokal. Lade Freunde in deine Nähe ein!',
+                        style: const TextStyle(
+                          color: Color(0xFF74420D),
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Expanded(
               child: profile == null
-                  ? _EmptyMatchState(onReset: () {
-                      setState(() {
-                        _currentIndex = 0;
-                        _interestFilter.clear();
-                        _languageFilter.clear();
-                        _valuesFilter.clear();
-                        _familyFormFilter.clear();
-                        _childAgeFilter.clear();
-                      });
-                      _persistState();
-                    })
-                  : Column(
-                      children: [
-                        Expanded(
-                          child: _ProfileCard(
-                            profile: profile,
-                            compatibility: _compatibility(profile),
-                            distanceKm: _distanceKm(profile),
-                            quality: _matchQuality(profile),
-                            reasons: _whyMatch(profile),
-                            onReport: _reportCurrent,
-                            onBlock: _blockCurrent,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _skipCurrent,
-                                icon: const Icon(Icons.close_rounded),
-                                label: const Text('Weiter'),
+                  ? (_globalDigitalMode
+                      ? _GlobalParentRoomsState(
+                          rooms: _globalRooms,
+                          onOpenRoom: (room) {
+                            _openMatchChat(
+                              _ParentProfile(
+                                id: room['id'] ?? 'global-room',
+                                name: room['title'] ?? 'Globaler Elternchat',
+                                age: 30,
+                                city: 'Online',
+                                bio: room['subtitle'] ?? 'Themenbasierter Online-Austausch',
+                                interests: const ['Online', 'Austausch'],
+                                languages: const ['Deutsch'],
+                                valuesFocus: const ['Respekt'],
+                                childAges: const ['0-3', '3-5', '6-9'],
+                                familyForm: 'Community',
+                                verificationLevel: _VerificationLevel.checked,
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: _likeCurrent,
-                                icon: const Icon(Icons.handshake_rounded),
-                                label: const Text('Verbinden'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_pendingProfiles.isNotEmpty ||
-                            _matchedProfiles.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 120),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  if (_pendingProfiles.isNotEmpty)
-                                    Container(
-                                      width: double.infinity,
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: theme
-                                            .colorScheme.tertiaryContainer
-                                            .withValues(alpha: 0.5),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Ausstehende Anfragen',
-                                            style: theme.textTheme.labelLarge
-                                                ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Wrap(
-                                            spacing: 8,
-                                            runSpacing: 8,
-                                            children: _pendingProfiles
-                                                .map((p) => Chip(
-                                                      avatar: const Icon(
-                                                        Icons
-                                                            .hourglass_top_rounded,
-                                                        size: 16,
-                                                      ),
-                                                      label: Text(p.name),
-                                                    ))
-                                                .toList(),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  if (_matchedProfiles.isNotEmpty)
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: theme
-                                            .colorScheme.primaryContainer
-                                            .withValues(alpha: 0.5),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: _matchedProfiles
-                                            .map((p) => Chip(
-                                                  avatar: CircleAvatar(
-                                                    child: Text(
-                                                        _safeInitial(p.name)),
-                                                  ),
-                                                  label: Text(p.name),
-                                                  onDeleted: () =>
-                                                      _openMatchChat(p),
-                                                  deleteIcon: const Icon(Icons
-                                                      .chat_bubble_outline_rounded),
-                                                ))
-                                            .toList(),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                            );
+                          },
+                        )
+                      : _EmptyMatchState(onReset: () {
+                          setState(() {
+                            _currentIndex = 0;
+                            _interestFilter.clear();
+                            _languageFilter.clear();
+                            _valuesFilter.clear();
+                            _familyFormFilter.clear();
+                            _childAgeFilter.clear();
+                          });
+                          _persistState();
+                        }))
+                  : TweenAnimationBuilder<double>(
+                      key: ValueKey<String>(
+                          'profile-${profile.id}-${_showWelcomeMatchHighlight && _welcomeMatchProfileId == profile.id}'),
+                      tween: Tween<double>(
+                        begin: _showWelcomeMatchHighlight &&
+                                _welcomeMatchProfileId == profile.id
+                            ? 0.97
+                            : 1,
+                        end: 1,
+                      ),
+                      duration: Duration(
+                        milliseconds: _showWelcomeMatchHighlight &&
+                                _welcomeMatchProfileId == profile.id
+                            ? 320
+                            : 1,
+                      ),
+                      curve: Curves.easeOutBack,
+                      builder: (context, scale, child) {
+                        final highlighted = _showWelcomeMatchHighlight &&
+                            _welcomeMatchProfileId == profile.id;
+                        final opacity = highlighted ? (0.78 + ((scale - 0.97) / 0.03) * 0.22) : 1.0;
+                        return Opacity(
+                          opacity: opacity.clamp(0.0, 1.0),
+                          child: Transform.scale(scale: scale, child: child),
+                        );
+                      },
+                      child: _ProfileCard(
+                        profile: profile,
+                        compatibility: _compatibility(profile),
+                        distanceKm: _distanceKm(profile),
+                        quality: _matchQuality(profile),
+                        reasons: _whyMatch(profile),
+                        showWelcomeHighlight: _showWelcomeMatchHighlight &&
+                            _welcomeMatchProfileId == profile.id,
+                        onReport: _reportCurrent,
+                        onBlock: _blockCurrent,
+                      ),
                     ),
             ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compactActions = constraints.maxWidth < 360;
+                return Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: profile == null ? null : _skipCurrent,
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: compactActions ? 17 : 19,
+                        ),
+                        label: Text(
+                          'Weiter',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(fontSize: compactActions ? 15 : null),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: profile == null ? null : _likeCurrent,
+                        icon: Icon(
+                          Icons.handshake_rounded,
+                          size: compactActions ? 17 : 19,
+                        ),
+                        label: Text(
+                          compactActions ? 'Verb.' : 'Verbinden',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(fontSize: compactActions ? 15 : null),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            if (_pendingProfiles.isNotEmpty)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.tertiaryContainer
+                      .withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pendingSectionTitle,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _pendingProfiles
+                          .map((p) => Chip(
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                avatar: const Icon(
+                                  Icons.hourglass_top_rounded,
+                                  size: 16,
+                                ),
+                                label: ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(maxWidth: 170),
+                                  child: Text(
+                                    p.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                  ],
+                ),
+              ),
+            if (_matchedProfiles.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color:
+                      theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _matchedProfiles
+                      .map((p) => Chip(
+                            visualDensity: VisualDensity.compact,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            avatar: CircleAvatar(
+                              child: Text(_safeInitial(p.name)),
+                            ),
+                            label: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 170),
+                              child: Text(
+                                p.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            onDeleted: () => _openMatchChat(p),
+                            deleteIcon:
+                                const Icon(Icons.chat_bubble_outline_rounded),
+                          ))
+                      .toList(),
+                ),
+              ),
           ],
         ),
       ),
@@ -1566,27 +2451,39 @@ class _StatPill extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    this.compact = false,
   });
 
   final IconData icon;
   final String label;
   final int value;
   final Color color;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 9 : 10,
+        vertical: compact ? 7 : 8,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
+          Icon(icon, size: compact ? 14 : 15, color: color),
+          const SizedBox(width: 5),
           Text('$label: $value',
-              style: TextStyle(color: color, fontWeight: FontWeight.w700)),
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: compact ? 11.8 : 12.5,
+                height: 1,
+              )),
         ],
       ),
     );
@@ -1600,6 +2497,7 @@ class _ProfileCard extends StatelessWidget {
     required this.distanceKm,
     required this.quality,
     required this.reasons,
+    required this.showWelcomeHighlight,
     required this.onReport,
     required this.onBlock,
   });
@@ -1609,126 +2507,233 @@ class _ProfileCard extends StatelessWidget {
   final double? distanceKm;
   final _MatchQuality quality;
   final List<String> reasons;
+  final bool showWelcomeHighlight;
   final VoidCallback onReport;
   final VoidCallback onBlock;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: showWelcomeHighlight
+            ? const [
+                BoxShadow(
+                  color: Color(0x2A1E5CD7),
+                  blurRadius: 22,
+                  offset: Offset(0, 8),
+                ),
+              ]
+            : null,
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          Card(
+            clipBehavior: Clip.antiAlias,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.08),
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.white.withValues(alpha: 0.25),
-                  child: Text(_safeInitial(profile.name),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 22)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text('${profile.name}, ${profile.age}',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700)),
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.white.withValues(alpha: 0.25),
+                        child: Text(_safeInitial(profile.name),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text('${profile.name}, ${profile.age}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700)),
+                                ),
+                                _VerificationBadge(level: profile.verificationLevel),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                                distanceKm == null
+                                    ? profile.city
+                                    : '${profile.city} · ${distanceKm!.toStringAsFixed(1)} km',
+                                style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.95),
+                                    fontWeight: FontWeight.w500)),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text('$compatibility%',
+                            style: const TextStyle(
+                                color: Colors.white, fontWeight: FontWeight.w700)),
+                      ),
+                      PopupMenuButton<String>(
+                        color: Colors.white,
+                        iconColor: Colors.white,
+                        onSelected: (value) {
+                          if (value == 'report') onReport();
+                          if (value == 'block') onBlock();
+                        },
+                        itemBuilder: (context) => const [
+                          PopupMenuItem<String>(
+                            value: 'report',
+                            child: Text('Profil melden'),
                           ),
-                          _VerificationBadge(level: profile.verificationLevel),
+                          PopupMenuItem<String>(
+                            value: 'block',
+                            child: Text('Profil blockieren'),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                          distanceKm == null
-                              ? profile.city
-                              : '${profile.city} · ${distanceKm!.toStringAsFixed(1)} km',
-                          style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.95),
-                              fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(999),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Text(profile.bio,
+                          style: theme.textTheme.bodyLarge?.copyWith(height: 1.35)),
+                      const SizedBox(height: 14),
+                      _TagSection(title: 'Interessen', values: profile.interests),
+                      const SizedBox(height: 10),
+                      _TagSection(title: 'Sprachen', values: profile.languages),
+                      const SizedBox(height: 10),
+                      _TagSection(title: 'Werte', values: profile.valuesFocus),
+                      const SizedBox(height: 10),
+                      _TagSection(title: 'Kinderalter', values: profile.childAges),
+                      const SizedBox(height: 10),
+                      _MatchQualityRow(quality: quality),
+                      const SizedBox(height: 10),
+                      _TagSection(title: 'Warum ihr passt', values: reasons),
+                      const SizedBox(height: 10),
+                      Text('Familienform: ${profile.familyForm}',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                    ],
                   ),
-                  child: Text('$compatibility%',
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w700)),
-                ),
-                PopupMenuButton<String>(
-                  color: Colors.white,
-                  iconColor: Colors.white,
-                  onSelected: (value) {
-                    if (value == 'report') onReport();
-                    if (value == 'block') onBlock();
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem<String>(
-                      value: 'report',
-                      child: Text('Profil melden'),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'block',
-                      child: Text('Profil blockieren'),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(profile.bio,
-                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.35)),
-                const SizedBox(height: 14),
-                _TagSection(title: 'Interessen', values: profile.interests),
-                const SizedBox(height: 10),
-                _TagSection(title: 'Sprachen', values: profile.languages),
-                const SizedBox(height: 10),
-                _TagSection(title: 'Werte', values: profile.valuesFocus),
-                const SizedBox(height: 10),
-                _TagSection(title: 'Kinderalter', values: profile.childAges),
-                const SizedBox(height: 10),
-                _MatchQualityRow(quality: quality),
-                const SizedBox(height: 10),
-                _TagSection(title: 'Warum ihr passt', values: reasons),
-                const SizedBox(height: 10),
-                Text('Familienform: ${profile.familyForm}',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-              ],
+          Positioned(
+            top: 12,
+            left: 12,
+            child: IgnorePointer(
+              ignoring: true,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                opacity: showWelcomeHighlight ? 1 : 0,
+                child: _WelcomeMatchBadge(showShine: showWelcomeHighlight),
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WelcomeMatchBadge extends StatelessWidget {
+  const _WelcomeMatchBadge({required this.showShine});
+
+  final bool showShine;
+
+  @override
+  Widget build(BuildContext context) {
+    final badge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFD6E4F9)),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.auto_awesome_rounded,
+            size: 14,
+            color: Color(0xFF1E5CD7),
+          ),
+          SizedBox(width: 6),
+          Text(
+            'Neu für euch',
+            style: TextStyle(
+              color: Color(0xFF224161),
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!showShine) {
+      return badge;
+    }
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: -1.2, end: 1.8),
+      duration: const Duration(milliseconds: 980),
+      curve: Curves.easeOutCubic,
+      child: badge,
+      builder: (context, position, child) {
+        return ShaderMask(
+          shaderCallback: (rect) {
+            return LinearGradient(
+              begin: Alignment(position - 1, 0),
+              end: Alignment(position, 0),
+              colors: [
+                Colors.white.withValues(alpha: 0),
+                Colors.white.withValues(alpha: 0.62),
+                Colors.white.withValues(alpha: 0),
+              ],
+              stops: const [0.35, 0.5, 0.65],
+            ).createShader(rect);
+          },
+          blendMode: BlendMode.srcATop,
+          child: child,
+        );
+      },
     );
   }
 }
@@ -1745,7 +2750,11 @@ class _TagSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: Color(0xFF2A3D54),
+            )),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
@@ -1753,6 +2762,12 @@ class _TagSection extends StatelessWidget {
           children: values
               .map((v) => Chip(
                     visualDensity: VisualDensity.compact,
+                    backgroundColor: const Color(0xFFF5F8FC),
+                    side: const BorderSide(color: Color(0xFFE0E8F2)),
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2B4158),
+                    ),
                     label: Text(v),
                   ))
               .toList(),
@@ -1849,15 +2864,138 @@ class _EmptyMatchState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.of(context).size.width < 390;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.search_off_rounded, size: 56),
           const SizedBox(height: 10),
-          const Text('Keine Profile für die aktuellen Filter.'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Text(
+              'Keine Profile für die aktuellen Filter.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: compact ? 16 : null,
+                height: 1.3,
+              ),
+            ),
+          ),
           const SizedBox(height: 10),
-          OutlinedButton(onPressed: onReset, child: const Text('Filter reset')),
+          OutlinedButton(
+            onPressed: onReset,
+            child: Text(
+              compact ? 'Filter zurück' : 'Filter zurücksetzen',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlobalParentRoomsState extends StatelessWidget {
+  const _GlobalParentRoomsState({
+    required this.rooms,
+    required this.onOpenRoom,
+  });
+
+  final List<Map<String, String>> rooms;
+  final ValueChanged<Map<String, String>> onOpenRoom;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rooms.isEmpty) {
+      return const _EmptyMatchState(onReset: _noop);
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 6, bottom: 6),
+      itemCount: rooms.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final room = rooms[index];
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFDCE6F3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.public_rounded, color: Color(0xFF1E5CD7)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Globaler Digital-Modus',
+                    style: TextStyle(
+                      color: Color(0xFF1E5CD7),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                room['title'] ?? 'Globaler Elternchat',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                room['subtitle'] ?? 'Online Austausch fuer Eltern',
+                style: const TextStyle(color: Color(0xFF607286), fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.tonalIcon(
+                  onPressed: () => onOpenRoom(room),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                  label: const Text('Raum oeffnen'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+void _noop() {}
+
+class _SetupStepChip extends StatelessWidget {
+  const _SetupStepChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFD8E6F8)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF1E5CD7)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF224161),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -1943,3 +3081,4 @@ class _VerificationBadge extends StatelessWidget {
     );
   }
 }
+

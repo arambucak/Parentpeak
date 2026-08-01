@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -35,9 +34,20 @@ try {
   console.warn('⚠️  Firebase Admin SDK nicht verfügbar:', err.message);
 }
 
-// Multer für Image-Uploads — memoryStorage (kein Disk), Buffer direkt an Firebase Storage.
+// Multer for image uploads — stored under uploads/ (create if missing)
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+const multerStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+  },
+});
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: multerStorage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
   fileFilter: (_req, file, cb) => {
     const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -49,66 +59,50 @@ const upload = multer({
   },
 });
 
-// Firebase Storage Bucket — aus FIREBASE_STORAGE_BUCKET env oder aus dem
-// Service-Account-JSON abgeleitet (Format: <projectId>.firebasestorage.app).
-function getStorageBucket() {
-  const explicit = (process.env.FIREBASE_STORAGE_BUCKET || '').trim();
-  if (explicit) return explicit;
-
-  // Aus Service-Account-JSON ableiten wenn vorhanden
-  const saJson = (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
-  if (saJson) {
-    try {
-      const sa = JSON.parse(saJson);
-      const projectId = sa.project_id || '';
-      if (projectId) return `${projectId}.firebasestorage.app`;
-    } catch (_) { /* ignore */ }
-  }
-  return '';
-}
-
-/**
- * Lädt einen Buffer in Firebase Storage hoch und gibt die öffentliche URL zurück.
- * Wirft einen Fehler wenn Firebase Admin nicht initialisiert ist.
- */
-async function uploadBufferToFirebaseStorage({ buffer, filename, mimetype, folder = 'uploads' }) {
-  if (!firebaseAdmin) {
-    throw new Error('Firebase Admin nicht initialisiert — FIREBASE_SERVICE_ACCOUNT_JSON setzen.');
-  }
-
-  const bucketName = getStorageBucket();
-  if (!bucketName) {
-    throw new Error(
-      'FIREBASE_STORAGE_BUCKET nicht konfiguriert. ' +
-      'Setze FIREBASE_STORAGE_BUCKET=<projectId>.firebasestorage.app in den Umgebungsvariablen.'
-    );
-  }
-
-  const bucket = firebaseAdmin.storage().bucket(bucketName);
-  const destination = `${folder}/${filename}`;
-  const file = bucket.file(destination);
-
-  await file.save(buffer, {
-    metadata: { contentType: mimetype },
-    resumable: false,
-  });
-
-  // Datei öffentlich lesbar machen
-  await file.makePublic();
-
-  const publicUrl = `https://storage.googleapis.com/${bucketName}/${destination}`;
-  return publicUrl;
-}
-
 const databaseUrl = (process.env.DATABASE_URL || '').trim();
 const useDatabaseSsl = /render\.com/i.test(databaseUrl);
 const prismaPool = new Pool({
   connectionString: databaseUrl,
   ssl: useDatabaseSsl ? { rejectUnauthorized: false } : undefined,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  query_timeout: 15000,
+  statement_timeout: 15000,
 });
-const prismaAdapter = new PrismaPg(prismaPool);
+
+// Retry logic for Prisma connection
+let prismaRetries = 0;
+const MAX_RETRIES = 3;
+let prisma = null;
+
+async function initializePrisma() {
+  try {
+    const prismaAdapter = new PrismaPg(prismaPool);
+    prisma = new PrismaClient({ 
+      adapter: prismaAdapter, 
+      log: ['error'],
+      errorFormat: 'pretty',
+    });
+    // Test connection
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ Prisma Client initialisiert & Datenbankverbindung geprüft');
+    prismaRetries = 0;
+    return prisma;
+  } catch (err) {
+    if (prismaRetries < MAX_RETRIES) {
+      prismaRetries++;
+      console.warn(`⚠️  Prisma-Verbindung fehlgeschlagen (Versuch ${prismaRetries}/${MAX_RETRIES}): ${err.message}`);
+      await new Promise(resolve => setTimeout(resolve, 2000 * prismaRetries));
+      return initializePrisma();
+    } else {
+      console.error(`❌ Prisma-Verbindung nach ${MAX_RETRIES} Versuchen fehlgeschlagen. In-Memory-Fallback wird verwendet.`);
+      return null;
+    }
+  }
+}
+
 const app = express();
-const prisma = new PrismaClient({ adapter: prismaAdapter, log: ['error'] });
 const PORT = Number.parseInt(process.env.PORT || '3000', 10);
 const backendApiToken = (process.env.BACKEND_API_TOKEN || '').trim();
 const requireAuthForWrites =
@@ -502,8 +496,7 @@ async function verifyFirebaseIdToken(req) {
 
 // Middleware: if FIREBASE_REQUIRE_AUTH=1 AND Firebase Admin is configured,
 // reject write requests whose token does not match the acting userId.
-// Default is '1' (auth enforced) — set FIREBASE_REQUIRE_AUTH=0 only for local dev without Firebase.
-const firebaseRequireAuth = (process.env.FIREBASE_REQUIRE_AUTH || '1') === '1';
+const firebaseRequireAuth = (process.env.FIREBASE_REQUIRE_AUTH || '0') === '1';
 
 async function firebaseAuthMiddleware(req, res, next) {
   if (!firebaseRequireAuth || !firebaseAdmin || !WRITE_METHODS.has(req.method)) {
@@ -519,15 +512,14 @@ async function firebaseAuthMiddleware(req, res, next) {
 
 // Middleware
 app.use(firebaseAuthMiddleware);
-
-// Security headers via helmet (HSTS, CSP, X-Content-Type-Options, etc.)
-// Content-Security-Policy ist für eine reine JSON-API irrelevant — abschalten.
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-  }),
-);
+app.use(async (req, res, next) => {
+  // Baseline hardening headers for API traffic.
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
 
 app.use(
   cors({
@@ -927,6 +919,9 @@ const parentProfiles = [
     childAges: ['3-5', '6-9'],
     familyForm: 'Kernfamilie',
     verificationLevel: 'recommended',
+    phoneVerified: true,
+    identityVerified: true,
+    moderationChecked: true,
   },
   {
     id: 'p2',
@@ -943,6 +938,9 @@ const parentProfiles = [
     childAges: ['6-9', '10-13'],
     familyForm: 'Alleinerziehend',
     verificationLevel: 'checked',
+    phoneVerified: true,
+    identityVerified: false,
+    moderationChecked: true,
   },
 ];
 
@@ -950,7 +948,76 @@ const parentMatchingActions = [];
 const parentMatchingMessages = [];
 const parentMatchingAllowedActions = new Set(['like', 'report', 'block']);
 const parentMatchingMessageSubscribers = new Map();
+const parentMatchingOtpStore = new Map();
+const parentMatchingOtpRateLimit = new Map();
 let parentMatchingSchemaEnsured = false;
+
+const otpTtlMs = Number.parseInt(process.env.PARENT_MATCHING_OTP_TTL_MS || `${10 * 60 * 1000}`, 10);
+const otpMaxAttempts = Number.parseInt(process.env.PARENT_MATCHING_OTP_MAX_ATTEMPTS || '5', 10);
+const otpRateWindowMs = Number.parseInt(
+  process.env.PARENT_MATCHING_OTP_RATE_WINDOW_MS || `${10 * 60 * 1000}`,
+  10,
+);
+const otpRateMax = Number.parseInt(process.env.PARENT_MATCHING_OTP_RATE_MAX || '3', 10);
+const allowDevOtpEcho = (process.env.ALLOW_DEV_OTP_ECHO || '1') === '1' && !isProduction;
+
+function redactSensitiveString(value) {
+  const input = (value || '').toString();
+  if (!input) return input;
+  return input
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[EMAIL]')
+    .replace(/\b\+?\d[\d\s()./-]{6,}\d\b/g, '[PHONE]')
+    .replace(/\b\d{5}\b/g, '[PLZ]')
+    .replace(/\b-?\d{1,3}\.\d{4,}\s*,\s*-?\d{1,3}\.\d{4,}\b/g, '[COORDS]');
+}
+
+function sanitizeLogMeta(input) {
+  if (input == null) return input;
+  if (typeof input === 'string') return redactSensitiveString(input);
+  if (Array.isArray(input)) return input.map(item => sanitizeLogMeta(item));
+  if (typeof input === 'object') {
+    const out = {};
+    for (const [key, value] of Object.entries(input)) {
+      const lower = key.toLowerCase();
+      if (
+        lower.includes('token') ||
+        lower.includes('secret') ||
+        lower.includes('password') ||
+        lower.includes('authorization') ||
+        lower.includes('signature')
+      ) {
+        out[key] = '[REDACTED]';
+        continue;
+      }
+      out[key] = sanitizeLogMeta(value);
+    }
+    return out;
+  }
+  return input;
+}
+
+function logSafeError(route, error, meta = {}) {
+  const payload = {
+    route,
+    error: redactSensitiveString(error?.message || String(error || 'unknown_error')),
+    meta: sanitizeLogMeta(meta),
+  };
+  console.error('API_ERROR', JSON.stringify(payload));
+}
+
+function maskPhone(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (digits.length < 4) return '***';
+  return `***${digits.slice(-2)}`;
+}
+
+function hashOtpForUser(userId, code) {
+  const secret = (process.env.BACKEND_API_TOKEN || process.env.STRIPE_WEBHOOK_SECRET || 'otp-fallback-secret').toString();
+  return crypto
+    .createHmac('sha256', secret)
+    .update(`${userId}:${code}`, 'utf8')
+    .digest('hex');
+}
 
 async function ensureParentMatchingSchemaReady() {
   if (parentMatchingSchemaEnsured) {
@@ -974,6 +1041,9 @@ async function ensureParentMatchingSchemaReady() {
       "childAges" TEXT[] DEFAULT ARRAY[]::TEXT[],
       "familyForm" TEXT NOT NULL,
       "verificationLevel" TEXT NOT NULL DEFAULT 'basic',
+      "phoneVerified" BOOLEAN NOT NULL DEFAULT false,
+      "identityVerified" BOOLEAN NOT NULL DEFAULT false,
+      "moderationChecked" BOOLEAN NOT NULL DEFAULT false,
       "isActive" BOOLEAN NOT NULL DEFAULT true,
       "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -993,6 +1063,9 @@ async function ensureParentMatchingSchemaReady() {
     ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION,
     ADD COLUMN IF NOT EXISTS "familyForm" TEXT,
     ADD COLUMN IF NOT EXISTS "verificationLevel" TEXT DEFAULT 'basic',
+    ADD COLUMN IF NOT EXISTS "phoneVerified" BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS "identityVerified" BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS "moderationChecked" BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN NOT NULL DEFAULT true,
     ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
@@ -1104,6 +1177,9 @@ function mapParentMatchingProfileForClient(profile) {
     childAges: Array.isArray(profile.childAges) ? profile.childAges : [],
     familyForm: profile.familyForm || 'Kernfamilie',
     verificationLevel: profile.verificationLevel || 'basic',
+    phoneVerified: profile.phoneVerified === true,
+    identityVerified: profile.identityVerified === true,
+    moderationChecked: profile.moderationChecked === true,
   };
 }
 
@@ -1138,6 +1214,9 @@ async function ensureParentMatchingProfilesSeeded() {
           childAges: Array.isArray(profile.childAges) ? profile.childAges : [],
           familyForm: profile.familyForm || 'Kernfamilie',
           verificationLevel: profile.verificationLevel || 'basic',
+          phoneVerified: profile.phoneVerified === true,
+          identityVerified: profile.identityVerified === true,
+          moderationChecked: profile.moderationChecked === true,
           isActive: true,
         },
         create: {
@@ -1157,6 +1236,9 @@ async function ensureParentMatchingProfilesSeeded() {
           childAges: Array.isArray(profile.childAges) ? profile.childAges : [],
           familyForm: profile.familyForm || 'Kernfamilie',
           verificationLevel: profile.verificationLevel || 'basic',
+          phoneVerified: profile.phoneVerified === true,
+          identityVerified: profile.identityVerified === true,
+          moderationChecked: profile.moderationChecked === true,
           isActive: true,
         },
       }),
@@ -1231,6 +1313,9 @@ async function ensureParentMatchingProfileForUser(userId) {
       childAges: ['3-5', '6-9'],
       familyForm: 'Kernfamilie',
       verificationLevel: 'basic',
+      phoneVerified: false,
+      identityVerified: false,
+      moderationChecked: false,
       isActive: true,
     },
   });
@@ -1441,7 +1526,62 @@ function ensureParentMatchingProfileForUserInMemory(userId) {
     childAges: ['3-5', '6-9'],
     familyForm: 'Kernfamilie',
     verificationLevel: 'basic',
+    phoneVerified: false,
+    identityVerified: false,
+    moderationChecked: false,
   });
+}
+
+function getMyParentMatchingProfileInMemory(userId) {
+  if (!userId) return null;
+  return parentProfiles.find(item => item.ownerUserId === userId) || null;
+}
+
+function upsertMyParentMatchingProfileInMemory({
+  userId,
+  name,
+  age,
+  city,
+  latitude,
+  longitude,
+  bio,
+  interests,
+  languages,
+  valuesFocus,
+  childAges,
+  familyForm,
+}) {
+  const existingIndex = parentProfiles.findIndex(item => item.ownerUserId === userId);
+  const existing = existingIndex >= 0 ? parentProfiles[existingIndex] : null;
+  const next = {
+    id: existing?.id || `self-${userId}`,
+    ownerUserId: userId,
+    name,
+    age,
+    city,
+    latitude,
+    longitude,
+    bio,
+    interests,
+    languages,
+    valuesFocus,
+    childAges,
+    familyForm,
+    verificationLevel: existing?.verificationLevel || 'basic',
+    phoneVerified: existing?.phoneVerified === true,
+    identityVerified: existing?.identityVerified === true,
+    moderationChecked: existing?.moderationChecked === true,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    createdAt: existing?.createdAt || new Date().toISOString(),
+  };
+
+  if (existingIndex >= 0) {
+    parentProfiles[existingIndex] = next;
+  } else {
+    parentProfiles.unshift(next);
+  }
+  return next;
 }
 
 const familyContacts = [
@@ -3322,6 +3462,119 @@ app.post('/photos', (req, res) => {
 });
 
 // 12. Parent matching
+app.post('/parent-matching/verification/request-otp', async (req, res) => {
+  const userId = (req.body.userId || '').toString().trim();
+  const phoneNumber = (req.body.phoneNumber || '').toString().trim();
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId fehlt' });
+  }
+  const digits = phoneNumber.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 15) {
+    return res.status(400).json({ error: 'Ungueltige Telefonnummer' });
+  }
+
+  const now = Date.now();
+  const bucket = parentMatchingOtpRateLimit.get(userId);
+  if (!bucket || now - bucket.start > otpRateWindowMs) {
+    parentMatchingOtpRateLimit.set(userId, { start: now, count: 1 });
+  } else {
+    bucket.count += 1;
+    if (bucket.count > otpRateMax) {
+      return res.status(429).json({ error: 'Zu viele OTP-Anfragen. Bitte spaeter erneut versuchen.' });
+    }
+  }
+
+  const code = `${Math.floor(100000 + Math.random() * 900000)}`;
+  const expiresAt = now + otpTtlMs;
+  parentMatchingOtpStore.set(userId, {
+    codeHash: hashOtpForUser(userId, code),
+    expiresAt,
+    attempts: 0,
+    phoneNumber: digits,
+  });
+
+  // In Produktion sollte der OTP-Code ueber einen SMS-Provider zugestellt werden.
+  // Dieser Endpoint gibt den Code nur in Entwicklungsumgebungen zurueck.
+  return res.status(202).json({
+    ok: true,
+    channel: 'sms',
+    phoneHint: maskPhone(digits),
+    expiresInSec: Math.floor(otpTtlMs / 1000),
+    ...(allowDevOtpEcho ? { devCode: code } : {}),
+  });
+});
+
+app.post('/parent-matching/verification/confirm-otp', async (req, res) => {
+  const userId = (req.body.userId || '').toString().trim();
+  const code = (req.body.code || '').toString().trim();
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId fehlt' });
+  }
+  if (!/^\d{6}$/.test(code)) {
+    return res.status(400).json({ error: 'OTP-Code ungueltig' });
+  }
+
+  const stored = parentMatchingOtpStore.get(userId);
+  if (!stored) {
+    return res.status(404).json({ error: 'Keine offene OTP-Anfrage gefunden' });
+  }
+  if (Date.now() > stored.expiresAt) {
+    parentMatchingOtpStore.delete(userId);
+    return res.status(410).json({ error: 'OTP-Code abgelaufen' });
+  }
+  if ((stored.attempts || 0) >= otpMaxAttempts) {
+    parentMatchingOtpStore.delete(userId);
+    return res.status(429).json({ error: 'Zu viele Fehlversuche. Bitte neuen OTP anfordern.' });
+  }
+
+  stored.attempts = (stored.attempts || 0) + 1;
+  parentMatchingOtpStore.set(userId, stored);
+
+  const codeHash = hashOtpForUser(userId, code);
+  if (codeHash !== stored.codeHash) {
+    return res.status(401).json({ error: 'OTP-Code falsch' });
+  }
+
+  parentMatchingOtpStore.delete(userId);
+
+  try {
+    await ensureParentMatchingSchemaReady();
+    await ensureParentMatchingProfileForUser(userId);
+    const updated = await prisma.parentMatchingProfile.updateMany({
+      where: {
+        ownerUserId: userId,
+        isActive: true,
+      },
+      data: {
+        phoneVerified: true,
+        verificationLevel: 'checked',
+        updatedAt: new Date(),
+      },
+    });
+
+    return res.json({
+      ok: true,
+      verified: true,
+      updatedProfiles: updated.count,
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /parent-matching/verification/confirm-otp', error)) {
+      return;
+    }
+    ensureParentMatchingProfileForUserInMemory(userId);
+    const existing = getMyParentMatchingProfileInMemory(userId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Matching-Profil nicht gefunden' });
+    }
+    existing.phoneVerified = true;
+    existing.verificationLevel = 'checked';
+    existing.updatedAt = new Date().toISOString();
+    return res.json({ ok: true, verified: true, updatedProfiles: 1 });
+  }
+});
+
 app.get('/parent-matching/my-profile', async (req, res) => {
   const userId = (req.query.userId || '').toString().trim();
   if (!userId) {
@@ -3335,8 +3588,14 @@ app.get('/parent-matching/my-profile', async (req, res) => {
     }
     return res.json({ item: mapParentMatchingProfileForClient(profile) });
   } catch (error) {
-    console.error('GET /parent-matching/my-profile failed:', error?.message || error);
-    return res.status(500).json({ error: 'Matching-Profil konnte nicht geladen werden' });
+    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/my-profile', error)) {
+      return;
+    }
+    const profile = getMyParentMatchingProfileInMemory(userId);
+    if (!profile) {
+      return res.status(404).json({ error: 'Matching-Profil nicht gefunden' });
+    }
+    return res.json({ item: mapParentMatchingProfileForClient(profile) });
   }
 });
 
@@ -3396,7 +3655,6 @@ app.post('/parent-matching/my-profile', async (req, res) => {
         valuesFocus,
         childAges,
         familyForm,
-        verificationLevel: 'basic',
         isActive: true,
       },
       create: {
@@ -3414,14 +3672,33 @@ app.post('/parent-matching/my-profile', async (req, res) => {
         childAges,
         familyForm,
         verificationLevel: 'basic',
+        phoneVerified: false,
+        identityVerified: false,
+        moderationChecked: false,
         isActive: true,
       },
     });
 
     return res.status(201).json({ item: mapParentMatchingProfileForClient(profile) });
   } catch (error) {
-    console.error('POST /parent-matching/my-profile failed:', error?.message || error);
-    return res.status(500).json({ error: 'Matching-Profil konnte nicht gespeichert werden' });
+    if (respondWithStrictPersistenceError(res, 'POST /parent-matching/my-profile', error)) {
+      return;
+    }
+    const profile = upsertMyParentMatchingProfileInMemory({
+      userId,
+      name,
+      age,
+      city,
+      latitude,
+      longitude,
+      bio,
+      interests,
+      languages,
+      valuesFocus,
+      childAges,
+      familyForm,
+    });
+    return res.status(201).json({ item: mapParentMatchingProfileForClient(profile) });
   }
 });
 
@@ -3449,8 +3726,17 @@ app.get('/parent-matching/profiles', async (req, res) => {
       profiles: profiles.map(mapParentMatchingProfileForClient),
     });
   } catch (error) {
-    console.error('GET /parent-matching/profiles failed:', error?.message || error);
-    return res.status(500).json({ error: 'Profile konnten nicht geladen werden' });
+    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/profiles', error)) {
+      return;
+    }
+    const ownProfile = getMyParentMatchingProfileInMemory(userId);
+    if (!ownProfile) {
+      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
+    }
+    const profiles = parentProfiles
+      .filter(item => item.isActive !== false && item.ownerUserId !== userId)
+      .map(mapParentMatchingProfileForClient);
+    return res.json({ profiles });
   }
 });
 
@@ -3472,8 +3758,15 @@ app.get('/parent-matching/connections', async (req, res) => {
 
     return res.json({ profileIds: connectedProfileIds });
   } catch (error) {
-    console.error('GET /parent-matching/connections failed:', error?.message || error);
-    return res.status(500).json({ error: 'Verbindungen konnten nicht geladen werden' });
+    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/connections', error)) {
+      return;
+    }
+    const ownProfile = getMyParentMatchingProfileInMemory(userId);
+    if (!ownProfile) {
+      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
+    }
+    const connectedProfileIds = getMutualConnectionProfileIdsInMemory(familyId, userId);
+    return res.json({ profileIds: connectedProfileIds });
   }
 });
 
@@ -3540,8 +3833,33 @@ app.post('/parent-matching/actions', async (req, res) => {
         : (actionValue === 'like' ? 'pending' : 'none'),
     });
   } catch (error) {
-    console.error('POST /parent-matching/actions failed:', error?.message || error);
-    return res.status(500).json({ error: 'Matching-Aktion konnte nicht gespeichert werden' });
+    if (respondWithStrictPersistenceError(res, 'POST /parent-matching/actions', error)) {
+      return;
+    }
+    ensureParentMatchingProfileForUserInMemory(actorUserId);
+    const targetProfile = parentProfiles.find(item => item.id === profileIdInput);
+    if (!targetProfile) {
+      return res.status(404).json({ error: 'Profil nicht gefunden' });
+    }
+    const createdAt = createdAtInput ? new Date(createdAtInput) : new Date();
+    const createdAction = {
+      id: generateId('pm-action'),
+      familyId,
+      profileId: targetProfile.id,
+      action: actionValue,
+      userId: actorUserId,
+      createdAt: Number.isNaN(createdAt.getTime()) ? new Date().toISOString() : createdAt.toISOString(),
+    };
+    parentMatchingActions.unshift(createdAction);
+    const mutualProfileIds = getMutualConnectionProfileIdsInMemory(familyId, actorUserId);
+    const connected = actionValue === 'like' && mutualProfileIds.includes(targetProfile.id);
+    return res.status(201).json({
+      item: createdAction,
+      connected,
+      matchState: connected
+        ? 'matched'
+        : (actionValue === 'like' ? 'pending' : 'none'),
+    });
   }
 });
 
@@ -3598,8 +3916,43 @@ app.get('/parent-matching/messages/stream', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('GET /parent-matching/messages/stream failed:', error?.message || error);
-    return res.status(500).json({ error: 'Live-Stream konnte nicht gestartet werden' });
+    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/messages/stream', error)) {
+      return;
+    }
+    const ownProfile = getMyParentMatchingProfileInMemory(userId);
+    if (!ownProfile) {
+      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
+    }
+    const connectedProfileIds = getMutualConnectionProfileIdsInMemory(familyId, userId);
+    if (!connectedProfileIds.includes(profileId)) {
+      return res.status(403).json({ error: 'Chat erst nach beidseitigem Match verfügbar' });
+    }
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+    res.write('event: ready\ndata: {"type":"ready"}\n\n');
+    const key = parentMatchingStreamKey(familyId, profileId);
+    if (!parentMatchingMessageSubscribers.has(key)) {
+      parentMatchingMessageSubscribers.set(key, new Set());
+    }
+    const subscribers = parentMatchingMessageSubscribers.get(key);
+    subscribers.add(res);
+    const heartbeat = setInterval(() => {
+      res.write('event: ping\ndata: {"type":"ping"}\n\n');
+    }, 25000);
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      const current = parentMatchingMessageSubscribers.get(key);
+      if (!current) return;
+      current.delete(res);
+      if (current.size === 0) {
+        parentMatchingMessageSubscribers.delete(key);
+      }
+    });
   }
 });
 
@@ -3646,8 +3999,22 @@ app.get('/parent-matching/messages', async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error('GET /parent-matching/messages failed:', error?.message || error);
-    return res.status(500).json({ error: 'Nachrichten konnten nicht geladen werden' });
+    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/messages', error)) {
+      return;
+    }
+    const ownProfile = getMyParentMatchingProfileInMemory(userId);
+    if (!ownProfile) {
+      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
+    }
+    const connectedProfileIds = getMutualConnectionProfileIdsInMemory(familyId, userId);
+    if (!connectedProfileIds.includes(profileId)) {
+      return res.status(403).json({ error: 'Chat erst nach beidseitigem Match verfügbar' });
+    }
+    const items = parentMatchingMessages
+      .filter(item => item.familyId === familyId && item.profileId === profileId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .slice(0, 300);
+    return res.json({ items });
   }
 });
 
@@ -3701,20 +4068,30 @@ app.post('/parent-matching/messages', async (req, res) => {
     publishParentMatchingMessage(item);
     return res.status(201).json({ item });
   } catch (error) {
-    console.error('POST /parent-matching/messages failed:', error?.message || error);
-    return res.status(500).json({ error: 'Nachricht konnte nicht gesendet werden' });
+    if (respondWithStrictPersistenceError(res, 'POST /parent-matching/messages', error)) {
+      return;
+    }
+    const ownProfile = getMyParentMatchingProfileInMemory(authorUserId);
+    if (!ownProfile) {
+      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
+    }
+    const connectedProfileIds = getMutualConnectionProfileIdsInMemory(familyId, authorUserId);
+    if (!connectedProfileIds.includes(profileId)) {
+      return res.status(403).json({ error: 'Chat erst nach beidseitigem Match verfügbar' });
+    }
+    const item = {
+      id: generateId('pm-msg'),
+      familyId,
+      profileId,
+      authorUserId,
+      authorName,
+      content,
+      createdAt: new Date().toISOString(),
+    };
+    parentMatchingMessages.push(item);
+    publishParentMatchingMessage(item);
+    return res.status(201).json({ item });
   }
-});
-
-// 13. Family circle
-app.get('/family/contacts', (req, res) => {
-  const userId = req.query.userId;
-  if (!userId) {
-    return res.json({ contacts: familyContacts });
-  }
-
-  const filtered = familyContacts.filter(c => c.userId !== userId);
-  res.json({ contacts: filtered });
 });
 
 app.get('/family/requests', async (req, res) => {
@@ -5148,7 +5525,11 @@ app.post('/payments/stripe/initiate', async (req, res) => {
       error: 'Stripe ist nicht konfiguriert.',
     });
   } catch (error) {
-    console.error('Stripe PaymentIntent creation failed:', error?.message || error);
+    logSafeError('POST /payments/stripe/initiate failed', error, {
+      eventId,
+      hosterId,
+      amount,
+    });
     return res.status(500).json({
       error: `Stripe-Initialisierung fehlgeschlagen: ${error?.message || 'Unknown error'}`,
     });
@@ -5180,7 +5561,9 @@ app.get('/payments/stripe/confirm/:intentId', async (req, res) => {
       error: 'Stripe ist nicht konfiguriert.',
     });
   } catch (error) {
-    console.error('Stripe PaymentIntent retrieval failed:', error?.message || error);
+    logSafeError('GET /payments/stripe/confirm/:intentId failed', error, {
+      intentId,
+    });
     return res.status(500).json({
       error: `Stripe Abruf fehlgeschlagen: ${error?.message || 'Unknown error'}`,
     });
@@ -5732,10 +6115,11 @@ async function sendPushToUser(userId, { title, body, data = {} }) {
   }
 }
 
-// ── Image Upload → Firebase Storage ─────────────────────────────────────────
+// ── Image Upload ─────────────────────────────────────────────────────────────
+app.use('/uploads', express.static(uploadsDir));
 
 app.post('/uploads/image', (req, res) => {
-  upload.single('image')(req, res, async err => {
+  upload.single('image')(req, res, err => {
     if (err) {
       return res.status(400).json({ error: err.message || 'Bild-Upload fehlgeschlagen' });
     }
@@ -5744,24 +6128,11 @@ app.post('/uploads/image', (req, res) => {
       return res.status(400).json({ error: 'Kein Bild empfangen' });
     }
 
-    try {
-      const ext = path.extname(req.file.originalname).toLowerCase();
-      const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+    const publicBase = (process.env.PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
+    const relPath = `/uploads/${req.file.filename}`;
+    const url = publicBase ? `${publicBase}${relPath}` : relPath;
 
-      const url = await uploadBufferToFirebaseStorage({
-        buffer: req.file.buffer,
-        filename,
-        mimetype: req.file.mimetype,
-        folder: 'uploads',
-      });
-
-      return res.status(201).json({ url, filename, size: req.file.size });
-    } catch (uploadErr) {
-      console.error('Firebase Storage Upload fehlgeschlagen:', uploadErr?.message || uploadErr);
-      return res.status(503).json({
-        error: 'Bild-Upload fehlgeschlagen. Bitte später erneut versuchen.',
-      });
-    }
+    return res.status(201).json({ url, filename: req.file.filename, size: req.file.size });
   });
 });
 
@@ -7943,384 +8314,23 @@ app.delete('/api/treasures/:id', async (req, res) => {
   }
 });
 
-
-// ============================================================================
-// SPIELFREUNDE & REFERRAL ENDPOINTS
-// ============================================================================
-
-// In-memory stores (Prisma migration follows later)
-const spielfreundeProfiles = [];
-const referralTracker = new Map(); // referralCode -> { ownerId, invitedUsers: [], coins: 0 }
-
-/**
- * POST /api/spielfreunde/profiles
- * Create or update a family match profile
- */
-app.post("/api/spielfreunde/profiles", (req, res) => {
-  const { userId, displayName, district, children, languages, familyForm, values, lookingFor, availability, specials, bio } = req.body;
-  if (!userId || !displayName || !district) {
-    return res.status(400).json({ error: "userId, displayName, district erforderlich" });
-  }
-  const existing = spielfreundeProfiles.findIndex(p => p.userId === userId);
-  const profile = {
-    id: existing >= 0 ? spielfreundeProfiles[existing].id : generateId("sf"),
-    userId,
-    displayName: String(displayName).slice(0, 50),
-    district: String(district).slice(0, 50),
-    children: Array.isArray(children) ? children : [],
-    languages: Array.isArray(languages) ? languages : ["de"],
-    familyForm: String(familyForm || "kernfamilie"),
-    values: Array.isArray(values) ? values : [],
-    lookingFor: Array.isArray(lookingFor) ? lookingFor : [],
-    availability: String(availability || "flexibel"),
-    specials: Array.isArray(specials) ? specials : [],
-    bio: String(bio || "").slice(0, 140),
-    createdAt: existing >= 0 ? spielfreundeProfiles[existing].createdAt : new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  if (existing >= 0) { spielfreundeProfiles[existing] = profile; }
-  else { spielfreundeProfiles.push(profile); }
-  res.status(201).json({ item: profile });
-});
-
-/**
- * GET /api/spielfreunde/profiles
- * List family profiles (with optional filters)
- */
-app.get("/api/spielfreunde/profiles", (req, res) => {
-  let results = [...spielfreundeProfiles];
-  const { district, familyForm, language, userId } = req.query;
-  if (userId) results = results.filter(p => p.userId !== userId);
-  if (district) results = results.filter(p => p.district.toLowerCase().includes(district.toLowerCase()));
-  if (familyForm) results = results.filter(p => p.familyForm === familyForm);
-  if (language) results = results.filter(p => p.languages.includes(language));
-  res.json({ items: results, total: results.length });
-});
-
-/**
- * GET /api/spielfreunde/waitlist-count
- * Returns how many families are in the waitlist for a district
- */
-app.get("/api/spielfreunde/waitlist-count", (req, res) => {
-  const { district } = req.query;
-  let count = spielfreundeProfiles.length;
-  if (district) {
-    count = spielfreundeProfiles.filter(p => p.district.toLowerCase().includes(district.toLowerCase())).length;
-  }
-  const threshold = 20;
-  const remaining = Math.max(0, threshold - count);
-  res.json({ total: count, threshold, remaining, progress: Math.min(1, count / threshold) });
-});
-
-/**
- * POST /api/referral/register
- * Track a successful referral (called when invited user registers)
- */
-app.post("/api/referral/register", (req, res) => {
-  const { referralCode, newUserId, newUserName } = req.body;
-  if (!referralCode || !newUserId) {
-    return res.status(400).json({ error: "referralCode und newUserId erforderlich" });
-  }
-  let tracker = referralTracker.get(referralCode);
-  if (!tracker) {
-    tracker = { ownerId: null, invitedUsers: [], coins: 0 };
-    referralTracker.set(referralCode, tracker);
-  }
-  if (tracker.invitedUsers.some(u => u.userId === newUserId)) {
-    return res.status(409).json({ error: "User bereits registriert" });
-  }
-  tracker.invitedUsers.push({ userId: newUserId, name: newUserName || "User", registeredAt: new Date().toISOString() });
-  tracker.coins += 1;
-  res.status(201).json({ item: { referralCode, totalCoins: tracker.coins, totalInvites: tracker.invitedUsers.length } });
-});
-
-/**
- * GET /api/referral/status/:code
- * Get referral stats for a code
- */
-app.get("/api/referral/status/:code", (req, res) => {
-  const tracker = referralTracker.get(req.params.code);
-  if (!tracker) {
-    return res.json({ referralCode: req.params.code, totalCoins: 0, totalInvites: 0, invitedUsers: [] });
-  }
-  res.json({ referralCode: req.params.code, totalCoins: tracker.coins, totalInvites: tracker.invitedUsers.length, invitedUsers: tracker.invitedUsers });
-});
-
-/**
- * POST /api/referral/redeem
- * Redeem coins for premium (5 coins = 1 month)
- */
-app.post("/api/referral/redeem", (req, res) => {
-  const { referralCode, coinsToSpend } = req.body;
-  if (!referralCode || !coinsToSpend) {
-    return res.status(400).json({ error: "referralCode und coinsToSpend erforderlich" });
-  }
-  const tracker = referralTracker.get(referralCode);
-  if (!tracker || tracker.coins < coinsToSpend) {
-    return res.status(409).json({ error: "Nicht genug Coins" });
-  }
-  tracker.coins -= coinsToSpend;
-  res.json({ success: true, remainingCoins: tracker.coins });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// COMMUNITY EVENTS — Eltern & Partner koennen Events eintragen
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// GET /api/events — Events nach Stadt laden
-app.get('/api/events', async (req, res) => {
-  const city = (req.query.city || '').toString().trim().toLowerCase();
-  const limit = Math.min(Math.max(Number.parseInt(req.query.limit || '20', 10), 1), 50);
-  const category = (req.query.category || '').toString().trim();
-
-  try {
-    const where = {
-      isHidden: false,
-      eventDate: { gte: new Date() },
-      ...(city ? { city: { contains: city, mode: 'insensitive' } } : {}),
-      ...(category ? { category } : {}),
-    };
-
-    const events = await prisma.communityEvent.findMany({
-      where,
-      orderBy: [{ isVerified: 'desc' }, { eventDate: 'asc' }],
-      take: limit,
-    });
-
-    const result = events.map(e => ({
-      ...e,
-      ageGroups: safeJsonParse(e.ageGroups, []),
-      accessibility: safeJsonParse(e.accessibility, []),
-    }));
-
-    return res.json(result);
-  } catch (error) {
-    console.error('GET /api/events error:', error.message);
-    return res.json([]);
-  }
-});
-
-// POST /api/events — Neues Event erstellen
-app.post('/api/events', async (req, res) => {
-  const body = req.body;
-
-  // Pflichtfelder Validierung
-  if (!body.title || !body.location || !body.eventDate || !body.creatorId) {
-    return res.status(400).json({ error: 'title, location, eventDate und creatorId sind Pflichtfelder.' });
-  }
-
-  // Rate-Limit: Max 3 pro Tag pro User
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  try {
-    const todayCount = await prisma.communityEvent.count({
-      where: {
-        creatorId: body.creatorId,
-        createdAt: { gte: today },
-      },
-    });
-    if (todayCount >= 3) {
-      return res.status(429).json({ error: 'Tageslimit erreicht (max. 3 Events pro Tag).' });
+// Server starten mit Prisma Initialization
+(async () => {
+  await initializePrisma();
+  app.listen(PORT, '0.0.0.0', () => {
+    if (allowedOrigins.length > 0) {
+      console.log(`🌐 CORS allowlist aktiv (${allowedOrigins.length} Origin(s))`);
+    } else if (isProduction) {
+      console.warn('⚠️ CORS allowlist fehlt in Produktion; Browser-Origin-Requests werden blockiert');
+    } else {
+      console.log('🌐 CORS allowlist nicht gesetzt, alle Origins erlaubt');
     }
-  } catch (_) { /* In-Memory Fallback */ }
-
-  // Spam-Filter: Einfache Keyword-Pruefung
-  const spamKeywords = ['viagra', 'casino', 'crypto', 'mlm', 'schnell reich', 'abnehmen'];
-  const textToCheck = `${body.title} ${body.description}`.toLowerCase();
-  if (spamKeywords.some(kw => textToCheck.includes(kw))) {
-    return res.status(400).json({ error: 'Dein Event wurde als unangemessen erkannt.' });
-  }
-
-  try {
-    const event = await prisma.communityEvent.create({
-      data: {
-        title: body.title.substring(0, 200),
-        description: (body.description || '').substring(0, 1000),
-        category: body.category || 'sonstiges',
-        ageGroups: JSON.stringify(body.ageGroups || ['alle']),
-        venue: body.venue || 'beides',
-        location: body.location.substring(0, 300),
-        city: (body.city || '').substring(0, 100),
-        lat: body.lat || null,
-        lon: body.lon || null,
-        isPrivateAddress: body.isPrivateAddress || false,
-        eventDate: new Date(body.eventDate),
-        eventEndDate: body.eventEndDate ? new Date(body.eventEndDate) : null,
-        isRecurring: body.isRecurring || false,
-        recurringNote: body.recurringNote || null,
-        rainPlan: body.rainPlan || null,
-        price: (body.price || 'kostenlos').substring(0, 50),
-        isFree: body.isFree !== undefined ? body.isFree : true,
-        url: body.url || null,
-        imageUrl: body.imageUrl || null,
-        organizer: (body.organizer || 'Eltern-Tipp').substring(0, 200),
-        creatorType: body.creatorType || 'eltern',
-        contactName: body.contactName || null,
-        contactPhone: body.contactPhone || null,
-        contactEmail: body.contactEmail || null,
-        accessibility: JSON.stringify(body.accessibility || []),
-        eventLanguage: body.eventLanguage || 'de',
-        source: body.source || 'community',
-        isVerified: false,
-        creatorId: body.creatorId,
-      },
-    });
-
-    return res.status(201).json({
-      ...event,
-      ageGroups: safeJsonParse(event.ageGroups, []),
-      accessibility: safeJsonParse(event.accessibility, []),
-    });
-  } catch (error) {
-    console.error('POST /api/events error:', error.message);
-    return res.status(500).json({ error: 'Event konnte nicht erstellt werden.' });
-  }
-});
-
-// POST /api/events/:id/flag — Event melden
-app.post('/api/events/:id/flag', async (req, res) => {
-  const { id } = req.params;
-  const { userId, reason } = req.body;
-
-  if (!userId || !reason) {
-    return res.status(400).json({ error: 'userId und reason sind Pflichtfelder.' });
-  }
-
-  try {
-    // Flag erstellen (unique pro User+Event)
-    await prisma.communityEventFlag.create({
-      data: { eventId: id, userId, reason },
-    });
-
-    // Flag-Count erhoehen
-    const flagCount = await prisma.communityEventFlag.count({ where: { eventId: id } });
-
-    // Auto-Hide bei 3+ Flags
-    await prisma.communityEvent.update({
-      where: { id },
-      data: {
-        flagCount,
-        isHidden: flagCount >= 3,
-      },
-    });
-
-    return res.json({ success: true, flagCount, isHidden: flagCount >= 3 });
-  } catch (error) {
-    if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'Du hast dieses Event bereits gemeldet.' });
+    if (requireAuthForWrites) {
+      console.log('🔐 Write-Auth aktiv (Bearer Token erforderlich)');
+    } else {
+      console.log('🔓 Write-Auth deaktiviert (REQUIRE_AUTH_FOR_WRITES=0)');
     }
-    console.error('POST /api/events/:id/flag error:', error.message);
-    return res.status(500).json({ error: 'Meldung fehlgeschlagen.' });
-  }
-});
-
-// POST /api/events/:id/interest — Interesse zeigen (mit Name + optionaler Nachricht)
-app.post('/api/events/:id/interest', async (req, res) => {
-  const { id } = req.params;
-  const { userId, displayName, message } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'userId ist Pflichtfeld.' });
-  }
-
-  try {
-    await prisma.communityEventInterest.create({
-      data: {
-        eventId: id,
-        userId,
-        displayName: (displayName || 'Elternteil').substring(0, 50),
-        message: message ? message.substring(0, 100) : null,
-      },
-    });
-
-    const interestCount = await prisma.communityEventInterest.count({ where: { eventId: id } });
-
-    await prisma.communityEvent.update({
-      where: { id },
-      data: { interestCount },
-    });
-
-    return res.json({ success: true, interestCount });
-  } catch (error) {
-    if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'Du hast bereits Interesse gezeigt.' });
-    }
-    console.error('POST /api/events/:id/interest error:', error.message);
-    return res.status(500).json({ error: 'Aktion fehlgeschlagen.' });
-  }
-});
-
-// GET /api/events/:id/attendees — Wer ist dabei?
-app.get('/api/events/:id/attendees', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const attendees = await prisma.communityEventInterest.findMany({
-      where: { eventId: id },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-      select: {
-        userId: true,
-        displayName: true,
-        message: true,
-        createdAt: true,
-      },
-    });
-
-    const total = await prisma.communityEventInterest.count({ where: { eventId: id } });
-
-    return res.json({ attendees, total });
-  } catch (error) {
-    console.error('GET /api/events/:id/attendees error:', error.message);
-    return res.json({ attendees: [], total: 0 });
-  }
-});
-
-// DELETE /api/events/:id — Eigenes Event loeschen
-app.delete('/api/events/:id', async (req, res) => {
-  const { id } = req.params;
-  const userId = req.query.userId || req.body?.userId;
-
-  try {
-    const event = await prisma.communityEvent.findUnique({ where: { id } });
-    if (!event) {
-      return res.status(404).json({ error: 'Event nicht gefunden.' });
-    }
-    if (event.creatorId !== userId) {
-      return res.status(403).json({ error: 'Nur der Ersteller kann dieses Event loeschen.' });
-    }
-
-    await prisma.communityEvent.delete({ where: { id } });
-    return res.json({ success: true });
-  } catch (error) {
-    console.error('DELETE /api/events/:id error:', error.message);
-    return res.status(500).json({ error: 'Loeschen fehlgeschlagen.' });
-  }
-});
-
-// Helper: Sicheres JSON-Parsing
-function safeJsonParse(str, fallback) {
-  try {
-    return typeof str === 'string' ? JSON.parse(str) : (str || fallback);
-  } catch (_) {
-    return fallback;
-  }
-}
-
-// Server starten
-app.listen(PORT, '0.0.0.0', () => {
-  if (allowedOrigins.length > 0) {
-    console.log(`🌐 CORS allowlist aktiv (${allowedOrigins.length} Origin(s))`);
-  } else if (isProduction) {
-    console.warn('⚠️ CORS allowlist fehlt in Produktion; Browser-Origin-Requests werden blockiert');
-  } else {
-    console.log('🌐 CORS allowlist nicht gesetzt, alle Origins erlaubt');
-  }
-  if (requireAuthForWrites) {
-    console.log('🔐 Write-Auth aktiv (Bearer Token erforderlich)');
-  } else {
-    console.log('🔓 Write-Auth deaktiviert (REQUIRE_AUTH_FOR_WRITES=0)');
-  }
-  console.log(`✅ Parentpeak Backend läuft auf http://localhost:${PORT}`);
-  console.log(`📍 API verfügbar unter http://localhost:${PORT}/api`);
-});
+    console.log(`✅ Parentpeak Backend läuft auf http://localhost:${PORT}`);
+    console.log(`📍 API verfügbar unter http://localhost:${PORT}/api`);
+  });
+})();

@@ -8,7 +8,7 @@
 ///
 /// Sicherheit:
 ///   - Passwort-Hashing: SHA-256 mit zufälligem Salt (hex)
-///   - Sessions über flutter_secure_storage (verschlüsselt auf iOS Keychain / Android Keystore)
+///   - Sessions über SharedPreferences (für Prod: flutter_secure_storage)
 ///   - Input-Sanitierung vor jeder Datenbankoperation
 
 import 'dart:convert';
@@ -16,10 +16,8 @@ import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:parentpeak/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/config/api_config.dart';
@@ -129,10 +127,6 @@ class AuthService {
   static const _kLocalEmailIndexPrefix = 'pp_local_email_uid_';
   static const _kLocalAuthRecordPrefix = 'pp_local_auth_record_';
 
-  // Verschlüsselter Speicher für die aktive Session.
-  // iOS: Keychain, Android: Keystore-backed custom cipher (flutter_secure_storage v10+).
-  static const _secureStorage = FlutterSecureStorage();
-
   ParentUser? _currentUser;
   ParentUser? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
@@ -184,18 +178,14 @@ class AuthService {
     }
 
     if (kReleaseMode) {
-      await _secureStorage.delete(key: _kUserKey);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kUserKey);
       _currentUser = null;
       return;
     }
 
-    // Sichere Session aus flutter_secure_storage lesen.
-    // Fallback: einmalige Migration aus alten SharedPreferences-Daten.
-    String? raw = await _secureStorage.read(key: _kUserKey);
-    if (raw == null || raw.isEmpty) {
-      raw = await _migrateSessionFromSharedPrefs();
-    }
-
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kUserKey);
     if (raw == null || raw.isEmpty) {
       _currentUser = null;
       return;
@@ -207,27 +197,8 @@ class AuthService {
       );
     } catch (e) {
       _logIgnoredError('AuthService.initialize(): local session unreadable', e);
-      await _secureStorage.delete(key: _kUserKey);
-      _currentUser = null;
-    }
-  }
-
-  /// Einmalige Migration: liest Session aus SharedPreferences, schreibt sie
-  /// in SecureStorage und löscht den alten Eintrag.
-  Future<String?> _migrateSessionFromSharedPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final legacy = prefs.getString(_kUserKey);
-      if (legacy == null || legacy.isEmpty) return null;
-
-      await _secureStorage.write(key: _kUserKey, value: legacy);
       await prefs.remove(_kUserKey);
-      debugPrint(
-          'AuthService: Session von SharedPreferences nach SecureStorage migriert.');
-      return legacy;
-    } catch (e) {
-      _logIgnoredError('AuthService._migrateSessionFromSharedPrefs()', e);
-      return null;
+      _currentUser = null;
     }
   }
 
@@ -256,6 +227,16 @@ class AuthService {
       try {
         final auth = _firebaseAuth;
         if (auth == null) {
+          if (!kReleaseMode) {
+            debugPrint(
+              'AuthService.register(): Firebase auth instance missing, using local fallback in debug.',
+            );
+            return _registerLocal(
+              email: email,
+              password: password,
+              displayName: displayName,
+            );
+          }
           return AuthResult.fail(
             AuthErrorCode.unknown,
             'Firebase ist nicht verfügbar. Bitte später erneut versuchen.',
@@ -280,18 +261,18 @@ class AuthService {
         debugPrint(
           'AuthService.register(): Firebase signup failed. code=${e.code}',
         );
-        // Im Debug-Modus: bei internal-error auf lokalen Fallback wechseln
-        // (typisch wenn Email/Password Auth in Firebase Console nicht aktiviert ist)
-        if (!kReleaseMode && e.code == 'internal-error') {
+        if (_canUseLocalAuthFallbackForFirebase(e)) {
           debugPrint(
-            'AuthService.register(): Firebase internal-error im Debug → lokaler Fallback. '
-            'Tipp: Email/Password Auth in Firebase Console aktivieren.',
+            'AuthService.register(): recoverable Firebase error on debug build, using local fallback. code=${e.code}',
           );
-          // Fall-through zum lokalen Fallback unten
-        } else {
-          final mapped = _mapFirebaseError(e);
-          return mapped;
+          return _registerLocal(
+            email: email,
+            password: password,
+            displayName: displayName,
+          );
         }
+        final mapped = _mapFirebaseError(e);
+        return mapped;
       } catch (e) {
         _logIgnoredError(
           'AuthService.register(): Firebase signup failed',
@@ -299,25 +280,130 @@ class AuthService {
         );
         if (!kReleaseMode) {
           debugPrint(
-            'AuthService.register(): Fehler im Debug → lokaler Fallback.',
+            'AuthService.register(): unknown Firebase error on debug build, using local fallback.',
           );
-          // Fall-through zum lokalen Fallback unten
-        } else {
-          return AuthResult.fail(
-            AuthErrorCode.unknown,
-            'Registrierung ist fehlgeschlagen. Bitte versuche es erneut.',
+          return _registerLocal(
+            email: email,
+            password: password,
+            displayName: displayName,
           );
         }
+        return AuthResult.fail(
+          AuthErrorCode.unknown,
+          'Registrierung ist fehlgeschlagen. Bitte versuche es erneut.',
+        );
       }
     }
 
-    if (kReleaseMode && !_firebaseReady) {
+    if (kReleaseMode) {
       return AuthResult.fail(
         AuthErrorCode.networkError,
         'Login/Registrierung ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.',
       );
     }
 
+    return _registerLocal(
+      email: email,
+      password: password,
+      displayName: displayName,
+    );
+  }
+
+  // ── Login ──────────────────────────────────────────────────────────────────
+
+  Future<AuthResult> login({
+    required String email,
+    required String password,
+  }) async {
+    await _ensureFirebaseInitChecked();
+
+    if (_firebaseReady) {
+      final emailError = _validateEmail(email);
+      if (emailError != null) return emailError;
+
+      if (password.isEmpty) {
+        return AuthResult.fail(
+            AuthErrorCode.wrongPassword, 'Bitte gib dein Passwort ein.');
+      }
+
+      try {
+        final auth = _firebaseAuth;
+        if (auth == null) {
+          if (!kReleaseMode) {
+            debugPrint(
+              'AuthService.login(): Firebase auth instance missing, using local fallback in debug.',
+            );
+            return _loginLocal(email: email, password: password);
+          }
+          return AuthResult.fail(
+            AuthErrorCode.unknown,
+            'Firebase ist nicht verfügbar. Bitte später erneut versuchen.',
+          );
+        }
+
+        final credential = await auth.signInWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
+        );
+
+        final firebaseUser = credential.user;
+        if (firebaseUser == null) {
+          return AuthResult.fail(
+            AuthErrorCode.unknown,
+            'Login ist fehlgeschlagen. Bitte versuche es erneut.',
+          );
+        }
+
+        final user = await _readOrCreateFirebaseUser(firebaseUser);
+        _currentUser = user;
+        await refreshEntitlements();
+        _triggerFcmInit(user.uid);
+        return AuthResult.ok(user);
+      } on FirebaseAuthException catch (e) {
+        debugPrint(
+          'AuthService.login(): Firebase login failed. code=${e.code}',
+        );
+        if (_canUseLocalAuthFallbackForFirebase(e)) {
+          debugPrint(
+            'AuthService.login(): recoverable Firebase error on debug build, using local fallback. code=${e.code}',
+          );
+          return _loginLocal(email: email, password: password);
+        }
+        final mapped = _mapFirebaseError(e);
+        return mapped;
+      } catch (e) {
+        _logIgnoredError(
+          'AuthService.login(): Firebase login failed',
+          e,
+        );
+        if (!kReleaseMode) {
+          debugPrint(
+            'AuthService.login(): unknown Firebase error on debug build, using local fallback.',
+          );
+          return _loginLocal(email: email, password: password);
+        }
+        return AuthResult.fail(
+          AuthErrorCode.unknown,
+          'Login ist fehlgeschlagen. Bitte versuche es erneut.',
+        );
+      }
+    }
+
+    if (kReleaseMode) {
+      return AuthResult.fail(
+        AuthErrorCode.networkError,
+        'Login/Registrierung ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.',
+      );
+    }
+
+    return _loginLocal(email: email, password: password);
+  }
+
+  Future<AuthResult> _registerLocal({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
     final emailError = _validateEmail(email);
     if (emailError != null) return emailError;
 
@@ -359,94 +445,15 @@ class AuthService {
         'hash': _hashPassword(password: password, salt: salt),
       }),
     );
-    await _persistSession(user);
+    await _persistSession(prefs, user);
     _currentUser = user;
     return AuthResult.ok(user);
   }
 
-  // ── Login ──────────────────────────────────────────────────────────────────
-
-  Future<AuthResult> login({
+  Future<AuthResult> _loginLocal({
     required String email,
     required String password,
   }) async {
-    await _ensureFirebaseInitChecked();
-
-    if (_firebaseReady) {
-      final emailError = _validateEmail(email);
-      if (emailError != null) return emailError;
-
-      if (password.isEmpty) {
-        return AuthResult.fail(
-            AuthErrorCode.wrongPassword, 'Bitte gib dein Passwort ein.');
-      }
-
-      try {
-        final auth = _firebaseAuth;
-        if (auth == null) {
-          return AuthResult.fail(
-            AuthErrorCode.unknown,
-            'Firebase ist nicht verfügbar. Bitte später erneut versuchen.',
-          );
-        }
-
-        final credential = await auth.signInWithEmailAndPassword(
-          email: email.trim(),
-          password: password,
-        );
-
-        final firebaseUser = credential.user;
-        if (firebaseUser == null) {
-          return AuthResult.fail(
-            AuthErrorCode.unknown,
-            'Login ist fehlgeschlagen. Bitte versuche es erneut.',
-          );
-        }
-
-        final user = await _readOrCreateFirebaseUser(firebaseUser);
-        _currentUser = user;
-        await refreshEntitlements();
-        _triggerFcmInit(user.uid);
-        return AuthResult.ok(user);
-      } on FirebaseAuthException catch (e) {
-        debugPrint(
-          'AuthService.login(): Firebase login failed. code=${e.code}',
-        );
-        // Im Debug-Modus: bei internal-error auf lokalen Fallback wechseln
-        if (!kReleaseMode && e.code == 'internal-error') {
-          debugPrint(
-            'AuthService.login(): Firebase internal-error im Debug → lokaler Fallback.',
-          );
-          // Fall-through zum lokalen Fallback unten
-        } else {
-          final mapped = _mapFirebaseError(e);
-          return mapped;
-        }
-      } catch (e) {
-        _logIgnoredError(
-          'AuthService.login(): Firebase login failed',
-          e,
-        );
-        if (!kReleaseMode) {
-          debugPrint(
-            'AuthService.login(): Fehler im Debug → lokaler Fallback.',
-          );
-          // Fall-through zum lokalen Fallback unten
-        } else {
-          return AuthResult.fail(
-            AuthErrorCode.unknown,
-            'Login ist fehlgeschlagen. Bitte versuche es erneut.',
-          );
-        }
-      }
-    }
-
-    if (kReleaseMode && !_firebaseReady) {
-      return AuthResult.fail(
-        AuthErrorCode.networkError,
-        'Login/Registrierung ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.',
-      );
-    }
 
     final emailError = _validateEmail(email);
     if (emailError != null) return emailError;
@@ -477,8 +484,7 @@ class AuthService {
       final authMap = jsonDecode(authRaw) as Map<String, dynamic>;
       final salt = (authMap['salt'] ?? '').toString();
       final hash = (authMap['hash'] ?? '').toString();
-      if (!_verifyPassword(
-          password: password, salt: salt, expectedHash: hash)) {
+      if (!_verifyPassword(password: password, salt: salt, expectedHash: hash)) {
         return AuthResult.fail(
           AuthErrorCode.wrongPassword,
           'E-Mail oder Passwort ist nicht korrekt.',
@@ -497,7 +503,7 @@ class AuthService {
         jsonDecode(profileRaw) as Map<String, dynamic>,
       );
       _currentUser = user;
-      await _persistSession(user);
+      await _persistSession(prefs, user);
       _triggerFcmInit(user.uid);
       return AuthResult.ok(user);
     } catch (e) {
@@ -509,45 +515,21 @@ class AuthService {
     }
   }
 
-  // ── Passwort-Reset ─────────────────────────────────────────────────────────
-
-  /// Sendet eine Passwort-Reset-E-Mail über Firebase Auth.
-  /// Gibt null bei Erfolg zurück, sonst eine lesbare Fehlermeldung.
-  Future<String?> sendPasswordReset(String email) async {
-    await _ensureFirebaseInitChecked();
-
-    final cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail.isEmpty ||
-        !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(cleanEmail)) {
-      return 'Bitte gib eine gültige E-Mail-Adresse ein.';
+  bool _canUseLocalAuthFallbackForFirebase(FirebaseAuthException e) {
+    if (kReleaseMode) {
+      return false;
     }
 
-    if (!_firebaseReady) {
-      return 'Passwort-Reset ist nur mit Firebase verfügbar. '
-          'Bitte prüfe deine Internetverbindung.';
-    }
-
-    try {
-      await _firebaseAuth!.sendPasswordResetEmail(email: cleanEmail);
-      return null; // Erfolg
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'user-not-found':
-          // Aus Sicherheitsgründen keine Info ob E-Mail existiert
-          return null;
-        case 'invalid-email':
-          return 'Bitte gib eine gültige E-Mail-Adresse ein.';
-        case 'too-many-requests':
-          return 'Zu viele Versuche. Bitte später erneut versuchen.';
-        case 'network-request-failed':
-          return 'Netzwerkfehler. Bitte Internetverbindung prüfen.';
-        default:
-          return 'Fehler beim Senden der E-Mail. Bitte erneut versuchen.';
-      }
-    } catch (e) {
-      _logIgnoredError('AuthService.sendPasswordReset()', e);
-      return 'Fehler beim Senden der E-Mail. Bitte erneut versuchen.';
-    }
+    const recoverableCodes = {
+      'internal-error',
+      'network-request-failed',
+      'unknown',
+      'app-not-authorized',
+      'operation-not-allowed',
+      'invalid-api-key',
+    };
+    final normalizedCode = e.code.trim().toLowerCase().replaceAll('_', '-');
+    return recoverableCodes.contains(normalizedCode);
   }
 
   // ── Logout ─────────────────────────────────────────────────────────────────
@@ -564,7 +546,6 @@ class AuthService {
       }
     });
   }
-
   Future<void> logout() async {
     final currentUserId = _currentUser?.uid;
     if (currentUserId != null) {
@@ -591,7 +572,8 @@ class AuthService {
       return;
     }
 
-    await _secureStorage.delete(key: _kUserKey);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kUserKey);
     _currentUser = null;
   }
 
@@ -611,7 +593,8 @@ class AuthService {
       serverTrialDaysRemaining: 13,
     );
 
-    await _persistSession(seededUser);
+    final prefs = await SharedPreferences.getInstance();
+    await _persistSession(prefs, seededUser);
     _currentUser = seededUser;
   }
 
@@ -640,9 +623,8 @@ class AuthService {
             : <String, dynamic>{};
 
         final status = (raw['status'] ?? '').toString().toLowerCase();
-        backendVerified = raw['isPremium'] == true ||
-            raw['activated'] == true ||
-            status == 'active';
+        backendVerified =
+            raw['isPremium'] == true || raw['activated'] == true || status == 'active';
       } catch (e) {
         debugPrint('AuthService.activatePremium(): backend sync failed: $e');
         if (kReleaseMode) {
@@ -665,15 +647,14 @@ class AuthService {
       displayName: currentUser.displayName,
       registeredAt: currentUser.registeredAt,
       isPremium: true,
-      serverHasFullAccess:
-          backendVerified ? true : currentUser.serverHasFullAccess,
+      serverHasFullAccess: backendVerified ? true : currentUser.serverHasFullAccess,
       serverTrialDaysRemaining: currentUser.serverTrialDaysRemaining,
     );
     final prefs = await SharedPreferences.getInstance();
     if (_firebaseReady) {
       await _persistFirebaseProfile(prefs, user);
     } else {
-      await _persistSession(user);
+      await _persistSession(prefs, user);
     }
     _currentUser = user;
     await refreshEntitlements();
@@ -719,7 +700,7 @@ class AuthService {
       if (_firebaseReady) {
         await _persistFirebaseProfile(prefs, updated);
       } else {
-        await _persistSession(updated);
+        await _persistSession(prefs, updated);
       }
       _currentUser = updated;
     } catch (e) {
@@ -744,15 +725,12 @@ class AuthService {
 
     try {
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
+        await Firebase.initializeApp();
       }
       _firebaseAuth = FirebaseAuth.instance;
       _firebaseReady = true;
     } catch (e) {
-      _logIgnoredError(
-          'AuthService._tryInitFirebase(): Firebase unavailable', e);
+      _logIgnoredError('AuthService._tryInitFirebase(): Firebase unavailable', e);
       _firebaseReady = false;
       _firebaseAuth = null;
     }
@@ -863,13 +841,8 @@ class AuthService {
     }
   }
 
-  /// Speichert die aktive Session verschlüsselt in flutter_secure_storage.
-  /// iOS: Keychain, Android: EncryptedSharedPreferences (Keystore-backed).
-  Future<void> _persistSession(ParentUser user) async {
-    await _secureStorage.write(
-      key: _kUserKey,
-      value: jsonEncode(user.toJson()),
-    );
+  Future<void> _persistSession(SharedPreferences prefs, ParentUser user) async {
+    await prefs.setString(_kUserKey, jsonEncode(user.toJson()));
   }
 
   String _normalizeEmail(String email) => email.trim().toLowerCase();
@@ -906,8 +879,8 @@ class AuthService {
     }
     final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailRegex.hasMatch(clean)) {
-      return AuthResult.fail(AuthErrorCode.invalidEmail,
-          'Bitte gib eine gültige E-Mail-Adresse ein.');
+      return AuthResult.fail(
+          AuthErrorCode.invalidEmail, 'Bitte gib eine gültige E-Mail-Adresse ein.');
     }
     return null;
   }
@@ -933,4 +906,5 @@ class AuthService {
     }
     return null;
   }
+
 }

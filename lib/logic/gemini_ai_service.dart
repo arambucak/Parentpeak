@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/privacy_sanitizer.dart';
 
 class GeminiAIService {
   final String _modelName;
@@ -33,8 +34,10 @@ class GeminiAIService {
       debugPrint('DEBUG: Sende Nachricht mit Modell: $_modelName');
       debugPrint('DEBUG: API-Key Länge: ${_apiKey?.length}');
 
+      final safeMessage = PrivacySanitizer.sanitizeForAi(userMessage);
+
       final content = [
-        Content.text(userMessage),
+        Content.text(safeMessage),
       ];
 
       final response = _model.generateContentStream(content);
@@ -53,9 +56,10 @@ class GeminiAIService {
   /// Sende mehrere Nachrichten als Chat-Historie und erhalte die gesamte Antwort.
   Future<String> chatWithHistory(List<Map<String, String>> messages) async {
     try {
+      final safeMessages = PrivacySanitizer.sanitizeHistoryForAi(messages);
       final contentList = <Content>[];
 
-      for (final msg in messages) {
+      for (final msg in safeMessages) {
         final isUser = msg['role'] == 'user';
         final roleValue = isUser ? 'user' : 'model';
         contentList.add(
@@ -75,8 +79,9 @@ class GeminiAIService {
   /// Sende eine Nachricht und erhalte die komplette Antwort auf einmal
   Future<String> chat(String userMessage) async {
     try {
+      final safeMessage = PrivacySanitizer.sanitizeForAi(userMessage);
       final content = [
-        Content.text(userMessage),
+        Content.text(safeMessage),
       ];
 
       final response = await _model.generateContent(content);
@@ -96,10 +101,11 @@ class GeminiAIService {
     List<Map<String, String>> messages,
   ) async* {
     try {
+      final safeMessages = PrivacySanitizer.sanitizeHistoryForAi(messages);
       // Convert messages to Content objects
       final contentList = <Content>[];
 
-      for (final msg in messages) {
+      for (final msg in safeMessages) {
         final isUser = msg['role'] == 'user';
         final roleValue = isUser ? 'user' : 'model';
 

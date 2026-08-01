@@ -999,42 +999,75 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     accentColor: const Color(0xFF475569),
                   ),
                   const SizedBox(height: 18),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: () async {
-                          await _toggleLikePost(post.id);
-                          if (!context.mounted) {
-                            return;
-                          }
-                          Navigator.of(context).pop();
-                        },
-                        icon: Icon(
-                          isLiked
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                        ),
-                        label: Text(isLiked ? 'Like entfernen' : 'Like geben'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await _showCommentsSheet(post);
-                        },
-                        icon: const Icon(Icons.mode_comment_outlined),
-                        label: Text('Kommentare ($commentCount)'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await _showReportSheet(post);
-                        },
-                        icon: const Icon(Icons.flag_outlined),
-                        label: const Text('Melden'),
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 360;
+                      return Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          SizedBox(
+                            width: compact
+                                ? constraints.maxWidth
+                                : (constraints.maxWidth - 16) / 3,
+                            child: FilledButton.icon(
+                              onPressed: () async {
+                                await _toggleLikePost(post.id);
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                Navigator.of(context).pop();
+                              },
+                              icon: Icon(
+                                isLiked
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                size: compact ? 17 : 18,
+                              ),
+                              label: Text(
+                                isLiked ? 'Like rm.' : 'Like',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: compact
+                                ? constraints.maxWidth
+                                : (constraints.maxWidth - 16) / 3,
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                Navigator.of(context).pop();
+                                await _showCommentsSheet(post);
+                              },
+                              icon: const Icon(Icons.mode_comment_outlined, size: 17),
+                              label: Text(
+                                compact ? 'Komm. ($commentCount)' : 'Kommentare ($commentCount)',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: compact
+                                ? constraints.maxWidth
+                                : (constraints.maxWidth - 16) / 3,
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                Navigator.of(context).pop();
+                                await _showReportSheet(post);
+                              },
+                              icon: const Icon(Icons.flag_outlined, size: 17),
+                              label: const Text(
+                                'Melden',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -1712,20 +1745,44 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
             style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              FilledButton.icon(
-                onPressed: () => _showCommentsSheet(discussionPost),
-                icon: const Icon(Icons.forum_rounded),
-                label: Text(count == 0 ? 'Antworten' : '$count Antworten'),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton.icon(
-                onPressed: _showComposeSheet,
-                icon: const Icon(Icons.edit_note_rounded),
-                label: const Text('Praxisimpuls teilen'),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 360;
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  SizedBox(
+                    width: compact
+                        ? constraints.maxWidth
+                        : (constraints.maxWidth - 8) / 2,
+                    child: FilledButton.icon(
+                      onPressed: () => _showCommentsSheet(discussionPost),
+                      icon: const Icon(Icons.forum_rounded),
+                      label: Text(
+                        count == 0 ? 'Antworten' : '$count Antw.',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: compact
+                        ? constraints.maxWidth
+                        : (constraints.maxWidth - 8) / 2,
+                    child: OutlinedButton.icon(
+                      onPressed: _showComposeSheet,
+                      icon: const Icon(Icons.edit_note_rounded),
+                      label: Text(
+                        compact ? 'Teilen' : 'Praxisimpuls teilen',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

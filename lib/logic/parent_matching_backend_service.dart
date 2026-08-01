@@ -2,13 +2,13 @@
 /// Uses geographic proximity + interests + child compatibility scoring
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
 
 class ParentMatchActionResult {
   final bool connected;
   final String matchState;
-
+  
   const ParentMatchActionResult({
     required this.connected,
     required this.matchState,
@@ -29,6 +29,10 @@ class ParentMatchingProfile {
   final List<String> valuesFocus;
   final List<String> childAges;
   final String? familyForm;
+  final bool phoneVerified;
+  final bool identityVerified;
+  final bool moderationChecked;
+  final String? verificationLevel;
 
   ParentMatchingProfile({
     required this.id,
@@ -44,7 +48,17 @@ class ParentMatchingProfile {
     this.valuesFocus = const [],
     this.childAges = const [],
     this.familyForm,
+    this.phoneVerified = false,
+    this.identityVerified = false,
+    this.moderationChecked = false,
+    this.verificationLevel,
   });
+
+  static bool _toBool(dynamic value) {
+    if (value is bool) return value;
+    final text = value?.toString().toLowerCase().trim();
+    return text == 'true' || text == '1' || text == 'yes';
+  }
 
   factory ParentMatchingProfile.fromJson(Map<String, dynamic> json) {
     return ParentMatchingProfile(
@@ -53,35 +67,39 @@ class ParentMatchingProfile {
       name: json['name'] ?? '',
       age: json['age'],
       city: json['city'] ?? '',
-      latitude: json['latitude'] != null
-          ? double.parse(json['latitude'].toString())
-          : null,
-      longitude: json['longitude'] != null
-          ? double.parse(json['longitude'].toString())
-          : null,
+      latitude: json['latitude'] != null ? double.parse(json['latitude'].toString()) : null,
+      longitude: json['longitude'] != null ? double.parse(json['longitude'].toString()) : null,
       bio: json['bio'],
       interests: List<String>.from(json['interests'] ?? []),
       languages: List<String>.from(json['languages'] ?? []),
       valuesFocus: List<String>.from(json['valuesFocus'] ?? []),
       childAges: List<String>.from(json['childAges'] ?? []),
       familyForm: json['familyForm'],
+      phoneVerified: _toBool(json['phoneVerified'] ?? json['isPhoneVerified']),
+      identityVerified: _toBool(json['identityVerified'] ?? json['isIdentityVerified']),
+      moderationChecked: _toBool(json['moderationChecked'] ?? json['isModerationChecked']),
+      verificationLevel: json['verificationLevel']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'name': name,
-        'age': age,
-        'city': city,
-        'latitude': latitude,
-        'longitude': longitude,
-        'bio': bio,
-        'interests': interests,
-        'languages': languages,
-        'valuesFocus': valuesFocus,
-        'childAges': childAges,
-        'familyForm': familyForm,
-      };
+    'userId': userId,
+    'name': name,
+    'age': age,
+    'city': city,
+    'latitude': latitude,
+    'longitude': longitude,
+    'bio': bio,
+    'interests': interests,
+    'languages': languages,
+    'valuesFocus': valuesFocus,
+    'childAges': childAges,
+    'familyForm': familyForm,
+    'phoneVerified': phoneVerified,
+    'identityVerified': identityVerified,
+    'moderationChecked': moderationChecked,
+    'verificationLevel': verificationLevel,
+  };
 }
 
 class MatchResult {
@@ -104,11 +122,27 @@ class MatchResult {
   }
 }
 
+class ParentMatchingDiscoveryResult {
+  final List<MatchResult> matches;
+  final String scope;
+  final bool globalDigitalMode;
+  final bool showInviteBanner;
+  final List<Map<String, String>> globalRooms;
+
+  const ParentMatchingDiscoveryResult({
+    required this.matches,
+    required this.scope,
+    required this.globalDigitalMode,
+    required this.showInviteBanner,
+    this.globalRooms = const [],
+  });
+}
+
 class ParentMatchingBackendService {
   final String? _apiUrl = APIConfig.getBackendBaseUrl();
   final http.Client _httpClient;
   String? lastSyncError;
-
+  
   // Backward compatibility: accept old apiClient parameter
   final dynamic apiClient;
 
@@ -117,27 +151,106 @@ class ParentMatchingBackendService {
     this.apiClient,
   }) : _httpClient = httpClient ?? http.Client();
 
-  /// Holt den Firebase ID-Token des aktuell eingeloggten Nutzers.
-  /// Gibt null zurück wenn kein Nutzer eingeloggt ist.
-  Future<String?> _getIdToken() async {
+  BackendApiClient? get _typedApiClient =>
+      apiClient is BackendApiClient ? apiClient as BackendApiClient : null;
+
+  Future<Map<String, dynamic>?> requestVerificationOtp({
+    required String userId,
+    required String phoneNumber,
+  }) async {
+    lastSyncError = null;
+    if (_apiUrl == null) {
+      lastSyncError = 'Backend-URL nicht konfiguriert';
+      return null;
+    }
+
+    final payload = {
+      'userId': userId,
+      'phoneNumber': phoneNumber,
+    };
+
     try {
-      return await FirebaseAuth.instance.currentUser?.getIdToken();
-    } catch (_) {
+      const endpoint = '/parent-matching/verification/request-otp';
+      final client = _typedApiClient;
+      if (client != null) {
+        final decoded = await client.postJsonAny(endpoint, payload);
+        return decoded is Map<String, dynamic> ? decoded : null;
+      }
+
+      final fallbackToken = APIConfig.getBackendApiToken();
+      final response = await _httpClient.post(
+        Uri.parse('$_apiUrl$endpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (fallbackToken != null && fallbackToken.trim().isNotEmpty)
+            'Authorization': 'Bearer ${fallbackToken.trim()}',
+        },
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        lastSyncError = 'OTP-Anfrage fehlgeschlagen: ${response.statusCode}';
+        return null;
+      }
+
+      final decoded = jsonDecode(response.body);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } catch (e) {
+      lastSyncError = 'OTP-Anfrage fehlgeschlagen: $e';
       return null;
     }
   }
 
-  /// Baut HTTP-Header mit Firebase ID-Token auf.
-  /// Alle schreibenden und lesenden Requests nutzen diese Header.
-  Future<Map<String, String>> _authHeaders() async {
-    final token = await _getIdToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
+  Future<bool> confirmVerificationOtp({
+    required String userId,
+    required String code,
+  }) async {
+    lastSyncError = null;
+    if (_apiUrl == null) {
+      lastSyncError = 'Backend-URL nicht konfiguriert';
+      return false;
+    }
 
-  // ── Profile ────────────────────────────────────────────────────────────────
+    final payload = {
+      'userId': userId,
+      'code': code,
+    };
+
+    try {
+      const endpoint = '/parent-matching/verification/confirm-otp';
+      final client = _typedApiClient;
+      if (client != null) {
+        final decoded = await client.postJsonAny(endpoint, payload);
+        if (decoded is Map<String, dynamic>) {
+          return decoded['verified'] == true || decoded['ok'] == true;
+        }
+        return false;
+      }
+
+      final fallbackToken = APIConfig.getBackendApiToken();
+      final response = await _httpClient.post(
+        Uri.parse('$_apiUrl$endpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (fallbackToken != null && fallbackToken.trim().isNotEmpty)
+            'Authorization': 'Bearer ${fallbackToken.trim()}',
+        },
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        lastSyncError = 'OTP-Bestaetigung fehlgeschlagen: ${response.statusCode}';
+        return false;
+      }
+
+      final decoded = jsonDecode(response.body);
+      return decoded is Map<String, dynamic> &&
+          (decoded['verified'] == true || decoded['ok'] == true);
+    } catch (e) {
+      lastSyncError = 'OTP-Bestaetigung fehlgeschlagen: $e';
+      return false;
+    }
+  }
 
   /// Backward compatibility: Create or update user's matching profile
   /// with interests and child compatibility info
@@ -162,35 +275,65 @@ class ParentMatchingBackendService {
       return null;
     }
 
+    final payload = {
+      'userId': userId,
+      'name': name,
+      'age': age,
+      'city': city,
+      'latitude': latitude,
+      'longitude': longitude,
+      'bio': bio,
+      'interests': interests ?? [],
+      'languages': languages ?? [],
+      'valuesFocus': valuesFocus ?? [],
+      'childAges': childAges ?? [],
+      'familyForm': familyForm,
+    };
+
     try {
-      final headers = await _authHeaders();
+      final myProfilePath = APIConfig.getBackendParentMatchingMyProfilePath();
+      final client = _typedApiClient;
+      if (client != null) {
+        final decoded = await client.postJsonAny(myProfilePath, payload);
+        final data = decoded is Map<String, dynamic>
+            ? (decoded['item'] is Map<String, dynamic>
+                ? decoded['item'] as Map<String, dynamic>
+                : decoded)
+            : <String, dynamic>{};
+        if (data.isEmpty) {
+          lastSyncError = 'Profil-Speicherung fehlgeschlagen: leere Server-Antwort';
+          return null;
+        }
+        return ParentMatchingProfile.fromJson(data);
+      }
+
+      final fallbackToken = APIConfig.getBackendApiToken();
       final response = await _httpClient.post(
-        Uri.parse('$_apiUrl/parent-matching/profiles'),
-        headers: headers,
-        body: jsonEncode({
-          'userId': userId,
-          'name': name,
-          'age': age,
-          'city': city,
-          'latitude': latitude,
-          'longitude': longitude,
-          'bio': bio,
-          'interests': interests ?? [],
-          'languages': languages ?? [],
-          'valuesFocus': valuesFocus ?? [],
-          'childAges': childAges ?? [],
-          'familyForm': familyForm,
-        }),
+        Uri.parse('$_apiUrl$myProfilePath'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (fallbackToken != null && fallbackToken.trim().isNotEmpty)
+            'Authorization': 'Bearer ${fallbackToken.trim()}',
+        },
+        body: jsonEncode(payload),
       );
 
-      if (response.statusCode != 200) {
-        lastSyncError =
-            'Profil-Speicherung fehlgeschlagen: ${response.statusCode}';
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        lastSyncError = 'Profil-Speicherung fehlgeschlagen: ${response.statusCode}';
         return null;
       }
 
-      final data = jsonDecode(response.body);
-      return ParentMatchingProfile.fromJson(data['profile']);
+      final decoded = jsonDecode(response.body);
+      final data = decoded is Map<String, dynamic>
+          ? (decoded['item'] is Map<String, dynamic>
+              ? decoded['item'] as Map<String, dynamic>
+              : decoded)
+          : <String, dynamic>{};
+      if (data.isEmpty) {
+        lastSyncError = 'Profil-Speicherung fehlgeschlagen: leere Server-Antwort';
+        return null;
+      }
+      return ParentMatchingProfile.fromJson(data);
     } catch (e) {
       lastSyncError = 'Fehler beim Erstellen des Profils: $e';
       return null;
@@ -201,10 +344,58 @@ class ParentMatchingBackendService {
   Future<Map<String, dynamic>?> fetchMyProfile({required String userId}) async {
     lastSyncError = null;
     try {
-      // This would call a GET endpoint that returns user's own profile
-      // For now, return null to signal profile needs creation
-      return null;
+      if (_apiUrl == null) {
+        lastSyncError = 'Backend-URL nicht konfiguriert';
+        return null;
+      }
+
+      final myProfilePath = APIConfig.getBackendParentMatchingMyProfilePath();
+      final requestPath = '$myProfilePath?userId=$userId';
+      final client = _typedApiClient;
+      if (client != null) {
+        final decoded = await client.getJson(requestPath);
+        if (decoded is! Map<String, dynamic>) {
+          return null;
+        }
+        final item = decoded['item'];
+        if (item is Map<String, dynamic>) {
+          return item;
+        }
+        return decoded;
+      }
+
+      final fallbackToken = APIConfig.getBackendApiToken();
+      final response = await _httpClient.get(
+        Uri.parse('$_apiUrl$requestPath'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (fallbackToken != null && fallbackToken.trim().isNotEmpty)
+            'Authorization': 'Bearer ${fallbackToken.trim()}',
+        },
+      );
+
+      if (response.statusCode == 404) {
+        return null;
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        lastSyncError = 'Profil konnte nicht geladen werden: ${response.statusCode}';
+        return null;
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+      final item = decoded['item'];
+      if (item is Map<String, dynamic>) {
+        return item;
+      }
+      return decoded;
     } catch (e) {
+      final text = e.toString();
+      if (text.contains('404')) {
+        return null;
+      }
       lastSyncError = 'Profil konnte nicht geladen werden: $e';
       return null;
     }
@@ -316,8 +507,7 @@ class ParentMatchingBackendService {
       );
       return ParentMatchActionResult(
         connected: result,
-        matchState:
-            result ? 'matched' : (action == 'like' ? 'pending' : 'none'),
+        matchState: result ? 'matched' : (action == 'like' ? 'pending' : 'none'),
       );
     } catch (e) {
       lastSyncError = 'Aktion konnte nicht gespeichert werden: $e';
@@ -326,6 +516,57 @@ class ParentMatchingBackendService {
         matchState: 'error',
       );
     }
+  }
+
+  Future<ParentMatchingDiscoveryResult> findMatchesWithFallback({
+    required String userId,
+    int limit = 10,
+    List<String> childAges = const [],
+  }) async {
+    lastSyncError = null;
+    const fallbackRadii = <double>[10, 50, 100, 1200];
+    const fallbackScopes = <String>['10km', '50km', '100km', 'country'];
+
+    for (var i = 0; i < fallbackRadii.length; i++) {
+      final matches = await findMatches(
+        userId: userId,
+        limit: limit,
+        maxDistanceKm: fallbackRadii[i],
+      );
+      if (matches.isNotEmpty) {
+        return ParentMatchingDiscoveryResult(
+          matches: matches,
+          scope: fallbackScopes[i],
+          globalDigitalMode: false,
+          showInviteBanner: i > 0,
+        );
+      }
+    }
+
+    final ageTag = childAges.isNotEmpty ? childAges.first : '6-9';
+    return ParentMatchingDiscoveryResult(
+      matches: const [],
+      scope: 'global',
+      globalDigitalMode: true,
+      showInviteBanner: true,
+      globalRooms: [
+        {
+          'id': 'global-room-age-$ageTag',
+          'title': 'Globaler Elternchat: Alter $ageTag',
+          'subtitle': 'Online Austausch zu Alltag, Schlaf und Routinen',
+        },
+        {
+          'id': 'global-room-bedtime',
+          'title': 'Globaler Elternchat: Schlaf & Abendroutinen',
+          'subtitle': 'Kurzform Tipps und Erfahrungen in Echtzeit',
+        },
+        {
+          'id': 'global-room-school',
+          'title': 'Globaler Elternchat: Kita, Schule & Lernen',
+          'subtitle': 'Themenbasierter Austausch fuer Eltern weltweit',
+        },
+      ],
+    );
   }
 
   // ===== NEW SMART MATCHING METHODS =====
@@ -339,22 +580,17 @@ class ParentMatchingBackendService {
     double maxDistanceKm = 25,
   }) async {
     lastSyncError = null;
-
+    
     if (_apiUrl == null) {
       lastSyncError = 'Backend-URL nicht konfiguriert';
       return [];
     }
-
+    
     try {
-      final headers = await _authHeaders();
-      // GET-Requests haben keinen Body — Authorization Header wird in den Headers gesetzt
-      final getHeaders = Map<String, String>.from(headers)
-        ..remove('Content-Type');
       final response = await _httpClient.get(
         Uri.parse(
-          '$_apiUrl/parent-matching/find?userId=$userId&limit=$limit&maxDistanceKm=$maxDistanceKm',
+          '$_apiUrl/api/parent-matching/find?userId=$userId&limit=$limit&maxDistanceKm=$maxDistanceKm',
         ),
-        headers: getHeaders,
       );
 
       if (response.statusCode == 404) {
@@ -368,8 +604,7 @@ class ParentMatchingBackendService {
 
       final data = jsonDecode(response.body);
       final matches = List<MatchResult>.from(
-        (data['matches'] as List? ?? [])
-            .map((m) => MatchResult.fromJson(m as Map<String, dynamic>)),
+        (data['matches'] as List? ?? []).map((m) => MatchResult.fromJson(m as Map<String, dynamic>)),
       );
 
       return matches;
@@ -388,17 +623,16 @@ class ParentMatchingBackendService {
     String? familyId,
   }) async {
     lastSyncError = null;
-
+    
     if (_apiUrl == null) {
       lastSyncError = 'Backend-URL nicht konfiguriert';
       return false;
     }
-
+    
     try {
-      final headers = await _authHeaders();
       final response = await _httpClient.post(
-        Uri.parse('$_apiUrl/parent-matching/record-action'),
-        headers: headers,
+        Uri.parse('$_apiUrl/api/parent-matching/record-action'),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'userId': userId,
           'matchedProfileId': matchedProfileId,
@@ -408,8 +642,7 @@ class ParentMatchingBackendService {
       );
 
       if (response.statusCode != 201) {
-        lastSyncError =
-            'Aktion konnte nicht gespeichert werden: ${response.statusCode}';
+        lastSyncError = 'Aktion konnte nicht gespeichert werden: ${response.statusCode}';
         return false;
       }
 

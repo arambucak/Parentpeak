@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LegalInfoScreen extends StatelessWidget {
   const LegalInfoScreen({super.key});
@@ -76,10 +77,24 @@ class LegalInfoScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const _LegalSection(
+            icon: Icons.privacy_tip_outlined,
+            title: 'DSGVO & Privacy by Design',
+            body:
+                'KI-Anfragen werden datensparsam verarbeitet. Keine echten Kindernamen, Kontaktdaten oder exakten Adressen in Freitext eingeben. Der Privacy-Modus minimiert sensible Details.',
+          ),
+          const SizedBox(height: 10),
+          const _LegalSection(
             icon: Icons.emergency_outlined,
             title: 'Schutz vor Ersatz von echten Hilfsstellen',
             body:
                 'Sicherheits- und Notfallhinweise in Parentpeak helfen bei Orientierung, ersetzen aber keine professionelle medizinische, rechtliche oder akute Hilfe.',
+          ),
+          const SizedBox(height: 10),
+          const _LegalSection(
+            icon: Icons.storefront_outlined,
+            title: 'Verschenkmarkt: Rolle von Parentpeak',
+            body:
+                'Parentpeak stellt im Verschenkmarkt nur die Plattform zur Vermittlung bereit. Verantwortung fuer Zustand, Sicherheit, Rechtmaessigkeit und Uebergabe der Artikel liegt bei den beteiligten Nutzern.',
           ),
           const SizedBox(height: 10),
           const _LegalSection(
@@ -174,6 +189,17 @@ class _LegalSection extends StatelessWidget {
 }
 
 class _ComplianceLinksSection extends StatelessWidget {
+  Future<void> _openUrl(BuildContext context, String value) async {
+    final uri = Uri.tryParse(value);
+    if (uri == null) return;
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Link konnte nicht geoeffnet werden.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final privacyUrl = APIConfig.getPrivacyPolicyUrl();
@@ -223,21 +249,25 @@ class _ComplianceLinksSection extends StatelessWidget {
               ),
             if (contactEmail != null && contactEmail.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.email_outlined,
-                      size: 16, color: Color(0xFF0369A1)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SelectableText(
-                      contactEmail,
-                      style: const TextStyle(
-                        color: Color(0xFF0369A1),
-                        decoration: TextDecoration.underline,
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _openUrl(context, 'mailto:$contactEmail'),
+                child: Row(
+                  children: [
+                    const Icon(Icons.email_outlined,
+                        size: 16, color: Color(0xFF0369A1)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        contactEmail,
+                        style: const TextStyle(
+                          color: Color(0xFF0369A1),
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ],
@@ -253,23 +283,41 @@ class _ComplianceLink extends StatelessWidget {
 
   const _ComplianceLink({required this.label, required this.url});
 
+  Future<void> _openUrl(BuildContext context) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Link konnte nicht geoeffnet werden.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Icon(Icons.link_outlined, size: 16, color: Color(0xFF0369A1)),
-        const SizedBox(width: 8),
-        Expanded(
-          child: SelectableText(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF0369A1),
-              decoration: TextDecoration.underline,
-              fontSize: 14,
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => _openUrl(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            const Icon(Icons.link_outlined, size: 16, color: Color(0xFF0369A1)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF0369A1),
+                  decoration: TextDecoration.underline,
+                  fontSize: 14,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

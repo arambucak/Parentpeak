@@ -5,6 +5,7 @@ import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/models/payment_transaction.dart';
 import 'package:parentpeak/logic/payment_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PaymentScreen extends StatefulWidget {
   final MeetupEvent event;
@@ -27,6 +28,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String _selectedPaymentMethod = 'stripe'; // stripe oder paypal
   bool _isProcessing = false;
   bool _agreeToTerms = false;
+
+  Future<void> _openLegalUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Link konnte nicht geoeffnet werden.')),
+      );
+    }
+  }
 
   bool get _stripeAvailable =>
       APIConfig.isStripePaymentSheetSupportedPlatform() &&
@@ -437,9 +449,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                 // Terms & Conditions
                 CheckboxListTile(
-                  title: const Text('Bedingungen akzeptieren'),
+                  title: const Text('AGB & Datenschutz akzeptieren'),
                   subtitle:
-                      const Text('Ich akzeptiere die Zahlungsbedingungen.'),
+                      const Text(
+                        'Ich akzeptiere die AGB und Datenschutzhinweise. Zahlungen werden ueber Stripe/PayPal abgewickelt.',
+                      ),
                   value: _agreeToTerms,
                   onChanged: _isProcessing
                       ? null
@@ -447,6 +461,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           setState(() => _agreeToTerms = value ?? false);
                         },
                   controlAffinity: ListTileControlAffinity.leading,
+                ),
+                Builder(
+                  builder: (context) {
+                    final termsUrl = APIConfig.getTermsOfServiceUrl();
+                    final privacyUrl = APIConfig.getPrivacyPolicyUrl();
+                    if ((termsUrl == null || termsUrl.isEmpty) &&
+                        (privacyUrl == null || privacyUrl.isEmpty)) {
+                      return const SizedBox.shrink();
+                    }
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        if (termsUrl != null && termsUrl.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: () => _openLegalUrl(termsUrl),
+                            icon: const Icon(Icons.description_outlined, size: 16),
+                            label: const Text('AGB ansehen'),
+                          ),
+                        if (privacyUrl != null && privacyUrl.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: () => _openLegalUrl(privacyUrl),
+                            icon: const Icon(Icons.privacy_tip_outlined, size: 16),
+                            label: const Text('Datenschutz ansehen'),
+                          ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
 

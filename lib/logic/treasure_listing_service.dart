@@ -6,6 +6,20 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
 import 'package:parentpeak/logic/treasure_backend_service.dart';
 
+class TreasureDiscoveryResult {
+  final List<TreasureListing> listings;
+  final String scope;
+  final bool globalDigitalMode;
+  final bool showInviteBanner;
+
+  const TreasureDiscoveryResult({
+    required this.listings,
+    required this.scope,
+    required this.globalDigitalMode,
+    required this.showInviteBanner,
+  });
+}
+
 class TreasureListingService {
   TreasureListingService._();
 
@@ -18,6 +32,82 @@ class TreasureListingService {
   String? lastSyncError;
 
   bool get isBackendEnabled => _backendService.isEnabled;
+
+  Future<TreasureDiscoveryResult> loadListingsWithFallback() async {
+    if (_backendService.isEnabled) {
+      const radii = <double>[10, 50, 100, 1200];
+      const scopes = <String>['10km', '50km', '100km', 'country'];
+
+      for (var i = 0; i < radii.length; i++) {
+        final remoteListings = await _backendService.fetchTreasures(radiusKm: radii[i]);
+        if (remoteListings.isNotEmpty) {
+          _cache = remoteListings;
+          await _persist();
+          lastSyncError = _backendService.lastSyncError;
+          return TreasureDiscoveryResult(
+            listings: List<TreasureListing>.from(_cache!),
+            scope: scopes[i],
+            globalDigitalMode: false,
+            showInviteBanner: i > 0,
+          );
+        }
+      }
+
+      final fallbackDigital = <TreasureListing>[
+        TreasureListing(
+          id: 'digital-room-kids-books',
+          title: 'Globaler Tauschraum: Kinderbuecher',
+          category: 'Buecher',
+          sizeAge: '0-9 Jahre',
+          conditionKey: 'round2',
+          distanceMeters: 0,
+          colorLabel: 'Online',
+          note: 'Digitale Matching-Liste fuer Familien, die Kinderbuecher verschenken oder suchen.',
+          locationLabel: 'Online',
+          createdAt: DateTime.now(),
+        ),
+        TreasureListing(
+          id: 'digital-room-clothes',
+          title: 'Globaler Tauschraum: Kleidung',
+          category: 'Kleidung',
+          sizeAge: 'Baby bis Schule',
+          conditionKey: 'round2',
+          distanceMeters: 0,
+          colorLabel: 'Online',
+          note: 'Kleidungspakete nach Groesse sortiert mit direktem Elternkontakt.',
+          locationLabel: 'Online',
+          createdAt: DateTime.now(),
+        ),
+        TreasureListing(
+          id: 'digital-room-toys',
+          title: 'Globaler Tauschraum: Spielzeug',
+          category: 'Spielzeug',
+          sizeAge: '2-10 Jahre',
+          conditionKey: 'round2',
+          distanceMeters: 0,
+          colorLabel: 'Online',
+          note: 'Themenbasierter digitaler Marktplatz fuer Spielsachen und Lernmaterialien.',
+          locationLabel: 'Online',
+          createdAt: DateTime.now(),
+        ),
+      ];
+
+      return TreasureDiscoveryResult(
+        listings: fallbackDigital,
+        scope: 'global',
+        globalDigitalMode: true,
+        showInviteBanner: true,
+      );
+    }
+
+    final local = await loadListings();
+    return TreasureDiscoveryResult(
+      listings: local,
+      scope: 'local-cache',
+      globalDigitalMode: false,
+      showInviteBanner: false,
+    );
+  }
 
   Future<List<TreasureListing>> loadListings() async {
     if (_cache != null) {

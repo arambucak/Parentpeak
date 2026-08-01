@@ -6,6 +6,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/food_share_post.dart';
 import 'package:parentpeak/models/shared_recipe.dart';
 import 'package:parentpeak/models/meal_plan.dart';
+import 'package:parentpeak/models_and_widgets/animation_helpers.dart';
 import 'package:parentpeak/services/meal_planner_service.dart';
 import 'package:parentpeak/logic/gemeinsam_satt_backend_service.dart' as backend_service;
 
@@ -178,6 +179,9 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
   bool _isLoadingNearby = false;
   bool _isLoadingRecipes = false;
   String? _nearbyLoadError;
+  String _nearbyDiscoveryScope = '10km';
+  bool _nearbyGlobalDigitalMode = false;
+  bool _showNearbyInviteBanner = false;
   String? _recipeLoadError;
   String? _mealPlanLoadError;
   _RecipeFeedMode _recipeFeedMode = _RecipeFeedMode.forYou;
@@ -271,11 +275,15 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
       if (!mounted) return;
       final syncError = _service.lastSyncError;
+      final scoped = _resolveNearbyScope(
+        mappedOffers.where((post) => !_hiddenOfferIds.contains(post.id)).toList(),
+      );
       setState(() {
         _nearbyLoadError = syncError;
-        _posts = mappedOffers
-            .where((post) => !_hiddenOfferIds.contains(post.id))
-            .toList();
+        _posts = scoped.posts;
+        _nearbyDiscoveryScope = scoped.scope;
+        _nearbyGlobalDigitalMode = scoped.globalDigitalMode;
+        _showNearbyInviteBanner = scoped.showInviteBanner;
         _isLoadingNearby = false;
       });
     } catch (e) {
@@ -284,9 +292,103 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       setState(() {
         _nearbyLoadError = _service.lastSyncError ?? 'Angebote konnten nicht geladen werden.';
         _posts = [];
+        _nearbyDiscoveryScope = 'global';
+        _nearbyGlobalDigitalMode = true;
+        _showNearbyInviteBanner = true;
         _isLoadingNearby = false;
       });
     }
+  }
+
+  ({List<FoodSharePost> posts, String scope, bool globalDigitalMode, bool showInviteBanner})
+      _resolveNearbyScope(List<FoodSharePost> source) {
+    final within10 = source.where((p) => p.distanceKm <= 10).toList();
+    if (within10.isNotEmpty) {
+      return (
+        posts: within10,
+        scope: '10km',
+        globalDigitalMode: false,
+        showInviteBanner: false,
+      );
+    }
+
+    final within50 = source.where((p) => p.distanceKm <= 50).toList();
+    if (within50.isNotEmpty) {
+      return (
+        posts: within50,
+        scope: '50km',
+        globalDigitalMode: false,
+        showInviteBanner: true,
+      );
+    }
+
+    final within100 = source.where((p) => p.distanceKm <= 100).toList();
+    if (within100.isNotEmpty) {
+      return (
+        posts: within100,
+        scope: '100km',
+        globalDigitalMode: false,
+        showInviteBanner: true,
+      );
+    }
+
+    if (source.isNotEmpty) {
+      return (
+        posts: source,
+        scope: 'country',
+        globalDigitalMode: false,
+        showInviteBanner: true,
+      );
+    }
+
+    return (
+      posts: _buildGlobalDigitalNearbyFallback(),
+      scope: 'global',
+      globalDigitalMode: true,
+      showInviteBanner: true,
+    );
+  }
+
+  List<FoodSharePost> _buildGlobalDigitalNearbyFallback() {
+    final now = DateTime.now();
+    return [
+      FoodSharePost(
+        id: 'global-food-room-family-snacks',
+        authorId: 'global-community',
+        authorName: 'Global Community',
+        authorInitials: 'GC',
+        authorColor: const Color(0xFF1E5CD7),
+        title: 'Globaler Food-Raum: Familienfreundliche Snacks',
+        description: 'Digitale Vorschlaege und Austausch fuer schnelle kindgerechte Snacks.',
+        totalPortions: 1,
+        remainingPortions: 1,
+        pickupWindow: 'Online jetzt',
+        distanceKm: 0,
+        createdAt: now,
+        likedByUserIds: const [],
+        tags: const ['global', 'digital', 'snack'],
+        comments: const [],
+        imageEmoji: '🌍',
+      ),
+      FoodSharePost(
+        id: 'global-food-room-meal-prep',
+        authorId: 'global-community',
+        authorName: 'Global Community',
+        authorInitials: 'GC',
+        authorColor: const Color(0xFF1E5CD7),
+        title: 'Globaler Food-Raum: Meal Prep fuer Familien',
+        description: 'Rezepte, Portionsideen und Austausch fuer stressfreie Wochenplanung.',
+        totalPortions: 1,
+        remainingPortions: 1,
+        pickupWindow: 'Online jetzt',
+        distanceKm: 0,
+        createdAt: now,
+        likedByUserIds: const [],
+        tags: const ['global', 'digital', 'mealprep'],
+        comments: const [],
+        imageEmoji: '🥗',
+      ),
+    ];
   }
 
   FoodSharePost _mapBackendRecipeToOfferPost(backend_service.SharedRecipe item) {
@@ -751,6 +853,35 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     }
     return Column(
       children: [
+        if (_showNearbyInviteBanner)
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7E8),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF7D8A5)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.campaign_outlined, color: Color(0xFF9A5A11), size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _nearbyGlobalDigitalMode
+                        ? '🍲 Noch keine lokalen Angebote. Stöber global & teile ab sofort selbst — kostenlos!'
+                        : '🔄 Suche in $_nearbyDiscoveryScope erweitert | Mehr Teller? Lade Eltern in deine Nähe ein.',
+                    style: const TextStyle(
+                      color: Color(0xFF74420D),
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Container(
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           padding: const EdgeInsets.all(14),
@@ -866,15 +997,29 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 6, 16, 100),
               itemCount: available.length,
-              itemBuilder: (context, i) => _PostCard(
-                post: available[i],
-                myUserId: _myUserId,
-                onLike: () => _toggleLike(available[i].id),
-                onAbholen: () => _reservePost(available[i].id),
-                onComment: () => _showComments(available[i]),
-                onReport: () => _reportPost(available[i]),
-                onHide: () => _hidePost(available[i]),
-              ),
+              itemBuilder: (context, i) {
+                // Animate only first 8 items on initial load
+                final shouldAnimate = i < 8;
+                final delay = shouldAnimate ? i * 50 : 0;
+                
+                final card = _PostCard(
+                  post: available[i],
+                  myUserId: _myUserId,
+                  onLike: () => _toggleLike(available[i].id),
+                  onAbholen: () => _reservePost(available[i].id),
+                  onComment: () => _showComments(available[i]),
+                  onReport: () => _reportPost(available[i]),
+                  onHide: () => _hidePost(available[i]),
+                );
+                
+                return shouldAnimate
+                    ? EntranceAnimation(
+                        delayMs: delay,
+                        duration: const Duration(milliseconds: 350),
+                        child: card,
+                      )
+                    : card;
+              },
             ),
           ),
         ),
@@ -997,7 +1142,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             itemBuilder: (context, i) {
               final dayPlan =
                   _weekPlan.getDay(i) ?? DayPlan(date: _weekPlan.weekStart.add(Duration(days: i)));
-              return _DayPlanCard(
+              final card = _DayPlanCard(
                 dayPlan: dayPlan,
                 onAddMeal: () => _openAddMealForDay(context, dayPlan.date),
                 onRemoveMeal: (type) {
@@ -1007,6 +1152,12 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                   _showSnack('Mahlzeit entfernt');
                 },
                 onTapMeal: (meal) => _showMealDetail(meal),
+              );
+              
+              return EntranceAnimation(
+                delayMs: i * 60,
+                duration: const Duration(milliseconds: 400),
+                child: card,
               );
             },
           ),

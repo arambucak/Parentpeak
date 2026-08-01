@@ -17,6 +17,7 @@
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
+node_modules/
 
 # Android
 **/local.properties

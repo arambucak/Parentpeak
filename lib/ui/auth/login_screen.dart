@@ -270,6 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         children: [
           TextFormField(
+            key: const ValueKey('email_field'),
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
@@ -294,6 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 14),
           TextFormField(
+            key: const ValueKey('password_field'),
             controller: _passCtrl,
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.done,
@@ -350,6 +352,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildError(ThemeData theme) {
     return Container(
+      key: const ValueKey('error_message'),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4F1),
@@ -379,6 +382,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return SizedBox(
       height: 54,
       child: FilledButton(
+        key: const ValueKey('login_button'),
         onPressed: _isLoading ? null : _submit,
         style: FilledButton.styleFrom(
           backgroundColor: const Color(0xFF166A61),

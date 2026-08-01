@@ -94,6 +94,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Stack(
         children: [
           Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8, top: 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                    color: const Color(0xFF122220),
+                    tooltip: 'Zurück zum Login',
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
             top: -130,
             right: -60,
             child: Container(
@@ -174,6 +194,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _buildTerms(theme),
                             const SizedBox(height: 16),
                             _buildRegisterButton(theme),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Bereits registriert? ',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: const Color(0xFF5A6B68),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Text(
+                                    'Jetzt einloggen',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: const Color(0xFF166A61),
+                                      fontWeight: FontWeight.w700,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: const Color(0xFF166A61),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
