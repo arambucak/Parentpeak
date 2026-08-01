@@ -115,12 +115,19 @@ const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
   .map(origin => origin.trim())
   .filter(Boolean);
 const stripeWebhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || '').trim();
+const otpHashSecret = (process.env.OTP_HASH_SECRET || '').trim();
 const stripeWebhookToleranceSec = Number.parseInt(
   process.env.STRIPE_WEBHOOK_TOLERANCE_SEC || '300',
   10,
 );
 const stripeSecretKey = (process.env.STRIPE_SECRET_KEY || '').trim();
 const isProduction = process.env.NODE_ENV === 'production';
+
+if (!otpHashSecret) {
+  console.warn('⚠️ OTP_HASH_SECRET fehlt — OTP Hashing nutzt temporären Prozess-Secret.');
+}
+
+const runtimeOtpHashSecret = otpHashSecret || crypto.randomBytes(32).toString('hex');
 
 // Stripe client — initialized if secret key is available.
 let stripe = null;
@@ -1012,9 +1019,8 @@ function maskPhone(phone) {
 }
 
 function hashOtpForUser(userId, code) {
-  const secret = (process.env.BACKEND_API_TOKEN || process.env.STRIPE_WEBHOOK_SECRET || 'otp-fallback-secret').toString();
   return crypto
-    .createHmac('sha256', secret)
+    .createHmac('sha256', runtimeOtpHashSecret)
     .update(`${userId}:${code}`, 'utf8')
     .digest('hex');
 }
