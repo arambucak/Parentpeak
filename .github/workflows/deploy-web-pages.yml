@@ -54,6 +54,7 @@ jobs:
           GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME:-gemini-3.1-pro-preview}"
 
           flutter build web --release \
+            --no-wasm-dry-run \
             --base-href "/" \
             --dart-define=BACKEND_BASE_URL="$BACKEND_BASE_URL" \
             --dart-define=PRIVACY_POLICY_URL="$PRIVACY_POLICY_URL" \
