@@ -33,6 +33,7 @@ class DiscoveredEvent {
   final DateTime? eventDate;
   final bool isRecurring;
   final String? recurringNote; // z.B. "Jeden Samstag 10–12 Uhr"
+  final String? eventTimeRange; // z.B. "10:00 – 12:30 Uhr"
   final String? price;         // z.B. "kostenlos", "5 €"
   final String? url;           // Link zur Original-Quelle
   final String? organizer;     // Veranstalter/Institution
@@ -54,6 +55,7 @@ class DiscoveredEvent {
     this.eventDate,
     this.isRecurring = false,
     this.recurringNote,
+    this.eventTimeRange,
     this.price,
     this.url,
     this.organizer,
@@ -76,6 +78,7 @@ class DiscoveredEvent {
         eventDate: eventDate,
         isRecurring: isRecurring,
         recurringNote: recurringNote,
+        eventTimeRange: eventTimeRange,
         price: price,
         url: url,
         organizer: organizer,

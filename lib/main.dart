@@ -88,8 +88,11 @@ void main() {
 
 Future<void> _startApp() async {
   final startupInviteInput = _extractStartupInviteInput();
+  await APIConfig.ensureRuntimeEnvLoaded();
   final hasDotEnv = await _loadOptionalDotEnv();
+  await APIConfig.ensureRuntimeEnvLoaded();
   debugPrint('Gemini runtime model: ${APIConfig.getGeminiModelName()}');
+  debugPrint('Gemini API configured: ${APIConfig.isGeminiApiKeyConfigured()}');
 
   final missingSecrets = APIConfig.getMissingRequiredSecrets();
   final releaseConfigIssues = APIConfig.getReleaseConfigIssues();

@@ -645,7 +645,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(height: 32),
             const Text(
-              'Verlaessliche Hilfe fuer Eltern.',
+              'Dein paedagogischer Begleiter.',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -656,7 +656,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Hier bekommst du konkrete, paedagogisch fundierte Hilfe bei Erziehungsfragen nach Gewaltfreier Kommunikation: klar, empathisch und alltagstauglich.',
+              'Konkrete Hilfe fuer Eltern — basierend auf Neurobiologie (Hüther), Gewaltfreier Kommunikation (Rosenberg) und Familientherapie (Juul). Warm, klar und sofort anwendbar.',
               style: TextStyle(
                 fontSize: 15,
                 height: 1.45,
@@ -709,10 +709,12 @@ class _ChatScreenState extends State<ChatScreen> {
               runSpacing: 10,
               alignment: WrapAlignment.center,
               children: [
-                _buildSuggestionChip('Autonomiephase Tipps'),
-                _buildSuggestionChip('Konflikt gewaltfrei lösen'),
-                _buildSuggestionChip('Schlaftipps'),
-                _buildSuggestionChip('Ich bin überfordert'),
+                _buildSuggestionChip('Kind haengt nur am Handy'),
+                _buildSuggestionChip('Trotzanfall — was tun?'),
+                _buildSuggestionChip('Mein Kind hoert nicht'),
+                _buildSuggestionChip('Ich bin total erschoepft'),
+                _buildSuggestionChip('Kind braucht mehr Freiheit'),
+                _buildSuggestionChip('Strafe oder Konsequenz?'),
               ],
             ),
             const SizedBox(height: 32),
@@ -737,7 +739,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Pädagogik-KI mit Rosenberg-Fokus',
+                          'Pädagogik-KI nach Hüther · Rosenberg · Juul',
                           style:
                               Theme.of(context).textTheme.labelMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
@@ -749,7 +751,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Nur paedagogische, respektvolle und konkrete Antworten fuer Eltern.',
+                    'Neurobiologie (Hüther): Verbundenheit + Autonomie als Grundbeduerfnisse. GfK (Rosenberg): konkrete Saetze fuer heute. Familientherapie (Juul): Kinder als vollwertige Menschen.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF516072),
                           height: 1.4,
@@ -981,8 +983,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     _buildTermsItem(
                       theme,
                       '\u{1F9E0}',
-                      'GfK-basierte Orientierung',
-                      'Die KI gibt Impulse basierend auf Gewaltfreier Kommunikation nach Rosenberg. Sie ersetzt keine Therapie oder Fachberatung.',
+                      'Hüther · Rosenberg · Juul',
+                      'Die KI arbeitet nach Neurobiologie (Hüther), Gewaltfreier Kommunikation (Rosenberg) und Familientherapie (Juul). Ersetzt keine Therapie oder Fachberatung.',
                     ),
                     const SizedBox(height: 16),
                     _buildTermsItem(

@@ -2342,7 +2342,7 @@ function ensureEntitlement(userId, options = {}) {
 }
 
 function buildEntitlementStatus(record) {
-  const trialDays = 14;
+  const trialDays = 30;
   const now = new Date();
   const registeredAt = new Date(record.registeredAt);
   const trialEndsAt = new Date(registeredAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
@@ -7621,6 +7621,262 @@ app.delete('/api/events/:id', async (req, res) => {
   } catch (err) {
     console.error('❌ Event delete error:', err.message);
     res.status(500).json({ error: `Failed to delete event: ${err.message}` });
+  }
+});
+
+// ============================================================================
+// COMMUNITY EVENTS API (/api/community-events)
+// Kiro spec: KI-Event-Discovery + Community Events with flag/interest/attendees
+// ============================================================================
+
+/**
+ * GET /api/community-events
+ * List community events by city with optional filters.
+ * Query params: city, limit, offset, category, free, ageGroup
+ */
+app.get('/api/community-events', async (req, res) => {
+  const { city, limit = 20, offset = 0, category, free, ageGroup } = req.query;
+
+  try {
+    const where = {
+      isHidden: false,
+      ...(city && { city: { contains: String(city), mode: 'insensitive' } }),
+      ...(category && { category: String(category) }),
+      ...(free === 'true' && { isFree: true }),
+    };
+
+    const events = await prisma.communityEvent.findMany({
+      where,
+      orderBy: [{ isVerified: 'desc' }, { eventDate: 'asc' }],
+      take: Math.min(parseInt(limit, 10) || 20, 100),
+      skip: parseInt(offset, 10) || 0,
+    });
+
+    const now = new Date();
+    const visible = events.filter(e => e.isRecurring || new Date(e.eventDate) >= now);
+
+    const filtered = ageGroup
+      ? visible.filter(e => {
+          try {
+            const groups = JSON.parse(e.ageGroups || '[]');
+            return groups.includes(String(ageGroup));
+          } catch (_) { return true; }
+        })
+      : visible;
+
+    res.json(filtered);
+  } catch (err) {
+    console.error('❌ GET /api/community-events error:', err.message);
+    res.status(500).json({ error: `Failed to list community events: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/community-events
+ * Create a new community event. Max 3 per day per creator.
+ */
+app.post('/api/community-events', async (req, res) => {
+  const {
+    title, description, category, ageGroups, venue, location, city,
+    lat, lon, isPrivateAddress, eventDate, eventEndDate, isRecurring, recurringNote,
+    rainPlan, price, isFree, url, imageUrl, organizer, creatorType,
+    contactName, contactPhone, contactEmail, accessibility, eventLanguage,
+    source, creatorId,
+  } = req.body;
+
+  if (!title || !location || !city || !creatorId || !eventDate || !organizer) {
+    return res.status(400).json({
+      error: 'title, location, city, creatorId, eventDate, organizer sind erforderlich',
+    });
+  }
+
+  if (String(title).length < 3 || String(title).length > 200) {
+    return res.status(400).json({ error: 'Titel muss 3-200 Zeichen lang sein' });
+  }
+
+  const text = `${String(title).toLowerCase()} ${String(description || '').toLowerCase()}`;
+  const spamKeywords = ['gewalt', 'hass', 'sex', 'nackt', 'missbrauch', 'betrug', 'scam', 'drohung', 'casino', 'kredit'];
+  if (spamKeywords.some(kw => text.includes(kw))) {
+    return res.status(422).json({ error: 'Inhalt entspricht nicht den Community-Richtlinien' });
+  }
+
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const todayCount = await prisma.communityEvent.count({
+    where: { creatorId: String(creatorId), createdAt: { gte: dayStart } },
+  });
+  if (todayCount >= 3) {
+    return res.status(429).json({ error: 'Maximal 3 Events pro Tag erlaubt' });
+  }
+
+  try {
+    const event = await prisma.communityEvent.create({
+      data: {
+        title: String(title).slice(0, 200),
+        description: description ? String(description).slice(0, 2000) : '',
+        category: category ? String(category).slice(0, 50) : 'sonstiges',
+        ageGroups: Array.isArray(ageGroups) ? JSON.stringify(ageGroups) : '["alle"]',
+        venue: venue ? String(venue) : 'beides',
+        location: String(location).slice(0, 200),
+        city: String(city).slice(0, 100),
+        lat: lat != null ? parseFloat(lat) : null,
+        lon: lon != null ? parseFloat(lon) : null,
+        isPrivateAddress: isPrivateAddress === true,
+        eventDate: new Date(eventDate),
+        eventEndDate: eventEndDate ? new Date(eventEndDate) : null,
+        isRecurring: isRecurring === true,
+        recurringNote: recurringNote ? String(recurringNote).slice(0, 200) : null,
+        rainPlan: rainPlan ? String(rainPlan).slice(0, 500) : null,
+        price: price ? String(price).slice(0, 50) : 'kostenlos',
+        isFree: isFree !== false,
+        url: url ? String(url).slice(0, 500) : null,
+        imageUrl: imageUrl ? String(imageUrl).slice(0, 500) : null,
+        organizer: String(organizer).slice(0, 200),
+        creatorType: creatorType ? String(creatorType) : 'eltern',
+        contactName: contactName ? String(contactName).slice(0, 100) : null,
+        contactPhone: contactPhone ? String(contactPhone).slice(0, 50) : null,
+        contactEmail: contactEmail ? String(contactEmail).slice(0, 100) : null,
+        accessibility: Array.isArray(accessibility) ? JSON.stringify(accessibility) : '[]',
+        eventLanguage: eventLanguage ? String(eventLanguage).slice(0, 10) : 'de',
+        source: source ? String(source) : 'community',
+        creatorId: String(creatorId).slice(0, 100),
+      },
+    });
+    res.status(201).json(event);
+  } catch (err) {
+    console.error('❌ POST /api/community-events error:', err.message);
+    res.status(500).json({ error: `Failed to create community event: ${err.message}` });
+  }
+});
+
+/**
+ * DELETE /api/community-events/:id
+ * Delete own community event. Query param: creatorId
+ */
+app.delete('/api/community-events/:id', async (req, res) => {
+  const { id } = req.params;
+  const { creatorId } = req.query;
+
+  if (!creatorId) return res.status(400).json({ error: 'creatorId erforderlich' });
+
+  try {
+    const event = await prisma.communityEvent.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
+    if (event.creatorId !== String(creatorId)) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann das Event löschen' });
+    }
+    await prisma.communityEvent.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ DELETE /api/community-events/:id error:', err.message);
+    res.status(500).json({ error: `Failed to delete event: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/community-events/:id/flag
+ * Report a community event. Auto-hides after 3 flags.
+ */
+app.post('/api/community-events/:id/flag', async (req, res) => {
+  const { id } = req.params;
+  const { userId, reason } = req.body;
+
+  if (!userId || !reason) {
+    return res.status(400).json({ error: 'userId und reason erforderlich' });
+  }
+  const validReasons = ['spam', 'fake', 'unsafe', 'inappropriate', 'expired'];
+  if (!validReasons.includes(String(reason))) {
+    return res.status(400).json({ error: `reason muss einer sein von: ${validReasons.join(', ')}` });
+  }
+
+  try {
+    const event = await prisma.communityEvent.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
+
+    await prisma.communityEventFlag.upsert({
+      where: { eventId_userId: { eventId: id, userId: String(userId) } },
+      create: { eventId: id, userId: String(userId), reason: String(reason) },
+      update: { reason: String(reason) },
+    });
+
+    const flagCount = await prisma.communityEventFlag.count({ where: { eventId: id } });
+    await prisma.communityEvent.update({
+      where: { id },
+      data: { flagCount, isHidden: flagCount >= 3 },
+    });
+
+    res.json({ success: true, flagCount, autoHidden: flagCount >= 3 });
+  } catch (err) {
+    console.error('❌ POST /api/community-events/:id/flag error:', err.message);
+    res.status(500).json({ error: `Failed to flag event: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/community-events/:id/interest
+ * Express interest ("Ich bin auch dabei!") with optional message.
+ */
+app.post('/api/community-events/:id/interest', async (req, res) => {
+  const { id } = req.params;
+  const { userId, displayName, message } = req.body;
+
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+
+  try {
+    const event = await prisma.communityEvent.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
+
+    await prisma.communityEventInterest.upsert({
+      where: { eventId_userId: { eventId: id, userId: String(userId) } },
+      create: {
+        eventId: id,
+        userId: String(userId),
+        displayName: displayName ? String(displayName).slice(0, 100) : 'Elternteil',
+        message: message ? String(message).slice(0, 500) : null,
+      },
+      update: {
+        displayName: displayName ? String(displayName).slice(0, 100) : 'Elternteil',
+        message: message ? String(message).slice(0, 500) : null,
+      },
+    });
+
+    const interestCount = await prisma.communityEventInterest.count({ where: { eventId: id } });
+    await prisma.communityEvent.update({ where: { id }, data: { interestCount } });
+
+    res.json({ success: true, interestCount });
+  } catch (err) {
+    console.error('❌ POST /api/community-events/:id/interest error:', err.message);
+    res.status(500).json({ error: `Failed to register interest: ${err.message}` });
+  }
+});
+
+/**
+ * GET /api/community-events/:id/attendees
+ * List users who expressed interest ("Ich bin auch dabei!").
+ */
+app.get('/api/community-events/:id/attendees', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const interests = await prisma.communityEventInterest.findMany({
+      where: { eventId: id },
+      orderBy: { createdAt: 'asc' },
+      take: 50,
+    });
+
+    const attendees = interests.map(i => ({
+      userId: i.userId,
+      displayName: i.displayName,
+      initial: i.displayName ? i.displayName.charAt(0).toUpperCase() : '?',
+      message: i.message,
+      joinedAt: i.createdAt,
+      isNetworkContact: false,
+    }));
+
+    res.json({ attendees, total: interests.length });
+  } catch (err) {
+    console.error('❌ GET /api/community-events/:id/attendees error:', err.message);
+    res.status(500).json({ error: `Failed to load attendees: ${err.message}` });
   }
 });
 

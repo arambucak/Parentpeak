@@ -589,7 +589,7 @@ class _HomeScreenState extends State<HomeScreen>
     final featureActions = <_FeatureAction>[
       _FeatureAction(
         label: 'Impulse & Entwicklung',
-        description: 'Wochenimpuls und Entwicklung in einem Bereich',
+        description: 'Tagesimpuls und Entwicklung in einem Bereich',
         icon: Icons.auto_awesome_mosaic_rounded,
         color: const Color(0xFF0EA5A4),
         builder: (_) => const EntwicklungImpulseScreen(),

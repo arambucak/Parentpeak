@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
@@ -24,11 +25,15 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   final _todoCtrl = TextEditingController();
   List<Map<String, dynamic>> _todos = [];
   bool _loaded = false;
+  int _activeTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
+    _tabs.addListener(() {
+      if (mounted) setState(() => _activeTabIndex = _tabs.index);
+    });
     _load();
   }
 
@@ -86,6 +91,27 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     await prefs.setString('zentrale.todos', jsonEncode(_todos));
   }
 
+  /// Anzahl fälliger oder überfälliger U-Untersuchungen über alle Kinder.
+  int get _urgentExamCount {
+    if (!_loaded) return 0;
+    return _dossierService.dossiers.fold(0, (count, d) {
+      return count +
+          d.uExams
+              .where((u) => !u.isDone && u.dueAtMonths <= d.ageMonths + 3)
+              .length;
+    });
+  }
+
+  void _shareShoppingList() {
+    final items = _shopping.activeItems;
+    if (items.isEmpty) return;
+    final lines = items
+        .map((i) => '• ${i.emoji} ${i.name}'  
+            '${i.quantity != null ? ' (${i.quantity})' : ''}')
+        .join('\n');
+    Share.share('🛒 Einkaufsliste\n\n$lines', subject: 'Einkaufsliste');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -100,14 +126,53 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
       appBar: AppBar(
         title: const Text('Familien-Zentrale'),
         elevation: 0,
+        actions: [
+          if (_activeTabIndex == 0 && _shopping.activeItems.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.ios_share_rounded),
+              tooltip: 'Liste teilen',
+              onPressed: _shareShoppingList,
+            ),
+        ],
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(
+          tabs: [
+            const Tab(
                 icon: Icon(Icons.shopping_cart_rounded, size: 20),
                 text: 'Einkauf'),
-            Tab(icon: Icon(Icons.task_alt_rounded, size: 20), text: 'To-do'),
-            Tab(icon: Icon(Icons.child_care_rounded, size: 20), text: 'Kinder'),
+            const Tab(
+                icon: Icon(Icons.task_alt_rounded, size: 20), text: 'To-do'),
+            Tab(
+              child: SizedBox(
+                height: 46,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.child_care_rounded, size: 20),
+                        if (_urgentExamCount > 0)
+                          Positioned(
+                            right: -5,
+                            top: -3,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFDC2626),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text('Kinder', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -191,24 +256,75 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                 },
               )),
         ),
-      // Aktive Items
+      // Liste
       Expanded(
-          child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        children: [
-          ...active.map((item) => _shoppingItemTile(theme, item, false)),
-          if (done.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 14, bottom: 6),
-              child: Text('Erledigt (${done.length})',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: theme.colorScheme.outline)),
-            ),
-            ...done.map((item) => _shoppingItemTile(theme, item, true)),
-          ],
-        ],
-      )),
+          child: active.isEmpty && done.isEmpty
+              ? _buildEmptyShoppingState(theme)
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  children: [
+                    if (active.isEmpty && done.isNotEmpty)
+                      _buildAllDoneCelebration(theme),
+                    ...active.map((item) => _shoppingItemTile(theme, item, false)),
+                    if (done.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 14, bottom: 6),
+                        child: Text('Erledigt (${done.length})',
+                            style: theme.textTheme.labelMedium
+                                ?.copyWith(color: theme.colorScheme.outline)),
+                      ),
+                      ...done.map((item) => _shoppingItemTile(theme, item, true)),
+                    ],
+                  ],
+                )),
     ]);
+  }
+
+  Widget _buildEmptyShoppingState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('🛒', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 16),
+          Text('Liste ist leer',
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Text('Tippe oben etwas ein — z.B. "3x Milch"',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.outline),
+              textAlign: TextAlign.center),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildAllDoneCelebration(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFDCFCE7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.3)),
+      ),
+      child: Row(children: [
+        const Text('🎉', style: TextStyle(fontSize: 28)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Alle Einkäufe erledigt.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF166534))),
+            Text('Die Liste ist vollständig.',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: const Color(0xFF166534))),
+          ]),
+        ),
+      ]),
+    );
   }
 
   Widget _shoppingItemTile(ThemeData theme, ShoppingItem item, bool isDone) {

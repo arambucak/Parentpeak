@@ -1,6 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
 import 'package:parentpeak/logic/event_service.dart';
@@ -14,7 +18,14 @@ import 'package:parentpeak/ui/event_invitations_screen.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 
 class EventsActivitiesScreen extends StatefulWidget {
-  const EventsActivitiesScreen({super.key});
+  final EventDiscoveryAgent? agent;
+  final EventService? eventService;
+
+  const EventsActivitiesScreen({
+    super.key,
+    this.agent,
+    this.eventService,
+  });
 
   @override
   State<EventsActivitiesScreen> createState() => _EventsActivitiesScreenState();
@@ -25,14 +36,13 @@ enum _FeedSource { ai, community }
 enum _TimeWindowFilter { all, today, weekend }
 
 class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
-  final EventDiscoveryAgent _agent = EventDiscoveryAgent.instance;
-  final EventService _eventService = EventService();
+  late final EventDiscoveryAgent _agent;
+  late final EventService _eventService;
   final TextEditingController _cityController =
       TextEditingController(text: 'Berlin');
 
   bool _isLoading = true;
   String? _errorMessage;
-  bool _isUsingFallbackFeed = false;
   DateTime? _lastFeedSyncAt;
   List<DiscoveredEvent> _aiEvents = const [];
   List<MeetupEvent> _communityEvents = const [];
@@ -49,16 +59,111 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   bool _onlyNearbyQuick = false;
   _TimeWindowFilter _timeWindowFilter = _TimeWindowFilter.all;
 
+  // GPS
+  double? _gpsLat;
+  double? _gpsLon;
+  bool _gpsDetecting = false;
+  // Verhindert dass GPS eine manuell gewaehlte Stadt ueberschreibt
+  bool _cityManuallySet = false;
+
+  static const String _savedCityKey = 'events.saved_city';
+
   @override
   void initState() {
     super.initState();
-    _refreshFeed();
+    _agent = widget.agent ?? EventDiscoveryAgent.instance;
+    _eventService = widget.eventService ?? EventService();
+    _loadSavedCityThenDetect();
+  }
+
+  Future<void> _loadSavedCityThenDetect() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_savedCityKey);
+    if (saved != null && saved.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _cityController.text = saved;
+          _cityManuallySet = true;
+        });
+      }
+    }
+    _detectGpsAndRefresh();
   }
 
   @override
   void dispose() {
     _cityController.dispose();
     super.dispose();
+  }
+
+  // ─── GPS Standort-Erkennung ───────────────────────────────────────────────
+
+  /// [forceOverride] true wenn Nutzer den GPS-Button manuell drueckt —
+  /// dann wird die Stadt immer aktualisiert und gespeichert.
+  Future<void> _detectGpsAndRefresh({bool forceOverride = false}) async {
+    setState(() => _gpsDetecting = true);
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        _refreshFeed();
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 6),
+        ),
+      );
+      final district = await _reverseGeocode(pos.latitude, pos.longitude);
+      if (mounted) {
+        final shouldSetCity = district != null && (forceOverride || !_cityManuallySet);
+        if (shouldSetCity) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_savedCityKey, district);
+        }
+        setState(() {
+          _gpsLat = pos.latitude;
+          _gpsLon = pos.longitude;
+          if (shouldSetCity) {
+            _cityController.text = district;
+            _cityManuallySet = true;
+          }
+          _gpsDetecting = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('EventsActivitiesScreen: GPS fehlgeschlagen: $e');
+      if (mounted) setState(() => _gpsDetecting = false);
+    }
+    _refreshFeed();
+  }
+
+  Future<String?> _reverseGeocode(double lat, double lon) async {
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json&addressdetails=1',
+      );
+      final resp = await http
+          .get(uri, headers: {'User-Agent': 'ParentPeak/1.0 (family app)'})
+          .timeout(const Duration(seconds: 5));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        final address = data['address'] as Map<String, dynamic>?;
+        final suburb = address?['suburb'] as String? ??
+            address?['quarter'] as String? ??
+            address?['neighbourhood'] as String?;
+        final cityName = address?['city'] as String? ??
+            address?['town'] as String? ??
+            address?['village'] as String?;
+        if (suburb != null && cityName != null) return '$suburb, $cityName';
+        if (cityName != null) return cityName;
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> _refreshFeed() async {
@@ -69,39 +174,30 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _isUsingFallbackFeed = false;
     });
 
     try {
       final viewerUserId = AuthService.instance.currentUser?.uid ?? 'guest';
       final coords = _coordsForCity(city);
-      var hadAnyLoadError = false;
-
       List<DiscoveredEvent> aiEvents;
       try {
         aiEvents = await _agent.discoverEvents(
           city: city,
           radiusHint: '$_radiusKm km Umkreis',
           childAges: _selectedAgeGroups.map(_ageGroupLabel).toList(),
+          latitude: _gpsLat,
+          longitude: _gpsLon,
         );
-        if (aiEvents.isEmpty) {
-          // AI can return an empty list (for example when key/runtime is missing)
-          // without throwing. Keep the feed useful with local curated events.
-          aiEvents = _buildLocalFallbackAiEvents(city, coords);
-          hadAnyLoadError = true;
-        }
       } catch (e) {
-        debugPrint('EventsActivitiesScreen: AI feed fallback aktiv: $e');
-        hadAnyLoadError = true;
-        aiEvents = _buildLocalFallbackAiEvents(city, coords);
+        debugPrint('EventsActivitiesScreen: AI feed unavailable: $e');
+        aiEvents = const <DiscoveredEvent>[];
       }
 
       List<MeetupEvent> communityEvents;
       try {
         communityEvents = await _loadCommunityEventsForCity(coords);
       } catch (e) {
-        debugPrint('EventsActivitiesScreen: community feed fallback aktiv: $e');
-        hadAnyLoadError = true;
+        debugPrint('EventsActivitiesScreen: community feed unavailable: $e');
         communityEvents = const <MeetupEvent>[];
       }
 
@@ -110,7 +206,6 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         invitations = await _eventService.getInvitationsForUser(viewerUserId);
       } catch (e) {
         debugPrint('EventsActivitiesScreen: invitations load skipped: $e');
-        hadAnyLoadError = true;
         invitations = const <EventInvitation>[];
       }
 
@@ -129,11 +224,6 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         }
       }
 
-      if (aiEvents.isEmpty && communityEvents.isEmpty) {
-        aiEvents = _buildLocalFallbackAiEvents(city, coords);
-        hadAnyLoadError = true;
-      }
-
       if (!mounted) return;
       setState(() {
         _aiEvents = aiEvents;
@@ -141,7 +231,6 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         _invitations = invitations;
         _eventTitlesById = titleMap;
         _isLoading = false;
-        _isUsingFallbackFeed = hadAnyLoadError;
         _lastFeedSyncAt = DateTime.now();
         _errorMessage = null;
       });
@@ -149,13 +238,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       debugPrint('EventsActivitiesScreen._refreshFeed(): failed: $e');
       if (!mounted) return;
       setState(() {
-        _aiEvents = _buildLocalFallbackAiEvents(city, _coordsForCity(city));
+        _aiEvents = const <DiscoveredEvent>[];
         _communityEvents = const <MeetupEvent>[];
         _invitations = const <EventInvitation>[];
         _eventTitlesById = const {};
         _errorMessage = null;
         _isLoading = false;
-        _isUsingFallbackFeed = true;
         _lastFeedSyncAt = DateTime.now();
       });
     }
@@ -169,63 +257,6 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
     return '$day.$month.$year, $hour:$minute';
-  }
-
-  List<DiscoveredEvent> _buildLocalFallbackAiEvents(
-    String city,
-    (double, double) coords,
-  ) {
-    final now = DateTime.now();
-    return <DiscoveredEvent>[
-      DiscoveredEvent(
-        id: 'fallback_event_1',
-        title: 'Spielplatz-Treff im Kiez',
-        description:
-            'Offenes Treffen fuer Eltern mit Kindern. Lockeres Kennenlernen mit kurzer Bewegungsrunde.',
-        category: DiscoveredEventCategory.spielplatz,
-        ageLabels: const ['0-3', '4-6'],
-        location: 'Stadtpark Nord',
-        cityHint: city,
-        latitude: coords.$1,
-        longitude: coords.$2,
-        eventDate: now.add(const Duration(days: 1)),
-        price: 'kostenlos',
-        organizer: 'Parentpeak Community',
-        discoveredAt: now,
-      ),
-      DiscoveredEvent(
-        id: 'fallback_event_2',
-        title: 'Kreativnachmittag fuer Familien',
-        description:
-            'Basteln mit Alltagsmaterialien, kleine Mitmachstationen und Zeit fuer Austausch.',
-        category: DiscoveredEventCategory.basteln,
-        ageLabels: const ['4-6', '7-10'],
-        location: 'Familienzentrum Mitte',
-        cityHint: city,
-        latitude: coords.$1 + 0.01,
-        longitude: coords.$2 + 0.01,
-        eventDate: now.add(const Duration(days: 3)),
-        price: 'kostenlos',
-        organizer: 'Lokales Familienzentrum',
-        discoveredAt: now,
-      ),
-      DiscoveredEvent(
-        id: 'fallback_event_3',
-        title: 'Waldspaziergang mit Kindern',
-        description:
-            'Gemeinsamer Spaziergang mit kleinen Naturspielen. Kinderwagenfreundliche Strecke.',
-        category: DiscoveredEventCategory.natur,
-        ageLabels: const ['0-3', '4-6', '7-10'],
-        location: 'Waldpark Treffpunkt Ost',
-        cityHint: city,
-        latitude: coords.$1 - 0.015,
-        longitude: coords.$2 + 0.008,
-        eventDate: now.add(const Duration(days: 5)),
-        price: 'kostenlos',
-        organizer: 'Elterninitiative',
-        discoveredAt: now,
-      ),
-    ];
   }
 
   Future<List<MeetupEvent>> _loadCommunityEventsForCity(
@@ -652,67 +683,27 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             const SizedBox(height: 10),
             _buildAdvancedFilters(theme),
             const SizedBox(height: 14),
-            if (_isUsingFallbackFeed) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF7F4),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFB8E2D8)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.wifi_off_rounded, size: 18, color: Color(0xFF2E6D5F)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Offline-Modus aktiv: Einige Event-Daten sind lokal vorbereitet.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF2E6D5F),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
             if (_lastFeedSyncAt != null) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: _isUsingFallbackFeed
-                      ? const Color(0xFFFFF4E5)
-                      : const Color(0xFFEAF5FF),
+                  color: const Color(0xFFEAF5FF),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _isUsingFallbackFeed
-                        ? const Color(0xFFFFD79A)
-                        : const Color(0xFFB8DAF6),
-                  ),
+                  border: Border.all(color: const Color(0xFFB8DAF6)),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      _isUsingFallbackFeed
-                          ? Icons.schedule_rounded
-                          : Icons.update_rounded,
+                    const Icon(
+                      Icons.update_rounded,
                       size: 18,
-                      color: _isUsingFallbackFeed
-                          ? const Color(0xFF8A4B00)
-                          : const Color(0xFF155E75),
+                      color: Color(0xFF155E75),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _isUsingFallbackFeed
-                            ? 'Event-Stand: ${_formatLastSyncLabel(_lastFeedSyncAt!)} (Fallback aktiv)'
-                            : 'Event-Stand: ${_formatLastSyncLabel(_lastFeedSyncAt!)}',
+                        'Event-Stand: ${_formatLastSyncLabel(_lastFeedSyncAt!)}',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: _isUsingFallbackFeed
-                              ? const Color(0xFF8A4B00)
-                              : const Color(0xFF155E75),
+                          color: const Color(0xFF155E75),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -769,7 +760,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Text(
-                  'Keine passenden Events gefunden. Passe den Standort an oder veröffentliche selbst ein Angebot.',
+                  'Keine echten Events sind aktuell verfügbar.',
                 ),
               )
             else
@@ -906,12 +897,62 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   Widget _buildLocationSearch(ThemeData theme) {
-    return LocationPickerWidget(
-      hint: 'Standort waehlen',
-      onLocationPicked: (loc) {
-        _cityController.text = loc.displayName;
-        _refreshFeed();
-      },
+    return Row(
+      children: [
+        Expanded(
+          child: LocationPickerWidget(
+            hint: 'Standort waehlen',
+            onLocationPicked: (loc) async {
+              _cityController.text = loc.displayName;
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString(_savedCityKey, loc.displayName);
+              setState(() {
+                _cityManuallySet = true;
+                _gpsLat = null;
+                _gpsLon = null;
+              });
+              _refreshFeed();
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        // GPS-Detect Button
+        Tooltip(
+          message: _gpsLat != null ? 'GPS aktiv' : 'Standort automatisch erkennen',
+          child: InkWell(
+            onTap: _gpsDetecting ? null : () => _detectGpsAndRefresh(forceOverride: true),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _gpsLat != null
+                    ? const Color(0xFF0EA5A4).withValues(alpha: 0.12)
+                    : theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _gpsLat != null
+                      ? const Color(0xFF0EA5A4)
+                      : theme.colorScheme.outlineVariant,
+                ),
+              ),
+              child: _gpsDetecting
+                  ? const SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      _gpsLat != null
+                          ? Icons.my_location_rounded
+                          : Icons.location_searching_rounded,
+                      size: 18,
+                      color: _gpsLat != null
+                          ? const Color(0xFF0EA5A4)
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1327,6 +1368,7 @@ class _UnifiedFeedItem {
     this.ageLabel,
     this.communityAgeGroups = const [],
     this.eventDate,
+    this.eventTimeRange,
     this.latitude,
     this.longitude,
     this.priceLabel,
@@ -1341,6 +1383,7 @@ class _UnifiedFeedItem {
   final String? ageLabel;
   final List<AgeGroup> communityAgeGroups;
   final DateTime? eventDate;
+  final String? eventTimeRange;
   final double? latitude;
   final double? longitude;
   final String? priceLabel;
@@ -1362,6 +1405,7 @@ class _UnifiedFeedItem {
       location: event.location,
       ageLabel: event.ageLabels.isNotEmpty ? event.ageLabels.join(', ') : null,
       eventDate: event.eventDate,
+      eventTimeRange: event.eventTimeRange,
       latitude: event.latitude,
       longitude: event.longitude,
       priceLabel: price,
@@ -1415,6 +1459,22 @@ class _UnifiedEventCard extends StatelessWidget {
     return 'weit';
   }
 
+  String _formatCardDate(_UnifiedFeedItem item) {
+    final d = item.eventDate!;
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    final dateStr = '$dd.$mm.${d.year}';
+    if (item.eventTimeRange != null && item.eventTimeRange!.isNotEmpty) {
+      return '$dateStr  ${item.eventTimeRange!}';
+    }
+    if (d.hour != 0 || d.minute != 0) {
+      final h = d.hour.toString().padLeft(2, '0');
+      final min = d.minute.toString().padLeft(2, '0');
+      return '$dateStr  $h:$min Uhr';
+    }
+    return dateStr;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAi = item.source == _FeedSource.ai;
@@ -1456,8 +1516,11 @@ class _UnifiedEventCard extends StatelessWidget {
                   const Spacer(),
                   if (item.eventDate != null)
                     Text(
-                      '${item.eventDate!.day.toString().padLeft(2, '0')}.${item.eventDate!.month.toString().padLeft(2, '0')}.${item.eventDate!.year}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      _formatCardDate(item),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF374151),
+                      ),
                     ),
                 ],
               ),

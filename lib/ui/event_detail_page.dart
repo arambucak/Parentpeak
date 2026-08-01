@@ -3,7 +3,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/models/discovered_event.dart';
 import 'package:parentpeak/ui/widgets/event_attendees_widget.dart';
 import 'package:parentpeak/ui/widgets/event_safety_widgets.dart';
-import 'package:parentpeak/models/community_event.dart';
 
 /// Event-Detail Seite — zeigt alle Infos zu einem Event.
 class EventDetailPage extends StatelessWidget {
@@ -52,11 +51,7 @@ class EventDetailPage extends StatelessWidget {
               theme,
               '\u{1F4C5}',
               'Wann',
-              event.isRecurring
-                  ? event.recurringNote ?? 'Regelmaessig'
-                  : event.eventDate != null
-                      ? '${event.eventDate!.day}.${event.eventDate!.month}.${event.eventDate!.year}'
-                      : 'Bitte beim Veranstalter erfragen'),
+              _formatWann(event)),
           const SizedBox(height: 10),
           _infoCard(theme, '\u{1F4CD}', 'Wo', event.location),
           const SizedBox(height: 10),
@@ -86,7 +81,7 @@ class EventDetailPage extends StatelessWidget {
               ),
             ),
           ),
-          // Website-Link
+          // Website-Link / Veranstalter-Suche
           if (event.url != null && event.url!.isNotEmpty) ...[
             const SizedBox(height: 10),
             SizedBox(
@@ -97,6 +92,34 @@ class EventDetailPage extends StatelessWidget {
                 label: const Text('Website des Veranstalters'),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF0EA5A4),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+          ],
+          // Fallback: Websuche immer anzeigen wenn keine direkte URL vorhanden
+          if (event.url == null || event.url!.isEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  // Bevorzuge Veranstalter-Name, sonst Event-Titel als Suchbegriff
+                  final searchTerm =
+                      (event.organizer != null && event.organizer!.isNotEmpty)
+                          ? '${event.organizer!} ${event.cityHint}'
+                          : '${event.title} ${event.cityHint}';
+                  _openUrl(
+                      'https://www.google.com/search?q=${Uri.encodeComponent(searchTerm)}');
+                },
+                icon: const Icon(Icons.search_rounded, size: 18),
+                label: const Text('Im Web suchen'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF0EA5A4),
+                  side: BorderSide(
+                      color: const Color(0xFF0EA5A4).withValues(alpha: 0.4)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
@@ -175,6 +198,34 @@ class EventDetailPage extends StatelessWidget {
         ])),
       ]),
     );
+  }
+
+  /// Formatiert den Wann-Text mit Datum + Uhrzeit + Zeitraum.
+  String _formatWann(DiscoveredEvent event) {
+    if (event.isRecurring) {
+      return event.recurringNote ?? 'Regelmaessig';
+    }
+    if (event.eventDate == null && event.eventTimeRange == null) {
+      return 'Bitte beim Veranstalter erfragen';
+    }
+    final parts = <String>[];
+    if (event.eventDate != null) {
+      final d = event.eventDate!;
+      final weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+      final wd = weekdays[d.weekday - 1];
+      parts.add('$wd, ${d.day}.${d.month}.${d.year}');
+    }
+    if (event.eventTimeRange != null && event.eventTimeRange!.isNotEmpty) {
+      parts.add(event.eventTimeRange!);
+    } else if (event.eventDate != null) {
+      final d = event.eventDate!;
+      if (d.hour != 0 || d.minute != 0) {
+        final h = d.hour.toString().padLeft(2, '0');
+        final m = d.minute.toString().padLeft(2, '0');
+        parts.add('$h:$m Uhr');
+      }
+    }
+    return parts.join(' · ');
   }
 
   void _openInMaps(String location) async {

@@ -23,13 +23,15 @@ class PaywallScreen extends StatelessWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 24),
-              _buildHeader(theme, user),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 56),
+                  _buildHeader(theme, user),
               const SizedBox(height: 28),
               if (triggerFeatureId != null) _buildContextBanner(theme),
               if (triggerFeatureId != null) const SizedBox(height: 24),
@@ -44,8 +46,18 @@ class PaywallScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+        // Zurück-Button oben links
+        Positioned(
+          top: 8,
+          left: 4,
+          child: BackButton(
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ],
+    ),
+  ),
+);
   }
 
   Widget _buildHeader(ThemeData theme, ParentUser? user) {

@@ -674,7 +674,7 @@ class OnboardingReadyPage extends StatelessWidget {
                     ),
                   )),
               const SizedBox(height: 24),
-              // 14 Tage Trial Hinweis
+              // 30 Tage Trial Hinweis
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -692,7 +692,7 @@ class OnboardingReadyPage extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        '14 Tage kostenlos alle Features testen',
+                        '30 Tage kostenlos alle Features testen',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: theme.colorScheme.onTertiaryContainer,

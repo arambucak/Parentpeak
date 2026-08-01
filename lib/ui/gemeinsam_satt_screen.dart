@@ -1692,7 +1692,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         remainingPortions: remaining,
       );
     });
-    _showSnack('Super! ${post.authorName} wurde benachrichtigt');
+    _showSnack('${post.authorName} wurde benachrichtigt.');
   }
 
   Future<void> _cancelReservation(FoodSharePost post, int index) async {

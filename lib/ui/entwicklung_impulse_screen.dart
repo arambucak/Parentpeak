@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -20,14 +19,16 @@ import 'package:parentpeak/ui/widgets/eltern_wissen_widget.dart';
 
 /// Impulse & Entwicklung — vereinfacht, elternfreundlich, modern.
 ///
-/// Tab 1: Wochenimpuls mit 3 Mini-Formaten (Verstehen, Praxis, Reflexion)
+/// Tab 1: Tagesimpuls mit 3 Mini-Formaten (Verstehen, Praxis, Reflexion)
 /// Tab 2: Entwicklungs-Check-in (5 Bereiche, Radar-Chart, KI-Tipps)
 class EntwicklungImpulseScreen extends StatefulWidget {
   final int initialTabIndex;
+  final WeeklyImpulseService? impulseService;
 
   const EntwicklungImpulseScreen({
     super.key,
     this.initialTabIndex = 0,
+    this.impulseService,
   });
 
   @override
@@ -39,21 +40,25 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final FlutterTts _tts = FlutterTts();
-  final WeeklyImpulseService _impulseService =
-      BackendServiceFactory.createWeeklyImpulseService();
+  late final WeeklyImpulseService _impulseService;
 
   WeeklyImpulse? _impulse;
   bool _isLoading = true;
   String? _error;
-  bool _isUsingFallbackImpulse = false;
   bool _isPlayingAudio = false;
   int _expandedFormat = -1;
+
+  // Stimmungscheck & Streak
+  int _todayMood = 0;          // 0=kein Check-in, 1=😮‍💨, 2=😌, 3=🌟
+  int _streak = 0;             // Tage in Folge
+  bool _impulseCompleted = false; // Heutiger Impuls gelesen
+  String? _wissenTopic;        // Vorausgefülltes Thema für Wissen-Tab (Soforthilfe)
 
   String _t(String key) => AppStringsManager.getString(
       languageService.currentLanguage,
       key); // welches Mini-Format aufgeklappt ist
 
-  static const Duration _impulseStaleThreshold = Duration(days: 10);
+  static const Duration _impulseStaleThreshold = Duration(days: 2);
 
   // Entwicklung Check-in State — managed in TAB 2 section below
 
@@ -65,8 +70,11 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       vsync: this,
       initialIndex: widget.initialTabIndex.clamp(0, 1),
     );
+    _impulseService = widget.impulseService ??
+        BackendServiceFactory.createWeeklyImpulseService();
     _loadImpulse();
     _loadCheckIn();
+    _loadStreakAndMood();
   }
 
   @override
@@ -80,7 +88,6 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     setState(() {
       _isLoading = true;
       _error = null;
-      _isUsingFallbackImpulse = false;
     });
     try {
       final impulse = await _impulseService.fetchWeeklyImpulse(
@@ -90,70 +97,86 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         setState(() {
           _impulse = impulse;
           _isLoading = false;
-          _isUsingFallbackImpulse = false;
+          _error = null;
         });
     } catch (e) {
-      final fallback = _buildLocalFallbackImpulse();
       if (mounted)
         setState(() {
-          _impulse = fallback;
-          _error = null;
+          _impulse = null;
+          _error = 'Aktuell sind keine frischen Impulse verfügbar.';
           _isLoading = false;
-          _isUsingFallbackImpulse = true;
         });
     }
   }
 
-  WeeklyImpulse _buildLocalFallbackImpulse() {
-    return WeeklyImpulse(
-      id: 'local_fallback_impulse',
-      title: 'Kleine Schritte, große Wirkung',
-      contentBody:
-          'Wenn heute alles zu viel ist: Wähle nur einen ruhigen Moment mit deinem Kind und benenne ein Gefühl wertfrei. Dieser kurze Check-in stärkt Verbindung und Sicherheit.',
-      practicalTip:
-          'Praxis für heute: 3 Minuten gemeinsam atmen, dann frage: "Was war heute leicht für dich?".',
-      category: PedagogicalCategory.gfk,
-      publishDate: DateTime.now(),
-      heroHeadline: 'Offline-Impuls für deinen Alltag',
-      heroDescription:
-          'Der Server antwortet gerade nicht. Du kannst trotzdem direkt mit einem alltagstauglichen Impuls starten.',
-      companionImpulses: const <WeeklyImpulseCompanion>[
-        WeeklyImpulseCompanion(
-          id: 'fallback_verstehen',
-          title: 'Verstehen (2 min)',
-          summary:
-              'Kinder kooperieren besser, wenn sie sich zuerst gesehen fühlen. Verbindung kommt vor Korrektur.',
-          durationLabel: '2 min',
-          formatLabel: 'Verstehen',
-        ),
-        WeeklyImpulseCompanion(
-          id: 'fallback_praxis',
-          title: 'Praxis (3 min)',
-          summary:
-              'Nutze eine Ich-Botschaft: "Ich sehe, du bist gerade frustriert. Wir schaffen das zusammen."',
-          durationLabel: '3 min',
-          formatLabel: 'Praxis',
-        ),
-        WeeklyImpulseCompanion(
-          id: 'fallback_reflexion',
-          title: 'Reflexion (1 min)',
-          summary:
-              'Frage dich am Abend: Was hat heute zwischen uns gut funktioniert?',
-          durationLabel: '1 min',
-          formatLabel: 'Reflexion',
-        ),
-      ],
-      discussionPrompt: const WeeklyImpulseDiscussionPrompt(
-        id: 'fallback_discussion',
-        title: 'Gesprächsimpuls',
-        body:
-            'Welcher kleine Satz hat deinem Kind heute sichtbar gutgetan?',
-      ),
-    );
+  Future<void> _loadStreakAndMood() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = _todayKey();
+    // Mood
+    final savedMood = prefs.getInt('impulse.mood.$today') ?? 0;
+    // Streak
+    final lastDate = prefs.getString('impulse.streak.last_date') ?? '';
+    final savedCount = prefs.getInt('impulse.streak.count') ?? 0;
+    int streak = savedCount;
+    if (lastDate == today) {
+      streak = savedCount;
+    } else if (lastDate == _yesterdayKey()) {
+      streak = savedCount + 1;
+      await prefs.setInt('impulse.streak.count', streak);
+      await prefs.setString('impulse.streak.last_date', today);
+    } else if (lastDate.isEmpty) {
+      streak = 1;
+      await prefs.setInt('impulse.streak.count', 1);
+      await prefs.setString('impulse.streak.last_date', today);
+    } else {
+      streak = 1;
+      await prefs.setInt('impulse.streak.count', 1);
+      await prefs.setString('impulse.streak.last_date', today);
+    }
+    // Impuls erledigt heute?
+    final completed = prefs.getBool('impulse.completed.$today') ?? false;
+    if (mounted) setState(() {
+      _todayMood = savedMood;
+      _streak = streak;
+      _impulseCompleted = completed;
+    });
   }
 
-  Future<void> _playAudio(String text) async {
-    if (_isPlayingAudio) {
+  Future<void> _saveMood(int mood) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('impulse.mood.${_todayKey()}', mood);
+    setState(() => _todayMood = mood);
+  }
+
+  Future<void> _markImpulseCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('impulse.completed.${_todayKey()}', true);
+    setState(() => _impulseCompleted = true);
+    HapticFeedback.lightImpact();
+  }
+
+  String _todayKey() {
+    final n = DateTime.now();
+    return '${n.year}-${n.month.toString().padLeft(2,'0')}-${n.day.toString().padLeft(2,'0')}';
+  }
+
+  String _yesterdayKey() {
+    final n = DateTime.now().subtract(const Duration(days: 1));
+    return '${n.year}-${n.month.toString().padLeft(2,'0')}-${n.day.toString().padLeft(2,'0')}';
+  }
+
+  String _getMoodGreeting() {
+    final hour = DateTime.now().hour;
+    final timeGreet = hour < 12 ? 'Guten Morgen' : hour < 17 ? 'Hallo' : 'Guten Abend';
+    switch (_todayMood) {
+      case 1: return '$timeGreet — auch erschöpfte Eltern sind gute Eltern. 💛';
+      case 2: return '$timeGreet — schön, dass du heute dabei bist.';
+      case 3: return '$timeGreet — mit dieser Energie kannst du viel bewegen! 🌟';
+      default: return '$timeGreet! Wie geht\'s dir heute?';
+    }
+  }
+
+  Future<void> _playAudio(String text) async {    if (_isPlayingAudio) {
       await _tts.stop();
       setState(() => _isPlayingAudio = false);
       return;
@@ -240,7 +263,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TAB 1: WOCHENIMPULS — 3 Mini-Formate
+  // TAB 1: TAGESIMPULS — 3 Mini-Formate
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildImpulseTab(ThemeData theme) {
@@ -282,36 +305,10 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_isUsingFallbackImpulse) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.wifi_off_rounded,
-                      color: theme.colorScheme.onTertiaryContainer,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Offline-Modus aktiv: Dieser Impuls ist lokal geladen.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onTertiaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
+            // Täglicher Header: Begrüßung + Streak + Stimmungscheck
+            _buildDailyHeader(theme),
+            // Soforthilfe — "Was ist gerade los?"
+            _buildSoforthilfe(theme),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -541,6 +538,41 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                 ),
               ),
             ),
+            const SizedBox(height: 14),
+            // "Für heute gelesen" Completion Button
+            if (!_impulseCompleted)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _markImpulseCompleted,
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                  label: const Text('Für heute gelesen ✓'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF16A34A),
+                    side: const BorderSide(color: Color(0xFF16A34A), width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(Icons.check_circle_rounded,
+                      size: 18, color: Color(0xFF16A34A)),
+                  const SizedBox(width: 8),
+                  Text('Der heutige Impuls ist abgeschlossen.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF166534))),
+                ]),
+              ),
           ],
         ),
       ),
@@ -659,7 +691,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     );
   }
 
-  // ─── Schriftlicher Inhalt des Wochenimpulses ─────────────────────────────────
+  // ─── Schriftlicher Inhalt des Tagesimpulses ─────────────────────────────────
 
   bool _contentExpanded = false;
 
@@ -1468,6 +1500,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       child: ElternWissenWidget(
+        key: ValueKey(_wissenTopic), // rebuild when topic changes
+        initialTopic: _wissenTopic,
         onOpenChat: () {
           Navigator.push(
             context,
@@ -1475,6 +1509,154 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
           );
         },
       ),
+    );
+  }
+
+  // ─── Header: Begrüßung + Streak + Stimmungscheck ──────────────────────────
+  Widget _buildDailyHeader(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Greeting + Streak Row
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _getMoodGreeting(),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+            if (_streak > 1) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF4E5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFFD79A)),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Text('🔥', style: TextStyle(fontSize: 13)),
+                  const SizedBox(width: 4),
+                  Text('$_streak Tage',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF8A4B00))),
+                ]),
+              ),
+            ],
+          ],
+        ),
+        // Mood Check-in
+        if (_todayMood == 0) ...[
+          const SizedBox(height: 10),
+          _buildMoodCheckIn(theme),
+        ],
+        const SizedBox(height: 14),
+      ],
+    );
+  }
+
+  Widget _buildMoodCheckIn(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text('Wie geht\'s dir gerade?',
+                style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600)),
+          ),
+          ...[
+            ('😮‍💨', 'Erschöpft', 1),
+            ('😌', 'Okay', 2),
+            ('🌟', 'Top', 3),
+          ].map((item) => GestureDetector(
+            onTap: () => _saveMood(item.$3),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(item.$1, style: const TextStyle(fontSize: 22)),
+                Text(item.$2,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 9)),
+              ]),
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  // ─── Soforthilfe — "Was ist gerade los?" ─────────────────────────────────
+  Widget _buildSoforthilfe(ThemeData theme) {
+    const cards = [
+      (emoji: '😤', label: 'Trotz &\nWut', topic: 'trotz', color: Color(0xFFDC2626)),
+      (emoji: '😴', label: 'Schlafen\nklappt nicht', topic: 'schlafen', color: Color(0xFF7C3AED)),
+      (emoji: '✋', label: 'Haut ·\nBeißt', topic: 'haut', color: Color(0xFFEA580C)),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Was ist gerade los?',
+            style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        Row(
+          children: cards.map((card) {
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                    right: card.topic == cards.last.topic ? 0 : 8),
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    setState(() => _wissenTopic = card.topic);
+                    _tabController.animateTo(2);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: card.color.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                          color: card.color.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(card.emoji,
+                            style: const TextStyle(fontSize: 26)),
+                        const SizedBox(height: 6),
+                        Text(card.label,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: card.color,
+                                height: 1.3)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

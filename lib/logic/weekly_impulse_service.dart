@@ -208,7 +208,7 @@ class WeeklyImpulseService {
     'publish_date',
   ];
   static const String _weeklyImpulseCacheKey = 'pp_weekly_impulse_cache_v1';
-  static const Duration _weeklyImpulseCacheMaxAge = Duration(days: 10);
+  static const Duration _weeklyImpulseCacheMaxAge = Duration(days: 2);
 
   Future<WeeklyImpulse> fetchWeeklyImpulse({String? viewerUserId}) async {
     if (apiClient == null) {

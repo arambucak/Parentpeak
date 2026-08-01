@@ -8,8 +8,9 @@ import 'package:parentpeak/models/eltern_wissen_faq.dart';
 /// Zeigt: 1 personalisierter Impuls oben + Suchfeld + Ergebnisse.
 class ElternWissenWidget extends StatefulWidget {
   final VoidCallback? onOpenChat; // Fallback -> KI-Chat
+  final String? initialTopic;    // Vorausgefülltes Suchthema (z.B. von Soforthilfe)
 
-  const ElternWissenWidget({super.key, this.onOpenChat});
+  const ElternWissenWidget({super.key, this.onOpenChat, this.initialTopic});
 
   @override
   State<ElternWissenWidget> createState() => _ElternWissenWidgetState();
@@ -41,6 +42,11 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
         _impuls = _service.getDailyImpuls();
         _initialized = true;
       });
+    // Soforthilfe-Thema vorauffüllen wenn übergeben
+    if (widget.initialTopic != null && widget.initialTopic!.isNotEmpty) {
+      _searchCtrl.text = widget.initialTopic!;
+      _onSearch(widget.initialTopic!);
+    }
   }
 
   void _onSearch(String query) {

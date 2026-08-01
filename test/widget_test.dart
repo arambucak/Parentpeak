@@ -6,9 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/event_discovery_agent.dart';
+import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
+import 'package:parentpeak/logic/weekly_impulse_service.dart';
 import 'package:parentpeak/main.dart';
+import 'package:parentpeak/models/discovered_event.dart';
+import 'package:parentpeak/models/event_invitation.dart';
+import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/models/trusted_device.dart';
+import 'package:parentpeak/models_and_widgets/weekly_impulse_feature.dart';
+import 'package:parentpeak/ui/entwicklung_impulse_screen.dart';
 import 'package:parentpeak/ui/auth/login_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/ui/create_event_screen.dart';
@@ -34,6 +42,45 @@ class _LoginSuccessHarness extends StatefulWidget {
 
   @override
   State<_LoginSuccessHarness> createState() => _LoginSuccessHarnessState();
+}
+
+class _FakeEventDiscoveryAgent extends EventDiscoveryAgent {
+  @override
+  Future<List<DiscoveredEvent>> discoverEvents({
+    required String city,
+    String radiusHint = '20 km Umkreis',
+    List<String> childAges = const [],
+  }) async {
+    return const <DiscoveredEvent>[];
+  }
+}
+
+class _FakeEventService extends EventService {
+  @override
+  Future<List<MeetupEvent>> getEvents() async => const <MeetupEvent>[];
+
+  @override
+  Future<List<MeetupEvent>> getDiscoverableEventsForUser({
+    required String viewerUserId,
+    required double viewerLatitude,
+    required double viewerLongitude,
+    List<AgeGroup>? ageGroups,
+  }) async => const <MeetupEvent>[];
+
+  @override
+  Future<List<EventInvitation>> getInvitationsForUser(String userId) async => const <EventInvitation>[];
+
+  @override
+  Future<MeetupEvent?> getEventById(String id) async => null;
+}
+
+class _ThrowingWeeklyImpulseService extends WeeklyImpulseService {
+  const _ThrowingWeeklyImpulseService() : super(apiClient: null);
+
+  @override
+  Future<WeeklyImpulse> fetchWeeklyImpulse({String? viewerUserId}) async {
+    throw StateError('backend unavailable');
+  }
 }
 
 class _LoginSuccessHarnessState extends State<_LoginSuccessHarness> {
@@ -197,6 +244,44 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 600));
+  });
+
+  testWidgets('Events screen shows a real empty state instead of synthetic fallback events',
+      (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await AuthService.instance.debugSeedSessionForTesting();
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        EventsActivitiesScreen(
+          agent: _FakeEventDiscoveryAgent(),
+          eventService: _FakeEventService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Keine echten Events sind aktuell verfügbar.'), findsOneWidget);
+  });
+
+  testWidgets('Impulse screen shows an empty state instead of local fallback content',
+      (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        const EntwicklungImpulseScreen(
+          impulseService: _ThrowingWeeklyImpulseService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Aktuell sind keine frischen Impulse verfügbar.'), findsOneWidget);
+    expect(find.textContaining('Offline-Modus'), findsNothing);
   });
 
   testWidgets('LoginScreen logs in with valid local credentials',
