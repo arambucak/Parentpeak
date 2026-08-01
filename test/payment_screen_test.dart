@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/models/meetup_event.dart';
@@ -24,26 +25,38 @@ MeetupEvent _buildEvent() {
 void main() {
   testWidgets('PaymentScreen warns when Stripe key is missing',
       (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PaymentScreen(
-          event: _buildEvent(),
-          amount: 9.99,
+    // Use a tall viewport so all widgets are visible without scrolling
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    // Override platform to Linux so isStripePaymentSheetSupportedPlatform()
+    // returns false → _stripeAvailable = false → SnackBar warning is shown.
+    // Must be reset in finally so the test framework invariant check passes.
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PaymentScreen(
+            event: _buildEvent(),
+            amount: 9.99,
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
 
-  final termsText = find.text('Bedingungen akzeptieren');
-  await tester.ensureVisible(termsText);
-  await tester.tap(termsText);
-    await tester.pumpAndSettle();
+      // Toggle terms checkbox
+      await tester.tap(find.text('AGB & Datenschutz akzeptieren'));
+      await tester.pump();
 
-  final payButton = find.text('Jetzt 9.99 € zahlen');
-  await tester.ensureVisible(payButton);
-  await tester.tap(payButton);
-    await tester.pump();
+      // Tap the pay button — Stripe not supported on Linux → warning shown
+      await tester.tap(find.text('Jetzt 9.99 € zahlen'));
+      await tester.pump(); // process tap → _processPayment called → showSnackBar
+      await tester.pump(); // rebuild scaffold to show SnackBar
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
 
     expect(
       find.text(

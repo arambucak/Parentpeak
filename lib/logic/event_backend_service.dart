@@ -35,7 +35,7 @@ class EventBackendService {
       final query = <String, String>{
         if (status != null && status.isNotEmpty) 'status': status,
         if (hostUserId != null && hostUserId.isNotEmpty) 'hosterId': hostUserId,
-        'maxResults': limit.toString(),
+        'limit': limit.toString(),
         'offset': offset.toString(),
       };
       final payload = await _apiClient!.getJson(_appendQuery(_eventsPath, query));
@@ -60,10 +60,11 @@ class EventBackendService {
     if (_apiClient == null) return [];
     try {
       final query = <String, String>{
+        'viewerUserId': viewerUserId,
         'latitude': viewerLatitude.toString(),
         'longitude': viewerLongitude.toString(),
         'radiusKm': '25',
-        'maxResults': limit.toString(),
+        'limit': limit.toString(),
         'offset': offset.toString(),
         'status': 'upcoming',
         'visibility': 'publicNearby',
@@ -142,7 +143,7 @@ class EventBackendService {
     try {
       final body = <String, dynamic>{
         ...fields,
-        if (requestingUserId != null) 'hosterId': requestingUserId,
+        if (requestingUserId != null) 'requestingUserId': requestingUserId,
       };
       final payload = await _apiClient!.putJson('$_eventsPath/$id', body);
       if (payload is Map<String, dynamic> && payload.containsKey('event')) {
