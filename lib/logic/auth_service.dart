@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/firebase_options.dart';
 import 'package:parentpeak/logic/notification_service.dart';
@@ -534,6 +535,85 @@ class AuthService {
   }
 
   // ── Logout ─────────────────────────────────────────────────────────────────
+  Future<String?> sendPasswordReset(String email) async {
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty) {
+      return 'Bitte gib deine E-Mail-Adresse ein.';
+    }
+
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(cleanEmail)) {
+      return 'Bitte gib eine gueltige E-Mail-Adresse ein.';
+    }
+
+    await _ensureFirebaseInitChecked();
+
+    if (!_firebaseReady || _firebaseAuth == null) {
+      debugPrint(
+        'AuthService.sendPasswordReset(): Firebase nicht verfuegbar, kein Mail-Versand moeglich.',
+      );
+      return 'Passwort-Reset ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.';
+    }
+
+    try {
+      // ── Modern path: send branded German email via backend ─────────────────
+      // The backend uses Firebase Admin SDK to generate the action link and
+      // nodemailer to send a fully custom HTML email pointing to our
+      // branded auth-action page (https://parentpeak.onrender.com/auth/action).
+      final backendUrl = APIConfig.getBackendBaseUrl();
+      if (backendUrl != null && backendUrl.isNotEmpty) {
+        try {
+          final response = await http
+              .post(
+                Uri.parse('$backendUrl/auth/send-password-reset'),
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({'email': cleanEmail}),
+              )
+              .timeout(const Duration(seconds: 10));
+
+          if (response.statusCode == 200) {
+            return null; // success — branded email sent
+          }
+          debugPrint(
+            'AuthService.sendPasswordReset(): backend returned ${response.statusCode}, falling back to Firebase',
+          );
+        } catch (e) {
+          debugPrint(
+            'AuthService.sendPasswordReset(): backend unreachable ($e), falling back to Firebase',
+          );
+        }
+      }
+
+      // ── Fallback: Firebase built-in email (now sent in German) ────────────
+      await _firebaseAuth!.sendPasswordResetEmail(email: cleanEmail);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      final code = e.code.trim().toLowerCase().replaceAll('_', '-');
+      switch (code) {
+        case 'user-not-found':
+          return 'Kein Konto mit dieser E-Mail gefunden.';
+        case 'invalid-email':
+          return 'Bitte gib eine gueltige E-Mail-Adresse ein.';
+        case 'too-many-requests':
+          return 'Zu viele Versuche. Bitte spaeter erneut versuchen.';
+        case 'network-request-failed':
+          return 'Netzwerkfehler. Bitte pruefe deine Verbindung.';
+        case 'internal-error':
+        case 'app-not-authorized':
+        case 'operation-not-allowed':
+        case 'invalid-api-key':
+          return 'E-Mail-Versand ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.';
+        default:
+          debugPrint(
+            'AuthService.sendPasswordReset(): Firebase Fehler ${e.code}',
+          );
+          return 'Passwort-Reset fehlgeschlagen. Bitte versuche es erneut.';
+      }
+    } catch (e) {
+      _logIgnoredError('AuthService.sendPasswordReset(): unexpected error', e);
+      return 'Passwort-Reset fehlgeschlagen. Bitte versuche es erneut.';
+    }
+  }
+
   void _triggerFcmInit(String userId) {
     Future.microtask(() async {
       try {

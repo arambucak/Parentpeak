@@ -9,13 +9,14 @@ import 'package:parentpeak/models/event_attendee.dart';
 /// Service fuer Community-Events — verbindet App mit Backend.
 ///
 /// Endpoints:
-///   POST   /api/events           — Event erstellen
-///   GET    /api/events?city=X    — Events in einer Stadt laden
-///   POST   /api/events/:id/flag  — Event melden
-///   POST   /api/events/:id/interest — Interesse zeigen
-///   DELETE /api/events/:id       — Eigenes Event loeschen
+///   POST   /api/community-events              — Event erstellen
+///   GET    /api/community-events?city=X       — Events in einer Stadt laden
+///   POST   /api/community-events/:id/flag     — Event melden
+///   POST   /api/community-events/:id/interest — Interesse zeigen
+///   GET    /api/community-events/:id/attendees — Teilnehmer-Liste
+///   DELETE /api/community-events/:id          — Eigenes Event loeschen
 ///
-/// Rate-Limiting: Max 3 Events pro Tag pro User (Client-seitig geprueft).
+/// Rate-Limiting: Max 3 Events pro Tag pro User (Server-seitig geprueft).
 class CommunityEventService extends ChangeNotifier {
   static final CommunityEventService instance = CommunityEventService._();
   CommunityEventService._();
@@ -56,7 +57,7 @@ class CommunityEventService extends ChangeNotifier {
     try {
       if (_api != null) {
         final response = await _api!.getJson(
-          '/api/events?city=${Uri.encodeComponent(city)}&limit=20',
+          '/api/community-events?city=${Uri.encodeComponent(city)}&limit=20',
         );
         if (response is List) {
           final communityEvents = response
@@ -126,7 +127,7 @@ class CommunityEventService extends ChangeNotifier {
         return false;
       }
 
-      await _api!.postJson('/api/events', event.toJson());
+      await _api!.postJson('/api/community-events', event.toJson());
       _todayCreatedCount++;
       _error = null;
 
@@ -150,7 +151,7 @@ class CommunityEventService extends ChangeNotifier {
       if (_api == null) return false;
 
       final uid = AuthService.instance.currentUser?.uid ?? 'guest';
-      await _api!.postJson('/api/events/$eventId/flag', {
+      await _api!.postJson('/api/community-events/$eventId/flag', {
         'userId': uid,
         'reason': reason,
       });
@@ -183,7 +184,7 @@ class CommunityEventService extends ChangeNotifier {
           AuthService.instance.currentUser?.displayName ?? 'Elternteil';
 
       if (_api != null) {
-        await _api!.postJson('/api/events/$eventId/interest', {
+        await _api!.postJson('/api/community-events/$eventId/interest', {
           'userId': uid,
           'displayName': name,
           'message': message,
@@ -212,10 +213,11 @@ class CommunityEventService extends ChangeNotifier {
   Future<EventAttendeesResult> getAttendees(String eventId) async {
     _ensureApi();
     try {
-      if (_api == null)
+      if (_api == null) {
         return const EventAttendeesResult(attendees: [], total: 0);
+      }
 
-      final response = await _api!.getJson('/api/events/$eventId/attendees');
+      final response = await _api!.getJson('/api/community-events/$eventId/attendees');
       final list = (response['attendees'] as List? ?? [])
           .map((e) => EventAttendee.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -239,7 +241,8 @@ class CommunityEventService extends ChangeNotifier {
     _ensureApi();
     try {
       if (_api != null) {
-        await _api!.delete('/api/events/$eventId');
+        final uid = AuthService.instance.currentUser?.uid ?? '';
+        await _api!.delete('/api/community-events/$eventId?creatorId=${Uri.encodeComponent(uid)}');
       }
       _events.removeWhere((e) => e.id == eventId);
       notifyListeners();

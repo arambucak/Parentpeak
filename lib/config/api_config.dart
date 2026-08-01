@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
 
@@ -7,6 +8,9 @@ import 'package:flutter/foundation.dart';
 /// await dotenv.load();
 
 class APIConfig {
+  static final Map<String, String> _runtimeEnvCache = <String, String>{};
+  static bool _runtimeEnvInitialized = false;
+
   // Compile-time release values (set via --dart-define).
   static const String _geminiApiKeyDefine =
       String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
@@ -27,7 +31,7 @@ class APIConfig {
   static const String _contactSupportUrlDefine =
       String.fromEnvironment('CONTACT_SUPPORT_URL', defaultValue: '');
 
-  // Gemini API Configuration - Gemini 3.1 Pro for highest quality conversations.
+  // Gemini API Configuration - gemini-3.1-pro-preview (used in Kiro workspace).
   static const String geminiModelName = 'gemini-3.1-pro-preview';
 
   static String getGeminiModelName() {
@@ -44,6 +48,17 @@ class APIConfig {
   /// Hole den Gemini API-Key aus --dart-define oder .env.
   static String? getGeminiApiKey() {
     return _readEnvOrDefine('GEMINI_API_KEY');
+  }
+
+  /// Ensure dotenv is loaded before reading runtime values.
+  static Future<void> ensureRuntimeEnvLoaded() async {
+    _loadRuntimeEnvCacheIfNeeded();
+
+    try {
+      await dotenv.load(fileName: '.env', isOptional: true);
+    } catch (e) {
+      debugPrint('APIConfig.ensureRuntimeEnvLoaded(): $e');
+    }
   }
 
   /// Validiere ob ein API-Key vorhanden ist
@@ -424,6 +439,8 @@ class APIConfig {
   }
 
   static String? _readEnvOrDefine(String key) {
+    _loadRuntimeEnvCacheIfNeeded();
+
     try {
       final envValue = dotenv.env[key]?.trim();
       if (envValue != null && envValue.isNotEmpty) {
@@ -437,11 +454,99 @@ class APIConfig {
       }
     }
 
+    final cachedValue = _runtimeEnvCache[key]?.trim();
+    if (cachedValue != null && cachedValue.isNotEmpty) {
+      return cachedValue;
+    }
+
     final compileTimeValue = _readCompileTimeValue(key);
     if (compileTimeValue != null && compileTimeValue.isNotEmpty) {
       return compileTimeValue;
     }
 
+    return null;
+  }
+
+  static void _loadRuntimeEnvCacheIfNeeded() {
+    if (_runtimeEnvInitialized) {
+      return;
+    }
+
+    _runtimeEnvInitialized = true;
+
+    try {
+      final envFile = _findDotEnvFile();
+      if (envFile != null && envFile.existsSync()) {
+        final lines = envFile.readAsLinesSync();
+        for (final line in lines) {
+          final trimmed = line.trim();
+          if (trimmed.isEmpty || trimmed.startsWith('#')) {
+            continue;
+          }
+          final separatorIndex = trimmed.indexOf('=');
+          if (separatorIndex <= 0) {
+            continue;
+          }
+          final key = trimmed.substring(0, separatorIndex).trim();
+          final value = trimmed.substring(separatorIndex + 1).trim();
+          if (key.isEmpty) {
+            continue;
+          }
+          final normalizedValue = value
+              .replaceAll(RegExp(r'^"|"$'), '')
+              .replaceAll(RegExp(r"^'|'$"), '');
+          if (normalizedValue.isNotEmpty) {
+            _runtimeEnvCache[key] = normalizedValue;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('APIConfig._loadRuntimeEnvCacheIfNeeded() failed: $e');
+    }
+  }
+
+  static File? _findDotEnvFile() {
+    if (kIsWeb) {
+      return null;
+    }
+
+    final directories = <Directory>{};
+    void addDirectory(Directory? directory) {
+      if (directory == null) {
+        return;
+      }
+      var current = directory;
+      while (true) {
+        directories.add(current);
+        final parent = current.parent;
+        if (parent.path == current.path) {
+          break;
+        }
+        current = parent;
+      }
+    }
+
+    addDirectory(Directory.current);
+
+    try {
+      addDirectory(File(Platform.script.toFilePath()).parent);
+    } catch (_) {}
+
+    try {
+      addDirectory(File(Platform.resolvedExecutable).parent);
+    } catch (_) {}
+
+    final envPath = Platform.environment['PWD'];
+    if (envPath != null && envPath.isNotEmpty) {
+      addDirectory(Directory(envPath));
+    }
+
+    for (final directory in directories) {
+      final candidate = File('${directory.path}/.env');
+      if (candidate.existsSync()) {
+        return candidate;
+      }
+    }
     return null;
   }
 
@@ -484,24 +589,47 @@ class APIConfig {
 
   /// System-Instruktion für Eltern-Assistent
   static const String parentAssistantSystemPrompt = '''
-Du bist der ParentPeak Eltern-Coach. Stell dir vor: Eine warmherzige Freundin die auch Pädagogin ist. Du hilfst Eltern im Alltag mit Kindern (0–18 Jahre).
+Du bist der ParentPeak Eltern-Coach — eine warmherzige, kluge Begleiterin für Eltern im Alltag mit Kindern (0–18 Jahre). Du kombinierst neurowissenschaftliche Erkenntnisse mit bewährter Pädagogik zu konkreten, sofort umsetzbaren Antworten.
 
-SO ANTWORTEST DU:
-• Kurz und direkt. Maximal 8-10 Zeilen.
+DEINE PÄDAGOGISCHE GRUNDLAGE — drei sich ergänzende Ansätze:
+
+1. GERALD HÜTHER (Neurobiologie der Kindheit)
+   — Das Gehirn ist lebenslang formbar: durch Begeisterung und emotionale Verbundenheit, NICHT durch Druck oder Angst.
+   — Jedes Kind hat zwei gleichzeitige Grundbedürfnisse die beide erfüllt sein müssen:
+     → Verbundenheit: Liebe, Sicherheit, echte Zugehörigkeit
+     → Autonomie: Dinge selbst entdecken und gestalten dürfen
+   — Kinder lernen durch Nachahmung, nicht durch Belehrung. Eltern sind das größte Lernmodell.
+   — Kein Kind darf zum Objekt von Erwartungen, Bewertungen oder elterlichen Absichten werden — das blockiert die natürliche Entwicklung.
+   — Hindernisse NICHT wegnehmen: Kinder die eigene, lösbare Probleme bewältigen, bauen echtes Selbstvertrauen und Resilienz auf.
+   — Begeisterung setzt neuroplastische Botenstoffe frei (wie Dünger für neue Nervenverbindungen) — emotionale Beteiligung ist Grundbedingung für echtes Lernen.
+   — Druck, Belohnung, Bestrafung → ersetzen durch Beziehungsarbeit, echte Präsenz und Vorbildsein.
+   — Trenne echte Bedürfnisse (Nähe, Sicherheit, Autonomie) von materiellen Wünschen.
+
+2. GEWALTFREIE KOMMUNIKATION nach Marshall Rosenberg
+   — Vier Schritte: Beobachtung → Gefühl → Bedürfnis → Bitte
+   — Gib Eltern einen konkreten Satz den sie HEUTE sagen können.
+   — Gefühle und Bedürfnisse des Kindes laut benennen hilft dem Gehirn, sich selbst zu regulieren.
+
+3. JESPER JUUL (Familientherapie)
+   — Kinder sind vollwertige Menschen, nicht kleine Erwachsene.
+   — Eltern führen liebevoll ohne zu dominieren.
+   — Selbstverantwortung statt Gehorsamkeit als Ziel.
+
+WIE DU ANTWORTEST:
+• Kurz und direkt. Maximal 8–10 Zeilen.
 • Konkret: Gib Beispiele die man HEUTE umsetzen kann.
 • Duze immer. Warm, nicht belehrend.
-• Bei Erziehungsproblemen: Sage was das Kind vermutlich braucht + einen konkreten Satz den Eltern sagen können.
-• Bei praktischen Fragen: Direkt antworten mit Tipps. Keine Gefühls-Einleitung.
-• Frage am Ende kurz nach wenn dir Info fehlt (Alter, Situation).
+• Bei Erziehungsproblemen: Was braucht das Kind gerade (Hüther-Linse: Verbundenheit oder Autonomie?) + ein konkreter Satz.
+• Bei praktischen Fragen: Direkt antworten. Keine Gefühls-Einleitung.
+• Frage kurz nach wenn dir wichtige Info fehlt (Alter, Situation).
+• Schreibe wie in einer WhatsApp-Nachricht an eine gute Freundin — nicht wie ein Lehrbuch.
 
 DAS MACHST DU NICHT:
 • Keine langen Texte. Keine Textwände.
 • Keine Diagnosen. Keine Medikamente.
 • Keinen Disclaimer anhängen. Nie.
-• Nicht moralisieren. Nicht belehren.
+• Nicht moralisieren. Nicht belehren. Nicht werten.
+• Nicht alle Hindernisse theoretisch weg-erklären — zeige wie Eltern DANEBEN stehen können.
 • Bei akuter Gefahr (Gewalt, Suizid): Notruf 112, Telefonseelsorge 0800-1110111.
-
-DEIN STIL:
-Schreibe wie in einer WhatsApp-Nachricht an eine gute Freundin die um Rat fragt. Nicht wie ein Lehrbuch. Nicht wie ein Chatbot. Wie ein Mensch.
 ''';
 }

@@ -31,6 +31,7 @@ dependencies:
   just_audio: ^0.9.46
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  geolocator: ^13.0.2
   qr_flutter: ^4.1.0
   pdf: ^3.11.3
   printing: ^5.14.3
@@ -51,5 +52,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/images/
     - assets/icons/

@@ -3,6 +3,8 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const Stripe = require('stripe');
 require('dotenv').config(); // Load environment variables
 const { Pool } = require('pg');
@@ -2342,7 +2344,7 @@ function ensureEntitlement(userId, options = {}) {
 }
 
 function buildEntitlementStatus(record) {
-  const trialDays = 14;
+  const trialDays = 30;
   const now = new Date();
   const registeredAt = new Date(record.registeredAt);
   const trialEndsAt = new Date(registeredAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
@@ -6121,6 +6123,236 @@ async function sendPushToUser(userId, { title, body, data = {} }) {
   }
 }
 
+// ── Firebase Custom Auth Action Handler ─────────────────────────────────────
+// Serves the branded German auth-action page. Firebase sends users here for
+// password reset, email verification and email-change recovery.
+// Set this URL in Firebase Console → Auth → Settings → Email action handler URL:
+//   https://parentpeak.onrender.com/auth/action
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+app.get('/auth/action', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'auth-action.html'));
+});
+
+// ── Branded Email Service (modern alternative to Firebase email templates) ───
+// Uses nodemailer + Firebase Admin SDK to send fully custom German HTML emails.
+// Required env vars: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+// Optional: SMTP_FROM_NAME (default: "ParentPeak"), SMTP_FROM_EMAIL
+// The custom auth-action.html page handles the user interaction after click.
+
+const ACTION_HANDLER_BASE = process.env.AUTH_ACTION_URL || 'https://parentpeak.onrender.com/auth/action';
+const SMTP_FROM_NAME  = process.env.SMTP_FROM_NAME  || 'ParentPeak';
+const SMTP_FROM_EMAIL = process.env.SMTP_FROM_EMAIL || (process.env.SMTP_USER || 'noreply@parentpeak.app');
+
+/** Lazy-create the nodemailer transporter (returns null if SMTP not configured) */
+function createMailTransporter() {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  return nodemailer.createTransport({
+    host,
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true', // true for port 465
+    auth: { user, pass },
+    tls: { rejectUnauthorized: true },
+  });
+}
+
+/**
+ * sendEmail({ to, subject, html })
+ * Priority: 1) Resend API  2) SMTP/nodemailer  3) returns false (Firebase fallback)
+ */
+async function sendEmail({ to, subject, html }) {
+  // ── 1. Resend (recommended: modern API, excellent deliverability, free 3k/mo) ──
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    const resend = new Resend(resendKey);
+    const { error } = await resend.emails.send({
+      from: `${SMTP_FROM_NAME} <${SMTP_FROM_EMAIL}>`,
+      to,
+      subject,
+      html,
+    });
+    if (error) throw new Error(`Resend error: ${error.message}`);
+    return true;
+  }
+
+  // ── 2. SMTP / nodemailer (classic: Gmail, SendGrid, Mailgun, etc.) ─────────
+  const transporter = createMailTransporter();
+  if (transporter) {
+    await transporter.sendMail({
+      from: `"${SMTP_FROM_NAME}" <${SMTP_FROM_EMAIL}>`,
+      to,
+      subject,
+      html,
+    });
+    return true;
+  }
+
+  // ── 3. No email provider configured ───────────────────────────────────────
+  console.warn('⚠️ Email provider not configured. Set RESEND_API_KEY or SMTP_HOST/SMTP_USER/SMTP_PASS.');
+  return false;
+}
+
+/** Build a custom action URL pointing to our handler, preserving oobCode + mode */
+function buildCustomActionUrl(firebaseLink, mode) {
+  try {
+    const u = new URL(firebaseLink);
+    const oobCode   = u.searchParams.get('oobCode');
+    const apiKey    = u.searchParams.get('apiKey');
+    const continueUrl = u.searchParams.get('continueUrl');
+    const custom = new URL(ACTION_HANDLER_BASE);
+    custom.searchParams.set('mode', mode);
+    if (oobCode)    custom.searchParams.set('oobCode', oobCode);
+    if (apiKey)     custom.searchParams.set('apiKey', apiKey);
+    if (continueUrl) custom.searchParams.set('continueUrl', continueUrl);
+    return custom.toString();
+  } catch {
+    return firebaseLink; // fallback to original if URL parsing fails
+  }
+}
+
+const EMAIL_STYLE = `
+  font-family:-apple-system,Arial,sans-serif;max-width:520px;margin:0 auto;
+  padding:32px 24px;background:#ffffff;color:#2D3748;
+`;
+
+function buildPasswordResetEmail(actionUrl) {
+  return `
+<div style="${EMAIL_STYLE}">
+  <div style="font-size:36px;margin-bottom:12px;text-align:center;">🌿</div>
+  <h2 style="font-size:22px;font-weight:800;color:#2D3748;margin:0 0 8px 0;">Passwort zurücksetzen</h2>
+  <p style="font-size:15px;color:#718096;margin:0 0 20px 0;">
+    Hallo!<br><br>
+    Kein Stress — das passiert den Besten. 😊<br>
+    Klick auf den Button um ein neues Passwort für dein <strong>ParentPeak</strong>-Konto festzulegen:
+  </p>
+  <a href="${actionUrl}" style="display:inline-block;background:#4CAF50;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:15px;">
+    Neues Passwort festlegen →
+  </a>
+  <p style="font-size:13px;color:#A0AEC0;margin:20px 0 8px 0;">⏱ Der Link ist <strong>1 Stunde</strong> gültig.</p>
+  <p style="font-size:13px;color:#A0AEC0;margin:0 0 24px 0;">
+    Falls du diese Anfrage <strong>nicht</strong> gestellt hast, kannst du diese E-Mail ignorieren. Dein Konto bleibt sicher.
+  </p>
+  <hr style="border:none;border-top:1px solid #EDF2F7;margin:24px 0;">
+  <p style="font-size:12px;color:#CBD5E0;margin:0;">
+    Liebe Grüße,<br>
+    <strong style="color:#4CAF50;">Dein ParentPeak-Team 💚</strong><br>
+    <em>Dein digitaler Begleiter für Eltern</em>
+  </p>
+</div>`;
+}
+
+function buildVerificationEmail(displayName, actionUrl) {
+  const name = displayName || 'dort';
+  return `
+<div style="${EMAIL_STYLE}">
+  <div style="font-size:36px;margin-bottom:12px;text-align:center;">🌿</div>
+  <h2 style="font-size:22px;font-weight:800;color:#2D3748;margin:0 0 8px 0;">E-Mail-Adresse bestätigen</h2>
+  <p style="font-size:15px;color:#718096;margin:0 0 20px 0;">
+    Hallo ${name}! 🎉<br><br>
+    Schön, dass du dabei bist. Bestätige jetzt deine E-Mail-Adresse:
+  </p>
+  <a href="${actionUrl}" style="display:inline-block;background:#4CAF50;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:15px;">
+    E-Mail bestätigen →
+  </a>
+  <p style="font-size:13px;color:#A0AEC0;margin:20px 0 24px 0;">
+    Falls du kein ParentPeak-Konto erstellt hast, kannst du diese E-Mail ignorieren.
+  </p>
+  <hr style="border:none;border-top:1px solid #EDF2F7;margin:24px 0;">
+  <p style="font-size:12px;color:#CBD5E0;margin:0;">
+    Herzlich willkommen,<br>
+    <strong style="color:#4CAF50;">Dein ParentPeak-Team 💚</strong><br>
+    <em>Dein digitaler Begleiter für Eltern</em>
+  </p>
+</div>`;
+}
+
+/**
+ * POST /auth/send-password-reset
+ * Body: { email: string }
+ * Generates a Firebase password reset link via Admin SDK and sends it
+ * through nodemailer with a fully branded German HTML email.
+ * Always returns 200 to avoid leaking user existence.
+ */
+app.post('/auth/send-password-reset', async (req, res) => {
+  const email = (req.body?.email || '').trim().toLowerCase();
+
+  // Basic email format validation (prevents unnecessary Firebase calls)
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
+  }
+
+  // Always 200 so callers can't enumerate users
+  res.json({ success: true });
+
+  // Async: generate link + send email (fire-and-forget after response)
+  try {
+    if (!firebaseAdmin) {
+      console.warn('⚠️ /auth/send-password-reset: Firebase Admin nicht initialisiert');
+      return;
+    }
+
+    const firebaseLink = await firebaseAdmin.auth().generatePasswordResetLink(email, {
+      url: ACTION_HANDLER_BASE,
+    });
+    const actionUrl = buildCustomActionUrl(firebaseLink, 'resetPassword');
+
+    const sent = await sendEmail({
+      to: email,
+      subject: 'Dein ParentPeak-Passwort zurücksetzen',
+      html: buildPasswordResetEmail(actionUrl),
+    });
+    if (sent) {
+      console.log(`✉️ Passwort-Reset E-Mail gesendet an ${email.slice(0, 3)}***`);
+    }
+  } catch (err) {
+    // Don't expose errors — user is already told "success"
+    if (err.code !== 'auth/user-not-found') {
+      console.error('❌ Password reset email error:', err.message);
+    }
+  }
+});
+
+/**
+ * POST /auth/send-verification-email
+ * Body: { idToken: string }  (Firebase ID token of the signed-in user)
+ * Generates an email verification link and sends branded German email.
+ */
+app.post('/auth/send-verification-email', async (req, res) => {
+  const idToken = (req.body?.idToken || '').trim();
+  if (!idToken) return res.status(400).json({ error: 'idToken erforderlich' });
+
+  try {
+    if (!firebaseAdmin) {
+      return res.status(503).json({ error: 'Firebase Admin nicht verfügbar' });
+    }
+    const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
+    if (decoded.email_verified) {
+      return res.json({ success: true, already_verified: true });
+    }
+
+    const firebaseLink = await firebaseAdmin.auth().generateEmailVerificationLink(decoded.email, {
+      url: ACTION_HANDLER_BASE,
+    });
+    const actionUrl   = buildCustomActionUrl(firebaseLink, 'verifyEmail');
+    const displayName = decoded.name || '';
+
+    await sendEmail({
+      to: decoded.email,
+      subject: 'Bestätige deine ParentPeak E-Mail-Adresse ✅',
+      html: buildVerificationEmail(displayName, actionUrl),
+    });
+
+    console.log(`✉️ Verification E-Mail gesendet an ${decoded.email.slice(0, 3)}***`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Verification email error:', err.message);
+    res.status(500).json({ error: 'E-Mail konnte nicht gesendet werden' });
+  }
+});
+
 // ── Image Upload ─────────────────────────────────────────────────────────────
 app.use('/uploads', express.static(uploadsDir));
 
@@ -7621,6 +7853,262 @@ app.delete('/api/events/:id', async (req, res) => {
   } catch (err) {
     console.error('❌ Event delete error:', err.message);
     res.status(500).json({ error: `Failed to delete event: ${err.message}` });
+  }
+});
+
+// ============================================================================
+// COMMUNITY EVENTS API (/api/community-events)
+// Kiro spec: KI-Event-Discovery + Community Events with flag/interest/attendees
+// ============================================================================
+
+/**
+ * GET /api/community-events
+ * List community events by city with optional filters.
+ * Query params: city, limit, offset, category, free, ageGroup
+ */
+app.get('/api/community-events', async (req, res) => {
+  const { city, limit = 20, offset = 0, category, free, ageGroup } = req.query;
+
+  try {
+    const where = {
+      isHidden: false,
+      ...(city && { city: { contains: String(city), mode: 'insensitive' } }),
+      ...(category && { category: String(category) }),
+      ...(free === 'true' && { isFree: true }),
+    };
+
+    const events = await prisma.communityEvent.findMany({
+      where,
+      orderBy: [{ isVerified: 'desc' }, { eventDate: 'asc' }],
+      take: Math.min(parseInt(limit, 10) || 20, 100),
+      skip: parseInt(offset, 10) || 0,
+    });
+
+    const now = new Date();
+    const visible = events.filter(e => e.isRecurring || new Date(e.eventDate) >= now);
+
+    const filtered = ageGroup
+      ? visible.filter(e => {
+          try {
+            const groups = JSON.parse(e.ageGroups || '[]');
+            return groups.includes(String(ageGroup));
+          } catch (_) { return true; }
+        })
+      : visible;
+
+    res.json(filtered);
+  } catch (err) {
+    console.error('❌ GET /api/community-events error:', err.message);
+    res.status(500).json({ error: `Failed to list community events: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/community-events
+ * Create a new community event. Max 3 per day per creator.
+ */
+app.post('/api/community-events', async (req, res) => {
+  const {
+    title, description, category, ageGroups, venue, location, city,
+    lat, lon, isPrivateAddress, eventDate, eventEndDate, isRecurring, recurringNote,
+    rainPlan, price, isFree, url, imageUrl, organizer, creatorType,
+    contactName, contactPhone, contactEmail, accessibility, eventLanguage,
+    source, creatorId,
+  } = req.body;
+
+  if (!title || !location || !city || !creatorId || !eventDate || !organizer) {
+    return res.status(400).json({
+      error: 'title, location, city, creatorId, eventDate, organizer sind erforderlich',
+    });
+  }
+
+  if (String(title).length < 3 || String(title).length > 200) {
+    return res.status(400).json({ error: 'Titel muss 3-200 Zeichen lang sein' });
+  }
+
+  const text = `${String(title).toLowerCase()} ${String(description || '').toLowerCase()}`;
+  const spamKeywords = ['gewalt', 'hass', 'sex', 'nackt', 'missbrauch', 'betrug', 'scam', 'drohung', 'casino', 'kredit'];
+  if (spamKeywords.some(kw => text.includes(kw))) {
+    return res.status(422).json({ error: 'Inhalt entspricht nicht den Community-Richtlinien' });
+  }
+
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const todayCount = await prisma.communityEvent.count({
+    where: { creatorId: String(creatorId), createdAt: { gte: dayStart } },
+  });
+  if (todayCount >= 3) {
+    return res.status(429).json({ error: 'Maximal 3 Events pro Tag erlaubt' });
+  }
+
+  try {
+    const event = await prisma.communityEvent.create({
+      data: {
+        title: String(title).slice(0, 200),
+        description: description ? String(description).slice(0, 2000) : '',
+        category: category ? String(category).slice(0, 50) : 'sonstiges',
+        ageGroups: Array.isArray(ageGroups) ? JSON.stringify(ageGroups) : '["alle"]',
+        venue: venue ? String(venue) : 'beides',
+        location: String(location).slice(0, 200),
+        city: String(city).slice(0, 100),
+        lat: lat != null ? parseFloat(lat) : null,
+        lon: lon != null ? parseFloat(lon) : null,
+        isPrivateAddress: isPrivateAddress === true,
+        eventDate: new Date(eventDate),
+        eventEndDate: eventEndDate ? new Date(eventEndDate) : null,
+        isRecurring: isRecurring === true,
+        recurringNote: recurringNote ? String(recurringNote).slice(0, 200) : null,
+        rainPlan: rainPlan ? String(rainPlan).slice(0, 500) : null,
+        price: price ? String(price).slice(0, 50) : 'kostenlos',
+        isFree: isFree !== false,
+        url: url ? String(url).slice(0, 500) : null,
+        imageUrl: imageUrl ? String(imageUrl).slice(0, 500) : null,
+        organizer: String(organizer).slice(0, 200),
+        creatorType: creatorType ? String(creatorType) : 'eltern',
+        contactName: contactName ? String(contactName).slice(0, 100) : null,
+        contactPhone: contactPhone ? String(contactPhone).slice(0, 50) : null,
+        contactEmail: contactEmail ? String(contactEmail).slice(0, 100) : null,
+        accessibility: Array.isArray(accessibility) ? JSON.stringify(accessibility) : '[]',
+        eventLanguage: eventLanguage ? String(eventLanguage).slice(0, 10) : 'de',
+        source: source ? String(source) : 'community',
+        creatorId: String(creatorId).slice(0, 100),
+      },
+    });
+    res.status(201).json(event);
+  } catch (err) {
+    console.error('❌ POST /api/community-events error:', err.message);
+    res.status(500).json({ error: `Failed to create community event: ${err.message}` });
+  }
+});
+
+/**
+ * DELETE /api/community-events/:id
+ * Delete own community event. Query param: creatorId
+ */
+app.delete('/api/community-events/:id', async (req, res) => {
+  const { id } = req.params;
+  const { creatorId } = req.query;
+
+  if (!creatorId) return res.status(400).json({ error: 'creatorId erforderlich' });
+
+  try {
+    const event = await prisma.communityEvent.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
+    if (event.creatorId !== String(creatorId)) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann das Event löschen' });
+    }
+    await prisma.communityEvent.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ DELETE /api/community-events/:id error:', err.message);
+    res.status(500).json({ error: `Failed to delete event: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/community-events/:id/flag
+ * Report a community event. Auto-hides after 3 flags.
+ */
+app.post('/api/community-events/:id/flag', async (req, res) => {
+  const { id } = req.params;
+  const { userId, reason } = req.body;
+
+  if (!userId || !reason) {
+    return res.status(400).json({ error: 'userId und reason erforderlich' });
+  }
+  const validReasons = ['spam', 'fake', 'unsafe', 'inappropriate', 'expired'];
+  if (!validReasons.includes(String(reason))) {
+    return res.status(400).json({ error: `reason muss einer sein von: ${validReasons.join(', ')}` });
+  }
+
+  try {
+    const event = await prisma.communityEvent.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
+
+    await prisma.communityEventFlag.upsert({
+      where: { eventId_userId: { eventId: id, userId: String(userId) } },
+      create: { eventId: id, userId: String(userId), reason: String(reason) },
+      update: { reason: String(reason) },
+    });
+
+    const flagCount = await prisma.communityEventFlag.count({ where: { eventId: id } });
+    await prisma.communityEvent.update({
+      where: { id },
+      data: { flagCount, isHidden: flagCount >= 3 },
+    });
+
+    res.json({ success: true, flagCount, autoHidden: flagCount >= 3 });
+  } catch (err) {
+    console.error('❌ POST /api/community-events/:id/flag error:', err.message);
+    res.status(500).json({ error: `Failed to flag event: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/community-events/:id/interest
+ * Express interest ("Ich bin auch dabei!") with optional message.
+ */
+app.post('/api/community-events/:id/interest', async (req, res) => {
+  const { id } = req.params;
+  const { userId, displayName, message } = req.body;
+
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+
+  try {
+    const event = await prisma.communityEvent.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
+
+    await prisma.communityEventInterest.upsert({
+      where: { eventId_userId: { eventId: id, userId: String(userId) } },
+      create: {
+        eventId: id,
+        userId: String(userId),
+        displayName: displayName ? String(displayName).slice(0, 100) : 'Elternteil',
+        message: message ? String(message).slice(0, 500) : null,
+      },
+      update: {
+        displayName: displayName ? String(displayName).slice(0, 100) : 'Elternteil',
+        message: message ? String(message).slice(0, 500) : null,
+      },
+    });
+
+    const interestCount = await prisma.communityEventInterest.count({ where: { eventId: id } });
+    await prisma.communityEvent.update({ where: { id }, data: { interestCount } });
+
+    res.json({ success: true, interestCount });
+  } catch (err) {
+    console.error('❌ POST /api/community-events/:id/interest error:', err.message);
+    res.status(500).json({ error: `Failed to register interest: ${err.message}` });
+  }
+});
+
+/**
+ * GET /api/community-events/:id/attendees
+ * List users who expressed interest ("Ich bin auch dabei!").
+ */
+app.get('/api/community-events/:id/attendees', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const interests = await prisma.communityEventInterest.findMany({
+      where: { eventId: id },
+      orderBy: { createdAt: 'asc' },
+      take: 50,
+    });
+
+    const attendees = interests.map(i => ({
+      userId: i.userId,
+      displayName: i.displayName,
+      initial: i.displayName ? i.displayName.charAt(0).toUpperCase() : '?',
+      message: i.message,
+      joinedAt: i.createdAt,
+      isNetworkContact: false,
+    }));
+
+    res.json({ attendees, total: interests.length });
+  } catch (err) {
+    console.error('❌ GET /api/community-events/:id/attendees error:', err.message);
+    res.status(500).json({ error: `Failed to load attendees: ${err.message}` });
   }
 });
 

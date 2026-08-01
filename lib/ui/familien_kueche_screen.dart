@@ -62,8 +62,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(liked
-            ? '\u{2B50} Super! Kommt auf die Kinder-Hits Liste.'
-            : '\u{1F44D} Okay, merken wir uns.'),
+            ? '\u{2B50} Auf die Kinder-Hits Liste gesetzt.'
+            : '\u{1F44D} Merken wir uns.'),
       ));
     }
   }
