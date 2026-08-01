@@ -3,6 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const Stripe = require('stripe');
 require('dotenv').config(); // Load environment variables
 const { Pool } = require('pg');
@@ -6120,6 +6121,210 @@ async function sendPushToUser(userId, { title, body, data = {} }) {
     console.error('FCM sendPushToUser failed:', err?.message || err);
   }
 }
+
+// ── Firebase Custom Auth Action Handler ─────────────────────────────────────
+// Serves the branded German auth-action page. Firebase sends users here for
+// password reset, email verification and email-change recovery.
+// Set this URL in Firebase Console → Auth → Settings → Email action handler URL:
+//   https://parentpeak.onrender.com/auth/action
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+app.get('/auth/action', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'auth-action.html'));
+});
+
+// ── Branded Email Service (modern alternative to Firebase email templates) ───
+// Uses nodemailer + Firebase Admin SDK to send fully custom German HTML emails.
+// Required env vars: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+// Optional: SMTP_FROM_NAME (default: "ParentPeak"), SMTP_FROM_EMAIL
+// The custom auth-action.html page handles the user interaction after click.
+
+const ACTION_HANDLER_BASE = process.env.AUTH_ACTION_URL || 'https://parentpeak.onrender.com/auth/action';
+const SMTP_FROM_NAME  = process.env.SMTP_FROM_NAME  || 'ParentPeak';
+const SMTP_FROM_EMAIL = process.env.SMTP_FROM_EMAIL || (process.env.SMTP_USER || 'noreply@parentpeak.app');
+
+/** Lazy-create the nodemailer transporter (returns null if SMTP not configured) */
+function createMailTransporter() {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  return nodemailer.createTransport({
+    host,
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true', // true for port 465
+    auth: { user, pass },
+    tls: { rejectUnauthorized: true },
+  });
+}
+
+/** Build a custom action URL pointing to our handler, preserving oobCode + mode */
+function buildCustomActionUrl(firebaseLink, mode) {
+  try {
+    const u = new URL(firebaseLink);
+    const oobCode   = u.searchParams.get('oobCode');
+    const apiKey    = u.searchParams.get('apiKey');
+    const continueUrl = u.searchParams.get('continueUrl');
+    const custom = new URL(ACTION_HANDLER_BASE);
+    custom.searchParams.set('mode', mode);
+    if (oobCode)    custom.searchParams.set('oobCode', oobCode);
+    if (apiKey)     custom.searchParams.set('apiKey', apiKey);
+    if (continueUrl) custom.searchParams.set('continueUrl', continueUrl);
+    return custom.toString();
+  } catch {
+    return firebaseLink; // fallback to original if URL parsing fails
+  }
+}
+
+const EMAIL_STYLE = `
+  font-family:-apple-system,Arial,sans-serif;max-width:520px;margin:0 auto;
+  padding:32px 24px;background:#ffffff;color:#2D3748;
+`;
+
+function buildPasswordResetEmail(actionUrl) {
+  return `
+<div style="${EMAIL_STYLE}">
+  <div style="font-size:36px;margin-bottom:12px;text-align:center;">🌿</div>
+  <h2 style="font-size:22px;font-weight:800;color:#2D3748;margin:0 0 8px 0;">Passwort zurücksetzen</h2>
+  <p style="font-size:15px;color:#718096;margin:0 0 20px 0;">
+    Hallo!<br><br>
+    Kein Stress — das passiert den Besten. 😊<br>
+    Klick auf den Button um ein neues Passwort für dein <strong>ParentPeak</strong>-Konto festzulegen:
+  </p>
+  <a href="${actionUrl}" style="display:inline-block;background:#4CAF50;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:15px;">
+    Neues Passwort festlegen →
+  </a>
+  <p style="font-size:13px;color:#A0AEC0;margin:20px 0 8px 0;">⏱ Der Link ist <strong>1 Stunde</strong> gültig.</p>
+  <p style="font-size:13px;color:#A0AEC0;margin:0 0 24px 0;">
+    Falls du diese Anfrage <strong>nicht</strong> gestellt hast, kannst du diese E-Mail ignorieren. Dein Konto bleibt sicher.
+  </p>
+  <hr style="border:none;border-top:1px solid #EDF2F7;margin:24px 0;">
+  <p style="font-size:12px;color:#CBD5E0;margin:0;">
+    Liebe Grüße,<br>
+    <strong style="color:#4CAF50;">Dein ParentPeak-Team 💚</strong><br>
+    <em>Dein digitaler Begleiter für Eltern</em>
+  </p>
+</div>`;
+}
+
+function buildVerificationEmail(displayName, actionUrl) {
+  const name = displayName || 'dort';
+  return `
+<div style="${EMAIL_STYLE}">
+  <div style="font-size:36px;margin-bottom:12px;text-align:center;">🌿</div>
+  <h2 style="font-size:22px;font-weight:800;color:#2D3748;margin:0 0 8px 0;">E-Mail-Adresse bestätigen</h2>
+  <p style="font-size:15px;color:#718096;margin:0 0 20px 0;">
+    Hallo ${name}! 🎉<br><br>
+    Schön, dass du dabei bist. Bestätige jetzt deine E-Mail-Adresse:
+  </p>
+  <a href="${actionUrl}" style="display:inline-block;background:#4CAF50;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:15px;">
+    E-Mail bestätigen →
+  </a>
+  <p style="font-size:13px;color:#A0AEC0;margin:20px 0 24px 0;">
+    Falls du kein ParentPeak-Konto erstellt hast, kannst du diese E-Mail ignorieren.
+  </p>
+  <hr style="border:none;border-top:1px solid #EDF2F7;margin:24px 0;">
+  <p style="font-size:12px;color:#CBD5E0;margin:0;">
+    Herzlich willkommen,<br>
+    <strong style="color:#4CAF50;">Dein ParentPeak-Team 💚</strong><br>
+    <em>Dein digitaler Begleiter für Eltern</em>
+  </p>
+</div>`;
+}
+
+/**
+ * POST /auth/send-password-reset
+ * Body: { email: string }
+ * Generates a Firebase password reset link via Admin SDK and sends it
+ * through nodemailer with a fully branded German HTML email.
+ * Always returns 200 to avoid leaking user existence.
+ */
+app.post('/auth/send-password-reset', async (req, res) => {
+  const email = (req.body?.email || '').trim().toLowerCase();
+
+  // Basic email format validation (prevents unnecessary Firebase calls)
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
+  }
+
+  // Always 200 so callers can't enumerate users
+  res.json({ success: true });
+
+  // Async: generate link + send email (fire-and-forget after response)
+  try {
+    if (!firebaseAdmin) {
+      console.warn('⚠️ /auth/send-password-reset: Firebase Admin nicht initialisiert');
+      return;
+    }
+    const transporter = createMailTransporter();
+    if (!transporter) {
+      console.warn('⚠️ /auth/send-password-reset: SMTP nicht konfiguriert (SMTP_HOST/SMTP_USER/SMTP_PASS fehlen)');
+      return;
+    }
+
+    const firebaseLink = await firebaseAdmin.auth().generatePasswordResetLink(email, {
+      url: ACTION_HANDLER_BASE,
+    });
+    const actionUrl = buildCustomActionUrl(firebaseLink, 'resetPassword');
+
+    await transporter.sendMail({
+      from: `"${SMTP_FROM_NAME}" <${SMTP_FROM_EMAIL}>`,
+      to: email,
+      subject: 'Dein ParentPeak-Passwort zurücksetzen',
+      html: buildPasswordResetEmail(actionUrl),
+    });
+    console.log(`✉️ Passwort-Reset E-Mail gesendet an ${email.slice(0, 3)}***`);
+  } catch (err) {
+    // Don't expose errors — user is already told "success"
+    if (err.code !== 'auth/user-not-found') {
+      console.error('❌ Password reset email error:', err.message);
+    }
+  }
+});
+
+/**
+ * POST /auth/send-verification-email
+ * Body: { idToken: string }  (Firebase ID token of the signed-in user)
+ * Generates an email verification link and sends branded German email.
+ */
+app.post('/auth/send-verification-email', async (req, res) => {
+  const idToken = (req.body?.idToken || '').trim();
+  if (!idToken) return res.status(400).json({ error: 'idToken erforderlich' });
+
+  try {
+    if (!firebaseAdmin) {
+      return res.status(503).json({ error: 'Firebase Admin nicht verfügbar' });
+    }
+    const transporter = createMailTransporter();
+    if (!transporter) {
+      return res.status(503).json({ error: 'SMTP nicht konfiguriert' });
+    }
+
+    const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
+    if (decoded.email_verified) {
+      return res.json({ success: true, already_verified: true });
+    }
+
+    const firebaseLink = await firebaseAdmin.auth().generateEmailVerificationLink(decoded.email, {
+      url: ACTION_HANDLER_BASE,
+    });
+    const actionUrl   = buildCustomActionUrl(firebaseLink, 'verifyEmail');
+    const displayName = decoded.name || '';
+
+    await transporter.sendMail({
+      from: `"${SMTP_FROM_NAME}" <${SMTP_FROM_EMAIL}>`,
+      to: decoded.email,
+      subject: 'Bestätige deine ParentPeak E-Mail-Adresse ✅',
+      html: buildVerificationEmail(displayName, actionUrl),
+    });
+
+    console.log(`✉️ Verification E-Mail gesendet an ${decoded.email.slice(0, 3)}***`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Verification email error:', err.message);
+    res.status(500).json({ error: 'E-Mail konnte nicht gesendet werden' });
+  }
+});
 
 // ── Image Upload ─────────────────────────────────────────────────────────────
 app.use('/uploads', express.static(uploadsDir));

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.firebaseapp.com https://*.firebase.com;
+                 script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com;
+                 style-src 'self' 'unsafe-inline';
+                 img-src 'self' data: https:;
+                 connect-src 'self' https://*.googleapis.com https://*.firebase.com https://*.firebaseio.com https://identitytoolkit.googleapis.com;">
+  <title>ParentPeak – Konto-Aktion</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #F7FAF7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      color: #2D3748;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 40px 32px;
+      max-width: 440px;
+      width: 100%;
+    }
+
+    .logo {
+      font-size: 40px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .brand {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: #4CAF50;
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+
+    .tagline {
+      text-align: center;
+      font-size: 13px;
+      color: #A0AEC0;
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2D3748;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 15px;
+      color: #718096;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4A5568;
+      margin-bottom: 6px;
+    }
+
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #E2E8F0;
+      border-radius: 10px;
+      font-size: 15px;
+      color: #2D3748;
+      background: #F7FAF7;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="password"]:focus {
+      border-color: #4CAF50;
+      background: #ffffff;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: #ffffff;
+    }
+
+    .btn-secondary {
+      background: #EDF2F7;
+      color: #4A5568;
+      margin-top: 12px;
+    }
+
+    .btn-danger {
+      background: #EF4444;
+      color: #ffffff;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .alert.error {
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FECACA;
+    }
+
+    .alert.success {
+      background: #F0FDF4;
+      color: #16A34A;
+      border: 1px solid #BBF7D0;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #EDF2F7;
+      margin: 28px 0;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #CBD5E0;
+      margin-top: 8px;
+    }
+
+    .footer strong { color: #4CAF50; }
+
+    .strength-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: #E2E8F0;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .strength-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s, background 0.3s;
+      width: 0%;
+    }
+
+    .strength-label {
+      font-size: 12px;
+      color: #A0AEC0;
+      margin-top: 4px;
+    }
+
+    #screen-loading { display: flex; align-items: center; justify-content: center; min-height: 120px; }
+    #screen-loading .big-spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #E2E8F0;
+      border-top-color: #4CAF50;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    [id^="screen-"]:not(#screen-loading) { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🌿</div>
+    <div class="brand">ParentPeak</div>
+    <div class="tagline">Dein digitaler Begleiter für Eltern</div>
+
+    <!-- Loading -->
+    <div id="screen-loading">
+      <div class="big-spinner"></div>
+    </div>
+
+    <!-- Passwort zurücksetzen -->
+    <div id="screen-reset">
+      <h1>Neues Passwort festlegen</h1>
+      <p>Wähle ein starkes Passwort für dein ParentPeak-Konto.</p>
+      <div id="reset-alert" class="alert"></div>
+      <form id="reset-form" novalidate>
+        <div class="form-group">
+          <label for="new-password">Neues Passwort</label>
+          <input type="password" id="new-password" placeholder="Mindestens 8 Zeichen" autocomplete="new-password" required>
+          <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+          <div class="strength-label" id="strength-label"></div>
+        </div>
+        <div class="form-group">
+          <label for="confirm-password">Passwort bestätigen</label>
+          <input type="password" id="confirm-password" placeholder="Passwort wiederholen" autocomplete="new-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="reset-btn">Passwort speichern</button>
+      </form>
+    </div>
+
+    <!-- Passwort erfolgreich zurückgesetzt -->
+    <div id="screen-reset-done">
+      <h1>✅ Passwort aktualisiert!</h1>
+      <p>Dein neues Passwort wurde gespeichert. Du kannst dich jetzt in der ParentPeak-App anmelden.</p>
+      <p style="font-size:13px; color:#A0AEC0;">Du kannst dieses Fenster schließen.</p>
+    </div>
+
+    <!-- E-Mail bestätigen -->
+    <div id="screen-verify">
+      <h1>E-Mail-Adresse bestätigen</h1>
+      <p>Einen Moment bitte — deine E-Mail-Adresse wird bestätigt...</p>
+    </div>
+
+    <!-- E-Mail erfolgreich bestätigt -->
+    <div id="screen-verify-done">
+      <h1>🎉 E-Mail bestätigt!</h1>
+      <p>Willkommen bei ParentPeak! Deine E-Mail-Adresse wurde erfolgreich bestätigt.</p>
+      <p style="font-size:13px; color:#A0AEC0;">Du kannst die App jetzt vollständig nutzen.<br>Dieses Fenster kann geschlossen werden.</p>
+    </div>
+
+    <!-- E-Mail-Änderung rückgängig machen -->
+    <div id="screen-recover">
+      <h1>Anmelde-E-Mail wiederherstellen</h1>
+      <p>Klick auf den Button, um deine vorherige E-Mail-Adresse wiederherzustellen und den unbefugten Zugriff zu blockieren.</p>
+      <div id="recover-alert" class="alert"></div>
+      <button class="btn btn-danger" id="recover-btn">Änderung rückgängig machen</button>
+    </div>
+
+    <!-- Wiederherstellung erfolgreich -->
+    <div id="screen-recover-done">
+      <h1>🔒 Konto gesichert</h1>
+      <p>Deine ursprüngliche E-Mail-Adresse wurde wiederhergestellt. Dein Konto ist jetzt wieder sicher.</p>
+      <p style="font-size:13px; color:#A0AEC0;">Wir empfehlen, dein Passwort zu ändern. Dieses Fenster kann geschlossen werden.</p>
+    </div>
+
+    <!-- Fehler -->
+    <div id="screen-error">
+      <h1>⚠️ Link ungültig</h1>
+      <p id="error-detail">Dieser Link ist abgelaufen oder wurde bereits verwendet. Bitte fordere in der ParentPeak-App einen neuen Link an.</p>
+      <p style="font-size:13px; color:#A0AEC0; margin-top:8px;">Hast du Fragen? Schreib uns: <a href="mailto:support@parentpeak.app" style="color:#4CAF50;">support@parentpeak.app</a></p>
+    </div>
+
+    <hr class="divider">
+    <p class="footer">Liebe Grüße,<br><strong>Dein ParentPeak-Team 💚</strong></p>
+  </div>
+
+  <!-- Firebase JS SDK v10 compat (modular-compat: works with legacy API style) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+
+  <script>
+    'use strict';
+
+    // ── Firebase initialisieren ──────────────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: 'AIzaSyAwLIoizIEAVjoM4WWBBSi9DPG5ZJDOFk0',
+      authDomain: 'parentpeak-prod-2026.firebaseapp.com',
+      projectId: 'parentpeak-prod-2026',
+      storageBucket: 'parentpeak-prod-2026.firebasestorage.app',
+      messagingSenderId: '89417219632',
+      measurementId: 'G-9R8Z7RXYVP',
+      appId: '1:89417219632:web:51b6fa43ffa2b52f1bf7f5'
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    auth.languageCode = 'de';
+
+    // ── URL-Parameter auslesen ───────────────────────────────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const mode       = params.get('mode')       || '';
+    const oobCode    = params.get('oobCode')     || '';
+    const continueUrl = params.get('continueUrl') || '';
+
+    // ── Screen-Steuerung ─────────────────────────────────────────────────────
+    function show(id) {
+      document.querySelectorAll('[id^="screen-"]').forEach(el => {
+        el.style.display = el.id === id ? 'block' : 'none';
+      });
+    }
+
+    function showAlert(elId, message, type) {
+      const el = document.getElementById(elId);
+      el.textContent = message;
+      el.className = 'alert ' + type;
+      el.style.display = 'block';
+    }
+
+    // ── Passwort-Stärke ──────────────────────────────────────────────────────
+    function checkStrength(pw) {
+      let score = 0;
+      if (pw.length >= 8)  score++;
+      if (pw.length >= 12) score++;
+      if (/[A-Z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+      const labels  = ['', 'Sehr schwach', 'Schwach', 'Mittel', 'Stark', 'Sehr stark'];
+      const colors  = ['', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#16A34A'];
+      const widths  = ['0%', '20%', '40%', '60%', '80%', '100%'];
+      document.getElementById('strength-fill').style.width      = widths[score];
+      document.getElementById('strength-fill').style.background = colors[score];
+      document.getElementById('strength-label').textContent     = score > 0 ? labels[score] : '';
+      return score;
+    }
+
+    document.getElementById('new-password').addEventListener('input', function() {
+      checkStrength(this.value);
+    });
+
+    // ── Fehler-Mapping Deutsch ────────────────────────────────────────────────
+    function mapError(code) {
+      const map = {
+        'auth/expired-action-code':    'Dieser Link ist abgelaufen. Bitte fordere einen neuen an.',
+        'auth/invalid-action-code':    'Dieser Link ist ungültig oder wurde bereits verwendet.',
+        'auth/user-disabled':          'Dieses Konto wurde deaktiviert. Bitte kontaktiere den Support.',
+        'auth/user-not-found':         'Kein Konto für diese E-Mail-Adresse gefunden.',
+        'auth/weak-password':          'Das Passwort ist zu schwach. Mindestens 8 Zeichen mit Groß- und Kleinbuchstaben.',
+        'auth/network-request-failed': 'Keine Internetverbindung. Bitte überprüfe deine Verbindung.',
+      };
+      return map[code] || 'Ein unbekannter Fehler ist aufgetreten. Bitte versuche es erneut.';
+    }
+
+    // ── Passwort zurücksetzen ─────────────────────────────────────────────────
+    function initResetPassword() {
+      auth.verifyPasswordResetCode(oobCode)
+        .then(() => show('screen-reset'))
+        .catch(err => {
+          document.getElementById('error-detail').textContent = mapError(err.code);
+          show('screen-error');
+        });
+
+      document.getElementById('reset-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const pw1 = document.getElementById('new-password').value;
+        const pw2 = document.getElementById('confirm-password').value;
+
+        if (pw1.length < 8) {
+          showAlert('reset-alert', 'Das Passwort muss mindestens 8 Zeichen lang sein.', 'error');
+          return;
+        }
+        if (pw1 !== pw2) {
+          showAlert('reset-alert', 'Die Passwörter stimmen nicht überein.', 'error');
+          return;
+        }
+        if (checkStrength(pw1) < 2) {
+          showAlert('reset-alert', 'Bitte wähle ein stärkeres Passwort.', 'error');
+          return;
+        }
+
+        const btn = document.getElementById('reset-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Speichern…';
+
+        auth.confirmPasswordReset(oobCode, pw1)
+          .then(() => show('screen-reset-done'))
+          .catch(err => {
+            btn.disabled = false;
+            btn.textContent = 'Passwort speichern';
+            showAlert('reset-alert', mapError(err.code), 'error');
+          });
+      });
+    }
+
+    // ── E-Mail bestätigen ─────────────────────────────────────────────────────
+    function initVerifyEmail() {
+      show('screen-verify');
+      auth.applyActionCode(oobCode)
+        .then(() => show('screen-verify-done'))
+        .catch(err => {
+          document.getElementById('error-detail').textContent = mapError(err.code);
+          show('screen-error');
+        });
+    }
+
+    // ── E-Mail-Änderung rückgängig machen ─────────────────────────────────────
+    function initRecoverEmail() {
+      show('screen-recover');
+      document.getElementById('recover-btn').addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Wird wiederhergestellt…';
+
+        auth.applyActionCode(oobCode)
+          .then(() => show('screen-recover-done'))
+          .catch(err => {
+            btn.disabled = false;
+            btn.textContent = 'Änderung rückgängig machen';
+            showAlert('recover-alert', mapError(err.code), 'error');
+          });
+      });
+    }
+
+    // ── Routing ───────────────────────────────────────────────────────────────
+    if (!oobCode || !mode) {
+      document.getElementById('error-detail').textContent =
+        'Dieser Link ist unvollständig. Bitte klicke den Link direkt aus deiner E-Mail.';
+      show('screen-error');
+    } else {
+      switch (mode) {
+        case 'resetPassword':  initResetPassword(); break;
+        case 'verifyEmail':    initVerifyEmail();    break;
+        case 'recoverEmail':   initRecoverEmail();   break;
+        default:
+          document.getElementById('error-detail').textContent =
+            'Unbekannte Konto-Aktion. Bitte wende dich an den Support.';
+          show('screen-error');
+      }
+    }
+  </script>
+</body>
+</html>

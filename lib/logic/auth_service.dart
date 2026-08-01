@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/firebase_options.dart';
 import 'package:parentpeak/logic/notification_service.dart';
@@ -554,6 +555,35 @@ class AuthService {
     }
 
     try {
+      // ── Modern path: send branded German email via backend ─────────────────
+      // The backend uses Firebase Admin SDK to generate the action link and
+      // nodemailer to send a fully custom HTML email pointing to our
+      // branded auth-action page (https://parentpeak.onrender.com/auth/action).
+      final backendUrl = APIConfig.getBackendBaseUrl();
+      if (backendUrl != null && backendUrl.isNotEmpty) {
+        try {
+          final response = await http
+              .post(
+                Uri.parse('$backendUrl/auth/send-password-reset'),
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({'email': cleanEmail}),
+              )
+              .timeout(const Duration(seconds: 10));
+
+          if (response.statusCode == 200) {
+            return null; // success — branded email sent
+          }
+          debugPrint(
+            'AuthService.sendPasswordReset(): backend returned ${response.statusCode}, falling back to Firebase',
+          );
+        } catch (e) {
+          debugPrint(
+            'AuthService.sendPasswordReset(): backend unreachable ($e), falling back to Firebase',
+          );
+        }
+      }
+
+      // ── Fallback: Firebase built-in email (now sent in German) ────────────
       await _firebaseAuth!.sendPasswordResetEmail(email: cleanEmail);
       return null;
     } on FirebaseAuthException catch (e) {
