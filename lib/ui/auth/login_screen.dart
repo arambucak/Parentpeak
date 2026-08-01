@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/logic/auth_service.dart';
@@ -20,6 +21,26 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Handle the case where signInWithRedirect already ran and the user
+    // was redirected back to this page — complete the auth flow.
+    if (kIsWeb) _checkGoogleRedirectResult();
+  }
+
+  Future<void> _checkGoogleRedirectResult() async {
+    try {
+      final result = await FirebaseAuth.instance.getRedirectResult();
+      if (result.user != null && mounted) {
+        await AuthService.instance.initialize();
+        if (mounted) widget.onLoginSuccess?.call();
+      }
+    } catch (_) {
+      // No pending redirect — ignore.
+    }
+  }
 
   void _clearError() {
     if (_errorMessage == null) return;
@@ -651,33 +672,39 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final googleProvider = GoogleAuthProvider();
       googleProvider.addScope('email');
-
-      // signInWithPopup funktioniert auf Desktop-Browsern
-      // signInWithRedirect als Fallback fuer Mobile
-      UserCredential? result;
-      try {
-        result = await FirebaseAuth.instance.signInWithPopup(googleProvider);
-      } catch (popupError) {
-        // Popup blockiert (Mobile) -> Redirect verwenden
-        await FirebaseAuth.instance.signInWithRedirect(googleProvider);
-        return; // Redirect laedt die Seite neu
-      }
-
+      final result =
+          await FirebaseAuth.instance.signInWithPopup(googleProvider);
       if (result.user != null && mounted) {
         await AuthService.instance.initialize();
-        if (mounted) Navigator.of(context).pushReplacementNamed('/home');
+        if (mounted) widget.onLoginSuccess?.call();
       }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      // User closed the popup intentionally — no error needed.
+      if (e.code == 'popup-closed-by-user' ||
+          e.code == 'cancelled-popup-request') return;
+      final String msg;
+      if (e.code == 'popup-blocked') {
+        msg =
+            'Popups sind blockiert. Bitte nutze E-Mail + Passwort oder öffne die Seite in Safari.';
+      } else {
+        msg = e.message != null && e.message!.isNotEmpty
+            ? e.message!
+            : 'Google-Login fehlgeschlagen. Bitte erneut versuchen.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Google-Login: $msg'),
+            behavior: SnackBarBehavior.floating),
+      );
     } catch (e) {
-      if (mounted) {
-        final msg = e.toString().contains('null')
-            ? 'Bitte versuche es erneut oder nutze E-Mail + Passwort.'
-            : e.toString().split(']').last.trim();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Google-Login: $msg'),
-              behavior: SnackBarBehavior.floating),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'Google-Login: Bitte versuche es erneut oder nutze E-Mail + Passwort.'),
+            behavior: SnackBarBehavior.floating),
+      );
     }
   }
 
