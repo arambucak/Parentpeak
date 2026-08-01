@@ -46,6 +46,15 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           set -o pipefail
+
+          if [ -f webapp/index.html ]; then
+            echo "Using committed webapp artifacts for deployment"
+            rm -rf build/web
+            mkdir -p build/web
+            cp -R webapp/. build/web/
+            exit 0
+          fi
+
           BACKEND_BASE_URL="${BACKEND_BASE_URL:-https://parentpeak.onrender.com}"
           PRIVACY_POLICY_URL="${PRIVACY_POLICY_URL:-https://parentpeak.de/privacy}"
           TERMS_OF_SERVICE_URL="${TERMS_OF_SERVICE_URL:-https://parentpeak.de/terms}"
