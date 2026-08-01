@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const Stripe = require('stripe');
 require('dotenv').config(); // Load environment variables
 const { Pool } = require('pg');
@@ -6158,6 +6159,42 @@ function createMailTransporter() {
   });
 }
 
+/**
+ * sendEmail({ to, subject, html })
+ * Priority: 1) Resend API  2) SMTP/nodemailer  3) returns false (Firebase fallback)
+ */
+async function sendEmail({ to, subject, html }) {
+  // ── 1. Resend (recommended: modern API, excellent deliverability, free 3k/mo) ──
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    const resend = new Resend(resendKey);
+    const { error } = await resend.emails.send({
+      from: `${SMTP_FROM_NAME} <${SMTP_FROM_EMAIL}>`,
+      to,
+      subject,
+      html,
+    });
+    if (error) throw new Error(`Resend error: ${error.message}`);
+    return true;
+  }
+
+  // ── 2. SMTP / nodemailer (classic: Gmail, SendGrid, Mailgun, etc.) ─────────
+  const transporter = createMailTransporter();
+  if (transporter) {
+    await transporter.sendMail({
+      from: `"${SMTP_FROM_NAME}" <${SMTP_FROM_EMAIL}>`,
+      to,
+      subject,
+      html,
+    });
+    return true;
+  }
+
+  // ── 3. No email provider configured ───────────────────────────────────────
+  console.warn('⚠️ Email provider not configured. Set RESEND_API_KEY or SMTP_HOST/SMTP_USER/SMTP_PASS.');
+  return false;
+}
+
 /** Build a custom action URL pointing to our handler, preserving oobCode + mode */
 function buildCustomActionUrl(firebaseLink, mode) {
   try {
@@ -6256,24 +6293,20 @@ app.post('/auth/send-password-reset', async (req, res) => {
       console.warn('⚠️ /auth/send-password-reset: Firebase Admin nicht initialisiert');
       return;
     }
-    const transporter = createMailTransporter();
-    if (!transporter) {
-      console.warn('⚠️ /auth/send-password-reset: SMTP nicht konfiguriert (SMTP_HOST/SMTP_USER/SMTP_PASS fehlen)');
-      return;
-    }
 
     const firebaseLink = await firebaseAdmin.auth().generatePasswordResetLink(email, {
       url: ACTION_HANDLER_BASE,
     });
     const actionUrl = buildCustomActionUrl(firebaseLink, 'resetPassword');
 
-    await transporter.sendMail({
-      from: `"${SMTP_FROM_NAME}" <${SMTP_FROM_EMAIL}>`,
+    const sent = await sendEmail({
       to: email,
       subject: 'Dein ParentPeak-Passwort zurücksetzen',
       html: buildPasswordResetEmail(actionUrl),
     });
-    console.log(`✉️ Passwort-Reset E-Mail gesendet an ${email.slice(0, 3)}***`);
+    if (sent) {
+      console.log(`✉️ Passwort-Reset E-Mail gesendet an ${email.slice(0, 3)}***`);
+    }
   } catch (err) {
     // Don't expose errors — user is already told "success"
     if (err.code !== 'auth/user-not-found') {
@@ -6295,11 +6328,6 @@ app.post('/auth/send-verification-email', async (req, res) => {
     if (!firebaseAdmin) {
       return res.status(503).json({ error: 'Firebase Admin nicht verfügbar' });
     }
-    const transporter = createMailTransporter();
-    if (!transporter) {
-      return res.status(503).json({ error: 'SMTP nicht konfiguriert' });
-    }
-
     const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
     if (decoded.email_verified) {
       return res.json({ success: true, already_verified: true });
@@ -6311,8 +6339,7 @@ app.post('/auth/send-verification-email', async (req, res) => {
     const actionUrl   = buildCustomActionUrl(firebaseLink, 'verifyEmail');
     const displayName = decoded.name || '';
 
-    await transporter.sendMail({
-      from: `"${SMTP_FROM_NAME}" <${SMTP_FROM_EMAIL}>`,
+    await sendEmail({
       to: decoded.email,
       subject: 'Bestätige deine ParentPeak E-Mail-Adresse ✅',
       html: buildVerificationEmail(displayName, actionUrl),
