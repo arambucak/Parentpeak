@@ -232,7 +232,23 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       (double, double) coords) async {
     final viewerUserId = AuthService.instance.currentUser?.uid;
     if (viewerUserId == null || viewerUserId.trim().isEmpty) {
-      return const <MeetupEvent>[];
+      final publicEvents = await _eventService.getEvents();
+      return publicEvents.where((event) {
+        if (event.status != EventStatus.active) return false;
+        if (event.visibility != EventVisibility.publicNearby) return false;
+
+        final distance =
+            _distanceKm(coords.$1, coords.$2, event.latitude, event.longitude);
+        final visibleRadius = event.shareRadiusKm ?? _radiusKm.toDouble();
+        if (distance > visibleRadius || distance > _radiusKm) return false;
+
+        if (_selectedAgeGroups.isNotEmpty &&
+            !event.ageGroups.any(_selectedAgeGroups.contains)) {
+          return false;
+        }
+
+        return true;
+      }).toList();
     }
 
     return _eventService.getDiscoverableEventsForUser(
