@@ -132,6 +132,7 @@ class OnboardingWelcomePage extends StatelessWidget {
 
 class OnboardingRolePage extends StatelessWidget {
   final String? selectedRole;
+  final Set<String> selectedRoles;
   final Animation<double> fadeAnimation;
   final Animation<Offset> slideAnimation;
   final ValueChanged<String> onRoleSelected;
@@ -139,6 +140,7 @@ class OnboardingRolePage extends StatelessWidget {
   const OnboardingRolePage({
     super.key,
     required this.selectedRole,
+    this.selectedRoles = const {},
     required this.fadeAnimation,
     required this.slideAnimation,
     required this.onRoleSelected,
@@ -167,7 +169,7 @@ class OnboardingRolePage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Wir passen die App an deine Situation an.',
+                'Mehrfachauswahl moeglich — waehle alle die passen.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -181,7 +183,7 @@ class OnboardingRolePage extends StatelessWidget {
                       emoji: '\u{1F476}',
                       title: 'Schwangerschaft / Baby',
                       subtitle: '0–12 Monate',
-                      isSelected: selectedRole == 'neugeboren',
+                      isSelected: selectedRoles.contains('neugeboren'),
                       onTap: () => onRoleSelected('neugeboren'),
                     ),
                     const SizedBox(height: 12),
@@ -190,7 +192,7 @@ class OnboardingRolePage extends StatelessWidget {
                       emoji: '\u{1F9D2}',
                       title: 'Kleinkind',
                       subtitle: '1–5 Jahre',
-                      isSelected: selectedRole == 'kleinkind',
+                      isSelected: selectedRoles.contains('kleinkind'),
                       onTap: () => onRoleSelected('kleinkind'),
                     ),
                     const SizedBox(height: 12),
@@ -199,7 +201,7 @@ class OnboardingRolePage extends StatelessWidget {
                       emoji: '\u{1F393}',
                       title: 'Schulkind',
                       subtitle: '6–12 Jahre',
-                      isSelected: selectedRole == 'schulkind',
+                      isSelected: selectedRoles.contains('schulkind'),
                       onTap: () => onRoleSelected('schulkind'),
                     ),
                     const SizedBox(height: 12),
@@ -208,7 +210,7 @@ class OnboardingRolePage extends StatelessWidget {
                       emoji: '\u{1F9D1}',
                       title: 'Teenager',
                       subtitle: '13–18 Jahre',
-                      isSelected: selectedRole == 'teenager',
+                      isSelected: selectedRoles.contains('teenager'),
                       onTap: () => onRoleSelected('teenager'),
                     ),
                   ],

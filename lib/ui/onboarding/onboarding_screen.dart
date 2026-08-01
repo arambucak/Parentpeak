@@ -40,6 +40,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final PageController _pageController = PageController();
   int _currentPage = 0;
   String? _selectedRole;
+  final Set<String> _selectedRoles = {};
   final Set<String> _selectedPriorities = {};
 
   late final AnimationController _fadeController;
@@ -102,7 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       case 0:
         return true; // Welcome page, immer weiter
       case 1:
-        return _selectedRole != null;
+        return _selectedRoles.isNotEmpty;
       case 2:
         return _selectedPriorities.isNotEmpty;
       case 3:
@@ -116,8 +117,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     HapticFeedback.mediumImpact();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_completedKey, true);
-    if (_selectedRole != null) {
-      await prefs.setString(_roleKey, _selectedRole!);
+    if (_selectedRoles.isNotEmpty) {
+      await prefs.setString(_roleKey, _selectedRoles.first);
+      await prefs.setStringList(
+          'onboarding.parent_roles', _selectedRoles.toList());
     }
     await prefs.setStringList(
       _prioritiesKey,
@@ -207,11 +210,21 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                   OnboardingRolePage(
                     selectedRole: _selectedRole,
+                    selectedRoles: _selectedRoles,
                     fadeAnimation: _fadeAnimation,
                     slideAnimation: _slideAnimation,
                     onRoleSelected: (role) {
                       HapticFeedback.selectionClick();
-                      setState(() => _selectedRole = role);
+                      setState(() {
+                        if (_selectedRoles.contains(role)) {
+                          _selectedRoles.remove(role);
+                        } else {
+                          _selectedRoles.add(role);
+                        }
+                        _selectedRole = _selectedRoles.isNotEmpty
+                            ? _selectedRoles.first
+                            : null;
+                      });
                     },
                   ),
                   OnboardingPrioritiesPage(
