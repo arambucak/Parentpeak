@@ -172,6 +172,18 @@ class _CalendarScreenState extends State<CalendarScreen>
     });
   }
 
+  // Feature 4: Schnell-Vorlagen
+  static const List<Map<String, String>> _eventTemplates = [
+    {'emoji': '\u{1F3E5}', 'label': 'Kinderarzt', 'person': 'Eltern'},
+    {'emoji': '\u{1F9B7}', 'label': 'Zahnarzt', 'person': 'Eltern'},
+    {'emoji': '\u{1F4DA}', 'label': 'Elternsprechtag', 'person': 'Eltern'},
+    {'emoji': '\u{1F382}', 'label': 'Geburtstag', 'person': 'Eltern'},
+    {'emoji': '\u{1F3CA}', 'label': 'Schwimmen', 'person': 'Mia'},
+    {'emoji': '\u{1F393}', 'label': 'Kita-Fest', 'person': 'Kindergarten'},
+    {'emoji': '\u{1F3C3}', 'label': 'Sport', 'person': 'Ben'},
+    {'emoji': '\u{1F489}', 'label': 'Impfung', 'person': 'Eltern'},
+  ];
+
   Future<void> _openAddSheet() async {
     _titleController.clear();
     String person = 'Eltern';
@@ -180,9 +192,13 @@ class _CalendarScreenState extends State<CalendarScreen>
     String recurrence = 'Einmalig';
     int reminder = _smartReminderValue;
     String endMode = _recurrenceEndMode;
-    DateTime? endDate =
+    DateTime? recurrenceEndDate =
         _recurrenceEndDate ?? _selectedDay.add(const Duration(days: 30));
     int endCount = _recurrenceCount;
+    String packReminderText = '';
+    String bringer = '';
+    String abholer = '';
+    final packReminderCtrl = TextEditingController();
 
     await showModalBottomSheet(
       context: context,
@@ -192,23 +208,25 @@ class _CalendarScreenState extends State<CalendarScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        final viewInsets = MediaQuery.of(ctx).viewInsets;
-        return Padding(
-          padding: EdgeInsets.only(bottom: viewInsets.bottom),
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
-            ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final viewInsets = MediaQuery.of(ctx).viewInsets;
+            return Padding(
+              padding: EdgeInsets.only(bottom: viewInsets.bottom),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.9,
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
                     Text(
                       AppStringsManager.getString(languageService.currentLanguage, 'new_event'),
                       style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                          const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                     ),
                     const Spacer(),
                     IconButton(
@@ -217,7 +235,58 @@ class _CalendarScreenState extends State<CalendarScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
+                // Feature 4: Schnell-Vorlagen
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Schnell-Vorlage',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600])),
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 40,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemCount: _eventTemplates.length,
+                    itemBuilder: (_, i) {
+                      final t = _eventTemplates[i];
+                      return GestureDetector(
+                        onTap: () {
+                          _titleController.text = t['label']!;
+                          setSheetState(() => person = t['person']!);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5EFE7),
+                            borderRadius: BorderRadius.circular(20),
+                            border:
+                                Border.all(color: const Color(0xFFD6C8B4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(t['emoji']!,
+                                  style: const TextStyle(fontSize: 14)),
+                              const SizedBox(width: 5),
+                              Text(t['label']!,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF4A5568))),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Flexible(
                   child: SingleChildScrollView(
                     child: Column(
@@ -233,16 +302,17 @@ class _CalendarScreenState extends State<CalendarScreen>
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          initialValue: person,
+                          key: ValueKey(person),
+                          value: person,
                           decoration:
-                              const InputDecoration(labelText: 'Für wen?'),
+                              const InputDecoration(labelText: 'F\u00fcr wen?'),
                           isExpanded: true,
                           items: _personColors.keys
                               .map((p) =>
                                   DropdownMenuItem(value: p, child: Text(p)))
                               .toList(),
                           onChanged: (v) {
-                            if (v != null) person = v;
+                            if (v != null) setSheetState(() => person = v);
                           },
                         ),
                         const SizedBox(height: 12),
@@ -266,8 +336,56 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ],
                         ),
                         const SizedBox(height: 12),
+                        // Feature 3: Wer bringt / Wer holt
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                value: bringer.isEmpty ? '' : bringer,
+                                decoration: const InputDecoration(
+                                    labelText: '\u{1F697} Bringt'),
+                                isExpanded: true,
+                                items: ['', 'Mama', 'Papa', 'Oma', 'Opa', 'Andere']
+                                    .map((p) => DropdownMenuItem(
+                                        value: p,
+                                        child: Text(
+                                            p.isEmpty ? 'Niemand' : p)))
+                                    .toList(),
+                                onChanged: (v) => bringer = v ?? '',
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                value: abholer.isEmpty ? '' : abholer,
+                                decoration: const InputDecoration(
+                                    labelText: '\u{1F3E0} Holt'),
+                                isExpanded: true,
+                                items: ['', 'Mama', 'Papa', 'Oma', 'Opa', 'Andere']
+                                    .map((p) => DropdownMenuItem(
+                                        value: p,
+                                        child: Text(
+                                            p.isEmpty ? 'Niemand' : p)))
+                                    .toList(),
+                                onChanged: (v) => abholer = v ?? '',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Feature 2: Pack-Reminder
+                        TextField(
+                          controller: packReminderCtrl,
+                          decoration: const InputDecoration(
+                            labelText: '\u{1F392} Vorbereitung (optional)',
+                            hintText:
+                                'z.B. Schwimmsachen, Turnzeug einpacken',
+                          ),
+                          onChanged: (v) => packReminderText = v,
+                        ),
+                        const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          initialValue: recurrence,
+                          value: recurrence,
                           decoration:
                               const InputDecoration(labelText: 'Wiederholung'),
                           isExpanded: true,
@@ -281,7 +399,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<int>(
-                          initialValue: reminder,
+                          value: reminder,
                           decoration:
                               const InputDecoration(labelText: 'Erinnerung'),
                           isExpanded: true,
@@ -304,7 +422,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          initialValue: endMode,
+                          value: endMode,
                           decoration: const InputDecoration(labelText: 'Endet'),
                           isExpanded: true,
                           items: _recurrenceEndOptions
@@ -312,33 +430,35 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   DropdownMenuItem(value: p, child: Text(p)))
                               .toList(),
                           onChanged: (v) {
-                            if (v != null) endMode = v;
-                            if (endMode == '5 Termine') endCount = 5;
-                            if (endMode == '10 Termine') endCount = 10;
+                            if (v != null) setSheetState(() {
+                              endMode = v;
+                              if (endMode == '5 Termine') endCount = 5;
+                              if (endMode == '10 Termine') endCount = 10;
+                            });
                           },
                         ),
-                        if (endMode == 'Datum wählen') ...[
+                        if (endMode == 'Datum w\u00e4hlen') ...[
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: () async {
                               final picked = await showDatePicker(
                                 context: ctx,
-                                initialDate: endDate ?? _selectedDay,
+                                initialDate:
+                                    recurrenceEndDate ?? _selectedDay,
                                 firstDate: DateTime.now()
                                     .subtract(const Duration(days: 1)),
                                 lastDate: DateTime.now()
                                     .add(const Duration(days: 365 * 2)),
                               );
                               if (picked != null) {
-                                endDate = picked;
-                                // ignore: use_build_context_synchronously
-                                (ctx as Element).markNeedsBuild();
+                                setSheetState(
+                                    () => recurrenceEndDate = picked);
                               }
                             },
                             icon: const Icon(Icons.event_available_rounded),
-                            label: Text(endDate == null
-                                ? 'Enddatum wählen'
-                                : 'Endet am ${DateFormat.yMMMd('de').format(endDate!)}'),
+                            label: Text(recurrenceEndDate == null
+                                ? 'Enddatum w\u00e4hlen'
+                                : 'Endet am ${DateFormat.yMMMd('de').format(recurrenceEndDate!)}'),
                           ),
                         ],
                         const SizedBox(height: 20),
@@ -361,7 +481,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         start.hour,
                         start.minute,
                       );
-                      final endDate = DateTime(
+                      final endDateTime = DateTime(
                         _selectedDay.year,
                         _selectedDay.month,
                         _selectedDay.day,
@@ -372,18 +492,24 @@ class _CalendarScreenState extends State<CalendarScreen>
                         id: 'event_${DateTime.now().millisecondsSinceEpoch}',
                         title: _titleController.text.trim(),
                         start: startDate,
-                        end: endDate.isAfter(startDate)
-                            ? endDate
+                        end: endDateTime.isAfter(startDate)
+                            ? endDateTime
                             : startDate.add(const Duration(hours: 1)),
                         person: person,
                         location: 'Familienkalender',
                         recurrence: recurrence,
                         reminderMinutes: reminder,
                         recurrenceEndMode: endMode,
-                        recurrenceEndDate:
-                            endMode == 'Datum wählen' ? endDate : null,
+                        recurrenceEndDate: endMode == 'Datum w\u00e4hlen'
+                            ? recurrenceEndDate
+                            : null,
                         recurrenceCount:
                             endMode.contains('Termine') ? endCount : null,
+                        packReminder: packReminderText.trim().isEmpty
+                            ? null
+                            : packReminderText.trim(),
+                        bringer: bringer.isEmpty ? null : bringer,
+                        abholer: abholer.isEmpty ? null : abholer,
                       );
                       final expanded = _expandRecurrence(base);
                       try {
@@ -404,14 +530,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                           ),
                         );
+                        packReminderCtrl.dispose();
                         return;
                       }
-
                       setState(() {
                         _events.addAll(expanded);
                         _syncError = _calendarService.lastSyncError;
                       });
                       _scheduleRemindersFor(expanded);
+                      packReminderCtrl.dispose();
                       if (!ctx.mounted) return;
                       Navigator.pop(ctx);
                     },
@@ -420,6 +547,8 @@ class _CalendarScreenState extends State<CalendarScreen>
               ],
             ),
           ),
+          );
+          },
         );
       },
     );
@@ -508,6 +637,16 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ),
                         ),
                       ),
+                    // Feature 5: Diese Woche Vorschau
+                    _WeekPreview(
+                      events: _events
+                          .where((e) =>
+                              _filterPerson == 'Alle' ||
+                              e.person == _filterPerson)
+                          .toList(),
+                      personColors: _personColors,
+                      onDayTap: _selectDay,
+                    ),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -556,6 +695,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                         _buildFilterChip('Alle'),
                         ..._personColors.keys.map(_buildFilterChip),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Feature 1: Wochenstreifen
+                    _WeekStrip(
+                      selectedDay: _selectedDay,
+                      onSelectDay: _selectDay,
+                      eventCounter: _countEventsForDay,
                     ),
                     const SizedBox(height: 16),
                     _MonthGrid(
@@ -894,19 +1040,20 @@ class _EventCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 6,
-              height: 110,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  bottomLeft: Radius.circular(16),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 6,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
                 ),
               ),
-            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -1011,11 +1158,58 @@ class _EventCard extends StatelessWidget {
                         ],
                       ),
                     ],
+                    // Feature 3: Wer bringt / Wer holt
+                    if ((event.bringer != null && event.bringer!.isNotEmpty) ||
+                        (event.abholer != null && event.abholer!.isNotEmpty)) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if (event.bringer != null && event.bringer!.isNotEmpty)
+                            _Badge(
+                              label: '${event.bringer!} bringt',
+                              color: const Color(0xFF4A90E2),
+                              icon: Icons.directions_car_rounded,
+                            ),
+                          if (event.abholer != null && event.abholer!.isNotEmpty)
+                            _Badge(
+                              label: '${event.abholer!} holt',
+                              color: const Color(0xFF7B68EE),
+                              icon: Icons.home_rounded,
+                            ),
+                        ],
+                      ),
+                    ],
+                    // Feature 2: Pack-Reminder Badge
+                    if (event.packReminder != null &&
+                        event.packReminder!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.backpack_outlined,
+                              size: 14, color: Color(0xFF9F7AEA)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '\u{1F392} ${event.packReminder!}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF9F7AEA),
+                                fontStyle: FontStyle.italic,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -1069,6 +1263,9 @@ class _CalendarEvent {
   final String recurrenceEndMode;
   final DateTime? recurrenceEndDate;
   final int? recurrenceCount;
+  final String? packReminder; // Feature 2: Vorbereitungsnotiz
+  final String? bringer;     // Feature 3: Wer bringt
+  final String? abholer;     // Feature 3: Wer holt
 
   _CalendarEvent({
     required this.id,
@@ -1083,6 +1280,9 @@ class _CalendarEvent {
     this.recurrenceEndMode = 'Kein Ende',
     this.recurrenceEndDate,
     this.recurrenceCount,
+    this.packReminder,
+    this.bringer,
+    this.abholer,
   });
 
   _CalendarEvent copyWith({
@@ -1098,6 +1298,9 @@ class _CalendarEvent {
     String? recurrenceEndMode,
     DateTime? recurrenceEndDate,
     int? recurrenceCount,
+    String? packReminder,
+    String? bringer,
+    String? abholer,
   }) {
     return _CalendarEvent(
       id: id ?? this.id,
@@ -1112,6 +1315,9 @@ class _CalendarEvent {
       recurrenceEndMode: recurrenceEndMode ?? this.recurrenceEndMode,
       recurrenceEndDate: recurrenceEndDate ?? this.recurrenceEndDate,
       recurrenceCount: recurrenceCount ?? this.recurrenceCount,
+      packReminder: packReminder ?? this.packReminder,
+      bringer: bringer ?? this.bringer,
+      abholer: abholer ?? this.abholer,
     );
   }
 
@@ -1140,6 +1346,9 @@ class _CalendarEvent {
           ? DateTime.tryParse(json['recurrenceEndDate'].toString())
           : null,
       recurrenceCount: (json['recurrenceCount'] as num?)?.toInt(),
+      packReminder: json['packReminder']?.toString(),
+      bringer: json['bringer']?.toString(),
+      abholer: json['abholer']?.toString(),
     );
   }
 
@@ -1157,6 +1366,9 @@ class _CalendarEvent {
       'recurrenceEndMode': recurrenceEndMode,
       'recurrenceEndDate': recurrenceEndDate?.toIso8601String(),
       'recurrenceCount': recurrenceCount,
+      'packReminder': packReminder,
+      'bringer': bringer,
+      'abholer': abholer,
     };
   }
 }
@@ -1187,6 +1399,25 @@ extension on _CalendarScreenState {
           body: body,
           reminderKey: 'custom_${event.reminderMinutes}',
         );
+      }
+      // Feature 2: Pack-Reminder Abend vorher um 20:00 Uhr
+      if (event.packReminder != null && event.packReminder!.isNotEmpty) {
+        final evening = DateTime(
+          event.start.year,
+          event.start.month,
+          event.start.day - 1,
+          20,
+          0,
+        );
+        if (evening.isAfter(DateTime.now())) {
+          await NotificationService.instance.scheduleEventReminder(
+            eventId: '${event.id}_pack',
+            when: evening,
+            title: 'Morgen: ${event.title}',
+            body: 'Nicht vergessen: ${event.packReminder}',
+            reminderKey: 'pack_reminder',
+          );
+        }
       }
     }
   }
@@ -1257,6 +1488,247 @@ class _TimeButtonState extends State<_TimeButton> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 1: Wochenstreifen — 7-Tage Quick-Selector
+// ═══════════════════════════════════════════════════════════════════════════
+class _WeekStrip extends StatelessWidget {
+  const _WeekStrip({
+    required this.selectedDay,
+    required this.onSelectDay,
+    required this.eventCounter,
+  });
+
+  final DateTime selectedDay;
+  final void Function(DateTime) onSelectDay;
+  final int Function(DateTime) eventCounter;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    final days = List.generate(7, (i) => today.add(Duration(days: i)));
+
+    return SizedBox(
+      height: 70,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemCount: days.length,
+        itemBuilder: (context, index) {
+          final day = days[index];
+          final isSelected = day.year == selectedDay.year &&
+              day.month == selectedDay.month &&
+              day.day == selectedDay.day;
+          final isToday = day.year == today.year &&
+              day.month == today.month &&
+              day.day == today.day;
+          final eventCount = eventCounter(day);
+          final wd = weekdays[day.weekday - 1];
+
+          return GestureDetector(
+            onTap: () => onSelectDay(day),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 44,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF4CAF50)
+                    : isToday
+                        ? const Color(0xFF4CAF50).withValues(alpha: 0.1)
+                        : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF4CAF50)
+                      : isToday
+                          ? const Color(0xFF4CAF50)
+                          : Colors.grey[200]!,
+                  width: isSelected || isToday ? 1.5 : 1,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    wd,
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF718096),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF2D3748),
+                    ),
+                  ),
+                  if (eventCount > 0) ...[
+                    const SizedBox(height: 3),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE 5: Diese Woche Vorschau — horizontal scrollbare Event-Cards
+// ═══════════════════════════════════════════════════════════════════════════
+class _WeekPreview extends StatelessWidget {
+  const _WeekPreview({
+    required this.events,
+    required this.personColors,
+    required this.onDayTap,
+  });
+
+  final List<_CalendarEvent> events;
+  final Map<String, Color> personColors;
+  final void Function(DateTime) onDayTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final in6days = today.add(const Duration(days: 6));
+
+    final upcoming = events
+        .where((e) =>
+            !e.start.isBefore(today) && e.start.isBefore(in6days))
+        .toList()
+      ..sort((a, b) => a.start.compareTo(b.start));
+
+    if (upcoming.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        const Text(
+          'Diese Woche',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF4A5568),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 66,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemCount: upcoming.length,
+            itemBuilder: (context, i) {
+              final e = upcoming[i];
+              final color =
+                  personColors[e.person] ?? const Color(0xFF4CAF50);
+              final isToday = e.start.year == today.year &&
+                  e.start.month == today.month &&
+                  e.start.day == today.day;
+              final dayLabel = isToday
+                  ? 'Heute'
+                  : DateFormat.E('de').format(e.start);
+
+              return GestureDetector(
+                onTap: () => onDayTap(e.start),
+                child: Container(
+                  constraints:
+                      const BoxConstraints(maxWidth: 160, minWidth: 110),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border:
+                        Border.all(color: color.withValues(alpha: 0.35)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '$dayLabel ${DateFormat.Hm('de').format(e.start)}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        e.title,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2D3748),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (e.bringer != null && e.bringer!.isNotEmpty)
+                        Text(
+                          '\u{1F697} ${e.bringer!}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF718096),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
