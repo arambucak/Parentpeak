@@ -42,6 +42,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       TextEditingController(text: 'Berlin');
 
   bool _isLoading = true;
+  bool _isUsingFallbackFeed = false;
   String? _errorMessage;
   DateTime? _lastFeedSyncAt;
   List<DiscoveredEvent> _aiEvents = const [];
@@ -227,7 +228,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
       if (aiEvents.isEmpty && communityEvents.isEmpty) {
         aiEvents = _buildLocalFallbackAiEvents(city, coords);
-        hadAnyLoadError = true;
+        _isUsingFallbackFeed = true;
       }
 
       if (!mounted) return;
@@ -263,6 +264,63 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
     return '$day.$month.$year, $hour:$minute';
+  }
+
+  List<DiscoveredEvent> _buildLocalFallbackAiEvents(
+    String city,
+    (double, double) coords,
+  ) {
+    final now = DateTime.now();
+    return <DiscoveredEvent>[
+      DiscoveredEvent(
+        id: 'fallback_event_1',
+        title: 'Spielplatz-Treff im Kiez',
+        description:
+            'Offenes Treffen fuer Eltern mit Kindern. Lockeres Kennenlernen mit kurzer Bewegungsrunde.',
+        category: DiscoveredEventCategory.spielplatz,
+        ageLabels: const ['0-3', '4-6'],
+        location: 'Stadtpark Nord',
+        cityHint: city,
+        latitude: coords.$1,
+        longitude: coords.$2,
+        eventDate: now.add(const Duration(days: 1)),
+        price: 'kostenlos',
+        organizer: 'Parentpeak Community',
+        discoveredAt: now,
+      ),
+      DiscoveredEvent(
+        id: 'fallback_event_2',
+        title: 'Kreativnachmittag fuer Familien',
+        description:
+            'Basteln mit Alltagsmaterialien, kleine Mitmachstationen und Zeit fuer Austausch.',
+        category: DiscoveredEventCategory.basteln,
+        ageLabels: const ['4-6', '7-10'],
+        location: 'Familienzentrum Mitte',
+        cityHint: city,
+        latitude: coords.$1 + 0.01,
+        longitude: coords.$2 + 0.01,
+        eventDate: now.add(const Duration(days: 3)),
+        price: 'kostenlos',
+        organizer: 'Lokales Familienzentrum',
+        discoveredAt: now,
+      ),
+      DiscoveredEvent(
+        id: 'fallback_event_3',
+        title: 'Waldspaziergang mit Kindern',
+        description:
+            'Gemeinsamer Spaziergang mit kleinen Naturspielen. Kinderwagenfreundliche Strecke.',
+        category: DiscoveredEventCategory.natur,
+        ageLabels: const ['0-3', '4-6', '7-10'],
+        location: 'Waldpark Treffpunkt Ost',
+        cityHint: city,
+        latitude: coords.$1 - 0.015,
+        longitude: coords.$2 + 0.008,
+        eventDate: now.add(const Duration(days: 5)),
+        price: 'kostenlos',
+        organizer: 'Elterninitiative',
+        discoveredAt: now,
+      ),
+    ];
   }
 
   Future<List<MeetupEvent>> _loadCommunityEventsForCity(
