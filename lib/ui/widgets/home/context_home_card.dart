@@ -453,6 +453,34 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         Text('\u{1F4A1} $_tip',
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: const Color(0xFF92400E), height: 1.4)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => setState(() => _showMaterials = !_showMaterials),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              Text('\u{23F1}\u{FE0F} $_tipDuration',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFD97706))),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(
+                _showMaterials
+                    ? '\u{1F9F0} $_tipMaterials'
+                    : '\u{1F9F0} Was ihr braucht \u{25BC}',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: const Color(0xFF92400E)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )),
+            ]),
+          ),
+        ),
         if (widget.onExpandTip != null) ...[
           const SizedBox(height: 10),
           GestureDetector(
@@ -463,6 +491,16 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                     fontWeight: FontWeight.w700)),
           ),
         ],
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: _miniButton(
+            theme,
+            '\u{1F3B2} Neue Spielidee',
+            const Color(0xFFD97706),
+            _shuffleTip,
+          ),
+        ),
       ]),
     );
   }
@@ -603,6 +641,44 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         Text('\u{1F4A1} $_tip',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: const Color(0xFF7C3AED), height: 1.3)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => setState(() => _showMaterials = !_showMaterials),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              Text('\u{23F1}\u{FE0F} $_tipDuration',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF7C3AED))),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(
+                _showMaterials
+                    ? '\u{1F9F0} $_tipMaterials'
+                    : '\u{1F9F0} Was ihr braucht \u{25BC}',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: const Color(0xFF6B21A8)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: _miniButton(
+            theme,
+            '\u{1F3B2} Neue Spielidee',
+            const Color(0xFF7C3AED),
+            _shuffleTip,
+          ),
+        ),
       ]),
     );
   }
@@ -631,6 +707,47 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         Text('Ruh dich aus. Morgen seid ihr wieder ein tolles Team.',
             style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.white.withValues(alpha: 0.8), height: 1.4)),
+        const SizedBox(height: 12),
+        Text('\u{1F3A8} $_tip',
+            style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.7), height: 1.3)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => setState(() => _showMaterials = !_showMaterials),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              Text('\u{23F1}\u{FE0F} $_tipDuration',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700, color: Colors.white)),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(
+                _showMaterials
+                    ? '\u{1F9F0} $_tipMaterials'
+                    : '\u{1F9F0} Was ihr braucht \u{25BC}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.8)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: _miniButton(
+            theme,
+            '\u{1F3B2} Neue Spielidee',
+            Colors.white,
+            _shuffleTip,
+          ),
+        ),
       ]),
     );
   }
