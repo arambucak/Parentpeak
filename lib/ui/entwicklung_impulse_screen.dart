@@ -113,6 +113,52 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     }
   }
 
+  WeeklyImpulse _buildLocalFallbackImpulse() {
+    return WeeklyImpulse(
+      id: 'local_fallback_impulse',
+      title: 'Kleine Schritte, große Wirkung',
+      contentBody:
+          'Wenn heute alles zu viel ist: Wähle nur einen ruhigen Moment mit deinem Kind und benenne ein Gefühl wertfrei. Dieser kurze Check-in stärkt Verbindung und Sicherheit.',
+      practicalTip:
+          'Praxis für heute: 3 Minuten gemeinsam atmen, dann frage: "Was war heute leicht für dich?".',
+      category: PedagogicalCategory.gfk,
+      publishDate: DateTime.now(),
+      heroHeadline: 'Offline-Impuls für deinen Alltag',
+      heroDescription:
+          'Der Server antwortet gerade nicht. Du kannst trotzdem direkt mit einem alltagstauglichen Impuls starten.',
+      companionImpulses: const <WeeklyImpulseCompanion>[
+        WeeklyImpulseCompanion(
+          id: 'fallback_verstehen',
+          title: 'Verstehen (2 min)',
+          summary:
+              'Kinder kooperieren besser, wenn sie sich zuerst gesehen fühlen. Verbindung kommt vor Korrektur.',
+          durationLabel: '2 min',
+          formatLabel: 'Verstehen',
+        ),
+        WeeklyImpulseCompanion(
+          id: 'fallback_praxis',
+          title: 'Praxis (3 min)',
+          summary:
+              'Nutze eine Ich-Botschaft: "Ich sehe, du bist gerade frustriert. Wir schaffen das zusammen."',
+          durationLabel: '3 min',
+          formatLabel: 'Praxis',
+        ),
+        WeeklyImpulseCompanion(
+          id: 'fallback_reflexion',
+          title: 'Reflexion (1 min)',
+          summary: 'Frage dich am Abend: Was hat heute zwischen uns gut funktioniert?',
+          durationLabel: '1 min',
+          formatLabel: 'Reflexion',
+        ),
+      ],
+      discussionPrompt: const WeeklyImpulseDiscussionPrompt(
+        id: 'fallback_discussion',
+        title: 'Gesprächsimpuls',
+        body: 'Welcher kleine Satz hat deinem Kind heute sichtbar gutgetan?',
+      ),
+    );
+  }
+
   Future<void> _loadStreakAndMood() async {
     final prefs = await SharedPreferences.getInstance();
     final today = _todayKey();
