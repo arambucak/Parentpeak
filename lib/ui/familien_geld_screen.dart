@@ -45,6 +45,17 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   // Feature 4: Monat ist eng
   bool _showKnappSection = false;
 
+  // Persistente TextField-Controller (verhindert Reset beim setState)
+  final Map<String, TextEditingController> _controllers = {};
+
+  TextEditingController _controllerFor(String id, double amount) {
+    if (!_controllers.containsKey(id)) {
+      _controllers[id] =
+          TextEditingController(text: amount > 0 ? amount.toStringAsFixed(0) : '');
+    }
+    return _controllers[id]!;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +66,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   @override
   void dispose() {
     _tabs.dispose();
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -418,8 +432,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               ),
-              controller: TextEditingController(
-                  text: amount > 0 ? amount.toStringAsFixed(0) : ''),
+              controller: _controllerFor(cat.id, amount),
               onChanged: (v) {
                 _monthlyAmounts[cat.id] = double.tryParse(v) ?? 0;
                 _saveAmounts();
