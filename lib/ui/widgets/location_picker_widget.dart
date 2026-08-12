@@ -306,27 +306,30 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                 itemCount: _suggestions.length,
                 itemBuilder: (_, i) {
                   final s = _suggestions[i];
-                  return ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                          color:
-                              const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.place_rounded,
-                          size: 14, color: Color(0xFF8B5CF6)),
+                  return Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      dense: true,
+                      leading: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.place_rounded,
+                            size: 14, color: Color(0xFF8B5CF6)),
+                      ),
+                      title: Text(s.shortLabel,
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600)),
+                      subtitle: s.postcode.isNotEmpty
+                          ? Text(s.postcode,
+                              style: TextStyle(
+                                  fontSize: 11, color: theme.colorScheme.outline))
+                          : null,
+                      onTap: () => _selectSuggestion(s),
                     ),
-                    title: Text(s.shortLabel,
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: s.postcode.isNotEmpty
-                        ? Text(s.postcode,
-                            style: TextStyle(
-                                fontSize: 11, color: theme.colorScheme.outline))
-                        : null,
-                    onTap: () => _selectSuggestion(s),
                   );
                 },
               ),
