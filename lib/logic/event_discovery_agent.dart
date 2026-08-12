@@ -103,8 +103,9 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
   Future<List<DiscoveredEvent>> _callWithGrounding(
       String apiKey, String prompt, String city) async {
     final modelName = APIConfig.getGeminiModelName();
+    // Use key as query param to avoid CORS preflight on web (custom headers trigger preflight)
     final uri = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent?key=${Uri.encodeComponent(apiKey)}',
     );
 
     final body = jsonEncode({
@@ -124,10 +125,7 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
     });
 
     final response = await http
-        .post(uri, headers: {
-          'x-goog-api-key': apiKey,
-          'Content-Type': 'application/json',
-        }, body: body)
+        .post(uri, headers: {'Content-Type': 'application/json'}, body: body)
         .timeout(const Duration(seconds: 25));
 
     if (response.statusCode != 200) {
