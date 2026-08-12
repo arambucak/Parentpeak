@@ -54,6 +54,14 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
   }
 
   @override
+  void didUpdateWidget(LocationPickerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialLocation != oldWidget.initialLocation) {
+      setState(() => _picked = widget.initialLocation);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 

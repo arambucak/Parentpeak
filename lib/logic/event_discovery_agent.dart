@@ -119,7 +119,7 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
       ],
       'generationConfig': {
         'temperature': 0.1,
-        'maxOutputTokens': 4000,
+        'maxOutputTokens': 6000,
       },
     });
 
