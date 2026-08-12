@@ -146,7 +146,9 @@ class _TodoScreenState extends State<TodoScreen> {
                 color:
                     theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(12),
-                child: ListTile(
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListTile(
                   leading: Icon(
                     Icons.cloud_off_rounded,
                     color: theme.colorScheme.primary,
@@ -157,6 +159,7 @@ class _TodoScreenState extends State<TodoScreen> {
                     onPressed: _loadTodos,
                     child: const Text('Erneut versuchen'),
                   ),
+                )
                 ),
               ),
             ),
@@ -222,7 +225,9 @@ class _TodoScreenState extends State<TodoScreen> {
                       ? BorderSide(color: Colors.grey[300]!, width: 1)
                       : BorderSide.none,
                 ),
-                child: ListTile(
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: Checkbox(
@@ -273,6 +278,7 @@ class _TodoScreenState extends State<TodoScreen> {
                       _removeTodo(i);
                     },
                   ),
+                )
                 ),
               ),
             );

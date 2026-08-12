@@ -330,7 +330,9 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   Widget _shoppingItemTile(ThemeData theme, ShoppingItem item, bool isDone) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
-      child: ListTile(
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 4),
         onTap: () async {
@@ -386,6 +388,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                 size: 16, color: theme.colorScheme.outline),
           ),
         ]),
+      )
       ),
     );
   }

@@ -214,7 +214,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                         color: theme.colorScheme.outlineVariant
                             .withValues(alpha: 0.4)),
                   ),
-                  child: ListTile(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
                     onTap: () {
                       setState(() {
                         _country = c;
@@ -233,6 +235,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                         const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
+                  )
                   ),
                 );
               },

@@ -230,7 +230,9 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                 color:
                     theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(12),
-                child: ListTile(
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListTile(
                   leading: Icon(
                     Icons.cloud_done_rounded,
                     color: theme.colorScheme.primary,
@@ -241,6 +243,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                     onPressed: _loadData,
                     child: const Text('Erneut versuchen'),
                   ),
+                )
                 ),
               ),
             ),
@@ -366,7 +369,9 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                           ? BorderSide(color: Colors.grey[300]!, width: 1)
                           : BorderSide.none,
                     ),
-                    child: ListTile(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ListTile(
                       leading: Checkbox(
                         value: isDone,
                         onChanged: (val) => _toggleEntry(item, val ?? false),
@@ -388,6 +393,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => _deleteEntry(item),
                       ),
+                    )
                     ),
                   ),
                 );
@@ -414,7 +420,9 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                           ? BorderSide(color: Colors.grey[300]!, width: 1)
                           : BorderSide.none,
                     ),
-                    child: ListTile(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ListTile(
                       leading: Checkbox(
                         value: isDone,
                         onChanged: (val) => _toggleEntry(item, val ?? false),
@@ -436,6 +444,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => _deleteEntry(item),
                       ),
+                    )
                     ),
                   ),
                 );

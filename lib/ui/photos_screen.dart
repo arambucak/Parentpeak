@@ -131,7 +131,9 @@ class _PhotosScreenState extends State<PhotosScreen>
                         color: theme.colorScheme.primaryContainer
                             .withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(12),
-                        child: ListTile(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: ListTile(
                           leading: Icon(
                             Icons.cloud_off_rounded,
                             color: theme.colorScheme.primary,
@@ -142,6 +144,7 @@ class _PhotosScreenState extends State<PhotosScreen>
                             onPressed: _loadAlbums,
                             child: const Text('Erneut versuchen'),
                           ),
+                        )
                         ),
                       ),
                     ),

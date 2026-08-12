@@ -440,7 +440,9 @@ class _BackendStatusScreenState extends State<BackendStatusScreen> {
           const SizedBox(height: 12),
           Card(
             color: _summaryColor(theme).withValues(alpha: 0.1),
-            child: ListTile(
+            child: Material(
+              color: Colors.transparent,
+              child: ListTile(
               leading:
                   Icon(Icons.cloud_done_rounded, color: _summaryColor(theme)),
               title: Text(
@@ -451,6 +453,7 @@ class _BackendStatusScreenState extends State<BackendStatusScreen> {
                 ),
               ),
               subtitle: const Text('Pruefung gegen konfigurierte Endpunkte'),
+            )
             ),
           ),
           const SizedBox(height: 12),
@@ -463,7 +466,9 @@ class _BackendStatusScreenState extends State<BackendStatusScreen> {
             final color =
                 check.ok ? Colors.green[700]! : theme.colorScheme.error;
             return Card(
-              child: ListTile(
+              child: Material(
+                color: Colors.transparent,
+                child: ListTile(
                 leading: Icon(
                   check.ok ? Icons.check_circle_rounded : Icons.error_rounded,
                   color: color,
@@ -472,6 +477,7 @@ class _BackendStatusScreenState extends State<BackendStatusScreen> {
                 subtitle: Text(
                     '${check.path}\n${check.detail}\nLatenz: ${check.latencyMs} ms'),
                 isThreeLine: true,
+              )
               ),
             );
           }),

@@ -623,7 +623,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     theme.colorScheme.outlineVariant.withValues(alpha: 0.5))),
         color: theme.colorScheme.surfaceContainerLow,
         clipBehavior: Clip.antiAlias,
-        child: ListTile(
+        child: Material(
+          color: Colors.transparent,
+          child: ListTile(
             onTap: () {
               HapticFeedback.lightImpact();
               onTap();
@@ -645,7 +647,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 overflow: TextOverflow.ellipsis),
             trailing: Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: theme.colorScheme.outline)));
+                size: 14, color: theme.colorScheme.outline)))
+        );
   }
 
   Future<void> _confirmDeleteProfile(ThemeData theme) async {

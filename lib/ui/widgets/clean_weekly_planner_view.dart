@@ -532,7 +532,9 @@ class _CleanWeeklyPlannerViewState extends State<CleanWeeklyPlannerView> {
                   ? Border.all(color: const Color(0xFF3B72E8), width: 1.5)
                   : null,
             ),
-            child: ListTile(
+            child: Material(
+              color: Colors.transparent,
+              child: ListTile(
               onTap: () => setState(() => _selectedDayIndex = index),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -580,6 +582,7 @@ class _CleanWeeklyPlannerViewState extends State<CleanWeeklyPlannerView> {
                 color: Color(0xFFCBD5E1),
                 size: 20,
               ),
+            )
             ),
           );
         }),
