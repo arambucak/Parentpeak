@@ -88,6 +88,14 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         setState(() {
           _cityController.text = saved;
           _cityManuallySet = true;
+          // Sync saved city into the picker widget so the location bar shows it
+          _pickedLocation = PickedLocation(
+            displayName: saved,
+            city: saved.contains(',') ? saved.split(',').last.trim() : saved,
+            postcode: '',
+            lat: 0.0,
+            lon: 0.0,
+          );
         });
       }
     }
