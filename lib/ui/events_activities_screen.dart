@@ -88,14 +88,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         setState(() {
           _cityController.text = saved;
           _cityManuallySet = true;
-          // Sync saved city into the picker widget so the location bar shows it
-          _pickedLocation = PickedLocation(
-            displayName: saved,
-            city: saved.contains(',') ? saved.split(',').last.trim() : saved,
-            postcode: '',
-            lat: 0.0,
-            lon: 0.0,
-          );
+          // _pickedLocation intentionally NOT set here: bar shows "Standort wählen"
+          // until GPS confirms the current location.
         });
       }
     }
@@ -135,27 +129,29 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       // Fallback when geocoding fails: still mark location as active
       final cityLabel = district ?? 'Aktueller Standort';
       if (mounted) {
-        final shouldSetCity = forceOverride || !_cityManuallySet;
-        if (shouldSetCity && district != null) {
+        // shouldUpdateSearch: only overwrite the search city if not manually set (or forced)
+        final shouldUpdateSearch = forceOverride || !_cityManuallySet;
+        if (shouldUpdateSearch && district != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(_savedCityKey, district);
         }
         setState(() {
           _gpsLat = pos.latitude;
           _gpsLon = pos.longitude;
-          if (shouldSetCity) {
+          if (shouldUpdateSearch) {
             _cityController.text = district ?? '';
             _cityManuallySet = true;
-            _pickedLocation = PickedLocation(
-              displayName: cityLabel,
-              city: district != null
-                  ? (district.contains(',') ? district.split(',').last.trim() : district)
-                  : cityLabel,
-              postcode: '',
-              lat: pos.latitude,
-              lon: pos.longitude,
-            );
           }
+          // Always show GPS result in the location bar
+          _pickedLocation = PickedLocation(
+            displayName: cityLabel,
+            city: district != null
+                ? (district.contains(',') ? district.split(',').last.trim() : district)
+                : cityLabel,
+            postcode: '',
+            lat: pos.latitude,
+            lon: pos.longitude,
+          );
           _gpsDetecting = false;
         });
       }
