@@ -441,6 +441,16 @@ class APIConfig {
   static String? _readEnvOrDefine(String key) {
     _loadRuntimeEnvCacheIfNeeded();
 
+    // On web, --dart-define values are baked in at build time with real CI secrets.
+    // dotenv loads the bundled .env asset (which is .env.example with placeholders)
+    // so compile-time values must take priority to avoid placeholder overrides.
+    if (kIsWeb) {
+      final compileTimeValue = _readCompileTimeValue(key);
+      if (compileTimeValue != null && compileTimeValue.isNotEmpty) {
+        return compileTimeValue;
+      }
+    }
+
     try {
       final envValue = dotenv.env[key]?.trim();
       if (envValue != null && envValue.isNotEmpty) {
