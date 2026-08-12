@@ -31,8 +31,8 @@ class APIConfig {
   static const String _contactSupportUrlDefine =
       String.fromEnvironment('CONTACT_SUPPORT_URL', defaultValue: '');
 
-  // Gemini API Configuration - gemini-3.1-pro-preview (used in Kiro workspace).
-  static const String geminiModelName = 'gemini-3.1-pro-preview';
+  // Gemini API Configuration - gemini-3.5-flash (fast grounding support).
+  static const String geminiModelName = 'gemini-3.5-flash';
 
   static String getGeminiModelName() {
     final modelName = _readEnvOrDefine('GEMINI_MODEL_NAME');

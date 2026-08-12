@@ -61,66 +61,35 @@ class EventDiscoveryAgent {
         ? 'Nutzerstandort: $latitude, $longitude. '
         : '';
 
+    // Kurzer Prompt für schnelle Grounding-Antwort (< 20 s)
+    final groundingPrompt = '''
+$today. ${gpsHint}Suche 10 aktuelle Familienevents in "$cleanCity" ($cleanRadius) — $saison. Zielgruppe: $agesText.
+Antworte NUR als JSON-Array (kein Markdown):
+[{"id":"1","title":"...","description":"...","category":"theater","ageLabels":["alle"],"location":"Adresse, $cleanCity","cityHint":"$cleanCity","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"kostenlos","url":"https://...","organizer":"..."}]
+Erstelle genau 10 echte Events mit verschiedenen Kategorien (theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges).
+''';
+
+    // Ausführlicher Prompt für Package-Fallback (ohne Web-Suche)
     final prompt = '''
 Heute ist $today. $gpsHint
 
-Suche nach ECHTEN, aktuellen Veranstaltungen und Aktivitäten für Eltern mit Kindern 
-in "$cleanCity" ($cleanRadius) für die nächsten 14 Tage.
+Erstelle 10 typische Familien-Events für "$cleanCity" ($cleanRadius), $saison.
+Zielgruppe: $agesText. Realistische Orte, Preise 0–15€.
 
-Suche auf diesen Quellen:
-- Offizielle Stadtportale: berlin.de/veranstaltungen, muenchen.de, hamburg.de, koeln.de
-- Familienzentren und Eltern-Kind-Treffs in "$cleanCity"
-- Kindertheater und Theater mit Kinderprogramm
-- Kino-Programme: Kinderfilme und Familienfilme diese Woche
-- Sportvereine, Schwimmbäder, Kletterhallen
-- Museen mit Kinderprogramm oder Mitmach-Ausstellungen
-- eventbrite.de/de, meetup.com mit Keywords "Familie", "Kinder", "Eltern"
-- Lokale Familienbüros und Bezirksämter
-- $saison-spezifische Angebote (Freilichtbühnen, Freibäder, Wochenmärkte, Weihnachtsmärkte etc.)
-
-Zielgruppe: $agesText.
-
-WICHTIG:
-- Echte Orte, echte Veranstalter aus "$cleanCity" — keine Erfindungen
-- URL der offiziellen Event-Seite angeben wo möglich
-- Datum für diese Woche oder nächste Wochen
-- Wiederkehrende Angebote (offene Treffs, Babyschwimmen) bevorzugen
-- Preise realistisch: 0–15€ pro Person
-- Mischung: Indoor + Outdoor, verschiedene Altersgruppen, verschiedene Stadtteile
-
-Antworte NUR mit einem gültigen JSON-Array (kein Markdown, keine Erklärung, kein Text außerhalb):
-
-[
-  {
-    "id": "eindeutiger-kurzer-string",
-    "title": "Echter Titel der Veranstaltung",
-    "description": "2-3 Sätze: Was ist das? Was macht es für Eltern besonders? Was erleben Kinder dort?",
-    "category": "theater|kino|sport|musik|natur|basteln|familienzentrum|museum|festival|spielplatz|sonstiges",
-    "ageLabels": ["0–3 Jahre"],
-    "location": "Vollständige Adresse inkl. Straße und Stadtteil",
-    "cityHint": "$cleanCity",
-    "eventDate": "ISO-Datum z.B. ${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day + 2).toString().padLeft(2,'0')}T10:00:00 oder null",
-    "eventTimeRange": "Uhrzeit z.B. '10:00 – 12:30 Uhr' oder '14:00 – 17:00 Uhr'. null wenn unbekannt.",
-    "isRecurring": false,
-    "recurringNote": "Bei regelmaessigen Angeboten: z.B. 'Jeden Samstag 10:00 – 12:00 Uhr', sonst null",
-    "price": "kostenlos oder z.B. 5 €",
-    "url": "https://... (WICHTIG: echte URL der Veranstaltungsseite)",
-    "organizer": "Name des Veranstalters oder der Institution"
-  }
-]
-
-Erstelle genau 10 Events. Verschiedene Kategorien und Stadtteile. Bitte IMMER Uhrzeit angeben wenn bekannt.
+Antworte NUR mit einem gültigen JSON-Array:
+[{"id":"ev1","title":"...","description":"2-3 Sätze","category":"theater","ageLabels":["3–6 Jahre"],"location":"Adresse, Stadtteil","cityHint":"$cleanCity","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"5 €","url":"https://...","organizer":"Veranstalter"}]
+Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges) und Stadtteile.
 ''';
 
-    // Primär: REST API mit Google Search Grounding
+    // Primär: REST API mit Google Search Grounding (kurzer Prompt für < 20s)
     try {
-      final events = await _callWithGrounding(apiKey, prompt, city);
+      final events = await _callWithGrounding(apiKey, groundingPrompt, city);
       if (events.isNotEmpty) return events;
     } catch (e) {
       debugPrint('EventDiscoveryAgent: Grounding-Aufruf fehlgeschlagen: $e');
     }
 
-    // Fallback: Package-Aufruf ohne Grounding
+    // Fallback: Package-Aufruf ohne Grounding (ausführlicher Prompt)
     try {
       return await _callWithPackage(apiKey, prompt, city);
     } catch (e) {
@@ -159,7 +128,7 @@ Erstelle genau 10 Events. Verschiedene Kategorien und Stadtteile. Bitte IMMER Uh
           'x-goog-api-key': apiKey,
           'Content-Type': 'application/json',
         }, body: body)
-        .timeout(const Duration(seconds: 20));
+        .timeout(const Duration(seconds: 25));
 
     if (response.statusCode != 200) {
       throw Exception('Gemini REST ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
@@ -203,7 +172,9 @@ Erstelle genau 10 Events. Verschiedene Kategorien und Stadtteile. Bitte IMMER Uh
       apiKey: apiKey,
       generationConfig: GenerationConfig(temperature: 0.3, maxOutputTokens: 8192),
     );
-    final response = await model.generateContent([Content.text(prompt)]);
+    final response = await model
+        .generateContent([Content.text(prompt)])
+        .timeout(const Duration(seconds: 30));
     return _parseAgentResponse(response.text ?? '', city);
   }
 
