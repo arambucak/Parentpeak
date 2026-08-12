@@ -368,10 +368,15 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     return (52.5200, 13.4050);
   }
 
+  /// GPS-Koordinaten bevorzugen — verhindert dass Auslands-Events als "zu weit" gefiltert werden.
+  (double, double) get _originCoords {
+    if (_gpsLat != null && _gpsLon != null) return (_gpsLat!, _gpsLon!);
+    return _coordsForCity(
+        _cityController.text.trim().isEmpty ? 'Berlin' : _cityController.text.trim());
+  }
+
   List<_UnifiedFeedItem> get _combinedFeed {
-    final coords = _coordsForCity(_cityController.text.trim().isEmpty
-        ? 'Berlin'
-        : _cityController.text.trim());
+    final coords = _originCoords;
     final items = <_UnifiedFeedItem>[];
 
     if (_activeSources.contains(_FeedSource.ai)) {
@@ -399,9 +404,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   int get _nearbyQuickCount {
-    final coords = _coordsForCity(_cityController.text.trim().isEmpty
-        ? 'Berlin'
-        : _cityController.text.trim());
+    final coords = _originCoords;
 
     final items = <_UnifiedFeedItem>[];
     if (_activeSources.contains(_FeedSource.ai)) {
