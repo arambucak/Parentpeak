@@ -124,9 +124,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
+      // Fallback when geocoding fails: still mark location as active
+      final cityLabel = district ?? 'Aktueller Standort';
       if (mounted) {
-        final shouldSetCity = district != null && (forceOverride || !_cityManuallySet);
-        if (shouldSetCity) {
+        final shouldSetCity = forceOverride || !_cityManuallySet;
+        if (shouldSetCity && district != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(_savedCityKey, district);
         }
@@ -134,11 +136,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           _gpsLat = pos.latitude;
           _gpsLon = pos.longitude;
           if (shouldSetCity) {
-            _cityController.text = district;
+            _cityController.text = district ?? '';
             _cityManuallySet = true;
             _pickedLocation = PickedLocation(
-              displayName: district,
-              city: district.contains(',') ? district.split(',').last.trim() : district,
+              displayName: cityLabel,
+              city: district != null
+                  ? (district.contains(',') ? district.split(',').last.trim() : district)
+                  : cityLabel,
               postcode: '',
               lat: pos.latitude,
               lon: pos.longitude,
@@ -159,9 +163,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       final uri = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json&addressdetails=1',
       );
+      // User-Agent is a forbidden header in browser Fetch API — skip on web
+      final headers = kIsWeb ? <String, String>{} : {'User-Agent': 'ParentPeak/1.0 (family app)'};
       final resp = await http
-          .get(uri, headers: {'User-Agent': 'ParentPeak/1.0 (family app)'})
-          .timeout(const Duration(seconds: 5));
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 8));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         final address = data['address'] as Map<String, dynamic>?;
