@@ -31,8 +31,8 @@ class APIConfig {
   static const String _contactSupportUrlDefine =
       String.fromEnvironment('CONTACT_SUPPORT_URL', defaultValue: '');
 
-  // Gemini API Configuration - gemini-3.5-flash (fast grounding support).
-  static const String geminiModelName = 'gemini-3.5-flash';
+  // gemini-3.5-flash-lite: grounding in ~6s, no thinking overhead.
+  static const String geminiModelName = 'gemini-3.5-flash-lite';
 
   static String getGeminiModelName() {
     final modelName = _readEnvOrDefine('GEMINI_MODEL_NAME');

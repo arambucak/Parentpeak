@@ -118,8 +118,8 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
         {'google_search': {}}
       ],
       'generationConfig': {
-        'temperature': 0.2,
-        'maxOutputTokens': 8192,
+        'temperature': 0.1,
+        'maxOutputTokens': 4000,
       },
     });
 
