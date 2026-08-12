@@ -87,12 +87,36 @@ class EventDetailPage extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () => _openUrl(event.url!),
                 icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                label: const Text('Website des Veranstalters'),
+                label: const Text('Event-Website öffnen'),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF0EA5A4),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  final parts = [
+                    event.title,
+                    if (event.organizer != null && event.organizer!.isNotEmpty) event.organizer!,
+                    event.cityHint,
+                    'Veranstaltung',
+                  ];
+                  _openUrl('https://www.google.com/search?q=${Uri.encodeComponent(parts.join(' '))}');
+                },
+                icon: const Icon(Icons.search_rounded, size: 18),
+                label: const Text('Event online suchen'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF0EA5A4),
+                  side: BorderSide(color: const Color(0xFF0EA5A4).withValues(alpha: 0.5)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               ),
             ),

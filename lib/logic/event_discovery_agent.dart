@@ -64,9 +64,9 @@ class EventDiscoveryAgent {
     // Kurzer Prompt für schnelle Grounding-Antwort (< 20 s)
     final groundingPrompt = '''
 $today. ${gpsHint}Suche 10 aktuelle Familienevents in "$cleanCity" ($cleanRadius) — $saison. Zielgruppe: $agesText.
-Antworte NUR als JSON-Array (kein Markdown):
-[{"id":"1","title":"...","description":"...","category":"theater","ageLabels":["alle"],"location":"Adresse, $cleanCity","cityHint":"$cleanCity","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"kostenlos","url":"https://...","organizer":"..."}]
-Erstelle genau 10 echte Events mit verschiedenen Kategorien (theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges).
+Antworte NUR als JSON-Array (kein Markdown). Trage bei "url" die ECHTE URL aus dem Web-Suchergebnis ein:
+[{"id":"1","title":"...","description":"...","category":"theater","ageLabels":["alle"],"location":"Adresse, $cleanCity","cityHint":"$cleanCity","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"kostenlos","url":"ECHTE_URL_AUS_WEBSUCHE","organizer":"..."}]
+Erstelle genau 10 echte Events. Bei "url" MUSS eine echte Webseite stehen (z.B. berlin.de, eventbrite.de, Veranstalter-Website).
 ''';
 
     // Ausführlicher Prompt für Package-Fallback (ohne Web-Suche)
@@ -206,10 +206,14 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
           } catch (_) {}
         }
 
-        // Nimm URL aus Event-JSON oder aus Grounding-Metadaten
+        // Take URL from event JSON; fall back to any available grounding URL pool entry
         String? url = _validateUrl(map['url'] as String?);
-        if (url == null && i < groundingUrls.length) {
-          url = _validateUrl(groundingUrls[i]);
+        if (url == null) {
+          // Try index-matched URL first, then scan pool for any valid URL
+          for (var j = i; j < i + groundingUrls.length; j++) {
+            final candidate = _validateUrl(groundingUrls[j % groundingUrls.length]);
+            if (candidate != null) { url = candidate; break; }
+          }
         }
 
         results.add(DiscoveredEvent(
