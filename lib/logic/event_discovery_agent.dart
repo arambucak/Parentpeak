@@ -159,7 +159,7 @@ Erstelle genau 10 Events. Verschiedene Kategorien und Stadtteile. Bitte IMMER Uh
           'x-goog-api-key': apiKey,
           'Content-Type': 'application/json',
         }, body: body)
-        .timeout(const Duration(seconds: 30));
+        .timeout(const Duration(seconds: 20));
 
     if (response.statusCode != 200) {
       throw Exception('Gemini REST ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
