@@ -47,12 +47,10 @@ class EventDetailPage extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
           const SizedBox(height: 20),
           // Info-Karten
-          _infoCard(
-              theme,
-              '\u{1F4C5}',
-              'Wann',
-              _formatWann(event)),
-          const SizedBox(height: 10),
+          if (_formatWann(event) case final wann when wann.isNotEmpty) ...[  
+            _infoCard(theme, '\u{1F4C5}', 'Wann', wann),
+            const SizedBox(height: 10),
+          ],
           _infoCard(theme, '\u{1F4CD}', 'Wo', event.location),
           const SizedBox(height: 10),
           _infoCard(theme, '\u{1F476}', 'Fuer wen', event.ageLabels.join(', ')),
@@ -99,34 +97,7 @@ class EventDetailPage extends StatelessWidget {
               ),
             ),
           ],
-          // Fallback: Websuche immer anzeigen wenn keine direkte URL vorhanden
-          if (event.url == null || event.url!.isEmpty) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  // Bevorzuge Veranstalter-Name, sonst Event-Titel als Suchbegriff
-                  final searchTerm =
-                      (event.organizer != null && event.organizer!.isNotEmpty)
-                          ? '${event.organizer!} ${event.cityHint}'
-                          : '${event.title} ${event.cityHint}';
-                  _openUrl(
-                      'https://www.google.com/search?q=${Uri.encodeComponent(searchTerm)}');
-                },
-                icon: const Icon(Icons.search_rounded, size: 18),
-                label: const Text('Im Web suchen'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0EA5A4),
-                  side: BorderSide(
-                      color: const Color(0xFF0EA5A4).withValues(alpha: 0.4)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-            ),
-          ],
+
           const SizedBox(height: 20),
           // Teilnehmer
           EventAttendeesWidget(
@@ -206,7 +177,7 @@ class EventDetailPage extends StatelessWidget {
       return event.recurringNote ?? 'Regelmaessig';
     }
     if (event.eventDate == null && event.eventTimeRange == null) {
-      return 'Bitte beim Veranstalter erfragen';
+      return '';
     }
     final parts = <String>[];
     if (event.eventDate != null) {
