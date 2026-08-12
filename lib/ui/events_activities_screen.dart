@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -115,10 +116,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         _refreshFeed();
         return;
       }
+      // Web GPS needs more time (browser WiFi/IP-based location can take 15s+)
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
+        locationSettings: LocationSettings(
           accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 6),
+          timeLimit: kIsWeb ? const Duration(seconds: 20) : const Duration(seconds: 6),
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
