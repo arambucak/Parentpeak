@@ -39,11 +39,16 @@ enum _TimeWindowFilter { all, today, weekend }
 class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   late final EventDiscoveryAgent _agent;
   late final EventService _eventService;
-  final TextEditingController _cityController =
-      TextEditingController(text: 'Berlin');
+
+  // Single source of truth for location.
+  // null = no location selected yet (bar shows "Standort wählen").
+  PickedLocation? _activeLocation;
+  // Fallback city for search when no active location (from saved prefs).
+  String _fallbackCity = 'Berlin';
+  // True once the user explicitly picked a location — GPS won't auto-override.
+  bool _userLockedLocation = false;
 
   bool _isLoading = true;
-  bool _isUsingFallbackFeed = false;
   String? _errorMessage;
   DateTime? _lastFeedSyncAt;
   List<DiscoveredEvent> _aiEvents = const [];
@@ -61,14 +66,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   bool _onlyNearbyQuick = false;
   _TimeWindowFilter _timeWindowFilter = _TimeWindowFilter.all;
 
-  // GPS
-  double? _gpsLat;
-  double? _gpsLon;
   bool _gpsDetecting = false;
-  // Verhindert dass GPS eine manuell gewaehlte Stadt ueberschreibt
-  bool _cityManuallySet = false;
-  // Aktuell angezeigte Location im Picker (GPS oder manuell)
-  PickedLocation? _pickedLocation;
 
   static const String _savedCityKey = 'events.saved_city';
 
@@ -83,22 +81,19 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   Future<void> _loadSavedCityThenDetect() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_savedCityKey);
-    if (saved != null && saved.isNotEmpty) {
-      if (mounted) {
-        setState(() {
-          _cityController.text = saved;
-          _cityManuallySet = true;
-          // _pickedLocation intentionally NOT set here: bar shows "Standort wählen"
-          // until GPS confirms the current location.
-        });
-      }
+    if (saved != null && saved.isNotEmpty && mounted) {
+      setState(() => _fallbackCity = saved);
     }
     _detectGpsAndRefresh();
   }
 
+  // Search city: active location takes priority, saved city is the fallback.
+  String get _searchCity => _activeLocation?.city.isNotEmpty == true
+      ? _activeLocation!.city
+      : _fallbackCity;
+
   @override
   void dispose() {
-    _cityController.dispose();
     super.dispose();
   }
 
@@ -115,10 +110,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
+        if (mounted) setState(() => _gpsDetecting = false);
         _refreshFeed();
         return;
       }
-      // Web GPS needs more time (browser WiFi/IP-based location can take 15s+)
+      // Web needs more time: browser uses WiFi/IP geolocation
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: LocationSettings(
           accuracy: LocationAccuracy.medium,
@@ -126,32 +122,29 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
-      // Fallback when geocoding fails: still mark location as active
       final cityLabel = district ?? 'Aktueller Standort';
+      final city = district != null
+          ? (district.contains(',') ? district.split(',').last.trim() : district)
+          : cityLabel;
+      final newLocation = PickedLocation(
+        displayName: cityLabel,
+        city: city,
+        postcode: '',
+        lat: pos.latitude,
+        lon: pos.longitude,
+      );
       if (mounted) {
-        // shouldUpdateSearch: only overwrite the search city if not manually set (or forced)
-        final shouldUpdateSearch = forceOverride || !_cityManuallySet;
-        if (shouldUpdateSearch && district != null) {
+        final shouldUpdate = forceOverride || !_userLockedLocation;
+        if (shouldUpdate && district != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(_savedCityKey, district);
         }
         setState(() {
-          _gpsLat = pos.latitude;
-          _gpsLon = pos.longitude;
-          if (shouldUpdateSearch) {
-            _cityController.text = district ?? '';
-            _cityManuallySet = true;
+          _activeLocation = newLocation;
+          if (shouldUpdate) {
+            _fallbackCity = city;
+            _userLockedLocation = false;
           }
-          // Always show GPS result in the location bar
-          _pickedLocation = PickedLocation(
-            displayName: cityLabel,
-            city: district != null
-                ? (district.contains(',') ? district.split(',').last.trim() : district)
-                : cityLabel,
-            postcode: '',
-            lat: pos.latitude,
-            lon: pos.longitude,
-          );
           _gpsDetecting = false;
         });
       }
@@ -189,14 +182,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   Future<void> _refreshFeed() async {
-    final city = _cityController.text.trim().isEmpty
-        ? 'Berlin'
-        : _cityController.text.trim();
+    final city = _searchCity;
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _isUsingFallbackFeed = false;
     });
 
     try {
@@ -208,8 +198,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           city: city,
           radiusHint: '$_radiusKm km Umkreis',
           childAges: _selectedAgeGroups.map(_ageGroupLabel).toList(),
-          latitude: _gpsLat,
-          longitude: _gpsLon,
+          latitude: _activeLocation?.lat,
+          longitude: _activeLocation?.lon,
         );
       } catch (e) {
         debugPrint('EventsActivitiesScreen: AI feed unavailable: $e');
@@ -249,7 +239,6 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
       if (aiEvents.isEmpty && communityEvents.isEmpty) {
         aiEvents = _buildLocalFallbackAiEvents(city, coords);
-        _isUsingFallbackFeed = true;
       }
 
       if (!mounted) return;
@@ -389,11 +378,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     return (52.5200, 13.4050);
   }
 
-  /// GPS-Koordinaten bevorzugen — verhindert dass Auslands-Events als "zu weit" gefiltert werden.
   (double, double) get _originCoords {
-    if (_gpsLat != null && _gpsLon != null) return (_gpsLat!, _gpsLon!);
-    return _coordsForCity(
-        _cityController.text.trim().isEmpty ? 'Berlin' : _cityController.text.trim());
+    final loc = _activeLocation;
+    if (loc != null && loc.lat != 0) return (loc.lat, loc.lon);
+    return _coordsForCity(_searchCity);
   }
 
   List<_UnifiedFeedItem> get _combinedFeed {
@@ -738,9 +726,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final feed = _combinedFeed;
-    final city = _cityController.text.trim().isEmpty
-        ? 'Berlin'
-        : _cityController.text.trim();
+    final city = _searchCity;
     final coords = _coordsForCity(city);
     final showInvitationsSection = _invitations.isNotEmpty;
 
@@ -1003,16 +989,14 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         Expanded(
           child: LocationPickerWidget(
             hint: 'Standort waehlen',
-            initialLocation: _pickedLocation,
+            initialLocation: _activeLocation,
             onLocationPicked: (loc) async {
-              _cityController.text = loc.displayName;
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setString(_savedCityKey, loc.displayName);
+              await prefs.setString(_savedCityKey, loc.city.isNotEmpty ? loc.city : loc.displayName);
               setState(() {
-                _cityManuallySet = true;
-                _gpsLat = loc.lat;
-                _gpsLon = loc.lon;
-                _pickedLocation = loc;
+                _activeLocation = loc;
+                _fallbackCity = loc.city.isNotEmpty ? loc.city : loc.displayName;
+                _userLockedLocation = true;
               });
               _refreshFeed();
             },
@@ -1021,19 +1005,19 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         const SizedBox(width: 8),
         // GPS-Detect Button
         Tooltip(
-          message: _gpsLat != null ? 'GPS aktiv' : 'Standort automatisch erkennen',
+          message: _activeLocation != null ? 'GPS aktiv' : 'Standort automatisch erkennen',
           child: InkWell(
             onTap: _gpsDetecting ? null : () => _detectGpsAndRefresh(forceOverride: true),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: _gpsLat != null
+                color: _activeLocation != null
                     ? const Color(0xFF0EA5A4).withValues(alpha: 0.12)
                     : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _gpsLat != null
+                  color: _activeLocation != null
                       ? const Color(0xFF0EA5A4)
                       : theme.colorScheme.outlineVariant,
                 ),
@@ -1044,11 +1028,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Icon(
-                      _gpsLat != null
+                      _activeLocation != null
                           ? Icons.my_location_rounded
                           : Icons.location_searching_rounded,
                       size: 18,
-                      color: _gpsLat != null
+                      color: _activeLocation != null
                           ? const Color(0xFF0EA5A4)
                           : theme.colorScheme.onSurfaceVariant,
                     ),
@@ -1389,7 +1373,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
               category: DiscoveredEventCategory.sonstiges,
               ageLabels: item.ageLabel != null ? [item.ageLabel!] : ['Alle'],
               location: item.location,
-              cityHint: _cityController.text.trim(),
+              cityHint: _searchCity,
               discoveredAt: DateTime.now(),
             ),
           ),
