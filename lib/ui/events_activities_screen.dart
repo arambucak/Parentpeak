@@ -65,6 +65,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   bool _gpsDetecting = false;
   // Verhindert dass GPS eine manuell gewaehlte Stadt ueberschreibt
   bool _cityManuallySet = false;
+  // Aktuell angezeigte Location im Picker (GPS oder manuell)
+  PickedLocation? _pickedLocation;
 
   static const String _savedCityKey = 'events.saved_city';
 
@@ -131,6 +133,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           if (shouldSetCity) {
             _cityController.text = district;
             _cityManuallySet = true;
+            _pickedLocation = PickedLocation(
+              displayName: district,
+              city: district.contains(',') ? district.split(',').last.trim() : district,
+              postcode: '',
+              lat: pos.latitude,
+              lon: pos.longitude,
+            );
           }
           _gpsDetecting = false;
         });
@@ -669,22 +678,32 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Column(
           children: [
-            _buildHeaderCard(theme),
-            const SizedBox(height: 10),
-            _buildPinnedActionBar(theme),
-            const SizedBox(height: 12),
-            _buildLocationSearch(theme),
-            const SizedBox(height: 12),
-            _buildSourceFilters(theme),
-            if (showInvitationsSection) ...[
-              const SizedBox(height: 10),
-              _buildInvitationsSection(theme),
-            ],
-            const SizedBox(height: 10),
-            _buildAdvancedFilters(theme),
+            // Sticky: Location + Quellfilter
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                children: [
+                  _buildLocationSearch(theme),
+                  const SizedBox(height: 10),
+                  _buildSourceFilters(theme),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                children: [
+                  _buildHeaderCard(theme),
+                  const SizedBox(height: 10),
+                  _buildPinnedActionBar(theme),
+                  if (showInvitationsSection) ...[
+                    const SizedBox(height: 10),
+                    _buildInvitationsSection(theme),
+                  ],
+                  const SizedBox(height: 10),
+                  _buildAdvancedFilters(theme),
             const SizedBox(height: 14),
             if (_lastFeedSyncAt != null) ...[
               Container(
@@ -795,6 +814,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   ),
                 ),
               ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -905,14 +927,16 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         Expanded(
           child: LocationPickerWidget(
             hint: 'Standort waehlen',
+            initialLocation: _pickedLocation,
             onLocationPicked: (loc) async {
               _cityController.text = loc.displayName;
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString(_savedCityKey, loc.displayName);
               setState(() {
                 _cityManuallySet = true;
-                _gpsLat = null;
-                _gpsLon = null;
+                _gpsLat = loc.lat;
+                _gpsLon = loc.lon;
+                _pickedLocation = loc;
               });
               _refreshFeed();
             },
