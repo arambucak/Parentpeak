@@ -81,7 +81,7 @@ class ParentUser {
   });
 
   bool get isTrialActive {
-    final trialEnd = registeredAt.add(const Duration(days: 14));
+    final trialEnd = registeredAt.add(const Duration(days: 180));
     return DateTime.now().isBefore(trialEnd);
   }
 
@@ -89,7 +89,7 @@ class ParentUser {
     if (serverTrialDaysRemaining != null) {
       return serverTrialDaysRemaining! < 0 ? 0 : serverTrialDaysRemaining!;
     }
-    final trialEnd = registeredAt.add(const Duration(days: 14));
+    final trialEnd = registeredAt.add(const Duration(days: 180));
     final diff = trialEnd.difference(DateTime.now()).inDays;
     return diff < 0 ? 0 : diff;
   }

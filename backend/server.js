@@ -2344,7 +2344,7 @@ function ensureEntitlement(userId, options = {}) {
 }
 
 function buildEntitlementStatus(record) {
-  const trialDays = 30;
+  const trialDays = 180;
   const now = new Date();
   const registeredAt = new Date(record.registeredAt);
   const trialEndsAt = new Date(registeredAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
