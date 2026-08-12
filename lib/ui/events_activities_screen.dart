@@ -84,6 +84,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     if (saved != null && saved.isNotEmpty && mounted) {
       setState(() => _fallbackCity = saved);
     }
+    // Load feed immediately with saved/default city while GPS detects in background
+    _refreshFeed();
     _detectGpsAndRefresh();
   }
 
@@ -288,7 +290,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         description:
             'Offenes Treffen fuer Eltern mit Kindern. Lockeres Kennenlernen mit kurzer Bewegungsrunde.',
         category: DiscoveredEventCategory.spielplatz,
-        ageLabels: const ['0-3', '4-6'],
+        ageLabels: const ['Alle Altersklassen'],
         location: 'Stadtpark Nord',
         cityHint: city,
         latitude: coords.$1,
@@ -304,7 +306,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         description:
             'Basteln mit Alltagsmaterialien, kleine Mitmachstationen und Zeit fuer Austausch.',
         category: DiscoveredEventCategory.basteln,
-        ageLabels: const ['4-6', '7-10'],
+        ageLabels: const ['Alle Altersklassen'],
         location: 'Familienzentrum Mitte',
         cityHint: city,
         latitude: coords.$1 + 0.01,
@@ -320,7 +322,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         description:
             'Gemeinsamer Spaziergang mit kleinen Naturspielen. Kinderwagenfreundliche Strecke.',
         category: DiscoveredEventCategory.natur,
-        ageLabels: const ['0-3', '4-6', '7-10'],
+        ageLabels: const ['Alle Altersklassen'],
         location: 'Waldpark Treffpunkt Ost',
         cityHint: city,
         latitude: coords.$1 - 0.015,
@@ -1497,6 +1499,7 @@ class _UnifiedFeedItem {
       longitude: event.longitude,
       priceLabel: price,
       isFree: isFree,
+      eventId: event.id,
     );
   }
 
