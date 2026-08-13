@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -135,6 +136,14 @@ class ParentCoinService extends ChangeNotifier {
         'Kostenlos ausprobieren: ${getInviteLink()}';
   }
 
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
+
   /// Invitee: Meldet dem Backend, dass jemand über diesen Code beigetreten ist.
   Future<void> recordReferral(String code, String inviteeId, String inviteeName) async {
     final base = APIConfig.getBackendBaseUrl();
@@ -142,7 +151,7 @@ class ParentCoinService extends ChangeNotifier {
     try {
       await http.post(
         Uri.parse('$base/referrals/record'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await _authHeaders(),
         body: jsonEncode({'referralCode': code, 'inviteeId': inviteeId, 'inviteeName': inviteeName}),
       ).timeout(const Duration(seconds: 10));
     } catch (e) {
@@ -172,6 +181,7 @@ class ParentCoinService extends ChangeNotifier {
       // Mark as claimed
       await http.delete(
         Uri.parse('$base/referrals/claim/${Uri.encodeComponent(myCode)}'),
+        headers: await _authHeaders(),
       ).timeout(const Duration(seconds: 10));
 
       if (context.mounted) {

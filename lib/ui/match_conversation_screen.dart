@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:parentpeak/config/api_config.dart';
@@ -203,6 +204,14 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     await _loadMessages();
   }
 
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
+
   Future<Map<String, dynamic>?> _sendFriendMessage(String text) async {
     final base = APIConfig.getBackendBaseUrl();
     if (base == null) return null;
@@ -210,7 +219,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       final resp = await http
           .post(
             Uri.parse('$base/friend-chat/messages'),
-            headers: {'Content-Type': 'application/json'},
+            headers: await _authHeaders(),
             body: jsonEncode({
               'roomId': widget.profileId,
               'userId': _currentUserId,
