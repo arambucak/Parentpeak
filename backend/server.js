@@ -4072,6 +4072,20 @@ app.post('/calendar/events', async (req, res) => {
   }
 });
 
+app.delete('/calendar/events/:id', async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(`DELETE FROM "CalendarEvent" WHERE "id" = $1`, id);
+  } catch (_) {
+    // also remove from in-memory fallback
+    const idx = calendarEvents.findIndex(e => e.id === id);
+    if (idx !== -1) calendarEvents.splice(idx, 1);
+  }
+  return res.status(200).json({ deleted: id });
+});
+
 // 11. Photos
 app.get('/photos', (req, res) => {
   res.json({ items: photoAlbums });

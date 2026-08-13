@@ -46,4 +46,15 @@ class CalendarBackendService {
       rethrow;
     }
   }
+
+  Future<void> deleteEvent(String id) async {
+    lastSyncError = null;
+    if (apiClient == null) return;
+    try {
+      await apiClient!.deleteJson('${CalendarContract.eventsPath}/$id', {});
+    } catch (e) {
+      lastSyncError = 'Termin konnte nicht gelöscht werden.';
+      rethrow;
+    }
+  }
 }

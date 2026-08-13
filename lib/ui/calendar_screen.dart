@@ -143,6 +143,35 @@ class _CalendarScreenState extends State<CalendarScreen>
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
+  Future<void> _deleteEvent(_CalendarEvent event) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Termin löschen?'),
+        content: Text('"${event.title}" wird dauerhaft gelöscht.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _events.remove(event));
+    try {
+      await _calendarService.deleteEvent(event.id);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _events.add(event));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Löschen fehlgeschlagen — bitte erneut versuchen.')),
+      );
+    }
+  }
+
   List<_CalendarEvent> get _eventsForSelectedDay {
     return _events
         .where((e) => _isSameDay(e.start, _selectedDay))
@@ -742,10 +771,34 @@ class _CalendarScreenState extends State<CalendarScreen>
                       ],
                     ),
                     const SizedBox(height: 12),
-                    ..._eventsForSelectedDay.map((e) => _EventCard(
-                        event: e,
-                        color: _personColors[e.person] ??
-                            theme.colorScheme.primary)),
+                    ..._eventsForSelectedDay.map((e) {
+                      final color = _personColors[e.person] ?? theme.colorScheme.primary;
+                      return Dismissible(
+                        key: ValueKey(e.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE53E3E),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.delete_rounded, color: Colors.white, size: 28),
+                              SizedBox(height: 4),
+                              Text('Löschen', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                        confirmDismiss: (_) async {
+                          await _deleteEvent(e);
+                          return false; // _deleteEvent handles state update
+                        },
+                        child: _EventCard(event: e, color: color),
+                      );
+                    }),
                     if (_eventsForSelectedDay.isEmpty)
                       GestureDetector(
                         onTap: _openAddSheet,
