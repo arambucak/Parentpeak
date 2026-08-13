@@ -105,56 +105,101 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       final fallback = _buildLocalFallbackImpulse();
       if (mounted)
         setState(() {
-          _impulse = null;
-          _error = 'Aktuell sind keine frischen Impulse verfügbar.';
+          _impulse = fallback;
+          _error = null;
           _isLoading = false;
           _isUsingFallbackImpulse = true;
         });
     }
   }
 
+  // 7 offline fallback topics, cycled by day-of-year when backend unavailable.
+  static const List<(String title, String body, String tip, String reflect)> _fallbackTopics = [
+    (
+      'Grenzen liebevoll setzen',
+      'Liebevolle Grenzen sind kein Widerspruch. Kinder brauchen beides: das Gefühl, geliebt zu sein, UND klare Orientierung. Grenzen mit Verbindung wirken wie Leitplanken, nicht wie Mauern.',
+      'Benenne heute zuerst das Gefühl deines Kindes, dann die Grenze: "Ich sehe, du bist wütend. Und trotzdem: Hauen geht nicht."',
+      'Gab es heute eine Situation, in der eine ruhige Grenze besser funktioniert hat als ein lautes Nein?',
+    ),
+    (
+      'Ich-Botschaften im Alltag',
+      'Du-Botschaften lösen Abwehr aus. Ich-Botschaften öffnen Türen. Kinder hören mehr zu, wenn sie sich nicht angegriffen fühlen.',
+      'Wähle heute eine Situation, in der du sonst "Du immer..." sagst – und ersetze sie durch "Ich fühle ... weil ich ... brauche."',
+      'Hat eine Ich-Botschaft heute eine Reaktion ausgelöst, die dich überrascht hat?',
+    ),
+    (
+      'Kleine Schritte, große Wirkung',
+      'Wenn heute alles zu viel ist: Wähle nur einen ruhigen Moment mit deinem Kind und benenne ein Gefühl wertfrei. Dieser kurze Check-in stärkt Verbindung und Sicherheit.',
+      '3 Minuten gemeinsam atmen, dann frage: "Was war heute leicht für dich?".',
+      'Welcher kleine Moment heute hat euch beiden gutgetan?',
+    ),
+    (
+      'Stärken sehen statt Schwächen bewerten',
+      'Jedes Kind hat eine einzigartige Stärken-Konstellation. Oft sehen wir zuerst die Baustellen – dabei wären wir die ersten, die den Rohdiamanten polieren könnten.',
+      'Sprich heute mit deinem Kind über eine seiner Stärken – nicht als Lob, sondern als Beobachtung: "Ich habe heute gesehen, wie du..."',
+      'Welche Stärke deines Kindes hat dich heute überrascht oder beeindruckt?',
+    ),
+    (
+      'Selbständigkeit – loslassen ist auch Liebe',
+      'Kinder werden selbständig, wenn wir ihnen trauen. Die Kunst ist: Schritt für Schritt mehr Verantwortung übergeben, ohne zu früh einzuspringen.',
+      'Übergib deinem Kind heute eine Aufgabe, die du bisher selbst gemacht hast – und lass es komplett selbst.',
+      'Wann habt ihr heute losgelassen – und wie hat sich das angefühlt?',
+    ),
+    (
+      'Gefühle benennen und anerkennen',
+      'Kinder, die ihre Gefühle benennen können, können kommunizieren, was sie brauchen. Dieser Schritt – vom Fühlen zum Sprechen – braucht Übung und deine Unterstützung.',
+      'Stell heute Abend die Frage: "Was hat dich froh gemacht? Was hat dich traurig oder wütend gemacht?" – und hör einfach zu.',
+      'Welchen Gefühlsmoment eures Kindes wolltet ihr heute festhalten?',
+    ),
+    (
+      'Scheitern als Lernchance sehen',
+      'Das Gehirn lernt am stärksten durch Fehler. Wenn dein Kind scheitert und du dabei ruhig bleibst, gibst du das stärkste Signal: Scheitern ist sicher. Ich halte das aus.',
+      'Erzähle deinem Kind heute von einem eigenen Misserfolg – und was du daraus gelernt hast.',
+      'Gab es heute einen Misserfolg, den dein Kind gut weggesteckt hat? Was hat dabei geholfen?',
+    ),
+  ];
+
   WeeklyImpulse _buildLocalFallbackImpulse() {
+    final now = DateTime.now();
+    final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+    final t = _fallbackTopics[dayOfYear % _fallbackTopics.length];
+    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     return WeeklyImpulse(
-      id: 'local_fallback_impulse',
-      title: 'Kleine Schritte, große Wirkung',
-      contentBody:
-          'Wenn heute alles zu viel ist: Wähle nur einen ruhigen Moment mit deinem Kind und benenne ein Gefühl wertfrei. Dieser kurze Check-in stärkt Verbindung und Sicherheit.',
-      practicalTip:
-          'Praxis für heute: 3 Minuten gemeinsam atmen, dann frage: "Was war heute leicht für dich?".',
+      id: 'local_fallback_$dateKey',
+      title: t.$1,
+      contentBody: t.$2,
+      practicalTip: t.$3,
       category: PedagogicalCategory.gfk,
-      publishDate: DateTime.now(),
-      heroHeadline: 'Offline-Impuls für deinen Alltag',
-      heroDescription:
-          'Der Server antwortet gerade nicht. Du kannst trotzdem direkt mit einem alltagstauglichen Impuls starten.',
-      companionImpulses: const <WeeklyImpulseCompanion>[
+      publishDate: now,
+      heroHeadline: 'Tagesimpuls für deinen Alltag',
+      heroDescription: t.$2,
+      companionImpulses: <WeeklyImpulseCompanion>[
         WeeklyImpulseCompanion(
-          id: 'fallback_verstehen',
-          title: 'Verstehen (2 min)',
-          summary:
-              'Kinder kooperieren besser, wenn sie sich zuerst gesehen fühlen. Verbindung kommt vor Korrektur.',
+          id: 'fallback_verstehen_$dateKey',
+          title: 'Kurz verstanden',
+          summary: 'Kinder kooperieren besser, wenn sie sich zuerst gesehen fühlen. Verbindung kommt vor Korrektur.',
           durationLabel: '2 min',
           formatLabel: 'Verstehen',
         ),
         WeeklyImpulseCompanion(
-          id: 'fallback_praxis',
-          title: 'Praxis (3 min)',
-          summary:
-              'Nutze eine Ich-Botschaft: "Ich sehe, du bist gerade frustriert. Wir schaffen das zusammen."',
+          id: 'fallback_praxis_$dateKey',
+          title: 'Praxis für heute',
+          summary: t.$3,
           durationLabel: '3 min',
           formatLabel: 'Praxis',
         ),
         WeeklyImpulseCompanion(
-          id: 'fallback_reflexion',
-          title: 'Reflexion (1 min)',
-          summary: 'Frage dich am Abend: Was hat heute zwischen uns gut funktioniert?',
+          id: 'fallback_reflexion_$dateKey',
+          title: 'Abend-Reflexion',
+          summary: t.$4,
           durationLabel: '1 min',
           formatLabel: 'Reflexion',
         ),
       ],
-      discussionPrompt: const WeeklyImpulseDiscussionPrompt(
-        id: 'fallback_discussion',
+      discussionPrompt: WeeklyImpulseDiscussionPrompt(
+        id: 'fallback_discussion_$dateKey',
         title: 'Gesprächsimpuls',
-        body: 'Welcher kleine Satz hat deinem Kind heute sichtbar gutgetan?',
+        body: t.$4,
       ),
     );
   }
@@ -357,6 +402,17 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
           children: [
             // Täglicher Header: Begrüßung + Streak + Stimmungscheck
             _buildDailyHeader(theme),
+            if (_isUsingFallbackImpulse)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.wifi_off_rounded, size: 14, color: theme.colorScheme.outline),
+                    const SizedBox(width: 6),
+                    Text('Offline-Impuls', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline)),
+                  ],
+                ),
+              ),
             // Soforthilfe — "Was ist gerade los?"
             _buildSoforthilfe(theme),
             Container(

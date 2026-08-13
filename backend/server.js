@@ -256,6 +256,453 @@ function storeVerifiedExpertRecord(record) {
   }
 }
 
+// Pool of 28 daily impulse topics, cycled by day-of-year.
+const DAILY_IMPULSE_POOL = [
+  {
+    key: 'gfk_warum',
+    title: 'Warum-Fragen gelassen begleiten',
+    category: 'gfk',
+    parent_lens: "Dein Kind stellt dir 100-mal am Tag die Frage 'Warum?'. Das tut es nicht, um dich zu nerven, sondern weil sein Gehirn Verbindungen knüpft. Es will die Welt begreifen.",
+    parent_tips: [
+      "Nutze die Giraffensprache (GfK): Benenne deine eigenen Gefühle und Bedürfnisse klar, statt zu schimpfen.",
+      "Beantworte die 'Warum'-Fragen kurz und simpel – dein Kind sucht Logik, keine wissenschaftlichen Vorträge.",
+      "Setze Grenzen liebevoll durch persönliche Präsenz ('Ich möchte nicht, dass du haust'), statt durch Strafen.",
+    ],
+    practical_tip: "Bei der nächsten Warum-Frage: erst das Gefühl spiegeln ('Du bist neugierig!'), dann in einem Satz antworten.",
+    discussion_body: "Welche kurze, ruhige Formulierung hilft euch, wenn euer Kind zum zehnten Mal nach dem Warum fragt?",
+    companion_quick: "Wähle heute nur eine ruhige Antwort auf eine Warum-Frage und bleib danach bewusst kurz.",
+    companion_reflect: "Wann hat dein Kind heute besonders viele Verbindungen gesucht – und wie konntest du ruhig Orientierung geben?",
+  },
+  {
+    key: 'gfk_grenzen',
+    title: 'Grenzen liebevoll und klar setzen',
+    category: 'gfk',
+    parent_lens: "Liebevolle Grenzen sind kein Widerspruch. Kinder brauchen beides: das Gefühl, geliebt zu sein, UND klare Orientierung, was nicht geht. Grenzen ohne Verbindung wirken wie Mauern – Grenzen mit Verbindung wirken wie Leitplanken.",
+    parent_tips: [
+      "Benenne zuerst das Gefühl deines Kindes, dann die Grenze: 'Ich sehe, du bist wütend. Und trotzdem: Hauen geht nicht.'",
+      "Bleib körperlich ruhig – dein Ton ist lauter als deine Worte. Ein tiefer Atemzug vor der Reaktion hilft.",
+      "Konsequenzen ansagen und einhalten. Nicht drohen, sondern ankündigen: 'Wenn du ... dann ...'",
+    ],
+    practical_tip: "Übe heute einen Satz mit Gefühl + Grenze: 'Ich verstehe, dass du das willst. Und: Nein.' – und dabei ruhig bleiben.",
+    discussion_body: "Wie reagiert ihr, wenn ihr selbst an eure Grenzen geratet? Welcher Satz hilft euch, ruhig zu bleiben?",
+    companion_quick: "Einmal tief einatmen vor der nächsten Grenzreaktion – das ist schon halbe Miete.",
+    companion_reflect: "Gab es heute eine Situation, in der eine ruhige Grenze besser funktioniert hat als ein lautes Nein?",
+  },
+  {
+    key: 'gfk_ichbotschaft',
+    title: 'Ich-Botschaften statt Du-Vorwürfe',
+    category: 'gfk',
+    parent_lens: "Du-Botschaften ('Du bist so laut!') lösen Abwehr aus. Ich-Botschaften ('Ich werde müde und brauche Ruhe') öffnen Türen. Kinder hören mehr zu, wenn sie sich nicht angegriffen fühlen.",
+    parent_tips: [
+      "Forme Vorwürfe zu Ich-Botschaften um: statt 'Du hörst nie zu' → 'Ich fühle mich nicht gehört und das macht mich traurig.'",
+      "Teile dein Bedürfnis mit: 'Ich brauche jetzt kurz Stille, um nachzudenken.' Kinder verstehen Bedürfnisse erstaunlich gut.",
+      "Übe im Alltag: Formuliere drei klassische Sätze als Ich-Botschaft um – morgens beim Zähneputzen, mittags beim Essen, abends beim Einschlafen.",
+    ],
+    practical_tip: "Wähle heute eine Situation, in der du sonst 'Du immer...' sagst – und ersetze sie durch 'Ich fühle ... weil ich ... brauche.'",
+    discussion_body: "Welche Du-Botschaft fällt euch am schwersten umzuformulieren? Und was hilft dabei?",
+    companion_quick: "Gefühl + Bedürfnis benennen – das ist die Formel für eine echte Ich-Botschaft.",
+    companion_reflect: "Hat eine Ich-Botschaft heute eine Reaktion ausgelöst, die dich überrascht hat?",
+  },
+  {
+    key: 'gfk_trotz',
+    title: 'Trotzphasen gelassen begleiten',
+    category: 'gfk',
+    parent_lens: "Trotz ist keine Rebellion – er ist Entwicklung. Wenn ein Kind auf dem Boden liegt und schreit, ist sein präfrontaler Kortex schlicht noch nicht ausgereift genug, um die Emotion zu regulieren. Es braucht dich als Co-Regulierer.",
+    parent_tips: [
+      "Bleib körperlich nah, ohne zu zwingen: Auf Kniehöhe gehen, ruhig sprechen, nicht anfassen wenn das Kind es ablehnt.",
+      "Vermeide Diskussionen mitten im Sturm. Erst wenn es sich beruhigt hat, kommt das Gespräch.",
+      "Verwende 'Gefühl-Brücken': 'Du wolltest das Eis. Das war dir so wichtig. Ich verstehe das.'",
+    ],
+    practical_tip: "Beim nächsten Trotzanfall: Setz dich neben dein Kind. Nicht weg, nicht eingreifen – einfach da sein. Das reguliert schon.",
+    discussion_body: "Was hilft euch selbst ruhig zu bleiben, wenn euer Kind mitten in einem Trotzanfall ist?",
+    companion_quick: "Drei Worte für Trotzphasen: Nah bleiben. Ruhig atmen. Abwarten.",
+    companion_reflect: "Was hat dich heute am meisten Kraft gekostet – und was hat dir geholfen, dabei gelassen zu bleiben?",
+  },
+  {
+    key: 'gfk_geschwister',
+    title: 'Geschwisterstreit als Lernfeld nutzen',
+    category: 'gfk',
+    parent_lens: "Geschwister streiten – das ist normal und sogar wichtig. Im Streit lernen Kinder Kompromisse, Perspektivwechsel und Selbstbehauptung. Deine Rolle ist die des Moderators, nicht des Richters.",
+    parent_tips: [
+      "Kein Partei ergreifen: 'Ich sehe, dass ihr beide gerade wütend seid. Ich höre zuerst dich, dann dich.'",
+      "Lass Kinder Lösungen selbst finden, wenn die Situation nicht eskaliert. Eingreifen erst bei Gefahr.",
+      "Stärke jedes Kind einzeln: regelmäßige 1:1-Momente ohne Geschwister reduzieren Eifersucht langfristig.",
+    ],
+    practical_tip: "Beim nächsten Streit: Beide Kinder fragen 'Was brauchst du gerade?' – bevor du entscheidest wer Recht hat.",
+    discussion_body: "Wie hanhabt ihr es, wenn Geschwister streiten? Was funktioniert bei euch am besten?",
+    companion_quick: "Moderator statt Richter – das ist deine Rolle bei Geschwisterkonflikten.",
+    companion_reflect: "Gab es heute einen Moment, in dem deine Kinder einen Streit selbst gelöst haben? Was habt ihr dabei gelernt?",
+  },
+  {
+    key: 'gfk_gefuehle',
+    title: 'Gefühle benennen und anerkennen',
+    category: 'gfk',
+    parent_lens: "Kinder, die ihre Gefühle benennen können, haben einen massiven Vorteil: Sie können kommunizieren, was sie brauchen. Dieser Schritt – vom Fühlen zum Sprechen – braucht Übung und deine Unterstützung.",
+    parent_tips: [
+      "Nutze das 'Gefühlsbarometer': Frage abends 'Wie war dein Tag auf einer Skala von 1-5?' – und erzähle selbst zuerst.",
+      "Benenne eigene Gefühle laut: 'Ich bin gerade ein bisschen gestresst, weil ich viel nachdenken muss.' Modelllernen wirkt.",
+      "Lese Kinderbücher über Gefühle – und halte danach inne: 'Was hat die Figur wohl gefühlt? Und du?'",
+    ],
+    practical_tip: "Stell heute Abend die Frage: 'Was hat dich heute froh gemacht? Was hat dich traurig oder wütend gemacht?' – und hör einfach zu.",
+    discussion_body: "Welches Gefühl fällt eurem Kind besonders schwer zu benennen? Wie begegnet ihr dem?",
+    companion_quick: "Erst fühlen, dann benennen – das Gefühls-ABC beginnt mit dir als Vorbild.",
+    companion_reflect: "Welchen Gefühlsmoment eures Kindes wolltet ihr heute festhalten?",
+  },
+  {
+    key: 'gfk_nein',
+    title: 'Nein sagen – ohne schlechtes Gewissen',
+    category: 'gfk',
+    parent_lens: "Eltern, die nie Nein sagen, erziehen Kinder, die Grenzen nicht kennen. Ein liebevolles Nein zeigt deinem Kind: Ich nehme meine Bedürfnisse ernst – und das darfst du auch.",
+    parent_tips: [
+      "Ein Nein braucht keine lange Erklärung. Ein klares 'Nein, das geht jetzt nicht' ist vollständig.",
+      "Schuld nach einem Nein ist ein Signal, kein Fehler. Frage dich: Ist das Nein wirklich falsch – oder nur unbequem?",
+      "Übe das Nein auch gegenüber anderen Erwachsenen (Spielverabredungen, Zusagen) – dein Kind lernt durch dein Vorbild.",
+    ],
+    practical_tip: "Sag heute einmal bewusst Nein – ohne dich zu entschuldigen. Spüre nach, wie es sich anfühlt.",
+    discussion_body: "Wann fällt es euch am schwersten, Nein zu sagen – zu euren Kindern, oder zu anderen?",
+    companion_quick: "Ein Nein zu einer Sache ist ein Ja zu etwas Wichtigerem – meistens zu dir selbst.",
+    companion_reflect: "Gab es heute ein Nein, das sich rückblickend richtig angefühlt hat?",
+  },
+  {
+    key: 'inclusion_staerken',
+    title: 'Stärken sehen statt Schwächen bewerten',
+    category: 'inclusion',
+    parent_lens: "Jedes Kind hat eine einzigartige Stärken-Konstellation. Oft sehen wir als Eltern zuerst die Baustellen – dabei wären wir die ersten, die den Rohdiamanten polieren könnten.",
+    parent_tips: [
+      "Schreib heute Abend 3 Stärken deines Kindes auf – nicht Leistungen, sondern Charaktereigenschaften ('neugierig', 'fürsorglich', 'hartnäckig').",
+      "Benenne Stärken konkret und zeitnah: 'Das warst du so geduldig gerade – das ist echt toll.'",
+      "Vermeide Vergleiche mit Geschwistern oder anderen Kindern. Jede Entwicklungskurve ist einzigartig.",
+    ],
+    practical_tip: "Sprich heute mit deinem Kind über eine seiner Stärken – nicht als Lob, sondern als Beobachtung: 'Ich habe heute gesehen, wie du ...'",
+    discussion_body: "Welche verborgene Stärke eures Kindes möchtet ihr heute teilen?",
+    companion_quick: "Stärken sehen heißt nicht, Schwächen ignorieren – es heißt, Wachstum ermöglichen.",
+    companion_reflect: "Welche Stärke deines Kindes hat dich heute überrascht oder beeindruckt?",
+  },
+  {
+    key: 'inclusion_selbstwert',
+    title: 'Selbstwert täglich aufbauen',
+    category: 'inclusion',
+    parent_lens: "Selbstwert entsteht nicht durch Lob allein – er entsteht durch das Erleben: 'Ich kann etwas. Ich bin wichtig. Ich gehöre dazu.' Du kannst alle drei Erfahrungen täglich einbauen.",
+    parent_tips: [
+      "Lass dein Kind kleine Entscheidungen treffen: 'Willst du erst die Aufgaben machen oder erst spielen?' Autonomie = Selbstwert.",
+      "Zeig echtes Interesse: Leg das Handy weg, schau ins Gesicht, frage nach. 10 Minuten volle Aufmerksamkeit wirken Wunder.",
+      "Feiere den Prozess, nicht nur das Ergebnis: 'Du hast das so lange probiert – das ist der wichtige Teil.'",
+    ],
+    practical_tip: "Heute: 10 Minuten ungeteilte Aufmerksamkeit für dein Kind – kein Handy, keine Ablenkung, nur Interesse.",
+    discussion_body: "Was macht euer Kind besonders stolz auf sich – und wie unterstützt ihr dieses Gefühl?",
+    companion_quick: "Selbstwert kommt nicht vom Spiegel, sondern aus den Augen der Menschen, die uns lieben.",
+    companion_reflect: "In welchem Moment hat dein Kind heute 'Ich kann das!' gezeigt?",
+  },
+  {
+    key: 'inclusion_scheitern',
+    title: 'Scheitern als Lernchance sehen',
+    category: 'inclusion',
+    parent_lens: "Das Gehirn lernt am stärksten durch Fehler – nicht durch Erfolge. Wenn dein Kind scheitert und du dabei ruhig bleibst, gibst du ihm das stärkste Signal: 'Scheitern ist sicher. Ich halte das aus.'",
+    parent_tips: [
+      "Beim Scheitern zuerst Mitgefühl, dann Lösung: 'Das war frustrierend. Was könnten wir beim nächsten Mal anders machen?'",
+      "Erzähle von eigenen Misserfolgen: 'Ich habe auch mal ... und dann habe ich ... gelernt.' Modelllernen enttabuisiert.",
+      "Vermeide 'Ich hab's dir doch gesagt'. Das schließt Türen. Stattdessen: 'Was hast du daraus mitgenommen?'",
+    ],
+    practical_tip: "Erzähle deinem Kind heute von einem eigenen Misserfolg – und was du daraus gelernt hast.",
+    discussion_body: "Wie geht ihr als Familie mit Niederlagen um? Was hilft euch, Scheitern als Teil des Lernens zu sehen?",
+    companion_quick: "Kinder, die Fehler machen dürfen, werden mutigere Erwachsene.",
+    companion_reflect: "Gab es heute einen Misserfolg, den dein Kind gut weggesteckt hat? Was hat dabei geholfen?",
+  },
+  {
+    key: 'inclusion_hochsensibel',
+    title: 'Hochsensible Kinder verstehen und begleiten',
+    category: 'inclusion',
+    parent_lens: "Etwa 20% der Kinder sind hochsensibel – sie nehmen mehr wahr, fühlen intensiver und brauchen mehr Erholungszeit. Das ist keine Schwäche, sondern ein Persönlichkeitsmerkmal mit eigenen Stärken.",
+    parent_tips: [
+      "Reduce Reizüberflutung: Ruhige Übergangszeiten einplanen, bevor Hochdruck-Situationen kommen (Einkauf, Schule, Party).",
+      "Vorhersehbarkeit schützt: Ankündigen was kommt ('In 10 Minuten gehen wir'). Überraschungen sind für hochsensible Kinder belastend.",
+      "Ihre Empfindsamkeit ist eine Stärke: Sie bemerken, wenn jemand traurig ist, und denken tief nach. Benenne das positiv.",
+    ],
+    practical_tip: "Plane heute 15 Minuten stille 'Auftankzeit' für dein Kind nach einer Hochdruck-Situation – ohne Bildschirm, ohne Erwartung.",
+    discussion_body: "Erkennt ihr hochsensible Züge in eurem Kind? Was hilft euch im Alltag damit umzugehen?",
+    companion_quick: "Hochsensible Kinder brauchen keine Abhärtung – sie brauchen Schutzräume und Verständnis.",
+    companion_reflect: "Wann hat dein Kind heute besonders viel Eindrücke verarbeitet – und wie hat es sich danach erholt?",
+  },
+  {
+    key: 'inclusion_freundschaft',
+    title: 'Freundschaften begleiten – nicht steuern',
+    category: 'inclusion',
+    parent_lens: "Freundschaften sind der wichtigste Lernort für soziale Kompetenz. Kinder lernen Geben und Nehmen, Verhandeln und Verzichten – aber nur wenn wir als Eltern loslassen und begleiten statt steuern.",
+    parent_tips: [
+      "Frage nach, aber urteile nicht: 'Wie war das heute mit ...?' ist besser als 'Mag ich nicht, der/die hat neulich ...'",
+      "Lass Konflikte zwischen Kindern zunächst selbst lösen – greife erst ein, wenn echte Not entsteht.",
+      "Ermögliche Freundschaften aktiv: Spielverabredungen, Einladungen. Soziale Chancen entstehen nicht von selbst.",
+    ],
+    practical_tip: "Frage dein Kind heute: 'Wer aus deiner Klasse / Gruppe mag das Gleiche wie du?' – und überlege gemeinsam, wie ihr Zeit schafft.",
+    discussion_body: "Wie gebt ihr euren Kindern Raum für eigene Freundschaften – auch wenn ihr die Wahl nicht immer versteht?",
+    companion_quick: "Echte Freundschaft lässt sich nicht erzwingen – aber fruchtbaren Boden könnt ihr gemeinsam schaffen.",
+    companion_reflect: "Hat dein Kind heute über jemanden gesprochen, der ihm wichtig ist? Was hast du dabei gelernt?",
+  },
+  {
+    key: 'inclusion_resilienz',
+    title: 'Resilienz – wie Kinder an Herausforderungen wachsen',
+    category: 'inclusion',
+    parent_lens: "Resilienz ist nicht angeboren – sie wird geübt. Kinder werden widerstandsfähig, wenn sie Herausforderungen erleben UND dabei unterstützt werden. Nicht Schutz, sondern Begleitung ist der Schlüssel.",
+    parent_tips: [
+      "Lass dein Kind Herausforderungen vollenden: Nicht zu früh helfen. Erst wenn es wirklich nicht mehr weiterkommt – dann anbieten.",
+      "Stärke den inneren Dialog: 'Was denkst du, was du tun könntest?' statt direkt die Lösung zu geben.",
+      "Spreche über Krisen in der Familie altersgerecht: Kinder die ausgeschlossen werden, entwickeln Fantasien die schlimmer sind als die Wahrheit.",
+    ],
+    practical_tip: "Wenn dein Kind heute scheitert: Warte 30 Sekunden bevor du eingreifst. Oft kommt die Lösung von selbst.",
+    discussion_body: "Welche Herausforderung hat euer Kind gemeistert und euch dabei überrascht?",
+    companion_quick: "Resilienz wächst in dem Raum zwischen Herausforderung und Unterstützung – nicht davor und nicht danach.",
+    companion_reflect: "Woran erkennt ihr, dass euer Kind heute innerlich gewachsen ist?",
+  },
+  {
+    key: 'inclusion_vielfalt',
+    title: 'Vielfalt erleben – Unterschiedlichkeit als Stärke',
+    category: 'inclusion',
+    parent_lens: "Kinder, die früh lernen, dass Menschen verschieden sind – in Herkunft, Fähigkeiten, Denkweise – entwickeln mehr Empathie und weniger Berührungsangst. Du kannst Vielfalt im Alltag lebendig machen.",
+    parent_tips: [
+      "Sprich offen über Unterschiede – Kinder bemerken sie sowieso. 'Ja, Lara hat eine andere Hautfarbe als du – und ihre Familie kommt aus ...'",
+      "Wähle Bücher, Filme und Spiele mit diversen Charakteren – Repräsentation beeinflusst Weltbild.",
+      "Feiere familiäre Eigenheiten: 'Bei uns ist das so, und bei anderen Familien ist es anders – das ist das Schöne.'",
+    ],
+    practical_tip: "Lies heute ein Kinderbuch mit einer Hauptfigur, die anders ist als dein Kind – und sprecht danach darüber.",
+    discussion_body: "Wie erklärt ihr Kindern Unterschiede zwischen Menschen auf eine Weise, die neugierig statt ängstlich macht?",
+    companion_quick: "Kinder sind von Natur aus neugierig auf Unterschiede – Vorurteile lernen sie erst.",
+    companion_reflect: "Hat dein Kind heute eine Frage über Unterschiede gestellt, die dich zum Nachdenken gebracht hat?",
+  },
+  {
+    key: 'leadership_struktur',
+    title: 'Tagesstruktur als Sicherheitsanker',
+    category: 'parentLeadership',
+    parent_lens: "Das Gehirn eines Kindes liebt Vorhersehbarkeit. Rituale und Strukturen sind keine Einschränkung – sie sind das Gerüst, das Kindern Freiheit gibt, sich sicher zu entfalten.",
+    parent_tips: [
+      "Fixe Anker im Tag: Aufsteh-Ritual, Mahlzeiten, Schlafenszeit. Diese drei reichen für echte Stabilität.",
+      "Übergangsrituale einplanen: Zwischen Aktivitäten kurze Übergänge ankündigen. 'In 5 Minuten räumen wir auf.'",
+      "Struktur ist kein Stress – verändere sie schrittweise wenn nötig, nicht abrupt.",
+    ],
+    practical_tip: "Schau heute gemeinsam mit deinem Kind auf den Tagesplan – besprecht, was kommt. Das reduziert Widerstand und Unsicherheit.",
+    discussion_body: "Welches Tagesritual ist euch als Familie besonders wichtig – und warum?",
+    companion_quick: "Vorhersehbarkeit schafft Sicherheit. Sicherheit schafft Lernbereitschaft.",
+    companion_reflect: "Welcher Moment heute hat gezeigt, dass dein Kind Struktur braucht – oder genossen hat?",
+  },
+  {
+    key: 'leadership_schlaf',
+    title: 'Schlafrituale – Ruhe schaffen für Körper und Geist',
+    category: 'parentLeadership',
+    parent_lens: "Schlaf ist Entwicklungszeit, keine Pause. Im Schlaf verarbeitet das Gehirn den Tag, festigt Erinnerungen und regeneriert. Ein gutes Einschlafritual ist eine der wirksamsten Investitionen in dein Kind.",
+    parent_tips: [
+      "30 Minuten vor dem Schlafen: keine Bildschirme, keine aufregenden Spiele. Runterkommen braucht Zeit.",
+      "Immer gleiche Reihenfolge: Zähne, Pyjama, Geschichte, Licht aus. Rituale signalisieren dem Gehirn: 'Jetzt kommt Schlaf.'",
+      "Wenn dein Kind nicht einschlafen kann: atmet zusammen. 4 Sekunden ein, 6 Sekunden aus – das aktiviert das parasympathische Nervensystem.",
+    ],
+    practical_tip: "Führe heute Abend ein 3-minütiges Atemsritual vor dem Schlafen ein – einatmen, ausatmen, zusammen.",
+    discussion_body: "Was ist euer liebstes Einschlafritual – und wie habt ihr es entwickelt?",
+    companion_quick: "Ein ruhiges Abschlussritual ist der beste Einstieg in einen guten Schlaf.",
+    companion_reflect: "Wie war das Einschlafen heute – was hat geholfen, was hat gestört?",
+  },
+  {
+    key: 'leadership_bildschirm',
+    title: 'Bildschirmzeit bewusst gestalten',
+    category: 'parentLeadership',
+    parent_lens: "Nicht die Bildschirmzeit an sich ist das Problem – es ist der unkontrollierte, passive Konsum ohne Gespräch danach. Mit einfachen Rahmenbedingungen wird Bildschirm zur gesunden Freizeitaktivität.",
+    parent_tips: [
+      "Feste Zeiten statt spontaner Verbote: 'Nach den Hausaufgaben bis 17 Uhr' ist klarer als 'nicht so viel'.",
+      "Gemeinsam schauen und danach reden: 'Was hat dir gefallen? Was war komisch oder merkwürdig?' stärkt Medienkompetenz.",
+      "Bildschirmfreie Räume einrichten: Schlafzimmer und Esstisch sind gute Start-Grenzen.",
+    ],
+    practical_tip: "Schaut heute 15 Minuten gemeinsam etwas an – und stell danach 2 Fragen dazu. Das verändert, wie dein Kind Medien wahrnimmt.",
+    discussion_body: "Wie handhabt ihr die Bildschirmzeit bei euch – was hat sich bewährt, was weniger?",
+    companion_quick: "Bewusstes Mediennutzen lernt man nicht durch Verbot, sondern durch Gespräch.",
+    companion_reflect: "Wie hat dein Kind heute Medien genutzt – aktiv oder passiv? Was fiel auf?",
+  },
+  {
+    key: 'leadership_autoritaet',
+    title: 'Autorität durch Verbindung – nicht durch Angst',
+    category: 'parentLeadership',
+    parent_lens: "Autoritär bedeutet nicht laut und streng. Wahre elterliche Autorität entsteht, wenn ein Kind weiß: 'Du liebst mich UND du bist klar.' Verbindung und Führung schließen sich nicht aus – sie bedingen einander.",
+    parent_tips: [
+      "Klare Ansagen ohne Diskussion: 'Das machen wir jetzt so.' Danach folgt kein Verhandeln – nur Verständnis anbieten.",
+      "Entschuldigungen machen Erwachsene stärker, nicht schwächer. 'Das war vorhin nicht fair von mir' – Kinder respektieren das.",
+      "Einige Regeln gemeinsam erarbeiten – das steigert die Bereitschaft, sie einzuhalten.",
+    ],
+    practical_tip: "Formuliere heute eine Regel als positiven Auftrag statt als Verbot: 'Wir räumen nach dem Spielen auf' statt 'Nicht liegen lassen'.",
+    discussion_body: "Wie findet ihr die Balance zwischen Führung und Mitsprache eurer Kinder?",
+    companion_quick: "Autorität ohne Verbindung ist Kontrolle. Verbindung ohne Autorität ist Chaos. Beides zusammen ist Führung.",
+    companion_reflect: "Gab es heute einen Moment, in dem deine ruhige Klarheit mehr bewirkt hat als ein Machtwort?",
+  },
+  {
+    key: 'leadership_hausaufgaben',
+    title: 'Hausaufgaben ohne Stress – ein Rahmen, der funktioniert',
+    category: 'parentLeadership',
+    parent_lens: "Hausaufgaben-Stress ist oft kein Lernproblem – er ist ein Ritual-Problem. Mit der richtigen Struktur und dem richtigen Zeitpunkt entspannt sich das Thema von selbst.",
+    parent_tips: [
+      "Den richtigen Zeitpunkt finden: Direkt nach der Schule oder nach einer kurzen Erholungsphase – aber vor dem Abend.",
+      "Ich bin da, aber ich helfe nicht sofort: Erst selbst versuchen. Nach 10 Minuten ohne Fortschritt: nachfragen 'Wo stockt's?'",
+      "Arbeitsplatz vorbereiten: fester Platz, aufgeräumter Tisch, kein Handy in Sichtweite – das reduziert Ablenkung.",
+    ],
+    practical_tip: "Definiere heute gemeinsam mit deinem Kind DEN einen Hausaufgaben-Zeitpunkt für die Woche – und schreib ihn auf.",
+    discussion_body: "Was hat bei euch Hausaufgaben stressfreier gemacht? Welche Routinen funktionieren?",
+    companion_quick: "Struktur beim Lernen ist keine Einschränkung – sie ist der Motor für Konzentration.",
+    companion_reflect: "Wie lief das Lernen heute? Was könnte ihr morgen anders ausprobieren?",
+  },
+  {
+    key: 'leadership_selbstaendigkeit',
+    title: 'Selbständigkeit – loslassen ist auch Liebe',
+    category: 'parentLeadership',
+    parent_lens: "Kinder werden selbständig, wenn wir ihnen trauen. Aber loslassen fühlt sich riskant an – und das ist normal. Die Kunst ist: Schritt für Schritt mehr Verantwortung übergeben.",
+    parent_tips: [
+      "Altersgerechte Aufgaben vergeben: 3-jährige räumen Spielzeug weg, 6-jährige decken den Tisch, 10-jährige kochen mit.",
+      "Nicht einspringen, wenn's langsam geht. Langsam und selbst ist wertvoller als schnell und mit Hilfe.",
+      "Fehler bei selbständigen Aufgaben akzeptieren: Das Glas Milch kippt um – das ist kein Versagen, das ist Üben.",
+    ],
+    practical_tip: "Übergib deinem Kind heute eine neue Aufgabe, die du bisher selbst gemacht hast – und lass es komplett selbst.",
+    discussion_body: "Was ist die größte Selbständigkeits-Leistung eures Kindes, auf die ihr beide stolz seid?",
+    companion_quick: "Jede Aufgabe, die das Kind selbst erledigt, ist eine Investition in sein späteres Selbstbewusstsein.",
+    companion_reflect: "Wann habt ihr heute losgelassen – und wie hat sich das für euch angefühlt?",
+  },
+  {
+    key: 'leadership_natur',
+    title: 'Natur und Bewegung als Familienritual',
+    category: 'parentLeadership',
+    parent_lens: "Kinder, die regelmäßig draußen sind, schlafen besser, sind konzentrierter und emotional stabiler. Natur ist keine Freizeitbeschäftigung – sie ist ein Grundbedürfnis.",
+    parent_tips: [
+      "15 Minuten täglich draußen sind bereits messbar wirksam – kein Ausflug nötig, auch der Schulweg zählt.",
+      "Bewege dich gemeinsam: Fahrrad, Spaziergang, Bolzplatz. Bewegung zusammen stärkt Bindung.",
+      "Lass dein Kind Natur entdecken: Steine, Käfer, Pfützen. Kein Programm – nur Offenheit.",
+    ],
+    practical_tip: "Plane heute eine 15-minütige Runde draußen – ohne Ziel, ohne Programm, einfach gemeinsam.",
+    discussion_body: "Welches Naturerlebnis aus eurer Kindheit möchtet ihr euren Kindern weitergeben?",
+    companion_quick: "Draußen sein ist Gehirnnahrung – für Kinder und Erwachsene.",
+    companion_reflect: "Wie hat eure Zeit draußen heute die Stimmung verändert?",
+  },
+  {
+    key: 'milestone_sprache',
+    title: 'Sprachentwicklung – so förderst du spielend',
+    category: 'milestones',
+    parent_lens: "Sprachentwicklung passiert nicht im Vokabeltraining – sie entsteht im Dialog. Kinder lernen sprechen, wenn Erwachsene mit ihnen sprechen, ihnen zuhören und auf ihre Äußerungen eingehen.",
+    parent_tips: [
+      "Beschreibe deinen Alltag laut: 'Ich schneide jetzt die Karotten' – das bereichert den passiven Wortschatz.",
+      "Greife Aussagen deines Kindes auf und erweitere sie: 'Ball!' – 'Ja, der rote Ball rollt.'",
+      "Vorlesen täglich, auch wenn das Kind schon lesen kann. Texte aus Büchern haben andere Strukturen als Alltagssprache.",
+    ],
+    practical_tip: "Lies heute 10 Minuten laut vor – und frage beim Lesen: 'Was glaubst du, was als nächstes passiert?'",
+    discussion_body: "Welche Wörter oder Sätze eures Kindes haben euch zuletzt besonders überrascht oder berührt?",
+    companion_quick: "Sprache wächst im Gespräch – nicht in der Stille.",
+    companion_reflect: "Welcher sprachliche Fortschritt eures Kindes ist euch heute aufgefallen?",
+  },
+  {
+    key: 'milestone_schule',
+    title: 'Schulstart und Übergänge gelassen begleiten',
+    category: 'milestones',
+    parent_lens: "Übergänge – Schulstart, Klassenwechsel, neue Kita – sind für Kinder die intensivsten Lernphasen. Deine Ruhe und Zuversicht übertragen sich auf dein Kind. Du bist die Regulationsbasis.",
+    parent_tips: [
+      "Neue Orte vorher kennenlernen: Wenn möglich, den neuen Klassenraum oder die Schule vor dem ersten Tag besuchen.",
+      "Über Gefühle reden: 'Es ist okay, aufgeregt zu sein. Ich war beim ersten Schultag auch nervös.'",
+      "Kleine Übergangsobjekte helfen: Ein Foto in der Tasche, ein kleines Erinnerungsstück – Gegenstände schaffen Sicherheit.",
+    ],
+    practical_tip: "Frage dein Kind heute: 'Was freut dich auf ... ? Was macht dir noch Sorgen?' – und höre ohne Bewertung zu.",
+    discussion_body: "Wie habt ihr einen wichtigen Übergang eures Kindes begleitet? Was hat geholfen?",
+    companion_quick: "Übergänge sind Ende und Anfang zugleich – und beides darf gefühlt werden.",
+    companion_reflect: "Welche Emotion hat dein Kind rund um einen Übergang heute gezeigt?",
+  },
+  {
+    key: 'milestone_sozial',
+    title: 'Soziale Intelligenz – die wichtigste Kompetenz des 21. Jahrhunderts',
+    category: 'milestones',
+    parent_lens: "IQ öffnet Türen. EQ (emotionale Intelligenz) lässt Menschen rein. Kinder mit hoher sozialer Kompetenz können besser kooperieren, kommunizieren und sich in andere hineinversetzen – das lernen sie bei dir.",
+    parent_tips: [
+      "Modelliere Empathie täglich: 'Die Katze sieht traurig aus. Was glaubst du, warum?'",
+      "Übe Perspektivwechsel: 'Wie hat sich wohl ... dabei gefühlt, als du das gesagt hast?'",
+      "Lobbe soziales Verhalten explizit: 'Du hast gewartet, bis er fertig gesprochen hat. Das war sehr respektvoll.'",
+    ],
+    practical_tip: "Sprich heute nach dem Kindergarten oder der Schule über eine soziale Situation: 'Hat jemand heute etwas Nettes getan?'",
+    discussion_body: "Welchen Aspekt sozialer Kompetenz findet ihr heute am wichtigsten – für Kinder und Erwachsene?",
+    companion_quick: "Sozialkompetenz ist kein Talent – sie ist eine Fähigkeit, die geübt wird.",
+    companion_reflect: "Wann hat dein Kind heute Empathie gezeigt – auch wenn es vielleicht unbemerkt war?",
+  },
+  {
+    key: 'milestone_emotion',
+    title: 'Emotionale Reife – wenn Gefühle verarbeitet werden',
+    category: 'milestones',
+    parent_lens: "Emotionale Reife zeigt sich nicht darin, keine Gefühle zu haben – sondern darin, sie zu verarbeiten. Kinder, die Gefühle ausdrücken dürfen, lernen langfristig besser damit umzugehen.",
+    parent_tips: [
+      "Alle Gefühle sind erlaubt – nicht alle Handlungen. 'Du darfst wütend sein. Du darfst nicht schlagen.'",
+      "Gefühle nicht wegredden: statt 'Das ist doch nicht so schlimm' → 'Ich sehe, dass dich das wirklich trifft.'",
+      "Emotionen im Körper spüren lassen: 'Wo fühlst du das gerade? Im Bauch? In der Brust?'",
+    ],
+    practical_tip: "Frage heute: 'Wie fühlt sich das in deinem Körper an?' – und akzeptiere jede Antwort.",
+    discussion_body: "Welches Gefühl fällt euch in eurer Familie am schwersten offen zu zeigen?",
+    companion_quick: "Gefühle zulassen ist nicht Schwäche – es ist emotionale Stärke.",
+    companion_reflect: "Welche Emotion hat dein Kind heute offen gezeigt – und wie habt ihr sie gemeinsam begleitet?",
+  },
+  {
+    key: 'milestone_kreativitaet',
+    title: 'Kreativität fördern – ohne Ergebnisorientierung',
+    category: 'milestones',
+    parent_lens: "Kreativität ist Problemlösefähigkeit in Verkleidung. Wenn Kinder malen, bauen, basteln oder spielen, trainieren sie Flexibilität und Originalität – die Kompetenzen der Zukunft.",
+    parent_tips: [
+      "Kein Endprodukt-Fokus: 'Erzähl mir, was du gemacht hast' statt 'Was soll das sein?'",
+      "Materialien ohne Anleitung anbieten: Stoff, Pappe, Naturmaterialien – und dann loslassen.",
+      "Selbst kreativ sein: Wenn Eltern malen, bauen, singen – ohne Perfektion – erlauben sie ihren Kindern dasselbe.",
+    ],
+    practical_tip: "Biete heute 20 Minuten freies Basteln an – ohne Vorlage, ohne Anleitung, nur Materialien.",
+    discussion_body: "Was ist das kreativste Projekt, das euer Kind je selbst entwickelt hat?",
+    companion_quick: "Kreativität braucht Raum, Zeit und einen Erwachsenen, der nicht bewertet.",
+    companion_reflect: "Was hat dein Kind heute erfunden, gebaut oder ausgedacht – das dich überrascht hat?",
+  },
+  {
+    key: 'milestone_koerper',
+    title: 'Körperwahrnehmung stärken – Bewegung als Entwicklungsmotor',
+    category: 'milestones',
+    parent_lens: "Motorische Entwicklung und kognitive Entwicklung sind untrennbar verbunden. Kinder, die klettern, balancieren und tanzen, entwickeln auch ihr räumliches Denken und ihre Konzentration.",
+    parent_tips: [
+      "Bewegung täglich einbauen: Nicht als Sport-Programm, sondern als Alltag – Treppen statt Aufzug, Laufen statt Tragen.",
+      "Grobmotorik und Feinmotorik wechseln: Bauen (Fein) und Klettern (Grob) ergänzen sich wunderbar.",
+      "Körperbilder positiv stärken: 'Dein Körper kann so viel' – unabhängig von Aussehen oder Leistung.",
+    ],
+    practical_tip: "Plane heute 10 Minuten Bewegungsspiel – Balancieren, Hüpfen, Rollen. Kein Programm, nur Körper und Spaß.",
+    discussion_body: "Welche Bewegungsaktivität macht eurem Kind am meisten Freude – und warum?",
+    companion_quick: "Bewegung ist nicht Freizeitbeschäftigung – sie ist Lernmotor.",
+    companion_reflect: "Was hat dein Kind heute körperlich ausprobiert oder gewagt, das neu war?",
+  },
+  {
+    key: 'milestone_uebergaenge',
+    title: 'Pubertät vorbereiten – frühzeitig und entspannt',
+    category: 'milestones',
+    parent_lens: "Die Pubertät beginnt früher als die meisten Eltern denken – und die Weichen werden in der Kindheit gestellt. Offene Kommunikation und ein sicheres Eltern-Kind-Verhältnis sind die beste Vorbereitung.",
+    parent_tips: [
+      "Frühzeitig über Körperveränderungen sprechen – sachlich, ohne Drama. Kinder die informiert sind, haben weniger Angst.",
+      "Eigene Pubertätserinnerungen teilen (angemessen): 'Ich war damals auch unsicher mit ...' – das normalisiert.",
+      "Räume für Privatheit schaffen: Anklopfen, Tagebücher respektieren. Vertrauen entsteht durch Respekt.",
+    ],
+    practical_tip: "Schau dir heute gemeinsam mit deinem Kind (altersgerecht) ein Video oder Buch über Körperprozesse an – ohne Scheu.",
+    discussion_body: "Was war euch rückblickend in der Pubertät wichtig – und was wünscht ihr euch, eure Eltern hätten gemacht?",
+    companion_quick: "Die beste Pubertätsvorbereitung ist eine starke Beziehung heute.",
+    companion_reflect: "Hat dein Kind heute eine Frage gestellt, die zeigt, dass es anfängt, über sich selbst nachzudenken?",
+  },
+  {
+    key: 'gfk_wiedergutmachung',
+    title: 'Wenn Eltern ausrasten – Wiedergutmachung als Stärke',
+    category: 'gfk',
+    parent_lens: "Kein Elternteil ist immer geduldig. Wenn du ausrastest, ist das kein Versagen als Elternteil – es ist ein menschlicher Moment. Was danach kommt, formt aber die Beziehung stärker als der Ausraster selbst.",
+    parent_tips: [
+      "Wiedergutmachung braucht drei Schritte: Verantwortung übernehmen ('Ich habe mich geirrt'), Mitgefühl zeigen, und ggf. anders machen.",
+      "Entschuldigungen ohne 'Aber': 'Es tut mir leid, dass ich so laut war. Das war nicht in Ordnung.' – fertig.",
+      "Dein Kind sieht dich als Mensch – das ist gut. Kinder lernen durch Reparatur, dass Beziehungen Stürme überstehen.",
+    ],
+    practical_tip: "Wenn du dich heute in einer Situation nicht schön verhalten hast: Geh nochmal zum Kind und sage es. Drei Sätze reichen.",
+    discussion_body: "Wie habt ihr als Eltern gelernt, mit eigenen Ausrastern umzugehen – ohne euch selbst zu hart zu beurteilen?",
+    companion_quick: "Wiedergutmachung lehrt Kindern etwas, was kein Ratgeber kann: dass Beziehungen reparierbar sind.",
+    companion_reflect: "Gab es heute einen Moment, den du im Nachhinein anders gemacht hättest – und was hast du daraus gemacht?",
+  },
+];
+
+// Returns the impulse topic for today, cycling through the pool by day-of-year.
+function getTodayImpulseTopic() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+  return DAILY_IMPULSE_POOL[dayOfYear % DAILY_IMPULSE_POOL.length];
+}
+
 function buildWeeklyImpulseSeedPosts(schema, impulseId) {
   if (!allowDemoBootstrap) {
     return [];
@@ -294,90 +741,85 @@ function buildWeeklyImpulseSeedPosts(schema, impulseId) {
 
 function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
   const today = new Date().toISOString().slice(0, 10);
-  const impulseId = `imp_${schema.id}_gfk_w1`;
+  const topic = getTodayImpulseTopic();
+  const impulseId = `imp_daily_${today}_${topic.key}`;
   const state = getWeeklyImpulseCommunityEntry(impulseId);
   const seedPosts = buildWeeklyImpulseSeedPosts(schema, impulseId);
   const mergedPosts = [...seedPosts, ...state.customPosts]
     .filter(post => !state.hiddenPostIds?.[post.id]?.hidden)
     .map(post => {
-    const likedBy = state.likedByPostId[post.id] || [];
-    const extraComments = state.commentsByPostId[post.id] || [];
-    const seedComments = Array.isArray(post.seed_comments) ? post.seed_comments : [];
-    const seedLikeCount = Number.isFinite(post.seed_like_count) ? post.seed_like_count : 0;
-    return {
-      ...post,
-      seed_like_count: seedLikeCount + likedBy.length,
-      seed_comments: [...seedComments, ...extraComments.map(item => item.text)],
-      viewer_has_liked: viewerUserId ? likedBy.includes(viewerUserId) : false,
-    };
-  });
+      const likedBy = state.likedByPostId[post.id] || [];
+      const extraComments = state.commentsByPostId[post.id] || [];
+      const seedComments = Array.isArray(post.seed_comments) ? post.seed_comments : [];
+      const seedLikeCount = Number.isFinite(post.seed_like_count) ? post.seed_like_count : 0;
+      return {
+        ...post,
+        seed_like_count: seedLikeCount + likedBy.length,
+        seed_comments: [...seedComments, ...extraComments.map(item => item.text)],
+        viewer_has_liked: viewerUserId ? likedBy.includes(viewerUserId) : false,
+      };
+    });
+
+  const contentBody =
+    `${topic.parent_lens}\n\n` +
+    `Drei alltagsnahe Impulse:\n` +
+    `- ${topic.parent_tips[0]}\n` +
+    `- ${topic.parent_tips[1]}\n` +
+    `- ${topic.parent_tips[2]}`;
 
   return {
     id: impulseId,
-    title: 'Warum-Fragen gelassen begleiten',
-    hero_headline: 'Euer Themenraum fuer ruhige Warum-Momente',
-    hero_description:
-      'Diese Woche bekommt ihr nicht nur einen Text, sondern mehrere kurze Impulse, alltagsnahe Praxisideen und erste Erfahrungen aus Elternhaus und Paedagogik.',
-    content_body:
-      `${schema.parent_lens}\n\n` +
-      `Fokus diese Woche: ${schema.pedagogical_focus}.\n\n` +
-      `Drei alltagsnahe Impulse:\n` +
-      `- ${schema.parent_tips[0]}\n` +
-      `- ${schema.parent_tips[1]}\n` +
-      `- ${schema.parent_tips[2]}\n\n` +
-      `${schema.reassurance}`,
-    practical_tip:
-      'Heute bei der naechsten Warum-Frage: erst Gefuehl spiegeln, dann in einem Satz antworten und die Grenze freundlich benennen.',
+    title: topic.title,
+    hero_headline: 'Dein Tagesimpuls für heute',
+    hero_description: topic.parent_lens,
+    content_body: contentBody,
+    practical_tip: topic.practical_tip,
     audio_script:
-      `Hallo und schoen, dass du da bist. ${schema.parent_lens} ` +
-      'Bleib bei kurzen Antworten, klaren Grenzen und liebevoller Praesenz. ' +
-      'Du gibst deinem Kind damit Sicherheit und Orientierung. Du machst das gut.',
-    category: 'gfk',
+      `Hallo und schoen, dass du da bist. ${topic.parent_lens} ` +
+      `${topic.practical_tip} Du machst das gut.`,
+    category: topic.category,
     publish_date: today,
     companion_impulses: [
       {
-        id: `imp_${schema.id}_quick`,
+        id: `${impulseId}_quick`,
         title: 'Heute in 2 Minuten',
-        summary:
-          'Waehle heute nur eine ruhige Antwort auf eine Warum-Frage und bleibe danach bewusst kurz.',
+        summary: topic.companion_quick,
         duration_label: '2 Min',
         format_label: 'Sofort-Impuls',
       },
       {
-        id: `imp_${schema.id}_understand`,
+        id: `${impulseId}_understand`,
         title: 'Kurz verstanden',
-        summary: schema.parent_lens,
+        summary: topic.parent_lens,
         duration_label: '3 Min',
         format_label: 'Verstehen',
       },
       {
-        id: `imp_${schema.id}_practice`,
-        title: 'Praxis fuer Zuhause und Kita',
-        summary: schema.parent_tips[0],
+        id: `${impulseId}_practice`,
+        title: 'Praxis fuer heute',
+        summary: topic.parent_tips[0],
         duration_label: '4 Min',
         format_label: 'Praxis',
       },
       {
-        id: `imp_${schema.id}_reflect`,
+        id: `${impulseId}_reflect`,
         title: 'Abend-Reflexion',
-        summary:
-          'Wann hat dein Kind heute besonders viele Verbindungen gesucht und wie konntest du ruhig Orientierung geben?',
+        summary: topic.companion_reflect,
         duration_label: '2 Min',
         format_label: 'Reflexion',
       },
       {
-        id: `imp_${schema.id}_deepdive`,
-        title: 'Tieferer Blick',
-        summary: schema.reassurance,
+        id: `${impulseId}_deepdive`,
+        title: 'Tipp fuer den Alltag',
+        summary: topic.parent_tips[1],
         duration_label: '5 Min',
         format_label: 'Artikel',
       },
     ],
     discussion_prompt: {
-      id: `imp_${schema.id}_discussion`,
-      title: 'Frage der Woche',
-      body:
-        'Welche kurze, ruhige Formulierung hilft euch, wenn euer Kind zum zehnten Mal nach dem Warum fragt?',
+      id: `${impulseId}_discussion`,
+      title: 'Frage des Tages',
+      body: topic.discussion_body,
     },
     community_posts: mergedPosts,
   };
