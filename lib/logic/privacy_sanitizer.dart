@@ -16,7 +16,7 @@ class PrivacySanitizer {
   );
 
   static final RegExp _streetPattern = RegExp(
-    r'\b[\p{L}][\p{L}\s.-]{1,40}(?:strasse|straße|weg|allee|platz|gasse|ufer|ring|chaussee)\s+\d+[a-zA-Z]?\b',
+    r'\b[\p{L}][\p{L}\s.-]{1,40}(?:straße|straße|weg|allee|platz|gasse|ufer|ring|chaussee)\s+\d+[a-zA-Z]?\b',
     unicode: true,
     caseSensitive: false,
   );

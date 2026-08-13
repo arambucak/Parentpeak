@@ -37,7 +37,7 @@ class LocationPickerWidget extends StatefulWidget {
     super.key,
     this.initialLocation,
     required this.onLocationPicked,
-    this.hint = 'Standort waehlen',
+    this.hint = 'Standort wählen',
   });
 
   @override
@@ -211,7 +211,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(children: [
-              Text('Standort waehlen',
+              Text('Standort wählen',
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800)),
               const Spacer(),
@@ -397,7 +397,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                   onPressed: _currentLabel.isEmpty ? null : _confirm,
                   icon: const Icon(Icons.check_rounded, size: 18),
                   label: Text(_currentLabel.isEmpty
-                      ? 'Waehle einen Ort'
+                      ? 'Wähle einen Ort'
                       : 'Bestaetigen: $_currentLabel'),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),

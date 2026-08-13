@@ -60,7 +60,7 @@ void main() {
 
     expect(
       find.text(
-        'Stripe ist aktuell nicht konfiguriert. Bitte waehle PayPal oder kontaktiere den Support.',
+        'Stripe ist aktuell nicht konfiguriert. Bitte wähle PayPal oder kontaktiere den Support.',
       ),
       findsOneWidget,
     );

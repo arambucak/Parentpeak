@@ -7,7 +7,7 @@ Future<void> main(List<String> args) async {
 
   final prompt = args.isNotEmpty
       ? args.join(' ')
-      : 'Mein 4-jaehriger rastet jeden Morgen aus, wenn wir zur Kita muessen. Ich werde laut und fuehle mich danach schlecht. Was kann ich heute konkret anders machen?';
+      : 'Mein 4-jaehriger rastet jeden Morgen aus, wenn wir zur Kita müssen. Ich werde laut und fuehle mich danach schlecht. Was kann ich heute konkret anders machen?';
 
   final modelName = APIConfig.getGeminiModelName();
   final apiKey = APIConfig.getGeminiApiKey();

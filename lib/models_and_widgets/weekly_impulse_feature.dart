@@ -392,7 +392,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
         id: '${widget.impulse.id}.practice',
         title: 'Fuer Alltag und Kita',
         summary:
-            'Formuliere kurz, ruhig und klar. Ein Satz zum Gefuehl, ein Satz zur Grenze, dann Praesenz statt Diskussion.',
+            'Formuliere kurz, ruhig und klar. Ein Satz zum Gefühl, ein Satz zur Grenze, dann Präsenz statt Diskussion.',
         durationLabel: '4 Min',
         formatLabel: 'Praxis',
         icon: Icons.groups_rounded,
@@ -402,7 +402,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
         id: '${widget.impulse.id}.reflect',
         title: 'Abend-Reflexion',
         summary:
-            'Wann war dein Kind heute besonders suchend oder angespannt? Was hat geholfen: erklaeren, spiegeln oder eine klare Grenze?',
+            'Wann war dein Kind heute besonders suchend oder angespannt? Was hat geholfen: erklären, spiegeln oder eine klare Grenze?',
         durationLabel: '2 Min',
         formatLabel: 'Reflexion',
         icon: Icons.self_improvement_rounded,
@@ -498,7 +498,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   Future<void> _toggleLikePost(String postId) async {
     final currentlyLiked = _likedPostIds.contains(postId);
     if (widget.onToggleLikePost == null) {
-      _showActionError('Like ist aktuell nicht verfuegbar.');
+      _showActionError('Like ist aktuell nicht verfügbar.');
       return;
     }
 
@@ -523,7 +523,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     }
 
     if (widget.onAddComment == null) {
-      _showActionError('Kommentare sind aktuell nicht verfuegbar.');
+      _showActionError('Kommentare sind aktuell nicht verfügbar.');
       return false;
     }
 
@@ -548,7 +548,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     }
 
     if (widget.onCreateCommunityPost == null) {
-      _showActionError('Community-Posting ist aktuell nicht verfuegbar.');
+      _showActionError('Community-Posting ist aktuell nicht verfügbar.');
       return false;
     }
 
@@ -556,7 +556,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       await widget.onCreateCommunityPost!(trimmedTitle, trimmedBody, role);
       return true;
     } catch (_) {
-      _showActionError('Beitrag konnte nicht veroeffentlicht werden.');
+      _showActionError('Beitrag konnte nicht veröffentlicht werden.');
       return false;
     }
   }
@@ -584,7 +584,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     }
 
     if (widget.onReportPost == null) {
-      _showActionError('Melden ist aktuell nicht verfuegbar.');
+      _showActionError('Melden ist aktuell nicht verfügbar.');
       return false;
     }
 
@@ -670,7 +670,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        'Fachbeitraege sind moeglich. Ein verifiziertes Fach-Badge wird jedoch nur fuer gepruefte Profile vergeben.',
+                        'Fachbeitraege sind moeglich. Ein verifiziertes Fach-Badge wird jedoch nur für gepruefte Profile vergeben.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -1109,7 +1109,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Wir blenden den Beitrag fuer dich aus und markieren ihn fuer eine spaetere Pruefung.',
+                    'Wir blenden den Beitrag für dich aus und markieren ihn für eine spätere Pruefung.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
@@ -1138,7 +1138,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     maxLines: 4,
                     decoration: const InputDecoration(
                       labelText: 'Optionaler Hinweis',
-                      hintText: 'Kurz erklaeren, was fuer dich problematisch war.',
+                      hintText: 'Kurz erklären, was für dich problematisch war.',
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1208,7 +1208,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Moderationsueberblick',
+                'Moderationsüberblick',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
@@ -1391,9 +1391,9 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     final companionCount = _buildCompanionImpulses(accentColor).length;
     final communityCount = _buildCommunityPosts().length;
     final heroHeadline =
-      widget.impulse.heroHeadline ?? 'Dein Themenraum fuer diese Woche';
+      widget.impulse.heroHeadline ?? 'Dein Themenraum für diese Woche';
     final heroDescription = widget.impulse.heroDescription ??
-      'Nicht nur ein einzelner Impuls: Du bekommst einen klaren Wochenfokus, kurze Praxisformate und Raum fuer hilfreiche Erfahrungen aus der Community.';
+      'Nicht nur ein einzelner Impuls: Du bekommst einen klaren Wochenfokus, kurze Praxisformate und Raum für hilfreiche Erfahrungen aus der Community.';
 
     return Container(
       width: double.infinity,
@@ -1615,7 +1615,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Eltern koennen je nach Energielevel lesen, merken oder spaeter vertiefen.',
+          'Eltern können je nach Energielevel lesen, merken oder später vertiefen.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -1822,7 +1822,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
               IconButton.filledTonal(
                 onPressed: () => _showModerationSheet(posts),
                 icon: const Icon(Icons.shield_outlined),
-                tooltip: 'Moderationsueberblick',
+                tooltip: 'Moderationsüberblick',
               ),
             const SizedBox(width: 8),
             IconButton.filledTonal(
@@ -1848,7 +1848,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '${_hiddenPostIds.length} Beitrag/Beitraege geschuetzt ausgeblendet. Du kannst sie im Moderationsueberblick verwalten.',
+                    '${_hiddenPostIds.length} Beitrag/Beitraege geschuetzt ausgeblendet. Du kannst sie im Moderationsüberblick verwalten.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: const Color(0xFF334155),
                     ),

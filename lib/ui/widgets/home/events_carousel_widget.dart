@@ -94,7 +94,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: _events.length + 1, // +1 fuer "Event eintragen" Card
+            itemCount: _events.length + 1, // +1 für "Event eintragen" Card
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (ctx, i) {
               if (i == _events.length) return _createEventCard(theme);

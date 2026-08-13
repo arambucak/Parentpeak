@@ -475,7 +475,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'Dieses Backup ist fuer einen einzelnen QR-Code zu gross und wurde in ${chunks.length} Teile aufgeteilt.',
+                            'Dieses Backup ist für einen einzelnen QR-Code zu gross und wurde in ${chunks.length} Teile aufgeteilt.',
                             style: Theme.of(context).textTheme.bodySmall,
                             textAlign: TextAlign.center,
                           ),
@@ -532,7 +532,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                                   syncAutoPlay(setDialogState);
                                 }
                               : null,
-                          child: const Text('Zurueck'),
+                          child: const Text('Zurück'),
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton(
@@ -1174,7 +1174,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Rollen koennen nur durch Elternprofile geaendert werden.',
+                      'Rollen können nur durch Elternprofile geaendert werden.',
                       style: TextStyle(fontSize: 12, color: Colors.black54),
                     ),
                   ),
@@ -1743,7 +1743,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 28),
                     child: Text(
-                      'Euer geschuetzter Raum fuer Rollen, Familienprofile, Datenschutz und vertrauensvolle Organisation.',
+                      'Euer geschuetzter Raum für Rollen, Familienprofile, Datenschutz und vertrauensvolle Organisation.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white, height: 1.35),
                     ),
@@ -2202,7 +2202,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                         Text(
                           _canManageMembers
                               ? 'Neues Profil anlegen'
-                              : 'Nur fuer Elternteil',
+                              : 'Nur für Elternteil',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -2458,13 +2458,13 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
           _buildSectionHeader(
             theme,
             _t('settings'),
-            'Steuert Sichtbarkeit, Benachrichtigungen und Sicherheitszugriffe passend fuer euren Familienalltag.',
+            'Steuert Sichtbarkeit, Benachrichtigungen und Sicherheitszugriffe passend für euren Familienalltag.',
           ),
           const SizedBox(height: 12),
           _buildSectionCard(
             primary,
             'Profil & Sichtbarkeit',
-            'Sprache, Darstellung, Hinweise und Datenschutz fuer euren Familienraum.',
+            'Sprache, Darstellung, Hinweise und Datenschutz für euren Familienraum.',
             [
               _buildActionTile(
                 leading: Builder(
@@ -2614,7 +2614,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     const Icon(Icons.description, color: Color(0xFFBDB2FF)),
                 title: _t('legal'),
                 subtitle:
-                    'Leitplanken fuer faire und sichere Nutzung im Familienalltag',
+                    'Leitplanken für faire und sichere Nutzung im Familienalltag',
                 status: 'Wichtig',
                 statusColor: const Color(0xFFDBEAFE),
                 statusTextColor: const Color(0xFF1D4ED8),
@@ -2625,7 +2625,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
           _buildSectionCard(
             primaryColor,
             'Sicherheit & Wiederherstellung',
-            'Backups, Signaturen und Wiederherstellung fuer euren geschuetzten Familienraum.',
+            'Backups, Signaturen und Wiederherstellung für euren geschuetzten Familienraum.',
             [
               _buildActionTile(
                 leading: const Icon(Icons.copy_all, color: Color(0xFFBDB2FF)),

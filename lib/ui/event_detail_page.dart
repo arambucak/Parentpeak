@@ -145,7 +145,7 @@ class EventDetailPage extends StatelessWidget {
                 Expanded(
                     child: Text(
                   'Dieses Angebot wurde von unserer KI vorgeschlagen. '
-                  'Bitte bestaetige Termine und Verfuegbarkeit direkt beim Veranstalter.',
+                  'Bitte bestaetige Termine und Verfügbarkeit direkt beim Veranstalter.',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
                 )),

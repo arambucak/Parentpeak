@@ -300,7 +300,7 @@ class AuthService {
     if (kReleaseMode) {
       return AuthResult.fail(
         AuthErrorCode.networkError,
-        'Login/Registrierung ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.',
+        'Login/Registrierung ist derzeit nicht verfügbar. Bitte später erneut versuchen.',
       );
     }
 
@@ -394,7 +394,7 @@ class AuthService {
     if (kReleaseMode) {
       return AuthResult.fail(
         AuthErrorCode.networkError,
-        'Login/Registrierung ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.',
+        'Login/Registrierung ist derzeit nicht verfügbar. Bitte später erneut versuchen.',
       );
     }
 
@@ -549,9 +549,9 @@ class AuthService {
 
     if (!_firebaseReady || _firebaseAuth == null) {
       debugPrint(
-        'AuthService.sendPasswordReset(): Firebase nicht verfuegbar, kein Mail-Versand moeglich.',
+        'AuthService.sendPasswordReset(): Firebase nicht verfügbar, kein Mail-Versand möglich.',
       );
-      return 'Passwort-Reset ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.';
+      return 'Passwort-Reset ist derzeit nicht verfügbar. Bitte später erneut versuchen.';
     }
 
     try {
@@ -594,14 +594,14 @@ class AuthService {
         case 'invalid-email':
           return 'Bitte gib eine gueltige E-Mail-Adresse ein.';
         case 'too-many-requests':
-          return 'Zu viele Versuche. Bitte spaeter erneut versuchen.';
+          return 'Zu viele Versuche. Bitte später erneut versuchen.';
         case 'network-request-failed':
           return 'Netzwerkfehler. Bitte pruefe deine Verbindung.';
         case 'internal-error':
         case 'app-not-authorized':
         case 'operation-not-allowed':
         case 'invalid-api-key':
-          return 'E-Mail-Versand ist derzeit nicht verfuegbar. Bitte spaeter erneut versuchen.';
+          return 'E-Mail-Versand ist derzeit nicht verfügbar. Bitte später erneut versuchen.';
         default:
           debugPrint(
             'AuthService.sendPasswordReset(): Firebase Fehler ${e.code}',

@@ -20,7 +20,7 @@ class KettenbrecherAiService {
     if (_geminiService == null) return null;
 
     final prompt = '''
-Erzeuge ein JSON ohne Zusatztext fuer ein Parentpeak Guerilla-Rezept-Mapping.
+Erzeuge ein JSON ohne Zusatztext für ein Parentpeak Guerilla-Rezept-Mapping.
 
 Eingaben:
 - Rezept: $baseRecipeTitle

@@ -8,10 +8,10 @@ import 'package:parentpeak/config/country_finance_data.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 
-/// Familien-Geld — Ruhiger Finanz-Helfer fuer Eltern.
+/// Familien-Geld — Ruhiger Finanz-Helfer für Eltern.
 ///
 /// 3 Tabs:
-/// 1. Schnellcheck — Monatliche Fixkosten-Uebersicht
+/// 1. Schnellcheck — Monatliche Fixkosten-Übersicht
 /// 2. Leistungen — Was steht euch zu? (Laender-spezifisch)
 /// 3. Meilensteine — Was kommt auf euch zu? (Kind-Alter-basiert)
 class FamilienGeldScreen extends StatefulWidget {
@@ -132,11 +132,11 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     }
   }
 
-  // Feature 5: Uebersicht teilen
+  // Feature 5: Übersicht teilen
   Future<void> _shareOverview() async {
     final total = _monthlyAmounts.values.fold(0.0, (a, b) => a + b);
     final sb = StringBuffer();
-    sb.writeln('${_country.flag} Familien-Geld Uebersicht \u2013 ${_country.name}');
+    sb.writeln('${_country.flag} Familien-Geld Übersicht \u2013 ${_country.name}');
     sb.writeln('');
     if (total > 0) {
       sb.writeln('\u{1F4B0} Monatliche Kinderkosten: ~${_country.formatAmount(total)}/Monat');
@@ -168,7 +168,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     }
     sb.writeln('');
     sb.writeln('\u{1F4F1} Erstellt mit ParentPeak \u2013 Dein Eltern-Begleiter');
-    await Share.share(sb.toString(), subject: 'Familien-Geld Uebersicht');
+    await Share.share(sb.toString(), subject: 'Familien-Geld Übersicht');
   }
 
   @override
@@ -260,7 +260,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share_rounded, size: 20),
-            tooltip: 'Uebersicht teilen',
+            tooltip: 'Übersicht teilen',
             onPressed: _shareOverview,
           ),
           IconButton(
@@ -272,7 +272,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         bottom: TabBar(
           controller: _tabs,
           tabs: const [
-            Tab(text: 'Ueberblick'),
+            Tab(text: 'Überblick'),
             Tab(text: 'Leistungen'),
             Tab(text: 'Meilensteine'),
           ],
@@ -299,7 +299,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Uebersichts-Card
+        // Übersichts-Card
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
@@ -343,7 +343,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('Einmal eintragen — keine taegliche Eingabe noetig.',
+        Text('Einmal eintragen — keine tägliche Eingabe noetig.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 14),
@@ -373,7 +373,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                   const SizedBox(height: 2),
                   Text(
                     _country.code == 'de'
-                        ? 'Kita-Gebuehren sind steuerlich absetzbar — bis zu 4.000\u{20AC}/Jahr pro Kind als Sonderausgabe.'
+                        ? 'Kita-Gebühren sind steuerlich absetzbar — bis zu 4.000\u{20AC}/Jahr pro Kind als Sonderausgabe.'
                         : 'Pruefe ob Kinderbetreuungskosten in deinem Land steuerlich absetzbar sind.',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: const Color(0xFF9A3412), height: 1.3),
@@ -478,7 +478,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(
-              'Diese Leistungen koennten fuer euch in ${_country.name} relevant sein.',
+              'Diese Leistungen könnten für euch in ${_country.name} relevant sein.',
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: const Color(0xFF6B21A8)),
               textAlign: TextAlign.center,
@@ -648,7 +648,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ]),
         ),
         const SizedBox(height: 16),
-        // Feature 3: Spar-Ziel fuer naechsten Meilenstein
+        // Feature 3: Spar-Ziel für naechsten Meilenstein
         _buildSavingsGoal(theme),
         const SizedBox(height: 16),
         // Meilensteine pro Kind
@@ -909,7 +909,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     return _country.benefits.where((b) {
       if (b.status == BenefitStatus.universal) return true;
       if (b.status == BenefitStatus.incomeDependent) return _incomeLevel <= 1;
-      // checkRequired: unterhaltsvorschuss nur fuer Alleinerziehende
+      // checkRequired: unterhaltsvorschuss nur für Alleinerziehende
       if (b.id == 'unterhaltsvorschuss') return _isSingleParent;
       return true;
     }).toList();
@@ -1025,7 +1025,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FEATURE 3: Spar-Ziel fuer naechsten Meilenstein
+  // FEATURE 3: Spar-Ziel für naechsten Meilenstein
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildSavingsGoal(ThemeData theme) {
     // Naechsten Meilenstein finden
@@ -1156,7 +1156,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         ] else if (autoGoal > 0) ...[
           const SizedBox(height: 8),
           Text(
-            'Empfehlung: ${_country.formatAmount(autoGoal)}/Monat zuruecklegen.',
+            'Empfehlung: ${_country.formatAmount(autoGoal)}/Monat zurücklegen.',
             style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF9A3412)),
           ),
         ],

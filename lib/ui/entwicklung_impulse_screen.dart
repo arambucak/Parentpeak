@@ -990,14 +990,14 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       sb.writeln('');
     }
     final prompt =
-        'Du schreibst eine paedagogische Entwicklungseinschaetzung fuer Eltern. '
+        'Du schreibst eine paedagogische Entwicklungseinschaetzung für Eltern. '
         'WICHTIGE REGELN:\n'
         '- Schreibe AUS DER PERSPEKTIVE DER APP (nicht Kita, nicht Erzieher).\n'
         '- Erster Satz: "Basierend auf euren Angaben zeigt [Name] folgendes Entwicklungsprofil:"\n'
         '- KEINE Bewertungswoerter wie "toll", "super", "gut", "wunderbar", "schlecht", "sehr gut".\n'
         '- Stattdessen: fachlich, objektiv, wertschaetzend. Beschreibe WAS das Kind zeigt, nicht WIE GUT.\n'
         '- Benutze Formulierungen wie: "zeigt sich sicher in...", "befindet sich im typischen Entwicklungsfenster fuer...", "beginnt zunehmend...", "uebt aktuell..."\n'
-        '- Struktur: 1) Sichtbare Kompetenzen (was das Kind bereits zeigt), 2) Aktuelle Entwicklungsfelder (woran es gerade waechst), 3) Impulse fuer den Alltag (2-3 konkrete Ideen)\n'
+        '- Struktur: 1) Sichtbare Kompetenzen (was das Kind bereits zeigt), 2) Aktuelle Entwicklungsfelder (woran es gerade waechst), 3) Impulse für den Alltag (2-3 konkrete Ideen)\n'
         '- Maximal 180 Woerter. Keine Emojis. Keine Sterne-Formatierung.\n'
         '- Kein "Liebe Eltern" am Anfang.\n\n$sb';
 
@@ -1371,7 +1371,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                       icon: const Icon(Icons.cake_rounded, size: 18),
                       label: Text(selectedDate != null
                           ? '${selectedDate!.day}.${selectedDate!.month}.${selectedDate!.year}'
-                          : 'Geburtsdatum waehlen'),
+                          : 'Geburtsdatum wählen'),
                       style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(

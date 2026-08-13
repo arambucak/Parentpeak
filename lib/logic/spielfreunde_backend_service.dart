@@ -3,7 +3,7 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 
-/// Backend-Service fuer Spielfreunde + Referral.
+/// Backend-Service für Spielfreunde + Referral.
 ///
 /// Verbindet die App mit:
 /// - POST/GET /api/spielfreunde/profiles
@@ -44,7 +44,7 @@ class SpielfreundeBackendService {
     }
   }
 
-  /// Warteliste-Counter fuer einen Stadtteil abrufen.
+  /// Warteliste-Counter für einen Stadtteil abrufen.
   Future<WaitlistStatus> getWaitlistCount(String? district) async {
     if (_api == null)
       return WaitlistStatus(

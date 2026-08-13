@@ -11,7 +11,7 @@ import 'package:parentpeak/models/family_profile_model.dart';
 /// Abends (17-23): "Ausatmen" — Mood-Check + Motivation
 /// Nachts (23-6): "Schlaf gut" — Sanfte Nachricht
 ///
-/// Personalisierung: Nutzt Kinder-Alter aus dem Profil fuer passende Inhalte.
+/// Personalisierung: Nutzt Kinder-Alter aus dem Profil für passende Inhalte.
 class ContextHomeCard extends StatefulWidget {
   final VoidCallback? onExpandTip;
   final VoidCallback? onOpenChat;
@@ -63,7 +63,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
       _greeting = 'Guten Morgen';
     } else if (hour >= 11 && hour < 17) {
       _context = _TimeContext.afternoon;
-      _greeting = 'Schoen dass ihr da seid';
+      _greeting = 'Schön dass ihr da seid';
     } else if (hour >= 17 && hour < 23) {
       _context = _TimeContext.evening;
       _greeting = 'Guten Abend';
@@ -82,7 +82,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
     if (name.isEmpty && profile != null) name = profile.displayName;
     if (name.isEmpty) name = '';
 
-    // Kinder-Alter fuer Personalisierung
+    // Kinder-Alter für Personalisierung
     int ageHint = 3;
     if (profile != null && profile.children.isNotEmpty) {
       ageHint = (profile.children.first.ageMonths / 12).round().clamp(0, 16);
@@ -190,7 +190,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
               'duration': '15 Min'
             },
             {
-              'tip': 'Knisterpapier-Erkundung: Verschiedene Papiere und Tuecher befuehlen und zerknuellen.',
+              'tip': 'Knisterpapier-Erkundung: Verschiedene Papiere und Tuecher befühlen und zerknuellen.',
               'materials': 'Zeitungspapier, Alufolie, weiches Tuch',
               'duration': '10 Min'
             },
@@ -215,7 +215,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
               'duration': '10 Min'
             },
             {
-              'tip': 'Spaziergang mit Staunen: Langsam gehen und alles benennen, was ihr seht und hoert.',
+              'tip': 'Spaziergang mit Staunen: Langsam gehen und alles benennen, was ihr seht und hört.',
               'materials': 'Babytrage oder Kinderwagen',
               'duration': '20 Min'
             },
@@ -259,17 +259,17 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   'duration': '20 Min'
                 },
                 {
-                  'tip': 'Pfuetzen-Springen: Nach dem Regen raus — Gummistiefel an und los!',
+                  'tip': 'Pfützen-Springen: Nach dem Regen raus — Gummistiefel an und los!',
                   'materials': 'Gummistiefel, Regenjacke',
                   'duration': '20 Min'
                 },
                 {
-                  'tip': 'Kuchenbaeckerei: Zusammen einen einfachen Ruehrkuchen backen.',
+                  'tip': 'Kuchenbäckerei: Zusammen einen einfachen Rührkuchen backen.',
                   'materials': 'Mehl, Eier, Zucker, Butter, Backform',
                   'duration': '45 Min'
                 },
                 {
-                  'tip': 'Schattentheater: Taschenlampe an die Wand, Haende formen Tiere und Figuren.',
+                  'tip': 'Schattentheater: Taschenlampe an die Wand, Hände formen Tiere und Figuren.',
                   'materials': 'Taschenlampe, dunkler Raum',
                   'duration': '15 Min'
                 },
@@ -279,7 +279,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   'duration': '20 Min'
                 },
                 {
-                  'tip': 'Hindernislauf: Stühle, Decken und Kissen als Tunnel und Bruecke aufbauen.',
+                  'tip': 'Hindernislauf: Stühle, Decken und Kissen als Tunnel und Brücke aufbauen.',
                   'materials': 'Stuehle, Decken, Kissen',
                   'duration': '20 Min'
                 },
@@ -294,13 +294,13 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   'duration': '10 Min'
                 },
                 {
-                  'tip': 'Matschkueche draussen: Mit Wasser, Erde und Blaettern "Suppe kochen".',
+                  'tip': 'Matschküche draussen: Mit Wasser, Erde und Blaettern "Suppe kochen".',
                   'materials': 'Schuessel, Wasser, Naturmaterialien',
                   'duration': '30 Min'
                 },
                 {
                   'tip': 'Fingertheater: Gesichter auf Finger malen und gemeinsam eine Geschichte erfinden.',
-                  'materials': 'Filzstifte (hautvertraeglich), Haende',
+                  'materials': 'Filzstifte (hautvertraeglich), Hände',
                   'duration': '15 Min'
                 },
               ]
@@ -322,7 +322,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   'duration': '60 Min'
                 },
                 {
-                  'tip': 'Comic zeichnen: Zusammen eine kurze Geschichte als Comicstrip erzaehlen.',
+                  'tip': 'Comic zeichnen: Zusammen eine kurze Geschichte als Comicstrip erzählen.',
                   'materials': 'Papier, Stifte, Buntstifte',
                   'duration': '30 Min'
                 },
@@ -342,7 +342,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   'duration': '60 Min'
                 },
                 {
-                  'tip': 'Brettspiel-Turnier: 3 Runden hintereinander, gemeinsam Punkte zaehlen.',
+                  'tip': 'Brettspiel-Turnier: 3 Runden hintereinander, gemeinsam Punkte zählen.',
                   'materials': 'Brettspiele, Snacks',
                   'duration': '60 Min'
                 },
@@ -352,7 +352,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   'duration': '60 Min'
                 },
                 {
-                  'tip': 'Pflanzenprojekt: Samen in Erde pflanzen, Wachstum taeglichbeobachten und notieren.',
+                  'tip': 'Pflanzenprojekt: Samen in Erde pflanzen, Wachstum täglichbeobachten und notieren.',
                   'materials': 'Blumentopf, Erde, Samen, kleines Heft',
                   'duration': '20 Min'
                 },
@@ -372,7 +372,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   'duration': '40 Min'
                 },
                 {
-                  'tip': 'Familien-Escape-Room: Raetsel fuer die ganze Familie selber erfinden und loesen.',
+                  'tip': 'Familien-Escape-Room: Raetsel für die ganze Familie selber erfinden und loesen.',
                   'materials': 'Papier, Stifte, Alltagsgegenstaende als Requisiten',
                   'duration': '60 Min'
                 },

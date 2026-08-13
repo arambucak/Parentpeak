@@ -137,13 +137,13 @@ class ShoppingItem {
         lower.contains('seife') ||
         lower.contains('shampoo')) return '\u{1F9F4}';
     if (lower.contains('toiletten') ||
-        lower.contains('kuechen') ||
+        lower.contains('küchen') ||
         lower.contains('papier')) return '\u{1F9FB}';
     return '\u{1F6D2}';
   }
 }
 
-/// Persistenz-Service fuer die Einkaufsliste.
+/// Persistenz-Service für die Einkaufsliste.
 class ShoppingListService {
   static final ShoppingListService instance = ShoppingListService._();
   ShoppingListService._();

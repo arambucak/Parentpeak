@@ -824,7 +824,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
         content: Text(
           'Das Profil ${profile.name} ist aktuell nur auf Basisniveau verifiziert. '
           'Teile keine privaten Kontaktdaten oder genaue Kinder-Standorte im ersten Kontakt. '
-          'Moechtest du trotzdem eine Anfrage senden?',
+          'Möchtest du trotzdem eine Anfrage senden?',
         ),
         actions: [
           TextButton(
@@ -1521,7 +1521,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                   child: Text(
                                     _phoneVerifiedLocal
                                         ? 'Telefon verifiziert'
-                                        : 'Verifiziere dein Telefon fuer mehr Sicherheit',
+                                        : 'Verifiziere dein Telefon für mehr Sicherheit',
                                     style: const TextStyle(
                                       color: Color(0xFF24405E),
                                       fontWeight: FontWeight.w700,
@@ -2946,7 +2946,7 @@ class _GlobalParentRoomsState extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                room['subtitle'] ?? 'Online Austausch fuer Eltern',
+                room['subtitle'] ?? 'Online Austausch für Eltern',
                 style: const TextStyle(color: Color(0xFF607286), fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 10),

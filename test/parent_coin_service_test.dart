@@ -91,7 +91,7 @@ void main() {
       expect(service.hasCommunityBadge, isTrue);
     });
 
-    test('getInviteLink() gibt validen Link zurueck', () {
+    test('getInviteLink() gibt validen Link zurück', () {
       final service = ParentCoinService.instance;
       final link = service.getInviteLink();
       expect(link, startsWith('https://parentpeak.de/invite/PP-'));

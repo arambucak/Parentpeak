@@ -1295,7 +1295,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     if (value.contains('fahr') || value == 'vehicles') return 'vehicles';
     if (value.contains('kleidung') || value == 'clothing') return 'clothing';
     if (value.contains('spiel') || value == 'toys') return 'toys';
-    if (value.contains('buch') || value == 'books' || value == 'buecher') return 'books';
+    if (value.contains('buch') || value == 'books' || value == 'bücher') return 'books';
     if (value.contains('ausstatt') || value == 'equipment') return 'equipment';
     return 'toys';
   }

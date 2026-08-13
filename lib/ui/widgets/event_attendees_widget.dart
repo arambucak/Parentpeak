@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/models/event_attendee.dart';
 
-/// "Bekannte Gesichter" Widget fuer Events.
+/// "Bekannte Gesichter" Widget für Events.
 ///
 /// Zeigt:
 /// - Avatar-Reihe der Teilnehmer (max 5 sichtbar)
@@ -10,7 +10,7 @@ import 'package:parentpeak/models/event_attendee.dart';
 /// - Netzwerk-Kontakte hervorgehoben mit Stern
 /// - "Ich bin auch dabei!" Button mit optionaler Kurznachricht
 ///
-/// Kompakt genug fuer Event-Cards UND ausfuehrlich fuer Detail-View.
+/// Kompakt genug für Event-Cards UND ausfuehrlich für Detail-View.
 class EventAttendeesWidget extends StatefulWidget {
   final String eventId;
   final int initialCount;
@@ -57,7 +57,7 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
     return _fullView(context);
   }
 
-  // ─── Compact View (fuer Event-Cards im Carousel) ──────────────────────────
+  // ─── Compact View (für Event-Cards im Carousel) ──────────────────────────
   Widget _compactView(BuildContext context) {
     final theme = Theme.of(context);
     if (_total == 0 && !_joined) return const SizedBox.shrink();
@@ -103,7 +103,7 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
     );
   }
 
-  // ─── Full View (fuer Event-Detail) ────────────────────────────────────────
+  // ─── Full View (für Event-Detail) ────────────────────────────────────────
   Widget _fullView(BuildContext context) {
     final theme = Theme.of(context);
     final attendees = _result?.attendees ?? [];

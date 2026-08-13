@@ -334,7 +334,7 @@ const DAILY_IMPULSE_POOL = [
     companion_reflect: "Gab es heute einen Moment, in dem deine Kinder einen Streit selbst gelöst haben? Was habt ihr dabei gelernt?",
   },
   {
-    key: 'gfk_gefuehle',
+    key: 'gfk_gefühle',
     title: 'Gefühle benennen und anerkennen',
     category: 'gfk',
     parent_lens: "Kinder, die ihre Gefühle benennen können, haben einen massiven Vorteil: Sie können kommunizieren, was sie brauchen. Dieser Schritt – vom Fühlen zum Sprechen – braucht Übung und deine Unterstützung.",
@@ -364,7 +364,7 @@ const DAILY_IMPULSE_POOL = [
     companion_reflect: "Gab es heute ein Nein, das sich rückblickend richtig angefühlt hat?",
   },
   {
-    key: 'inclusion_staerken',
+    key: 'inclusion_stärken',
     title: 'Stärken sehen statt Schwächen bewerten',
     category: 'inclusion',
     parent_lens: "Jedes Kind hat eine einzigartige Stärken-Konstellation. Oft sehen wir als Eltern zuerst die Baustellen – dabei wären wir die ersten, die den Rohdiamanten polieren könnten.",
@@ -717,7 +717,7 @@ function buildWeeklyImpulseSeedPosts(schema, impulseId) {
       verification_label: '',
       title: 'Kurze Antworten haben uns entlastet',
       body:
-        'Seit wir nicht mehr alles komplett erklaeren, sondern erst das Gefuehl sehen und dann kurz antworten, sind unsere Nachmittage deutlich entspannter.',
+        'Seit wir nicht mehr alles komplett erklären, sondern erst das Gefühl sehen und dann kurz antworten, sind unsere Nachmittage deutlich entspannter.',
       seed_like_count: 18,
       seed_comments: [
         'Das probieren wir heute direkt aus.',
@@ -732,7 +732,7 @@ function buildWeeklyImpulseSeedPosts(schema, impulseId) {
       verification_label: 'Verifizierte Fachstimme',
       title: 'Praxis aus der Gruppe',
       body:
-        'Ein ruhiger Blickkontakt und ein Satz wie Ich hoere dich, ich antworte dir kurz hilft vielen Kindern schneller als eine lange Erklaerung.',
+        'Ein ruhiger Blickkontakt und ein Satz wie Ich hoere dich, ich antworte dir kurz hilft vielen Kindern schneller als eine lange Erklärung.',
       seed_like_count: 24,
       seed_comments: ['Sehr nah am Alltag, danke.'],
     },
@@ -775,7 +775,7 @@ function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
     content_body: contentBody,
     practical_tip: topic.practical_tip,
     audio_script:
-      `Hallo und schoen, dass du da bist. ${topic.parent_lens} ` +
+      `Hallo und schön, dass du da bist. ${topic.parent_lens} ` +
       `${topic.practical_tip} Du machst das gut.`,
     category: topic.category,
     publish_date: today,
@@ -796,7 +796,7 @@ function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
       },
       {
         id: `${impulseId}_practice`,
-        title: 'Praxis fuer heute',
+        title: 'Praxis für heute',
         summary: topic.parent_tips[0],
         duration_label: '4 Min',
         format_label: 'Praxis',
@@ -810,7 +810,7 @@ function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
       },
       {
         id: `${impulseId}_deepdive`,
-        title: 'Tipp fuer den Alltag',
+        title: 'Tipp für den Alltag',
         summary: topic.parent_tips[1],
         duration_label: '5 Min',
         format_label: 'Artikel',
@@ -1278,15 +1278,15 @@ function getWeeklyImpulseSchema() {
   return {
     id: 'years_3',
     parent_lens:
-      'Kinder in der Warum-Phase suchen vor allem Verbindung und Orientierung, nicht perfekte Erklaerungen.',
-    pedagogical_focus: 'Gefuehle sehen, klar begrenzen, ruhig beantworten',
+      'Kinder in der Warum-Phase suchen vor allem Verbindung und Orientierung, nicht perfekte Erklärungen.',
+    pedagogical_focus: 'Gefühle sehen, klar begrenzen, ruhig beantworten',
     parent_tips: [
-      'Spiegele zuerst das Gefuehl deines Kindes, bevor du auf die Frage eingehst.',
+      'Spiegele zuerst das Gefühl deines Kindes, bevor du auf die Frage eingehst.',
       'Antworte kurz in einem Satz und vermeide lange Erklaerketten.',
       'Wiederhole Grenzen freundlich und konsistent statt in Diskussionen zu gehen.',
     ],
     reassurance:
-      'Du musst nicht jede Frage perfekt loesen. Verlaessliche Praesenz ist fuer dein Kind wichtiger als die perfekte Antwort.',
+      'Du musst nicht jede Frage perfekt loesen. Verlaessliche Präsenz ist für dein Kind wichtiger als die perfekte Antwort.',
   };
 }
 
@@ -3931,7 +3931,7 @@ app.post('/parent-matching/verification/request-otp', async (req, res) => {
   } else {
     bucket.count += 1;
     if (bucket.count > otpRateMax) {
-      return res.status(429).json({ error: 'Zu viele OTP-Anfragen. Bitte spaeter erneut versuchen.' });
+      return res.status(429).json({ error: 'Zu viele OTP-Anfragen. Bitte später erneut versuchen.' });
     }
   }
 
@@ -3945,7 +3945,7 @@ app.post('/parent-matching/verification/request-otp', async (req, res) => {
   });
 
   // In Produktion sollte der OTP-Code ueber einen SMS-Provider zugestellt werden.
-  // Dieser Endpoint gibt den Code nur in Entwicklungsumgebungen zurueck.
+  // Dieser Endpoint gibt den Code nur in Entwicklungsumgebungen zurück.
   return res.status(202).json({
     ok: true,
     channel: 'sms',
@@ -6070,7 +6070,7 @@ app.post('/payments/confirm', async (req, res) => {
 
   if ((paymentMethod === 'stripe' || paymentMethod === 'paypal') && !providerTransactionRef) {
     return res.status(400).json({
-      error: 'providerTransactionRef ist fuer Stripe/PayPal erforderlich',
+      error: 'providerTransactionRef ist für Stripe/PayPal erforderlich',
     });
   }
 
@@ -6233,7 +6233,7 @@ app.post('/payments/transactions/:id/refund', async (req, res) => {
     const mapped = mapPaymentRecordToApiItem(current);
     if (mapped.status !== 'completed') {
       return res.status(409).json({
-        error: 'Rueckerstattung nur fuer completed-Transaktionen erlaubt',
+        error: 'Rueckerstattung nur für completed-Transaktionen erlaubt',
       });
     }
 
@@ -6258,7 +6258,7 @@ app.post('/payments/transactions/:id/refund', async (req, res) => {
 
     if (paymentTransactions[index].status !== 'completed') {
       return res.status(409).json({
-        error: 'Rueckerstattung nur fuer completed-Transaktionen erlaubt',
+        error: 'Rueckerstattung nur für completed-Transaktionen erlaubt',
       });
     }
 

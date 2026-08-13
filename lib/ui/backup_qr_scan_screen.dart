@@ -157,7 +157,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
         _nextExpectedIndex = 1;
         _chunks.clear();
         _statusMessage =
-            'Zeitueberschreitung: Scan wurde zur Sicherheit zurueckgesetzt.';
+            'Zeitueberschreitung: Scan wurde zur Sicherheit zurückgesetzt.';
       });
     });
   }
@@ -185,7 +185,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
                 child: Padding(
                   padding: EdgeInsets.all(16),
                   child: Text(
-                    'Der Backup-Scanner ist auf diesem iOS-Simulator nicht verfuegbar.\n\n'
+                    'Der Backup-Scanner ist auf diesem iOS-Simulator nicht verfügbar.\n\n'
                     'Fuege den Backup-Text hier ein, um die Wiederherstellung fortzusetzen.',
                     textAlign: TextAlign.center,
                   ),
@@ -221,7 +221,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
                   ),
                   TextButton(
                     onPressed: _resetChunks,
-                    child: const Text('Zuruecksetzen'),
+                    child: const Text('Zurücksetzen'),
                   ),
                 ],
               ),

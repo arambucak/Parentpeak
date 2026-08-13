@@ -305,7 +305,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         id: 'fallback_event_1',
         title: 'Spielplatz-Treff im Kiez',
         description:
-            'Offenes Treffen fuer Eltern mit Kindern. Lockeres Kennenlernen mit kurzer Bewegungsrunde.',
+            'Offenes Treffen für Eltern mit Kindern. Lockeres Kennenlernen mit kurzer Bewegungsrunde.',
         category: DiscoveredEventCategory.spielplatz,
         ageLabels: const ['Alle Altersklassen'],
         location: 'Stadtpark Nord',
@@ -319,9 +319,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       ),
       DiscoveredEvent(
         id: 'fallback_event_2',
-        title: 'Kreativnachmittag fuer Familien',
+        title: 'Kreativnachmittag für Familien',
         description:
-            'Basteln mit Alltagsmaterialien, kleine Mitmachstationen und Zeit fuer Austausch.',
+            'Basteln mit Alltagsmaterialien, kleine Mitmachstationen und Zeit für Austausch.',
         category: DiscoveredEventCategory.basteln,
         ageLabels: const ['Alle Altersklassen'],
         location: 'Familienzentrum Mitte',
@@ -1007,7 +1007,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       children: [
         Expanded(
           child: LocationPickerWidget(
-            hint: 'Standort waehlen',
+            hint: 'Standort wählen',
             initialLocation: _activeLocation,
             onLocationPicked: (loc) async {
               final prefs = await SharedPreferences.getInstance();

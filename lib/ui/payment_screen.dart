@@ -56,7 +56,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Stripe ist aktuell nicht konfiguriert. Bitte waehle PayPal oder kontaktiere den Support.',
+            'Stripe ist aktuell nicht konfiguriert. Bitte wähle PayPal oder kontaktiere den Support.',
           ),
         ),
       );

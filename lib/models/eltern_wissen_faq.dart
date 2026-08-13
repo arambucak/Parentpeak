@@ -2,8 +2,8 @@
 class ElternWissenEntry {
   final String id;
   final String question;
-  final String akut;         // 1 Satz fuer den akuten Moment
-  final String beduerfnis;   // Was steckt dahinter?
+  final String akut;         // 1 Satz für den akuten Moment
+  final String bedürfnis;   // Was steckt dahinter?
   final String gfkSatz;      // Konkreter GfK-Satz zum Nachsprechen
   final List<String> aktion; // 2-3 Handlungsschritte
   final String ermutigung;   // "Du bist nicht schuld" etc.
@@ -16,7 +16,7 @@ class ElternWissenEntry {
     required this.id,
     required this.question,
     required this.akut,
-    required this.beduerfnis,
+    required this.bedürfnis,
     required this.gfkSatz,
     required this.aktion,
     required this.ermutigung,

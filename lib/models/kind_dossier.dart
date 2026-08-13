@@ -142,7 +142,7 @@ class UExaminationData {
   ];
 }
 
-/// Persistenz fuer Kind-Dossiers (lokal, verschluesselt).
+/// Persistenz für Kind-Dossiers (lokal, verschluesselt).
 class KindDossierService {
   static final KindDossierService instance = KindDossierService._();
   KindDossierService._();

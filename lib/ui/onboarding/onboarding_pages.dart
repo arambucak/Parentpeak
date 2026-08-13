@@ -169,7 +169,7 @@ class OnboardingRolePage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Mehrfachauswahl moeglich — waehle alle die passen.',
+                'Mehrfachauswahl moeglich — wähle alle die passen.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

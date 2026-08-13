@@ -184,7 +184,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _chatBackend = null;
         setState(() {
           _initError =
-              'KI-Beratung ist aktuell nicht verfuegbar (API-Konfiguration fehlt).';
+              'KI-Beratung ist aktuell nicht verfügbar (API-Konfiguration fehlt).';
         });
         return;
       }
@@ -247,7 +247,7 @@ class _ChatScreenState extends State<ChatScreen> {
           'KONTEXT: Das Kind des Elternteils ist $childAge Jahre alt.\n\n'
           'Der Elternteil hat diesen Tipp gelesen und will MEHR dazu wissen:\n'
           '"$tipText"\n\n'
-          'Antworte SPEZIFISCH fuer ein $childAge-jaehriges Kind:\n'
+          'Antworte SPEZIFISCH für ein $childAge-jaehriges Kind:\n'
           '1. Warum ist das bei $childAge-Jaehrigen besonders relevant? (2 Saetze)\n'
           '2. 3 konkrete Alltagsbeispiele/Situationen\n'
           '3. 1 Uebung die der Elternteil HEUTE ausprobieren kann\n\n'
@@ -388,7 +388,7 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Chatverlauf loeschen'),
         content: const Text(
-          'Moechtest du den aktuellen Chatverlauf wirklich loeschen?',
+          'Möchtest du den aktuellen Chatverlauf wirklich loeschen?',
         ),
         actions: [
           TextButton(
@@ -419,7 +419,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _isProviderUnavailableMessage(String content) {
     final lower = content.toLowerCase();
-    return lower.contains('ki-beratung ist aktuell nicht verfuegbar') ||
+    return lower.contains('ki-beratung ist aktuell nicht verfügbar') ||
         lower.contains('moeglicher grund:') ||
         lower.contains('debug:');
   }
@@ -501,7 +501,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (context.mounted) Navigator.pop(context);
                   },
                   icon: const Icon(Icons.restart_alt_rounded),
-                  label: const Text('Zaehler zuruecksetzen'),
+                  label: const Text('Zaehler zurücksetzen'),
                 ),
               ),
             ],
@@ -656,7 +656,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Konkrete Hilfe fuer Eltern — basierend auf Neurobiologie (Hüther), Gewaltfreier Kommunikation (Rosenberg) und Familientherapie (Juul). Warm, klar und sofort anwendbar.',
+              'Konkrete Hilfe für Eltern — basierend auf Neurobiologie (Hüther), Gewaltfreier Kommunikation (Rosenberg) und Familientherapie (Juul). Warm, klar und sofort anwendbar.',
               style: TextStyle(
                 fontSize: 15,
                 height: 1.45,
@@ -711,7 +711,7 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 _buildSuggestionChip('Kind haengt nur am Handy'),
                 _buildSuggestionChip('Trotzanfall — was tun?'),
-                _buildSuggestionChip('Mein Kind hoert nicht'),
+                _buildSuggestionChip('Mein Kind hört nicht'),
                 _buildSuggestionChip('Ich bin total erschoepft'),
                 _buildSuggestionChip('Kind braucht mehr Freiheit'),
                 _buildSuggestionChip('Strafe oder Konsequenz?'),
@@ -751,7 +751,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Neurobiologie (Hüther): Verbundenheit + Autonomie als Grundbeduerfnisse. GfK (Rosenberg): konkrete Saetze fuer heute. Familientherapie (Juul): Kinder als vollwertige Menschen.',
+                    'Neurobiologie (Hüther): Verbundenheit + Autonomie als Grundbedürfnisse. GfK (Rosenberg): konkrete Saetze für heute. Familientherapie (Juul): Kinder als vollwertige Menschen.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF516072),
                           height: 1.4,

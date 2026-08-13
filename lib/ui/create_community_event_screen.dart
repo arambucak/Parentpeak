@@ -151,7 +151,7 @@ class _CreateCommunityEventScreenState
       setState(() => _saving = false);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('\u{2705} Event veroeffentlicht!'),
+          content: Text('\u{2705} Event veröffentlicht!'),
         ));
         Navigator.pop(context, true);
       } else {
@@ -259,7 +259,7 @@ class _CreateCommunityEventScreenState
               TextButton.icon(
                 onPressed: _prev,
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: const Text('Zurueck'),
+                label: const Text('Zurück'),
               )
             else
               const Spacer(),
@@ -284,7 +284,7 @@ class _CreateCommunityEventScreenState
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.publish_rounded, size: 18),
-                label: Text(_saving ? 'Wird gesendet...' : 'Veroeffentlichen'),
+                label: Text(_saving ? 'Wird gesendet...' : 'Veröffentlichen'),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),
                   shape: RoundedRectangleBorder(
@@ -525,7 +525,7 @@ class _CreateCommunityEventScreenState
         const SizedBox(height: 12),
         // Ort
         LocationPickerWidget(
-          hint: 'Ort / Adresse waehlen *',
+          hint: 'Ort / Adresse wählen *',
           onLocationPicked: (loc) {
             _locationCtrl.text = loc.displayName;
             _city = loc.city;

@@ -41,7 +41,7 @@ class ChatService {
     'ich halte das nicht mehr aus',
     'ich koennte meinem kind etwas antun',
     'ich könnte meinem kind etwas antun',
-    'ich moechte mein baby schuetteln',
+    'ich möchte mein baby schuetteln',
     'ich möchte mein baby schütteln',
     'notfall',
     'akute gefahr',

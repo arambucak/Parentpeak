@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// 5 Quick-Action Buttons fuer den Home-Screen.
+/// 5 Quick-Action Buttons für den Home-Screen.
 /// Immer sichtbar, immer erreichbar — die wichtigsten Funktionen.
 class QuickActionsRow extends StatelessWidget {
   final VoidCallback onChat;

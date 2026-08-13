@@ -518,7 +518,7 @@ const List<Recipe> _demoRecipes = [
     ingredients: [
       RecipeIngredient(name: 'Pasta', amount: '300 g', babyOption: 'Sehr weich kochen'),
       RecipeIngredient(name: 'Brokkoli', amount: '200 g', babyOption: 'In kleine Roeschen dämpfen'),
-      RecipeIngredient(name: 'Frischkaese', amount: '150 g', babyOption: 'Ohne Salz fuer Baby-Portion'),
+      RecipeIngredient(name: 'Frischkaese', amount: '150 g', babyOption: 'Ohne Salz für Baby-Portion'),
     ],
   ),
   Recipe(

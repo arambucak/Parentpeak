@@ -157,7 +157,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                // ── Erklaerung ──
+                // ── Erklärung ──
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(

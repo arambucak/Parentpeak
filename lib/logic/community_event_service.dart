@@ -6,7 +6,7 @@ import 'package:parentpeak/logic/event_cache_service.dart';
 import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/models/event_attendee.dart';
 
-/// Service fuer Community-Events — verbindet App mit Backend.
+/// Service für Community-Events — verbindet App mit Backend.
 ///
 /// Endpoints:
 ///   POST   /api/community-events              — Event erstellen
@@ -40,7 +40,7 @@ class CommunityEventService extends ChangeNotifier {
     _api ??= BackendServiceFactory.createApiClient();
   }
 
-  /// Laedt alle Events fuer eine Stadt (Community + KI gemischt).
+  /// Laedt alle Events für eine Stadt (Community + KI gemischt).
   Future<List<CommunityEvent>> loadEvents({
     required String city,
     List<String> childAges = const [],
@@ -107,7 +107,7 @@ class CommunityEventService extends ChangeNotifier {
   }
 
   /// Erstellt ein neues Community-Event.
-  /// Gibt true zurueck bei Erfolg, false bei Fehler.
+  /// Gibt true zurück bei Erfolg, false bei Fehler.
   Future<bool> createEvent(CommunityEvent event) async {
     _ensureApi();
 
@@ -228,7 +228,7 @@ class CommunityEventService extends ChangeNotifier {
       return EventAttendeesResult(
         attendees: list,
         total: total,
-        networkContacts: [], // Wird spaeter mit echtem Netzwerk-Abgleich gefuellt
+        networkContacts: [], // Wird später mit echtem Netzwerk-Abgleich gefuellt
       );
     } catch (e) {
       debugPrint('CommunityEventService.getAttendees: $e');

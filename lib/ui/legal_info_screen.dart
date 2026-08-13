@@ -37,7 +37,7 @@ class LegalInfoScreen extends StatelessWidget {
                     Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
                     SizedBox(width: 10),
                     Text(
-                      'Klarheit fuer euren Familienraum',
+                      'Klarheit für euren Familienraum',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -66,7 +66,7 @@ class LegalInfoScreen extends StatelessWidget {
             icon: Icons.home_outlined,
             title: 'Private Nutzung im Familienkontext',
             body:
-                'Parentpeak ist fuer euren privaten Familienalltag gedacht. Inhalte, Rollen und Profile sollten nur fuer euren echten Vertrauenskreis gepflegt werden.',
+                'Parentpeak ist für euren privaten Familienalltag gedacht. Inhalte, Rollen und Profile sollten nur für euren echten Vertrauenskreis gepflegt werden.',
           ),
           const SizedBox(height: 10),
           const _LegalSection(
@@ -94,7 +94,7 @@ class LegalInfoScreen extends StatelessWidget {
             icon: Icons.storefront_outlined,
             title: 'Verschenkmarkt: Rolle von Parentpeak',
             body:
-                'Parentpeak stellt im Verschenkmarkt nur die Plattform zur Vermittlung bereit. Verantwortung fuer Zustand, Sicherheit, Rechtmaessigkeit und Uebergabe der Artikel liegt bei den beteiligten Nutzern.',
+                'Parentpeak stellt im Verschenkmarkt nur die Plattform zur Vermittlung bereit. Verantwortung für Zustand, Sicherheit, Rechtmaessigkeit und Uebergabe der Artikel liegt bei den beteiligten Nutzern.',
           ),
           const SizedBox(height: 10),
           const _LegalSection(

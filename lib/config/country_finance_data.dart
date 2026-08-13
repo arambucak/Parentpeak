@@ -1,6 +1,6 @@
 import 'package:parentpeak/models/country_finance_config.dart';
 
-/// Alle verfuegbaren Laender-Konfigurationen.
+/// Alle verfügbaren Laender-Konfigurationen.
 class CountryFinanceData {
   static const List<CountryFinanceConfig> availableCountries = [
     germany,
@@ -32,7 +32,7 @@ class CountryFinanceData {
       SocialBenefit(
         id: 'kindergeld',
         name: 'Kindergeld',
-        description: 'Monatliche Zahlung fuer jedes Kind bis 25 Jahre.',
+        description: 'Monatliche Zahlung für jedes Kind bis 25 Jahre.',
         amount: '250\u{20AC}/Kind',
         eligibility: 'Alle Eltern mit Kindern unter 25 (in Ausbildung).',
         url: 'https://www.arbeitsagentur.de/familie-und-kinder/kindergeld',
@@ -42,16 +42,16 @@ class CountryFinanceData {
         id: 'kinderzuschlag',
         name: 'Kinderzuschlag (KiZ)',
         description:
-            'Zusaetzliche Unterstuetzung fuer Familien mit geringem Einkommen.',
+            'Zusaetzliche Unterstuetzung für Familien mit geringem Einkommen.',
         amount: 'bis 292\u{20AC}/Kind',
-        eligibility: 'Einkommen reicht fuer euch, aber nicht fuer die Kinder.',
+        eligibility: 'Einkommen reicht für euch, aber nicht für die Kinder.',
         url: 'https://www.arbeitsagentur.de/familie-und-kinder/kinderzuschlag',
         status: BenefitStatus.incomeDependent,
       ),
       SocialBenefit(
         id: 'wohngeld',
         name: 'Wohngeld',
-        description: 'Mietzuschuss fuer Familien mit niedrigem Einkommen.',
+        description: 'Mietzuschuss für Familien mit niedrigem Einkommen.',
         amount: 'individuell berechnet',
         eligibility: 'Haushaltseinkommen unter bestimmter Grenze.',
         url: 'https://www.bmwsb.bund.de/Webs/BMWSB/DE/themen/wohnen/wohngeld',
@@ -159,8 +159,8 @@ class CountryFinanceData {
           emoji: '\u{1F3E5}',
           typicalAmount: 50),
       MonthlyCategory(
-          id: 'mobilitaet',
-          label: 'Mobilitaet',
+          id: 'mobilität',
+          label: 'Mobilität',
           emoji: '\u{1F68C}',
           typicalAmount: 80),
       MonthlyCategory(
@@ -350,7 +350,7 @@ class CountryFinanceData {
       SocialBenefit(
           id: 'cocuk_parasi',
           name: 'Cocuk Parasi',
-          description: 'Monatliches Kindergeld fuer Familien.',
+          description: 'Monatliches Kindergeld für Familien.',
           amount: 'einkommensabhaengig',
           status: BenefitStatus.incomeDependent),
       SocialBenefit(
@@ -488,7 +488,7 @@ class CountryFinanceData {
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // GENERISCH (Fallback fuer alle anderen Laender)
+  // GENERISCH (Fallback für alle anderen Laender)
   // ═══════════════════════════════════════════════════════════════════════════
 
   static const generic = CountryFinanceConfig(
@@ -507,7 +507,7 @@ class CountryFinanceData {
       SocialBenefit(
           id: 'generic_housing',
           name: 'Wohn-Unterstuetzung',
-          description: 'Viele Laender bieten Mietzuschuesse fuer Familien an.',
+          description: 'Viele Laender bieten Mietzuschuesse für Familien an.',
           status: BenefitStatus.checkRequired),
       SocialBenefit(
           id: 'generic_childcare',

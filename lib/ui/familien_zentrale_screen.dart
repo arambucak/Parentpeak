@@ -232,7 +232,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
           ),
         ]),
       ),
-      // Haeufig gekauft
+      // Häufig gekauft
       if (frequent.isNotEmpty && active.length < 3)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -793,8 +793,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
-              _editField(clothingCtrl, 'Kleidergroesse', 'z.B. 110'),
-              _editField(shoeCtrl, 'Schuhgroesse', 'z.B. 28'),
+              _editField(clothingCtrl, 'Kleidergröße', 'z.B. 110'),
+              _editField(shoeCtrl, 'Schuhgröße', 'z.B. 28'),
               _editField(allergiesCtrl, 'Allergien (kommagetrennt)',
                   'z.B. Nuesse, Laktose'),
               _editField(doctorCtrl, 'Kinderarzt Name', 'z.B. Dr. Mueller'),

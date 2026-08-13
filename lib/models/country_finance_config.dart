@@ -1,10 +1,10 @@
-/// Laender-spezifische Finanz-Konfiguration fuer die Familien-Geld Kachel.
+/// Laender-spezifische Finanz-Konfiguration für die Familien-Geld Kachel.
 ///
 /// Jedes Land hat:
 /// - Waehrung + Symbol
 /// - Liste moeglicher Sozialleistungen
-/// - Typische Meilenstein-Kosten fuer Kinder
-/// - Kategorien fuer den Monats-Schnellcheck
+/// - Typische Meilenstein-Kosten für Kinder
+/// - Kategorien für den Monats-Schnellcheck
 
 class CountryFinanceConfig {
   final String code;           // "de", "at", "tr", "gb", "generic"
@@ -80,7 +80,7 @@ class MilestoneCost {
   });
 }
 
-/// Kategorie fuer den monatlichen Schnellcheck.
+/// Kategorie für den monatlichen Schnellcheck.
 class MonthlyCategory {
   final String id;
   final String label;

@@ -99,7 +99,7 @@ class _NextGenFoodFeedScreenState extends State<NextGenFoodFeedScreen> {
       return Scaffold(
         appBar: AppBar(title: const Text('Food Feed Next Gen')),
         body: const Center(
-          child: Text('Noch keine Snacks verfuegbar.'),
+          child: Text('Noch keine Snacks verfügbar.'),
         ),
       );
     }
@@ -756,7 +756,7 @@ class _NextGenFoodFeedScreenState extends State<NextGenFoodFeedScreen> {
                                 SnackBar(
                                   content: Text(
                                     _backend.lastSyncError ??
-                                        'Snack konnte nicht veroeffentlicht werden.',
+                                        'Snack konnte nicht veröffentlicht werden.',
                                   ),
                                 ),
                               );
@@ -785,7 +785,7 @@ class _NextGenFoodFeedScreenState extends State<NextGenFoodFeedScreen> {
                                   SnackBar(
                                     content: Text(
                                       _backend.lastSyncError ??
-                                          'Audio-Hack konnte nicht veroeffentlicht werden.',
+                                          'Audio-Hack konnte nicht veröffentlicht werden.',
                                     ),
                                   ),
                                 );
@@ -812,7 +812,7 @@ class _NextGenFoodFeedScreenState extends State<NextGenFoodFeedScreen> {
                                   SnackBar(
                                     content: Text(
                                       _backend.lastSyncError ??
-                                          'Zutat konnte nicht veroeffentlicht werden.',
+                                          'Zutat konnte nicht veröffentlicht werden.',
                                     ),
                                   ),
                                 );
@@ -1067,7 +1067,7 @@ class _NextGenFoodFeedScreenState extends State<NextGenFoodFeedScreen> {
       ),
       Recipe(
         id: 'recipe-linsen-lasagne',
-        title: 'Linsen-Lasagne fuer alle',
+        title: 'Linsen-Lasagne für alle',
         ingredients: [
           RecipeIngredient(name: 'Lasagneblaetter', amount: '250 g'),
           RecipeIngredient(name: 'Rote Linsen', amount: '150 g'),

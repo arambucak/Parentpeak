@@ -2,7 +2,7 @@ import 'package:parentpeak/data/eltern_wissen_data.dart';
 import 'package:parentpeak/models/eltern_wissen_faq.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 
-/// Fuzzy-Search Service fuer Eltern-Wissen FAQ.
+/// Fuzzy-Search Service für Eltern-Wissen FAQ.
 ///
 /// Findet passende Eintraege auch bei Tippfehlern und Synonymen.
 /// Filtert automatisch nach Alter der Kinder (aus Profil).
@@ -71,7 +71,7 @@ class ElternWissenService {
     return ageFiltered[dayIndex % ageFiltered.length];
   }
 
-  /// Gibt alle Eintraege fuer das aktuelle Kind-Alter.
+  /// Gibt alle Eintraege für das aktuelle Kind-Alter.
   List<ElternWissenEntry> getForCurrentAge() {
     return elternWissenData
         .where((e) => _childAge >= e.minAge && _childAge <= e.maxAge)

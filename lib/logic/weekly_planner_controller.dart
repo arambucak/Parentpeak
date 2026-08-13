@@ -89,7 +89,7 @@ class WeeklyPlannerController extends ChangeNotifier {
     );
 
     if (hasBabyOptions) {
-      tips.add('Nutze die Baby-Optionen bei den Zutaten fuer die Baby-Portion.');
+      tips.add('Nutze die Baby-Optionen bei den Zutaten für die Baby-Portion.');
     }
 
     if (recipe.hideVegetables) {

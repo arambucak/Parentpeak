@@ -42,7 +42,7 @@ class PrivacySettingsScreen extends StatelessWidget {
                     Icon(Icons.lock_person_rounded, color: Colors.white, size: 28),
                     SizedBox(width: 10),
                     Text(
-                      'Privatsphaere fuer euren Familienalltag',
+                      'Privatsphaere für euren Familienalltag',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -73,7 +73,7 @@ class PrivacySettingsScreen extends StatelessWidget {
                     ),
                     const _InfoPill(
                       icon: Icons.family_restroom,
-                      label: 'Nur fuer euren Kreis',
+                      label: 'Nur für euren Kreis',
                     ),
                   ],
                 ),
@@ -96,7 +96,7 @@ class PrivacySettingsScreen extends StatelessWidget {
                 ),
                 subtitle: Text(
                   isPrivacyModeEnabled
-                      ? 'Geburtsdaten, Rollen und sensible Hinweise werden zurueckhaltender dargestellt.'
+                      ? 'Geburtsdaten, Rollen und sensible Hinweise werden zurückhaltender dargestellt.'
                       : 'Mehr Profilinfos sind im Familienkreis sichtbar.',
                 ),
                 secondary: Container(
@@ -140,7 +140,7 @@ class PrivacySettingsScreen extends StatelessWidget {
             icon: Icons.emergency_share_outlined,
             title: 'Wichtige Schutzfunktionen bleiben erreichbar',
             body:
-                'Notfallkontakte, Vertrauensgeraete und Sicherheitsinfos bleiben schnell verfuegbar, auch wenn das Profil diskreter dargestellt wird.',
+                'Notfallkontakte, Vertrauensgeraete und Sicherheitsinfos bleiben schnell verfügbar, auch wenn das Profil diskreter dargestellt wird.',
           ),
           const SizedBox(height: 12),
           Card(
@@ -155,7 +155,7 @@ class PrivacySettingsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Empfehlung fuer Eltern',
+                    'Empfehlung für Eltern',
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
                   SizedBox(height: 8),

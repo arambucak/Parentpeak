@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Familien-Profil fuer "Spielfreunde finden".
+/// Familien-Profil für "Spielfreunde finden".
 class FamilyMatchProfile {
   final String displayName;
   final String district;
@@ -114,7 +114,7 @@ class FamilyMatchProfile {
 class ChildEntry {
   final String name;
   final int
-      ageMonths; // Alter in Monaten fuer Babys, in Jahren * 12 fuer Groessere
+      ageMonths; // Alter in Monaten für Babys, in Jahren * 12 für Größere
   final String? gender; // maennlich, weiblich, divers, null = keine Angabe
   final List<String> interests;
   final String? interestsCustom;
@@ -156,7 +156,7 @@ class ChildEntry {
       );
 }
 
-/// Alle Optionen fuer das Profil-Formular.
+/// Alle Optionen für das Profil-Formular.
 class MatchOptions {
   // ─── FAMILIENFORMEN ───────────────────────────────────────────────────────
   static const List<String> familyForms = [
@@ -185,7 +185,7 @@ class MatchOptions {
   // ─── WERTE & ERZIEHUNGSSTIL ───────────────────────────────────────────────
   static const List<String> valueOptions = [
     'gfk',
-    'beduerfnisorientiert',
+    'bedürfnisorientiert',
     'attachment_parenting',
     'unerzogen',
     'montessori',
@@ -203,7 +203,7 @@ class MatchOptions {
   ];
   static const Map<String, String> valueLabels = {
     'gfk': '\u{1F49A} Gewaltfreie Kommunikation (GfK)',
-    'beduerfnisorientiert': '\u{1F49B} Beduerfnisorientiert',
+    'bedürfnisorientiert': '\u{1F49B} Bedürfnisorientiert',
     'attachment_parenting': '\u{1F917} Attachment Parenting',
     'unerzogen': '\u{1F331} Unerzogen',
     'montessori': '\u{1F52C} Montessori',
@@ -217,7 +217,7 @@ class MatchOptions {
     'interkulturell': '\u{1F30D} Interkulturell',
     'feministisch': '\u{2640}\u{FE0F} Feministisch',
     'naturverbunden': '\u{1F333} Naturverbunden',
-    'offen': '\u{2728} Offen fuer alles',
+    'offen': '\u{2728} Offen für alles',
   };
 
   // ─── WAS SUCHEN WIR? (AKTIVITAETEN) ──────────────────────────────────────
@@ -330,7 +330,7 @@ class MatchOptions {
     'musik',
     'tanzen',
     'tiere',
-    'buecher',
+    'bücher',
     'bauen',
     'rollenspiel',
     'kochen_backen',
@@ -348,7 +348,7 @@ class MatchOptions {
     'musik': '\u{1F3B5} Musik',
     'tanzen': '\u{1F483} Tanzen',
     'tiere': '\u{1F436} Tiere',
-    'buecher': '\u{1F4DA} Buecher',
+    'bücher': '\u{1F4DA} Bücher',
     'bauen': '\u{1F9F1} Bauen & Konstruieren',
     'rollenspiel': '\u{1F3AD} Rollenspiel',
     'kochen_backen': '\u{1F36A} Kochen & Backen',

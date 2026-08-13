@@ -82,13 +82,13 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
     },
     {
       'id': 'unsafe',
-      'label': '\u{1F6A8} Unsicher fuer Kinder',
+      'label': '\u{1F6A8} Unsicher für Kinder',
       'desc': 'Kein sicherer Ort oder Betreuer'
     },
     {
       'id': 'inappropriate',
       'label': '\u{1F645} Unangemessener Inhalt',
-      'desc': 'Beleidigend oder nicht fuer Familien geeignet'
+      'desc': 'Beleidigend oder nicht für Familien geeignet'
     },
     {
       'id': 'expired',
@@ -179,7 +179,7 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(success
-            ? 'Danke fuer deine Meldung. Wir pruefen das Event.'
+            ? 'Danke für deine Meldung. Wir pruefen das Event.'
             : 'Meldung konnte nicht gesendet werden.'),
       ));
     }

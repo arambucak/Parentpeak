@@ -300,7 +300,7 @@ class _SmartActions extends StatelessWidget {
                         content: Text(
                           ok
                               ? _toneCopy(tone, 'Fertig. Ein Express-Gericht ist jetzt eingeplant.', 'Express-Gericht uebernommen.', premium: 'Alternative wurde uebernommen.')
-                              : 'Kein Express-Gericht verfuegbar.',
+                              : 'Kein Express-Gericht verfügbar.',
                         ),
                       ),
                     );
@@ -481,7 +481,7 @@ class _RecipeRow extends StatelessWidget {
               Text(_toneCopy(tone, 'Heute Abend', 'Dinner-Slot', premium: 'Abendmenue'), style: theme.textTheme.labelMedium),
               const SizedBox(height: 2),
               Text(
-                recipe?.title ?? _toneCopy(tone, 'Noch offen - bitte ein Gericht auswaehlen', 'Noch kein Dinner gesetzt', premium: 'Menue noch offen'),
+                recipe?.title ?? _toneCopy(tone, 'Noch offen - bitte ein Gericht auswählen', 'Noch kein Dinner gesetzt', premium: 'Menue noch offen'),
                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               if (recipe != null)

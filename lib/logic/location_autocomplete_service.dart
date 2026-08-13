@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-/// Autocomplete fuer Orte via OpenStreetMap Nominatim (kostenlos, kein API-Key).
+/// Autocomplete für Orte via OpenStreetMap Nominatim (kostenlos, kein API-Key).
 class LocationAutocompleteService {
   static final LocationAutocompleteService instance =
       LocationAutocompleteService._();
@@ -11,7 +11,7 @@ class LocationAutocompleteService {
   Timer? _debounce;
   String _lastQuery = '';
 
-  /// Sucht Orte basierend auf Eingabe. Gibt maximal 5 Vorschlaege zurueck.
+  /// Sucht Orte basierend auf Eingabe. Gibt maximal 5 Vorschlaege zurück.
   /// Debounced: wartet 400ms nach letzter Eingabe bevor Request gesendet wird.
   Future<List<LocationSuggestion>> search(String query) async {
     if (query.trim().length < 2) return [];
@@ -33,7 +33,7 @@ class LocationAutocompleteService {
     return completer.future;
   }
 
-  /// Direkter Aufruf ohne Debounce (fuer programmatische Nutzung).
+  /// Direkter Aufruf ohne Debounce (für programmatische Nutzung).
   Future<List<LocationSuggestion>> searchImmediate(String query) async {
     if (query.trim().length < 2) return [];
     return _fetchSuggestions(query.trim());
@@ -125,7 +125,7 @@ class LocationSuggestion {
     required this.lon,
   });
 
-  /// Kurzform fuer Anzeige im Profil
+  /// Kurzform für Anzeige im Profil
   String get shortLabel {
     if (district.isNotEmpty && city.isNotEmpty) {
       return '$district, $city';

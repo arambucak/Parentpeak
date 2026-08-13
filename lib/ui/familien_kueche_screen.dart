@@ -4,17 +4,17 @@ import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 
-/// Familien-Kueche — 1-Tap Rezept-Inspiration + Eltern-Tipps.
+/// Familien-Küche — 1-Tap Rezept-Inspiration + Eltern-Tipps.
 ///
 /// Kein Formular, kein Tippen. App oeffnen → sofort Vorschlag sehen.
-class FamilienKuecheScreen extends StatefulWidget {
-  const FamilienKuecheScreen({super.key});
+class FamilienKücheScreen extends StatefulWidget {
+  const FamilienKücheScreen({super.key});
 
   @override
-  State<FamilienKuecheScreen> createState() => _FamilienKuecheScreenState();
+  State<FamilienKücheScreen> createState() => _FamilienKücheScreenState();
 }
 
-class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
+class _FamilienKücheScreenState extends State<FamilienKücheScreen> {
   final _service = FamilyRecipeService.instance;
   FamilyRecipe? _currentRecipe;
   bool _loading = true;
@@ -73,7 +73,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Familien-Kueche'),
+        title: const Text('Familien-Küche'),
         elevation: 0,
         actions: [
           if (_service.savedRecipes.isNotEmpty)
@@ -433,7 +433,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   List<Map<String, String>> _getTips() {
     final month = DateTime.now().month;
     final season = month >= 3 && month <= 5
-        ? 'fruehling'
+        ? 'frühling'
         : month >= 6 && month <= 8
             ? 'sommer'
             : month >= 9 && month <= 11
@@ -480,7 +480,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           'text':
               'Kohlrabi, Karotten, Kartoffeln: Eintopf waermt, ist guenstig und laesst sich gut vorkochen.'
         },
-      if (season == 'fruehling')
+      if (season == 'frühling')
         {
           'emoji': '\u{1F331}',
           'title': 'Saison-Tipp',
@@ -491,7 +491,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         'emoji': '\u{1F4B0}',
         'title': 'Budget-Tipp',
         'text':
-            'Huelsenfruchte (Linsen, Kichererbsen) sind guenstig, gesund und machen satt. Perfekt fuer Familien.'
+            'Huelsenfruchte (Linsen, Kichererbsen) sind guenstig, gesund und machen satt. Perfekt für Familien.'
       },
     ];
 
@@ -595,7 +595,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     );
   }
 
-  // ─── Zutaten-Auswahl fuer Einkaufsliste ───────────────────────────────────
+  // ─── Zutaten-Auswahl für Einkaufsliste ───────────────────────────────────
 
   void _showIngredientPicker(BuildContext context) {
     if (_currentRecipe == null) return;
@@ -706,7 +706,7 @@ class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('Waehle nur was du wirklich kaufen musst.',
+        Text('Wähle nur was du wirklich kaufen musst.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 14),

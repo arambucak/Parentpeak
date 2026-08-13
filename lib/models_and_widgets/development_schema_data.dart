@@ -114,7 +114,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
             DevelopmentMilestoneItem(
               code: 'G.01',
               title: 'Fremdeln',
-              description: 'Das Kind zeigt eine deutliche Skepsis, Zurueckhaltung oder Angst bei unbekannten Personen.',
+              description: 'Das Kind zeigt eine deutliche Skepsis, Zurückhaltung oder Angst bei unbekannten Personen.',
             ),
           ],
         ),
@@ -188,7 +188,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
             DevelopmentMilestoneItem(
               code: 'MO.06',
               title: 'Koordination',
-              description: 'Das Kind kann fuer einige Sekunden sicher auf einem Bein das Gleichgewicht halten.',
+              description: 'Das Kind kann für einige Sekunden sicher auf einem Bein das Gleichgewicht halten.',
             ),
             DevelopmentMilestoneItem(
               code: 'MO.07',
@@ -207,13 +207,13 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
             ),
             DevelopmentMilestoneItem(
               code: 'KF.03',
-              title: 'Abzaehlen',
+              title: 'Abzählen',
               description: 'Das Kind zaehlt eine Menge von bis zu fuenf Elementen fehlerfrei ab.',
             ),
             DevelopmentMilestoneItem(
               code: 'KF.04',
               title: 'Merkfaehigkeit',
-              description: 'Das Kind findet bei einfachen Memory-Spielen zielsicher zusammengehoerige Paare.',
+              description: 'Das Kind findet bei einfachen Memory-Spielen zielsicher zusammengehörige Paare.',
             ),
           ],
         ),
@@ -269,7 +269,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
             ),
             DevelopmentMilestoneItem(
               code: 'KF.06',
-              title: 'Zeitgefuehl',
+              title: 'Zeitgefühl',
               description: 'Das Kind liest die Uhrzeit verlaesslich ab und kann seinen Tagesablauf danach planen.',
             ),
           ],
@@ -280,7 +280,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
             DevelopmentMilestoneItem(
               code: 'SE.04',
               title: 'Empathie',
-              description: 'Das Kind erkennt und versteht komplexere Beweggruende fuer die Gefuehle und das Verhalten anderer.',
+              description: 'Das Kind erkennt und versteht komplexere Beweggruende für die Gefühle und das Verhalten anderer.',
             ),
             DevelopmentMilestoneItem(
               code: 'SE.05',
@@ -290,7 +290,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
             DevelopmentMilestoneItem(
               code: 'G.04',
               title: 'Metakognition',
-              description: 'Das Kind kann Ursachen fuer seine eigenen Aengste, Freuden oder Sorgen benennen und reflektieren.',
+              description: 'Das Kind kann Ursachen für seine eigenen Aengste, Freuden oder Sorgen benennen und reflektieren.',
             ),
           ],
         ),
@@ -312,7 +312,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
             DevelopmentMilestoneItem(
               code: 'IP.02',
               title: 'Koerperakzeptanz',
-              description: 'Der Jugendliche geht reflektiert und akzeptierend mit den koerperlichen Veraenderungen der Pubertaet um.',
+              description: 'Der Jugendliche geht reflektiert und akzeptierend mit den koerperlichen Veränderungen der Pubertaet um.',
             ),
           ],
         ),

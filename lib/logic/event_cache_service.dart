@@ -5,11 +5,11 @@ import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
 import 'package:parentpeak/models/discovered_event.dart';
 
-/// Caching-Layer fuer KI-entdeckte Events.
+/// Caching-Layer für KI-entdeckte Events.
 ///
 /// Funktionsweise:
 ///   - Speichert KI-Events 24h lokal (SharedPreferences)
-///   - Bei erneutem Aufruf: Cache zurueckgeben statt neuer API-Call
+///   - Bei erneutem Aufruf: Cache zurückgeben statt neuer API-Call
 ///   - Qualitaets-Validierung: nur Events mit Datum + Ort + Zukunft
 ///   - Auto-Refresh nach 24h oder bei Stadt-Wechsel
 ///   - Konvertiert DiscoveredEvent -> CommunityEvent (einheitliches Model)
@@ -26,7 +26,7 @@ class EventCacheService {
   String? _memoryCacheCity;
 
   /// Holt Events aus Cache oder generiert neue via KI-Agent.
-  /// Gibt sofort gecachte Events zurueck wenn vorhanden (0ms Ladezeit).
+  /// Gibt sofort gecachte Events zurück wenn vorhanden (0ms Ladezeit).
   Future<List<CommunityEvent>> getEvents({
     required String city,
     List<String> childAges = const [],

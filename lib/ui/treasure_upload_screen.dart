@@ -413,7 +413,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
           _TagChip(label: sizeAgeLabel),
           _TagChip(
             label: _selectedImages.isEmpty
-                ? l10n.t('treasureAiAccept', fallback: 'Uebernehmen')
+                ? l10n.t('treasureAiAccept', fallback: 'Übernehmen')
                 : l10n.tFormat(
                     'treasurePhotoCount',
                     {'count': '${_selectedImages.length}'},
@@ -986,7 +986,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
         ? l10n.t('treasureTitlePlaceholder', fallback: 'Rotes Laufrad')
         : _titleController.text.trim();
     if (l10n.locale.languageCode == 'de') {
-      return '$title in $sizeAge, faellt im Alltag direkt auf und ist sofort bereit fuer die naechste Runde.';
+      return '$title in $sizeAge, faellt im Alltag direkt auf und ist sofort bereit für die naechste Runde.';
     }
     return '$title in $sizeAge, easy to spot in everyday use and ready for the next family.';
   }

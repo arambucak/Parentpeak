@@ -1,16 +1,16 @@
 import 'dart:convert';
 
-/// Einheitliches Event-Model fuer KI-Events UND Community-Events.
+/// Einheitliches Event-Model für KI-Events UND Community-Events.
 ///
 /// Sicherheits-Features:
 ///   - [isPrivateAddress] verhindert Anzeige der exakten Adresse
-///   - [flagCount] + [isHidden] fuer Community-Moderation
+///   - [flagCount] + [isHidden] für Community-Moderation
 ///   - [creatorType] unterscheidet Eltern-Tipp vs. Veranstalter
 ///   - Events nach [eventDate] werden automatisch ausgeblendet
 ///
 /// Qualitaets-Features:
 ///   - Pflichtfelder: title, description, location, eventDate, ageGroups
-///   - [isVerified] fuer gepruefts Partner-Events
+///   - [isVerified] für gepruefts Partner-Events
 ///   - [source] zeigt woher das Event kommt (KI vs Community)
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -166,7 +166,7 @@ class CommunityEvent {
   final List<EventAgeGroup> ageGroups;
   final EventVenue venue;
   final String location;         // Adresse oder Ortsname
-  final String city;             // Stadt/Stadtteil fuer Suche
+  final String city;             // Stadt/Stadtteil für Suche
   final double? lat;
   final double? lon;
   final bool isPrivateAddress;   // Wenn true: nur Stadtteil anzeigen
@@ -252,7 +252,7 @@ class CommunityEvent {
   /// Preis-Display
   String get priceDisplay => isFree ? 'Kostenlos' : price;
 
-  /// Source-Label fuer UI
+  /// Source-Label für UI
   String get sourceLabel {
     switch (source) {
       case EventSource.kiAgent:

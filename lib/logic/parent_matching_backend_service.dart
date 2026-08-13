@@ -563,7 +563,7 @@ class ParentMatchingBackendService {
         {
           'id': 'global-room-school',
           'title': 'Globaler Elternchat: Kita, Schule & Lernen',
-          'subtitle': 'Themenbasierter Austausch fuer Eltern weltweit',
+          'subtitle': 'Themenbasierter Austausch für Eltern weltweit',
         },
       ],
     );

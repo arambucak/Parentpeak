@@ -3,13 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 
-/// ParentCoin-System — Belohnungs-Engine fuer Einladungen.
+/// ParentCoin-System — Belohnungs-Engine für Einladungen.
 ///
 /// 1 erfolgreiche Einladung = 1 ParentCoin (Wert: 1 EUR)
 /// 5 ParentCoins = 1 Monat Premium kostenlos
 /// Bonus: 3 Einladungen = "Community-Eltern" Badge
 ///
-/// Coins werden lokal gespeichert + spaeter mit Backend synchronisiert.
+/// Coins werden lokal gespeichert + später mit Backend synchronisiert.
 class ParentCoinService extends ChangeNotifier {
   ParentCoinService._();
   static final ParentCoinService instance = ParentCoinService._();
@@ -80,7 +80,7 @@ class ParentCoinService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Coins fuer Premium einloesen.
+  /// Coins für Premium einloesen.
   Future<bool> redeemForPremium() async {
     if (_balance < coinsForFreePremium) return false;
     _balance -= coinsForFreePremium;
@@ -96,7 +96,7 @@ class ParentCoinService extends ChangeNotifier {
     return true;
   }
 
-  /// Bonus-Coins (z.B. fuer App-Bewertung, erstes Kind-Profil etc.)
+  /// Bonus-Coins (z.B. für App-Bewertung, erstes Kind-Profil etc.)
   Future<void> earnBonus(int amount, String reason) async {
     _balance += amount;
     _totalEarned += amount;
@@ -125,10 +125,10 @@ class ParentCoinService extends ChangeNotifier {
     return 'https://parentpeak.de/invite/$referralCode';
   }
 
-  /// Generiert den Einladungstext fuer Share.
+  /// Generiert den Einladungstext für Share.
   String getInviteMessage() {
     final name = AuthService.instance.currentUser?.displayName ?? 'Ein Elternteil';
-    return '$name nutzt ParentPeak fuer den Familienalltag und laedt dich ein! '
+    return '$name nutzt ParentPeak für den Familienalltag und laedt dich ein! '
         'Kostenlos ausprobieren: ${getInviteLink()}';
   }
 }

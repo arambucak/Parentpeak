@@ -30,7 +30,7 @@ class BetaFeedbackWidget extends StatelessWidget {
             children: [
               Text('Deine Meinung zaehlt!',
                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
-              Text('Hilf uns die App fuer Familien zu verbessern.',
+              Text('Hilf uns die App für Familien zu verbessern.',
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline)),
             ],
           )),
@@ -121,7 +121,7 @@ class BetaFeedbackWidget extends StatelessWidget {
                 await _sendFeedback(type, text);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('\u{2764}\u{FE0F} Danke fuer dein Feedback!'),
+                    content: Text('\u{2764}\u{FE0F} Danke für dein Feedback!'),
                   ));
                 }
               },

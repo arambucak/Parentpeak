@@ -287,7 +287,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                           const SizedBox(height: 8),
                           if (visibleExpenses.isEmpty)
                             const _EmptyHint(
-                                text: 'Keine Belege fuer den gewaehlten Monat.')
+                                text: 'Keine Belege für den gewählten Monat.')
                           else
                             ...groupedExpenses.entries.take(6).expand(
                                   (entry) => [
@@ -320,7 +320,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                           if (_provider.filteredCareActivities.isEmpty)
                             const _EmptyHint(
                               text:
-                                  'Keine Care-Aktivitaeten fuer den gewaehlten Monat.',
+                                  'Keine Care-Aktivitaeten für den gewählten Monat.',
                             )
                           else
                             ...groupedCareActivities.entries.expand(
@@ -698,7 +698,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     if (_provider.secondHandSavingsPotential >= 50) {
       insights.add(
-          'Second-Hand-Treffer zeigen gerade spuerbares Sparpotenzial fuer diesen Monat.');
+          'Second-Hand-Treffer zeigen gerade spuerbares Sparpotenzial für diesen Monat.');
     }
 
     if (depositTotal > 0) {
@@ -999,7 +999,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                       width: double.infinity,
                       child: FilledButton(
                         onPressed: () => Navigator.of(context).pop(editable),
-                        child: const Text('Positionen uebernehmen'),
+                        child: const Text('Positionen übernehmen'),
                       ),
                     ),
                   ],
@@ -1220,7 +1220,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
               QrImageView(data: encoded, size: 180),
               const SizedBox(height: 12),
               Text(
-                'Scan fuer direkten Monatsausgleich zwischen Elternteilen.',
+                'Scan für direkten Monatsausgleich zwischen Elternteilen.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -1723,7 +1723,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
       case ExpenseCategory.personal:
         return 'Persoenlich';
       case ExpenseCategory.transport:
-        return 'Mobilitaet';
+        return 'Mobilität';
       case ExpenseCategory.health:
         return 'Gesundheit';
       case ExpenseCategory.leisure:

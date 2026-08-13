@@ -66,7 +66,7 @@ const List<_NearbyFilterPreset> _nearbyFilterPresets = [
   ),
   _NearbyFilterPreset(
     id: 'veggie_kids',
-    label: 'Veggie fuer Kinder',
+    label: 'Veggie für Kinder',
     tags: ['vegetarisch', 'kinderfreundlich'],
   ),
   _NearbyFilterPreset(
@@ -96,9 +96,9 @@ String? _familyFitSummaryForTags(List<String> tags) {
   final parts = <String>[];
 
   if (tagSet.contains('babyfreundlich')) {
-    parts.add('Gut fuer Babys');
+    parts.add('Gut für Babys');
   } else if (tagSet.contains('kinderfreundlich')) {
-    parts.add('Gut fuer Kinder');
+    parts.add('Gut für Kinder');
   }
 
   if (tagSet.contains('glutenfrei')) {
@@ -359,7 +359,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         authorInitials: 'GC',
         authorColor: const Color(0xFF1E5CD7),
         title: 'Globaler Food-Raum: Familienfreundliche Snacks',
-        description: 'Digitale Vorschlaege und Austausch fuer schnelle kindgerechte Snacks.',
+        description: 'Digitale Vorschlaege und Austausch für schnelle kindgerechte Snacks.',
         totalPortions: 1,
         remainingPortions: 1,
         pickupWindow: 'Online jetzt',
@@ -376,8 +376,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         authorName: 'Global Community',
         authorInitials: 'GC',
         authorColor: const Color(0xFF1E5CD7),
-        title: 'Globaler Food-Raum: Meal Prep fuer Familien',
-        description: 'Rezepte, Portionsideen und Austausch fuer stressfreie Wochenplanung.',
+        title: 'Globaler Food-Raum: Meal Prep für Familien',
+        description: 'Rezepte, Portionsideen und Austausch für stressfreie Wochenplanung.',
         totalPortions: 1,
         remainingPortions: 1,
         pickupWindow: 'Online jetzt',
@@ -1349,7 +1349,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       recipeId: recipe.id,
       userId: _myUserId,
       rating: 5,
-      comment: 'Sehr hilfreich fuer Familienalltag',
+      comment: 'Sehr hilfreich für Familienalltag',
     );
 
     if (result == null) {
@@ -1453,7 +1453,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
               ),
             );
           });
-          _showSnack('Dein Rezept ist jetzt fuer alle sichtbar!');
+          _showSnack('Dein Rezept ist jetzt für alle sichtbar!');
           return true;
         },
       ),
@@ -1841,7 +1841,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Hilf uns, den Bereich sicher und hilfreich fuer Eltern zu halten.',
+                    'Hilf uns, den Bereich sicher und hilfreich für Eltern zu halten.',
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
@@ -1863,7 +1863,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                     minLines: 2,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      hintText: 'Optional: kurze Notiz fuer die Moderation',
+                      hintText: 'Optional: kurze Notiz für die Moderation',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1925,7 +1925,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       builder: (dialogContext) => AlertDialog(
         title: const Text('Angebot ausblenden?'),
         content: const Text(
-          'Dieses Angebot wird nur fuer dich ausgeblendet und spaeter nicht mehr im Feed angezeigt.',
+          'Dieses Angebot wird nur für dich ausgeblendet und später nicht mehr im Feed angezeigt.',
         ),
         actions: [
           TextButton(
@@ -1983,7 +1983,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           if (!mounted) return false;
           if (created == null) {
             _showSnack(_service.lastSyncError ??
-                'Angebot konnte nicht veroeffentlicht werden.');
+                'Angebot konnte nicht veröffentlicht werden.');
             return false;
           }
 
@@ -2010,7 +2010,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           setState(() {
             _posts.insert(0, newPost);
           });
-          _showSnack('Dein Angebot ist jetzt fuer Eltern in der Naehe sichtbar!');
+          _showSnack('Dein Angebot ist jetzt für Eltern in der Naehe sichtbar!');
           _tabController.animateTo(0);
           return true;
         },
@@ -3015,7 +3015,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
             ),
             const SizedBox(height: 14),
 
-            _label('Hinweise fuer Eltern'),
+            _label('Hinweise für Eltern'),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -3552,7 +3552,7 @@ class _RecipeDetailSheet extends StatelessWidget {
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: Text(
-                        'Kurz fuer Eltern: $familySummary',
+                        'Kurz für Eltern: $familySummary',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -3782,11 +3782,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                 if (value == null) return;
                 setState(() => _category = value);
               },
-              decoration: _inputDeco('Kategorie waehlen'),
+              decoration: _inputDeco('Kategorie wählen'),
             ),
             const SizedBox(height: 12),
 
-            const Text('Hinweise fuer Eltern', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+            const Text('Hinweise für Eltern', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

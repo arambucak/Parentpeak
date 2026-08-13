@@ -18,7 +18,7 @@ import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:parentpeak/ui/finance_budget_screen.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
 import 'package:parentpeak/ui/gemeinsam_satt_screen.dart';
-import 'package:parentpeak/ui/familien_kueche_screen.dart';
+import 'package:parentpeak/ui/familien_küche_screen.dart';
 import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
@@ -215,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kachel-Sortierung wurde zurueckgesetzt.'),
+          content: Text('Kachel-Sortierung wurde zurückgesetzt.'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -650,11 +650,11 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'organisation',
       ),
       _FeatureAction(
-        label: 'Familien-Kueche',
+        label: 'Familien-Küche',
         description: 'Rezept-Ideen, Tipps und Inspiration',
         icon: Icons.restaurant_rounded,
         color: const Color(0xFFF97316),
-        builder: (_) => const FamilienKuecheScreen(),
+        builder: (_) => const FamilienKücheScreen(),
         featureId: 'gemeinsam_satt',
       ),
       _FeatureAction(
@@ -716,7 +716,7 @@ class _HomeScreenState extends State<HomeScreen>
                         if (impulseAction != null) _openFeature(impulseAction);
                       },
                       onMoodSelected: (mood) {
-                        // Mood speichern fuer Profil-Tracker
+                        // Mood speichern für Profil-Tracker
                         SharedPreferences.getInstance().then((prefs) {
                           prefs.setString('mood.today', mood);
                           prefs.setString('mood.today_date',
@@ -907,7 +907,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               if (showResetTileOrder)
                 IconButton(
-                  tooltip: 'Kachel-Sortierung zuruecksetzen',
+                  tooltip: 'Kachel-Sortierung zurücksetzen',
                   onPressed: onResetTileOrder,
                   icon: const Icon(Icons.restart_alt_rounded,
                       color: Colors.white),

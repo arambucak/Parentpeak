@@ -93,7 +93,7 @@ class AppStringsManager {
       'listen': 'Vorlesen',
       'stop': 'Stoppen',
       'learn_more': 'Mehr erfahren',
-      'ai_explains': 'Die KI erklaert dir das Thema persoenlich',
+      'ai_explains': 'Die KI erklärt dir das Thema persoenlich',
       'dev_checkin': 'Entwicklungs-Check-in',
       'dev_checkin_desc':
           '15 kurze Fragen zu 5 Bereichen. Kein Test — ein liebevoller Blick auf dein Kind.',
@@ -108,7 +108,7 @@ class AppStringsManager {
       'no_reports_yet': 'Noch keine Berichte vorhanden.',
       'about_your_child': 'Ueber euer Kind',
       'child_name': 'Name des Kindes',
-      'birthday': 'Geburtsdatum waehlen',
+      'birthday': 'Geburtsdatum wählen',
       'care_type': 'Betreuungsform',
       'care_kita': 'Kita / Kindergarten',
       'care_tagesmutter': 'Tagesmutter',

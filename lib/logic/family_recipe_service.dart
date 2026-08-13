@@ -17,8 +17,8 @@ class FamilyRecipeService {
   static final FamilyRecipeService instance = FamilyRecipeService._();
   FamilyRecipeService._();
 
-  static const _cacheKey = 'familykueche.recipes';
-  static const _savedKey = 'familykueche.saved';
+  static const _cacheKey = 'familyküche.recipes';
+  static const _savedKey = 'familyküche.saved';
 
   List<FamilyRecipe> _recentRecipes = [];
   List<FamilyRecipe> _savedRecipes = [];
@@ -33,9 +33,9 @@ class FamilyRecipeService {
     if (profile != null && profile.children.isNotEmpty) {
       _childAge = (profile.children.first.ageMonths / 12).round().clamp(0, 16);
     }
-    // Allergien aus SharedPreferences (spaeter aus Profil erweiterbar)
+    // Allergien aus SharedPreferences (später aus Profil erweiterbar)
     final prefs = await SharedPreferences.getInstance();
-    _allergies = prefs.getStringList('familykueche.allergies') ?? [];
+    _allergies = prefs.getStringList('familyküche.allergies') ?? [];
     // Gespeicherte Rezepte laden
     final savedRaw = prefs.getString(_savedKey);
     if (savedRaw != null) {
@@ -81,9 +81,9 @@ Kontext:
 
 Regeln:
 - VIELFALT: Wechsle zwischen Fleisch (Haehnchen, Hackfleisch, Schnitzel), Fisch (Lachs, Fischstaebchen), und vegetarisch. NICHT immer das gleiche.
-- Das Rezept MUSS fuer das angegebene Kindesalter sicher und geeignet sein
+- Das Rezept MUSS für das angegebene Kindesalter sicher und geeignet sein
 - Einfache Zutaten die man im Supermarkt bekommt
-- Kinder muessen es MOEGEN (nicht zu scharf, nicht zu bitter)
+- Kinder müssen es MOEGEN (nicht zu scharf, nicht zu bitter)
 - Beliebt bei Kindern: Nudeln, Reis, Kartoffeln, Chicken Nuggets, Pizza, Pfannkuchen, Fischstaebchen, Bolognese, Schnitzel, Mac&Cheese
 - Gib einen konkreten Eltern-Tipp (picky eater trick, gemeinsam kochen, etc.)
 - allergensFree: nur auflisten wenn das Rezept tatsaechlich FREI von Allergenen ist. Wenn Milch drin ist, NICHT "laktose" listen.
@@ -160,8 +160,8 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
   /// Bewertet ein Rezept: Hat es den Kindern geschmeckt?
   Future<void> rateRecipe(String title, bool liked) async {
     final prefs = await SharedPreferences.getInstance();
-    final rawHits = prefs.getString('familykueche.hits') ?? '[]';
-    final rawFlops = prefs.getString('familykueche.flops') ?? '[]';
+    final rawHits = prefs.getString('familyküche.hits') ?? '[]';
+    final rawFlops = prefs.getString('familyküche.flops') ?? '[]';
     List<String> hits = List<String>.from(jsonDecode(rawHits));
     List<String> flops = List<String>.from(jsonDecode(rawFlops));
     if (liked) {
@@ -173,14 +173,14 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
     }
     if (hits.length > 50) hits = hits.take(50).toList();
     if (flops.length > 30) flops = flops.take(30).toList();
-    await prefs.setString('familykueche.hits', jsonEncode(hits));
-    await prefs.setString('familykueche.flops', jsonEncode(flops));
+    await prefs.setString('familyküche.hits', jsonEncode(hits));
+    await prefs.setString('familyküche.flops', jsonEncode(flops));
   }
 
   /// Gibt die "Kinder-Hits" Liste.
   Future<List<String>> getKinderHits() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('familykueche.hits') ?? '[]';
+    final raw = prefs.getString('familyküche.hits') ?? '[]';
     return List<String>.from(jsonDecode(raw));
   }
 
@@ -188,14 +188,14 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
   Future<void> setAllergies(List<String> allergies) async {
     _allergies = allergies;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('familykueche.allergies', allergies);
+    await prefs.setStringList('familyküche.allergies', allergies);
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   String _currentSeason() {
     final month = DateTime.now().month;
-    if (month >= 3 && month <= 5) return 'Fruehling';
+    if (month >= 3 && month <= 5) return 'Frühling';
     if (month >= 6 && month <= 8) return 'Sommer';
     if (month >= 9 && month <= 11) return 'Herbst';
     return 'Winter';
@@ -292,7 +292,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         allergensFree: ['nuesse'],
         season: '',
         tip:
-            'Kinder ab 3 koennen beim Panieren helfen — Haende eintauchen macht Spass!'),
+            'Kinder ab 3 können beim Panieren helfen — Hände eintauchen macht Spass!'),
     FamilyRecipe(
         id: '',
         title: 'Mini-Schnitzel mit Kartoffelpueree',
@@ -317,7 +317,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         allergensFree: ['nuesse'],
         season: '',
         tip:
-            'Kleine Schnitzel die in Kinderhaende passen wirken einladender als grosse.'),
+            'Kleine Schnitzel die in Kinderhände passen wirken einladender als grosse.'),
     // FISCH
     FamilyRecipe(
         id: '',
@@ -342,11 +342,11 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         allergensFree: ['nuesse', 'laktose'],
         season: '',
         tip:
-            'Fischstaebchen-Form macht Fisch fuer Kinder attraktiver als ein ganzes Filet.'),
+            'Fischstaebchen-Form macht Fisch für Kinder attraktiver als ein ganzes Filet.'),
     FamilyRecipe(
         id: '',
         title: 'Lachs-Nudeln mit Sahne-Sauce',
-        description: 'Cremig, mild, reich an Omega-3 fuer kleine Gehirne.',
+        description: 'Cremig, mild, reich an Omega-3 für kleine Gehirne.',
         prepMinutes: 20,
         costPerPortion: 3.00,
         minChildAge: 2,
@@ -367,7 +367,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         allergensFree: ['nuesse', 'ei'],
         season: '',
         tip:
-            'Lachs ist mild genug fuer Kinder die keinen Fischgeschmack moegen.'),
+            'Lachs ist mild genug für Kinder die keinen Fischgeschmack moegen.'),
     // VEGETARISCH
     FamilyRecipe(
         id: '',
@@ -395,7 +395,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         id: '',
         title: 'Mac and Cheese (Nudeln mit Kaese)',
         description:
-            'Cremig, kaesig, geht immer. Comfort-Food fuer die ganze Familie.',
+            'Cremig, kaesig, geht immer. Comfort-Food für die ganze Familie.',
         prepMinutes: 20,
         costPerPortion: 1.30,
         minChildAge: 1,

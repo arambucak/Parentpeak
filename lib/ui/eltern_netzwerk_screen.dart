@@ -484,8 +484,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               'Familie M.',
               'Kreuzberg',
               '\u{1F467} Lina (3) \u{2022} \u{1F466} Ben (5)',
-              'Wir suchen Familien fuer Spielplatz-Treffen und gemeinsames Kochen.',
-              ['Beduerfnisorientiert', 'Natur'],
+              'Wir suchen Familien für Spielplatz-Treffen und gemeinsames Kochen.',
+              ['Bedürfnisorientiert', 'Natur'],
               'Nachmittags \u{2022} DE, TR'),
           const SizedBox(height: 10),
           _familyCard(
@@ -750,7 +750,7 @@ class _ProfileFormState extends State<_ProfileForm> {
   final Set<String> _values = {};
   final _valuesCustomCtrl = TextEditingController();
 
-  // Schritt 4: Aktivitaeten + Verfuegbarkeit
+  // Schritt 4: Aktivitaeten + Verfügbarkeit
   final Set<String> _lookingFor = {};
   final _lookingForCustomCtrl = TextEditingController();
   final Set<String> _availDays = {};
@@ -927,7 +927,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             TextButton.icon(
                 onPressed: _prev,
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: const Text('Zurueck'))
+                label: const Text('Zurück'))
           else
             const Spacer(),
           const Spacer(),
@@ -978,7 +978,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               'z.B. Sarah, Die Muellers', Icons.person_rounded),
           const SizedBox(height: 14),
           LocationPickerWidget(
-            hint: 'Euer Stadtteil / PLZ waehlen',
+            hint: 'Euer Stadtteil / PLZ wählen',
             onLocationPicked: (loc) {
               _districtCtrl.text = loc.displayName;
             },
@@ -986,7 +986,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 20),
           _sectionTitle(theme, '\u{1F46A} Familienform'),
           const SizedBox(height: 8),
-          Text('Waehle was am besten passt — oder schreib deine eigene:',
+          Text('Wähle was am besten passt — oder schreib deine eigene:',
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -1188,7 +1188,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               const SizedBox(width: 10),
               Expanded(
                   child: Text(
-                      'Tipp: Familien mit aehnlichen Werten verstehen sich am besten. Waehle was euch wichtig ist.',
+                      'Tipp: Familien mit aehnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.',
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF16A34A),
                           fontWeight: FontWeight.w500,
@@ -1237,7 +1237,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         ]));
   }
 
-  // ─── SCHRITT 4: Aktivitaeten + Verfuegbarkeit ──────────────────────────────
+  // ─── SCHRITT 4: Aktivitaeten + Verfügbarkeit ──────────────────────────────
   Widget _step4(ThemeData theme) {
     return SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1245,7 +1245,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 8),
           _sectionTitle(theme, '\u{1F3AF} Was sucht ihr?'),
           const SizedBox(height: 6),
-          Text('Waehle Aktivitaeten die euch Spass machen:',
+          Text('Wähle Aktivitaeten die euch Spass machen:',
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -1394,7 +1394,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 22),
           _sectionTitle(theme, '\u{1F49C} Besonderheiten (optional)'),
           const SizedBox(height: 6),
-          Text('Damit wir passende Familien vorschlagen koennen:',
+          Text('Damit wir passende Familien vorschlagen können:',
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),

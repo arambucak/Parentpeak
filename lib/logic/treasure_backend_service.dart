@@ -149,7 +149,7 @@ class TreasureBackendService {
       id: treasure['id']?.toString() ?? fallbackListing?.id ?? '',
       title: treasure['title']?.toString() ?? fallbackListing?.title ?? '',
       category: _mapCategoryForUi(categoryRaw),
-      sizeAge: fallbackListing?.sizeAge ?? 'Flexible Groesse',
+      sizeAge: fallbackListing?.sizeAge ?? 'Flexible Größe',
       conditionKey: _mapConditionForUi(rawCondition),
       distanceMeters:
           ((rawRadiusKm ?? (fallbackListing?.distanceMeters.toDouble() ?? 10000) / 1000) * 1000)
@@ -195,7 +195,7 @@ class TreasureBackendService {
       case 'clothing':
         return 'Kleidung';
       case 'books':
-        return 'Buecher';
+        return 'Bücher';
       case 'equipment':
         return 'Ausstattung';
       case 'toys':
