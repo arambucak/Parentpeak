@@ -3,6 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/models/discovered_event.dart';
 import 'package:parentpeak/ui/widgets/event_attendees_widget.dart';
 import 'package:parentpeak/ui/widgets/event_safety_widgets.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 /// Event-Detail Seite — zeigt alle Infos zu einem Event.
 class EventDetailPage extends StatelessWidget {
@@ -16,7 +18,7 @@ class EventDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event-Details'),
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'event_details_title')),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -68,7 +70,7 @@ class EventDetailPage extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _openInMaps(event.location),
               icon: const Icon(Icons.map_rounded, size: 18),
-              label: const Text('In Maps oeffnen'),
+              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'open_in_maps')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF2563EB),
                 side: BorderSide(
@@ -111,7 +113,7 @@ class EventDetailPage extends StatelessWidget {
                   _openUrl('https://www.google.com/search?q=${Uri.encodeComponent(parts.join(' '))}');
                 },
                 icon: const Icon(Icons.search_rounded, size: 18),
-                label: const Text('Event online suchen'),
+                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'search_event_online')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF0EA5A4),
                   side: BorderSide(color: const Color(0xFF0EA5A4).withValues(alpha: 0.5)),
@@ -158,7 +160,7 @@ class EventDetailPage extends StatelessWidget {
               onPressed: () => _showReport(context),
               icon: Icon(Icons.flag_rounded,
                   size: 16, color: theme.colorScheme.outline),
-              label: Text('Event melden',
+              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'report_event'),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.outline)),
             ),

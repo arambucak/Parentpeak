@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 /// Familien-Zentrale — Einkauf + To-do + Kind-Dossier.
 /// Besser als FamilyWall: Mengenangabe, Erledigt-Bereich, Kind-Infos.
@@ -117,14 +119,14 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     final theme = Theme.of(context);
     if (!_loaded) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Familien-Zentrale')),
+        appBar: AppBar(title: Text(AppStringsManager.getString(languageService.currentLanguage, 'familien_zentrale_title'))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Familien-Zentrale'),
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'familien_zentrale_title')),
         elevation: 0,
         actions: [
           if (_activeTabIndex == 0 && _shopping.activeItems.isNotEmpty)
@@ -269,7 +271,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                     if (done.isNotEmpty) ...[
                       Padding(
                         padding: const EdgeInsets.only(top: 14, bottom: 6),
-                        child: Text('Erledigt (${done.length})',
+                        child: Text('${AppStringsManager.getString(languageService.currentLanguage, "done_count")} (${done.length})',
                             style: theme.textTheme.labelMedium
                                 ?.copyWith(color: theme.colorScheme.outline)),
                       ),
@@ -287,7 +289,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text('🛒', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 16),
-          Text('Liste ist leer',
+          Text(AppStringsManager.getString(languageService.currentLanguage, 'list_empty'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
@@ -541,7 +543,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text('\u{1F476}', style: TextStyle(fontSize: 40)),
           const SizedBox(height: 14),
-          Text('Noch keine Kinder-Daten',
+          Text(AppStringsManager.getString(languageService.currentLanguage, 'no_children_data'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
@@ -662,7 +664,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             child: OutlinedButton.icon(
               onPressed: () => _showNotfallInfo(theme, dossier),
               icon: const Icon(Icons.local_hospital_rounded, size: 16),
-              label: const Text('Notfall-Info anzeigen'),
+              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'show_emergency_info')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFFDC2626),
                 side: BorderSide(
@@ -723,7 +725,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Schliessen'),
+                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'close_btn')),
               )),
         ]),
       ),
@@ -854,7 +856,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Speichern'),
+                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'save_btn')),
               ),
             ],
           ),

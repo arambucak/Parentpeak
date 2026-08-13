@@ -700,7 +700,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         ]),
         const SizedBox(height: 14),
         if (!_moodDone) ...[
-          Text('Wie war dein Tag?',
+          Text(AppStringsManager.getString(languageService.currentLanguage, 'how_was_your_day'),
               style: theme.textTheme.bodyMedium?.copyWith(
                   color: const Color(0xFF6B21A8), fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
@@ -965,7 +965,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
-                  child: Text('Speichern',
+                  child: Text(AppStringsManager.getString(languageService.currentLanguage, 'save_mood'),
                       style: theme.textTheme.labelSmall?.copyWith(
                           color: Colors.white, fontWeight: FontWeight.w700)),
                 ),

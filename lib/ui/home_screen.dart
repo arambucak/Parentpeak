@@ -169,9 +169,10 @@ class _HomeScreenState extends State<HomeScreen>
       prefs.setString('pending_referral_code', code);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Willkommen bei Parentpeak! Du wurdest eingeladen ❤️'),
-          duration: Duration(seconds: 4),
+        SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'welcome_invite')),
+          duration: const Duration(seconds: 4),
         ),
       );
     });
@@ -183,8 +184,9 @@ class _HomeScreenState extends State<HomeScreen>
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString('pending_referral_code');
     if (code == null || code.isEmpty) return;
-    final name =
-        AuthService.instance.currentUser?.displayName ?? 'Neues Mitglied';
+    final name = AuthService.instance.currentUser?.displayName ??
+        AppStringsManager.getString(
+            languageService.currentLanguage, 'new_member');
     final sent =
         await ParentCoinService.instance.recordReferral(code, uid, name);
     if (sent) await prefs.remove('pending_referral_code');
@@ -268,7 +270,8 @@ class _HomeScreenState extends State<HomeScreen>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('"$normalized" ist jetzt weiter oben angeordnet.'),
+          content: Text(
+              '"$normalized" ${AppStringsManager.getString(languageService.currentLanguage, 'tile_moved_up')}'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -286,9 +289,10 @@ class _HomeScreenState extends State<HomeScreen>
         _customTileOrderLabels = const [];
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kachel-Sortierung wurde zurückgesetzt.'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'tile_order_reset')),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -398,14 +402,15 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              'Kommt bald!',
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'coming_soon'),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 10),
             Text(
-              '${action.label} wird gerade fertig entwickelt und kommt in einem der nächsten Updates.',
+              '${action.label} ${AppStringsManager.getString(languageService.currentLanguage, 'coming_soon_desc')}',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.4,
@@ -427,7 +432,8 @@ class _HomeScreenState extends State<HomeScreen>
                       size: 16, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
                   Text(
-                    'Du wirst benachrichtigt wenn es soweit ist',
+                    AppStringsManager.getString(
+                        languageService.currentLanguage, 'will_notify'),
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,
@@ -447,7 +453,8 @@ class _HomeScreenState extends State<HomeScreen>
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text('Verstanden'),
+                child: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'understood')),
               ),
             ),
             const SizedBox(height: 8),
@@ -499,14 +506,15 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              'Premium Feature',
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'premium_feature'),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 10),
             Text(
-              '${action.label} ist Teil von Parentpeak Premium. Upgrade für vollen Zugang zu allen Features.',
+              '${action.label} ${AppStringsManager.getString(languageService.currentLanguage, 'premium_feature_desc')}',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.4,
@@ -537,13 +545,15 @@ class _HomeScreenState extends State<HomeScreen>
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text('Premium entdecken'),
+                child: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'discover_premium')),
               ),
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Nicht jetzt'),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'not_now')),
             ),
             const SizedBox(height: 8),
           ],
@@ -989,7 +999,8 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               if (showResetTileOrder)
                 IconButton(
-                  tooltip: 'Kachel-Sortierung zurücksetzen',
+                  tooltip:
+                      AppStringsManager.getString(languageService.currentLanguage, 'reset_tile_order'),
                   onPressed: onResetTileOrder,
                   icon: const Icon(Icons.restart_alt_rounded,
                       color: Colors.white),
@@ -1034,7 +1045,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Alles Wichtige für euren Alltag.',
+                      AppStringsManager.getString(languageService.currentLanguage, 'all_important'),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleSmall?.copyWith(
@@ -1045,7 +1056,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Gemeinsam planen, teilen und verbunden bleiben.',
+                      AppStringsManager.getString(languageService.currentLanguage, 'plan_together'),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -1076,18 +1087,20 @@ class _HomeScreenState extends State<HomeScreen>
     Widget tile = _buildFeatureTile(
       context,
       title: action.label,
-      subtitle: isComingSoon ? 'Bald verfügbar' : action.description,
+      subtitle: isComingSoon
+          ? AppStringsManager.getString(languageService.currentLanguage, 'soon_available')
+          : action.description,
       statusHint: isComingSoon ? null : action.statusHint,
       quickActionLabel: (!isComingSoon && !isPremiumLocked && isParentMatchTile)
           ? (_newParentMatchesCount > 0
-              ? 'Neue Verbindungen öffnen'
-              : 'Eltern Match öffnen')
+              ? AppStringsManager.getString(languageService.currentLanguage, 'open_new_connections')
+              : AppStringsManager.getString(languageService.currentLanguage, 'open_parent_match'))
           : null,
       quickActionHelperText: (!isComingSoon &&
               !isPremiumLocked &&
               isParentMatchTile &&
               _newParentMatchesCount == 0)
-          ? 'Noch keine neuen Verbindungen'
+          ? AppStringsManager.getString(languageService.currentLanguage, 'no_new_connections')
           : null,
       onQuickAction: (!isComingSoon && !isPremiumLocked && isParentMatchTile)
           ? () => _openParentMatchQuickAction(
@@ -1131,7 +1144,7 @@ class _HomeScreenState extends State<HomeScreen>
                       size: 12, color: theme.colorScheme.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Text(
-                    'Bald',
+                    AppStringsManager.getString(languageService.currentLanguage, 'soon_badge'),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w700,

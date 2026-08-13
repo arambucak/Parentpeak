@@ -380,7 +380,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               FilledButton.tonalIcon(
                 onPressed: _loadImpulse,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Erneut laden'),
+                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'reload_btn')),
               ),
             ],
           ),
@@ -673,7 +673,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   const Icon(Icons.check_circle_rounded,
                       size: 18, color: Color(0xFF16A34A)),
                   const SizedBox(width: 8),
-                  Text('Der heutige Impuls ist abgeschlossen.',
+                  Text(AppStringsManager.getString(languageService.currentLanguage, 'daily_done_message'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF166534))),
@@ -1343,7 +1343,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                       ?.copyWith(fontWeight: FontWeight.w800),
                   textAlign: TextAlign.center),
               const SizedBox(height: 6),
-              Text('Damit die Fragen und der Bericht zum Alter passen.',
+              Text(AppStringsManager.getString(languageService.currentLanguage, 'fits_age'),
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center),
@@ -1523,7 +1523,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Tipp:',
+                              Text(AppStringsManager.getString(languageService.currentLanguage, 'tip_label'),
                                   style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
@@ -1587,12 +1587,12 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
           Row(children: [
             const Text('\u{1F4CB}', style: TextStyle(fontSize: 20)),
             const SizedBox(width: 10),
-            Text('Paedagogische Einschaetzung',
+            Text(AppStringsManager.getString(languageService.currentLanguage, 'pedagogical_assessment'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800))
           ]),
           const SizedBox(height: 4),
-          Text('Erstellt von KI basierend auf euren Antworten',
+          Text(AppStringsManager.getString(languageService.currentLanguage, 'ai_based_report'),
               style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
           const SizedBox(height: 14),
@@ -1679,7 +1679,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       child: Row(
         children: [
           Expanded(
-            child: Text('Wie geht\'s dir gerade?',
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'how_are_you'),
                 style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600)),
           ),
@@ -1715,7 +1715,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Was ist gerade los?',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'whats_going_on'),
             style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: theme.colorScheme.onSurfaceVariant)),

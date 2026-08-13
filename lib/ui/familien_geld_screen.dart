@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 /// Familien-Geld — Ruhiger Finanz-Helfer für Eltern.
 ///
@@ -181,7 +183,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   Widget _countrySelector(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Familien-Geld'), elevation: 0),
+      appBar: AppBar(title: Text(AppStringsManager.getString(languageService.currentLanguage, 'familien_geld_title')), elevation: 0),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -190,12 +192,12 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(height: 20),
             const Text('\u{1F30D}', style: TextStyle(fontSize: 40)),
             const SizedBox(height: 16),
-            Text('In welchem Land lebt eure Familie?',
+            Text(AppStringsManager.getString(languageService.currentLanguage, 'country_question'),
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w800),
                 textAlign: TextAlign.center),
             const SizedBox(height: 6),
-            Text('Wir zeigen euch passende Leistungen und Kosten.',
+            Text(AppStringsManager.getString(languageService.currentLanguage, 'country_hint'),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.outline),
                 textAlign: TextAlign.center),
@@ -254,7 +256,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(_country.flag, style: const TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
-          const Text('Familien-Geld'),
+          Text(AppStringsManager.getString(languageService.currentLanguage, 'familien_geld_title')),
         ]),
         elevation: 0,
         actions: [
@@ -316,7 +318,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           child: Column(children: [
             Text('\u{1F4B0}', style: const TextStyle(fontSize: 28)),
             const SizedBox(height: 8),
-            Text('Monatliche Kinderkosten',
+            Text(AppStringsManager.getString(languageService.currentLanguage, 'monthly_child_costs'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
@@ -339,7 +341,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ]),
         ),
         const SizedBox(height: 20),
-        Text('Eure monatlichen Kosten',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'your_monthly_costs'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
@@ -366,7 +368,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text('Spar-Tipp',
+                  Text(AppStringsManager.getString(languageService.currentLanguage, 'saving_tip'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFFEA580C))),
@@ -473,7 +475,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           child: Column(children: [
             const Text('\u{1F4CB}', style: TextStyle(fontSize: 28)),
             const SizedBox(height: 8),
-            Text('Was steht euch zu?',
+            Text(AppStringsManager.getString(languageService.currentLanguage, 'what_you_deserve'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
@@ -633,7 +635,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           child: Column(children: [
             const Text('\u{1F3AF}', style: TextStyle(fontSize: 28)),
             const SizedBox(height: 8),
-            Text('Was kommt auf euch zu?',
+            Text(AppStringsManager.getString(languageService.currentLanguage, 'whats_coming'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
@@ -772,7 +774,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Spar-Empfehlung',
+          Text(AppStringsManager.getString(languageService.currentLanguage, 'saving_recommendation'),
               style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w700, color: const Color(0xFF16A34A))),
           const SizedBox(height: 4),
@@ -957,13 +959,13 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         Row(children: [
           const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
-          Text('Schnell-Pruefung: Was passt zu euch?',
+          Text(AppStringsManager.getString(languageService.currentLanguage, 'quick_check'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w700, color: const Color(0xFF4C1D95))),
         ]),
         const SizedBox(height: 12),
         // Frage 1: Berufstaetigkeit
-        Text('Bist du berufstaetig?',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'employed_question'),
             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
@@ -972,7 +974,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         ]),
         const SizedBox(height: 10),
         // Frage 2: Alleinerziehend
-        Text('Alleinerziehend?',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'single_parent'),
             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
@@ -981,7 +983,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         ]),
         const SizedBox(height: 10),
         // Frage 3: Einkommen
-        Text('Haushaltsnetto/Monat (ca.)?',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'net_income'),
             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
@@ -998,7 +1000,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               setState(() => _eligibilityDone = true);
               _saveEligibility();
             },
-            child: const Text('Leistungen filtern'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'filter_benefits')),
           ),
         ),
       ]),
@@ -1207,7 +1209,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const Text('\u{1F91D}', style: TextStyle(fontSize: 16)),
             const SizedBox(width: 10),
             Expanded(
-              child: Text('Monat ist eng? Hilfe finden',
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'month_tight'),
                   style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: _showKnappSection

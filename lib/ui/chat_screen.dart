@@ -6,6 +6,8 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? initialMessage;
@@ -393,7 +395,7 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -481,7 +483,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 12),
               if (sorted.isEmpty)
-                const Text('Noch keine Fragen erfasst.')
+                Text(AppStringsManager.getString(languageService.currentLanguage, 'no_questions_yet'))
               else
                 ...sorted.map(
                   (entry) => ListTile(
@@ -604,7 +606,7 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed:
                   _isStreaming ? null : () => _retryAssistantFailure(index),
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Erneut versuchen'),
+              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'try_again')),
             ),
           chip('hilfreich', Icons.thumb_up_alt_outlined),
           chip('nicht hilfreich', Icons.thumb_down_alt_outlined),
@@ -989,7 +991,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_initError != null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('KI Elternberatung'),
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'ki_parenting_title')),
           centerTitle: true,
           elevation: 0,
           actions: [

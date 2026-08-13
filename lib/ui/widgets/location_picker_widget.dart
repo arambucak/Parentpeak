@@ -4,6 +4,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 /// Ergebnis des Location-Pickers.
 class PickedLocation {
@@ -246,7 +248,9 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                       : const Icon(Icons.my_location_rounded,
                           size: 18, color: Color(0xFF16A34A)),
                   const SizedBox(width: 10),
-                  Text('Mein Standort verwenden',
+                  Text(
+                      AppStringsManager.getString(
+                          languageService.currentLanguage, 'use_my_location'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF16A34A))),
@@ -326,7 +330,8 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                       subtitle: s.postcode.isNotEmpty
                           ? Text(s.postcode,
                               style: TextStyle(
-                                  fontSize: 11, color: theme.colorScheme.outline))
+                                  fontSize: 11,
+                                  color: theme.colorScheme.outline))
                           : null,
                       onTap: () => _selectSuggestion(s),
                     ),
@@ -463,8 +468,9 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
             requested == LocationPermission.deniedForever) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Standort-Berechtigung wurde abgelehnt.')),
+              SnackBar(
+                  content: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'location_denied'))),
             );
           }
           setState(() => _gpsLoading = false);

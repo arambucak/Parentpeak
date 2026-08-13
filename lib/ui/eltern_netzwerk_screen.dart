@@ -13,6 +13,8 @@ import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/parent_friends_service.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
@@ -41,9 +43,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     ParentFriendsService.instance.addListener(_rebuild);
     _init();
     if (widget.initialFriendCode != null) {
-      WidgetsBinding.instance.addPostFrameCallback(
-          (_) => _showAddFriendSheet(Theme.of(context),
-              prefillCode: widget.initialFriendCode));
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showAddFriendSheet(
+          Theme.of(context),
+          prefillCode: widget.initialFriendCode));
     }
   }
 
@@ -73,7 +75,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
     // Register own code+name so others can find us by code
     final myCode = ParentFriendsService.instance.myCode;
-    final myName = _profile?.displayName ?? AuthService.instance.currentUser?.displayName ?? 'Elternteil';
+    final myName = _profile?.displayName ??
+        AuthService.instance.currentUser?.displayName ??
+        'Elternteil';
     unawaited(_backend.registerFriendCode(myCode, myName));
 
     // Auto-add anyone who scanned our QR since last open
@@ -107,9 +111,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               (mp['children'] as List? ?? []).cast<Map<String, dynamic>>();
           final kidsText = children.isEmpty
               ? ''
-              : children
-                  .map((c) => '${c['name']} (${c['age']})' )
-                  .join(' · ');
+              : children.map((c) => '${c['name']} (${c['age']})').join(' · ');
           final reason = (_profile?.district != null &&
                   district.isNotEmpty &&
                   district == _profile!.district)
@@ -138,7 +140,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eltern-Netzwerk'),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'eltern_netzwerk_title')),
         elevation: 0,
         bottom: TabBar(
           controller: _tabs,
@@ -151,7 +154,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       ),
       body: TabBarView(
         controller: _tabs,
-        children: [_freundeTab(theme), _spielfreundeTab(theme), _inviteTab(theme)],
+        children: [
+          _freundeTab(theme),
+          _spielfreundeTab(theme),
+          _inviteTab(theme)
+        ],
       ),
     );
   }
@@ -222,7 +229,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                               fontWeight: FontWeight.w900,
                               color: Color(0xFFC2410C))),
                       const SizedBox(width: 6),
-                      const Text('ParentCoins',
+                      Text(
+                          AppStringsManager.getString(
+                              languageService.currentLanguage, 'parent_coins'),
                           style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -245,11 +254,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         gradient: const LinearGradient(
                             colors: [Color(0xFFF97316), Color(0xFFEAB308)]),
                         borderRadius: BorderRadius.circular(10)),
-                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.star_rounded, size: 13, color: Colors.white),
-                      SizedBox(width: 3),
-                      Text('Community',
-                          style: TextStyle(
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.star_rounded,
+                          size: 13, color: Colors.white),
+                      const SizedBox(width: 3),
+                      Text(
+                          AppStringsManager.getString(
+                              languageService.currentLanguage, 'community_tab'),
+                          style: const TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w800,
                               color: Colors.white))
@@ -316,7 +328,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           ]),
         ),
         const SizedBox(height: 20),
-        Text('Freunde einladen',
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'invite_friends'),
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
@@ -354,8 +368,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         _inviteRow(theme, Icons.link_rounded, const Color(0xFF2563EB),
             'Link kopieren', coins.getInviteLink(), () {
           Clipboard.setData(ClipboardData(text: coins.getInviteLink()));
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Link kopiert!')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'link_copied'))));
         }),
         const SizedBox(height: 10),
         _inviteRow(
@@ -367,7 +382,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             () => ParentCoinService.instance.claimPendingReferrals(context)),
         if (coins.history.isNotEmpty) ...[
           const SizedBox(height: 24),
-          Text('Verlauf',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'history_tab'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
@@ -433,7 +450,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           child: const Center(
               child: Text('\u{1F46A}', style: TextStyle(fontSize: 28)))),
       const SizedBox(height: 12),
-      Text('Spielfreunde finden',
+      Text(
+          AppStringsManager.getString(
+              languageService.currentLanguage, 'find_playmates'),
           style: theme.textTheme.titleMedium
               ?.copyWith(fontWeight: FontWeight.w800),
           textAlign: TextAlign.center),
@@ -487,19 +506,23 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                           overflow: TextOverflow.ellipsis)
                     ])),
                 Row(mainAxisSize: MainAxisSize.min, children: [
-                  GestureDetector(behavior: HitTestBehavior.opaque, 
+                  GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () async {
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.remove('spielfreunde.profile');
                         setState(() => _profile = null);
                       },
-                      child: Text('Bearbeiten',
+                      child: Text(
+                          AppStringsManager.getString(
+                              languageService.currentLanguage, 'edit_btn'),
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.primary))),
                   const SizedBox(width: 12),
-                  GestureDetector(behavior: HitTestBehavior.opaque, 
+                  GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => _confirmDeleteProfile(theme),
                       child: Text('Löschen',
                           style: TextStyle(
@@ -521,7 +544,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               child: Column(children: [
                 const Text('\u{1F389}', style: TextStyle(fontSize: 36)),
                 const SizedBox(height: 14),
-                Text('Dein Profil ist bereit!',
+                Text(
+                    AppStringsManager.getString(
+                        languageService.currentLanguage, 'profile_ready'),
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
@@ -562,7 +587,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         ?.copyWith(color: theme.colorScheme.outline)),
               ])),
           const SizedBox(height: 20),
-          Text('So wird es aussehen:',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'how_it_will_look'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
@@ -584,7 +611,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               ['Offen', 'Spontan'],
               'Vormittags \u{2022} DE, AR'),
           const SizedBox(height: 20),
-          GestureDetector(behavior: HitTestBehavior.opaque, 
+          GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () => _tabs.animateTo(0),
               child: Container(
                   padding: const EdgeInsets.all(14),
@@ -608,7 +636,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         decoration: BoxDecoration(
                             color: const Color(0xFF0EA5A4),
                             borderRadius: BorderRadius.circular(8)),
-                        child: const Text('Einladen',
+                        child: Text(
+                            AppStringsManager.getString(
+                                languageService.currentLanguage, 'invite_btn'),
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -731,7 +761,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             ],
           ),
           child: Column(children: [
-            const Text('DEIN FREUNDES-CODE',
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'your_friend_code'),
                 style: TextStyle(
                     color: Colors.white60,
                     fontSize: 10,
@@ -764,8 +796,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             const SizedBox(height: 18),
             Row(children: [
               Expanded(
-                  child: _shareActionBtn(Icons.copy_all_rounded, 'Kopieren',
-                      () {
+                  child:
+                      _shareActionBtn(Icons.copy_all_rounded, 'Kopieren', () {
                 Clipboard.setData(ClipboardData(text: myCode));
                 ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Code kopiert ✓!')));
@@ -798,8 +830,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             side: BorderSide(
                 color: const Color(0xFF7C3AED).withValues(alpha: 0.5)),
             minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
         const SizedBox(height: 32),
@@ -808,7 +840,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         const SizedBox(height: 32),
 
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Meine Freunde',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'my_friends'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800)),
           if (friends.isNotEmpty)
@@ -849,7 +883,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   size: 28, color: Color(0xFF8B5CF6))),
         ),
         const SizedBox(height: 14),
-        Text('Noch keine Freunde',
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'no_friends_yet'),
             style: theme.textTheme.bodyMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
@@ -898,10 +934,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Vielleicht kennst du sie',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'maybe_you_know'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800)),
-          Text('Echte Eltern aus deiner Umgebung',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'real_parents_nearby'),
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.outline)),
         ]),
@@ -1001,7 +1041,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     _suggestedProfiles.removeWhere((x) => x.id == s.id);
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${s.name} verbunden! 🎉') ));
+                      SnackBar(content: Text('${s.name} verbunden! 🎉')));
                 }
               },
               style: FilledButton.styleFrom(
@@ -1010,10 +1050,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
-                textStyle: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w600),
+                textStyle:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
-              child: const Text('Verbinden'),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'connect_btn')),
             ),
           ),
           const SizedBox(width: 6),
@@ -1047,8 +1088,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   Color _avatarColor(String name) {
     const colors = [
-      Color(0xFF7C3AED), Color(0xFF0EA5E9), Color(0xFF059669),
-      Color(0xFFF59E0B), Color(0xFFEC4899), Color(0xFF6366F1),
+      Color(0xFF7C3AED),
+      Color(0xFF0EA5E9),
+      Color(0xFF059669),
+      Color(0xFFF59E0B),
+      Color(0xFFEC4899),
+      Color(0xFF6366F1),
     ];
     if (name.isEmpty) return colors[0];
     return colors[name.codeUnitAt(0) % colors.length];
@@ -1071,18 +1116,20 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
-            width: 36, height: 4,
+            width: 36,
+            height: 4,
             decoration: BoxDecoration(
                 color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 20),
-          Text('Zeig diesen Code',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'show_this_code'),
               style: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
@@ -1113,20 +1160,22 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             fit: BoxFit.scaleDown,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               ...code.split('').map((ch) => Container(
-                    width: 36, height: 42,
+                    width: 36,
+                    height: 42,
                     margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: const Color(0xFF7C3AED).withValues(alpha: 0.2)),
-                  ),
-                  child: Center(
-                      child: Text(ch,
-                          style: const TextStyle(
-                              color: Color(0xFF7C3AED),
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900))),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color:
+                              const Color(0xFF7C3AED).withValues(alpha: 0.2)),
+                    ),
+                    child: Center(
+                        child: Text(ch,
+                            style: const TextStyle(
+                                color: Color(0xFF7C3AED),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900))),
                   )),
             ]),
           ),
@@ -1141,7 +1190,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text('Fertig',
+              child: Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'done_btn'),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
@@ -1151,8 +1202,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   }
 
   Widget _friendCard(ThemeData theme, ParentFriend friend) {
-
-
     // Deterministic room ID: sorted codes ensure both sides open the same chat
     final myCode = ParentFriendsService.instance.myCode;
     final sorted = [myCode, friend.code]..sort();
@@ -1165,8 +1214,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color:
-                theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -1194,15 +1242,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ),
         const SizedBox(width: 12),
         Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(friend.name,
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w700)),
           Text(_friendSince(friend.addedAt),
-              style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant)),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ])),
         const SizedBox(width: 8),
         OutlinedButton.icon(
@@ -1210,21 +1257,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             context,
             MaterialPageRoute(
               builder: (_) => MatchConversationScreen(
-                  profileId: roomId,
-                  profileName: friend.name,
-                  isFriendChat: true,
-                ),
+                profileId: roomId,
+                profileName: friend.name,
+                isFriendChat: true,
+              ),
             ),
           ),
           icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
-          label: const Text('Chat'),
+          label: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'chat_btn')),
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFF8B5CF6),
             side: const BorderSide(color: Color(0xFF8B5CF6)),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             textStyle:
                 const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
@@ -1266,15 +1313,25 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             final normalized = val.trim().toUpperCase();
             // Trigger lookup once input looks complete (PP-XXXXXX = 9 chars)
             if (normalized.length < 6) {
-              setSheet(() { resolvedName = null; errorMsg = null; });
+              setSheet(() {
+                resolvedName = null;
+                errorMsg = null;
+              });
               return;
             }
             if (normalized == myCode ||
                 normalized == myCode.replaceFirst('PP-', '')) {
-              setSheet(() { resolvedName = null; errorMsg = 'Das ist dein eigener Code!'; });
+              setSheet(() {
+                resolvedName = null;
+                errorMsg = 'Das ist dein eigener Code!';
+              });
               return;
             }
-            setSheet(() { isLooking = true; resolvedName = null; errorMsg = null; });
+            setSheet(() {
+              isLooking = true;
+              resolvedName = null;
+              errorMsg = null;
+            });
             final name = await _lookupNameByCode(normalized);
             setSheet(() {
               isLooking = false;
@@ -1284,8 +1341,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           }
 
           return Padding(
-            padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            padding:
+                EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
               decoration: BoxDecoration(
@@ -1295,17 +1352,22 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               ),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Container(
-                  width: 36, height: 4,
+                  width: 36,
+                  height: 4,
                   decoration: BoxDecoration(
                       color: theme.colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(2)),
                 ),
                 const SizedBox(height: 20),
-                Text('Freund per Code verbinden',
+                Text(
+                    AppStringsManager.getString(
+                        languageService.currentLanguage, 'connect_by_code'),
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text('Gib den Code ein, den dir die andere Familie geschickt hat.',
+                Text(
+                    AppStringsManager.getString(
+                        languageService.currentLanguage, 'enter_friend_code'),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.outline),
                     textAlign: TextAlign.center),
@@ -1321,10 +1383,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         ? const Padding(
                             padding: EdgeInsets.all(12),
                             child: SizedBox(
-                                width: 20, height: 20,
+                                width: 20,
+                                height: 20,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color(0xFF8B5CF6))))
+                                    strokeWidth: 2, color: Color(0xFF8B5CF6))))
                         : resolvedName != null
                             ? const Icon(Icons.check_circle_rounded,
                                 color: Color(0xFF059669))
@@ -1350,7 +1412,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     ),
                     child: Row(children: [
                       Container(
-                        width: 36, height: 36,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           color: _avatarColor(resolvedName!),
                           shape: BoxShape.circle,
@@ -1370,15 +1433,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                          Text(resolvedName!,
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700)),
-                          const Text('Gefunden \u2713',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF059669),
-                                  fontWeight: FontWeight.w600)),
-                        ]),
+                              Text(resolvedName!,
+                                  style: theme.textTheme.bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700)),
+                              const Text('Gefunden \u2713',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF059669),
+                                      fontWeight: FontWeight.w600)),
+                            ]),
                       ),
                     ]),
                   ),
@@ -1413,8 +1476,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                             );
                             // Tell the other side that we connected
                             final myCode = ParentFriendsService.instance.myCode;
-                            final myName = _profile?.displayName ?? AuthService.instance.currentUser?.displayName ?? 'Elternteil';
-                            unawaited(_backend.notifyFriendConnect(myCode, myName, code));
+                            final myName = _profile?.displayName ??
+                                AuthService.instance.currentUser?.displayName ??
+                                'Elternteil';
+                            unawaited(_backend.notifyFriendConnect(
+                                myCode, myName, code));
                             if (ctx.mounted) Navigator.pop(ctx);
                           },
                     style: FilledButton.styleFrom(
@@ -1442,20 +1508,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20)),
-        title: const Text('Freund entfernen?'),
-        content: Text(
-            '${friend.name} wird aus deiner Freundesliste entfernt.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'remove_friend_title')),
+        content: Text('${friend.name} wird aus deiner Freundesliste entfernt.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(
                   backgroundColor: theme.colorScheme.error),
-              child: const Text('Entfernen')),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'remove_btn'))),
         ],
       ),
     );
@@ -1477,31 +1544,30 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         color: theme.colorScheme.surfaceContainerLow,
         clipBehavior: Clip.antiAlias,
         child: Material(
-          color: Colors.transparent,
-          child: ListTile(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onTap();
-            },
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: color, size: 20)),
-            title: Text(title,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            subtitle: Text(sub,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                overflow: TextOverflow.ellipsis),
-            trailing: Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: theme.colorScheme.outline)))
-        );
+            color: Colors.transparent,
+            child: ListTile(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onTap();
+                },
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Icon(icon, color: color, size: 20)),
+                title: Text(title,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                subtitle: Text(sub,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    overflow: TextOverflow.ellipsis),
+                trailing: Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: theme.colorScheme.outline))));
   }
 
   Future<void> _confirmDeleteProfile(ThemeData theme) async {
@@ -1510,9 +1576,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Profil löschen?'),
-        content:
-            const Text('Dein Spielfreunde-Profil wird dauerhaft gelöscht. '
-                'Du kannst jederzeit ein neues erstellen.'),
+        content: const Text('Dein Spielfreunde-Profil wird dauerhaft gelöscht. '
+            'Du kannst jederzeit ein neues erstellen.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -1548,7 +1613,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
-            width: 36, height: 4,
+            width: 36,
+            height: 4,
             decoration: BoxDecoration(
                 color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2)),
@@ -1561,18 +1627,24 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               color: const Color(0xFF0D9488).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text('App-Einladung',
+            child: Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'app_invitation'),
                 style: TextStyle(
                     color: Color(0xFF0D9488),
                     fontSize: 12,
                     fontWeight: FontWeight.w700)),
           ),
           const SizedBox(height: 10),
-          Text('Eltern einladen',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'invite_parents'),
               style: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          Text('Scannen \u2192 App herunterladen \u2192 Du verdienst 1 Coin',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'scan_download_earn'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline, height: 1.4),
               textAlign: TextAlign.center),
@@ -1582,7 +1654,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3), width: 2),
+              border: Border.all(
+                  color: const Color(0xFF0D9488).withValues(alpha: 0.3),
+                  width: 2),
               boxShadow: [
                 BoxShadow(
                     color: const Color(0xFF0D9488).withValues(alpha: 0.1),
@@ -1595,14 +1669,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 version: QrVersions.auto,
                 size: 190,
                 eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: Color(0xFF0D9488)),
+                    eyeShape: QrEyeShape.square, color: Color(0xFF0D9488)),
                 dataModuleStyle: const QrDataModuleStyle(
                     dataModuleShape: QrDataModuleShape.square,
                     color: Color(0xFF134E4A))),
           ),
           const SizedBox(height: 10),
-          Text('Einfach scannen lassen \u2013 kein Code n\u00f6tig',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'just_scan_no_code'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline),
               textAlign: TextAlign.center),
@@ -1857,7 +1932,8 @@ class _ProfileFormState extends State<_ProfileForm> {
             FilledButton.icon(
                 onPressed: _next,
                 icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: const Text('Weiter'),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'next_btn_wizard')),
                 style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14))))
@@ -1958,7 +2034,8 @@ class _ProfileFormState extends State<_ProfileForm> {
               child: TextButton.icon(
             onPressed: () => setState(() => _children.add(_ChildData())),
             icon: const Icon(Icons.add_rounded),
-            label: const Text('Kind hinzufuegen'),
+            label: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'add_child_btn')),
           )),
         ]));
   }
@@ -2000,7 +2077,9 @@ class _ProfileFormState extends State<_ProfileForm> {
         const SizedBox(height: 12),
         // Alter Slider
         Row(children: [
-          Text('Alter:',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'age_label'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(width: 8),
@@ -2026,7 +2105,9 @@ class _ProfileFormState extends State<_ProfileForm> {
         ]),
         const SizedBox(height: 10),
         // Geschlecht
-        Text('Geschlecht (optional):',
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'gender_optional'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
@@ -2047,7 +2128,9 @@ class _ProfileFormState extends State<_ProfileForm> {
                 .toList()),
         const SizedBox(height: 12),
         // Interessen
-        Text('Interessen:',
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'interests_label'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
@@ -2135,7 +2218,9 @@ class _ProfileFormState extends State<_ProfileForm> {
                   checkmarkColor: v == 'gfk' ? const Color(0xFF16A34A) : null,
                 )),
             ActionChip(
-              label: const Text('\u{2795} Eigener Wert',
+              label: Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'custom_value'),
                   style: TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
                   _valuesCustomCtrl, 'Was ist euch noch wichtig?'),
@@ -2182,7 +2267,9 @@ class _ProfileFormState extends State<_ProfileForm> {
                       borderRadius: BorderRadius.circular(16)),
                 )),
             ActionChip(
-              label: const Text('\u{2795} Eigene Idee',
+              label: Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'custom_idea'),
                   style: TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
                   _lookingForCustomCtrl, 'Was wünscht ihr euch noch?'),
@@ -2206,7 +2293,9 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 22),
           _sectionTitle(theme, '\u{1F4C5} Wann habt ihr Zeit?'),
           const SizedBox(height: 10),
-          Text('Tage:',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'days_label'),
               style: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
@@ -2227,7 +2316,9 @@ class _ProfileFormState extends State<_ProfileForm> {
                       ))
                   .toList()),
           const SizedBox(height: 14),
-          Text('Uhrzeiten:',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'times_label'),
               style: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
@@ -2242,7 +2333,9 @@ class _ProfileFormState extends State<_ProfileForm> {
                       borderRadius: BorderRadius.circular(16)),
                 )),
             ActionChip(
-              label: const Text('\u{2795} Andere Zeit',
+              label: Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'other_time'),
                   style: TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
                   _availCustomCtrl, 'z.B. Nur in Ferien, Nur Feiertage...'),
@@ -2331,7 +2424,9 @@ class _ProfileFormState extends State<_ProfileForm> {
                       borderRadius: BorderRadius.circular(16)),
                 )),
             ActionChip(
-              label: const Text('\u{2795} Eigenes',
+              label: Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'custom_entry'),
                   style: TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(_specialsCustomCtrl,
                   'Was sollten andere Familien noch wissen?'),

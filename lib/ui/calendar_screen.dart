@@ -143,35 +143,6 @@ class _CalendarScreenState extends State<CalendarScreen>
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  Future<void> _deleteEvent(_CalendarEvent event) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Termin löschen?'),
-        content: Text('"${event.title}" wird dauerhaft gelöscht.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Löschen'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    setState(() => _events.remove(event));
-    try {
-      await _calendarService.deleteEvent(event.id);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _events.add(event));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Löschen fehlgeschlagen — bitte erneut versuchen.')),
-      );
-    }
-  }
-
   List<_CalendarEvent> get _eventsForSelectedDay {
     return _events
         .where((e) => _isSameDay(e.start, _selectedDay))
@@ -237,7 +208,6 @@ class _CalendarScreenState extends State<CalendarScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        bool isSaving = false;
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             final viewInsets = MediaQuery.of(ctx).viewInsets;
@@ -250,344 +220,355 @@ class _CalendarScreenState extends State<CalendarScreen>
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
                   children: [
-                    Text(
-                      AppStringsManager.getString(languageService.currentLanguage, 'new_event'),
-                      style:
-                          const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    Row(
+                      children: [
+                        Text(
+                          AppStringsManager.getString(
+                              languageService.currentLanguage, 'new_event'),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w700),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.pop(ctx),
+                    const SizedBox(height: 6),
+                    // Feature 4: Schnell-Vorlagen
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                          AppStringsManager.getString(
+                              languageService.currentLanguage,
+                              'quick_template'),
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600])),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: 40,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemCount: _eventTemplates.length,
+                        itemBuilder: (_, i) {
+                          final t = _eventTemplates[i];
+                          return GestureDetector(
+                            onTap: () {
+                              _titleController.text = t['label']!;
+                              setSheetState(() => person = t['person']!);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5EFE7),
+                                borderRadius: BorderRadius.circular(20),
+                                border:
+                                    Border.all(color: const Color(0xFFD6C8B4)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(t['emoji']!,
+                                      style: const TextStyle(fontSize: 14)),
+                                  const SizedBox(width: 5),
+                                  Text(t['label']!,
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF4A5568))),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextField(
+                              controller: _titleController,
+                              decoration: const InputDecoration(
+                                labelText: 'Titel',
+                                hintText: 'z.B. Elternabend',
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            DropdownButtonFormField<String>(
+                              key: ValueKey(person),
+                              value: person,
+                              decoration: const InputDecoration(
+                                  labelText: 'F\u00fcr wen?'),
+                              isExpanded: true,
+                              items: _personColors.keys
+                                  .map((p) => DropdownMenuItem(
+                                      value: p, child: Text(p)))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v != null) setSheetState(() => person = v);
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _TimeButton(
+                                    label: 'Start',
+                                    initial: start,
+                                    onPicked: (t) => start = t,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _TimeButton(
+                                    label: 'Ende',
+                                    initial: end,
+                                    onPicked: (t) => end = t,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Feature 3: Wer bringt / Wer holt
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    value: bringer.isEmpty ? '' : bringer,
+                                    decoration: const InputDecoration(
+                                        labelText: '\u{1F697} Bringt'),
+                                    isExpanded: true,
+                                    items: [
+                                      '',
+                                      'Mama',
+                                      'Papa',
+                                      'Oma',
+                                      'Opa',
+                                      'Andere'
+                                    ]
+                                        .map((p) => DropdownMenuItem(
+                                            value: p,
+                                            child: Text(
+                                                p.isEmpty ? 'Niemand' : p)))
+                                        .toList(),
+                                    onChanged: (v) => bringer = v ?? '',
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    value: abholer.isEmpty ? '' : abholer,
+                                    decoration: const InputDecoration(
+                                        labelText: '\u{1F3E0} Holt'),
+                                    isExpanded: true,
+                                    items: [
+                                      '',
+                                      'Mama',
+                                      'Papa',
+                                      'Oma',
+                                      'Opa',
+                                      'Andere'
+                                    ]
+                                        .map((p) => DropdownMenuItem(
+                                            value: p,
+                                            child: Text(
+                                                p.isEmpty ? 'Niemand' : p)))
+                                        .toList(),
+                                    onChanged: (v) => abholer = v ?? '',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Feature 2: Pack-Reminder
+                            TextField(
+                              controller: packReminderCtrl,
+                              decoration: const InputDecoration(
+                                labelText: '\u{1F392} Vorbereitung (optional)',
+                                hintText:
+                                    'z.B. Schwimmsachen, Turnzeug einpacken',
+                              ),
+                              onChanged: (v) => packReminderText = v,
+                            ),
+                            const SizedBox(height: 12),
+                            DropdownButtonFormField<String>(
+                              value: recurrence,
+                              decoration: const InputDecoration(
+                                  labelText: 'Wiederholung'),
+                              isExpanded: true,
+                              items: _recurrenceOptions
+                                  .map((p) => DropdownMenuItem(
+                                      value: p, child: Text(p)))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v != null) recurrence = v;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            DropdownButtonFormField<int>(
+                              value: reminder,
+                              decoration: const InputDecoration(
+                                  labelText: 'Erinnerung'),
+                              isExpanded: true,
+                              items: _reminderOptions
+                                  .map((m) => DropdownMenuItem(
+                                        value: m,
+                                        child: Text(
+                                          m == _smartReminderValue
+                                              ? 'Smart (1W, 1T, am Tag)'
+                                              : m == 0
+                                                  ? 'Keine'
+                                                  : '$m Min vorher',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v != null) reminder = v;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            DropdownButtonFormField<String>(
+                              value: endMode,
+                              decoration:
+                                  const InputDecoration(labelText: 'Endet'),
+                              isExpanded: true,
+                              items: _recurrenceEndOptions
+                                  .map((p) => DropdownMenuItem(
+                                      value: p, child: Text(p)))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v != null)
+                                  setSheetState(() {
+                                    endMode = v;
+                                    if (endMode == '5 Termine') endCount = 5;
+                                    if (endMode == '10 Termine') endCount = 10;
+                                  });
+                              },
+                            ),
+                            if (endMode == 'Datum w\u00e4hlen') ...[
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                onPressed: () async {
+                                  final picked = await showDatePicker(
+                                    context: ctx,
+                                    initialDate:
+                                        recurrenceEndDate ?? _selectedDay,
+                                    firstDate: DateTime.now()
+                                        .subtract(const Duration(days: 1)),
+                                    lastDate: DateTime.now()
+                                        .add(const Duration(days: 365 * 2)),
+                                  );
+                                  if (picked != null) {
+                                    setSheetState(
+                                        () => recurrenceEndDate = picked);
+                                  }
+                                },
+                                icon: const Icon(Icons.event_available_rounded),
+                                label: Text(recurrenceEndDate == null
+                                    ? 'Enddatum w\u00e4hlen'
+                                    : 'Endet am ${DateFormat.yMMMd('de').format(recurrenceEndDate!)}'),
+                              ),
+                            ],
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.check_rounded),
+                        label: Text(AppStringsManager.getString(
+                            languageService.currentLanguage, 'save_btn')),
+                        onPressed: () async {
+                          if (_titleController.text.trim().isEmpty) return;
+                          final startDate = DateTime(
+                            _selectedDay.year,
+                            _selectedDay.month,
+                            _selectedDay.day,
+                            start.hour,
+                            start.minute,
+                          );
+                          final endDateTime = DateTime(
+                            _selectedDay.year,
+                            _selectedDay.month,
+                            _selectedDay.day,
+                            end.hour,
+                            end.minute,
+                          );
+                          final base = _CalendarEvent(
+                            id: 'event_${DateTime.now().millisecondsSinceEpoch}',
+                            title: _titleController.text.trim(),
+                            start: startDate,
+                            end: endDateTime.isAfter(startDate)
+                                ? endDateTime
+                                : startDate.add(const Duration(hours: 1)),
+                            person: person,
+                            location: 'Familienkalender',
+                            recurrence: recurrence,
+                            reminderMinutes: reminder,
+                            recurrenceEndMode: endMode,
+                            recurrenceEndDate: endMode == 'Datum w\u00e4hlen'
+                                ? recurrenceEndDate
+                                : null,
+                            recurrenceCount:
+                                endMode.contains('Termine') ? endCount : null,
+                            packReminder: packReminderText.trim().isEmpty
+                                ? null
+                                : packReminderText.trim(),
+                            bringer: bringer.isEmpty ? null : bringer,
+                            abholer: abholer.isEmpty ? null : abholer,
+                          );
+                          final expanded = _expandRecurrence(base);
+                          try {
+                            for (final e in expanded) {
+                              await _calendarService.addEvent(e.toJson());
+                            }
+                          } catch (_) {
+                            if (!mounted) return;
+                            setState(() {
+                              _syncError = _calendarService.lastSyncError;
+                            });
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  _syncError ??
+                                      'Termin konnte nicht gespeichert werden.',
+                                ),
+                              ),
+                            );
+                            packReminderCtrl.dispose();
+                            return;
+                          }
+                          setState(() {
+                            _events.addAll(expanded);
+                            _syncError = _calendarService.lastSyncError;
+                          });
+                          _scheduleRemindersFor(expanded);
+                          packReminderCtrl.dispose();
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                        },
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                // Feature 4: Schnell-Vorlagen
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Schnell-Vorlage',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[600])),
-                ),
-                const SizedBox(height: 6),
-                SizedBox(
-                  height: 40,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemCount: _eventTemplates.length,
-                    itemBuilder: (_, i) {
-                      final t = _eventTemplates[i];
-                      return GestureDetector(
-                        onTap: () {
-                          _titleController.text = t['label']!;
-                          setSheetState(() => person = t['person']!);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5EFE7),
-                            borderRadius: BorderRadius.circular(20),
-                            border:
-                                Border.all(color: const Color(0xFFD6C8B4)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(t['emoji']!,
-                                  style: const TextStyle(fontSize: 14)),
-                              const SizedBox(width: 5),
-                              Text(t['label']!,
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF4A5568))),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextField(
-                          controller: _titleController,
-                          decoration: const InputDecoration(
-                            labelText: 'Titel',
-                            hintText: 'z.B. Elternabend',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(person),
-                          value: person,
-                          decoration:
-                              const InputDecoration(labelText: 'F\u00fcr wen?'),
-                          isExpanded: true,
-                          items: _personColors.keys
-                              .map((p) =>
-                                  DropdownMenuItem(value: p, child: Text(p)))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) setSheetState(() => person = v);
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _TimeButton(
-                                label: 'Start',
-                                initial: start,
-                                onPicked: (t) => start = t,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _TimeButton(
-                                label: 'Ende',
-                                initial: end,
-                                onPicked: (t) => end = t,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Feature 3: Wer bringt / Wer holt
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: bringer.isEmpty ? '' : bringer,
-                                decoration: const InputDecoration(
-                                    labelText: '\u{1F697} Bringt'),
-                                isExpanded: true,
-                                items: ['', 'Mama', 'Papa', 'Oma', 'Opa', 'Andere']
-                                    .map((p) => DropdownMenuItem(
-                                        value: p,
-                                        child: Text(
-                                            p.isEmpty ? 'Niemand' : p)))
-                                    .toList(),
-                                onChanged: (v) => bringer = v ?? '',
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: abholer.isEmpty ? '' : abholer,
-                                decoration: const InputDecoration(
-                                    labelText: '\u{1F3E0} Holt'),
-                                isExpanded: true,
-                                items: ['', 'Mama', 'Papa', 'Oma', 'Opa', 'Andere']
-                                    .map((p) => DropdownMenuItem(
-                                        value: p,
-                                        child: Text(
-                                            p.isEmpty ? 'Niemand' : p)))
-                                    .toList(),
-                                onChanged: (v) => abholer = v ?? '',
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Feature 2: Pack-Reminder
-                        TextField(
-                          controller: packReminderCtrl,
-                          decoration: const InputDecoration(
-                            labelText: '\u{1F392} Vorbereitung (optional)',
-                            hintText:
-                                'z.B. Schwimmsachen, Turnzeug einpacken',
-                          ),
-                          onChanged: (v) => packReminderText = v,
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          value: recurrence,
-                          decoration:
-                              const InputDecoration(labelText: 'Wiederholung'),
-                          isExpanded: true,
-                          items: _recurrenceOptions
-                              .map((p) =>
-                                  DropdownMenuItem(value: p, child: Text(p)))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) recurrence = v;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<int>(
-                          value: reminder,
-                          decoration:
-                              const InputDecoration(labelText: 'Erinnerung'),
-                          isExpanded: true,
-                          items: _reminderOptions
-                              .map((m) => DropdownMenuItem(
-                                    value: m,
-                                    child: Text(
-                                      m == _smartReminderValue
-                                          ? 'Smart (1W, 1T, am Tag)'
-                                          : m == 0
-                                              ? 'Keine'
-                                              : '$m Min vorher',
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) reminder = v;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          value: endMode,
-                          decoration: const InputDecoration(labelText: 'Endet'),
-                          isExpanded: true,
-                          items: _recurrenceEndOptions
-                              .map((p) =>
-                                  DropdownMenuItem(value: p, child: Text(p)))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) setSheetState(() {
-                              endMode = v;
-                              if (endMode == '5 Termine') endCount = 5;
-                              if (endMode == '10 Termine') endCount = 10;
-                            });
-                          },
-                        ),
-                        if (endMode == 'Datum w\u00e4hlen') ...[
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              final picked = await showDatePicker(
-                                context: ctx,
-                                initialDate:
-                                    recurrenceEndDate ?? _selectedDay,
-                                firstDate: DateTime.now()
-                                    .subtract(const Duration(days: 1)),
-                                lastDate: DateTime.now()
-                                    .add(const Duration(days: 365 * 2)),
-                              );
-                              if (picked != null) {
-                                setSheetState(
-                                    () => recurrenceEndDate = picked);
-                              }
-                            },
-                            icon: const Icon(Icons.event_available_rounded),
-                            label: Text(recurrenceEndDate == null
-                                ? 'Enddatum w\u00e4hlen'
-                                : 'Endet am ${DateFormat.yMMMd('de').format(recurrenceEndDate!)}'),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: isSaving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.check_rounded),
-                    label: Text(isSaving ? 'Wird gespeichert…' : 'Speichern'),
-                    onPressed: isSaving
-                        ? null
-                        : () async {
-                      if (_titleController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Bitte einen Titel eingeben.')),
-                        );
-                        return;
-                      }
-                      setSheetState(() => isSaving = true);
-                      final startDate = DateTime(
-                        _selectedDay.year,
-                        _selectedDay.month,
-                        _selectedDay.day,
-                        start.hour,
-                        start.minute,
-                      );
-                      final endDateTime = DateTime(
-                        _selectedDay.year,
-                        _selectedDay.month,
-                        _selectedDay.day,
-                        end.hour,
-                        end.minute,
-                      );
-                      final base = _CalendarEvent(
-                        id: 'event_${DateTime.now().millisecondsSinceEpoch}',
-                        title: _titleController.text.trim(),
-                        start: startDate,
-                        end: endDateTime.isAfter(startDate)
-                            ? endDateTime
-                            : startDate.add(const Duration(hours: 1)),
-                        person: person,
-                        location: 'Familienkalender',
-                        recurrence: recurrence,
-                        reminderMinutes: reminder,
-                        recurrenceEndMode: endMode,
-                        recurrenceEndDate: endMode == 'Datum w\u00e4hlen'
-                            ? recurrenceEndDate
-                            : null,
-                        recurrenceCount:
-                            endMode.contains('Termine') ? endCount : null,
-                        packReminder: packReminderText.trim().isEmpty
-                            ? null
-                            : packReminderText.trim(),
-                        bringer: bringer.isEmpty ? null : bringer,
-                        abholer: abholer.isEmpty ? null : abholer,
-                      );
-                      final expanded = _expandRecurrence(base);
-                      try {
-                        for (final e in expanded) {
-                          await _calendarService.addEvent(e.toJson());
-                        }
-                      } catch (e) {
-                        if (!ctx.mounted) return;
-                        setSheetState(() => isSaving = false);
-                        if (!context.mounted) return;
-                        setState(() => _syncError = _calendarService.lastSyncError);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(_syncError ?? 'Termin konnte nicht gespeichert werden.'),
-                            duration: const Duration(seconds: 5),
-                          ),
-                        );
-                        return;
-                      }
-                      setState(() {
-                        _events.addAll(expanded);
-                        _syncError = null;
-                      });
-                      _scheduleRemindersFor(expanded);
-                      packReminderCtrl.dispose();
-                      if (!ctx.mounted) return;
-                      Navigator.pop(ctx);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          );
+              ),
+            );
           },
         );
       },
@@ -602,7 +583,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF5EFE7),
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'calendar')),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'calendar')),
         backgroundColor: const Color(0xFFF5EFE7),
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -669,7 +651,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                  child: const Text('Sync',
+                                  child: Text(
+                                      AppStringsManager.getString(
+                                          languageService.currentLanguage,
+                                          'sync_btn'),
                                       style: TextStyle(fontSize: 12)),
                                 ),
                               ],
@@ -771,34 +756,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                       ],
                     ),
                     const SizedBox(height: 12),
-                    ..._eventsForSelectedDay.map((e) {
-                      final color = _personColors[e.person] ?? theme.colorScheme.primary;
-                      return Dismissible(
-                        key: ValueKey(e.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE53E3E),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.delete_rounded, color: Colors.white, size: 28),
-                              SizedBox(height: 4),
-                              Text('Löschen', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                        ),
-                        confirmDismiss: (_) async {
-                          await _deleteEvent(e);
-                          return false; // _deleteEvent handles state update
-                        },
-                        child: _EventCard(event: e, color: color),
-                      );
-                    }),
+                    ..._eventsForSelectedDay.map((e) => _EventCard(
+                        event: e,
+                        color: _personColors[e.person] ??
+                            theme.colorScheme.primary)),
                     if (_eventsForSelectedDay.isEmpty)
                       GestureDetector(
                         onTap: _openAddSheet,
@@ -839,7 +800,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                AppStringsManager.getString(languageService.currentLanguage, 'no_events'),
+                                AppStringsManager.getString(
+                                    languageService.currentLanguage,
+                                    'no_events'),
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
@@ -961,16 +924,23 @@ class _MonthGrid extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Mo'),
-              Text('Di'),
-              Text('Mi'),
-              Text('Do'),
-              Text('Fr'),
-              Text('Sa'),
-              Text('So'),
+              Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'day_mo')),
+              Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'day_di')),
+              Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'day_mi')),
+              Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'day_do')),
+              Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'day_fr')),
+              Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'day_sa')),
+              Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'day_so')),
             ],
           ),
           const SizedBox(height: 12),
@@ -1118,162 +1088,167 @@ class _EventCard extends StatelessWidget {
                   ),
                 ),
               ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            event.person,
-                            style: TextStyle(
-                              color: color,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${_fmt(event.start)} - ${_fmt(event.end)}',
-                          style: const TextStyle(
-                            color: Color(0xFF4A5568),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      event.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF2D3748),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        if (event.recurrence != 'Einmalig')
-                          _Badge(
-                            label: event.recurrence,
-                            color: color,
-                            icon: Icons.loop_rounded,
-                          ),
-                        if (event.reminderMinutes ==
-                            _CalendarScreenState._smartReminderValue)
-                          const _Badge(
-                            label: 'Smart: 1W • 1T • Heute',
-                            color: Color(0xFF5B7FFF),
-                            icon: Icons.auto_awesome_rounded,
-                          ),
-                        if (event.reminderMinutes > 0)
-                          _Badge(
-                            label: '${event.reminderMinutes} Min vorher',
-                            color: const Color(0xFF718096),
-                            icon: Icons.alarm_rounded,
-                          ),
-                        if (event.recurrenceEndMode.contains('Termine') &&
-                            event.recurrenceCount != null)
-                          _Badge(
-                            label:
-                                'Endet nach ${event.recurrenceCount} Terminen',
-                            color: const Color(0xFF718096),
-                            icon: Icons.flag_rounded,
-                          ),
-                        if (event.recurrenceEndMode == 'Datum wählen' &&
-                            event.recurrenceEndDate != null)
-                          _Badge(
-                            label:
-                                'Endet ${DateFormat.yMMMd('de').format(event.recurrenceEndDate!)}',
-                            color: const Color(0xFF718096),
-                            icon: Icons.event_available_rounded,
-                          ),
-                      ],
-                    ),
-                    if (event.location != null &&
-                        event.location!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Row(
                         children: [
-                          const Icon(Icons.place_outlined,
-                              size: 16, color: Color(0xFF718096)),
-                          const SizedBox(width: 6),
-                          Expanded(
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: Text(
-                              event.location!,
-                              style: const TextStyle(color: Color(0xFF4A5568)),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    // Feature 3: Wer bringt / Wer holt
-                    if ((event.bringer != null && event.bringer!.isNotEmpty) ||
-                        (event.abholer != null && event.abholer!.isNotEmpty)) ...[
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: [
-                          if (event.bringer != null && event.bringer!.isNotEmpty)
-                            _Badge(
-                              label: '${event.bringer!} bringt',
-                              color: const Color(0xFF4A90E2),
-                              icon: Icons.directions_car_rounded,
-                            ),
-                          if (event.abholer != null && event.abholer!.isNotEmpty)
-                            _Badge(
-                              label: '${event.abholer!} holt',
-                              color: const Color(0xFF7B68EE),
-                              icon: Icons.home_rounded,
-                            ),
-                        ],
-                      ),
-                    ],
-                    // Feature 2: Pack-Reminder Badge
-                    if (event.packReminder != null &&
-                        event.packReminder!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.backpack_outlined,
-                              size: 14, color: Color(0xFF9F7AEA)),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '\u{1F392} ${event.packReminder!}',
-                              style: const TextStyle(
+                              event.person,
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.w700,
                                 fontSize: 12,
-                                color: Color(0xFF9F7AEA),
-                                fontStyle: FontStyle.italic,
                               ),
-                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${_fmt(event.start)} - ${_fmt(event.end)}',
+                            style: const TextStyle(
+                              color: Color(0xFF4A5568),
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      Text(
+                        event.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF2D3748),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          if (event.recurrence != 'Einmalig')
+                            _Badge(
+                              label: event.recurrence,
+                              color: color,
+                              icon: Icons.loop_rounded,
+                            ),
+                          if (event.reminderMinutes ==
+                              _CalendarScreenState._smartReminderValue)
+                            const _Badge(
+                              label: 'Smart: 1W • 1T • Heute',
+                              color: Color(0xFF5B7FFF),
+                              icon: Icons.auto_awesome_rounded,
+                            ),
+                          if (event.reminderMinutes > 0)
+                            _Badge(
+                              label: '${event.reminderMinutes} Min vorher',
+                              color: const Color(0xFF718096),
+                              icon: Icons.alarm_rounded,
+                            ),
+                          if (event.recurrenceEndMode.contains('Termine') &&
+                              event.recurrenceCount != null)
+                            _Badge(
+                              label:
+                                  'Endet nach ${event.recurrenceCount} Terminen',
+                              color: const Color(0xFF718096),
+                              icon: Icons.flag_rounded,
+                            ),
+                          if (event.recurrenceEndMode == 'Datum wählen' &&
+                              event.recurrenceEndDate != null)
+                            _Badge(
+                              label:
+                                  'Endet ${DateFormat.yMMMd('de').format(event.recurrenceEndDate!)}',
+                              color: const Color(0xFF718096),
+                              icon: Icons.event_available_rounded,
+                            ),
+                        ],
+                      ),
+                      if (event.location != null &&
+                          event.location!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.place_outlined,
+                                size: 16, color: Color(0xFF718096)),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                event.location!,
+                                style:
+                                    const TextStyle(color: Color(0xFF4A5568)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      // Feature 3: Wer bringt / Wer holt
+                      if ((event.bringer != null &&
+                              event.bringer!.isNotEmpty) ||
+                          (event.abholer != null &&
+                              event.abholer!.isNotEmpty)) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            if (event.bringer != null &&
+                                event.bringer!.isNotEmpty)
+                              _Badge(
+                                label: '${event.bringer!} bringt',
+                                color: const Color(0xFF4A90E2),
+                                icon: Icons.directions_car_rounded,
+                              ),
+                            if (event.abholer != null &&
+                                event.abholer!.isNotEmpty)
+                              _Badge(
+                                label: '${event.abholer!} holt',
+                                color: const Color(0xFF7B68EE),
+                                icon: Icons.home_rounded,
+                              ),
+                          ],
+                        ),
+                      ],
+                      // Feature 2: Pack-Reminder Badge
+                      if (event.packReminder != null &&
+                          event.packReminder!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.backpack_outlined,
+                                size: 14, color: Color(0xFF9F7AEA)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '\u{1F392} ${event.packReminder!}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF9F7AEA),
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
@@ -1328,8 +1303,8 @@ class _CalendarEvent {
   final DateTime? recurrenceEndDate;
   final int? recurrenceCount;
   final String? packReminder; // Feature 2: Vorbereitungsnotiz
-  final String? bringer;     // Feature 3: Wer bringt
-  final String? abholer;     // Feature 3: Wer holt
+  final String? bringer; // Feature 3: Wer bringt
+  final String? abholer; // Feature 3: Wer holt
 
   _CalendarEvent({
     required this.id,
@@ -1624,9 +1599,8 @@ class _WeekStrip extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF718096),
+                      color:
+                          isSelected ? Colors.white : const Color(0xFF718096),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1635,9 +1609,8 @@ class _WeekStrip extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF2D3748),
+                      color:
+                          isSelected ? Colors.white : const Color(0xFF2D3748),
                     ),
                   ),
                   if (eventCount > 0) ...[
@@ -1646,9 +1619,8 @@ class _WeekStrip extends StatelessWidget {
                       width: 6,
                       height: 6,
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF4CAF50),
+                        color:
+                            isSelected ? Colors.white : const Color(0xFF4CAF50),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -1684,8 +1656,7 @@ class _WeekPreview extends StatelessWidget {
     final in6days = today.add(const Duration(days: 6));
 
     final upcoming = events
-        .where((e) =>
-            !e.start.isBefore(today) && e.start.isBefore(in6days))
+        .where((e) => !e.start.isBefore(today) && e.start.isBefore(in6days))
         .toList()
       ..sort((a, b) => a.start.compareTo(b.start));
 
@@ -1712,27 +1683,24 @@ class _WeekPreview extends StatelessWidget {
             itemCount: upcoming.length,
             itemBuilder: (context, i) {
               final e = upcoming[i];
-              final color =
-                  personColors[e.person] ?? const Color(0xFF4CAF50);
+              final color = personColors[e.person] ?? const Color(0xFF4CAF50);
               final isToday = e.start.year == today.year &&
                   e.start.month == today.month &&
                   e.start.day == today.day;
-              final dayLabel = isToday
-                  ? 'Heute'
-                  : DateFormat.E('de').format(e.start);
+              final dayLabel =
+                  isToday ? 'Heute' : DateFormat.E('de').format(e.start);
 
               return GestureDetector(
                 onTap: () => onDayTap(e.start),
                 child: Container(
                   constraints:
                       const BoxConstraints(maxWidth: 160, minWidth: 110),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: color.withValues(alpha: 0.35)),
+                    border: Border.all(color: color.withValues(alpha: 0.35)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.04),

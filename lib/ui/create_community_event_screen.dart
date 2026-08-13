@@ -5,6 +5,8 @@ import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/community_event.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 /// Event erstellen — moderner 3-Schritt Wizard.
 ///
@@ -176,7 +178,7 @@ class _CreateCommunityEventScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event eintragen'),
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'create_event_title')),
         elevation: 0,
         actions: [
           Padding(
@@ -268,7 +270,7 @@ class _CreateCommunityEventScreenState
               FilledButton.icon(
                 onPressed: _next,
                 icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: const Text('Weiter'),
+                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'next_btn_wizard')),
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
@@ -323,7 +325,7 @@ class _CreateCommunityEventScreenState
           ]),
         ),
         const SizedBox(height: 20),
-        Text('Ich bin...',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'i_am'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
@@ -417,7 +419,7 @@ class _CreateCommunityEventScreenState
           ),
         ),
         const SizedBox(height: 12),
-        Text('Kategorie *',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'category_required'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -435,7 +437,7 @@ class _CreateCommunityEventScreenState
                     ))
                 .toList()),
         const SizedBox(height: 16),
-        Text('Altersgruppe *',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'age_group_required'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -506,7 +508,7 @@ class _CreateCommunityEventScreenState
         SwitchListTile(
           value: _isRecurring,
           onChanged: (v) => setState(() => _isRecurring = v),
-          title: Text('Wiederkehrendes Event',
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'recurring_event'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           dense: true,
@@ -537,7 +539,7 @@ class _CreateCommunityEventScreenState
         SwitchListTile(
           value: _isPrivateAddress,
           onChanged: (v) => setState(() => _isPrivateAddress = v),
-          title: Text('Private Adresse (nur Stadtteil zeigen)',
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'private_address'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(fontWeight: FontWeight.w600)),
           dense: true,
@@ -548,7 +550,7 @@ class _CreateCommunityEventScreenState
         SwitchListTile(
           value: _isFree,
           onChanged: (v) => setState(() => _isFree = v),
-          title: Text('Kostenlos',
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'free_event'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           secondary: const Text('\u{1F389}', style: TextStyle(fontSize: 20)),
@@ -577,7 +579,7 @@ class _CreateCommunityEventScreenState
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 12),
-        Text('Indoor / Outdoor',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'indoor_outdoor'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -608,7 +610,7 @@ class _CreateCommunityEventScreenState
           ),
         ],
         const SizedBox(height: 20),
-        Text('Barrierefreiheit (optional)',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'accessibility_label'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -627,7 +629,7 @@ class _CreateCommunityEventScreenState
                     ))
                 .toList()),
         const SizedBox(height: 20),
-        Text('Event-Sprache',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'event_language'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -653,11 +655,11 @@ class _CreateCommunityEventScreenState
                     ))
                 .toList()),
         const SizedBox(height: 20),
-        Text('Kontakt (optional)',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'contact_optional'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text('Wird nur Interessierten angezeigt.',
+        Text(AppStringsManager.getString(languageService.currentLanguage, 'contact_hint'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 10),

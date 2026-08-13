@@ -17,6 +17,8 @@ import 'package:parentpeak/ui/event_detail_screen.dart';
 import 'package:parentpeak/ui/event_detail_page.dart';
 import 'package:parentpeak/ui/event_invitations_screen.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class EventsActivitiesScreen extends StatefulWidget {
   final EventDiscoveryAgent? agent;
@@ -121,7 +123,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           if (!_hasRealLocation) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('GPS nicht verfügbar — bitte Standort oben eingeben.'),
+                content:
+                    Text('GPS nicht verfügbar — bitte Standort oben eingeben.'),
                 duration: Duration(seconds: 4),
               ),
             );
@@ -134,15 +137,19 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: LocationSettings(
           accuracy: LocationAccuracy.medium,
-          timeLimit: kIsWeb ? const Duration(seconds: 20) : const Duration(seconds: 6),
+          timeLimit:
+              kIsWeb ? const Duration(seconds: 20) : const Duration(seconds: 6),
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
       // When Nominatim fails, use coordinates as search city so Gemini can locate events
-      final coordCity = '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
+      final coordCity =
+          '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
       final cityLabel = district ?? 'Aktueller Standort';
       final city = district != null
-          ? (district.contains(',') ? district.split(',').last.trim() : district)
+          ? (district.contains(',')
+              ? district.split(',').last.trim()
+              : district)
           : coordCity; // pass raw coords to agent when city name unknown
       final newLocation = PickedLocation(
         displayName: cityLabel,
@@ -180,7 +187,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json&addressdetails=1',
       );
       // User-Agent is a forbidden header in browser Fetch API — skip on web
-      final headers = kIsWeb ? <String, String>{} : {'User-Agent': 'ParentPeak/1.0 (family app)'};
+      final headers = kIsWeb
+          ? <String, String>{}
+          : {'User-Agent': 'ParentPeak/1.0 (family app)'};
       final resp = await http
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 8));
@@ -210,7 +219,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
     try {
       final viewerUserId = AuthService.instance.currentUser?.uid ?? 'guest';
-      final coords = _originCoords; // GPS/picked coords for accurate community event radius
+      final coords =
+          _originCoords; // GPS/picked coords for accurate community event radius
       List<DiscoveredEvent> aiEvents;
       try {
         aiEvents = await _agent.discoverEvents(
@@ -732,8 +742,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       debugPrint('EventsActivitiesScreen._respondInvitation(): failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Aktion konnte nicht gespeichert werden.'),
+        SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'action_save_error')),
         ),
       );
     } finally {
@@ -786,116 +797,120 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   ],
                   const SizedBox(height: 10),
                   _buildAdvancedFilters(theme),
-            const SizedBox(height: 14),
-            if (_lastFeedSyncAt != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF5FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFB8DAF6)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.update_rounded,
-                      size: 18,
-                      color: Color(0xFF155E75),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Event-Stand: ${_formatLastSyncLabel(_lastFeedSyncAt!)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF155E75),
-                          fontWeight: FontWeight.w700,
-                        ),
+                  const SizedBox(height: 14),
+                  if (_lastFeedSyncAt != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF5FF),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFB8DAF6)),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            Text(
-              'Für dich in der Nähe',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_errorMessage != null)
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4F1),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFFFD1C3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _errorMessage!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF8C3E28),
-                        fontWeight: FontWeight.w600,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.update_rounded,
+                            size: 18,
+                            color: Color(0xFF155E75),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Event-Stand: ${_formatLastSyncLabel(_lastFeedSyncAt!)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFF155E75),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 8),
-                    FilledButton.tonalIcon(
-                      onPressed: _refreshFeed,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Erneut laden'),
-                    ),
                   ],
-                ),
-              )
-            else if (feed.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  'Keine echten Events sind aktuell verfügbar.',
-                ),
-              )
-            else
-              ...feed.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _UnifiedEventCard(
-                    item: item,
-                    distanceKm:
-                        _distanceKmForDisplay(item, coords.$1, coords.$2),
-                    onTap: () {
-                      if (item.source == _FeedSource.community &&
-                          item.eventId != null) {
-                        final event = _findCommunityEventById(item.eventId!);
-                        if (event == null) {
-                          _showAiDetails(item);
-                          return;
-                        }
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EventDetailScreen(event: event),
-                          ),
-                        );
-                        return;
-                      }
-                      _showAiDetails(item);
-                    },
+                  Text(
+                    'Für dich in der Nähe',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-              ),
+                  const SizedBox(height: 8),
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_errorMessage != null)
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF4F1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFFD1C3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _errorMessage!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF8C3E28),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          FilledButton.tonalIcon(
+                            onPressed: _refreshFeed,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: Text(AppStringsManager.getString(
+                                languageService.currentLanguage, 'reload_btn')),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (feed.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text(
+                        'Keine echten Events sind aktuell verfügbar.',
+                      ),
+                    )
+                  else
+                    ...feed.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _UnifiedEventCard(
+                          item: item,
+                          distanceKm:
+                              _distanceKmForDisplay(item, coords.$1, coords.$2),
+                          onTap: () {
+                            if (item.source == _FeedSource.community &&
+                                item.eventId != null) {
+                              final event =
+                                  _findCommunityEventById(item.eventId!);
+                              if (event == null) {
+                                _showAiDetails(item);
+                                return;
+                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      EventDetailScreen(event: event),
+                                ),
+                              );
+                              return;
+                            }
+                            _showAiDetails(item);
+                          },
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1012,10 +1027,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             initialLocation: _activeLocation,
             onLocationPicked: (loc) async {
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setString(_savedCityKey, loc.city.isNotEmpty ? loc.city : loc.displayName);
+              await prefs.setString(_savedCityKey,
+                  loc.city.isNotEmpty ? loc.city : loc.displayName);
               setState(() {
                 _activeLocation = loc;
-                _fallbackCity = loc.city.isNotEmpty ? loc.city : loc.displayName;
+                _fallbackCity =
+                    loc.city.isNotEmpty ? loc.city : loc.displayName;
                 _userLockedLocation = true;
                 _hasRealLocation = true;
               });
@@ -1026,9 +1043,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         const SizedBox(width: 8),
         // GPS-Detect Button
         Tooltip(
-          message: _activeLocation != null ? 'GPS aktiv' : 'Standort automatisch erkennen',
+          message: _activeLocation != null
+              ? 'GPS aktiv'
+              : 'Standort automatisch erkennen',
           child: InkWell(
-            onTap: _gpsDetecting ? null : () => _detectGpsAndRefresh(forceOverride: true),
+            onTap: _gpsDetecting
+                ? null
+                : () => _detectGpsAndRefresh(forceOverride: true),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(10),
@@ -1045,7 +1066,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
               ),
               child: _gpsDetecting
                   ? const SizedBox(
-                      width: 18, height: 18,
+                      width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Icon(
@@ -1070,7 +1092,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       runSpacing: 8,
       children: [
         FilterChip(
-          label: const Text('KI-Funde'),
+          label: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'ki_finds')),
           selected: _activeSources.contains(_FeedSource.ai),
           onSelected: (value) {
             setState(() {
@@ -1083,7 +1106,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           },
         ),
         FilterChip(
-          label: const Text('Community-Angebote'),
+          label: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'community_offers')),
           selected: _activeSources.contains(_FeedSource.community),
           onSelected: (value) {
             setState(() {
@@ -1170,28 +1194,32 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             runSpacing: 8,
             children: [
               FilterChip(
-                label: const Text('Nur kostenlos'),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'only_free')),
                 selected: _onlyFree,
                 onSelected: (value) {
                   setState(() => _onlyFree = value);
                 },
               ),
               ChoiceChip(
-                label: const Text('Alle Termine'),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'all_dates')),
                 selected: _timeWindowFilter == _TimeWindowFilter.all,
                 onSelected: (_) {
                   setState(() => _timeWindowFilter = _TimeWindowFilter.all);
                 },
               ),
               ChoiceChip(
-                label: const Text('Heute'),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'today_label')),
                 selected: _timeWindowFilter == _TimeWindowFilter.today,
                 onSelected: (_) {
                   setState(() => _timeWindowFilter = _TimeWindowFilter.today);
                 },
               ),
               ChoiceChip(
-                label: const Text('Dieses Wochenende'),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'this_weekend')),
                 selected: _timeWindowFilter == _TimeWindowFilter.weekend,
                 onSelected: (_) {
                   setState(() => _timeWindowFilter = _TimeWindowFilter.weekend);
@@ -1341,7 +1369,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                                             invitation,
                                             false,
                                           ),
-                                  child: const Text('Ablehnen'),
+                                  child: Text(AppStringsManager.getString(
+                                      languageService.currentLanguage,
+                                      'decline_btn')),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -1627,9 +1657,9 @@ class _UnifiedEventCard extends StatelessWidget {
                     Text(
                       _formatCardDate(item),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF374151),
-                      ),
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF374151),
+                          ),
                     ),
                 ],
               ),
