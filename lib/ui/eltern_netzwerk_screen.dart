@@ -707,26 +707,29 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     fontWeight: FontWeight.w700,
                     letterSpacing: 2.5)),
             const SizedBox(height: 14),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              ...myCode.split('').map((ch) => Container(
-                    width: 42,
-                    height: 50,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.35),
-                          width: 1.5),
-                    ),
-                    child: Center(
-                        child: Text(ch,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900))),
-                  )),
-            ]),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                ...myCode.split('').map((ch) => Container(
+                      width: 38,
+                      height: 46,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 1.5),
+                      ),
+                      child: Center(
+                          child: Text(ch,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w900))),
+                    )),
+              ]),
+            ),
             const SizedBox(height: 18),
             Row(children: [
               Expanded(
@@ -1075,10 +1078,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 size: 200),
           ),
           const SizedBox(height: 16),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            ...code.split('').map((ch) => Container(
-                  width: 38, height: 44,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              ...code.split('').map((ch) => Container(
+                    width: 36, height: 42,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
@@ -1091,8 +1096,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                               color: Color(0xFF7C3AED),
                               fontSize: 20,
                               fontWeight: FontWeight.w900))),
-                )),
-          ]),
+                  )),
+            ]),
+          ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
