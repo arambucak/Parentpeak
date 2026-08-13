@@ -1,12 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/calendar_backend_service.dart';
 import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/widgets/language_change_mixin.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -38,16 +42,24 @@ class _CalendarScreenState extends State<CalendarScreen>
     'Datum wählen'
   ];
   final String _recurrenceEndMode = 'Kein Ende';
+  List<String> _customPersons = [];
   DateTime? _recurrenceEndDate;
   final int _recurrenceCount = 5;
 
   late DateTime _focusedDay;
   late DateTime _selectedDay;
 
-  final Map<String, Color> _personColors = {
+  // Child colors cycle — index matches child position in profile
+  static const List<Color> _childColorPalette = [
+    Color(0xFFFF6B6B),
+    Color(0xFF6C63FF),
+    Color(0xFFFF9F43),
+    Color(0xFF48DBFB),
+    Color(0xFFFF6B9D),
+  ];
+
+  Map<String, Color> _personColors = {
     'Eltern': const Color(0xFF4CAF50),
-    'Mia': const Color(0xFFFF6B6B),
-    'Ben': const Color(0xFF6C63FF),
     'Kindergarten': const Color(0xFFFFC107),
   };
 
@@ -57,7 +69,94 @@ class _CalendarScreenState extends State<CalendarScreen>
     _focusedDay = DateTime.now();
     _selectedDay =
         DateTime(_focusedDay.year, _focusedDay.month, _focusedDay.day);
+    _loadCustomPersons();
+    _loadPersonColors();
     _loadEvents();
+  }
+
+  static const String _customPersonsKey = 'calendar_custom_persons';
+
+  Future<void> _loadCustomPersons() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_customPersonsKey);
+    if (raw != null && mounted) {
+      setState(() {
+        _customPersons = List<String>.from(jsonDecode(raw) as List);
+      });
+    }
+  }
+
+  Future<void> _saveCustomPersons() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_customPersonsKey, jsonEncode(_customPersons));
+  }
+
+  Future<void> _loadPersonColors() async {
+    final profile = await FamilyMatchProfile.load();
+    if (!mounted) return;
+    final children = profile?.children ?? [];
+    final Map<String, Color> colors = {
+      'Eltern': const Color(0xFF4CAF50),
+    };
+    for (var i = 0; i < children.length; i++) {
+      final name = children[i].name.trim();
+      if (name.isNotEmpty) {
+        colors[name] = _childColorPalette[i % _childColorPalette.length];
+      }
+    }
+    // Merge custom persons with distinct colors
+    for (var i = 0; i < _customPersons.length; i++) {
+      final name = _customPersons[i];
+      if (!colors.containsKey(name)) {
+        colors[name] = _childColorPalette[
+            (children.length + i) % _childColorPalette.length];
+      }
+    }
+    colors['Kindergarten'] = const Color(0xFFFFC107);
+    setState(() => _personColors = colors);
+  }
+
+  Future<void> _showAddPersonDialog({required void Function(String) onAdded}) async {
+    final ctrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Person hinzufügen'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            hintText: 'z.B. Lena, Oma, Sportverein',
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Hinzufügen'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (name == null || name.isEmpty) return;
+    if (_personColors.containsKey(name)) {
+      onAdded(name);
+      return;
+    }
+    setState(() {
+      _customPersons.add(name);
+      final idx = _personColors.length - 1; // before Kindergarten
+      _personColors[name] =
+          _childColorPalette[idx % _childColorPalette.length];
+    });
+    await _saveCustomPersons();
+    onAdded(name);
   }
 
   Future<void> _loadEvents() async {
@@ -172,17 +271,27 @@ class _CalendarScreenState extends State<CalendarScreen>
     });
   }
 
-  // Feature 4: Schnell-Vorlagen
+  // Quick templates — person will be replaced by first real child or 'Eltern'
   static const List<Map<String, String>> _eventTemplates = [
     {'emoji': '\u{1F3E5}', 'label': 'Kinderarzt', 'person': 'Eltern'},
     {'emoji': '\u{1F9B7}', 'label': 'Zahnarzt', 'person': 'Eltern'},
     {'emoji': '\u{1F4DA}', 'label': 'Elternsprechtag', 'person': 'Eltern'},
     {'emoji': '\u{1F382}', 'label': 'Geburtstag', 'person': 'Eltern'},
-    {'emoji': '\u{1F3CA}', 'label': 'Schwimmen', 'person': 'Mia'},
+    {'emoji': '\u{1F3CA}', 'label': 'Schwimmen', 'person': 'Kind'},
     {'emoji': '\u{1F393}', 'label': 'Kita-Fest', 'person': 'Kindergarten'},
-    {'emoji': '\u{1F3C3}', 'label': 'Sport', 'person': 'Ben'},
+    {'emoji': '\u{1F3C3}', 'label': 'Sport', 'person': 'Kind'},
     {'emoji': '\u{1F489}', 'label': 'Impfung', 'person': 'Eltern'},
   ];
+
+  /// Returns first real child name, or 'Eltern' as fallback.
+  String _resolveTemplatePerson(String placeholder) {
+    if (placeholder != 'Kind') return placeholder;
+    final firstChild = _personColors.keys.firstWhere(
+      (k) => k != 'Eltern' && k != 'Kindergarten',
+      orElse: () => 'Eltern',
+    );
+    return firstChild;
+  }
 
   Future<void> _openAddSheet() async {
     _titleController.clear();
@@ -261,7 +370,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                           return GestureDetector(
                             onTap: () {
                               _titleController.text = t['label']!;
-                              setSheetState(() => person = t['person']!);
+                              setSheetState(() => person =
+                                  _resolveTemplatePerson(t['person']!));
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -311,12 +421,32 @@ class _CalendarScreenState extends State<CalendarScreen>
                               decoration: const InputDecoration(
                                   labelText: 'F\u00fcr wen?'),
                               isExpanded: true,
-                              items: _personColors.keys
-                                  .map((p) => DropdownMenuItem(
-                                      value: p, child: Text(p)))
-                                  .toList(),
+                              items: [
+                                ..._personColors.keys.map((p) =>
+                                    DropdownMenuItem(value: p, child: Text(p))),
+                                const DropdownMenuItem(
+                                  value: '__add__',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.add_circle_outline_rounded,
+                                          size: 16, color: Color(0xFF4CAF50)),
+                                      SizedBox(width: 6),
+                                      Text('Neue Person…',
+                                          style: TextStyle(
+                                              color: Color(0xFF4CAF50),
+                                              fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               onChanged: (v) {
-                                if (v != null) setSheetState(() => person = v);
+                                if (v == '__add__') {
+                                  _showAddPersonDialog(onAdded: (name) {
+                                    setSheetState(() => person = name);
+                                  });
+                                } else if (v != null) {
+                                  setSheetState(() => person = v);
+                                }
                               },
                             ),
                             const SizedBox(height: 12),
@@ -719,6 +849,27 @@ class _CalendarScreenState extends State<CalendarScreen>
                       children: [
                         _buildFilterChip('Alle'),
                         ..._personColors.keys.map(_buildFilterChip),
+                        // Add person chip
+                        GestureDetector(
+                          onTap: () => _showAddPersonDialog(
+                              onAdded: (name) =>
+                                  setState(() => _filterPerson = name)),
+                          child: Chip(
+                            avatar: const Icon(Icons.add_rounded,
+                                size: 16, color: Color(0xFF4CAF50)),
+                            label: const Text('Person',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF4CAF50),
+                                    fontWeight: FontWeight.w600)),
+                            backgroundColor: const Color(0xFFE8F5E9),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            side: const BorderSide(
+                                color: Color(0xFF4CAF50), width: 0.8),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
