@@ -892,13 +892,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     _buildTermsItem(
                       theme,
-                      '\u{1F9E0}',
-                      'Hüther · Rosenberg · Juul',
-                      'Die KI arbeitet nach Neurobiologie (Hüther), Gewaltfreier Kommunikation (Rosenberg) und Familientherapie (Juul). Ersetzt keine Therapie oder Fachberatung.',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTermsItem(
-                      theme,
                       '\u{1F6E1}\u{FE0F}',
                       'Keine Diagnosen',
                       'Die KI stellt keine medizinischen oder psychologischen Diagnosen. Bei ernsthaften Sorgen wende dich an Fachpersonal.',
