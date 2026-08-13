@@ -1185,7 +1185,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             context,
             MaterialPageRoute(
               builder: (_) => MatchConversationScreen(
-                  profileId: roomId, profileName: friend.name),
+                  profileId: roomId,
+                  profileName: friend.name,
+                  isFriendChat: true,
+                ),
             ),
           ),
           icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
@@ -1389,7 +1392,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         : () async {
                             final raw = codeCtrl.text.trim().toLowerCase();
                             final code = raw.startsWith('pp-') ? raw : raw;
-                            final name = resolvedName ?? 'Code-Freund';
+                            final name = resolvedName ?? 'Elternteil';
                             await ParentFriendsService.instance.addFriend(
                               ParentFriend(
                                   code: code,

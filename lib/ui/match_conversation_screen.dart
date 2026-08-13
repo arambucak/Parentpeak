@@ -1,18 +1,23 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
-import 'dart:async';
 
 class MatchConversationScreen extends StatefulWidget {
   const MatchConversationScreen({
     super.key,
     required this.profileId,
     required this.profileName,
+    this.isFriendChat = false,
   });
 
   final String profileId;
   final String profileName;
+  final bool isFriendChat;
 
   @override
   State<MatchConversationScreen> createState() =>
@@ -48,7 +53,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   void initState() {
     super.initState();
     _loadMessages();
-    _startLiveStream();
+    if (!widget.isFriendChat) _startLiveStream();
   }
 
   void _startLiveStream() {
@@ -97,6 +102,10 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   }
 
   Future<void> _loadMessages() async {
+    if (widget.isFriendChat) {
+      await _loadFriendMessages();
+      return;
+    }
     final items = await _service.fetchMessages(
       profileId: widget.profileId,
       userId: _currentUserId,
@@ -113,6 +122,39 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         }));
       _isLoading = false;
     });
+  }
+
+  Future<void> _loadFriendMessages() async {
+    final base = APIConfig.getBackendBaseUrl();
+    if (base == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    try {
+      final uri = Uri.parse(
+        '$base/friend-chat/messages?roomId=${Uri.encodeComponent(widget.profileId)}',
+      );
+      final resp = await http.get(uri).timeout(const Duration(seconds: 10));
+      if (!mounted) return;
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final body = jsonDecode(resp.body) as Map<String, dynamic>;
+        final msgs = List<Map<String, dynamic>>.from(body['messages'] ?? []);
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(msgs.map((m) => _Msg(
+                  id: (m['id'] ?? '').toString(),
+                  text: (m['content'] ?? '').toString(),
+                  isMe: m['authorUserId'] == _currentUserId,
+                )));
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -133,12 +175,17 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       _controller.clear();
     });
 
-    final sent = await _service.sendMessage(
-      profileId: widget.profileId,
-      userId: _currentUserId,
-      userName: _currentUserName,
-      content: text,
-    );
+    final Map<String, dynamic>? sent;
+    if (widget.isFriendChat) {
+      sent = await _sendFriendMessage(text);
+    } else {
+      sent = await _service.sendMessage(
+        profileId: widget.profileId,
+        userId: _currentUserId,
+        userName: _currentUserName,
+        content: text,
+      );
+    }
     if (!mounted) return;
 
     if (sent == null) {
@@ -156,15 +203,41 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     await _loadMessages();
   }
 
+  Future<Map<String, dynamic>?> _sendFriendMessage(String text) async {
+    final base = APIConfig.getBackendBaseUrl();
+    if (base == null) return null;
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$base/friend-chat/messages'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'roomId': widget.profileId,
+              'userId': _currentUserId,
+              'userName': _currentUserName,
+              'content': text,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 201) {
+        final body = jsonDecode(resp.body) as Map<String, dynamic>;
+        return body['item'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat mit ${widget.profileName}'),
+        title: Text(widget.profileName),
         actions: [
-          if (!_streamActive)
+          if (!widget.isFriendChat && !_streamActive)
             IconButton(
               tooltip: 'Live verbinden',
               onPressed: _startLiveStream,

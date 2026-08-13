@@ -1397,6 +1397,7 @@ const parentProfiles = [
 
 const parentMatchingActions = [];
 const parentMatchingMessages = [];
+const friendChatMessages = new Map(); // roomId → [{ id, roomId, authorUserId, authorName, content, createdAt }]
 const parentMatchingAllowedActions = new Set(['like', 'report', 'block']);
 const parentMatchingMessageSubscribers = new Map();
 const parentMatchingOtpStore = new Map();
@@ -4577,6 +4578,34 @@ app.post('/parent-matching/messages', async (req, res) => {
     publishParentMatchingMessage(item);
     return res.status(201).json({ item });
   }
+});
+
+app.get('/friend-chat/messages', (req, res) => {
+  const roomId = (req.query.roomId || '').toString().trim();
+  if (!roomId) return res.status(400).json({ error: 'roomId fehlt' });
+  const messages = friendChatMessages.get(roomId) || [];
+  return res.json({ messages });
+});
+
+app.post('/friend-chat/messages', (req, res) => {
+  const roomId = (req.body.roomId || '').toString().trim();
+  const userId = (req.body.userId || '').toString().trim();
+  const userName = (req.body.userName || 'Elternteil').toString().trim();
+  const content = (req.body.content || '').toString().trim();
+  if (!roomId || !userId || !content) {
+    return res.status(400).json({ error: 'roomId, userId und content erforderlich' });
+  }
+  const item = {
+    id: generateId('fc'),
+    roomId,
+    authorUserId: userId,
+    authorName: userName,
+    content,
+    createdAt: new Date().toISOString(),
+  };
+  if (!friendChatMessages.has(roomId)) friendChatMessages.set(roomId, []);
+  friendChatMessages.get(roomId).push(item);
+  return res.status(201).json({ item });
 });
 
 app.get('/family/requests', async (req, res) => {
