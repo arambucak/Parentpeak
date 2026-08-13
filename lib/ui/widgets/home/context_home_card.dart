@@ -614,7 +614,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             _moodEmoji('\u{1F60A}', 'Super', const Color(0xFF16A34A)),
             _moodEmoji('\u{1F642}', 'Gut', const Color(0xFF2563EB)),
             _moodEmoji('\u{1F610}', 'Okay', const Color(0xFFF97316)),
-            _moodEmoji('\u{1F614}', 'Muehsam', const Color(0xFFDC2626)),
+            _moodEmoji('\u{1F614}', 'Mühsam', const Color(0xFFDC2626)),
             _moodEmoji('\u{1F970}', 'Dankbar', const Color(0xFFEC4899)),
           ]),
         ] else ...[
