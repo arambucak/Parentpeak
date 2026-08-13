@@ -35,10 +35,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   bool _isLoading = true;
 
   String get _currentUserId {
+    // Prefer FirebaseAuth (always in sync) over AuthService wrapper
+    final firebaseUid = FirebaseAuth.instance.currentUser?.uid.trim();
+    if (firebaseUid != null && firebaseUid.isNotEmpty) return firebaseUid;
     final value = AuthService.instance.currentUser?.uid.trim();
-    if (value != null && value.isNotEmpty) {
-      return value;
-    }
+    if (value != null && value.isNotEmpty) return value;
     return 'local-parent-user';
   }
 
@@ -223,6 +224,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
     try {
       final headers = await _authHeaders();
+      // Abort early if not logged in — avoids a guaranteed 401
+      if (!headers.containsKey('Authorization')) {
+        _showError('Bitte zuerst einloggen um Nachrichten zu senden.');
+        return null;
+      }
       final resp = await http
           .post(
             Uri.parse('$base/friend-chat/messages'),
