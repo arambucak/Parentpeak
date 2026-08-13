@@ -622,102 +622,55 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 40),
+            const SizedBox(height: 48),
             Container(
-              width: 100,
-              height: 100,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF0284C7).withValues(alpha: 0.2),
-                    const Color(0xFF0284C7).withValues(alpha: 0.05),
-                  ],
-                ),
+                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.psychology_alt_rounded,
-                size: 50,
+                size: 40,
                 color: Color(0xFF0284C7),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             const Text(
-              'Dein paedagogischer Begleiter.',
+              'Wie kann ich dir helfen?',
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.1,
-                color: Color(0xFF1A2A3A),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Konkrete Hilfe für Eltern — basierend auf Neurobiologie (Hüther), Gewaltfreier Kommunikation (Rosenberg) und Familientherapie (Juul). Warm, klar und sofort anwendbar.',
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.45,
-                letterSpacing: 0.08,
-                color: Color(0xFF516072),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF1EE),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFE8543A).withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline_rounded,
-                      color: Color(0xFFE8543A), size: 18),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'KI-gestützte Orientierung. Ersetzt keine professionelle Beratung oder Therapie.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF516072),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              'Häufige Themen:',
-              style: TextStyle(
-                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A2A3A),
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 32),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               alignment: WrapAlignment.center,
               children: [
-                _buildSuggestionChip('Kind haengt nur am Handy'),
+                _buildSuggestionChip('Kind hängt nur am Handy'),
                 _buildSuggestionChip('Trotzanfall — was tun?'),
                 _buildSuggestionChip('Mein Kind hört nicht'),
-                _buildSuggestionChip('Ich bin total erschoepft'),
+                _buildSuggestionChip('Ich bin total erschöpft'),
                 _buildSuggestionChip('Kind braucht mehr Freiheit'),
                 _buildSuggestionChip('Strafe oder Konsequenz?'),
               ],
             ),
             const SizedBox(height: 40),
+            const Text(
+              'Keine Diagnosen · Keine Therapie · Privat',
+              style: TextStyle(
+                fontSize: 11,
+                color: Color(0xFFADB8C4),
+                letterSpacing: 0.3,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
