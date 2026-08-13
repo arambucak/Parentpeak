@@ -210,7 +210,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
     try {
       final viewerUserId = AuthService.instance.currentUser?.uid ?? 'guest';
-      final coords = _coordsForCity(city);
+      final coords = _originCoords; // GPS/picked coords for accurate community event radius
       List<DiscoveredEvent> aiEvents;
       try {
         aiEvents = await _agent.discoverEvents(
@@ -300,6 +300,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     (double, double) coords,
   ) {
     final now = DateTime.now();
+    // Base at midnight so fallback events get clean daytime hours, not current clock time
+    final today = DateTime(now.year, now.month, now.day);
     return <DiscoveredEvent>[
       DiscoveredEvent(
         id: 'fallback_event_1',
@@ -312,7 +314,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         cityHint: city,
         latitude: coords.$1,
         longitude: coords.$2,
-        eventDate: now.add(const Duration(days: 1)),
+        eventDate: today.add(const Duration(days: 1, hours: 10)),
         price: 'kostenlos',
         organizer: 'Parentpeak Community',
         discoveredAt: now,
@@ -328,7 +330,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         cityHint: city,
         latitude: coords.$1 + 0.01,
         longitude: coords.$2 + 0.01,
-        eventDate: now.add(const Duration(days: 3)),
+        eventDate: today.add(const Duration(days: 3, hours: 15)),
         price: 'kostenlos',
         organizer: 'Lokales Familienzentrum',
         discoveredAt: now,
@@ -344,7 +346,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         cityHint: city,
         latitude: coords.$1 - 0.015,
         longitude: coords.$2 + 0.008,
-        eventDate: now.add(const Duration(days: 5)),
+        eventDate: today.add(const Duration(days: 5, hours: 10)),
         price: 'kostenlos',
         organizer: 'Elterninitiative',
         discoveredAt: now,
@@ -745,8 +747,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final feed = _combinedFeed;
-    final city = _searchCity;
-    final coords = _coordsForCity(city);
+    final coords = _originCoords; // GPS/picked coords, not city-name lookup
     final showInvitationsSection = _invitations.isNotEmpty;
 
     return Scaffold(
