@@ -1113,6 +1113,20 @@ app.use(async (req, res, next) => {
     return;
   }
 
+  // Calendar and todo endpoints: accept userId from request body as lightweight auth.
+  // Firebase token verification is still attempted; body userId is the fallback.
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping'];
+  if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
+    const authHeader = req.headers.authorization || '';
+    if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
+      const { uid, verified } = await verifyFirebaseIdToken(req);
+      if (verified) req.firebaseUid = uid;
+    }
+    // Always continue — userId in body identifies the owner
+    next();
+    return;
+  }
+
   const authHeader = req.headers.authorization || '';
   const hasBearer = authHeader.startsWith('Bearer ');
 
@@ -4034,7 +4048,7 @@ app.get('/calendar/events', async (req, res) => {
 });
 
 app.post('/calendar/events', async (req, res) => {
-  const userId = (req.firebaseUid || req.body.familyId || 'demo-family-001').toString().trim();
+  const userId = (req.firebaseUid || req.body.userId || req.body.familyId || 'demo-family-001').toString().trim();
   const event = {
     id: generateId('cal'),
     userId,

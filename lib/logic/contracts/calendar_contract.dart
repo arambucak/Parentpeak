@@ -48,8 +48,9 @@ class CalendarContract {
     return normalize(item);
   }
 
-  static Map<String, dynamic> buildCreatePayload(Map<String, dynamic> event) {
+  static Map<String, dynamic> buildCreatePayload(Map<String, dynamic> event, {String? userId}) {
     return {
+      'userId': userId ?? '',
       'familyId': APIConfig.getBackendFamilyId(),
       'title': event['title'] ?? '',
       'description': '',

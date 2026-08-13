@@ -38,9 +38,10 @@ class CalendarBackendService {
     }
 
     try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
       await apiClient!.postJsonAny(
         CalendarContract.eventsPath,
-        CalendarContract.buildCreatePayload(event),
+        CalendarContract.buildCreatePayload(event, userId: uid),
       );
     } catch (e) {
       lastSyncError = e.toString();
