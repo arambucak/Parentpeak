@@ -240,7 +240,7 @@ const List<ElternWissenEntry> elternWissenData = [
     beduerfnis:
         'Auch DEINE Gefühle sind real und wichtig. Schreien ist ein Zeichen DEINER Überlastung — nicht deines Versagens.',
     gfkSatz:
-        'Ich merke ich bin gerade überfordert. Ich brauche kurz eine Pause um ruhig zu werden.',,
+        'Ich merke ich bin gerade überfordert. Ich brauche kurz eine Pause um ruhig zu werden.',
     aktion: [
       'Erkenne deine Warnsignale (Kiefer, Schultern, Hitze)',
       'Sag laut: "Ich brauche kurz Pause" (modelliert Selbstregulation)',
@@ -335,7 +335,7 @@ const List<ElternWissenEntry> elternWissenData = [
         'Ich möchte verstehen was passiert ist. Du bekommst keinen Ärger — erzähl mir deine Version.',
     aktion: [
       'Sicherheit schaffen: Ehrlichkeit NICHT bestrafen',
-      'Zwischen Fantasie-Lüge (normal, 3-5 J.) und Schutz-Lüge (Angst) unterscheiden',,
+      'Zwischen Fantasie-Lüge (normal, 3-5 J.) und Schutz-Lüge (Angst) unterscheiden',
       'Vorbild: Selbst ehrlich sein, auch wenn es unangenehm ist'
     ],
     ermutigung:
@@ -418,7 +418,7 @@ const List<ElternWissenEntry> elternWissenData = [
     beduerfnis:
         'Der Körper deines Kindes ist noch nicht so weit. Das Anti-Diuretische Hormon reift bei manchen Kindern erst mit 6-7.',
     gfkSatz:
-        'Das ist nicht deine Schuld. Dein Körper lernt noch. Wir finden eine Lösung zusammen.',,
+        'Das ist nicht deine Schuld. Dein Körper lernt noch. Wir finden eine Lösung zusammen.',
     aktion: [
       'Wasserdichte Unterlage (ohne Drama)',
       'Gemeinsam Bett neu beziehen (Kind einbeziehen, nicht bestrafen)',
@@ -482,7 +482,7 @@ const List<ElternWissenEntry> elternWissenData = [
         'Ich höre dass dich das sehr traurig macht. Du bist liebenswert — egal was andere sagen.',
     aktion: [
       'Nicht sofort "loesen wollen" — erstmal Gefühle anerkennen',
-      'Fragen: Was wünscht du dir? (Manche wollen Hilfe, manche nur Zuhören)',,
+      'Fragen: Was wünscht du dir? (Manche wollen Hilfe, manche nur Zuhören)',
       'Bei Mobbing: Schule informieren (Klassenleitung)'
     ],
     ermutigung:
@@ -656,7 +656,7 @@ const List<ElternWissenEntry> elternWissenData = [
     akut:
         'Höre zu ohne zu relativieren. Nicht: "Du bist doch hübsch!" Sondern: "Erzähl mir mehr."',
     beduerfnis:
-        'In der Pubertät ist das Selbstbild fragil. Social Media verstärkt Vergleiche. Dein Kind braucht Ankerworte die NICHT äußeres bewerten.',,
+        'In der Pubertät ist das Selbstbild fragil. Social Media verstärkt Vergleiche. Dein Kind braucht Ankerworte die NICHT äußeres bewerten.',
     gfkSatz:
         'Du bist wertvoll — nicht wegen deines Aussehens sondern wegen dem wer du bist.',
     aktion: [
