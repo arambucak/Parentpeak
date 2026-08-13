@@ -52,7 +52,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     if (mounted) {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('\u{2764}\u{FE0F} Rezept gespeichert!')),
+        SnackBar(
+            content: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'recipe_saved'))),
       );
     }
   }
@@ -75,7 +77,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Familien-Küche'),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'familien_kueche_title')),
         elevation: 0,
         actions: [
           if (_service.savedRecipes.isNotEmpty)
@@ -113,7 +116,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       child: Column(children: [
         const Text('\u{1F373}', style: TextStyle(fontSize: 36)),
         const SizedBox(height: 14),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'generating_recipe'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'generating_recipe'),
             style: theme.textTheme.bodyMedium
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
@@ -179,7 +184,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('\u{1F6D2} Zutaten (${recipe.portions} Portionen)',
+            Text(
+                '${AppStringsManager.getString(languageService.currentLanguage, "ingredients_portions")} (${recipe.portions} ${AppStringsManager.getString(languageService.currentLanguage, "portions_label")})',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
@@ -201,7 +207,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         // Zubereitung (ausklappbar)
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-          child: GestureDetector(behavior: HitTestBehavior.opaque, 
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () => setState(() => _showSteps = !_showSteps),
             child: Row(children: [
               Text('\u{1F373} Zubereitung',
@@ -282,7 +289,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                   child: OutlinedButton.icon(
                 onPressed: _saveRecipe,
                 icon: const Icon(Icons.favorite_border_rounded, size: 18),
-                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'save_recipe')),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'save_recipe')),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -294,7 +302,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                   child: FilledButton.icon(
                 onPressed: _generateNew,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'other_idea')),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'other_idea')),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFF97316),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -309,7 +318,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _showIngredientPicker(context),
                 icon: const Icon(Icons.shopping_cart_rounded, size: 16),
-                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'ingredients_to_list')),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'ingredients_to_list')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF16A34A),
                   side: BorderSide(
@@ -332,12 +342,15 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                 Text('\u{1F36D}', style: const TextStyle(fontSize: 16)),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'did_it_taste'),
+                    child: Text(
+                        AppStringsManager.getString(
+                            languageService.currentLanguage, 'did_it_taste'),
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF9A3412)))),
-                GestureDetector(behavior: HitTestBehavior.opaque, 
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _rateRecipe(true),
                   child: Container(
                     padding:
@@ -345,7 +358,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                     decoration: BoxDecoration(
                         color: const Color(0xFF16A34A).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8)),
-                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'yes_tasty'),
+                    child: Text(
+                        AppStringsManager.getString(
+                            languageService.currentLanguage, 'yes_tasty'),
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -353,7 +368,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                GestureDetector(behavior: HitTestBehavior.opaque, 
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _rateRecipe(false),
                   child: Container(
                     padding:
@@ -361,7 +377,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                     decoration: BoxDecoration(
                         color: const Color(0xFFDC2626).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8)),
-                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'no_tasty'),
+                    child: Text(
+                        AppStringsManager.getString(
+                            languageService.currentLanguage, 'no_tasty'),
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -394,7 +412,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   Widget _tippsSection(ThemeData theme) {
     final tips = _getTips();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(AppStringsManager.getString(languageService.currentLanguage, 'family_food_tips'),
+      Text(
+          AppStringsManager.getString(
+              languageService.currentLanguage, 'family_food_tips'),
           style: theme.textTheme.titleSmall
               ?.copyWith(fontWeight: FontWeight.w800)),
       const SizedBox(height: 10),
@@ -549,7 +569,10 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             Expanded(
               child: _service.savedRecipes.isEmpty
                   ? Center(
-                      child: Text(AppStringsManager.getString(languageService.currentLanguage, 'no_saved_recipes'),
+                      child: Text(
+                          AppStringsManager.getString(
+                              languageService.currentLanguage,
+                              'no_saved_recipes'),
                           style: theme.textTheme.bodySmall
                               ?.copyWith(color: theme.colorScheme.outline)))
                   : ListView.separated(
@@ -704,7 +727,9 @@ class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
                 color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2))),
         const SizedBox(height: 14),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'what_do_you_need'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'what_do_you_need'),
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),

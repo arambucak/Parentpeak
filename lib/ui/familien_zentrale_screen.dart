@@ -108,7 +108,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     final items = _shopping.activeItems;
     if (items.isEmpty) return;
     final lines = items
-        .map((i) => '• ${i.emoji} ${i.name}'  
+        .map((i) => '• ${i.emoji} ${i.name}'
             '${i.quantity != null ? ' (${i.quantity})' : ''}')
         .join('\n');
     Share.share('🛒 Einkaufsliste\n\n$lines', subject: 'Einkaufsliste');
@@ -119,14 +119,17 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     final theme = Theme.of(context);
     if (!_loaded) {
       return Scaffold(
-        appBar: AppBar(title: Text(AppStringsManager.getString(languageService.currentLanguage, 'familien_zentrale_title'))),
+        appBar: AppBar(
+            title: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'familien_zentrale_title'))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'familien_zentrale_title')),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'familien_zentrale_title')),
         elevation: 0,
         actions: [
           if (_activeTabIndex == 0 && _shopping.activeItems.isNotEmpty)
@@ -267,15 +270,18 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                   children: [
                     if (active.isEmpty && done.isNotEmpty)
                       _buildAllDoneCelebration(theme),
-                    ...active.map((item) => _shoppingItemTile(theme, item, false)),
+                    ...active
+                        .map((item) => _shoppingItemTile(theme, item, false)),
                     if (done.isNotEmpty) ...[
                       Padding(
                         padding: const EdgeInsets.only(top: 14, bottom: 6),
-                        child: Text('${AppStringsManager.getString(languageService.currentLanguage, "done_count")} (${done.length})',
+                        child: Text(
+                            '${AppStringsManager.getString(languageService.currentLanguage, "done_count")} (${done.length})',
                             style: theme.textTheme.labelMedium
                                 ?.copyWith(color: theme.colorScheme.outline)),
                       ),
-                      ...done.map((item) => _shoppingItemTile(theme, item, true)),
+                      ...done
+                          .map((item) => _shoppingItemTile(theme, item, true)),
                     ],
                   ],
                 )),
@@ -289,11 +295,15 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text('🛒', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 16),
-          Text(AppStringsManager.getString(languageService.currentLanguage, 'list_empty'),
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'list_empty'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
-          Text('Tippe oben etwas ein — z.B. "3x Milch"',
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'type_hint_shopping'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline),
               textAlign: TextAlign.center),
@@ -309,18 +319,24 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
       decoration: BoxDecoration(
         color: const Color(0xFFDCFCE7),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.3)),
+        border:
+            Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.3)),
       ),
       child: Row(children: [
         const Text('🎉', style: TextStyle(fontSize: 28)),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Alle Einkäufe erledigt.',
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'all_shopping_done'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF166534))),
-            Text('Die Liste ist vollständig.',
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'list_complete'),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: const Color(0xFF166534))),
           ]),
@@ -333,65 +349,66 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-        dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-        onTap: () async {
-          await _shopping.toggleDone(item.id);
-          setState(() {});
-        },
-        leading: Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: isDone
-                ? const Color(0xFF16A34A).withValues(alpha: 0.1)
-                : Colors.transparent,
-            shape: BoxShape.circle,
-            border: Border.all(
-                color: isDone
-                    ? const Color(0xFF16A34A)
-                    : theme.colorScheme.outline,
-                width: 1.5),
-          ),
-          child: isDone
-              ? const Icon(Icons.check_rounded,
-                  size: 16, color: Color(0xFF16A34A))
-              : null,
-        ),
-        title: Text(
-          '${item.emoji} ${item.name}',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            decoration: isDone ? TextDecoration.lineThrough : null,
-            color: isDone ? theme.colorScheme.outline : null,
-          ),
-        ),
-        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (item.quantity != null)
-            Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8)),
-                child: Text(item.quantity!,
-                    style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF8B5CF6)))),
-          const SizedBox(width: 4),
-          GestureDetector(behavior: HitTestBehavior.opaque, 
+          color: Colors.transparent,
+          child: ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
             onTap: () async {
-              await _shopping.removeItem(item.id);
+              await _shopping.toggleDone(item.id);
               setState(() {});
             },
-            child: Icon(Icons.close_rounded,
-                size: 16, color: theme.colorScheme.outline),
-          ),
-        ]),
-      )
-      ),
+            leading: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDone
+                    ? const Color(0xFF16A34A).withValues(alpha: 0.1)
+                    : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: isDone
+                        ? const Color(0xFF16A34A)
+                        : theme.colorScheme.outline,
+                    width: 1.5),
+              ),
+              child: isDone
+                  ? const Icon(Icons.check_rounded,
+                      size: 16, color: Color(0xFF16A34A))
+                  : null,
+            ),
+            title: Text(
+              '${item.emoji} ${item.name}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                decoration: isDone ? TextDecoration.lineThrough : null,
+                color: isDone ? theme.colorScheme.outline : null,
+              ),
+            ),
+            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+              if (item.quantity != null)
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Text(item.quantity!,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF8B5CF6)))),
+              const SizedBox(width: 4),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () async {
+                  await _shopping.removeItem(item.id);
+                  setState(() {});
+                },
+                child: Icon(Icons.close_rounded,
+                    size: 16, color: theme.colorScheme.outline),
+              ),
+            ]),
+          )),
     );
   }
 
@@ -454,7 +471,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
           if (done.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(top: 14, bottom: 6),
-              child: Text('Erledigt (${done.length})',
+              child: Text(
+                  '${AppStringsManager.getString(languageService.currentLanguage, "completed")} (${done.length})',
                   style: theme.textTheme.labelMedium
                       ?.copyWith(color: theme.colorScheme.outline)),
             ),
@@ -469,7 +487,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     return ListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: GestureDetector(behavior: HitTestBehavior.opaque, 
+      leading: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           todo['done'] = !(todo['done'] ?? false);
           _saveTodos();
@@ -543,7 +562,9 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text('\u{1F476}', style: TextStyle(fontSize: 40)),
           const SizedBox(height: 14),
-          Text(AppStringsManager.getString(languageService.currentLanguage, 'no_children_data'),
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'no_children_data'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
@@ -664,7 +685,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             child: OutlinedButton.icon(
               onPressed: () => _showNotfallInfo(theme, dossier),
               icon: const Icon(Icons.local_hospital_rounded, size: 16),
-              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'show_emergency_info')),
+              label: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'show_emergency_info')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFFDC2626),
                 side: BorderSide(
@@ -704,7 +726,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text('\u{1F6A8}', style: TextStyle(fontSize: 32)),
           const SizedBox(height: 8),
-          Text('Notfall-Info: ${d.childName}',
+          Text(
+              '${AppStringsManager.getString(languageService.currentLanguage, "emergency_info")}: ${d.childName}',
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 16),
@@ -725,7 +748,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'close_btn')),
+                child: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'close_btn')),
               )),
         ]),
       ),
@@ -856,7 +880,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'save_btn')),
+                child: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'save_btn')),
               ),
             ],
           ),

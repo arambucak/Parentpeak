@@ -50,10 +50,10 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   int _expandedFormat = -1;
 
   // Stimmungscheck & Streak
-  int _todayMood = 0;          // 0=kein Check-in, 1=😮‍💨, 2=😌, 3=🌟
-  int _streak = 0;             // Tage in Folge
+  int _todayMood = 0; // 0=kein Check-in, 1=😮‍💨, 2=😌, 3=🌟
+  int _streak = 0; // Tage in Folge
   bool _impulseCompleted = false; // Heutiger Impuls gelesen
-  String? _wissenTopic;        // Vorausgefülltes Thema für Wissen-Tab (Soforthilfe)
+  String? _wissenTopic; // Vorausgefülltes Thema für Wissen-Tab (Soforthilfe)
 
   String _t(String key) => AppStringsManager.getString(
       languageService.currentLanguage,
@@ -114,7 +114,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   }
 
   // 7 offline fallback topics, cycled by day-of-year when backend unavailable.
-  static const List<(String title, String body, String tip, String reflect)> _fallbackTopics = [
+  static const List<(String title, String body, String tip, String reflect)>
+      _fallbackTopics = [
     (
       'Grenzen liebevoll setzen',
       'Liebevolle Grenzen sind kein Widerspruch. Kinder brauchen beides: das Gefühl, geliebt zu sein, UND klare Orientierung. Grenzen mit Verbindung wirken wie Leitplanken, nicht wie Mauern.',
@@ -163,7 +164,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     final now = DateTime.now();
     final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
     final t = _fallbackTopics[dayOfYear % _fallbackTopics.length];
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final dateKey =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     return WeeklyImpulse(
       id: 'local_fallback_$dateKey',
       title: t.$1,
@@ -177,7 +179,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         WeeklyImpulseCompanion(
           id: 'fallback_verstehen_$dateKey',
           title: 'Kurz verstanden',
-          summary: 'Kinder kooperieren besser, wenn sie sich zuerst gesehen fühlen. Verbindung kommt vor Korrektur.',
+          summary:
+              'Kinder kooperieren besser, wenn sie sich zuerst gesehen fühlen. Verbindung kommt vor Korrektur.',
           durationLabel: '2 min',
           formatLabel: 'Verstehen',
         ),
@@ -230,11 +233,12 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     }
     // Impuls erledigt heute?
     final completed = prefs.getBool('impulse.completed.$today') ?? false;
-    if (mounted) setState(() {
-      _todayMood = savedMood;
-      _streak = streak;
-      _impulseCompleted = completed;
-    });
+    if (mounted)
+      setState(() {
+        _todayMood = savedMood;
+        _streak = streak;
+        _impulseCompleted = completed;
+      });
   }
 
   Future<void> _saveMood(int mood) async {
@@ -252,26 +256,35 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
   String _todayKey() {
     final n = DateTime.now();
-    return '${n.year}-${n.month.toString().padLeft(2,'0')}-${n.day.toString().padLeft(2,'0')}';
+    return '${n.year}-${n.month.toString().padLeft(2, '0')}-${n.day.toString().padLeft(2, '0')}';
   }
 
   String _yesterdayKey() {
     final n = DateTime.now().subtract(const Duration(days: 1));
-    return '${n.year}-${n.month.toString().padLeft(2,'0')}-${n.day.toString().padLeft(2,'0')}';
+    return '${n.year}-${n.month.toString().padLeft(2, '0')}-${n.day.toString().padLeft(2, '0')}';
   }
 
   String _getMoodGreeting() {
     final hour = DateTime.now().hour;
-    final timeGreet = hour < 12 ? 'Guten Morgen' : hour < 17 ? 'Hallo' : 'Guten Abend';
+    final timeGreet = hour < 12
+        ? _t('greeting_morning')
+        : hour < 17
+            ? _t('greeting_afternoon')
+            : _t('greeting_evening');
     switch (_todayMood) {
-      case 1: return '$timeGreet — auch erschöpfte Eltern sind gute Eltern. 💛';
-      case 2: return '$timeGreet — schön, dass du heute dabei bist.';
-      case 3: return '$timeGreet — mit dieser Energie kannst du viel bewegen! 🌟';
-      default: return '$timeGreet! Wie geht\'s dir heute?';
+      case 1:
+        return '$timeGreet${_t('mood_exhausted_suffix')}';
+      case 2:
+        return '$timeGreet${_t('mood_present_suffix')}';
+      case 3:
+        return '$timeGreet${_t('mood_energetic_suffix')}';
+      default:
+        return '$timeGreet${_t('mood_default_suffix')}';
     }
   }
 
-  Future<void> _playAudio(String text) async {    if (_isPlayingAudio) {
+  Future<void> _playAudio(String text) async {
+    if (_isPlayingAudio) {
       await _tts.stop();
       setState(() => _isPlayingAudio = false);
       return;
@@ -380,7 +393,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               FilledButton.tonalIcon(
                 onPressed: _loadImpulse,
                 icon: const Icon(Icons.refresh_rounded),
-                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'reload_btn')),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'reload_btn')),
               ),
             ],
           ),
@@ -407,9 +421,12 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    Icon(Icons.wifi_off_rounded, size: 14, color: theme.colorScheme.outline),
+                    Icon(Icons.wifi_off_rounded,
+                        size: 14, color: theme.colorScheme.outline),
                     const SizedBox(width: 6),
-                    Text('Offline-Impuls', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline)),
+                    Text(_t('offline_impulse'),
+                        style: theme.textTheme.labelSmall
+                            ?.copyWith(color: theme.colorScheme.outline)),
                   ],
                 ),
               ),
@@ -444,8 +461,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   Expanded(
                     child: Text(
                       impulseIsStale
-                          ? 'Stand: ${_formatDateLabel(impulse.publishDate)} - älter als ${_impulseStaleThreshold.inDays} Tage. Bitte Inhalt prüfen.'
-                          : 'Stand: ${_formatDateLabel(impulse.publishDate)}',
+                          ? '${_t('status_as_of')} ${_formatDateLabel(impulse.publishDate)} - ${_t('stale_days_warning').replaceAll('{days}', '${_impulseStaleThreshold.inDays}')}'
+                          : '${_t('status_as_of')} ${_formatDateLabel(impulse.publishDate)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: impulseIsStale
                             ? const Color(0xFF8A4B00)
@@ -632,7 +649,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                           Text(_t('learn_more'),
                               style: theme.textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w700)),
-                          Text('Die KI erklärt dir das Thema persönlich',
+                          Text(_t('ai_explains_personal'),
                               style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant)),
                         ],
@@ -651,11 +668,13 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: _markImpulseCompleted,
-                  icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                  label: const Text('Für heute gelesen ✓'),
+                  icon:
+                      const Icon(Icons.check_circle_outline_rounded, size: 18),
+                  label: Text(_t('daily_done_mark')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF16A34A),
-                    side: const BorderSide(color: Color(0xFF16A34A), width: 1.5),
+                    side:
+                        const BorderSide(color: Color(0xFF16A34A), width: 1.5),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -664,16 +683,21 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               )
             else
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   color: const Color(0xFFDCFCE7),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   const Icon(Icons.check_circle_rounded,
                       size: 18, color: Color(0xFF16A34A)),
                   const SizedBox(width: 8),
-                  Text(AppStringsManager.getString(languageService.currentLanguage, 'daily_done_message'),
+                  Text(
+                      AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'daily_done_message'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF166534))),
@@ -780,7 +804,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      _isPlayingAudio ? 'Stoppen' : 'Vorlesen',
+                      _isPlayingAudio ? _t('stop') : _t('listen'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -855,7 +879,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _isPlayingAudio ? 'Stop' : 'Vorlesen',
+                          _isPlayingAudio ? _t('stop') : _t('listen'),
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
@@ -1343,7 +1367,9 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                       ?.copyWith(fontWeight: FontWeight.w800),
                   textAlign: TextAlign.center),
               const SizedBox(height: 6),
-              Text(AppStringsManager.getString(languageService.currentLanguage, 'fits_age'),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'fits_age'),
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center),
@@ -1381,17 +1407,19 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   value: selectedCare,
                   isExpanded: true,
                   decoration: InputDecoration(
-                      labelText: 'Betreuungsform',
+                      labelText: _t('care_type'),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14))),
-                  items: const [
+                  items: [
                     DropdownMenuItem(
-                        value: 'kita', child: Text('Kita / Kindergarten')),
+                        value: 'kita', child: Text(_t('care_kita'))),
                     DropdownMenuItem(
-                        value: 'tagesmutter', child: Text('Tagesmutter')),
+                        value: 'tagesmutter',
+                        child: Text(_t('care_tagesmutter'))),
                     DropdownMenuItem(
-                        value: 'zuhause', child: Text('Zuhause betreut')),
-                    DropdownMenuItem(value: 'andere', child: Text('Andere'))
+                        value: 'zuhause', child: Text(_t('care_home'))),
+                    DropdownMenuItem(
+                        value: 'andere', child: Text(_t('care_other')))
                   ],
                   onChanged: (v) {
                     if (v != null) setLocal(() => selectedCare = v);
@@ -1523,7 +1551,10 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(AppStringsManager.getString(languageService.currentLanguage, 'tip_label'),
+                              Text(
+                                  AppStringsManager.getString(
+                                      languageService.currentLanguage,
+                                      'tip_label'),
                                   style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
@@ -1587,12 +1618,16 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
           Row(children: [
             const Text('\u{1F4CB}', style: TextStyle(fontSize: 20)),
             const SizedBox(width: 10),
-            Text(AppStringsManager.getString(languageService.currentLanguage, 'pedagogical_assessment'),
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'pedagogical_assessment'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800))
           ]),
           const SizedBox(height: 4),
-          Text(AppStringsManager.getString(languageService.currentLanguage, 'ai_based_report'),
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'ai_based_report'),
               style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
           const SizedBox(height: 14),
@@ -1638,7 +1673,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
             if (_streak > 1) ...[
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF4E5),
                   borderRadius: BorderRadius.circular(20),
@@ -1679,27 +1715,29 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       child: Row(
         children: [
           Expanded(
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'how_are_you'),
-                style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600)),
+            child: Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'how_are_you'),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w600)),
           ),
           ...[
             ('😮‍💨', 'Erschöpft', 1),
             ('😌', 'Okay', 2),
             ('🌟', 'Top', 3),
           ].map((item) => GestureDetector(
-            onTap: () => _saveMood(item.$3),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text(item.$1, style: const TextStyle(fontSize: 22)),
-                Text(item.$2,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 9)),
-              ]),
-            ),
-          )),
+                onTap: () => _saveMood(item.$3),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(item.$1, style: const TextStyle(fontSize: 22)),
+                    Text(item.$2,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 9)),
+                  ]),
+                ),
+              )),
         ],
       ),
     );
@@ -1707,15 +1745,32 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
   // ─── Soforthilfe — "Was ist gerade los?" ─────────────────────────────────
   Widget _buildSoforthilfe(ThemeData theme) {
-    const cards = [
-      (emoji: '😤', label: 'Trotz &\nWut', topic: 'trotz', color: Color(0xFFDC2626)),
-      (emoji: '😴', label: 'Schlafen\nklappt nicht', topic: 'schlafen', color: Color(0xFF7C3AED)),
-      (emoji: '✋', label: 'Haut ·\nBeißt', topic: 'haut', color: Color(0xFFEA580C)),
+    final cards = [
+      (
+        emoji: '😤',
+        label: _t('topic_defiance_anger'),
+        topic: 'trotz',
+        color: const Color(0xFFDC2626)
+      ),
+      (
+        emoji: '😴',
+        label: _t('topic_sleep_issues'),
+        topic: 'schlafen',
+        color: const Color(0xFF7C3AED)
+      ),
+      (
+        emoji: '✋',
+        label: _t('topic_hits_bites'),
+        topic: 'haut',
+        color: const Color(0xFFEA580C)
+      ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'whats_going_on'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'whats_going_on'),
             style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: theme.colorScheme.onSurfaceVariant)),
@@ -1733,19 +1788,18 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                     _tabController.animateTo(2);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                     decoration: BoxDecoration(
                       color: card.color.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color: card.color.withValues(alpha: 0.2)),
+                      border:
+                          Border.all(color: card.color.withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(card.emoji,
-                            style: const TextStyle(fontSize: 26)),
+                        Text(card.emoji, style: const TextStyle(fontSize: 26)),
                         const SizedBox(height: 6),
                         Text(card.label,
                             textAlign: TextAlign.center,

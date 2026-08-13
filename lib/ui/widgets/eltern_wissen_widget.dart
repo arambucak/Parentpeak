@@ -10,7 +10,8 @@ import 'package:parentpeak/main.dart';
 /// Zeigt: 1 personalisierter Impuls oben + Suchfeld + Ergebnisse.
 class ElternWissenWidget extends StatefulWidget {
   final VoidCallback? onOpenChat; // Fallback -> KI-Chat
-  final String? initialTopic;    // Vorausgefülltes Suchthema (z.B. von Soforthilfe)
+  final String?
+      initialTopic; // Vorausgefülltes Suchthema (z.B. von Soforthilfe)
 
   const ElternWissenWidget({super.key, this.onOpenChat, this.initialTopic});
 
@@ -116,7 +117,9 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
       // Themen-Karten Carousel (3-5 Karten horizontal)
       if (_results.isEmpty) ...[
         const SizedBox(height: 14),
-        Text('\u{1F4DA} Häufige Themen',
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'common_topics'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
@@ -128,7 +131,8 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
             separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (_, i) {
               final topic = _topicCards[i];
-              return GestureDetector(behavior: HitTestBehavior.opaque, 
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () {
                   _searchCtrl.text = topic['search']!;
                   _onSearch(topic['search']!);
@@ -227,7 +231,9 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
         Row(children: [
           const Text('\u{1F4AC}', style: TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
-          Text(AppStringsManager.getString(languageService.currentLanguage, 'your_impulse_today'),
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'your_impulse_today'),
               style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700, color: const Color(0xFF16A34A))),
         ]),
@@ -261,12 +267,16 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
       child: Column(children: [
         const Text('\u{1F914}', style: TextStyle(fontSize: 24)),
         const SizedBox(height: 8),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'no_entry_yet'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'no_entry_yet'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(fontWeight: FontWeight.w600),
             textAlign: TextAlign.center),
         const SizedBox(height: 4),
-        Text('Frag unsere KI-Beratung — sie kennt sich aus!',
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'ask_ai_hint'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline),
             textAlign: TextAlign.center),
@@ -274,7 +284,8 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
         FilledButton.icon(
           onPressed: widget.onOpenChat,
           icon: const Icon(Icons.tips_and_updates_rounded, size: 16),
-          label: Text(AppStringsManager.getString(languageService.currentLanguage, 'ask_ai_btn')),
+          label: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'ask_ai_btn')),
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFF8B5CF6),
             shape:
@@ -348,7 +359,8 @@ class _ExpandableResultCardState extends State<_ExpandableResultCard> {
           ]),
         ),
         // "Mehr erfahren" Toggle
-        GestureDetector(behavior: HitTestBehavior.opaque, 
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () => setState(() => _expanded = !_expanded),
           child: Container(
             width: double.infinity,
@@ -390,7 +402,9 @@ class _ExpandableResultCardState extends State<_ExpandableResultCard> {
                   theme, '\u{1F4AC}', 'Was du sagen kannst (GfK)', e.gfkSatz),
               const SizedBox(height: 10),
               // Aktionen
-              Text(AppStringsManager.getString(languageService.currentLanguage, 'what_you_can_do'),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'what_you_can_do'),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),

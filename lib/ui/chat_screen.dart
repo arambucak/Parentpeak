@@ -388,18 +388,21 @@ class _ChatScreenState extends State<ChatScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Chatverlauf löschen'),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'delete_history_title')),
         content: const Text(
           'Möchtest du den aktuellen Chatverlauf wirklich löschen?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Löschen'),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'delete')),
           ),
         ],
       ),
@@ -483,7 +486,8 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 12),
               if (sorted.isEmpty)
-                Text(AppStringsManager.getString(languageService.currentLanguage, 'no_questions_yet'))
+                Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'no_questions_yet'))
               else
                 ...sorted.map(
                   (entry) => ListTile(
@@ -503,7 +507,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (context.mounted) Navigator.pop(context);
                   },
                   icon: const Icon(Icons.restart_alt_rounded),
-                  label: const Text('Zähler zurücksetzen'),
+                  label: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'reset_counter')),
                 ),
               ),
             ],
@@ -606,7 +611,8 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed:
                   _isStreaming ? null : () => _retryAssistantFailure(index),
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'try_again')),
+              label: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'try_again')),
             ),
           chip('hilfreich', Icons.thumb_up_alt_outlined),
           chip('nicht hilfreich', Icons.thumb_down_alt_outlined),
@@ -991,7 +997,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_initError != null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'ki_parenting_title')),
+          title: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'ki_parenting_title')),
           centerTitle: true,
           elevation: 0,
           actions: [
@@ -1036,7 +1043,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 FilledButton.tonalIcon(
                   onPressed: _initializeGemini,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Erneut versuchen'),
+                  label: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'try_again')),
                 ),
               ],
             ),

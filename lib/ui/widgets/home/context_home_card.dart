@@ -573,7 +573,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           const SizedBox(height: 10),
           GestureDetector(
             onTap: widget.onExpandTip,
-            child: Text('\u{2728} Erklaere mir das genauer \u{2192}',
+            child: Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'explain_more'),
                 style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFFD97706),
                     fontWeight: FontWeight.w700)),
@@ -700,7 +702,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         ]),
         const SizedBox(height: 14),
         if (!_moodDone) ...[
-          Text(AppStringsManager.getString(languageService.currentLanguage, 'how_was_your_day'),
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'how_was_your_day'),
               style: theme.textTheme.bodyMedium?.copyWith(
                   color: const Color(0xFF6B21A8), fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
@@ -749,7 +753,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('✨ Deine Woche ansehen',
+                    Text(
+                        AppStringsManager.getString(
+                            languageService.currentLanguage, 'view_your_week'),
                         style: theme.textTheme.labelMedium?.copyWith(
                             color: Colors.white, fontWeight: FontWeight.w700)),
                     const Icon(Icons.arrow_forward_ios_rounded,
@@ -965,7 +971,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
-                  child: Text(AppStringsManager.getString(languageService.currentLanguage, 'save_mood'),
+                  child: Text(
+                      AppStringsManager.getString(
+                          languageService.currentLanguage, 'save_mood'),
                       style: theme.textTheme.labelSmall?.copyWith(
                           color: Colors.white, fontWeight: FontWeight.w700)),
                 ),
@@ -975,7 +983,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           const SizedBox(width: 12),
           GestureDetector(
             onTap: () => _saveMoment(skip: true),
-            child: Text('Überspringen',
+            child: Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'skip_mood'),
                 style: theme.textTheme.labelSmall
                     ?.copyWith(color: const Color(0xFF9CA3AF))),
           ),
