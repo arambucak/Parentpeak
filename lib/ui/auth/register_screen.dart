@@ -64,8 +64,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _isLoading = false);
 
       if (result.success) {
-        widget.onRegisterSuccess?.call();
-        if (mounted) Navigator.of(context).pop();
+        // Sign out immediately — user must verify email first
+        await AuthService.instance.logout();
+        if (!mounted) return;
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => _EmailVerificationDialog(
+            email: _emailCtrl.text.trim().toLowerCase(),
+            onDone: () {
+              Navigator.of(context).pop(); // close dialog
+              Navigator.of(context).pop(); // go back to login
+            },
+          ),
+        );
       } else {
         setState(
           () => _errorMessage = result.errorMessage ??
@@ -603,6 +615,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _EmailVerificationDialog extends StatefulWidget {
+  const _EmailVerificationDialog({required this.email, required this.onDone});
+  final String email;
+  final VoidCallback onDone;
+
+  @override
+  State<_EmailVerificationDialog> createState() =>
+      _EmailVerificationDialogState();
+}
+
+class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
+  bool _resent = false;
+  bool _sending = false;
+
+  Future<void> _resend() async {
+    setState(() { _sending = true; _resent = false; });
+    await AuthService.instance.resendVerificationEmail(widget.email);
+    if (mounted) setState(() { _sending = false; _resent = true; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Text('E-Mail bestätigen 📬'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Wir haben eine Bestätigungs-E-Mail an\n${widget.email}\ngesendet.',
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Bitte klicke auf den Link in der E-Mail. Danach kannst du dich einloggen.',
+            style: TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+          if (_resent) ...[
+            const SizedBox(height: 10),
+            const Text(
+              '✅ Neuer Link wurde gesendet.',
+              style: TextStyle(color: Color(0xFF059669), fontSize: 13),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _sending ? null : _resend,
+          child: _sending
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Link erneut senden'),
+        ),
+        FilledButton(
+          onPressed: widget.onDone,
+          child: const Text('Zum Login'),
+        ),
+      ],
     );
   }
 }

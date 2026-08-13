@@ -36,6 +36,7 @@ enum AuthErrorCode {
   wrongPassword,
   tooManyRequests,
   networkError,
+  emailNotVerified,
   unknown,
 }
 
@@ -251,6 +252,7 @@ class AuthService with ChangeNotifier {
         );
 
         await credential.user?.updateDisplayName(cleanName);
+        await credential.user?.sendEmailVerification();
         final user = await _readOrCreateFirebaseUser(
           credential.user!,
           preferredDisplayName: cleanName,
@@ -353,6 +355,15 @@ class AuthService with ChangeNotifier {
           return AuthResult.fail(
             AuthErrorCode.unknown,
             'Login ist fehlgeschlagen. Bitte versuche es erneut.',
+          );
+        }
+
+        if (!firebaseUser.emailVerified) {
+          await firebaseUser.sendEmailVerification();
+          await auth.signOut();
+          return AuthResult.fail(
+            AuthErrorCode.emailNotVerified,
+            'Bitte bestätige deine E-Mail-Adresse. Wir haben dir einen neuen Link gesendet.',
           );
         }
 
@@ -660,6 +671,19 @@ class AuthService with ChangeNotifier {
     await prefs.remove(_kUserKey);
     _currentUser = null;
     notifyListeners();
+  }
+
+  Future<void> resendVerificationEmail(String email) async {
+    try {
+      final auth = FirebaseAuth.instance;
+      // Re-sign-in is not possible without password here; use currentUser if available
+      final user = auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+      }
+    } catch (e) {
+      debugPrint('resendVerificationEmail failed: $e');
+    }
   }
 
   /// Deletes the account permanently. Returns an error message on failure, null on success.
