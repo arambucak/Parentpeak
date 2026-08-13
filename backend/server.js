@@ -1650,6 +1650,29 @@ async function ensureSocialSchemaReady() {
       "ts" BIGINT NOT NULL DEFAULT 0
     );
   `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CalendarEvent" (
+      "id" TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "familyId" TEXT NOT NULL DEFAULT 'demo-family-001',
+      "title" TEXT NOT NULL,
+      "startAt" TIMESTAMPTZ NOT NULL,
+      "endAt" TIMESTAMPTZ,
+      "location" TEXT NOT NULL DEFAULT '',
+      "person" TEXT NOT NULL DEFAULT 'Eltern',
+      "allDay" BOOLEAN NOT NULL DEFAULT FALSE,
+      "recurrence" TEXT NOT NULL DEFAULT 'Einmalig',
+      "recurrenceEndMode" TEXT NOT NULL DEFAULT 'Kein Ende',
+      "recurrenceEndDate" TIMESTAMPTZ,
+      "recurrenceCount" INT,
+      "reminderMinutes" INT NOT NULL DEFAULT 0,
+      "packReminder" TEXT,
+      "bringer" TEXT,
+      "abholer" TEXT,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_calendar_user" ON "CalendarEvent"("userId");`);
   socialSchemaEnsured = true;
 }
 
@@ -3992,21 +4015,61 @@ app.delete('/shopping/:id', async (req, res) => {
 });
 
 // 10. Calendar events
-app.get('/calendar/events', (req, res) => {
-  res.json({ items: calendarEvents });
+app.get('/calendar/events', async (req, res) => {
+  const userId = (req.query.userId || req.query.familyId || '').toString().trim();
+  try {
+    await ensureSocialSchemaReady();
+    if (userId) {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT * FROM "CalendarEvent" WHERE "userId" = $1 ORDER BY "startAt" ASC`,
+        userId
+      );
+      return res.json({ items: rows });
+    }
+    return res.json({ items: [] });
+  } catch (error) {
+    // fallback to in-memory on DB error
+    return res.json({ items: calendarEvents.filter(e => !userId || e.familyId === userId) });
+  }
 });
 
-app.post('/calendar/events', (req, res) => {
+app.post('/calendar/events', async (req, res) => {
+  const userId = (req.firebaseUid || req.body.familyId || 'demo-family-001').toString().trim();
   const event = {
     id: generateId('cal'),
-    familyId: req.body.familyId || 'demo-family-001',
-    title: req.body.title || 'Neuer Termin',
-    startsAt: req.body.startsAt || new Date().toISOString(),
-    location: req.body.location || '',
-    createdAt: new Date().toISOString(),
+    userId,
+    familyId: req.body.familyId || userId,
+    title: (req.body.title || 'Neuer Termin').toString().trim(),
+    startAt: req.body.startAt || req.body.startsAt || new Date().toISOString(),
+    endAt: req.body.endAt || null,
+    location: (req.body.location || '').toString().trim(),
+    person: (req.body.personName || req.body.person || 'Eltern').toString().trim(),
+    allDay: req.body.allDay === true,
+    recurrence: (req.body.recurrence || 'Einmalig').toString().trim(),
+    recurrenceEndMode: (req.body.recurrenceEndMode || 'Kein Ende').toString().trim(),
+    recurrenceEndDate: req.body.recurrenceEndDate || null,
+    recurrenceCount: req.body.recurrenceCount ? Number(req.body.recurrenceCount) : null,
+    reminderMinutes: Number(req.body.reminderMinutes || 0),
+    packReminder: req.body.packReminder || null,
+    bringer: req.body.bringer || null,
+    abholer: req.body.abholer || null,
   };
-  calendarEvents.unshift(event);
-  res.status(201).json({ item: event });
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "CalendarEvent" ("id","userId","familyId","title","startAt","endAt","location","person","allDay","recurrence","recurrenceEndMode","recurrenceEndDate","recurrenceCount","reminderMinutes","packReminder","bringer","abholer") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+      event.id, event.userId, event.familyId, event.title,
+      event.startAt, event.endAt, event.location, event.person,
+      event.allDay, event.recurrence, event.recurrenceEndMode,
+      event.recurrenceEndDate, event.recurrenceCount, event.reminderMinutes,
+      event.packReminder, event.bringer, event.abholer
+    );
+    return res.status(201).json({ item: event });
+  } catch (error) {
+    // fallback to in-memory if DB unavailable
+    calendarEvents.unshift(event);
+    return res.status(201).json({ item: event });
+  }
 });
 
 // 11. Photos

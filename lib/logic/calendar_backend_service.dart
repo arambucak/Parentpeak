@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'backend_api_client.dart';
 import 'contracts/calendar_contract.dart';
 
@@ -15,7 +17,12 @@ class CalendarBackendService {
     }
 
     try {
-      final payload = await apiClient!.getJson(CalendarContract.eventsPath);
+      // Pass userId so the backend returns only this user's events
+      final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+      final path = userId.isNotEmpty
+          ? '${CalendarContract.eventsPath}?userId=${Uri.encodeComponent(userId)}'
+          : CalendarContract.eventsPath;
+      final payload = await apiClient!.getJson(path);
       return CalendarContract.parseList(payload);
     } catch (e) {
       lastSyncError = 'Server derzeit nicht erreichbar.';

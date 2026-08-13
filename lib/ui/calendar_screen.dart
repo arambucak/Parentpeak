@@ -208,6 +208,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
+        bool isSaving = false;
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             final viewInsets = MediaQuery.of(ctx).viewInsets;
@@ -470,15 +471,24 @@ class _CalendarScreenState extends State<CalendarScreen>
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    icon: const Icon(Icons.check_rounded),
-                    label: const Text('Speichern'),
-                    onPressed: () async {
+                    icon: isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_rounded),
+                    label: Text(isSaving ? 'Wird gespeichert…' : 'Speichern'),
+                    onPressed: isSaving
+                        ? null
+                        : () async {
                       if (_titleController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Bitte einen Titel eingeben.')),
                         );
                         return;
                       }
+                      setSheetState(() => isSaving = true);
                       final startDate = DateTime(
                         _selectedDay.year,
                         _selectedDay.month,
@@ -521,26 +531,22 @@ class _CalendarScreenState extends State<CalendarScreen>
                         for (final e in expanded) {
                           await _calendarService.addEvent(e.toJson());
                         }
-                      } catch (_) {
-                        if (!mounted) return;
-                        setState(() {
-                          _syncError = _calendarService.lastSyncError;
-                        });
+                      } catch (e) {
+                        if (!ctx.mounted) return;
+                        setSheetState(() => isSaving = false);
                         if (!context.mounted) return;
+                        setState(() => _syncError = _calendarService.lastSyncError);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                              _syncError ??
-                                  'Termin konnte nicht gespeichert werden.',
-                            ),
+                            content: Text(_syncError ?? 'Termin konnte nicht gespeichert werden.'),
+                            duration: const Duration(seconds: 5),
                           ),
                         );
-                        packReminderCtrl.dispose();
                         return;
                       }
                       setState(() {
                         _events.addAll(expanded);
-                        _syncError = _calendarService.lastSyncError;
+                        _syncError = null;
                       });
                       _scheduleRemindersFor(expanded);
                       packReminderCtrl.dispose();
