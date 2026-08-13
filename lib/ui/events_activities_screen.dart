@@ -257,7 +257,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
 
       if (aiEvents.isEmpty && communityEvents.isEmpty) {
-        aiEvents = _buildLocalFallbackAiEvents(city, coords);
+        aiEvents = _buildLocalFallbackAiEvents(city, _originCoords);
       }
 
       if (!mounted) return;

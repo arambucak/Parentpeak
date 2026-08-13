@@ -60,7 +60,7 @@ jobs:
           TERMS_OF_SERVICE_URL="${TERMS_OF_SERVICE_URL:-https://parentpeak.de/terms}"
           CONTACT_EMAIL="${CONTACT_EMAIL:-parentpeakapp@gmail.com}"
           CONTACT_SUPPORT_URL="${CONTACT_SUPPORT_URL:-https://parentpeak.de}"
-          GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME:-gemini-3.1-pro-preview}"
+          GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME:-gemini-3.5-flash-lite}"
 
           flutter build web --release \
             --no-wasm-dry-run \
