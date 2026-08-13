@@ -305,7 +305,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         }
                       },
                       icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-                      label: const Text('Premium einloesen'),
+                      label: const Text('Premium einlösen'),
                       style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFFF97316),
                           foregroundColor: Colors.white,
@@ -357,6 +357,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           ScaffoldMessenger.of(context)
               .showSnackBar(const SnackBar(content: Text('Link kopiert!')));
         }),
+        const SizedBox(height: 10),
+        _inviteRow(
+            theme,
+            Icons.refresh_rounded,
+            const Color(0xFF16A34A),
+            'Coins jetzt prüfen',
+            'Neue Einladungen gutschreiben',
+            () => ParentCoinService.instance.claimPendingReferrals(context)),
         if (coins.history.isNotEmpty) ...[
           const SizedBox(height: 24),
           Text('Verlauf',

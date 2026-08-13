@@ -132,7 +132,7 @@ class ParentCoinService extends ChangeNotifier {
   /// Generiert den Einladungstext für Share.
   String getInviteMessage() {
     final name = AuthService.instance.currentUser?.displayName ?? 'Ein Elternteil';
-    return '$name nutzt ParentPeak für den Familienalltag und laedt dich ein! '
+    return '$name nutzt ParentPeak für den Familienalltag und lädt dich ein! '
         'Kostenlos ausprobieren: ${getInviteLink()}';
   }
 
@@ -145,17 +145,22 @@ class ParentCoinService extends ChangeNotifier {
   }
 
   /// Invitee: Meldet dem Backend, dass jemand über diesen Code beigetreten ist.
-  Future<void> recordReferral(String code, String inviteeId, String inviteeName) async {
+  /// Gibt true zurück wenn erfolgreich gespeichert.
+  Future<bool> recordReferral(String code, String inviteeId, String inviteeName) async {
     final base = APIConfig.getBackendBaseUrl();
-    if (base == null || base.isEmpty) return;
+    if (base == null || base.isEmpty) return false;
     try {
-      await http.post(
+      final resp = await http.post(
         Uri.parse('$base/referrals/record'),
         headers: await _authHeaders(),
         body: jsonEncode({'referralCode': code, 'inviteeId': inviteeId, 'inviteeName': inviteeName}),
       ).timeout(const Duration(seconds: 10));
+      if (resp.statusCode >= 200 && resp.statusCode < 300) return true;
+      debugPrint('recordReferral HTTP ${resp.statusCode}: ${resp.body}');
+      return false;
     } catch (e) {
       debugPrint('recordReferral error: $e');
+      return false;
     }
   }
 

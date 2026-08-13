@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -76,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen>
   bool _initialFriendHandled = false;
   bool _initialReferralHandled = false;
   bool _debugFeatureHandled = false;
+  StreamSubscription<User?>? _authSub;
   List<String> _recentTileLabels = const [];
   List<String> _customTileOrderLabels = const [];
   int _newParentMatchesCount = 0;
@@ -99,6 +102,13 @@ class _HomeScreenState extends State<HomeScreen>
     _restoreRecentTiles();
     _restoreTileOrder();
     _restoreParentMatchStatusHint();
+    // Retry pending referral + coin claim whenever auth state changes
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null && mounted) {
+        _processPendingReferral();
+        ParentCoinService.instance.claimPendingReferrals(context);
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openInitialInviteIfNeeded();
       _openInitialFriendIfNeeded();
@@ -111,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _attentionController.dispose();
     languageService.removeListener(_onLanguageChanged);
     super.dispose();
@@ -169,8 +180,8 @@ class _HomeScreenState extends State<HomeScreen>
     final code = prefs.getString('pending_referral_code');
     if (code == null || code.isEmpty) return;
     final name = AuthService.instance.currentUser?.displayName ?? 'Neues Mitglied';
-    await ParentCoinService.instance.recordReferral(code, uid, name);
-    await prefs.remove('pending_referral_code'); // only remove after successful send
+    final sent = await ParentCoinService.instance.recordReferral(code, uid, name);
+    if (sent) await prefs.remove('pending_referral_code');
   }
 
   void _openDebugFeatureIfNeeded() {
