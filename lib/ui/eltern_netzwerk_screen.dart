@@ -1394,39 +1394,94 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   void _showQR(ThemeData theme, ParentCoinService coins) {
     showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        builder: (ctx) => Container(
-            padding: const EdgeInsets.all(32),
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 36, height: 4,
             decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(24))),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text('Dein Einladungs-Code',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 20),
-              Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16)),
-                  child: QrImageView(
-                      data: coins.getInviteLink(),
-                      version: QrVersions.auto,
-                      size: 200)),
-              const SizedBox(height: 14),
-              Text(coins.referralCode,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800, letterSpacing: 2)),
-              const SizedBox(height: 20),
-              SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Fertig')))
-            ])));
+                color: theme.colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 20),
+          // Teal badge: visually distinct from the purple Freunde-QR
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text('App-Einladung',
+                style: TextStyle(
+                    color: Color(0xFF0D9488),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(height: 10),
+          Text('Eltern einladen',
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text('Scannen \u2192 App herunterladen \u2192 Du verdienst 1 Coin',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.outline, height: 1.4),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3), width: 2),
+              boxShadow: [
+                BoxShadow(
+                    color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6)),
+              ],
+            ),
+            child: QrImageView(
+                data: coins.getInviteLink(),
+                version: QrVersions.auto,
+                size: 190,
+                eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: Color(0xFF0D9488)),
+                dataModuleStyle: const QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: Color(0xFF134E4A))),
+          ),
+          const SizedBox(height: 14),
+          Text(coins.referralCode,
+              style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 3,
+                  color: const Color(0xFF0D9488))),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0D9488),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Fertig',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ]),
+      ),
+    );
   }
 }
 
