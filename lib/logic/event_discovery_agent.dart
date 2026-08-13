@@ -47,6 +47,12 @@ class EventDiscoveryAgent {
 
     final cleanCity = _sanitize(PrivacySanitizer.sanitizeForAi(city));
     final cleanRadius = _sanitize(PrivacySanitizer.sanitizeForAi(radiusHint));
+
+    // When city is raw coordinates (Nominatim failed) or a placeholder, use coords as search location
+    final isCoordCity = RegExp(r'^-?\d+\.\d+,-?\d+\.\d+$').hasMatch(cleanCity);
+    final locationDesc = isCoordCity && latitude != null
+        ? '$latitude,$longitude'
+        : cleanCity;
     final agesText = childAges.isEmpty
         ? 'Kinder verschiedener Altersgruppen (0–16 Jahre)'
         : 'Kinder im Alter von ${childAges.map((a) => _sanitize(PrivacySanitizer.sanitizeForAi(a))).join(', ')}';
@@ -63,9 +69,9 @@ class EventDiscoveryAgent {
 
     // Kurzer Prompt für schnelle Grounding-Antwort (< 20 s)
     final groundingPrompt = '''
-$today. ${gpsHint}Suche 10 aktuelle Familienevents in "$cleanCity" ($cleanRadius) — $saison. Zielgruppe: $agesText.
+$today. ${gpsHint}Suche 10 aktuelle Familienevents ${isCoordCity ? 'in der Nähe von' : 'in'} "$locationDesc" ($cleanRadius) — $saison. Zielgruppe: $agesText.
 Antworte NUR als JSON-Array (kein Markdown). Trage bei "url" die ECHTE URL aus dem Web-Suchergebnis ein:
-[{"id":"1","title":"...","description":"...","category":"theater","ageLabels":["alle"],"location":"Adresse, $cleanCity","cityHint":"$cleanCity","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"kostenlos","url":"ECHTE_URL_AUS_WEBSUCHE","organizer":"..."}]
+[{"id":"1","title":"...","description":"...","category":"theater","ageLabels":["alle"],"location":"Adresse, Stadtteil","cityHint":"$locationDesc","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"kostenlos","url":"ECHTE_URL_AUS_WEBSUCHE","organizer":"..."}]
 Erstelle genau 10 echte Events. Bei "url" MUSS eine echte Webseite stehen (z.B. berlin.de, eventbrite.de, Veranstalter-Website).
 ''';
 
@@ -73,11 +79,11 @@ Erstelle genau 10 echte Events. Bei "url" MUSS eine echte Webseite stehen (z.B. 
     final prompt = '''
 Heute ist $today. $gpsHint
 
-Erstelle 10 typische Familien-Events für "$cleanCity" ($cleanRadius), $saison.
+Erstelle 10 typische Familien-Events ${isCoordCity ? 'in der Nähe von' : 'in'} "$locationDesc" ($cleanRadius), $saison.
 Zielgruppe: $agesText. Realistische Orte, Preise 0–15€.
 
 Antworte NUR mit einem gültigen JSON-Array:
-[{"id":"ev1","title":"...","description":"2-3 Sätze","category":"theater","ageLabels":["3–6 Jahre"],"location":"Adresse, Stadtteil","cityHint":"$cleanCity","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"5 €","url":"https://...","organizer":"Veranstalter"}]
+[{"id":"ev1","title":"...","description":"2-3 Sätze","category":"theater","ageLabels":["3–6 Jahre"],"location":"Adresse, Stadtteil","cityHint":"$locationDesc","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"5 €","url":"https://...","organizer":"Veranstalter"}]
 Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges) und Stadtteile.
 ''';
 

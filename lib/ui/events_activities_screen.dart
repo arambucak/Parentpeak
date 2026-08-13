@@ -47,6 +47,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   String _fallbackCity = 'Berlin';
   // True once the user explicitly picked a location — GPS won't auto-override.
   bool _userLockedLocation = false;
+  // True once we have a real location (from GPS or manual pick) — not just the Berlin default.
+  bool _hasRealLocation = false;
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -82,10 +84,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_savedCityKey);
     if (saved != null && saved.isNotEmpty && mounted) {
-      setState(() => _fallbackCity = saved);
+      setState(() {
+        _fallbackCity = saved;
+        _hasRealLocation = true; // saved city = previously confirmed location
+      });
+      _refreshFeed(); // load immediately only when we have a real saved city
     }
-    // Load feed immediately with saved/default city while GPS detects in background
-    _refreshFeed();
     _detectGpsAndRefresh();
   }
 
@@ -112,8 +116,18 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
-        if (mounted) setState(() => _gpsDetecting = false);
-        _refreshFeed();
+        if (mounted) {
+          setState(() => _gpsDetecting = false);
+          if (!_hasRealLocation) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('GPS nicht verfügbar — bitte Standort oben eingeben.'),
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+        if (_hasRealLocation) _refreshFeed();
         return;
       }
       // Web needs more time: browser uses WiFi/IP geolocation
@@ -124,10 +138,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
+      // When Nominatim fails, use coordinates as search city so Gemini can locate events
+      final coordCity = '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
       final cityLabel = district ?? 'Aktueller Standort';
       final city = district != null
           ? (district.contains(',') ? district.split(',').last.trim() : district)
-          : cityLabel;
+          : coordCity; // pass raw coords to agent when city name unknown
       final newLocation = PickedLocation(
         displayName: cityLabel,
         city: city,
@@ -137,12 +153,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       );
       if (mounted) {
         final shouldUpdate = forceOverride || !_userLockedLocation;
-        if (shouldUpdate && district != null) {
+        if (shouldUpdate) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_savedCityKey, district);
+          if (district != null) await prefs.setString(_savedCityKey, district);
         }
         setState(() {
           _activeLocation = newLocation;
+          _hasRealLocation = true;
           if (shouldUpdate) {
             _fallbackCity = city;
             _userLockedLocation = false;
@@ -999,6 +1016,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                 _activeLocation = loc;
                 _fallbackCity = loc.city.isNotEmpty ? loc.city : loc.displayName;
                 _userLockedLocation = true;
+                _hasRealLocation = true;
               });
               _refreshFeed();
             },
