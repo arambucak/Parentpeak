@@ -88,7 +88,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 children: [
                   const Text('\u{1F476}', style: TextStyle(fontSize: 24)),
                   const SizedBox(width: 10),
-                  Text('Kind hinzufügen',
+                  Text(_t('add_child'),
                       style: theme.textTheme.titleMedium
                           ?.copyWith(fontWeight: FontWeight.w800)),
                 ],
@@ -130,7 +130,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Hinzufügen'),
+                  child: Text(_t('kind_hinzufuegen')),
                 ),
               ),
             ],
@@ -251,7 +251,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                             isPremium
                                 ? 'Premium'
                                 : hasAccess
-                                    ? 'Trial \u00B7 Noch $trialDays Tage'
+                                    ? _t('trial_days_template')
+                                        .replaceAll('{days}', '$trialDays')
                                     : 'Free',
                             style: theme.textTheme.labelMedium?.copyWith(
                               fontWeight: FontWeight.w700,
@@ -286,7 +287,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                           Icon(Icons.add_rounded,
                               size: 14, color: theme.colorScheme.primary),
                           const SizedBox(width: 4),
-                          Text('Hinzufügen',
+                          Text(_t('kind_hinzufuegen'),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: theme.colorScheme.primary,
                                 fontWeight: FontWeight.w700,
@@ -308,7 +309,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                             .withValues(alpha: 0.5)),
                   ),
                   child: Text(
-                    'Füge eure Kinder hinzu — dann passen Tipps, Impulse und Aktivitäten perfekt zum Alter.',
+                    _t('children_hint'),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       height: 1.4,
@@ -413,10 +414,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Auf Premium upgraden',
+                              Text(_t('upgrade_premium'),
                                   style: theme.textTheme.bodyMedium
                                       ?.copyWith(fontWeight: FontWeight.w700)),
-                              Text('Alle Features freischalten',
+                              Text(_t('unlock_all_features'),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   )),

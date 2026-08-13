@@ -165,6 +165,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Bug oder Problem melden',
       'nav_home': 'Home',
       'nav_profile': 'Profil',
+      'children_hint': 'Füge eure Kinder hinzu — dann passen Tipps, Impulse und Aktivitäten perfekt zum Alter.',
+      'add_child': 'Kind hinzufügen',
+      'upgrade_premium': 'Auf Premium upgraden',
+      'unlock_all_features': 'Alle Features freischalten',
+      'trial_days_template': 'Trial · Noch {days} Tage',
+      'kind_hinzufuegen': 'Hinzufügen',
     },
     // English
     'en': {
@@ -326,6 +332,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Report bug or issue',
       'nav_home': 'Home',
       'nav_profile': 'Profile',
+      'children_hint': 'Add your children — then tips, impulses and activities fit perfectly to their age.',
+      'add_child': 'Add child',
+      'upgrade_premium': 'Upgrade to Premium',
+      'unlock_all_features': 'Unlock all features',
+      'trial_days_template': 'Trial · {days} days left',
+      'kind_hinzufuegen': 'Add',
     },
     // Français
     'fr': {
@@ -489,6 +501,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Signaler un bug ou un problème',
       'nav_home': 'Accueil',
       'nav_profile': 'Profil',
+      'children_hint': 'Ajoutez vos enfants — les conseils, impulsions et activités s\'adapteront parfaitement à leur âge.',
+      'add_child': 'Ajouter un enfant',
+      'upgrade_premium': 'Passer à Premium',
+      'unlock_all_features': 'Débloquer toutes les fonctionnalités',
+      'trial_days_template': 'Essai · {days} jours restants',
+      'kind_hinzufuegen': 'Ajouter',
     },
     // Español
     'es': {
@@ -652,6 +670,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Reportar error o problema',
       'nav_home': 'Inicio',
       'nav_profile': 'Perfil',
+      'children_hint': 'Añade a tus hijos — así los consejos, impulsos y actividades se adaptan perfectamente a su edad.',
+      'add_child': 'Añadir hijo',
+      'upgrade_premium': 'Mejorar a Premium',
+      'unlock_all_features': 'Desbloquear todas las funciones',
+      'trial_days_template': 'Prueba · {days} días restantes',
+      'kind_hinzufuegen': 'Añadir',
     },
     // Italiano
     'it': {
@@ -814,6 +838,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Segnala bug o problema',
       'nav_home': 'Home',
       'nav_profile': 'Profilo',
+      'children_hint': 'Aggiungi i tuoi bambini — così consigli, impulsi e attività si adattano perfettamente alla loro età.',
+      'add_child': 'Aggiungi bambino',
+      'upgrade_premium': 'Passa a Premium',
+      'unlock_all_features': 'Sblocca tutte le funzionalità',
+      'trial_days_template': 'Prova · {days} giorni rimasti',
+      'kind_hinzufuegen': 'Aggiungi',
     },
     // Português
     'pt': {
@@ -975,6 +1005,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Relatar bug ou problema',
       'nav_home': 'Início',
       'nav_profile': 'Perfil',
+      'children_hint': 'Adicione seus filhos — assim dicas, impulsos e atividades se adaptam perfeitamente à idade deles.',
+      'add_child': 'Adicionar filho',
+      'upgrade_premium': 'Atualizar para Premium',
+      'unlock_all_features': 'Desbloquear todas as funcionalidades',
+      'trial_days_template': 'Teste · {days} dias restantes',
+      'kind_hinzufuegen': 'Adicionar',
     },
     // Nederlands
     'nl': {
@@ -1138,6 +1174,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Bug of probleem melden',
       'nav_home': 'Home',
       'nav_profile': 'Profiel',
+      'children_hint': 'Voeg jullie kinderen toe — dan passen tips, impulsen en activiteiten perfect bij hun leeftijd.',
+      'add_child': 'Kind toevoegen',
+      'upgrade_premium': 'Upgraden naar Premium',
+      'unlock_all_features': 'Alle functies ontgrendelen',
+      'trial_days_template': 'Proef · {days} dagen over',
+      'kind_hinzufuegen': 'Toevoegen',
     },
     // العربية (Arabic)
     'ar': {
@@ -1299,6 +1341,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'الإبلاغ عن خطأ أو مشكلة',
       'nav_home': 'الرئيسية',
       'nav_profile': 'الملف الشخصي',
+      'children_hint': 'أضيفوا أطفالكم — ستتناسب النصائح والأنشطة مع أعمارهم تمامًا.',
+      'add_child': 'إضافة طفل',
+      'upgrade_premium': 'الترقية إلى بريميوم',
+      'unlock_all_features': 'فتح جميع الميزات',
+      'trial_days_template': 'تجربة · {days} أيام متبقية',
+      'kind_hinzufuegen': 'إضافة',
     },
     // فارسی (Persian/Farsi)
     'fa': {
@@ -1461,6 +1509,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'گزارش باگ یا مشکل',
       'nav_home': 'خانه',
       'nav_profile': 'پروفایل',
+      'children_hint': 'فرزندانتان را اضافه کنید — نکات و فعالیت‌ها کاملاً متناسب با سنشان خواهد بود.',
+      'add_child': 'افزودن فرزند',
+      'upgrade_premium': 'ارتقا به پریمیوم',
+      'unlock_all_features': 'باز کردن همه ویژگی‌ها',
+      'trial_days_template': 'آزمایشی · {days} روز باقیمانده',
+      'kind_hinzufuegen': 'افزودن',
     },
     // کوردی Kurmancî (ku)
     'ku': {
@@ -1622,6 +1676,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Çewtî an pirsgirêk ragihîne',
       'nav_home': 'Serûpel',
       'nav_profile': 'Profîl',
+      'children_hint': 'Zarokên xwe lê zêde bikin — wê hingê şîret û çalakî bi temenê wan re biqas.',
+      'add_child': 'Zarok lê zêde bike',
+      'upgrade_premium': 'Bilind bike bo Premium',
+      'unlock_all_features': 'Hemû taybetmendiyan veke',
+      'trial_days_template': 'Ceribandin · {days} roj mane',
+      'kind_hinzufuegen': 'Lê zêde bike',
     },
     // کوردی سۆرانی (ckb)
     'ckb': {
@@ -1783,6 +1843,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'ڕاپۆرتی ھەڵە یان کێشە',
       'nav_home': 'ماڵەوە',
       'nav_profile': 'پرۆفایل',
+      'children_hint': 'منداڵەکانتان زیاد بکەن — ئەوکات ئامۆژگاری و چالاکییەکان تەواو لەگەڵ تەمەنیان دەگونجێت.',
+      'add_child': 'منداڵ زیاد بکە',
+      'upgrade_premium': 'بەرزکردنەوە بۆ پریمیۆم',
+      'unlock_all_features': 'کردنەوەی هەموو تایبەتمەندییەکان',
+      'trial_days_template': 'تاقیکردنەوە · {days} ڕۆژ ماوە',
+      'kind_hinzufuegen': 'زیادکردن',
     },
     // 中文 (Chinese Simplified)
     'zh': {
@@ -1943,6 +2009,12 @@ class AppStringsManager {
       'feedback_bug_hint': '报告错误或问题',
       'nav_home': '首页',
       'nav_profile': '个人',
+      'children_hint': '添加您的孩子——建议和活动将完美匹配他们的年龄。',
+      'add_child': '添加孩子',
+      'upgrade_premium': '升级到高级版',
+      'unlock_all_features': '解锁所有功能',
+      'trial_days_template': '试用 · 还剩 {days} 天',
+      'kind_hinzufuegen': '添加',
     },
     // 日本語 (Japanese)
     'ja': {
@@ -2103,6 +2175,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'バグや問題を報告',
       'nav_home': 'ホーム',
       'nav_profile': 'プロフィール',
+      'children_hint': 'お子さまを追加してください — ヒントや活動がお子さまの年齢にぴったり合います。',
+      'add_child': '子どもを追加',
+      'upgrade_premium': 'プレミアムにアップグレード',
+      'unlock_all_features': 'すべての機能をアンロック',
+      'trial_days_template': 'トライアル · 残り{days}日',
+      'kind_hinzufuegen': '追加',
     },
     // हिन्दी (Hindi)
     'hi': {
@@ -2264,6 +2342,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'बग या समस्या रिपोर्ट करें',
       'nav_home': 'होम',
       'nav_profile': 'प्रोफ़ाइल',
+      'children_hint': 'अपने बच्चों को जोड़ें — फिर सुझाव और गतिविधियाँ उनकी उम्र के अनुसार होंगी।',
+      'add_child': 'बच्चा जोड़ें',
+      'upgrade_premium': 'प्रीमियम में अपग्रेड करें',
+      'unlock_all_features': 'सभी सुविधाएँ अनलॉक करें',
+      'trial_days_template': 'ट्रायल · {days} दिन शेष',
+      'kind_hinzufuegen': 'जोड़ें',
     },
     // Türkçe (Turkish)
     'tr': {
@@ -2426,6 +2510,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Hata veya sorun bildir',
       'nav_home': 'Ana Sayfa',
       'nav_profile': 'Profil',
+      'children_hint': 'Çocuklarınızı ekleyin — ipuçları ve aktiviteler yaşlarına mükemmel uyum sağlasın.',
+      'add_child': 'Çocuk ekle',
+      'upgrade_premium': 'Premium\'a yükselt',
+      'unlock_all_features': 'Tüm özelliklerin kilidini aç',
+      'trial_days_template': 'Deneme · {days} gün kaldı',
+      'kind_hinzufuegen': 'Ekle',
     },
     // Русский (Russian)
     'ru': {
@@ -2587,6 +2677,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Сообщить об ошибке или проблеме',
       'nav_home': 'Главная',
       'nav_profile': 'Профиль',
+      'children_hint': 'Добавьте ваших детей — тогда советы и активности будут идеально подходить их возрасту.',
+      'add_child': 'Добавить ребёнка',
+      'upgrade_premium': 'Перейти на Премиум',
+      'unlock_all_features': 'Разблокировать все функции',
+      'trial_days_template': 'Пробный · Осталось {days} дней',
+      'kind_hinzufuegen': 'Добавить',
     },
     // Українська (Ukrainian)
     'uk': {
@@ -2748,6 +2844,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Повідомити про помилку або проблему',
       'nav_home': 'Головна',
       'nav_profile': 'Профіль',
+      'children_hint': 'Додайте своїх дітей — тоді поради та активності ідеально підходитимуть їхньому віку.',
+      'add_child': 'Додати дитину',
+      'upgrade_premium': 'Перейти на Преміум',
+      'unlock_all_features': 'Розблокувати всі функції',
+      'trial_days_template': 'Пробний · Залишилось {days} днів',
+      'kind_hinzufuegen': 'Додати',
     },
     // Polski (Polish)
     'pl': {
@@ -2909,6 +3011,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Zgłoś błąd lub problem',
       'nav_home': 'Strona główna',
       'nav_profile': 'Profil',
+      'children_hint': 'Dodaj swoje dzieci — wtedy porady i aktywności będą idealnie dopasowane do ich wieku.',
+      'add_child': 'Dodaj dziecko',
+      'upgrade_premium': 'Przejdź na Premium',
+      'unlock_all_features': 'Odblokuj wszystkie funkcje',
+      'trial_days_template': 'Próba · Zostało {days} dni',
+      'kind_hinzufuegen': 'Dodaj',
     },
     // Hrvatski (Croatian)
     'hr': {
@@ -3070,6 +3178,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Prijavi grešku ili problem',
       'nav_home': 'Početna',
       'nav_profile': 'Profil',
+      'children_hint': 'Dodajte svoju djecu — savjeti i aktivnosti savršeno će odgovarati njihovoj dobi.',
+      'add_child': 'Dodaj dijete',
+      'upgrade_premium': 'Nadogradi na Premium',
+      'unlock_all_features': 'Otključaj sve značajke',
+      'trial_days_template': 'Probno · Još {days} dana',
+      'kind_hinzufuegen': 'Dodaj',
     },
     // Српски (Serbian)
     'sr': {
@@ -3232,6 +3346,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Пријави грешку или проблем',
       'nav_home': 'Почетна',
       'nav_profile': 'Профил',
+      'children_hint': 'Додајте своју децу — савети и активности ће савршено одговарати њиховом узрасту.',
+      'add_child': 'Додај дете',
+      'upgrade_premium': 'Надогради на Премиум',
+      'unlock_all_features': 'Откључај све функције',
+      'trial_days_template': 'Проба · Још {days} дана',
+      'kind_hinzufuegen': 'Додај',
     },
     // Suomi (Finnish)
     'fi': {
@@ -3393,6 +3513,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Ilmoita virheestä tai ongelmasta',
       'nav_home': 'Koti',
       'nav_profile': 'Profiili',
+      'children_hint': 'Lisää lapsesi — vinkit ja aktiviteetit sopivat täydellisesti heidän ikäänsä.',
+      'add_child': 'Lisää lapsi',
+      'upgrade_premium': 'Päivitä Premiumiin',
+      'unlock_all_features': 'Avaa kaikki ominaisuudet',
+      'trial_days_template': 'Kokeilu · {days} päivää jäljellä',
+      'kind_hinzufuegen': 'Lisää',
     },
     // Dansk (Danish)
     'da': {
@@ -3554,6 +3680,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Rapporter fejl eller problem',
       'nav_home': 'Hjem',
       'nav_profile': 'Profil',
+      'children_hint': 'Tilføj jeres børn — så passer tips og aktiviteter perfekt til deres alder.',
+      'add_child': 'Tilføj barn',
+      'upgrade_premium': 'Opgrader til Premium',
+      'unlock_all_features': 'Lås alle funktioner op',
+      'trial_days_template': 'Prøve · {days} dage tilbage',
+      'kind_hinzufuegen': 'Tilføj',
     },
     // Ελληνικά (Greek)
     'el': {
@@ -3717,6 +3849,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Αναφορά σφάλματος ή προβλήματος',
       'nav_home': 'Αρχική',
       'nav_profile': 'Προφίλ',
+      'children_hint': 'Προσθέστε τα παιδιά σας — οι συμβουλές και οι δραστηριότητες θα ταιριάζουν τέλεια στην ηλικία τους.',
+      'add_child': 'Προσθήκη παιδιού',
+      'upgrade_premium': 'Αναβάθμιση σε Premium',
+      'unlock_all_features': 'Ξεκλείδωμα όλων των λειτουργιών',
+      'trial_days_template': 'Δοκιμή · {days} ημέρες απομένουν',
+      'kind_hinzufuegen': 'Προσθήκη',
     },
     // Kiswahili (Swahili)
     'sw': {
@@ -3878,6 +4016,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Ripoti hitilafu au tatizo',
       'nav_home': 'Nyumbani',
       'nav_profile': 'Wasifu',
+      'children_hint': 'Ongeza watoto wako — vidokezo na shughuli zitafaa umri wao kikamilifu.',
+      'add_child': 'Ongeza mtoto',
+      'upgrade_premium': 'Panda daraja hadi Premium',
+      'unlock_all_features': 'Fungua vipengele vyote',
+      'trial_days_template': 'Jaribio · Siku {days} zimebaki',
+      'kind_hinzufuegen': 'Ongeza',
     },
     // አማርኛ (Amharic)
     'am': {
@@ -4039,6 +4183,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'ስህተት ወይም ችግር ሪፖርት',
       'nav_home': 'ዋና ገጽ',
       'nav_profile': 'መገለጫ',
+      'children_hint': 'ልጆቻችሁን ጨምሩ — ምክሮች እና ተግባራት ለዕድሜያቸው ፍጹም ይስማማሉ።',
+      'add_child': 'ልጅ ጨምር',
+      'upgrade_premium': 'ወደ ፕሪሚየም አሻሽል',
+      'unlock_all_features': 'ሁሉንም ባህሪያት ክፈት',
+      'trial_days_template': 'ሙከራ · {days} ቀናት ቀርተዋል',
+      'kind_hinzufuegen': 'ጨምር',
     },
     // Hausa
     'ha': {
@@ -4200,6 +4350,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Bayar da rahoton kuskure ko matsala',
       'nav_home': 'Gida',
       'nav_profile': 'Bayani',
+      'children_hint': 'Ƙara yaranku — shawarwari da ayyuka za su dace da shekarunsu sosai.',
+      'add_child': 'Ƙara yaro',
+      'upgrade_premium': 'Haɓaka zuwa Premium',
+      'unlock_all_features': 'Buɗe duk fasaloli',
+      'trial_days_template': 'Gwaji · Kwanaki {days} sun rage',
+      'kind_hinzufuegen': 'Ƙara',
     },
     // Soomaali (Somali)
     'so': {
@@ -4362,6 +4518,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'Warbix khalad ama dhibaato',
       'nav_home': 'Bogga hore',
       'nav_profile': 'Astaan',
+      'children_hint': 'Ku dar carruurtiinna — talooyinka iyo hawlaha si fiican ayay ugu habboonaanayaan da\'dooda.',
+      'add_child': 'Ku dar ilmo',
+      'upgrade_premium': 'U kor u qaad Premium',
+      'unlock_all_features': 'Fur dhammaan sifooyinka',
+      'trial_days_template': 'Tijaabo · {days} maalmood oo haray',
+      'kind_hinzufuegen': 'Ku dar',
     },
     // ትግርኛ (Tigrinya)
     'ti': {
@@ -4523,6 +4685,12 @@ class AppStringsManager {
       'feedback_bug_hint': 'ጌጋ ወይ ጸገም ሓብር',
       'nav_home': 'ዋና ገጽ',
       'nav_profile': 'መንነት',
+      'children_hint': 'ደቅኹም ወስኹ — ምኽሪታትን ንጥፈታትን ብዕድመኦም ፍጹም ክሰማምዑ እዮም።',
+      'add_child': 'ቆልዓ ወስኽ',
+      'upgrade_premium': 'ናብ ፕረሚየም ኣዕብይ',
+      'unlock_all_features': 'ኩሉ ባህሪያት ክፈት',
+      'trial_days_template': 'ፈተነ · {days} መዓልቲ ተሪፉ',
+      'kind_hinzufuegen': 'ወስኽ',
     },
   };
 
