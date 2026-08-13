@@ -156,7 +156,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Profil & Schutz'),
+        title: Text(_t('profile_title')),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -590,7 +590,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
                 color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
@@ -691,7 +692,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         barrierDismissible: false,
         builder: (_) => const Center(child: CircularProgressIndicator()),
       );
-      error = await AuthService.instance.reauthenticateAndDeleteAccount(password);
+      error =
+          await AuthService.instance.reauthenticateAndDeleteAccount(password);
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop(); // close loading
     }
@@ -898,7 +900,8 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
         children: [
           Center(
             child: Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
                 color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
@@ -1053,7 +1056,8 @@ class _ReauthDialogState extends State<_ReauthDialog> {
             final pw = _ctrl.text;
             if (pw.isNotEmpty) Navigator.pop(context, pw);
           },
-          child: const Text('Bestätigen', style: TextStyle(color: Colors.white)),
+          child:
+              const Text('Bestätigen', style: TextStyle(color: Colors.white)),
         ),
       ],
     );

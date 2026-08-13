@@ -61,7 +61,11 @@ class HomeScreen extends StatefulWidget {
   final String? initialFriendCode;
   final String? initialReferralCode;
 
-  const HomeScreen({super.key, this.initialInviteInput, this.initialFriendCode, this.initialReferralCode});
+  const HomeScreen(
+      {super.key,
+      this.initialInviteInput,
+      this.initialFriendCode,
+      this.initialReferralCode});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -179,8 +183,10 @@ class _HomeScreenState extends State<HomeScreen>
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString('pending_referral_code');
     if (code == null || code.isEmpty) return;
-    final name = AuthService.instance.currentUser?.displayName ?? 'Neues Mitglied';
-    final sent = await ParentCoinService.instance.recordReferral(code, uid, name);
+    final name =
+        AuthService.instance.currentUser?.displayName ?? 'Neues Mitglied';
+    final sent =
+        await ParentCoinService.instance.recordReferral(code, uid, name);
     if (sent) await prefs.remove('pending_referral_code');
   }
 
@@ -652,26 +658,28 @@ class _HomeScreenState extends State<HomeScreen>
             ? 1.36
             : 1.38;
 
+    final lang = languageService.currentLanguage;
+
     final featureActions = <_FeatureAction>[
       _FeatureAction(
-        label: 'Impulse & Entwicklung',
-        description: 'Tagesimpuls und Entwicklung in einem Bereich',
+        label: AppStringsManager.getString(lang, 'tile_impulse'),
+        description: AppStringsManager.getString(lang, 'tile_impulse_desc'),
         icon: Icons.auto_awesome_mosaic_rounded,
         color: const Color(0xFF0EA5A4),
         builder: (_) => const EntwicklungImpulseScreen(),
         featureId: 'impulse_entwicklung',
       ),
       _FeatureAction(
-        label: 'Kalender',
-        description: 'Termine und Familienplan',
+        label: AppStringsManager.getString(lang, 'tile_calendar'),
+        description: AppStringsManager.getString(lang, 'tile_calendar_desc'),
         icon: Icons.calendar_month_rounded,
         color: const Color(0xFF2563EB),
         builder: (_) => const CalendarScreen(),
         featureId: 'kalender',
       ),
       _FeatureAction(
-        label: 'Events & Aktivitäten',
-        description: 'Events finden und selbst anbieten',
+        label: AppStringsManager.getString(lang, 'tile_events'),
+        description: AppStringsManager.getString(lang, 'tile_events_desc'),
         icon: Icons.celebration_rounded,
         color: const Color(0xFF8B5CF6),
         builder: (_) => const EventsActivitiesScreen(),
@@ -687,8 +695,8 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'verschenkmarkt',
       ),
       _FeatureAction(
-        label: 'Eltern-Netzwerk',
-        description: 'Vernetze dich, lade Freunde ein, verdiene Coins',
+        label: AppStringsManager.getString(lang, 'tile_network'),
+        description: AppStringsManager.getString(lang, 'tile_network_desc'),
         icon: Icons.people_rounded,
         color: const Color(0xFF0EA5A4),
         builder: (_) => const ElternNetzwerkScreen(),
@@ -700,32 +708,32 @@ class _HomeScreenState extends State<HomeScreen>
             : null,
       ),
       _FeatureAction(
-        label: 'KI Elternberatung',
-        description: 'Schnelle Hilfe und Tipps rund um Erziehung',
+        label: AppStringsManager.getString(lang, 'tile_chat'),
+        description: AppStringsManager.getString(lang, 'tile_chat_desc'),
         icon: Icons.tips_and_updates_rounded,
         color: const Color(0xFF0284C7),
         builder: (_) => const ChatScreen(),
         featureId: 'ki_elternberatung',
       ),
       _FeatureAction(
-        label: 'Familien-Zentrale',
-        description: 'Einkauf, To-do und Kind-Infos an einem Ort',
+        label: AppStringsManager.getString(lang, 'tile_zentrale'),
+        description: AppStringsManager.getString(lang, 'tile_zentrale_desc'),
         icon: Icons.home_rounded,
         color: const Color(0xFF2563EB),
         builder: (_) => const FamilienZentraleScreen(),
         featureId: 'organisation',
       ),
       _FeatureAction(
-        label: 'Familien-Küche',
-        description: 'Rezept-Ideen, Tipps und Inspiration',
+        label: AppStringsManager.getString(lang, 'tile_kueche'),
+        description: AppStringsManager.getString(lang, 'tile_kueche_desc'),
         icon: Icons.restaurant_rounded,
         color: const Color(0xFFF97316),
         builder: (_) => const FamilienKuecheScreen(),
         featureId: 'gemeinsam_satt',
       ),
       _FeatureAction(
-        label: 'Familien-Geld',
-        description: 'Leistungen, Kosten und Meilensteine im Blick',
+        label: AppStringsManager.getString(lang, 'tile_geld'),
+        description: AppStringsManager.getString(lang, 'tile_geld_desc'),
         icon: Icons.savings_rounded,
         color: const Color(0xFF16A34A),
         builder: (_) => const FamilienGeldScreen(),
@@ -741,7 +749,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     final displayName =
         AuthService.instance.currentUser?.displayName.trim() ?? '';
-    final lang = languageService.currentLanguage;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -800,7 +807,8 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
                         horizontalPadding, 0, horizontalPadding, 12),
-                    child: GestureDetector(behavior: HitTestBehavior.opaque, 
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () {
                         final a = visibleGridActions
                             .where((a) => a.featureId == 'ki_elternberatung')
@@ -832,7 +840,9 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text('Was beschäftigt dich?',
+                            child: Text(
+                                AppStringsManager.getString(
+                                    lang, 'chat_prompt'),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                     color: const Color(0xFF0284C7),
                                     fontWeight: FontWeight.w600)),
@@ -849,7 +859,8 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
                         horizontalPadding, 0, horizontalPadding, 14),
-                    child: GestureDetector(behavior: HitTestBehavior.opaque, 
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () {
                         final a = visibleGridActions
                             .where((a) => a.featureId == 'events_aktivitaeten')
@@ -872,11 +883,13 @@ class _HomeScreenState extends State<HomeScreen>
                               style: TextStyle(fontSize: 16)),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text('Events in deiner Nähe',
+                            child: Text(
+                                AppStringsManager.getString(
+                                    lang, 'events_nearby'),
                                 style: theme.textTheme.bodySmall
                                     ?.copyWith(fontWeight: FontWeight.w700)),
                           ),
-                          Text('Alle \u{2192}',
+                          Text(AppStringsManager.getString(lang, 'all_link'),
                               style: theme.textTheme.bodySmall?.copyWith(
                                   color: const Color(0xFF8B5CF6),
                                   fontWeight: FontWeight.w700)),
