@@ -198,7 +198,17 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   }
 
   Future<Map<String, String>> _authHeaders() async {
-    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    // currentUser can be null on web while Firebase restores the session
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      try {
+        user = await FirebaseAuth.instance
+            .authStateChanges()
+            .firstWhere((u) => u != null)
+            .timeout(const Duration(seconds: 4));
+      } catch (_) {}
+    }
+    final token = await user?.getIdToken();
     return {
       'Content-Type': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
@@ -213,7 +223,6 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
     try {
       final headers = await _authHeaders();
-      final hasToken = headers.containsKey('Authorization');
       final resp = await http
           .post(
             Uri.parse('$base/friend-chat/messages'),
@@ -230,7 +239,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         final body = jsonDecode(resp.body) as Map<String, dynamic>;
         return body['item'] as Map<String, dynamic>?;
       }
-      _showError('Fehler ${resp.statusCode}${!hasToken ? " (nicht eingeloggt)" : ""}');
+      if (resp.statusCode == 401) {
+        _showError('Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
+      } else {
+        _showError('Fehler ${resp.statusCode}');
+      }
       return null;
     } catch (e) {
       _showError('Netzwerkfehler: $e');

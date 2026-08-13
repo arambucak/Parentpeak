@@ -137,7 +137,17 @@ class ParentCoinService extends ChangeNotifier {
   }
 
   Future<Map<String, String>> _authHeaders() async {
-    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    // currentUser can be null on web while Firebase restores the session
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      try {
+        user = await FirebaseAuth.instance
+            .authStateChanges()
+            .firstWhere((u) => u != null)
+            .timeout(const Duration(seconds: 4));
+      } catch (_) {}
+    }
+    final token = await user?.getIdToken();
     return {
       'Content-Type': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
