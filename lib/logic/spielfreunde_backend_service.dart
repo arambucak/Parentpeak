@@ -154,6 +154,51 @@ class SpielfreundeBackendService {
       return false;
     }
   }
+
+  Future<void> registerFriendCode(String code, String name) async {
+    if (_api == null) return;
+    try {
+      await _api!.postJsonAny('/api/friends/register', {'code': code, 'name': name});
+    } catch (e) {
+      debugPrint('registerFriendCode failed: $e');
+    }
+  }
+
+  Future<String?> lookupFriendName(String code) async {
+    if (_api == null) return null;
+    try {
+      final data = await _api!.getJson('/api/friends/lookup/${Uri.encodeComponent(code)}');
+      if (data is Map<String, dynamic>) return data['name'] as String?;
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> notifyFriendConnect(String fromCode, String fromName, String toCode) async {
+    if (_api == null) return;
+    try {
+      await _api!.postJsonAny('/api/friends/connect', {
+        'fromCode': fromCode,
+        'fromName': fromName,
+        'toCode': toCode,
+      });
+    } catch (e) {
+      debugPrint('notifyFriendConnect failed: $e');
+    }
+  }
+
+  /// Returns list of { fromCode, fromName } who added this code since last call.
+  Future<List<Map<String, dynamic>>> claimPendingFriendConnections(String code) async {
+    if (_api == null) return [];
+    try {
+      final data = await _api!.getJson('/api/friends/pending/${Uri.encodeComponent(code)}');
+      if (data is Map<String, dynamic> && data['connections'] is List) {
+        return List<Map<String, dynamic>>.from(data['connections']);
+      }
+    } catch (e) {
+      debugPrint('claimPendingFriendConnections failed: $e');
+    }
+    return [];
+  }
 }
 
 class WaitlistStatus {

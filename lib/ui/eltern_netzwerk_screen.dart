@@ -70,6 +70,23 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       final w = await _backend.getWaitlistCount(p.district);
       if (mounted) setState(() => _waitlist = w);
     }
+
+    // Register own code+name so others can find us by code
+    final myCode = ParentFriendsService.instance.myCode;
+    final myName = _profile?.displayName ?? AuthService.instance.currentUser?.displayName ?? 'Elternteil';
+    unawaited(_backend.registerFriendCode(myCode, myName));
+
+    // Auto-add anyone who scanned our QR since last open
+    final pending = await _backend.claimPendingFriendConnections(myCode);
+    for (final conn in pending) {
+      final code = (conn['fromCode'] as String? ?? '').toLowerCase();
+      final name = (conn['fromName'] as String? ?? 'Elternteil');
+      if (code.isNotEmpty) {
+        await ParentFriendsService.instance.addFriend(
+          ParentFriend(code: code, name: name, addedAt: DateTime.now()),
+        );
+      }
+    }
     try {
       final sug = await _backend.getProfiles();
       if (mounted) {
@@ -1216,23 +1233,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   /// Looks up a display name for the given code via getProfiles().
   Future<String?> _lookupNameByCode(String rawCode) async {
-    final code = rawCode.trim().toUpperCase();
-    // Strip optional PP- prefix to get the raw 6-char UID prefix
-    final uidPrefix =
-        code.startsWith('PP-') ? code.substring(3).toLowerCase() : code.toLowerCase();
-    if (uidPrefix.isEmpty) return null;
-    try {
-      final profiles = await _backend.getProfiles();
-      final match = profiles.cast<Map<String, dynamic>>().firstWhere(
-            (p) => (p['userId'] as String? ?? '')
-                .toLowerCase()
-                .startsWith(uidPrefix),
-            orElse: () => {},
-          );
-      return match['displayName'] as String?;
-    } catch (_) {
-      return null;
-    }
+    final code = rawCode.trim().toLowerCase();
+    final normalized = code.startsWith('pp-') ? code : code;
+    if (normalized.isEmpty) return null;
+    return _backend.lookupFriendName(normalized);
   }
 
   void _showAddFriendSheet(ThemeData theme, {String? prefillCode}) {
@@ -1399,6 +1403,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                                   name: name,
                                   addedAt: DateTime.now()),
                             );
+                            // Tell the other side that we connected
+                            final myCode = ParentFriendsService.instance.myCode;
+                            final myName = _profile?.displayName ?? AuthService.instance.currentUser?.displayName ?? 'Elternteil';
+                            unawaited(_backend.notifyFriendConnect(myCode, myName, code));
                             if (ctx.mounted) Navigator.pop(ctx);
                           },
                     style: FilledButton.styleFrom(

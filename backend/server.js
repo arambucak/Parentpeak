@@ -4580,6 +4580,45 @@ app.post('/parent-matching/messages', async (req, res) => {
   }
 });
 
+// ── Friend connections ──────────────────────────────────────────────────────
+const friendRegistry = new Map();         // code → { name, updatedAt }
+const friendPendingConnections = new Map(); // code → [{ fromCode, fromName, connectedAt }]
+
+app.post('/api/friends/register', (req, res) => {
+  const code = (req.body.code || '').toString().trim().toLowerCase();
+  const name = (req.body.name || '').toString().trim();
+  if (!code || !name) return res.status(400).json({ error: 'code und name erforderlich' });
+  friendRegistry.set(code, { name, updatedAt: new Date().toISOString() });
+  return res.json({ ok: true });
+});
+
+app.get('/api/friends/lookup/:code', (req, res) => {
+  const code = (req.params.code || '').toString().trim().toLowerCase();
+  const entry = friendRegistry.get(code);
+  if (!entry) return res.status(404).json({ error: 'Nicht gefunden' });
+  return res.json({ name: entry.name });
+});
+
+app.post('/api/friends/connect', (req, res) => {
+  const fromCode = (req.body.fromCode || '').toString().trim().toLowerCase();
+  const fromName = (req.body.fromName || '').toString().trim();
+  const toCode   = (req.body.toCode   || '').toString().trim().toLowerCase();
+  if (!fromCode || !toCode) return res.status(400).json({ error: 'fromCode und toCode erforderlich' });
+  if (!friendPendingConnections.has(toCode)) friendPendingConnections.set(toCode, []);
+  const list = friendPendingConnections.get(toCode);
+  if (!list.some(e => e.fromCode === fromCode)) {
+    list.push({ fromCode, fromName, connectedAt: new Date().toISOString() });
+  }
+  return res.json({ ok: true });
+});
+
+app.get('/api/friends/pending/:code', (req, res) => {
+  const code = (req.params.code || '').toString().trim().toLowerCase();
+  const connections = friendPendingConnections.get(code) || [];
+  friendPendingConnections.delete(code); // claim = clear
+  return res.json({ connections });
+});
+
 app.get('/friend-chat/messages', (req, res) => {
   const roomId = (req.query.roomId || '').toString().trim();
   if (!roomId) return res.status(400).json({ error: 'roomId fehlt' });
