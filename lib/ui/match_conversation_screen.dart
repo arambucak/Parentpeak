@@ -190,14 +190,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     if (!mounted) return;
 
     if (sent == null) {
-      setState(() {
-        _messages.remove(optimistic);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nachricht konnte nicht gesendet werden.'),
-        ),
-      );
+      setState(() => _messages.remove(optimistic));
       return;
     }
 
@@ -214,12 +207,17 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
 
   Future<Map<String, dynamic>?> _sendFriendMessage(String text) async {
     final base = APIConfig.getBackendBaseUrl();
-    if (base == null) return null;
+    if (base == null) {
+      _showError('Backend-URL fehlt');
+      return null;
+    }
     try {
+      final headers = await _authHeaders();
+      final hasToken = headers.containsKey('Authorization');
       final resp = await http
           .post(
             Uri.parse('$base/friend-chat/messages'),
-            headers: await _authHeaders(),
+            headers: headers,
             body: jsonEncode({
               'roomId': widget.profileId,
               'userId': _currentUserId,
@@ -227,15 +225,22 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
               'content': text,
             }),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 15));
       if (resp.statusCode == 201) {
         final body = jsonDecode(resp.body) as Map<String, dynamic>;
         return body['item'] as Map<String, dynamic>?;
       }
+      _showError('Fehler ${resp.statusCode}${!hasToken ? " (nicht eingeloggt)" : ""}');
       return null;
-    } catch (_) {
+    } catch (e) {
+      _showError('Netzwerkfehler: $e');
       return null;
     }
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 6)));
   }
 
   @override
