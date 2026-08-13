@@ -1576,12 +1576,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     dataModuleShape: QrDataModuleShape.square,
                     color: Color(0xFF134E4A))),
           ),
-          const SizedBox(height: 14),
-          Text(coins.referralCode,
-              style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 3,
-                  color: const Color(0xFF0D9488))),
+          const SizedBox(height: 10),
+          Text('Einfach scannen lassen \u2013 kein Code n\u00f6tig',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.outline),
+              textAlign: TextAlign.center),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
