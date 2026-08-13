@@ -146,15 +146,18 @@ class _HomeScreenState extends State<HomeScreen>
     if (code == null || code.isEmpty || !mounted) return;
     _initialReferralHandled = true;
 
-    // Always persist so it survives login/registration
-    SharedPreferences.getInstance().then((prefs) => prefs.setString('pending_referral_code', code));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Willkommen bei Parentpeak! Du wurdest eingeladen ❤️'),
-        duration: Duration(seconds: 4),
-      ),
-    );
+    SharedPreferences.getInstance().then((prefs) {
+      final existing = prefs.getString('pending_referral_code');
+      if (existing != null) return; // already stored → welcome shown, skip
+      prefs.setString('pending_referral_code', code);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Willkommen bei Parentpeak! Du wurdest eingeladen ❤️'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    });
   }
 
   Future<void> _processPendingReferral() async {
