@@ -5,6 +5,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_cache_service.dart';
 import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/models/event_attendee.dart';
+import 'package:parentpeak/logic/parent_friends_service.dart';
 
 /// Service für Community-Events — verbindet App mit Backend.
 ///
@@ -223,12 +224,24 @@ class CommunityEventService extends ChangeNotifier {
           .toList();
       final total = response['total'] as int? ?? list.length;
 
-      // Netzwerk-Kontakte markieren (TODO: echte Freundes-Liste abgleichen)
-      // Fuer jetzt: alle zeigen, Netzwerk-Highlight kommt mit Messaging-Feature
+      final friendsSvc = ParentFriendsService.instance;
+      await friendsSvc.load();
+      final markedList = list.map((a) {
+        if (!friendsSvc.isFriendByUserId(a.userId)) return a;
+        return EventAttendee(
+          userId: a.userId,
+          displayName: a.displayName,
+          message: a.message,
+          createdAt: a.createdAt,
+          isNetworkContact: true,
+        );
+      }).toList();
+      final networkContacts =
+          markedList.where((a) => a.isNetworkContact).toList();
       return EventAttendeesResult(
-        attendees: list,
+        attendees: markedList,
         total: total,
-        networkContacts: [], // Wird später mit echtem Netzwerk-Abgleich gefuellt
+        networkContacts: networkContacts,
       );
     } catch (e) {
       debugPrint('CommunityEventService.getAttendees: $e');

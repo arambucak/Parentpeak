@@ -11,6 +11,8 @@ import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
+import 'package:parentpeak/logic/parent_friends_service.dart';
+import 'package:parentpeak/ui/match_conversation_screen.dart';
 
 class ElternNetzwerkScreen extends StatefulWidget {
   const ElternNetzwerkScreen({super.key});
@@ -29,9 +31,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(length: 3, vsync: this);
     ParentCoinService.instance.initialize();
     ParentCoinService.instance.addListener(_rebuild);
+    ParentFriendsService.instance.addListener(_rebuild);
     _init();
   }
 
@@ -39,6 +42,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   void dispose() {
     _tabs.dispose();
     ParentCoinService.instance.removeListener(_rebuild);
+    ParentFriendsService.instance.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -47,6 +51,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   }
 
   Future<void> _init() async {
+    await ParentFriendsService.instance.load();
     final p = await FamilyMatchProfile.load();
     if (mounted) setState(() => _profile = p);
     if (p != null) {
@@ -66,13 +71,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           controller: _tabs,
           tabs: const [
             Tab(text: 'Einladen & Coins'),
-            Tab(text: 'Spielfreunde')
+            Tab(text: 'Spielfreunde'),
+            Tab(text: 'Freunde'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabs,
-        children: [_inviteTab(theme), _spielfreundeTab(theme)],
+        children: [_inviteTab(theme), _spielfreundeTab(theme), _freundeTab(theme)],
       ),
     );
   }
@@ -609,6 +615,336 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.outline)),
         ]));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TAB 3: FREUNDE & CHAT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _freundeTab(ThemeData theme) {
+    final myCode = ParentFriendsService.instance.myCode.toUpperCase();
+    final friends = ParentFriendsService.instance.friends;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // My code card
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6)),
+            ],
+          ),
+          child: Column(children: [
+            const Text('\u{1F91D}', style: TextStyle(fontSize: 32)),
+            const SizedBox(height: 10),
+            const Text(
+              'Dein Freundschafts-Code',
+              style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(
+                myCode,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 6),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: myCode));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Code kopiert!')),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.copy_rounded,
+                      color: Colors.white, size: 16),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            const Text(
+              'Teile diesen Code – andere Eltern k\u00f6nnen dich damit als Freund hinzuf\u00fcgen',
+              style: TextStyle(color: Colors.white60, fontSize: 11),
+              textAlign: TextAlign.center,
+            ),
+          ]),
+        ),
+        const SizedBox(height: 20),
+
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () => _showAddFriendSheet(theme),
+            icon: const Icon(Icons.person_add_rounded, size: 18),
+            label: const Text('Freund hinzuf\u00fcgen'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF8B5CF6),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 26),
+
+        Row(children: [
+          const Text('\u{1F465}', style: TextStyle(fontSize: 16)),
+          const SizedBox(width: 8),
+          Text(
+            'Meine Freunde (${friends.length})',
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ]),
+        const SizedBox(height: 12),
+
+        if (friends.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                  color: theme.colorScheme.outlineVariant
+                      .withValues(alpha: 0.4)),
+            ),
+            child: Column(children: [
+              const Text('\u{1F44B}', style: TextStyle(fontSize: 36)),
+              const SizedBox(height: 12),
+              Text('Noch keine Freunde',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              Text(
+                'Tausche deinen Code mit anderen Eltern aus und verbindet euch!',
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant, height: 1.4),
+                textAlign: TextAlign.center,
+              ),
+            ]),
+          )
+        else
+          ...friends.map((f) => _friendCard(theme, f)),
+      ]),
+    );
+  }
+
+  Widget _friendCard(ThemeData theme, ParentFriend friend) {
+    // Deterministic room ID: sorted codes ensure both sides open the same chat
+    final myCode = ParentFriendsService.instance.myCode;
+    final sorted = [myCode, friend.code]..sort();
+    final roomId = sorted.join('-');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color:
+                theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Row(children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Center(
+              child: Text('\u{1F46A}', style: TextStyle(fontSize: 20))),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+          Text(friend.name,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w700)),
+          Text('Code: ${friend.code.toUpperCase()}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant)),
+        ])),
+        const SizedBox(width: 8),
+        OutlinedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MatchConversationScreen(
+                  profileId: roomId, profileName: friend.name),
+            ),
+          ),
+          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+          label: const Text('Chat'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF8B5CF6),
+            side: const BorderSide(color: Color(0xFF8B5CF6)),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+            textStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(width: 4),
+        GestureDetector(
+          onTap: () => _confirmRemoveFriend(friend),
+          child: Icon(Icons.close_rounded,
+              size: 18, color: theme.colorScheme.outline),
+        ),
+      ]),
+    );
+  }
+
+  void _showAddFriendSheet(ThemeData theme) {
+    final codeCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('\u{1F91D}', style: TextStyle(fontSize: 32)),
+            const SizedBox(height: 10),
+            Text('Freund hinzuf\u00fcgen',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text('Gib den Code einer anderen Familie ein.',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+            const SizedBox(height: 20),
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                labelText: 'Name der Familie',
+                hintText: 'z.B. Familie M\u00fcller',
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: Color(0xFF8B5CF6), width: 1.5)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: codeCtrl,
+              textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(
+                labelText: 'Freundschafts-Code',
+                hintText: 'z.B. AB12CD',
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: Color(0xFF8B5CF6), width: 1.5)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final code = codeCtrl.text.trim().toLowerCase();
+                  final name = nameCtrl.text.trim();
+                  if (code.isEmpty || name.isEmpty) return;
+                  await ParentFriendsService.instance.addFriend(
+                    ParentFriend(
+                        code: code,
+                        name: name,
+                        addedAt: DateTime.now()),
+                  );
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Verbinden'),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmRemoveFriend(ParentFriend friend) async {
+    final theme = Theme.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        title: const Text('Freund entfernen?'),
+        content: Text(
+            '${friend.name} wird aus deiner Freundesliste entfernt.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error),
+              child: const Text('Entfernen')),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ParentFriendsService.instance.removeFriend(friend.code);
+    }
   }
 
   Widget _inviteRow(ThemeData theme, IconData icon, Color color, String title,
