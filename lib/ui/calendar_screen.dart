@@ -116,7 +116,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     setState(() => _personColors = colors);
   }
 
-  Future<void> _showAddPersonDialog({required void Function(String) onAdded}) async {
+  Future<void> _showAddPersonDialog(
+      {required void Function(String) onAdded}) async {
     final ctrl = TextEditingController();
     final name = await showDialog<String>(
       context: context,
@@ -152,8 +153,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     setState(() {
       _customPersons.add(name);
       final idx = _personColors.length - 1; // before Kindergarten
-      _personColors[name] =
-          _childColorPalette[idx % _childColorPalette.length];
+      _personColors[name] = _childColorPalette[idx % _childColorPalette.length];
     });
     await _saveCustomPersons();
     onAdded(name);
@@ -291,6 +291,58 @@ class _CalendarScreenState extends State<CalendarScreen>
       orElse: () => 'Eltern',
     );
     return firstChild;
+  }
+
+  Future<void> _deleteEvent(_CalendarEvent event) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Termin löschen?'),
+        content: Text('„${event.title}" wird unwiderruflich gelöscht.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      setState(() {
+        _events.removeWhere((e) => e.id == event.id);
+      });
+      await _persistEvents();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Termin gelöscht.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _editEvent(_CalendarEvent event) async {
+    // Für jetzt: Event löschen und Add-Sheet öffnen mit vorausgefüllten Daten
+    setState(() {
+      _events.removeWhere((e) => e.id == event.id);
+      _titleController.text = event.title;
+    });
+    await _persistEvents();
+    _openAddSheet();
+  }
+
+  Future<void> _persistEvents() async {
+    // Save lokal via SharedPreferences (Fallback)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        'calendar.events', jsonEncode(_events.map((e) => e.toJson()).toList()));
   }
 
   Future<void> _openAddSheet() async {
@@ -910,7 +962,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                     ..._eventsForSelectedDay.map((e) => _EventCard(
                         event: e,
                         color: _personColors[e.person] ??
-                            theme.colorScheme.primary)),
+                            theme.colorScheme.primary,
+                        onDelete: () => _deleteEvent(e),
+                        onEdit: () => _editEvent(e))),
                     if (_eventsForSelectedDay.isEmpty)
                       GestureDetector(
                         onTap: _openAddSheet,
@@ -1200,10 +1254,13 @@ class _MonthGrid extends StatelessWidget {
 }
 
 class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event, required this.color});
+  const _EventCard(
+      {required this.event, required this.color, this.onDelete, this.onEdit});
 
   final _CalendarEvent event;
   final Color color;
+  final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
 
   String _fmt(DateTime dt) {
     return DateFormat.Hm('de').format(dt);
@@ -1213,193 +1270,231 @@ class _EventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: 6,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              event.person,
-                              style: TextStyle(
-                                color: color,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '${_fmt(event.start)} - ${_fmt(event.end)}',
-                            style: const TextStyle(
-                              color: Color(0xFF4A5568),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        event.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF2D3748),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: [
-                          if (event.recurrence != 'Einmalig')
-                            _Badge(
-                              label: event.recurrence,
-                              color: color,
-                              icon: Icons.loop_rounded,
-                            ),
-                          if (event.reminderMinutes ==
-                              _CalendarScreenState._smartReminderValue)
-                            const _Badge(
-                              label: 'Smart: 1W • 1T • Heute',
-                              color: Color(0xFF5B7FFF),
-                              icon: Icons.auto_awesome_rounded,
-                            ),
-                          if (event.reminderMinutes > 0)
-                            _Badge(
-                              label: '${event.reminderMinutes} Min vorher',
-                              color: const Color(0xFF718096),
-                              icon: Icons.alarm_rounded,
-                            ),
-                          if (event.recurrenceEndMode.contains('Termine') &&
-                              event.recurrenceCount != null)
-                            _Badge(
-                              label:
-                                  'Endet nach ${event.recurrenceCount} Terminen',
-                              color: const Color(0xFF718096),
-                              icon: Icons.flag_rounded,
-                            ),
-                          if (event.recurrenceEndMode == 'Datum wählen' &&
-                              event.recurrenceEndDate != null)
-                            _Badge(
-                              label:
-                                  'Endet ${DateFormat.yMMMd('de').format(event.recurrenceEndDate!)}',
-                              color: const Color(0xFF718096),
-                              icon: Icons.event_available_rounded,
-                            ),
-                        ],
-                      ),
-                      if (event.location != null &&
-                          event.location!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.place_outlined,
-                                size: 16, color: Color(0xFF718096)),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                event.location!,
-                                style:
-                                    const TextStyle(color: Color(0xFF4A5568)),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      // Feature 3: Wer bringt / Wer holt
-                      if ((event.bringer != null &&
-                              event.bringer!.isNotEmpty) ||
-                          (event.abholer != null &&
-                              event.abholer!.isNotEmpty)) ...[
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            if (event.bringer != null &&
-                                event.bringer!.isNotEmpty)
-                              _Badge(
-                                label: '${event.bringer!} bringt',
-                                color: const Color(0xFF4A90E2),
-                                icon: Icons.directions_car_rounded,
-                              ),
-                            if (event.abholer != null &&
-                                event.abholer!.isNotEmpty)
-                              _Badge(
-                                label: '${event.abholer!} holt',
-                                color: const Color(0xFF7B68EE),
-                                icon: Icons.home_rounded,
-                              ),
-                          ],
-                        ),
-                      ],
-                      // Feature 2: Pack-Reminder Badge
-                      if (event.packReminder != null &&
-                          event.packReminder!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.backpack_outlined,
-                                size: 14, color: Color(0xFF9F7AEA)),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '\u{1F392} ${event.packReminder!}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF9F7AEA),
-                                  fontStyle: FontStyle.italic,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: () => _showOptions(context),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 6,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                event.person,
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${_fmt(event.start)} - ${_fmt(event.end)}',
+                              style: const TextStyle(
+                                color: Color(0xFF4A5568),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          event.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF2D3748),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            if (event.recurrence != 'Einmalig')
+                              _Badge(
+                                label: event.recurrence,
+                                color: color,
+                                icon: Icons.loop_rounded,
+                              ),
+                            if (event.reminderMinutes ==
+                                _CalendarScreenState._smartReminderValue)
+                              const _Badge(
+                                label: 'Smart: 1W • 1T • Heute',
+                                color: Color(0xFF5B7FFF),
+                                icon: Icons.auto_awesome_rounded,
+                              ),
+                            if (event.reminderMinutes > 0)
+                              _Badge(
+                                label: '${event.reminderMinutes} Min vorher',
+                                color: const Color(0xFF718096),
+                                icon: Icons.alarm_rounded,
+                              ),
+                            if (event.recurrenceEndMode.contains('Termine') &&
+                                event.recurrenceCount != null)
+                              _Badge(
+                                label:
+                                    'Endet nach ${event.recurrenceCount} Terminen',
+                                color: const Color(0xFF718096),
+                                icon: Icons.flag_rounded,
+                              ),
+                            if (event.recurrenceEndMode == 'Datum wählen' &&
+                                event.recurrenceEndDate != null)
+                              _Badge(
+                                label:
+                                    'Endet ${DateFormat.yMMMd('de').format(event.recurrenceEndDate!)}',
+                                color: const Color(0xFF718096),
+                                icon: Icons.event_available_rounded,
+                              ),
+                          ],
+                        ),
+                        if (event.location != null &&
+                            event.location!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.place_outlined,
+                                  size: 16, color: Color(0xFF718096)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  event.location!,
+                                  style:
+                                      const TextStyle(color: Color(0xFF4A5568)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        // Feature 3: Wer bringt / Wer holt
+                        if ((event.bringer != null &&
+                                event.bringer!.isNotEmpty) ||
+                            (event.abholer != null &&
+                                event.abholer!.isNotEmpty)) ...[
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              if (event.bringer != null &&
+                                  event.bringer!.isNotEmpty)
+                                _Badge(
+                                  label: '${event.bringer!} bringt',
+                                  color: const Color(0xFF4A90E2),
+                                  icon: Icons.directions_car_rounded,
+                                ),
+                              if (event.abholer != null &&
+                                  event.abholer!.isNotEmpty)
+                                _Badge(
+                                  label: '${event.abholer!} holt',
+                                  color: const Color(0xFF7B68EE),
+                                  icon: Icons.home_rounded,
+                                ),
+                            ],
+                          ),
+                        ],
+                        // Feature 2: Pack-Reminder Badge
+                        if (event.packReminder != null &&
+                            event.packReminder!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.backpack_outlined,
+                                  size: 14, color: Color(0xFF9F7AEA)),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '\u{1F392} ${event.packReminder!}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF9F7AEA),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            ListTile(
+              leading: const Icon(Icons.edit_rounded),
+              title: const Text('Bearbeiten'),
+              onTap: () {
+                Navigator.pop(ctx);
+                onEdit?.call();
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete_rounded,
+                  color: Theme.of(context).colorScheme.error),
+              title: Text('Löschen',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              onTap: () {
+                Navigator.pop(ctx);
+                onDelete?.call();
+              },
+            ),
+          ]),
         ),
       ),
     );
