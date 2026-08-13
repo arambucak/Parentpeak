@@ -33,7 +33,8 @@ class CalendarBackendService {
   Future<void> addEvent(Map<String, dynamic> event) async {
     lastSyncError = null;
     if (apiClient == null) {
-      throw StateError('Kalender-Backend ist nicht konfiguriert.');
+      lastSyncError = 'Backend nicht konfiguriert (BACKEND_BASE_URL fehlt).';
+      throw StateError(lastSyncError!);
     }
 
     try {
@@ -42,7 +43,7 @@ class CalendarBackendService {
         CalendarContract.buildCreatePayload(event),
       );
     } catch (e) {
-      lastSyncError = 'Termin konnte nicht gespeichert werden.';
+      lastSyncError = e.toString();
       rethrow;
     }
   }

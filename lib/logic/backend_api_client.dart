@@ -64,7 +64,7 @@ class BackendApiClient {
     final headers = await _headers();
     final response = await _httpClient
       .get(_uri(path), headers: headers)
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 20));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('GET $path failed: ${response.statusCode}');
@@ -103,7 +103,7 @@ class BackendApiClient {
           headers: headers,
           body: jsonEncode(body),
         )
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('POST $path failed: ${response.statusCode}');
