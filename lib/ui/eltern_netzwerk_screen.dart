@@ -28,6 +28,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   WaitlistStatus _waitlist =
       const WaitlistStatus(total: 0, threshold: 20, remaining: 20, progress: 0);
   Set<String> _dismissedSuggestions = {};
+  List<_SuggestedParent> _suggestedProfiles = [];
+  bool _loadingSuggestions = true;
 
   @override
   void initState() {
@@ -61,6 +63,50 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     if (p != null) {
       final w = await _backend.getWaitlistCount(p.district);
       if (mounted) setState(() => _waitlist = w);
+    }
+    try {
+      final sug = await _backend.getProfiles();
+      if (mounted) {
+        final myCode = ParentFriendsService.instance.myCode;
+        final friendCodes =
+            ParentFriendsService.instance.friends.map((f) => f.code).toSet();
+        final suggestions = sug
+            .where((mp) =>
+                mp['userId'] != null &&
+                !(mp['userId'] as String).startsWith(myCode) &&
+                !friendCodes.contains(mp['userId'] as String) &&
+                !_dismissedSuggestions.contains(mp['userId'] as String? ?? ''))
+            .take(6)
+            .map((mp) {
+          final name = mp['displayName'] as String? ?? 'Familie';
+          final district = mp['district'] as String? ?? '';
+          final children =
+              (mp['children'] as List? ?? []).cast<Map<String, dynamic>>();
+          final kidsText = children.isEmpty
+              ? ''
+              : children
+                  .map((c) => '${c['name']} (${c['age']})' )
+                  .join(' · ');
+          final reason = (_profile?.district != null &&
+                  district.isNotEmpty &&
+                  district == _profile!.district)
+              ? '📍 Gleicher Bezirk'
+              : district.isNotEmpty
+                  ? '🌍 $district'
+                  : '👥 In deiner Nähe';
+          return _SuggestedParent(
+              id: mp['userId'] as String,
+              name: name,
+              kids: kidsText,
+              reason: reason);
+        }).toList();
+        setState(() {
+          _suggestedProfiles = suggestions;
+          _loadingSuggestions = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingSuggestions = false);
     }
   }
 
@@ -628,62 +674,71 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   Widget _freundeTab(ThemeData theme) {
     final myCode = ParentFriendsService.instance.myCode.toUpperCase();
     final friends = ParentFriendsService.instance.friends;
-    final shareMsg =
-        'Hey! \u{1F44B} Ich bin auf ParentPeak und w\u00fcrde dich gerne als Freund hinzuf\u00fcgen.\n'
-        'Verbinde dich mit mir: parentpeak.de/freund/$myCode';
+    final shareMsg = 'Hey! 👋 Ich bin auf ParentPeak – verbinde dich mit mir:\n'
+        'parentpeak.de/freund/$myCode';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Eltern die du kennst \u2013 hier verbinden',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text(
-          'Schick deinen pers\u00f6nlichen Link an Eltern aus Kita, Spielplatz oder Elternabend.',
-          style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant, height: 1.4),
-        ),
-        const SizedBox(height: 16),
-
-        // Code + 3 Share-Aktionen
+        // ── Code card mit OTP-Style Zeichen ────────────────────────────────
         Container(
-          padding: const EdgeInsets.all(20),
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+              colors: [Color(0xFF5B21B6), Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+              stops: [0.0, 0.55, 1.0],
             ),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                  color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6)),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                  blurRadius: 28,
+                  offset: const Offset(0, 10)),
             ],
           ),
           child: Column(children: [
-            Text(myCode,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 6)),
-            const SizedBox(height: 2),
-            const Text('Dein pers\u00f6nlicher Code',
-                style: TextStyle(color: Colors.white70, fontSize: 12)),
-            const SizedBox(height: 16),
+            const Text('DEIN FREUNDES-CODE',
+                style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2.5)),
+            const SizedBox(height: 14),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              ...myCode.split('').map((ch) => Container(
+                    width: 42,
+                    height: 50,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.35),
+                          width: 1.5),
+                    ),
+                    child: Center(
+                        child: Text(ch,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900))),
+                  )),
+            ]),
+            const SizedBox(height: 18),
             Row(children: [
               Expanded(
-                  child: _shareActionBtn(Icons.copy_rounded, 'Kopieren', () {
+                  child: _shareActionBtn(Icons.copy_all_rounded, 'Kopieren',
+                      () {
                 Clipboard.setData(ClipboardData(text: myCode));
                 ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Code kopiert!')));
+                    const SnackBar(content: Text('Code kopiert ✓!')));
               })),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
-                  child: _shareActionBtn(Icons.share_rounded, 'Teilen',
+                  child: _shareActionBtn(Icons.ios_share_rounded, 'Teilen',
                       () async {
                 final box = context.findRenderObject() as RenderBox?;
                 await Share.share(shareMsg,
@@ -691,9 +746,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         ? box.localToGlobal(Offset.zero) & box.size
                         : null);
               })),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
-                  child: _shareActionBtn(Icons.qr_code_rounded, 'QR-Code',
+                  child: _shareActionBtn(Icons.qr_code_2_rounded, 'QR-Code',
                       () => _showFriendQR(theme, myCode))),
             ]),
           ]),
@@ -702,298 +757,364 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
         OutlinedButton.icon(
           onPressed: () => _showAddFriendSheet(theme),
-          icon: const Icon(Icons.person_add_outlined, size: 18),
-          label: const Text('Freund per Code hinzuf\u00fcgen'),
+          icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+          label: const Text('Freund per Code hinzufügen'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF8B5CF6),
-            side: const BorderSide(color: Color(0xFF8B5CF6)),
+            foregroundColor: const Color(0xFF7C3AED),
+            side: BorderSide(
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.5)),
             minimumSize: const Size(double.infinity, 48),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 32),
 
         _suggestedParentsSection(theme),
-        const SizedBox(height: 28),
+        const SizedBox(height: 32),
 
-        Row(children: [
-          const Text('\u{1F465}', style: TextStyle(fontSize: 16)),
-          const SizedBox(width: 8),
-          Text(
-            'Meine Freunde (${friends.length})',
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w800),
-          ),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text('Meine Freunde',
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w800)),
+          if (friends.isNotEmpty)
+            Text('${friends.length} verbunden',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: const Color(0xFF7C3AED))),
         ]),
         const SizedBox(height: 12),
 
         if (friends.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                  color: theme.colorScheme.outlineVariant
-                      .withValues(alpha: 0.4)),
-            ),
-            child: Column(children: [
-              const Text('\u{1F44B}', style: TextStyle(fontSize: 36)),
-              const SizedBox(height: 12),
-              Text('Noch keine Freunde',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              Text(
-                'Teile deinen Code \u2013 ein Tap und ihr seid verbunden!',
-                style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant, height: 1.4),
-                textAlign: TextAlign.center,
-              ),
-            ]),
-          )
+          _emptyFriendsState(theme)
         else
           ...friends.map((f) => _friendCard(theme, f)),
       ]),
     );
   }
 
-  Widget _shareActionBtn(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
+  Widget _emptyFriendsState(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(children: [
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+            shape: BoxShape.circle,
+          ),
+          child: const Center(
+              child: Icon(Icons.group_add_rounded,
+                  size: 28, color: Color(0xFF8B5CF6))),
         ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(height: 4),
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600)),
-        ]),
+        const SizedBox(height: 14),
+        Text('Noch keine Freunde',
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 6),
+        Text('Teile deinen Code – ein Tap und ihr seid verbunden!',
+            style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant, height: 1.5),
+            textAlign: TextAlign.center),
+      ]),
+    );
+  }
+
+  Widget _shareActionBtn(IconData icon, String label, VoidCallback onTap) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        splashColor: Colors.white.withValues(alpha: 0.2),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(height: 5),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600)),
+          ]),
+        ),
       ),
     );
   }
 
   Widget _suggestedParentsSection(ThemeData theme) {
-    const suggestions = [
-      _SuggestedParent(
-          id: 'sug-1',
-          name: 'Familie \u00d6zdemir',
-          kids: '\u{1F466} Leon (4) \u00b7 \u{1F467} Layla (6)',
-          reason: '\u{1F4CD} In deiner N\u00e4he \u00b7 Gleiche Kita-Phase'),
-      _SuggestedParent(
-          id: 'sug-2',
-          name: 'Familie Wagner',
-          kids: '\u{1F476} Mia (2)',
-          reason: '\u{1F9F8} Kind im gleichen Alter \u00b7 Warteliste'),
-      _SuggestedParent(
-          id: 'sug-3',
-          name: 'Familie Kim',
-          kids: '\u{1F467} Sofia (5) \u00b7 \u{1F466} Max (7)',
-          reason: '\u{1F331} Gleiche Interessen \u00b7 Outdoor & Natur'),
-      _SuggestedParent(
-          id: 'sug-4',
-          name: 'Familie M\u00fcller',
-          kids: '\u{1F466} Tim (3)',
-          reason: '\u{1F389} K\u00fcrzlich beim gleichen Event'),
-    ];
-    final visible = suggestions
-        .where((s) => !_dismissedSuggestions.contains(s.id))
-        .toList();
-    if (visible.isEmpty) return const SizedBox.shrink();
+    if (_loadingSuggestions) {
+      return const Center(
+          child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(
+                  color: Color(0xFF8B5CF6), strokeWidth: 2)));
+    }
+    if (_suggestedProfiles.isEmpty) return const SizedBox.shrink();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        const Text('\u2728', style: TextStyle(fontSize: 16)),
-        const SizedBox(width: 8),
-        Expanded(
-            child: Text('Eltern die du vielleicht kennst',
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w800))),
-        Text('${visible.length} Vorschl\u00e4ge',
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Vielleicht kennst du sie',
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w800)),
+          Text('Echte Eltern aus deiner Umgebung',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: theme.colorScheme.outline)),
+        ]),
+        Text('${_suggestedProfiles.length} Vorschläge',
             style: theme.textTheme.labelSmall
-                ?.copyWith(color: theme.colorScheme.outline)),
+                ?.copyWith(color: const Color(0xFF8B5CF6))),
       ]),
-      const SizedBox(height: 4),
-      Text('Basierend auf deinem Standort und deinen Kindern',
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-      const SizedBox(height: 12),
-      ...visible.map((s) => _suggestionCard(theme, s)),
+      const SizedBox(height: 14),
+      SizedBox(
+        height: 240,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.zero,
+          itemCount: _suggestedProfiles.length,
+          itemBuilder: (ctx, i) =>
+              _suggestionCard(theme, _suggestedProfiles[i]),
+        ),
+      ),
     ]);
   }
 
   Widget _suggestionCard(ThemeData theme, _SuggestedParent s) {
+    final color = _avatarColor(s.name);
+    final initial = s.name.isNotEmpty ? s.name[0].toUpperCase() : '?';
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      width: 168,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)]),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Center(
-            child: Text(
-              s.name.split(' ').last[0],
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Center(
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Center(
+              child: Text(initial,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800)),
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-          Text(s.name,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        Text(s.name,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+        if (s.kids.isNotEmpty) ...[
           const SizedBox(height: 2),
           Text(s.kids,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(s.reason,
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF7C3AED))),
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+        ],
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
           ),
-          const SizedBox(height: 10),
-          Row(children: [
-            Expanded(
-              child: FilledButton(
-                onPressed: () async {
-                  await ParentFriendsService.instance.addFriend(
-                    ParentFriend(
-                        code: s.id, name: s.name, addedAt: DateTime.now()),
-                  );
-                  if (mounted) setState(() => _dismissedSuggestions.add(s.id));
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${s.name} verbunden! \u{1F44B}')));
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  textStyle: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-                child: const Text('Verbinden'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(
+          child: Text(s.reason,
+              style: TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w600, color: color),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
+        ),
+        const Spacer(),
+        Row(children: [
+          Expanded(
+            child: FilledButton(
               onPressed: () async {
-                final prefs = await SharedPreferences.getInstance();
-                if (mounted) setState(() => _dismissedSuggestions.add(s.id));
-                await prefs.setStringList(
-                    'friends.dismissed', _dismissedSuggestions.toList());
+                final code = s.id.length >= 6
+                    ? s.id.substring(0, 6).toLowerCase()
+                    : s.id.toLowerCase();
+                await ParentFriendsService.instance.addFriend(ParentFriend(
+                    code: code, name: s.name, addedAt: DateTime.now()));
+                if (mounted) {
+                  setState(() {
+                    _dismissedSuggestions.add(s.id);
+                    _suggestedProfiles.removeWhere((x) => x.id == s.id);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${s.name} verbunden! 🎉') ));
+                }
               },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: theme.colorScheme.outline,
-                side: BorderSide(
-                    color: theme.colorScheme.outlineVariant
-                        .withValues(alpha: 0.5)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7C3AED),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
                 textStyle: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w500),
+                    fontSize: 12, fontWeight: FontWeight.w600),
               ),
-              child: const Text('\u00dcberspringen'),
+              child: const Text('Verbinden'),
             ),
-          ]),
-        ])),
+          ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: () async {
+              final prefs = await SharedPreferences.getInstance();
+              if (mounted) {
+                setState(() {
+                  _dismissedSuggestions.add(s.id);
+                  _suggestedProfiles.removeWhere((x) => x.id == s.id);
+                });
+                await prefs.setStringList(
+                    'friends.dismissed', _dismissedSuggestions.toList());
+              }
+            },
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.close_rounded,
+                  size: 16, color: theme.colorScheme.outline),
+            ),
+          ),
+        ]),
       ]),
     );
+  }
+
+  Color _avatarColor(String name) {
+    const colors = [
+      Color(0xFF7C3AED), Color(0xFF0EA5E9), Color(0xFF059669),
+      Color(0xFFF59E0B), Color(0xFFEC4899), Color(0xFF6366F1),
+    ];
+    if (name.isEmpty) return colors[0];
+    return colors[name.codeUnitAt(0) % colors.length];
+  }
+
+  String _friendSince(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inDays == 0) return 'heute verbunden';
+    if (diff.inDays == 1) return 'gestern verbunden';
+    if (diff.inDays < 7) return 'vor ${diff.inDays} Tagen';
+    return 'seit ${dt.day}.${dt.month}.${dt.year}';
   }
 
   void _showFriendQR(ThemeData theme, String code) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
+              const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('Lass andere dich scannen',
-              style: theme.textTheme.titleMedium
+          Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+                color: theme.colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 20),
+          Text('Zeig diesen Code',
+              style: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          Text('Beim Treffen einfach zeigen \u2013 sofort verbunden!',
+          Text('Beim Treffen einfach scannen – sofort verbunden!',
               style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+                  ?.copyWith(color: theme.colorScheme.outline, height: 1.4),
               textAlign: TextAlign.center),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16)),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6)),
+              ],
+            ),
             child: QrImageView(
                 data: 'parentpeak.de/freund/$code',
                 version: QrVersions.auto,
                 size: 200),
           ),
-          const SizedBox(height: 14),
-          Text(code,
-              style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w900, letterSpacing: 4)),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            ...code.split('').map((ch) => Container(
+                  width: 38, height: 44,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.2)),
+                  ),
+                  child: Center(
+                      child: Text(ch,
+                          style: const TextStyle(
+                              color: Color(0xFF7C3AED),
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900))),
+                )),
+          ]),
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Fertig')),
-          )
+              onPressed: () => Navigator.pop(ctx),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7C3AED),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Fertig',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ),
         ]),
       ),
     );
   }
 
   Widget _friendCard(ThemeData theme, ParentFriend friend) {
+
 
     // Deterministic room ID: sorted codes ensure both sides open the same chat
     final myCode = ParentFriendsService.instance.myCode;
@@ -1018,14 +1139,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       ),
       child: Row(children: [
         Container(
-          width: 44,
-          height: 44,
+          width: 46,
+          height: 46,
           decoration: BoxDecoration(
-            color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: _avatarColor(friend.name),
+            shape: BoxShape.circle,
           ),
-          child: const Center(
-              child: Text('\u{1F46A}', style: TextStyle(fontSize: 20))),
+          child: Center(
+            child: Text(
+              friend.name.isNotEmpty ? friend.name[0].toUpperCase() : '?',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800),
+            ),
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1035,7 +1163,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           Text(friend.name,
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w700)),
-          Text('Code: ${friend.code.toUpperCase()}',
+          Text(_friendSince(friend.addedAt),
               style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant)),
         ])),
