@@ -386,9 +386,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Chatverlauf loeschen'),
+        title: const Text('Chatverlauf löschen'),
         content: const Text(
-          'Möchtest du den aktuellen Chatverlauf wirklich loeschen?',
+          'Möchtest du den aktuellen Chatverlauf wirklich löschen?',
         ),
         actions: [
           TextButton(
@@ -397,7 +397,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Loeschen'),
+            child: const Text('Löschen'),
           ),
         ],
       ),
@@ -476,7 +476,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Datensparsam: Es werden nur Themenzaehler gespeichert, keine Rohtexte.',
+                'Datensparsam: Es werden nur Themenzähler gespeichert, keine Rohtexte.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -501,7 +501,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (context.mounted) Navigator.pop(context);
                   },
                   icon: const Icon(Icons.restart_alt_rounded),
-                  label: const Text('Zaehler zurücksetzen'),
+                  label: const Text('Zähler zurücksetzen'),
                 ),
               ),
             ],

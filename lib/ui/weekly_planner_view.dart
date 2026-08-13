@@ -382,7 +382,7 @@ class _DayPlanCard extends StatelessWidget {
                 child: Text(
                   _toneCopy(
                     tone,
-                    'Mittag und Abend sind sehr aehnlich. Vorschlag: heute etwas Leichtes am Abend.',
+                    'Mittag und Abend sind sehr ähnlich. Vorschlag: heute etwas Leichtes am Abend.',
                     'Mittag und Abend sind sehr ähnlich. Empfehlung: leichtes Dinner.',
                     premium: 'Hinweis: Mittags- und Abendgericht überschneiden sich deutlich.',
                   ),

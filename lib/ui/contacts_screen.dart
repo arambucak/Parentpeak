@@ -219,7 +219,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                 if (existing != null)
                   TextButton.icon(
                     icon: const Icon(Icons.delete_rounded, color: Colors.red, size: 18),
-                    label: const Text('Loeschen', style: TextStyle(color: Colors.red)),
+                    label: const Text('Löschen', style: TextStyle(color: Colors.red)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       setState(() => _contacts.removeWhere((c) => c.id == existing.id));

@@ -2955,7 +2955,7 @@ class _GlobalParentRoomsState extends StatelessWidget {
                 child: FilledButton.tonalIcon(
                   onPressed: () => onOpenRoom(room),
                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                  label: const Text('Raum oeffnen'),
+                  label: const Text('Raum öffnen'),
                 ),
               ),
             ],

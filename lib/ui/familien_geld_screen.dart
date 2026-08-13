@@ -154,7 +154,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     }
     if (_children.isNotEmpty) {
       sb.writeln('');
-      sb.writeln('\u{1F3AF} Naechste Meilensteine:');
+      sb.writeln('\u{1F3AF} Nächste Meilensteine:');
       for (final child in _children) {
         final ageYears = (child.ageMonths / 12).round();
         final upcoming =
@@ -265,7 +265,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ),
           IconButton(
             icon: const Icon(Icons.language_rounded, size: 20),
-            tooltip: 'Land aendern',
+            tooltip: 'Land ändern',
             onPressed: () => setState(() => _countrySelected = false),
           ),
         ],
@@ -343,7 +343,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('Einmal eintragen — keine tägliche Eingabe noetig.',
+        Text('Einmal eintragen — keine tägliche Eingabe nötig.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 14),
@@ -374,7 +374,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                   Text(
                     _country.code == 'de'
                         ? 'Kita-Gebühren sind steuerlich absetzbar — bis zu 4.000\u{20AC}/Jahr pro Kind als Sonderausgabe.'
-                        : 'Pruefe ob Kinderbetreuungskosten in deinem Land steuerlich absetzbar sind.',
+                        : 'Prüfe ob Kinderbetreuungskosten in deinem Land steuerlich absetzbar sind.',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: const Color(0xFF9A3412), height: 1.3),
                   ),
@@ -504,7 +504,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(width: 8),
             Expanded(
                 child: Text(
-              'Dies ist keine Rechtsberatung. Bitte pruefe deine Ansprueche beim zustaendigen Amt oder einer Beratungsstelle.',
+              'Dies ist keine Rechtsberatung. Bitte prüfe deine Ansprüche beim zustaendigen Amt oder einer Beratungsstelle.',
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
             )),
@@ -522,17 +522,17 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     switch (b.status) {
       case BenefitStatus.universal:
         statusColor = const Color(0xFF16A34A);
-        statusLabel = 'Fuer alle';
+        statusLabel = 'Für alle';
         statusIcon = Icons.check_circle_rounded;
         break;
       case BenefitStatus.incomeDependent:
         statusColor = const Color(0xFFF97316);
-        statusLabel = 'Einkommensabhaengig';
+        statusLabel = 'Einkommensabhängig';
         statusIcon = Icons.info_rounded;
         break;
       case BenefitStatus.checkRequired:
         statusColor = const Color(0xFF2563EB);
-        statusLabel = 'Pruefung noetig';
+        statusLabel = 'Prüfung nötig';
         statusIcon = Icons.help_rounded;
         break;
     }
@@ -648,7 +648,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ]),
         ),
         const SizedBox(height: 16),
-        // Feature 3: Spar-Ziel für naechsten Meilenstein
+        // Feature 3: Spar-Ziel für nächsten Meilenstein
         _buildSavingsGoal(theme),
         const SizedBox(height: 16),
         // Meilensteine pro Kind
@@ -724,7 +724,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           if (year != null)
             Text(
                 yearsUntil == 1
-                    ? 'Naechstes Jahr ($year)'
+                    ? 'Nächstes Jahr ($year)'
                     : 'In $yearsUntil Jahren ($year)',
                 style: theme.textTheme.labelSmall?.copyWith(
                     color: const Color(0xFF8B5CF6),
@@ -777,7 +777,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                   fontWeight: FontWeight.w700, color: const Color(0xFF16A34A))),
           const SizedBox(height: 4),
           Text(
-            'In den naechsten 5 Jahren kommen ca. ${_country.formatAmount(totalUpcoming)} auf euch zu. '
+            'In den nächsten 5 Jahren kommen ca. ${_country.formatAmount(totalUpcoming)} auf euch zu. '
             'Mit ~${_country.formatAmount(monthlyTarget)}/Monat seid ihr vorbereitet.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: const Color(0xFF166534), height: 1.4),
@@ -938,7 +938,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               _eligibilityDone = false;
               _saveEligibility();
             }),
-            child: Text('Aendern',
+            child: Text('Ändern',
                 style: theme.textTheme.labelSmall?.copyWith(
                     color: const Color(0xFF7C3AED), fontWeight: FontWeight.w700)),
           ),

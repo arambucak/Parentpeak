@@ -531,7 +531,7 @@ class _NextGenFoodFeedScreenState extends State<NextGenFoodFeedScreen> {
                         await _queueRecipeAudioHacksIfNeeded(autoplay: true);
                       },
                 icon: const Icon(Icons.skip_next_rounded, size: 16),
-                label: const Text('Naechster Hack'),
+                label: const Text('Nächster Hack'),
               ),
               FilledButton.icon(
                 onPressed: () async {

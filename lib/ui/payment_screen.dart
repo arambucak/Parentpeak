@@ -35,7 +35,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Link konnte nicht geoeffnet werden.')),
+        const SnackBar(content: Text('Link konnte nicht geöffnet werden.')),
       );
     }
   }

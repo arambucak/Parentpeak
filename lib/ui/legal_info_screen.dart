@@ -101,7 +101,7 @@ class LegalInfoScreen extends StatelessWidget {
             icon: Icons.handshake_outlined,
             title: 'Respektvoller Familienraum',
             body:
-                'Die App soll Zusammenarbeit erleichtern. Profile, Hinweise und Funktionen duerfen nicht genutzt werden, um Familienmitglieder zu kontrollieren oder blosszustellen.',
+                'Die App soll Zusammenarbeit erleichtern. Profile, Hinweise und Funktionen dürfen nicht genutzt werden, um Familienmitglieder zu kontrollieren oder bloßzustellen.',
           ),
           const SizedBox(height: 12),
           Card(
@@ -195,7 +195,7 @@ class _ComplianceLinksSection extends StatelessWidget {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Link konnte nicht geoeffnet werden.')),
+        const SnackBar(content: Text('Link konnte nicht geöffnet werden.')),
       );
     }
   }
@@ -289,7 +289,7 @@ class _ComplianceLink extends StatelessWidget {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Link konnte nicht geoeffnet werden.')),
+        const SnackBar(content: Text('Link konnte nicht geöffnet werden.')),
       );
     }
   }

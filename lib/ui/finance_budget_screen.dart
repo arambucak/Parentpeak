@@ -1279,7 +1279,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded),
-                title: const Text('Ausgabe loeschen'),
+                title: const Text('Ausgabe löschen'),
                 onTap: () => Navigator.of(context).pop('delete'),
               ),
             ],

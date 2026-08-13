@@ -122,7 +122,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
-                  Text(_syncError ?? 'Eintrag konnte nicht geloescht werden.')),
+                  Text(_syncError ?? 'Eintrag konnte nicht gelöscht werden.')),
         );
         return;
       }

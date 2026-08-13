@@ -114,7 +114,7 @@ class _TodoScreenState extends State<TodoScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(_syncError ?? 'Todo konnte nicht geloescht werden.')),
+            content: Text(_syncError ?? 'Todo konnte nicht gelöscht werden.')),
       );
     }
   }

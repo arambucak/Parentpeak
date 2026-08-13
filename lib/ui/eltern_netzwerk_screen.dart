@@ -1501,9 +1501,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Profil loeschen?'),
+        title: const Text('Profil löschen?'),
         content:
-            const Text('Dein Spielfreunde-Profil wird dauerhaft geloescht. '
+            const Text('Dein Spielfreunde-Profil wird dauerhaft gelöscht. '
                 'Du kannst jederzeit ein neues erstellen.'),
         actions: [
           TextButton(
@@ -1513,7 +1513,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(
                   backgroundColor: theme.colorScheme.error),
-              child: const Text('Loeschen')),
+              child: const Text('Löschen')),
         ],
       ),
     );
