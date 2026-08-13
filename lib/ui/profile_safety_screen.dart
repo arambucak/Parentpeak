@@ -670,10 +670,31 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    final error = await AuthService.instance.deleteAccount();
+    var error = await AuthService.instance.deleteAccount();
 
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pop(); // close loading
+
+    if (error == 'requires-recent-login') {
+      // Firebase requires a recent login for account deletion – ask for password.
+      if (!mounted) return;
+      final password = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => _ReauthDialog(theme: theme),
+      );
+      if (password == null || !mounted) return;
+
+      // Show loading again while re-authenticating + deleting
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+      error = await AuthService.instance.reauthenticateAndDeleteAccount(password);
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // close loading
+    }
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -966,6 +987,75 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
           ]),
         ],
       ),
+    );
+  }
+}
+
+// ─── Re-authentication dialog ─────────────────────────────────────────────────
+
+class _ReauthDialog extends StatefulWidget {
+  final ThemeData theme;
+  const _ReauthDialog({required this.theme});
+
+  @override
+  State<_ReauthDialog> createState() => _ReauthDialogState();
+}
+
+class _ReauthDialogState extends State<_ReauthDialog> {
+  final _ctrl = TextEditingController();
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    return AlertDialog(
+      title: const Text('Anmeldung bestätigen'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bitte gib dein Passwort ein, um das Konto endgültig zu löschen.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _ctrl,
+            obscureText: _obscure,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Passwort',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Abbrechen'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: theme.colorScheme.error,
+          ),
+          onPressed: () {
+            final pw = _ctrl.text;
+            if (pw.isNotEmpty) Navigator.pop(context, pw);
+          },
+          child: const Text('Bestätigen', style: TextStyle(color: Colors.white)),
+        ),
+      ],
     );
   }
 }

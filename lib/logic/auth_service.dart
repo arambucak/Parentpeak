@@ -683,7 +683,7 @@ class AuthService with ChangeNotifier {
           await auth.currentUser?.delete();
         } on FirebaseAuthException catch (e) {
           if (e.code == 'requires-recent-login') {
-            return 'Bitte melde dich erneut an und versuche es dann nochmal.';
+            return 'requires-recent-login';
           }
           return 'Fehler beim Löschen: ${e.message}';
         }
@@ -699,6 +699,26 @@ class AuthService with ChangeNotifier {
     _currentUser = null;
     notifyListeners();
     return null;
+  }
+
+  /// Re-authenticates with [password] and then permanently deletes the account.
+  Future<String?> reauthenticateAndDeleteAccount(String password) async {
+    if (!_firebaseReady) return 'Firebase nicht verfügbar.';
+    final auth = _firebaseAuth;
+    final user = auth?.currentUser;
+    if (user == null) return 'Kein Benutzer eingeloggt.';
+    final email = user.email;
+    if (email == null || email.isEmpty) return 'Keine E-Mail-Adresse gefunden.';
+    try {
+      final credential = EmailAuthProvider.credential(email: email, password: password);
+      await user.reauthenticateWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return 'Falsches Passwort. Bitte versuche es erneut.';
+      }
+      return 'Fehler bei der Anmeldung: ${e.message}';
+    }
+    return deleteAccount();
   }
 
   @visibleForTesting

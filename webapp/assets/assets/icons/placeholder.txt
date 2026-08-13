@@ -1,0 +1,1 @@
+Platzhalter für App Icon - ersetze mit einer echten PNG-Datei (1024x1024) in assets/icons/
