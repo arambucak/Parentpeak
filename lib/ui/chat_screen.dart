@@ -653,7 +653,7 @@ class _ChatScreenState extends State<ChatScreen> {
               alignment: WrapAlignment.center,
               children: [
                 _buildSuggestionChip('Kind hängt nur am Handy'),
-                _buildSuggestionChip('Trotzanfall — was tun?'),
+                _buildSuggestionChip('Mein Kind ist außer sich'),
                 _buildSuggestionChip('Mein Kind hört nicht'),
                 _buildSuggestionChip('Ich bin total erschöpft'),
                 _buildSuggestionChip('Kind braucht mehr Freiheit'),
