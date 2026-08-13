@@ -39,3 +39,4 @@ certs_temp/
 *.cer
 fastlane/report.xml
 fastlane/.env
+webapp/

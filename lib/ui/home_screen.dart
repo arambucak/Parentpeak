@@ -166,9 +166,9 @@ class _HomeScreenState extends State<HomeScreen>
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString('pending_referral_code');
     if (code == null || code.isEmpty) return;
-    await prefs.remove('pending_referral_code');
     final name = AuthService.instance.currentUser?.displayName ?? 'Neues Mitglied';
     await ParentCoinService.instance.recordReferral(code, uid, name);
+    await prefs.remove('pending_referral_code'); // only remove after successful send
   }
 
   void _openDebugFeatureIfNeeded() {

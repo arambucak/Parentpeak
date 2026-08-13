@@ -47,14 +47,6 @@ jobs:
         run: |
           set -o pipefail
 
-          if [ -f webapp/index.html ]; then
-            echo "Using committed webapp artifacts for deployment"
-            rm -rf build/web
-            mkdir -p build/web
-            cp -R webapp/. build/web/
-            exit 0
-          fi
-
           BACKEND_BASE_URL="${BACKEND_BASE_URL:-https://parentpeak.onrender.com}"
           PRIVACY_POLICY_URL="${PRIVACY_POLICY_URL:-https://parentpeak.de/privacy}"
           TERMS_OF_SERVICE_URL="${TERMS_OF_SERVICE_URL:-https://parentpeak.de/terms}"
@@ -74,6 +66,8 @@ jobs:
             --dart-define=GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME}" \
             --dart-define=GEMINI_API_KEY="${GEMINI_API_KEY}" \
             2>&1 | tee flutter-build.log
+
+          touch build/web/.nojekyll
 
       - name: Upload build log on failure
         if: failure()

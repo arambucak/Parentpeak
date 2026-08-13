@@ -1403,6 +1403,7 @@ const parentMatchingMessageSubscribers = new Map();
 const parentMatchingOtpStore = new Map();
 const parentMatchingOtpRateLimit = new Map();
 let parentMatchingSchemaEnsured = false;
+let socialSchemaEnsured = false;
 
 const otpTtlMs = Number.parseInt(process.env.PARENT_MATCHING_OTP_TTL_MS || `${10 * 60 * 1000}`, 10);
 const otpMaxAttempts = Number.parseInt(process.env.PARENT_MATCHING_OTP_MAX_ATTEMPTS || '5', 10);
@@ -1610,6 +1611,46 @@ async function ensureParentMatchingSchemaReady() {
   `);
 
   parentMatchingSchemaEnsured = true;
+}
+
+async function ensureSocialSchemaReady() {
+  if (socialSchemaEnsured) return;
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "FriendRegistry" (
+      "code" TEXT PRIMARY KEY,
+      "name" TEXT NOT NULL,
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "FriendPendingConnection" (
+      "id" TEXT PRIMARY KEY,
+      "toCode" TEXT NOT NULL,
+      "fromCode" TEXT NOT NULL,
+      "fromName" TEXT NOT NULL,
+      "connectedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "FriendChatMessage" (
+      "id" TEXT PRIMARY KEY,
+      "roomId" TEXT NOT NULL,
+      "authorUserId" TEXT NOT NULL,
+      "authorName" TEXT NOT NULL,
+      "content" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "PendingReferral" (
+      "id" TEXT PRIMARY KEY,
+      "referralCode" TEXT NOT NULL,
+      "inviteeId" TEXT NOT NULL,
+      "inviteeName" TEXT NOT NULL,
+      "ts" BIGINT NOT NULL DEFAULT 0
+    );
+  `);
+  socialSchemaEnsured = true;
 }
 
 function mapParentMatchingProfileForClient(profile) {
@@ -3005,12 +3046,10 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
   };
 }
 
-// Routes
-
 // ============================================================================
-// REFERRAL TRACKING — in-memory store (survives restarts via claim-on-open)
+// REFERRAL TRACKING
 // ============================================================================
-const _pendingReferrals = new Map(); // referralCode -> [{inviteeId, inviteeName, ts}]
+const _pendingReferrals = new Map(); // in-memory fallback
 
 app.post('/referrals/record', async (req, res) => {
   const { referralCode, inviteeId, inviteeName } = req.body;
@@ -3018,28 +3057,68 @@ app.post('/referrals/record', async (req, res) => {
     return res.status(400).json({ error: 'referralCode und inviteeId sind erforderlich' });
   }
   const code = String(referralCode).toUpperCase().trim();
-  if (!_pendingReferrals.has(code)) _pendingReferrals.set(code, []);
-  // Prevent duplicate entries for the same invitee
-  const existing = _pendingReferrals.get(code);
-  if (!existing.some(r => r.inviteeId === inviteeId)) {
-    existing.push({ inviteeId: String(inviteeId), inviteeName: String(inviteeName || 'Neues Mitglied'), ts: Date.now() });
+  const name = String(inviteeName || 'Neues Mitglied');
+  try {
+    await ensureSocialSchemaReady();
+    const existing = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "PendingReferral" WHERE "referralCode" = $1 AND "inviteeId" = $2`,
+      code, String(inviteeId)
+    );
+    if (existing.length === 0) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "PendingReferral" ("id", "referralCode", "inviteeId", "inviteeName", "ts") VALUES ($1, $2, $3, $4, $5)`,
+        generateId('ref'), code, String(inviteeId), name, Date.now()
+      );
+    }
+    console.log(`📬 Referral recorded (DB): ${code} ← ${inviteeId}`);
+    return res.json({ success: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /referrals/record', error)) return;
+    if (!_pendingReferrals.has(code)) _pendingReferrals.set(code, []);
+    const existing = _pendingReferrals.get(code);
+    if (!existing.some(r => r.inviteeId === inviteeId)) {
+      existing.push({ inviteeId: String(inviteeId), inviteeName: name, ts: Date.now() });
+    }
+    console.log(`📬 Referral recorded (memory): ${code} ← ${inviteeId}`);
+    return res.json({ success: true });
   }
-  console.log(`📬 Referral recorded: ${code} ← ${inviteeId}`);
-  res.json({ success: true });
 });
 
-app.get('/referrals/pending/:code', (req, res) => {
+app.get('/referrals/pending/:code', async (req, res) => {
   const code = String(req.params.code || '').toUpperCase().trim();
   if (!code) return res.status(400).json({ error: 'code erforderlich' });
-  res.json({ referrals: _pendingReferrals.get(code) || [] });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "inviteeId", "inviteeName", "ts" FROM "PendingReferral" WHERE "referralCode" = $1`,
+      code
+    );
+    return res.json({ referrals: rows });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /referrals/pending', error)) return;
+    return res.json({ referrals: _pendingReferrals.get(code) || [] });
+  }
 });
 
-app.delete('/referrals/claim/:code', (req, res) => {
+app.delete('/referrals/claim/:code', async (req, res) => {
   const code = String(req.params.code || '').toUpperCase().trim();
-  const claimed = (_pendingReferrals.get(code) || []).length;
-  _pendingReferrals.delete(code);
-  console.log(`✅ Referral claimed: ${code} (${claimed} entries)`);
-  res.json({ claimed });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "PendingReferral" WHERE "referralCode" = $1`, code
+    );
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "PendingReferral" WHERE "referralCode" = $1`, code
+    );
+    console.log(`✅ Referral claimed (DB): ${code} (${rows.length} entries)`);
+    return res.json({ claimed: rows.length });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /referrals/claim', error)) return;
+    const claimed = (_pendingReferrals.get(code) || []).length;
+    _pendingReferrals.delete(code);
+    console.log(`✅ Referral claimed (memory): ${code} (${claimed} entries)`);
+    return res.json({ claimed });
+  }
 });
 
 app.post('/account/delete-data', async (req, res) => {
@@ -4581,70 +4660,134 @@ app.post('/parent-matching/messages', async (req, res) => {
 });
 
 // ── Friend connections ──────────────────────────────────────────────────────
-const friendRegistry = new Map();         // code → { name, updatedAt }
-const friendPendingConnections = new Map(); // code → [{ fromCode, fromName, connectedAt }]
+const friendRegistry = new Map();          // in-memory fallback
+const friendPendingConnections = new Map(); // in-memory fallback
 
-app.post('/api/friends/register', (req, res) => {
+app.post('/api/friends/register', async (req, res) => {
   const code = (req.body.code || '').toString().trim().toLowerCase();
   const name = (req.body.name || '').toString().trim();
   if (!code || !name) return res.status(400).json({ error: 'code und name erforderlich' });
-  friendRegistry.set(code, { name, updatedAt: new Date().toISOString() });
-  return res.json({ ok: true });
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "FriendRegistry" ("code", "name", "updatedAt") VALUES ($1, $2, NOW())
+       ON CONFLICT ("code") DO UPDATE SET "name" = $2, "updatedAt" = NOW()`,
+      code, name
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friends/register', error)) return;
+    friendRegistry.set(code, { name, updatedAt: new Date().toISOString() });
+    return res.json({ ok: true });
+  }
 });
 
-app.get('/api/friends/lookup/:code', (req, res) => {
+app.get('/api/friends/lookup/:code', async (req, res) => {
   const code = (req.params.code || '').toString().trim().toLowerCase();
-  const entry = friendRegistry.get(code);
-  if (!entry) return res.status(404).json({ error: 'Nicht gefunden' });
-  return res.json({ name: entry.name });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "name" FROM "FriendRegistry" WHERE "code" = $1`, code
+    );
+    if (rows.length > 0) return res.json({ name: rows[0].name });
+    const mem = friendRegistry.get(code);
+    if (mem) return res.json({ name: mem.name });
+    return res.status(404).json({ error: 'Nicht gefunden' });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/friends/lookup', error)) return;
+    const entry = friendRegistry.get(code);
+    if (!entry) return res.status(404).json({ error: 'Nicht gefunden' });
+    return res.json({ name: entry.name });
+  }
 });
 
-app.post('/api/friends/connect', (req, res) => {
+app.post('/api/friends/connect', async (req, res) => {
   const fromCode = (req.body.fromCode || '').toString().trim().toLowerCase();
   const fromName = (req.body.fromName || '').toString().trim();
   const toCode   = (req.body.toCode   || '').toString().trim().toLowerCase();
   if (!fromCode || !toCode) return res.status(400).json({ error: 'fromCode und toCode erforderlich' });
-  if (!friendPendingConnections.has(toCode)) friendPendingConnections.set(toCode, []);
-  const list = friendPendingConnections.get(toCode);
-  if (!list.some(e => e.fromCode === fromCode)) {
-    list.push({ fromCode, fromName, connectedAt: new Date().toISOString() });
+  try {
+    await ensureSocialSchemaReady();
+    const existing = await prisma.$queryRawUnsafe(
+      `SELECT "id" FROM "FriendPendingConnection" WHERE "toCode" = $1 AND "fromCode" = $2`,
+      toCode, fromCode
+    );
+    if (existing.length === 0) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "FriendPendingConnection" ("id", "toCode", "fromCode", "fromName", "connectedAt") VALUES ($1, $2, $3, $4, NOW())`,
+        generateId('fpc'), toCode, fromCode, fromName
+      );
+    }
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friends/connect', error)) return;
+    if (!friendPendingConnections.has(toCode)) friendPendingConnections.set(toCode, []);
+    const list = friendPendingConnections.get(toCode);
+    if (!list.some(e => e.fromCode === fromCode)) {
+      list.push({ fromCode, fromName, connectedAt: new Date().toISOString() });
+    }
+    return res.json({ ok: true });
   }
-  return res.json({ ok: true });
 });
 
-app.get('/api/friends/pending/:code', (req, res) => {
+app.get('/api/friends/pending/:code', async (req, res) => {
   const code = (req.params.code || '').toString().trim().toLowerCase();
-  const connections = friendPendingConnections.get(code) || [];
-  friendPendingConnections.delete(code); // claim = clear
-  return res.json({ connections });
+  try {
+    await ensureSocialSchemaReady();
+    const connections = await prisma.$queryRawUnsafe(
+      `SELECT "fromCode", "fromName", "connectedAt" FROM "FriendPendingConnection" WHERE "toCode" = $1`,
+      code
+    );
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "FriendPendingConnection" WHERE "toCode" = $1`, code
+    );
+    return res.json({ connections });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/friends/pending', error)) return;
+    const connections = friendPendingConnections.get(code) || [];
+    friendPendingConnections.delete(code);
+    return res.json({ connections });
+  }
 });
 
-app.get('/friend-chat/messages', (req, res) => {
+app.get('/friend-chat/messages', async (req, res) => {
   const roomId = (req.query.roomId || '').toString().trim();
   if (!roomId) return res.status(400).json({ error: 'roomId fehlt' });
-  const messages = friendChatMessages.get(roomId) || [];
-  return res.json({ messages });
+  try {
+    await ensureSocialSchemaReady();
+    const messages = await prisma.$queryRawUnsafe(
+      `SELECT "id", "roomId", "authorUserId", "authorName", "content", "createdAt" FROM "FriendChatMessage" WHERE "roomId" = $1 ORDER BY "createdAt" ASC`,
+      roomId
+    );
+    return res.json({ messages });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /friend-chat/messages', error)) return;
+    return res.json({ messages: friendChatMessages.get(roomId) || [] });
+  }
 });
 
-app.post('/friend-chat/messages', (req, res) => {
-  const roomId = (req.body.roomId || '').toString().trim();
-  const userId = (req.body.userId || '').toString().trim();
+app.post('/friend-chat/messages', async (req, res) => {
+  const roomId   = (req.body.roomId   || '').toString().trim();
+  const userId   = (req.body.userId   || '').toString().trim();
   const userName = (req.body.userName || 'Elternteil').toString().trim();
-  const content = (req.body.content || '').toString().trim();
+  const content  = (req.body.content  || '').toString().trim();
   if (!roomId || !userId || !content) {
     return res.status(400).json({ error: 'roomId, userId und content erforderlich' });
   }
-  const item = {
-    id: generateId('fc'),
-    roomId,
-    authorUserId: userId,
-    authorName: userName,
-    content,
-    createdAt: new Date().toISOString(),
-  };
-  if (!friendChatMessages.has(roomId)) friendChatMessages.set(roomId, []);
-  friendChatMessages.get(roomId).push(item);
-  return res.status(201).json({ item });
+  const item = { id: generateId('fc'), roomId, authorUserId: userId, authorName: userName, content, createdAt: new Date().toISOString() };
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "FriendChatMessage" ("id", "roomId", "authorUserId", "authorName", "content", "createdAt") VALUES ($1, $2, $3, $4, $5, NOW())`,
+      item.id, roomId, userId, userName, content
+    );
+    return res.status(201).json({ item });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /friend-chat/messages', error)) return;
+    if (!friendChatMessages.has(roomId)) friendChatMessages.set(roomId, []);
+    friendChatMessages.get(roomId).push(item);
+    return res.status(201).json({ item });
+  }
 });
 
 app.get('/family/requests', async (req, res) => {
