@@ -241,7 +241,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('Fuer jede Registrierung: 1 ParentCoin.',
+        Text('Für jede Registrierung: 1 ParentCoin.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 14),
@@ -414,7 +414,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   const SizedBox(width: 12),
                   GestureDetector(behavior: HitTestBehavior.opaque, 
                       onTap: () => _confirmDeleteProfile(theme),
-                      child: Text('Loeschen',
+                      child: Text('Löschen',
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -439,7 +439,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
                 Text(
-                    'Wir oeffnen die Spielfreunde-Suche sobald genug Familien in deiner Naehe sind.',
+                    'Wir öffnen die Spielfreunde-Suche sobald genug Familien in deiner Nähe sind.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant, height: 1.4),
                     textAlign: TextAlign.center),
@@ -750,7 +750,7 @@ class _ProfileFormState extends State<_ProfileForm> {
   final Set<String> _values = {};
   final _valuesCustomCtrl = TextEditingController();
 
-  // Schritt 4: Aktivitaeten + Verfügbarkeit
+  // Schritt 4: Aktivitäten + Verfügbarkeit
   final Set<String> _lookingFor = {};
   final _lookingForCustomCtrl = TextEditingController();
   final Set<String> _availDays = {};
@@ -1023,7 +1023,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SizedBox(height: 8),
-          Text('Fuer wen sucht ihr Spielfreunde?',
+          Text('Für wen sucht ihr Spielfreunde?',
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 14),
@@ -1188,7 +1188,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               const SizedBox(width: 10),
               Expanded(
                   child: Text(
-                      'Tipp: Familien mit aehnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.',
+                      'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.',
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF16A34A),
                           fontWeight: FontWeight.w500,
@@ -1245,7 +1245,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 8),
           _sectionTitle(theme, '\u{1F3AF} Was sucht ihr?'),
           const SizedBox(height: 6),
-          Text('Wähle Aktivitaeten die euch Spass machen:',
+          Text('Wähle Aktivitäten die euch Spaß machen:',
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -1263,7 +1263,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               label: const Text('\u{2795} Eigene Idee',
                   style: TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
-                  _lookingForCustomCtrl, 'Was wuenscht ihr euch noch?'),
+                  _lookingForCustomCtrl, 'Was wünscht ihr euch noch?'),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               side: const BorderSide(color: Color(0xFF8B5CF6)),

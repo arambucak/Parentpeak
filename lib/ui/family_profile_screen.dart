@@ -2597,7 +2597,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
           _buildSectionCard(
             primaryColor,
             'Vertrauen & Orientierung',
-            'Was eure Familie ueber Verantwortung, Leitplanken und Zusammenarbeit wissen sollte.',
+            'Was eure Familie über Verantwortung, Leitplanken und Zusammenarbeit wissen sollte.',
             [
               _buildActionTile(
                 leading: const Icon(Icons.star, color: Color(0xFFBDB2FF)),

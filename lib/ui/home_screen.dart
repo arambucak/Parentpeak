@@ -763,7 +763,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text('Was beschaeftigt dich?',
+                            child: Text('Was beschäftigt dich?',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                     color: const Color(0xFF0284C7),
                                     fontWeight: FontWeight.w600)),
@@ -803,7 +803,7 @@ class _HomeScreenState extends State<HomeScreen>
                               style: TextStyle(fontSize: 16)),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text('Events in deiner Naehe',
+                            child: Text('Events in deiner Nähe',
                                 style: theme.textTheme.bodySmall
                                     ?.copyWith(fontWeight: FontWeight.w700)),
                           ),

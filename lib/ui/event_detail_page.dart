@@ -53,7 +53,7 @@ class EventDetailPage extends StatelessWidget {
           ],
           _infoCard(theme, '\u{1F4CD}', 'Wo', event.location),
           const SizedBox(height: 10),
-          _infoCard(theme, '\u{1F476}', 'Fuer wen', event.ageLabels.join(', ')),
+          _infoCard(theme, '\u{1F476}', 'Für wen', event.ageLabels.join(', ')),
           const SizedBox(height: 10),
           _infoCard(
               theme, '\u{1F4B0}', 'Preis', event.price ?? 'Nicht angegeben'),

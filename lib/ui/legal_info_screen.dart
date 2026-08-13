@@ -94,7 +94,7 @@ class LegalInfoScreen extends StatelessWidget {
             icon: Icons.storefront_outlined,
             title: 'Verschenkmarkt: Rolle von Parentpeak',
             body:
-                'Parentpeak stellt im Verschenkmarkt nur die Plattform zur Vermittlung bereit. Verantwortung für Zustand, Sicherheit, Rechtmaessigkeit und Uebergabe der Artikel liegt bei den beteiligten Nutzern.',
+                'Parentpeak stellt im Verschenkmarkt nur die Plattform zur Vermittlung bereit. Verantwortung für Zustand, Sicherheit, Rechtmäßigkeit und Übergabe der Artikel liegt bei den beteiligten Nutzern.',
           ),
           const SizedBox(height: 10),
           const _LegalSection(

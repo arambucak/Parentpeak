@@ -7,7 +7,7 @@ import 'package:parentpeak/ui/create_community_event_screen.dart';
 import 'package:parentpeak/ui/events_activities_screen.dart';
 import 'package:parentpeak/ui/widgets/event_attendees_widget.dart';
 
-/// Home-Widget: Events in deiner Naehe — Carousel + "Event eintragen" CTA.
+/// Home-Widget: Events in deiner Nähe — Carousel + "Event eintragen" CTA.
 ///
 /// Laedt Events automatisch basierend auf dem Spielfreunde-Profil Stadtteil.
 /// Zeigt 3 Events als horizontale Karten + "Alle anzeigen" + "Event eintragen".
@@ -60,7 +60,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Events in deiner Naehe',
+              Text('Events in deiner Nähe',
                   style: theme.textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w800)),
               Text(_city,
@@ -275,7 +275,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
         child: Column(children: [
           const Text('\u{1F50D}', style: TextStyle(fontSize: 28)),
           const SizedBox(height: 10),
-          Text('Noch keine Events in deiner Naehe',
+          Text('Noch keine Events in deiner Nähe',
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center),

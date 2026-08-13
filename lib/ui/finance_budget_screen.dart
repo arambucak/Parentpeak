@@ -417,7 +417,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
       _provider.addExpenses(expenses);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${expenses.length} Positionen uebernommen.')),
+        SnackBar(content: Text('${expenses.length} Positionen übernommen.')),
       );
     } on ReceiptOcrUnsupportedException catch (error) {
       if (!mounted) return;
@@ -708,7 +708,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     if (personalTotal > groceriesTotal && personalTotal > 0) {
       insights.add(
-          'Persoenliche Ausgaben liegen aktuell ueber den Familien-Lebensmitteln. Ein kurzer Beleg-Check lohnt sich.');
+          'Persönliche Ausgaben liegen aktuell über den Familien-Lebensmitteln. Ein kurzer Beleg-Check lohnt sich.');
     }
 
     if (insights.isEmpty) {

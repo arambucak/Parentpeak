@@ -114,7 +114,7 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
       // Themen-Karten Carousel (3-5 Karten horizontal)
       if (_results.isEmpty) ...[
         const SizedBox(height: 14),
-        Text('\u{1F4DA} Haeufige Themen',
+        Text('\u{1F4DA} Häufige Themen',
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
@@ -175,7 +175,7 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
         controller: _searchCtrl,
         onChanged: _onSearch,
         decoration: InputDecoration(
-          hintText: 'Was beschaeftigt dich? (z.B. "haut", "schlaeft nicht")',
+          hintText: 'Was beschäftigt dich? (z.B. "haut", "schläft nicht")',
           hintStyle: TextStyle(fontSize: 13, color: theme.colorScheme.outline),
           prefixIcon: const Icon(Icons.search_rounded, size: 20),
           suffixIcon: _searchCtrl.text.isNotEmpty

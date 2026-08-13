@@ -43,10 +43,10 @@ const Map<String, _FoodInfoMeta> _foodInfoMetaByTag = {
   'vegan': _FoodInfoMeta('Vegan', Color(0xFFD1FAE5)),
   'glutenfrei': _FoodInfoMeta('Glutenfrei', Color(0xFFDBEAFE)),
   'nussfrei': _FoodInfoMeta('Nussfrei', Color(0xFFE0E7FF)),
-  'enthaelt_nuesse': _FoodInfoMeta('Enthaelt Nuesse', Color(0xFFFEE2E2)),
+  'enthaelt_nuesse': _FoodInfoMeta('Enthält Nüsse', Color(0xFFFEE2E2)),
   'laktosefrei': _FoodInfoMeta('Laktosefrei', Color(0xFFE0F2FE)),
-  'enthaelt_milch': _FoodInfoMeta('Enthaelt Milch', Color(0xFFFFEDD5)),
-  'enthaelt_ei': _FoodInfoMeta('Enthaelt Ei', Color(0xFFFEF3C7)),
+  'enthaelt_milch': _FoodInfoMeta('Enthält Milch', Color(0xFFFFEDD5)),
+  'enthaelt_ei': _FoodInfoMeta('Enthält Ei', Color(0xFFFEF3C7)),
   'babyfreundlich': _FoodInfoMeta('Babyfreundlich', Color(0xFFFCE7F3)),
   'kinderfreundlich': _FoodInfoMeta('Kinderfreundlich', Color(0xFFEDE9FE)),
   'nicht_scharf': _FoodInfoMeta('Nicht scharf', Color(0xFFF3F4F6)),
@@ -397,7 +397,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     final portions = item.servings <= 0 ? 1 : item.servings;
     final minutesAgo = DateTime.now().difference(createdAt).inMinutes;
     final pickupLabel = minutesAgo <= 120
-        ? 'Abholung heute moeglich'
+        ? 'Abholung heute möglich'
         : 'Abholung nach Absprache';
 
     return FoodSharePost(
@@ -903,7 +903,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
               ),
               const SizedBox(height: 4),
               const Text(
-                'Sortiert nach Naehe, Frische, Vertrauen und deinen aktiven Hinweisen.',
+                'Sortiert nach Nähe, Frische, Vertrauen und deinen aktiven Hinweisen.',
                 style: TextStyle(
                   fontSize: 12,
                   color: Color(0xFF6B778C),
@@ -1256,7 +1256,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
               ),
               const SizedBox(height: 4),
               const Text(
-                'Standard ist Fuer dich: kinderfreundlich, schnell, gut bewertet und aktuell.',
+                'Standard ist Für dich: kinderfreundlich, schnell, gut bewertet und aktuell.',
                 style: TextStyle(
                   fontSize: 12,
                   color: Color(0xFF6B778C),
@@ -1268,7 +1268,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 child: Row(
                   children: [
                     _buildRecipeModeChip(
-                      label: 'Fuer dich',
+                      label: 'Für dich',
                       mode: _RecipeFeedMode.forYou,
                     ),
                     const SizedBox(width: 8),
@@ -1740,7 +1740,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     await _persistOfferSafetyState();
 
     if (!mounted) return;
-    _showSnack('Abholung bestaetigt. Danke fuers Teilen!');
+    _showSnack('Abholung bestätigt. Danke fürs Teilen!');
   }
 
   Future<void> _showComments(FoodSharePost post) async {
@@ -2010,7 +2010,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           setState(() {
             _posts.insert(0, newPost);
           });
-          _showSnack('Dein Angebot ist jetzt für Eltern in der Naehe sichtbar!');
+          _showSnack('Dein Angebot ist jetzt für Eltern in der Nähe sichtbar!');
           _tabController.animateTo(0);
           return true;
         },

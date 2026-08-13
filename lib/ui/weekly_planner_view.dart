@@ -299,7 +299,7 @@ class _SmartActions extends StatelessWidget {
                       SnackBar(
                         content: Text(
                           ok
-                              ? _toneCopy(tone, 'Fertig. Ein Express-Gericht ist jetzt eingeplant.', 'Express-Gericht uebernommen.', premium: 'Alternative wurde uebernommen.')
+                              ? _toneCopy(tone, 'Fertig. Ein Express-Gericht ist jetzt eingeplant.', 'Express-Gericht übernommen.', premium: 'Alternative wurde übernommen.')
                               : 'Kein Express-Gericht verfügbar.',
                         ),
                       ),

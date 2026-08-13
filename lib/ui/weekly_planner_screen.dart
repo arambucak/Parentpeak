@@ -340,7 +340,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${extracted.length} Kita-Eintraege uebernommen.')),
+      SnackBar(content: Text('${extracted.length} Kita-Einträge übernommen.')),
     );
   }
 

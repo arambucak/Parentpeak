@@ -88,6 +88,6 @@
 		<key>UIStatusBarHidden</key>
 		<false/>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>ParentPeak nutzt deinen Standort um Events und Familien in deiner Naehe zu finden.</string>
+		<string>ParentPeak nutzt deinen Standort um Events und Familien in deiner Nähe zu finden.</string>
 	</dict>
 </plist>

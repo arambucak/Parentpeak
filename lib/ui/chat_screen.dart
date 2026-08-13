@@ -247,10 +247,10 @@ class _ChatScreenState extends State<ChatScreen> {
           'KONTEXT: Das Kind des Elternteils ist $childAge Jahre alt.\n\n'
           'Der Elternteil hat diesen Tipp gelesen und will MEHR dazu wissen:\n'
           '"$tipText"\n\n'
-          'Antworte SPEZIFISCH für ein $childAge-jaehriges Kind:\n'
-          '1. Warum ist das bei $childAge-Jaehrigen besonders relevant? (2 Saetze)\n'
+          'Antworte SPEZIFISCH für ein $childAge-jähriges Kind:\n'
+          '1. Warum ist das bei $childAge-Jährigen besonders relevant? (2 Sätze)\n'
           '2. 3 konkrete Alltagsbeispiele/Situationen\n'
-          '3. 1 Uebung die der Elternteil HEUTE ausprobieren kann\n\n'
+          '3. 1 Übung die der Elternteil HEUTE ausprobieren kann\n\n'
           'Kurz, praktisch, kein Theorievortrag. Max 12 Zeilen.';
 
       try {

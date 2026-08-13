@@ -12,16 +12,16 @@ const List<ElternWissenEntry> elternWissenData = [
     question: 'Mein Baby weint und ich weiss nicht warum',
     akut: 'Nimm dein Baby hoch, halte es nah. Deine Ruhe ist seine Sicherheit.',
     beduerfnis:
-        'Babys weinen um zu kommunizieren. Es hat ein unerfuelltes Bedürfnis: Hunger, Naehe, Reizueberflutung, Muedigkeit oder Schmerz.',
+        'Babys weinen um zu kommunizieren. Es hat ein unerfülltes Bedürfnis: Hunger, Nähe, Reizüberflutung, Müdigkeit oder Schmerz.',
     gfkSatz:
-        'Ich bin da. Ich hoere dich. Wir finden zusammen raus was du brauchst.',
+        'Ich bin da. Ich höre dich. Wir finden zusammen raus was du brauchst.',
     aktion: [
-      'Koerperkontakt herstellen (Haut auf Haut)',
-      'Grundbedürfnisse durchgehen: Hunger? Windel? Muede?',
+      'Körperkontakt herstellen (Haut auf Haut)',
+      'Grundbedürfnisse durchgehen: Hunger? Windel? Müde?',
       'Reize reduzieren: leiser, dunkler, ruhiger'
     ],
     ermutigung:
-        'Du musst nicht sofort wissen was es braucht. Deine Anwesenheit ist schon die halbe Loesung.',
+        'Du musst nicht sofort wissen was es braucht. Deine Anwesenheit ist schon die halbe Lösung.',
     minAge: 0,
     maxAge: 1,
     tags: [
@@ -38,14 +38,14 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'baby_02',
     question: 'Mein Baby schlaeft nicht ein',
     akut:
-        'Bleib ruhig. Dein Baby spuert deine Anspannung. Atme langsam und halte es.',
+        'Bleib ruhig. Dein Baby spürt deine Anspannung. Atme langsam und halte es.',
     beduerfnis:
         'Babys brauchen Co-Regulation. Sie können sich noch nicht selbst beruhigen — dein Nervensystem ist ihr Anker.',
-    gfkSatz: 'Du bist sicher. Ich bin hier. Dein Koerper darf jetzt ruhen.',
+    gfkSatz: 'Du bist sicher. Ich bin hier. Dein Körper darf jetzt ruhen.',
     aktion: [
       'Routinen schaffen: gleicher Ablauf jeden Abend',
       'Reize 30 Min vor dem Schlafen reduzieren',
-      'Koerpernaehe anbieten (tragen, wiegen, stillen)'
+      'Körpernähe anbieten (tragen, wiegen, stillen)'
     ],
     ermutigung:
         'Schlaf ist ein Entwicklungsprozess, kein Trainingsergebnis. Es wird besser.',
@@ -67,11 +67,11 @@ const List<ElternWissenEntry> elternWissenData = [
     akut:
         'Das ist normal und gesund. Dein Baby zeigt sichere Bindung — keine Ablehnung.',
     beduerfnis:
-        'Babys bauen primaere Bindung oft zuerst zu einer Person auf. Das zweite Elternteil braucht eigene Rituale und Zeit.',
+        'Babys bauen primäre Bindung oft zuerst zu einer Person auf. Das zweite Elternteil braucht eigene Rituale und Zeit.',
     gfkSatz: 'Du liebst uns beide. Gerade brauchst du mich — und das ist okay.',
     aktion: [
       'Dem anderen Elternteil eigene Kuschelzeiten ohne Konkurrenz geben',
-      'Nicht erzwingen — Vertrauen waechst durch positive Erfahrungen',
+      'Nicht erzwingen — Vertrauen wächst durch positive Erfahrungen',
       'Kurze allein-Zeiten (5 Min) langsam steigern'
     ],
     ermutigung:
@@ -91,13 +91,13 @@ const List<ElternWissenEntry> elternWissenData = [
     akut:
         'Ruhig dazugehen. Nicht schreien. Sage: Stopp, ich lasse nicht zu dass du haust.',
     beduerfnis:
-        'Dein Kind ist nicht boese. Es hat starke Gefühle (Frust, Ueberforderung) und noch keine Worte dafuer. Hauen ist Kommunikation.',
+        'Dein Kind ist nicht böse. Es hat starke Gefühle (Frust, Überforderung) und noch keine Worte dafür. Hauen ist Kommunikation.',
     gfkSatz:
-        'Ich sehe du bist wuetend. Hauen tut weh. Komm, wir finden zusammen raus was du brauchst.',
+        'Ich sehe du bist wütend. Hauen tut weh. Komm, wir finden zusammen raus was du brauchst.',
     aktion: [
-      'Sofort ruhig dazugehen, das andere Kind troesten',
+      'Sofort ruhig dazugehen, das andere Kind trösten',
       'Später: Alternativen anbieten (stampfen, Kissen boxen)',
-      'Ausloeser erkennen: Muedigkeit? Hunger? Ueberreizung?'
+      'Auslöser erkennen: Müdigkeit? Hunger? Überreizung?'
     ],
     ermutigung:
         'Das ist eine Phase. Dein Kind lernt gerade Impulskontrolle — das dauert bis 4-5 Jahre.',
@@ -117,20 +117,20 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'klein_02',
-    question: 'Mein Kind bekommt Wutanfaelle',
+    question: 'Mein Kind bekommt Wutanfälle',
     akut:
-        'Bleib in der Naehe. Sage nichts. Lass den Sturm vorbeiziehen. Dein Kind braucht dich DANACH.',
+        'Bleib in der Nähe. Sage nichts. Lass den Sturm vorbeiziehen. Dein Kind braucht dich DANACH.',
     beduerfnis:
-        'Wutanfaelle sind neurologisch: Das Grosshirn ist noch nicht reif genug um Gefühle zu regulieren. Dein Kind wird geflutet und braucht Co-Regulation.',
+        'Wutanfälle sind neurologisch: Das Großhirn ist noch nicht reif genug um Gefühle zu regulieren. Dein Kind wird geflutet und braucht Co-Regulation.',
     gfkSatz:
-        'Du darfst wuetend sein. Ich bin hier. Wenn du fertig bist, halte ich dich.',
+        'Du darfst wütend sein. Ich bin hier. Wenn du fertig bist, halte ich dich.',
     aktion: [
-      'Sicherheit gewaehrleisten (nichts werfen lassen das verletzt)',
+      'Sicherheit gewährleisten (nichts werfen lassen das verletzt)',
       'Nicht argumentieren, nicht schimpfen, nicht weggehen',
-      'Nach dem Anfall: Koerperkontakt anbieten, nicht moralisieren'
+      'Nach dem Anfall: Körperkontakt anbieten, nicht moralisieren'
     ],
     ermutigung:
-        'Du bist nicht schuld. Wutanfaelle sind entwicklungsgerecht und KEIN Zeichen schlechter Erziehung.',
+        'Du bist nicht schuld. Wutanfälle sind entwicklungsgerecht und KEIN Zeichen schlechter Erziehung.',
     minAge: 1,
     maxAge: 5,
     tags: [
@@ -149,18 +149,18 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'klein_03',
     question: 'Mein Kind will nicht teilen',
     akut:
-        'Nicht zwingen. Teilen ist eine Faehigkeit die REIFT — sie kann nicht erzwungen werden.',
+        'Nicht zwingen. Teilen ist eine Fähigkeit die REIFT — sie kann nicht erzwungen werden.',
     beduerfnis:
         'Kinder unter 3-4 verstehen Besitz anders als Erwachsene. Teilen erfordert Empathie — die entwickelt sich erst.',
     gfkSatz:
         'Das ist deins. Du darfst entscheiden wann du es abgeben möchtest.',
     aktion: [
-      'Nicht beschaemen (kein "Sei nicht so egoistisch!")',
+      'Nicht beschämen (kein "Sei nicht so egoistisch!")',
       'Vorbild sein: Selbst laut teilen ("Möchtest du von meinem Apfel?")',
       'Lieblingsspielzeug VOR dem Besuch weglegen (reduziert Stress)'
     ],
     ermutigung:
-        'Ein Kind das sich sicher fühlt in seinem Besitz wird freiwillig grosszuegig.',
+        'Ein Kind das sich sicher fühlt in seinem Besitz wird freiwillig großzügig.',
     minAge: 1,
     maxAge: 4,
     tags: [
@@ -182,11 +182,11 @@ const List<ElternWissenEntry> elternWissenData = [
     beduerfnis:
         'Autonomie ist ein Grundbedürfnis. "Nein" sagen ist die erste Form von Selbstbestimmung.',
     gfkSatz:
-        'Ich hoere dein Nein. Manche Dinge müssen trotzdem sein — lass uns schauen wie.',
+        'Ich höre dein Nein. Manche Dinge müssen trotzdem sein — lass uns schauen wie.',
     aktion: [
       'Wahlmöglichkeiten geben statt Befehle ("Rote oder blaue Jacke?")',
-      'Unnoetige Machtkampfe vermeiden (muss es WIRKLICH jetzt sein?)',
-      'Das Nein respektieren wo möglich — staerkt Selbstvertrauen'
+      'Unnötige Machtkämpfe vermeiden (muss es WIRKLICH jetzt sein?)',
+      'Das Nein respektieren wo möglich — stärkt Selbstvertrauen'
     ],
     ermutigung:
         'Ein Kind das Nein sagen darf zuhause kann später auch Nein sagen zu Fremden.',
@@ -207,7 +207,7 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'klein_05',
     question: 'Mein Kind will nicht essen',
     akut:
-        'Kein Druck. Kein Zwang. Kein Ablenkfuettern. Vertraue: Kein Kind hungert freiwillig.',
+        'Kein Druck. Kein Zwang. Kein Ablenkfüttern. Vertraue: Kein Kind hungert freiwillig.',
     beduerfnis:
         'Essen ist ein Autonomie-Feld. Kinder regulieren ihren Hunger selbst — Druck erzeugt Gegendruck.',
     gfkSatz:
@@ -234,13 +234,13 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'klein_06',
-    question: 'Wie hoere ich auf zu schreien wenn ich wuetend bin',
+    question: 'Wie höre ich auf zu schreien wenn ich wütend bin',
     akut:
         'Geh einen Schritt zurück. Atme. Du darfst den Raum kurz verlassen (Kind muss sicher sein).',
     beduerfnis:
-        'Auch DEINE Gefühle sind real und wichtig. Schreien ist ein Zeichen DEINER Ueberlastung — nicht deines Versagens.',
+        'Auch DEINE Gefühle sind real und wichtig. Schreien ist ein Zeichen DEINER Überlastung — nicht deines Versagens.',
     gfkSatz:
-        'Ich merke ich bin gerade ueberfordert. Ich brauche kurz eine Pause um ruhig zu werden.',
+        'Ich merke ich bin gerade überfordert. Ich brauche kurz eine Pause um ruhig zu werden.',,
     aktion: [
       'Erkenne deine Warnsignale (Kiefer, Schultern, Hitze)',
       'Sag laut: "Ich brauche kurz Pause" (modelliert Selbstregulation)',
@@ -273,11 +273,11 @@ const List<ElternWissenEntry> elternWissenData = [
         'Ich sehe du bist traurig. Du möchtest bei mir bleiben. Ich komme nach dem Mittagessen zurück.',
     aktion: [
       'Abschiedsritual entwickeln (immer gleich, kurz, liebevoll)',
-      'Nie heimlich weggehen — das zerstoert Vertrauen',
+      'Nie heimlich weggehen — das zerstört Vertrauen',
       'Ein Übergangsobjekt mitgeben (dein Schal, ein Foto)'
     ],
     ermutigung:
-        'Eingewoehnung braucht Zeit. Wochen, manchmal Monate. Das ist kein Rueckschritt.',
+        'Eingewöhnung braucht Zeit. Wochen, manchmal Monate. Das ist kein Rückschritt.',
     minAge: 1,
     maxAge: 5,
     tags: [
@@ -293,20 +293,20 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'klein_08',
-    question: 'Mein Kind ist auf das neue Geschwisterchen eifersuetig',
+    question: 'Mein Kind ist auf das neue Geschwisterchen eifersüchtig',
     akut:
-        'Nicht vergleichen. Nicht sagen "Du bist doch schon gross". Dein aelteres Kind trauert — um geteilte Aufmerksamkeit.',
+        'Nicht vergleichen. Nicht sagen "Du bist doch schon groß". Dein älteres Kind trauert — um geteilte Aufmerksamkeit.',
     beduerfnis:
         'Eifersucht ist Verlustangst: Liebt ihr mich noch genauso? Bin ich noch wichtig?',
     gfkSatz:
-        'Du bist genauso wichtig wie vorher. Es ist okay dass du gerade traurig oder wuetend bist.',
+        'Du bist genauso wichtig wie vorher. Es ist okay dass du gerade traurig oder wütend bist.',
     aktion: [
-      'Exklusive Mama/Papa-Zeit NUR für das aeltere Kind (10 Min/Tag reicht)',
-      'Aelteres Kind in Baby-Pflege einbeziehen (Windel bringen, singen)',
+        'Exklusive Mama/Papa-Zeit NUR für das ältere Kind (10 Min/Tag reicht)',
+      'Älteres Kind in Baby-Pflege einbeziehen (Windel bringen, singen)',
       'Gefühle benennen ohne zu bewerten: "Du bist sauer auf das Baby — das verstehe ich"'
     ],
     ermutigung:
-        'Geschwister-Liebe waechst nicht sofort. Gib dem aelteren Kind Zeit und Sicherheit.',
+        'Geschwister-Liebe wächst nicht sofort. Gib dem älteren Kind Zeit und Sicherheit.',
     minAge: 1,
     maxAge: 6,
     tags: [
@@ -328,18 +328,18 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'kita_01',
     question: 'Mein Kind luegt',
     akut:
-        'Nicht bestrafen. Nicht beschaemen. Kinder unter 6 "luegen" oft aus Fantasie, Angst oder Wunschdenken.',
+        'Nicht bestrafen. Nicht beschämen. Kinder unter 6 "lügen" oft aus Fantasie, Angst oder Wunschdenken.',
     beduerfnis:
-        'Kinder luegen wenn die Wahrheit sich gefaehrlich anfühlt. Frage dich: Fühlt mein Kind sich sicher genug um ehrlich zu sein?',
+        'Kinder lügen wenn die Wahrheit sich gefährlich anfühlt. Frage dich: Fühlt mein Kind sich sicher genug um ehrlich zu sein?',
     gfkSatz:
-        'Ich möchte verstehen was passiert ist. Du bekommst keinen Aerger — erzaehl mir deine Version.',
+        'Ich möchte verstehen was passiert ist. Du bekommst keinen Ärger — erzähl mir deine Version.',
     aktion: [
       'Sicherheit schaffen: Ehrlichkeit NICHT bestrafen',
-      'Zwischen Fantasie-Luege (normal, 3-5 J.) und Schutz-Luege (Angst) unterscheiden',
+      'Zwischen Fantasie-Lüge (normal, 3-5 J.) und Schutz-Lüge (Angst) unterscheiden',,
       'Vorbild: Selbst ehrlich sein, auch wenn es unangenehm ist'
     ],
     ermutigung:
-        'Kinder die in Sicherheit ehrlich sein duerfen werden ehrliche Erwachsene.',
+        'Kinder die in Sicherheit ehrlich sein dürfen werden ehrliche Erwachsene.',
     minAge: 3,
     maxAge: 10,
     tags: [
@@ -385,18 +385,18 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'kita_03',
     question: 'Mein Kind will immer bestimmen beim Spielen',
     akut:
-        'Das ist normal bei 4-6 Jaehrigen. Sie ueben gerade Fuehrung — ohne soziale Feinheiten.',
+        'Das ist normal bei 4-6 Jährigen. Sie üben gerade Führung — ohne soziale Feinheiten.',
     beduerfnis:
         'Dein Kind braucht Selbstwirksamkeit. Es will erleben: Meine Ideen zählen.',
     gfkSatz:
         'Du hast tolle Ideen. Dein Freund hat auch welche. Wie waere es wenn ihr abwechselt?',
     aktion: [
       'Nicht sofort eingreifen — Kinder loesen mehr als wir denken',
-      'Wenn noetig: Rollenwechsel vorschlagen, nicht befehlen',
+      'Wenn nötig: Rollenwechsel vorschlagen, nicht befehlen',
       'Zuhause: Situationen schaffen wo das Kind fuehren DARF (Spielleiter)'
     ],
     ermutigung:
-        'Bestimmen-wollen ist Fuehrungspotential. Das wird später eine Stärke.',
+        'Bestimmen-wollen ist Führungspotential. Das wird später eine Stärke.',
     minAge: 3,
     maxAge: 7,
     tags: [
@@ -414,18 +414,18 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'kita_04',
     question: 'Mein Kind macht immer noch ins Bett',
     akut:
-        'Kein Schimpfen. Kein Beschaemen. Bettnassen ist NICHT Faulheit — es ist unreife Blasenkontrolle.',
+        'Nicht beschämen. Bettnassen ist NICHT Faulheit — es ist unreife Blasenkontrolle.',
     beduerfnis:
-        'Der Koerper deines Kindes ist noch nicht so weit. Das Anti-Diuretische Hormon reift bei manchen Kindern erst mit 6-7.',
+        'Der Körper deines Kindes ist noch nicht so weit. Das Anti-Diuretische Hormon reift bei manchen Kindern erst mit 6-7.',
     gfkSatz:
-        'Das ist nicht deine Schuld. Dein Koerper lernt noch. Wir finden eine Loesung zusammen.',
+        'Das ist nicht deine Schuld. Dein Körper lernt noch. Wir finden eine Lösung zusammen.',,
     aktion: [
       'Wasserdichte Unterlage (ohne Drama)',
       'Gemeinsam Bett neu beziehen (Kind einbeziehen, nicht bestrafen)',
       'Bei Sorge: Kinderarzt konsultieren ab 7 Jahren'
     ],
     ermutigung:
-        'Fast 15% aller 5-Jaehrigen naessen noch ein. Dein Kind ist nicht allein.',
+        'Fast 15% aller 5-Jährigen nässen noch ein. Dein Kind ist nicht allein.',
     minAge: 3,
     maxAge: 8,
     tags: [
@@ -448,13 +448,13 @@ const List<ElternWissenEntry> elternWissenData = [
     akut:
         'Nicht kaempfen. Sage: Ich sehe du hast keine Lust. Was brauchst du um anzufangen?',
     beduerfnis:
-        'Hausaufgaben-Verweigerung ist selten Faulheit. Oft steckt dahinter: Ueberforderung, Langeweile, Erschoepfung nach dem Schultag.',
+        'Hausaufgaben-Verweigerung ist selten Faulheit. Oft steckt dahinter: Überforderung, Langeweile, Erschöpfung nach dem Schultag.',
     gfkSatz:
         'Ich merke die Aufgaben fühlen sich anstrengend an. Wollen wir zusammen schauen wo es hakt?',
     aktion: [
       '30 Min Pause nach der Schule (Bewegen, Snack, Ruhe)',
       'Kleine Portionen (5 Min fokussiert, dann Pause)',
-      'Keine Drohungen — sondern Unterstuetzung: "Ich helfe dir beim Start"'
+      'Keine Drohungen — sondern Unterstützung: "Ich helfe dir beim Start"'
     ],
     ermutigung:
         'Motivation kommt durch Erfolg, nicht durch Druck. Kleine Schritte reichen.',
@@ -479,10 +479,10 @@ const List<ElternWissenEntry> elternWissenData = [
     beduerfnis:
         'Zugehörigkeit ist ein Grundbedürfnis. Ausgrenzung schmerzt Kinder koerperlich — das Gehirn verarbeitet es wie physischen Schmerz.',
     gfkSatz:
-        'Ich hoere dass dich das sehr traurig macht. Du bist liebenswert — egal was andere sagen.',
+        'Ich höre dass dich das sehr traurig macht. Du bist liebenswert — egal was andere sagen.',
     aktion: [
       'Nicht sofort "loesen wollen" — erstmal Gefühle anerkennen',
-      'Fragen: Was wuenscht du dir? (Manche wollen Hilfe, manche nur Zuhören)',
+      'Fragen: Was wünscht du dir? (Manche wollen Hilfe, manche nur Zuhören)',,
       'Bei Mobbing: Schule informieren (Klassenleitung)'
     ],
     ermutigung:
@@ -534,15 +534,15 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'grund_04',
     question: 'Mein Kind hat Pruefungsangst',
     akut:
-        'Normalisiere: Aufregung vor Pruefungen ist menschlich. Sage: Dein Wert haengt nicht von einer Note ab.',
+        'Normalisiere: Aufregung vor Prüfungen ist menschlich. Sage: Dein Wert hängt nicht von einer Note ab.',
     beduerfnis:
-        'Pruefungsangst entsteht wenn Leistung mit Liebe verknuepft wird: "Wenn ich schlecht bin, bin ich nicht gut genug."',
+        'Prüfungsangst entsteht wenn Leistung mit Liebe verknüpft wird: "Wenn ich schlecht bin, bin ich nicht gut genug."',
     gfkSatz:
         'Ich liebe dich genauso — egal welche Note da steht. Du bist mehr als eine Zahl.',
     aktion: [
       'Nicht fragen "Hast du genug gelernt?" — sondern "Wie geht es dir damit?"',
-      'Entspannungsuebung zeigen (4-7-8 Atmung)',
-      'Nach der Pruefung: NIE zuerst nach der Note fragen'
+      'Entspannungsübung zeigen (4-7-8 Atmung)',
+      'Nach der Prüfung: NIE zuerst nach der Note fragen'
     ],
     ermutigung:
         'Kinder die wissen dass sie bedingungslos geliebt werden haben weniger Angst.',
@@ -564,15 +564,15 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'grund_05',
     question: 'Mein Kind sagt es hasst mich',
     akut:
-        'Das tut weh. Aber dein Kind meint: Ich bin gerade so wuetend dass ich nicht weiss wohin damit.',
+        'Das tut weh. Aber dein Kind meint: Ich bin gerade so wütend dass ich nicht weiss wohin damit.',
     beduerfnis:
-        'Kinder testen ob die Beziehung haelt — auch wenn sie das Schlimmste sagen. Dein Kind braucht die Erfahrung: Du gehst nicht weg.',
+        'Kinder testen ob die Beziehung hält — auch wenn sie das Schlimmste sagen. Dein Kind braucht die Erfahrung: Du gehst nicht weg.',
     gfkSatz:
-        'Ich hoere dass du gerade sehr wuetend bist. Ich liebe dich — auch wenn du sauer auf mich bist.',
+        'Ich höre dass du gerade sehr wütend bist. Ich liebe dich — auch wenn du sauer auf mich bist.',
     aktion: [
       'Nicht kontern ("Dann geh doch!")',
       'Nicht beleidigt weggehen',
-      'Später ansprechen: "Das hat mich verletzt. Was hat dich so wuetend gemacht?"'
+      'Später ansprechen: "Das hat mich verletzt. Was hat dich so wütend gemacht?"'
     ],
     ermutigung:
         'Ein Kind das dir sagt was es fühlt (auch haesslich) vertraut dir. Das ist Beziehung.',
@@ -596,15 +596,15 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'teen_01',
     question: 'Mein Teenager redet nicht mehr mit mir',
     akut:
-        'Nicht draengen. Nicht beleidigt sein. Anwesenheit zeigen ohne Erwartung. Verfügbar sein.',
+        'Nicht drängen. Nicht beleidigt sein. Anwesenheit zeigen ohne Erwartung. Verfügbar sein.',
     beduerfnis:
-        'Teenager brauchen Abgrenzung um Identitaet zu bilden. Rueckzug ist keine Ablehnung sondern Entwicklung.',
+        'Teenager brauchen Abgrenzung um Identität zu bilden. Rückzug ist keine Ablehnung sondern Entwicklung.',
     gfkSatz:
-        'Ich bin da wenn du reden möchtest. Kein Druck. Ich frage nicht — aber ich hoere zu wenn du kommst.',
+        'Ich bin da wenn du reden möchtest. Kein Druck. Ich frage nicht — aber ich höre zu wenn du kommst.',
     aktion: [
-      'Gemeinsame Aktivitaeten anbieten OHNE Gespraechsdruck (zusammen kochen, Auto fahren)',
+      'Gemeinsame Aktivitäten anbieten OHNE Gesprächsdruck (zusammen kochen, Auto fahren)',
       'Nicht jedes Schweigen fuellen',
-      'Eigene Gefühle teilen: "Ich vermisse unsere Gespraeche manchmal"'
+      'Eigene Gefühle teilen: "Ich vermisse unsere Gespräche manchmal"'
     ],
     ermutigung:
         'Dein Teenager liebt dich. Er braucht gerade Raum. Halte die Tuer offen — er kommt zurück.',
@@ -654,15 +654,15 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'teen_03',
     question: 'Ich mache mir Sorgen um das Selbstbild meines Teenagers',
     akut:
-        'Hoere zu ohne zu relativieren. Nicht: "Du bist doch huebsch!" Sondern: "Erzaehl mir mehr."',
+        'Höre zu ohne zu relativieren. Nicht: "Du bist doch hübsch!" Sondern: "Erzähl mir mehr."',
     beduerfnis:
-        'In der Pubertaet ist das Selbstbild fragil. Social Media verstaerkt Vergleiche. Dein Kind braucht Ankerworte die NICHT aeusseres bewerten.',
+        'In der Pubertät ist das Selbstbild fragil. Social Media verstärkt Vergleiche. Dein Kind braucht Ankerworte die NICHT äußeres bewerten.',,
     gfkSatz:
         'Du bist wertvoll — nicht wegen deines Aussehens sondern wegen dem wer du bist.',
     aktion: [
       'Koerper nie kommentieren (auch nicht positiv!)',
       'Stärken benennen die nichts mit Aussehen zu tun haben',
-      'Eigenes Vorbild: Wie sprichst DU ueber deinen Koerper?'
+      'Eigenes Vorbild: Wie sprichst DU über deinen Körper?'
     ],
     ermutigung:
         'Deine Stimme wird zur inneren Stimme deines Kindes. Mach sie liebevoll.',
@@ -691,13 +691,13 @@ const List<ElternWissenEntry> elternWissenData = [
     beduerfnis:
         'Kinder brauchen Grenzen — aber liebevolle. Grenzen geben Orientierung, Strafen erzeugen Angst.',
     gfkSatz:
-        'Ich lasse nicht zu dass du mich schlägst. Nicht weil du boese bist — sondern weil mir mein Koerper wichtig ist.',
+        'Ich lasse nicht zu dass du mich schlägst. Nicht weil du böse bist — sondern weil mir mein Körper wichtig ist.',
     aktion: [
       'Grenzen als ICH-Aussage formulieren (nicht DU-Vorwurf)',
-      'Konsequenzen statt Strafen (natuerlich, nicht willkuerlich)',
+      'Konsequenzen statt Strafen (natürlich, nicht willkürlich)',
       'Grenze setzen UND Gefühl anerkennen ("Du bist sauer UND wir gehen jetzt")'
     ],
-    ermutigung: 'Grenzen setzen IST Liebe. Dein Kind braucht deine Fuehrung.',
+    ermutigung: 'Grenzen setzen IST Liebe. Dein Kind braucht deine Führung.',
     minAge: 0,
     maxAge: 18,
     tags: [
@@ -713,11 +713,11 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'allg_02',
-    question: 'Ich fuehle mich als schlechter Elternteil',
+    question: 'Ich fühle mich als schlechter Elternteil',
     akut:
         'Du bist hier. Du suchst nach Antworten. Das ist das Gegenteil von schlecht.',
     beduerfnis:
-        'Eltern-Schuld ist allgegenwaertig. Social Media zeigt perfekte Familien — die es nicht gibt. Dein Gefühl ist menschlich.',
+        'Eltern-Schuld ist allgegenwärtig. Social Media zeigt perfekte Familien — die es nicht gibt. Dein Gefühl ist menschlich.',
     gfkSatz:
         'Ich bin gut genug. Mein Kind braucht nicht perfekt — es braucht echt.',
     aktion: [
@@ -744,18 +744,18 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'allg_03',
     question: 'Mein Kind hört nicht auf mich',
     akut:
-        'Kinder "hoeren" wenn sie sich gehört FUEHLEN. Geh auf Augenhoehe. Beruehre die Schulter. Dann sprich.',
+        'Kinder "hören" wenn sie sich gehört FÜHLEN. Geh auf Augenhöhe. Berühre die Schulter. Dann sprich.',
     beduerfnis:
-        'Nicht-Hoeren ist selten Respektlosigkeit. Oft: Das Kind ist vertieft, ueberreizt, oder die Bitte war zu komplex.',
+        'Nicht-Hören ist selten Respektlosigkeit. Oft: Das Kind ist vertieft, überreizt, oder die Bitte war zu komplex.',
     gfkSatz:
         'Hey, ich brauche kurz deine Aufmerksamkeit. Schau mich an — ich möchte dir was sagen.',
     aktion: [
-      'Naeher kommen statt quer durch den Raum rufen',
-      'Kurze klare Saetze (nicht "Raeumst du bitte irgendwann mal...")',
+      'Näher kommen statt quer durch den Raum rufen',
+      'Kurze klare Sätze (nicht "Räumst du bitte irgendwann mal...")',
       'Vorwarnen: "In 5 Minuten gehen wir — mach dich bereit"'
     ],
     ermutigung:
-        'Kinder die auf Augenhoehe angesprochen werden kooperieren 80% besser.',
+        'Kinder die auf Augenhöhe angesprochen werden kooperieren 80% besser.',
     minAge: 1,
     maxAge: 12,
     tags: [
@@ -775,13 +775,13 @@ const List<ElternWissenEntry> elternWissenData = [
     akut:
         'Gemeinsam erzählen wenn möglich. Kern-Botschaft: Du bist nicht schuld. Wir haben dich beide lieb.',
     beduerfnis:
-        'Kinder brauchen: Sicherheit ("Wo werde ich wohnen?"), Liebe ("Haben mich beide noch lieb?"), Vorhersagbarkeit ("Was aendert sich?").',
+        'Kinder brauchen: Sicherheit ("Wo werde ich wohnen?"), Liebe ("Haben mich beide noch lieb?"), Vorhersagbarkeit ("Was ändert sich?").',
     gfkSatz:
         'Mama und Papa haben sich entschieden getrennt zu wohnen. Das hat nichts mit dir zu tun. Wir haben dich beide genauso lieb.',
     aktion: [
-      'Altersgerecht: Einfache Worte, wenig Details ueber Gruende',
+      'Altersgerecht: Einfache Worte, wenig Details über Gründe',
       'Konkret: Was bleibt gleich? (Schule, Freunde, Kuscheltier)',
-      'Gefühle erlauben: "Du darfst traurig und wuetend sein"'
+      'Gefühle erlauben: "Du darfst traurig und wütend sein"'
     ],
     ermutigung:
         'Kinder verkraften Trennungen — wenn die Eltern respektvoll miteinander umgehen.',
@@ -803,16 +803,16 @@ const List<ElternWissenEntry> elternWissenData = [
     akut:
         'Nicht loben WAS es tut ("Toll gemalt!") — sondern WIE es das erlebt ("Du bist richtig stolz auf dein Bild!").',
     beduerfnis:
-        'Selbstvertrauen entsteht durch: Selbstwirksamkeit (Ich KANN was), Zugehörigkeit (Ich GEHOERE dazu), Autonomie (Ich DARF entscheiden).',
+        'Selbstvertrauen entsteht durch: Selbstwirksamkeit (Ich KANN was), Zugehörigkeit (Ich GEHÖRE dazu), Autonomie (Ich DARF entscheiden).',
     gfkSatz:
         'Ich sehe wie sehr du dich angestrengt hast. Wie fühlt sich das für dich an?',
     aktion: [
-      'Kind Dinge SELBST machen lassen (auch wenn es laenger dauert)',
+      'Kind Dinge SELBST machen lassen (auch wenn es länger dauert)',
       'Prozess loben statt Ergebnis ("Du hast nicht aufgegeben — das war mutig")',
-      'Fehler normalisieren: "Ups! Was könnten wir naechstes Mal anders machen?"'
+      'Fehler normalisieren: "Ups! Was könnten wir nächstes Mal anders machen?"'
     ],
     ermutigung:
-        'Selbstvertrauen waechst durch Erfahrung — nicht durch Worte. Lass dein Kind scheitern und wieder aufstehen.',
+        'Selbstvertrauen wächst durch Erfahrung — nicht durch Worte. Lass dein Kind scheitern und wieder aufstehen.',
     minAge: 1,
     maxAge: 18,
     tags: [
@@ -830,18 +830,18 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'allg_06',
     question: 'Mein Kind hat Angst vor der Schule',
     akut:
-        'Nimm die Angst ernst. Nicht: "Stell dich nicht an." Sondern: "Erzaehl mir was dich beschaeftigt."',
+        'Nimm die Angst ernst. Nicht: "Stell dich nicht an." Sondern: "Erzähl mir was dich beschäftigt."',
     beduerfnis:
-        'Schulangst kann viele Ursachen haben: soziale Konflikte, Ueberforderung, Lehrerperson, Leistungsdruck.',
+        'Schulangst kann viele Ursachen haben: soziale Konflikte, Überforderung, Lehrerperson, Leistungsdruck.',
     gfkSatz:
-        'Ich hoere dass die Schule sich gerade schwer anfühlt. Wir finden zusammen eine Loesung.',
+        'Ich höre dass die Schule sich gerade schwer anfühlt. Wir finden zusammen eine Lösung.',
     aktion: [
       'Genau nachfragen: WAS macht Angst? (Fach? Person? Pause?)',
       'Lehrerin einbeziehen (ohne Kind blosszustellen)',
-      'Morgen-Ritual das Sicherheit gibt (fester Ablauf, Lieblings-Fruehstueck)'
+      'Morgen-Ritual das Sicherheit gibt (fester Ablauf, Lieblings-Frühstück)'
     ],
     ermutigung:
-        'Schulangst ist loesbar. Oft reichen kleine Veränderungen für grosse Erleichterung.',
+        'Schulangst ist lösbar. Oft reichen kleine Veränderungen für große Erleichterung.',
     minAge: 5,
     maxAge: 14,
     tags: [
@@ -856,16 +856,16 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'allg_07',
-    question: 'Wie bringe ich mein Kind zum Zaehneputzen',
+    question: 'Wie bringe ich mein Kind zum Zähneputzen',
     akut:
-        'Nicht kaempfen. Spielerisch: "Darf ich die Krokodil-Zaehne putzen?" oder "Wer findet den versteckten Zucker?"',
+        'Nicht kämpfen. Spielerisch: "Darf ich die Krokodil-Zähne putzen?" oder "Wer findet den versteckten Zucker?"',
     beduerfnis:
-        'Zaehneputzen ist ein Autonomie-Kampf (MunD = intimster Bereich). Dein Kind will selbst entscheiden.',
+        'Zähneputzen ist ein Autonomie-Kampf (Mund = intimster Bereich). Dein Kind will selbst entscheiden.',
     gfkSatz:
         'Deine Zaehne brauchen Hilfe. Möchtest du zuerst selbst oder soll ich anfangen?',
     aktion: [
-      'Wahlmöglichkeiten: Welche Zahnbuerste? Welches Lied dabei?',
-      'Timer/Lied (2 Minuten Zaehneputz-Song)',
+      'Wahlmöglichkeiten: Welche Zahnbürste? Welches Lied dabei?',
+      'Timer/Lied (2 Minuten Zähneputz-Song)',
       'Nachputzen als Ritual, nicht als Machtkampf framen'
     ],
     ermutigung:
@@ -888,13 +888,13 @@ const List<ElternWissenEntry> elternWissenData = [
     akut:
         'Abendroutine ist alles: Gleiche Zeit, gleiches Ritual, keine Bildschirme 45 Min vorher.',
     beduerfnis:
-        'Schulkinder sind oft ueberreizt vom Tag. Ihr Kopf braucht Übergang von "aktiv" zu "ruhe".',
+        'Schulkinder sind oft überreizt vom Tag. Ihr Kopf braucht Übergang von "aktiv" zu "ruhe".',
     gfkSatz:
-        'Dein Koerper braucht Schlaf um morgen stark zu sein. Was hilft dir runterzukommen?',
+        'Dein Körper braucht Schlaf um morgen stark zu sein. Was hilft dir runterzukommen?',
     aktion: [
       'Feste Schlafenszeit (auch am Wochenende max. 1h abweichen)',
       'Routine: Bad/Zaehnef./Vorlesen/Kuscheln/Licht aus',
-      'Sorgen-Zeit: 5 Min VOR dem Bett "Was beschaeftigt dich?"'
+      'Sorgen-Zeit: 5 Min VOR dem Bett "Was beschäftigt dich?"'
     ],
     ermutigung:
         'Schlaf-Probleme bei Schulkindern sind meist phasenbedingt (Wachstumsschub, Schulstress).',
@@ -913,7 +913,7 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'allg_09',
-    question: 'Meine Kinder streiten staendig',
+    question: 'Meine Kinder streiten ständig',
     akut:
         'Nicht sofort Schiedsrichter spielen. Frage: Braucht ihr meine Hilfe oder schafft ihr das selbst?',
     beduerfnis:
@@ -921,12 +921,12 @@ const List<ElternWissenEntry> elternWissenData = [
     gfkSatz:
         'Ich sehe ihr seid beide frustriert. Was braucht jeder von euch gerade?',
     aktion: [
-      'Nur eingreifen wenn es koerperlich wird',
+      'Nur eingreifen wenn es körperlich wird',
       'Keine Partei ergreifen ("Wer hat angefangen?" ist sinnlos)',
-      'Jedem Kind sein Gefühl bestaetigen BEVOR Loesung gesucht wird'
+      'Jedem Kind sein Gefühl bestätigen BEVOR Lösung gesucht wird'
     ],
     ermutigung:
-        'Geschwister die streiten lernen Konfliktloesung. Das ist eine Lebenskompetenz.',
+        'Geschwister die streiten lernen Konfliktlösung. Das ist eine Lebenskompetenz.',
     minAge: 2,
     maxAge: 16,
     tags: [

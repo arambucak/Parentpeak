@@ -157,7 +157,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
         _nextExpectedIndex = 1;
         _chunks.clear();
         _statusMessage =
-            'Zeitueberschreitung: Scan wurde zur Sicherheit zurückgesetzt.';
+            'Zeitüberschreitung: Scan wurde zur Sicherheit zurückgesetzt.';
       });
     });
   }

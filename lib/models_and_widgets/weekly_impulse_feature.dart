@@ -390,7 +390,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       ),
       _CompanionImpulse(
         id: '${widget.impulse.id}.practice',
-        title: 'Fuer Alltag und Kita',
+        title: 'Für Alltag und Kita',
         summary:
             'Formuliere kurz, ruhig und klar. Ein Satz zum Gefühl, ein Satz zur Grenze, dann Präsenz statt Diskussion.',
         durationLabel: '4 Min',

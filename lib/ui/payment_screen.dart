@@ -211,7 +211,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return 'Zahlung fehlgeschlagen. Bitte versuche es erneut.';
     }
     if (code == FailureCode.Timeout) {
-      return 'Zeitueberschreitung bei der Zahlung. Bitte erneut versuchen.';
+      return 'Zeitüberschreitung bei der Zahlung. Bitte erneut versuchen.';
     }
     return e.error.localizedMessage?.trim().isNotEmpty == true
         ? 'Stripe-Fehler: ${e.error.localizedMessage}'

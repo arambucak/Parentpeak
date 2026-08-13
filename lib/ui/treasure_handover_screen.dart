@@ -89,7 +89,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
       l10n.t('treasureSlotTuesday', fallback: 'Dienstag, 08:15 - 08:45 Uhr'),
     ];
     final dropPoints = [
-      l10n.t('treasureDropRetterBox', fallback: 'Retter-Box vor der Haustuer'),
+      l10n.t('treasureDropRetterBox', fallback: 'Retter-Box vor der Haustür'),
       l10n.t('treasureDropKitaLocker', fallback: 'Kita-Garderobe (Fach "Moewe")'),
       l10n.t('treasureDropMailbox', fallback: 'Briefkastenbox am Eingang'),
     ];
@@ -142,7 +142,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                       'treasureHandoverQuestion',
                       fallback: compactScreen
                           ? 'Wie möchtet ihr übergeben?'
-                          : 'Wie wollt ihr uebergeben?',
+                          : 'Wie wollt ihr übergeben?',
                     ),
                     style: TextStyle(
                       fontSize: compactScreen ? 15 : 16,
@@ -480,7 +480,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n.t('treasureReserveTitle', fallback: 'Uebergabe planen'),
+            l10n.t('treasureReserveTitle', fallback: 'Übergabe planen'),
             style: TextStyle(
               fontSize: compactScreen ? 18 : 20,
               fontWeight: FontWeight.w800,
@@ -1976,7 +1976,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
         ? l10n.t('treasureHandoverCoffeeMode', fallback: 'Kurz treffen')
         : l10n.t('treasureHandoverFlyingSwap', fallback: 'Still tauschen');
     final detail = isCoffee
-        ? l10n.t('treasureHandoverCoffeeModeText', fallback: 'Kurz hallo, uebergeben, fertig.')
+        ? l10n.t('treasureHandoverCoffeeModeText', fallback: 'Kurz hallo, übergeben, fertig.')
         : l10n.t('treasureHandoverFlyingSwapText', fallback: 'Kontaktlos abholen, wenn es passt.');
     final background = isCoffee ? const Color(0xFFFFF3EA) : const Color(0xFFEFF9F2);
     final foreground = isCoffee ? const Color(0xFFD96C2F) : const Color(0xFF1F9C5D);
@@ -2058,7 +2058,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Rechtlicher Hinweis: Parentpeak ist im Verschenkmarkt nur Vermittler. Fuer Zustand, Sicherheit und Uebergabe der Artikel sind ausschliesslich die beteiligten Nutzer verantwortlich.',
+            'Rechtlicher Hinweis: Parentpeak ist im Verschenkmarkt nur Vermittler. Für Zustand, Sicherheit und Übergabe der Artikel sind ausschließlich die beteiligten Nutzer verantwortlich.',
             style: TextStyle(
               fontSize: 12,
               height: 1.35,
