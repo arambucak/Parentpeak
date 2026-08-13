@@ -53,8 +53,9 @@ const String _debugOpenFeature =
 
 class HomeScreen extends StatefulWidget {
   final String? initialInviteInput;
+  final String? initialFriendCode;
 
-  const HomeScreen({super.key, this.initialInviteInput});
+  const HomeScreen({super.key, this.initialInviteInput, this.initialFriendCode});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -68,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen>
   static const int _recentTilesLimit = 3;
 
   bool _initialInviteHandled = false;
+  bool _initialFriendHandled = false;
   bool _debugFeatureHandled = false;
   List<String> _recentTileLabels = const [];
   List<String> _customTileOrderLabels = const [];
@@ -94,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen>
     _restoreParentMatchStatusHint();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openInitialInviteIfNeeded();
+      _openInitialFriendIfNeeded();
       _openDebugFeatureIfNeeded();
     });
   }
@@ -114,6 +117,19 @@ class _HomeScreenState extends State<HomeScreen>
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => EventInvitationsScreen(initialInviteInput: input),
+      ),
+    );
+  }
+
+  void _openInitialFriendIfNeeded() {
+    if (_initialFriendHandled) return;
+    final code = widget.initialFriendCode?.trim();
+    if (code == null || code.isEmpty || !mounted) return;
+
+    _initialFriendHandled = true;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ElternNetzwerkScreen(initialFriendCode: code),
       ),
     );
   }

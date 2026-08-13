@@ -163,6 +163,7 @@ Future<void> _startApp() async {
   runApp(DemoApp(
     key: demoAppKey,
     startupInviteInput: startupInviteInput,
+    startupFriendCode: _extractStartupFriendCode(),
   ));
 }
 
@@ -202,16 +203,37 @@ String? _extractStartupInviteInput() {
   return null;
 }
 
+String? _extractStartupFriendCode() {
+  final candidates = [
+    WidgetsBinding.instance.platformDispatcher.defaultRouteName,
+    Uri.base.toString(),
+  ];
+  for (final candidate in candidates) {
+    if (candidate.isEmpty) continue;
+    final uri = Uri.tryParse(candidate);
+    if (uri == null) continue;
+    final segs = uri.pathSegments;
+    if (segs.isNotEmpty && segs.first == 'freund') {
+      if (segs.length >= 2 && segs[1].isNotEmpty) return segs[1].toUpperCase();
+      final q = uri.queryParameters['code'] ?? uri.queryParameters['add'];
+      if (q != null && q.isNotEmpty) return q.toUpperCase();
+    }
+  }
+  return null;
+}
+
 String? _extractInviteInputFromString(String? raw) {
   if (raw == null || raw.trim().isEmpty) return null;
   final input = raw.trim();
 
   final uri = Uri.tryParse(input);
   if (uri != null) {
-    final code = uri.queryParameters['code']?.trim();
-    if (code != null && code.isNotEmpty) {
-      return code;
+    // /freund/ links are friend codes, not event invites
+    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'freund') {
+      return null;
     }
+    final code = uri.queryParameters['code']?.trim();
+    if (code != null && code.isNotEmpty) return code;
   }
 
   final codeMatch = RegExp(r'(PP-[A-Za-z0-9]+)').firstMatch(input);
@@ -224,8 +246,9 @@ String? _extractInviteInputFromString(String? raw) {
 
 class DemoApp extends StatefulWidget {
   final String? startupInviteInput;
+  final String? startupFriendCode;
 
-  const DemoApp({super.key, this.startupInviteInput});
+  const DemoApp({super.key, this.startupInviteInput, this.startupFriendCode});
 
   static void setThemeMode(ThemeMode mode) {
     debugPrint('📱 DemoApp.setThemeMode() called with mode=$mode');
@@ -327,6 +350,7 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
         child: AuthGate(
           devices: const [],
           startupInviteInput: widget.startupInviteInput,
+          startupFriendCode: widget.startupFriendCode,
           onRevoke: (uuid, name) async {
             try {
               return await service.revokeDevice(uuid, 'Revoke');
@@ -344,12 +368,14 @@ class ParentpeakAppShell extends StatefulWidget {
   final List<TrustedDevice> devices;
   final Future<bool> Function(String deviceUuid, String deviceName) onRevoke;
   final String? startupInviteInput;
+  final String? startupFriendCode;
 
   const ParentpeakAppShell(
       {super.key,
       required this.devices,
       required this.onRevoke,
-      this.startupInviteInput});
+      this.startupInviteInput,
+      this.startupFriendCode});
 
   @override
   State<ParentpeakAppShell> createState() => _ParentpeakAppShellState();
@@ -387,7 +413,9 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
     final tabs = <Widget>[
       LanguageAwareWidget(
         key: ValueKey('home-${languageService.currentLanguage}'),
-        child: HomeScreen(initialInviteInput: widget.startupInviteInput),
+        child: HomeScreen(
+            initialInviteInput: widget.startupInviteInput,
+            initialFriendCode: widget.startupFriendCode),
       ),
       LanguageAwareWidget(
           key: ValueKey('family-${languageService.currentLanguage}'),
@@ -437,12 +465,14 @@ class AuthGate extends StatefulWidget {
   final List<TrustedDevice> devices;
   final Future<bool> Function(String, String) onRevoke;
   final String? startupInviteInput;
+  final String? startupFriendCode;
 
   const AuthGate({
     super.key,
     required this.devices,
     required this.onRevoke,
     this.startupInviteInput,
+    this.startupFriendCode,
   });
 
   @override
@@ -542,6 +572,7 @@ class _AuthGateState extends State<AuthGate> {
         devices: widget.devices,
         onRevoke: widget.onRevoke,
         startupInviteInput: widget.startupInviteInput,
+        startupFriendCode: widget.startupFriendCode,
       );
     }
 
@@ -577,6 +608,7 @@ class _AuthGateState extends State<AuthGate> {
       devices: widget.devices,
       onRevoke: widget.onRevoke,
       startupInviteInput: widget.startupInviteInput,
+      startupFriendCode: widget.startupFriendCode,
     );
   }
 }

@@ -15,7 +15,8 @@ import 'package:parentpeak/logic/parent_friends_service.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 
 class ElternNetzwerkScreen extends StatefulWidget {
-  const ElternNetzwerkScreen({super.key});
+  final String? initialFriendCode;
+  const ElternNetzwerkScreen({super.key, this.initialFriendCode});
   @override
   State<ElternNetzwerkScreen> createState() => _ScreenState();
 }
@@ -39,6 +40,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     ParentCoinService.instance.addListener(_rebuild);
     ParentFriendsService.instance.addListener(_rebuild);
     _init();
+    if (widget.initialFriendCode != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _showAddFriendSheet(Theme.of(context),
+              prefillCode: widget.initialFriendCode));
+    }
   }
 
   @override
@@ -1226,8 +1232,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     }
   }
 
-  void _showAddFriendSheet(ThemeData theme) {
-    final codeCtrl = TextEditingController();
+  void _showAddFriendSheet(ThemeData theme, {String? prefillCode}) {
+    final codeCtrl = TextEditingController(text: prefillCode ?? '');
 
     showModalBottomSheet(
       context: context,
