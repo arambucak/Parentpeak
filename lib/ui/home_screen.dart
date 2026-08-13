@@ -27,6 +27,8 @@ import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/ui/widgets/home/context_home_card.dart';
 import 'package:parentpeak/ui/widgets/home/quick_actions_row.dart';
 import 'package:parentpeak/ui/widgets/home/events_carousel_widget.dart';
+import 'package:parentpeak/services/mood_history_service.dart';
+import 'package:parentpeak/ui/wochenrueckblick_screen.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 
 class _FeatureAction {
@@ -768,13 +770,16 @@ class _HomeScreenState extends State<HomeScreen>
                             .firstOrNull;
                         if (impulseAction != null) _openFeature(impulseAction);
                       },
-                      onMoodSelected: (mood) {
-                        // Mood speichern für Profil-Tracker
-                        SharedPreferences.getInstance().then((prefs) {
-                          prefs.setString('mood.today', mood);
-                          prefs.setString('mood.today_date',
-                              DateTime.now().toIso8601String());
-                        });
+                      onMoodSelected: (mood, moment) {
+                        MoodHistoryService.saveMood(mood, moment: moment);
+                      },
+                      onOpenWeeklyReview: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WochenrueckblickScreen(),
+                          ),
+                        );
                       },
                     ),
                   ),

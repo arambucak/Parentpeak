@@ -17,8 +17,9 @@ class ContextHomeCard extends StatefulWidget {
   final VoidCallback? onOpenChat;
   final VoidCallback? onOpenCalendar;
   final VoidCallback? onOpenActivity;
-  final void Function(String mood)? onMoodSelected;
-  final VoidCallback? onShuffleActivity; // NEU: Spielidee shufflen
+  final void Function(String mood, String? moment)? onMoodSelected;
+  final VoidCallback? onOpenWeeklyReview;
+  final VoidCallback? onShuffleActivity;
 
   const ContextHomeCard({
     super.key,
@@ -27,6 +28,7 @@ class ContextHomeCard extends StatefulWidget {
     this.onOpenCalendar,
     this.onOpenActivity,
     this.onMoodSelected,
+    this.onOpenWeeklyReview,
     this.onShuffleActivity,
   });
 
@@ -46,8 +48,18 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   String? _nextEvent;
   int _childAgeHint = 3;
   bool _moodDone = false;
+  bool _momentDone = false;
+  String? _selectedMood;
+  int _historyCount = 0;
+  final TextEditingController _momentCtrl = TextEditingController();
   int _tipIndex = 0;
   bool _showMaterials = false;
+
+  @override
+  void dispose() {
+    _momentCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -110,12 +122,38 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
     // Tagesspezifischer Tipp
     final tip = _getTip(ageHint);
 
+    // Restore mood-done state if already completed today
+    final moodDateStr = prefs.getString('mood.today_date');
+    bool alreadyDone = false;
+    if (moodDateStr != null) {
+      final moodDate = DateTime.tryParse(moodDateStr);
+      if (moodDate != null) {
+        final now = DateTime.now();
+        alreadyDone = moodDate.year == now.year &&
+            moodDate.month == now.month &&
+            moodDate.day == now.day;
+      }
+    }
+    // Count history entries for weekly review badge
+    final historyRaw = prefs.getString('mood.history.v2');
+    int histCount = 0;
+    if (historyRaw != null && historyRaw.isNotEmpty) {
+      try {
+        histCount = (jsonDecode(historyRaw) as List).length;
+      } catch (_) {}
+    }
+
     if (mounted) {
       setState(() {
         _userName = name;
         _childAgeHint = ageHint;
         _nextEvent = nextEvent;
         _tip = tip;
+        if (alreadyDone) {
+          _moodDone = true;
+          _momentDone = true;
+        }
+        _historyCount = histCount;
       });
     }
   }
@@ -617,6 +655,8 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             _moodEmoji('\u{1F614}', 'Mühsam', const Color(0xFFDC2626)),
             _moodEmoji('\u{1F970}', 'Dankbar', const Color(0xFFEC4899)),
           ]),
+        ] else if (!_momentDone) ...[
+          _momentQuestion(theme),
         ] else ...[
           Container(
             padding: const EdgeInsets.all(12),
@@ -636,6 +676,32 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
               )),
             ]),
           ),
+          if (_historyCount >= 1 && widget.onOpenWeeklyReview != null) ...[  
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: widget.onOpenWeeklyReview,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('✨ Deine Woche ansehen',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                            color: Colors.white, fontWeight: FontWeight.w700)),
+                    const Icon(Icons.arrow_forward_ios_rounded,
+                        color: Colors.white, size: 14),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
         const SizedBox(height: 12),
         Text('\u{1F4A1} $_tip',
@@ -773,11 +839,110 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
     );
   }
 
+  Widget _momentQuestion(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.15)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Text('✨', style: TextStyle(fontSize: 15)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Was war heute dein schönster Moment?',
+              style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF6B21A8),
+                  fontWeight: FontWeight.w700),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _momentCtrl,
+          maxLines: 2,
+          textCapitalization: TextCapitalization.sentences,
+          style: theme.textTheme.bodySmall?.copyWith(color: Colors.black87),
+          decoration: InputDecoration(
+            hintText: 'Ein Moment mit meinem Kind …',
+            hintStyle: theme.textTheme.bodySmall
+                ?.copyWith(color: const Color(0xFF9CA3AF)),
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            filled: true,
+            fillColor: const Color(0xFFF9F7FF),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.2)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide:
+                  const BorderSide(color: Color(0xFF7C3AED), width: 1.5),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.15)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: _saveMoment,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text('Speichern',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: () => _saveMoment(skip: true),
+            child: Text('Überspringen',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: const Color(0xFF9CA3AF))),
+          ),
+        ]),
+      ]),
+    );
+  }
+
+  void _saveMoment({bool skip = false}) {
+    final text = _momentCtrl.text.trim();
+    final moment = (!skip && text.isNotEmpty) ? text : null;
+    setState(() {
+      _momentDone = true;
+      _historyCount = _historyCount + 1;
+    });
+    widget.onMoodSelected?.call(_selectedMood ?? '', moment);
+  }
+
   Widget _moodEmoji(String emoji, String label, Color color) {
     return GestureDetector(
       onTap: () {
-        setState(() => _moodDone = true);
-        widget.onMoodSelected?.call(label);
+        setState(() {
+          _moodDone = true;
+          _selectedMood = label;
+        });
       },
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
