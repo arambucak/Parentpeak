@@ -1,7 +1,7 @@
 {
   "buildCommand": "echo 'Web deployed via GitHub Pages at parentpeak.de'",
   "installCommand": "echo skip",
-  "outputDirectory": "webapp",
+  "outputDirectory": "public",
   "redirects": [
     { "source": "/(.*)", "destination": "https://parentpeak.de/$1", "permanent": true }
   ]
