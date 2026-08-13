@@ -123,7 +123,7 @@ class ParentUser {
 
 // ─── AuthService ─────────────────────────────────────────────────────────────
 
-class AuthService {
+class AuthService with ChangeNotifier {
   static const _kUserKey = 'pp_current_user';
   static const _kUserProfilePrefix = 'pp_user_profile_';
   static const _kLocalEmailIndexPrefix = 'pp_local_email_uid_';
@@ -359,6 +359,7 @@ class AuthService {
         final user = await _readOrCreateFirebaseUser(firebaseUser);
         _currentUser = user;
         await refreshEntitlements();
+        notifyListeners();
         _triggerFcmInit(user.uid);
         return AuthResult.ok(user);
       } on FirebaseAuthException catch (e) {
@@ -506,6 +507,7 @@ class AuthService {
       );
       _currentUser = user;
       await _persistSession(prefs, user);
+      notifyListeners();
       _triggerFcmInit(user.uid);
       return AuthResult.ok(user);
     } catch (e) {
@@ -650,12 +652,53 @@ class AuthService {
         await auth.signOut();
       }
       _currentUser = null;
+      notifyListeners();
       return;
     }
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kUserKey);
     _currentUser = null;
+    notifyListeners();
+  }
+
+  /// Deletes the account permanently. Returns an error message on failure, null on success.
+  Future<String?> deleteAccount() async {
+    final currentUserId = _currentUser?.uid;
+
+    // Unregister FCM token first (best-effort)
+    if (currentUserId != null) {
+      try {
+        final apiClient = backendApiClientFactory();
+        if (apiClient != null) {
+          await fcmUnregisterHandler(apiClient: apiClient, userId: currentUserId);
+        }
+      } catch (_) {}
+    }
+
+    if (_firebaseReady) {
+      final auth = _firebaseAuth;
+      if (auth != null) {
+        try {
+          await auth.currentUser?.delete();
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'requires-recent-login') {
+            return 'Bitte melde dich erneut an und versuche es dann nochmal.';
+          }
+          return 'Fehler beim Löschen: ${e.message}';
+        }
+      }
+    }
+
+    // Clear all local data
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kUserKey);
+    if (currentUserId != null) {
+      await prefs.remove('$_kUserProfilePrefix$currentUserId');
+    }
+    _currentUser = null;
+    notifyListeners();
+    return null;
   }
 
   @visibleForTesting

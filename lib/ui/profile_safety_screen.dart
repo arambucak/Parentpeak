@@ -576,74 +576,115 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   }
 
   Future<void> _logout() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Abmelden?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Abmelden')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    await AuthService.instance.logout();
-    if (mounted) setState(() {});
-  }
-
-  void _showDeleteDialog() {
     final theme = Theme.of(context);
-    showModalBottomSheet(
+    final ok = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.warning_rounded,
-                size: 40, color: theme.colorScheme.error),
-            const SizedBox(height: 14),
-            Text('Account löschen?',
-                style: theme.textTheme.titleMedium
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.logout_rounded,
+                  size: 28, color: theme.colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(height: 16),
+            Text('Abmelden?',
+                style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
             Text(
-              'Alle Daten werden unwiderruflich gelöscht.',
-              style: theme.textTheme.bodySmall
+              'Du kannst dich jederzeit wieder anmelden.',
+              style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: FilledButton.styleFrom(
-                  backgroundColor: theme.colorScheme.error,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+            const SizedBox(height: 28),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Abbrechen'),
                 ),
-                child: const Text('Ja, löschen'),
               ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Abbrechen')),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Abmelden'),
+                ),
+              ),
+            ]),
           ],
         ),
       ),
     );
+    if (ok != true) return;
+    await AuthService.instance.logout();
+    // AuthService notifies AuthGate via ChangeNotifier → rebuilds to LoginScreen
+  }
+
+  Future<void> _showDeleteDialog() async {
+    final theme = Theme.of(context);
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _DeleteAccountSheet(theme: theme),
+    );
+    if (confirmed != true) return;
+
+    // Show loading while deleting
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final error = await AuthService.instance.deleteAccount();
+
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop(); // close loading
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: theme.colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    // On success: AuthService notifies AuthGate → navigates to LoginScreen automatically
   }
 
   // ─── Sprach-Auswahl ─────────────────────────────────────────────────────────
@@ -799,4 +840,132 @@ class _ChildInfo {
   final String name;
   final String age;
   const _ChildInfo({required this.name, required this.age});
+}
+
+/// Bottom sheet with typed confirmation for account deletion.
+class _DeleteAccountSheet extends StatefulWidget {
+  final ThemeData theme;
+  const _DeleteAccountSheet({required this.theme});
+
+  @override
+  State<_DeleteAccountSheet> createState() => _DeleteAccountSheetState();
+}
+
+class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
+  final _ctrl = TextEditingController();
+  bool get _confirmed => _ctrl.text.trim().toUpperCase() == 'LÖSCHEN';
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    final insets = MediaQuery.of(context).viewInsets;
+    return Container(
+      padding: EdgeInsets.fromLTRB(24, 20, 24, 36 + insets.bottom),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.delete_forever_rounded,
+                  size: 28, color: theme.colorScheme.onErrorContainer),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Text('Konto löschen',
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'Alle deine Daten werden unwiderruflich gelöscht.\nDiese Aktion kann nicht rückgängig gemacht werden.',
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text('Zur Bestätigung "LÖSCHEN" eingeben:',
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _ctrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: 'LÖSCHEN',
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context, false),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Abbrechen'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed:
+                    _confirmed ? () => Navigator.pop(context, true) : null,
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                  disabledBackgroundColor:
+                      theme.colorScheme.error.withValues(alpha: 0.3),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Endgültig löschen',
+                    style: TextStyle(color: Colors.white)),
+              ),
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
 }

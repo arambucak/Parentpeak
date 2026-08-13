@@ -456,8 +456,15 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
+    AuthService.instance.addListener(_refresh);
     _syncEntitlements();
     _checkOnboarding();
+  }
+
+  @override
+  void dispose() {
+    AuthService.instance.removeListener(_refresh);
+    super.dispose();
   }
 
   Future<void> _checkOnboarding() async {
