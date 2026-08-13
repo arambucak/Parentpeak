@@ -140,6 +140,7 @@ class NotificationService {
     required BackendApiClient apiClient,
     required String userId,
   }) async {
+    if (kIsWeb) return; // Web has no FCM token; avoids triggering browser notification permission dialog.
     final token = await FirebaseMessaging.instance.getToken();
     if (token == null || token.isEmpty) return;
 

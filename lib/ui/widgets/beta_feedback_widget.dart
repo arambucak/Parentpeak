@@ -28,7 +28,7 @@ class BetaFeedbackWidget extends StatelessWidget {
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Deine Meinung zaehlt!',
+              Text('Deine Meinung zählt!',
                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
               Text('Hilf uns die App für Familien zu verbessern.',
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline)),
@@ -38,7 +38,7 @@ class BetaFeedbackWidget extends StatelessWidget {
         const SizedBox(height: 14),
         _FeedbackButton(
           emoji: '\u{2B50}',
-          label: 'Was gefaellt dir?',
+          label: 'Was gefällt dir?',
           hint: 'Positives Feedback',
           color: const Color(0xFF16A34A),
           onTap: () => _openFeedback(context, 'gefaellt'),
@@ -46,7 +46,7 @@ class BetaFeedbackWidget extends StatelessWidget {
         const SizedBox(height: 8),
         _FeedbackButton(
           emoji: '\u{1F4A1}',
-          label: 'Was wuenschst du dir?',
+          label: 'Was wünschst du dir?',
           hint: 'Feature-Wunsch oder Empfehlung',
           color: const Color(0xFF8B5CF6),
           onTap: () => _openFeedback(context, 'wunsch'),
@@ -71,12 +71,12 @@ class BetaFeedbackWidget extends StatelessWidget {
 
     switch (type) {
       case 'gefaellt':
-        title = '\u{2B50} Was gefaellt dir?';
+        title = '\u{2B50} Was gefällt dir?';
         hint = 'z.B. Die Spielideen sind toll! Der KI-Chat hilft mir wirklich...';
         break;
       case 'wunsch':
-        title = '\u{1F4A1} Was wuenschst du dir?';
-        hint = 'z.B. Ich wuensche mir eine Schlaftracker-Funktion...';
+        title = '\u{1F4A1} Was wünschst du dir?';
+        hint = 'z.B. Ich wünsche mir eine Schlaftracker-Funktion...';
         break;
       default:
         title = '\u{1F41B} Was funktioniert nicht?';
