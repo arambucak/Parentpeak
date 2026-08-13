@@ -1205,92 +1205,210 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     );
   }
 
+  /// Looks up a display name for the given code via getProfiles().
+  Future<String?> _lookupNameByCode(String rawCode) async {
+    final code = rawCode.trim().toUpperCase();
+    // Strip optional PP- prefix to get the raw 6-char UID prefix
+    final uidPrefix =
+        code.startsWith('PP-') ? code.substring(3).toLowerCase() : code.toLowerCase();
+    if (uidPrefix.isEmpty) return null;
+    try {
+      final profiles = await _backend.getProfiles();
+      final match = profiles.cast<Map<String, dynamic>>().firstWhere(
+            (p) => (p['userId'] as String? ?? '')
+                .toLowerCase()
+                .startsWith(uidPrefix),
+            orElse: () => {},
+          );
+      return match['displayName'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   void _showAddFriendSheet(ThemeData theme) {
     final codeCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('\u{1F91D}', style: TextStyle(fontSize: 32)),
-            const SizedBox(height: 10),
-            Text('Freund hinzuf\u00fcgen',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text('Gib den Code einer anderen Familie ein.',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
-            const SizedBox(height: 20),
-            TextField(
-              controller: nameCtrl,
-              decoration: InputDecoration(
-                labelText: 'Name der Familie',
-                hintText: 'z.B. Familie M\u00fcller',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: Color(0xFF8B5CF6), width: 1.5)),
+      builder: (ctx) {
+        String? resolvedName;
+        String? errorMsg;
+        bool isLooking = false;
+
+        return StatefulBuilder(builder: (ctx, setSheet) {
+          final myCode = ParentFriendsService.instance.myCode.toUpperCase();
+
+          Future<void> onCodeChanged(String val) async {
+            final normalized = val.trim().toUpperCase();
+            // Trigger lookup once input looks complete (PP-XXXXXX = 9 chars)
+            if (normalized.length < 6) {
+              setSheet(() { resolvedName = null; errorMsg = null; });
+              return;
+            }
+            if (normalized == myCode ||
+                normalized == myCode.replaceFirst('PP-', '')) {
+              setSheet(() { resolvedName = null; errorMsg = 'Das ist dein eigener Code!'; });
+              return;
+            }
+            setSheet(() { isLooking = true; resolvedName = null; errorMsg = null; });
+            final name = await _lookupNameByCode(normalized);
+            setSheet(() {
+              isLooking = false;
+              resolvedName = name;
+              errorMsg = null;
+            });
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: codeCtrl,
-              textCapitalization: TextCapitalization.characters,
-              decoration: InputDecoration(
-                labelText: 'Freundschafts-Code',
-                hintText: 'z.B. AB12CD',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: Color(0xFF8B5CF6), width: 1.5)),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  final code = codeCtrl.text.trim().toLowerCase();
-                  final name = nameCtrl.text.trim();
-                  if (code.isEmpty || name.isEmpty) return;
-                  await ParentFriendsService.instance.addFriend(
-                    ParentFriend(
-                        code: code,
-                        name: name,
-                        addedAt: DateTime.now()),
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                      color: theme.colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
-                child: const Text('Verbinden'),
-              ),
+                const SizedBox(height: 20),
+                Text('Freund per Code verbinden',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text('Gib den Code ein, den dir die andere Familie geschickt hat.',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.outline),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: codeCtrl,
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: onCodeChanged,
+                  decoration: InputDecoration(
+                    labelText: 'Freundschafts-Code',
+                    hintText: 'PP-XXXXXX',
+                    suffixIcon: isLooking
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                                width: 20, height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF8B5CF6))))
+                        : resolvedName != null
+                            ? const Icon(Icons.check_circle_rounded,
+                                color: Color(0xFF059669))
+                            : null,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF8B5CF6), width: 1.5)),
+                    errorText: errorMsg,
+                  ),
+                ),
+                // Name preview after lookup
+                if (resolvedName != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF059669).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: _avatarColor(resolvedName!),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            resolvedName![0].toUpperCase(),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          Text(resolvedName!,
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700)),
+                          const Text('Gefunden \u2713',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF059669),
+                                  fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
+                    ]),
+                  ),
+                ] else if (!isLooking &&
+                    codeCtrl.text.trim().length >= 6 &&
+                    errorMsg == null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Kein Profil gefunden \u2013 du kannst trotzdem verbinden.',
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: theme.colorScheme.outline),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: errorMsg != null ||
+                            codeCtrl.text.trim().isEmpty ||
+                            isLooking
+                        ? null
+                        : () async {
+                            final raw = codeCtrl.text.trim().toLowerCase();
+                            final code = raw.startsWith('pp-') ? raw : raw;
+                            final name = resolvedName ?? 'Code-Freund';
+                            await ParentFriendsService.instance.addFriend(
+                              ParentFriend(
+                                  code: code,
+                                  name: name,
+                                  addedAt: DateTime.now()),
+                            );
+                            if (ctx.mounted) Navigator.pop(ctx);
+                          },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: Text(resolvedName != null
+                        ? 'Mit $resolvedName verbinden'
+                        : 'Verbinden'),
+                  ),
+                ),
+              ]),
             ),
-          ]),
-        ),
-      ),
+          );
+        });
+      },
     );
   }
 
