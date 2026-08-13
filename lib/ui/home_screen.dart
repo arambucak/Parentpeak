@@ -18,7 +18,7 @@ import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:parentpeak/ui/finance_budget_screen.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
 import 'package:parentpeak/ui/gemeinsam_satt_screen.dart';
-import 'package:parentpeak/ui/familien_küche_screen.dart';
+import 'package:parentpeak/ui/familien_kueche_screen.dart';
 import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
@@ -654,7 +654,7 @@ class _HomeScreenState extends State<HomeScreen>
         description: 'Rezept-Ideen, Tipps und Inspiration',
         icon: Icons.restaurant_rounded,
         color: const Color(0xFFF97316),
-        builder: (_) => const FamilienKücheScreen(),
+        builder: (_) => const FamilienKuecheScreen(),
         featureId: 'gemeinsam_satt',
       ),
       _FeatureAction(

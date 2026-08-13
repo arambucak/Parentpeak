@@ -7,14 +7,14 @@ import 'package:parentpeak/models/shopping_item.dart';
 /// Familien-Küche — 1-Tap Rezept-Inspiration + Eltern-Tipps.
 ///
 /// Kein Formular, kein Tippen. App oeffnen → sofort Vorschlag sehen.
-class FamilienKücheScreen extends StatefulWidget {
-  const FamilienKücheScreen({super.key});
+class FamilienKuecheScreen extends StatefulWidget {
+  const FamilienKuecheScreen({super.key});
 
   @override
-  State<FamilienKücheScreen> createState() => _FamilienKücheScreenState();
+  State<FamilienKuecheScreen> createState() => _FamilienKuecheScreenState();
 }
 
-class _FamilienKücheScreenState extends State<FamilienKücheScreen> {
+class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   final _service = FamilyRecipeService.instance;
   FamilyRecipe? _currentRecipe;
   bool _loading = true;
