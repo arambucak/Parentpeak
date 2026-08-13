@@ -13,6 +13,23 @@ import 'todo_backend_service.dart';
 import 'weekly_planner_storage_service.dart';
 import 'weekly_impulse_service.dart';
 
+/// Waits for the Firebase session to restore before returning the ID token.
+/// On web, [FirebaseAuth.currentUser] is null for ~500ms after init while
+/// the session is restored from IndexedDB — requests in that window get 401.
+Future<String?> _getFirebaseIdToken() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    try {
+      user = await FirebaseAuth.instance
+          .authStateChanges()
+          .firstWhere((u) => u != null)
+          .timeout(const Duration(seconds: 4));
+    } catch (_) {}
+  }
+  return user?.getIdToken();
+}
+
+
 class BackendServiceFactory {
   static BackendApiClient? createApiClient() {
     final baseUrl = APIConfig.getBackendBaseUrl();
@@ -23,8 +40,7 @@ class BackendServiceFactory {
     return BackendApiClient(
       baseUrl: baseUrl,
       authToken: APIConfig.getBackendApiToken(),
-      authTokenProvider: () async =>
-          FirebaseAuth.instance.currentUser?.getIdToken(),
+      authTokenProvider: _getFirebaseIdToken,
     );
   }
 

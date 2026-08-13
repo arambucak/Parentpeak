@@ -473,7 +473,12 @@ class _CalendarScreenState extends State<CalendarScreen>
                     icon: const Icon(Icons.check_rounded),
                     label: const Text('Speichern'),
                     onPressed: () async {
-                      if (_titleController.text.trim().isEmpty) return;
+                      if (_titleController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Bitte einen Titel eingeben.')),
+                        );
+                        return;
+                      }
                       final startDate = DateTime(
                         _selectedDay.year,
                         _selectedDay.month,
