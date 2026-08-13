@@ -101,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen>
       _openInitialInviteIfNeeded();
       _openInitialFriendIfNeeded();
       _handleStartupReferralIfNeeded();
+      _processPendingReferral(); // also covers post-login case
       _openDebugFeatureIfNeeded();
       ParentCoinService.instance.claimPendingReferrals(context);
     });
@@ -145,17 +146,26 @@ class _HomeScreenState extends State<HomeScreen>
     if (code == null || code.isEmpty || !mounted) return;
     _initialReferralHandled = true;
 
-    final uid = AuthService.instance.currentUser?.uid;
-    final name = AuthService.instance.currentUser?.displayName ?? 'Neues Mitglied';
-    if (uid != null) {
-      ParentCoinService.instance.recordReferral(code, uid, name);
-    }
+    // Always persist so it survives login/registration
+    SharedPreferences.getInstance().then((prefs) => prefs.setString('pending_referral_code', code));
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Willkommen bei Parentpeak! Du wurdest eingeladen ❤️'),
         duration: Duration(seconds: 4),
       ),
     );
+  }
+
+  Future<void> _processPendingReferral() async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString('pending_referral_code');
+    if (code == null || code.isEmpty) return;
+    await prefs.remove('pending_referral_code');
+    final name = AuthService.instance.currentUser?.displayName ?? 'Neues Mitglied';
+    await ParentCoinService.instance.recordReferral(code, uid, name);
   }
 
   void _openDebugFeatureIfNeeded() {
