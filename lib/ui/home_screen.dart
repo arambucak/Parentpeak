@@ -23,6 +23,7 @@ import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/ui/widgets/home/context_home_card.dart';
 import 'package:parentpeak/ui/widgets/home/quick_actions_row.dart';
 import 'package:parentpeak/ui/widgets/home/events_carousel_widget.dart';
@@ -54,8 +55,9 @@ const String _debugOpenFeature =
 class HomeScreen extends StatefulWidget {
   final String? initialInviteInput;
   final String? initialFriendCode;
+  final String? initialReferralCode;
 
-  const HomeScreen({super.key, this.initialInviteInput, this.initialFriendCode});
+  const HomeScreen({super.key, this.initialInviteInput, this.initialFriendCode, this.initialReferralCode});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -70,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   bool _initialInviteHandled = false;
   bool _initialFriendHandled = false;
+  bool _initialReferralHandled = false;
   bool _debugFeatureHandled = false;
   List<String> _recentTileLabels = const [];
   List<String> _customTileOrderLabels = const [];
@@ -97,7 +100,9 @@ class _HomeScreenState extends State<HomeScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openInitialInviteIfNeeded();
       _openInitialFriendIfNeeded();
+      _handleStartupReferralIfNeeded();
       _openDebugFeatureIfNeeded();
+      ParentCoinService.instance.claimPendingReferrals(context);
     });
   }
 
@@ -130,6 +135,25 @@ class _HomeScreenState extends State<HomeScreen>
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ElternNetzwerkScreen(initialFriendCode: code),
+      ),
+    );
+  }
+
+  void _handleStartupReferralIfNeeded() {
+    if (_initialReferralHandled) return;
+    final code = widget.initialReferralCode?.trim();
+    if (code == null || code.isEmpty || !mounted) return;
+    _initialReferralHandled = true;
+
+    final uid = AuthService.instance.currentUser?.uid;
+    final name = AuthService.instance.currentUser?.displayName ?? 'Neues Mitglied';
+    if (uid != null) {
+      ParentCoinService.instance.recordReferral(code, uid, name);
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Willkommen bei Parentpeak! Du wurdest eingeladen ❤️'),
+        duration: Duration(seconds: 4),
       ),
     );
   }

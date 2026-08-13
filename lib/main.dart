@@ -164,6 +164,7 @@ Future<void> _startApp() async {
     key: demoAppKey,
     startupInviteInput: startupInviteInput,
     startupFriendCode: _extractStartupFriendCode(),
+    startupReferralCode: _extractStartupReferralCode(),
   ));
 }
 
@@ -222,14 +223,33 @@ String? _extractStartupFriendCode() {
   return null;
 }
 
+String? _extractStartupReferralCode() {
+  final candidates = [
+    WidgetsBinding.instance.platformDispatcher.defaultRouteName,
+    Uri.base.toString(),
+  ];
+  for (final candidate in candidates) {
+    if (candidate.isEmpty) continue;
+    final uri = Uri.tryParse(candidate);
+    if (uri == null) continue;
+    final segs = uri.pathSegments;
+    if (segs.length >= 2 && segs.first == 'invite' && segs[1].startsWith('PP-')) {
+      return segs[1].toUpperCase();
+    }
+  }
+  return null;
+}
+
 String? _extractInviteInputFromString(String? raw) {
   if (raw == null || raw.trim().isEmpty) return null;
   final input = raw.trim();
 
   final uri = Uri.tryParse(input);
   if (uri != null) {
-    // /freund/ links are friend codes, not event invites
-    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'freund') {
+    final segs = uri.pathSegments;
+    // /freund/ = friend code, /invite/PP-* = referral code — both are NOT event codes
+    if (segs.isNotEmpty && (segs.first == 'freund' ||
+        (segs.first == 'invite' && segs.length >= 2 && segs[1].startsWith('PP-')))) {
       return null;
     }
     final code = uri.queryParameters['code']?.trim();
@@ -247,8 +267,9 @@ String? _extractInviteInputFromString(String? raw) {
 class DemoApp extends StatefulWidget {
   final String? startupInviteInput;
   final String? startupFriendCode;
+  final String? startupReferralCode;
 
-  const DemoApp({super.key, this.startupInviteInput, this.startupFriendCode});
+  const DemoApp({super.key, this.startupInviteInput, this.startupFriendCode, this.startupReferralCode});
 
   static void setThemeMode(ThemeMode mode) {
     debugPrint('📱 DemoApp.setThemeMode() called with mode=$mode');
@@ -351,6 +372,7 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
           devices: const [],
           startupInviteInput: widget.startupInviteInput,
           startupFriendCode: widget.startupFriendCode,
+          startupReferralCode: widget.startupReferralCode,
           onRevoke: (uuid, name) async {
             try {
               return await service.revokeDevice(uuid, 'Revoke');
@@ -369,13 +391,15 @@ class ParentpeakAppShell extends StatefulWidget {
   final Future<bool> Function(String deviceUuid, String deviceName) onRevoke;
   final String? startupInviteInput;
   final String? startupFriendCode;
+  final String? startupReferralCode;
 
   const ParentpeakAppShell(
       {super.key,
       required this.devices,
       required this.onRevoke,
       this.startupInviteInput,
-      this.startupFriendCode});
+      this.startupFriendCode,
+      this.startupReferralCode});
 
   @override
   State<ParentpeakAppShell> createState() => _ParentpeakAppShellState();
@@ -415,7 +439,8 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
         key: ValueKey('home-${languageService.currentLanguage}'),
         child: HomeScreen(
             initialInviteInput: widget.startupInviteInput,
-            initialFriendCode: widget.startupFriendCode),
+            initialFriendCode: widget.startupFriendCode,
+            initialReferralCode: widget.startupReferralCode),
       ),
       LanguageAwareWidget(
           key: ValueKey('family-${languageService.currentLanguage}'),
@@ -466,6 +491,7 @@ class AuthGate extends StatefulWidget {
   final Future<bool> Function(String, String) onRevoke;
   final String? startupInviteInput;
   final String? startupFriendCode;
+  final String? startupReferralCode;
 
   const AuthGate({
     super.key,
@@ -473,6 +499,7 @@ class AuthGate extends StatefulWidget {
     required this.onRevoke,
     this.startupInviteInput,
     this.startupFriendCode,
+    this.startupReferralCode,
   });
 
   @override
@@ -573,6 +600,7 @@ class _AuthGateState extends State<AuthGate> {
         onRevoke: widget.onRevoke,
         startupInviteInput: widget.startupInviteInput,
         startupFriendCode: widget.startupFriendCode,
+        startupReferralCode: widget.startupReferralCode,
       );
     }
 
@@ -609,6 +637,7 @@ class _AuthGateState extends State<AuthGate> {
       onRevoke: widget.onRevoke,
       startupInviteInput: widget.startupInviteInput,
       startupFriendCode: widget.startupFriendCode,
+      startupReferralCode: widget.startupReferralCode,
     );
   }
 }

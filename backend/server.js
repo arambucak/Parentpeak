@@ -3006,6 +3006,41 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
 
 // Routes
 
+// ============================================================================
+// REFERRAL TRACKING — in-memory store (survives restarts via claim-on-open)
+// ============================================================================
+const _pendingReferrals = new Map(); // referralCode -> [{inviteeId, inviteeName, ts}]
+
+app.post('/referrals/record', async (req, res) => {
+  const { referralCode, inviteeId, inviteeName } = req.body;
+  if (!referralCode || !inviteeId) {
+    return res.status(400).json({ error: 'referralCode und inviteeId sind erforderlich' });
+  }
+  const code = String(referralCode).toUpperCase().trim();
+  if (!_pendingReferrals.has(code)) _pendingReferrals.set(code, []);
+  // Prevent duplicate entries for the same invitee
+  const existing = _pendingReferrals.get(code);
+  if (!existing.some(r => r.inviteeId === inviteeId)) {
+    existing.push({ inviteeId: String(inviteeId), inviteeName: String(inviteeName || 'Neues Mitglied'), ts: Date.now() });
+  }
+  console.log(`📬 Referral recorded: ${code} ← ${inviteeId}`);
+  res.json({ success: true });
+});
+
+app.get('/referrals/pending/:code', (req, res) => {
+  const code = String(req.params.code || '').toUpperCase().trim();
+  if (!code) return res.status(400).json({ error: 'code erforderlich' });
+  res.json({ referrals: _pendingReferrals.get(code) || [] });
+});
+
+app.delete('/referrals/claim/:code', (req, res) => {
+  const code = String(req.params.code || '').toUpperCase().trim();
+  const claimed = (_pendingReferrals.get(code) || []).length;
+  _pendingReferrals.delete(code);
+  console.log(`✅ Referral claimed: ${code} (${claimed} entries)`);
+  res.json({ claimed });
+});
+
 app.post('/account/delete-data', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   const dryRun =

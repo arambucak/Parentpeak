@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 
 /// ParentCoin-System — Belohnungs-Engine für Einladungen.
@@ -130,6 +133,58 @@ class ParentCoinService extends ChangeNotifier {
     final name = AuthService.instance.currentUser?.displayName ?? 'Ein Elternteil';
     return '$name nutzt ParentPeak für den Familienalltag und laedt dich ein! '
         'Kostenlos ausprobieren: ${getInviteLink()}';
+  }
+
+  /// Invitee: Meldet dem Backend, dass jemand über diesen Code beigetreten ist.
+  Future<void> recordReferral(String code, String inviteeId, String inviteeName) async {
+    final base = APIConfig.getBackendBaseUrl();
+    if (base == null || base.isEmpty) return;
+    try {
+      await http.post(
+        Uri.parse('$base/referrals/record'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'referralCode': code, 'inviteeId': inviteeId, 'inviteeName': inviteeName}),
+      ).timeout(const Duration(seconds: 10));
+    } catch (e) {
+      debugPrint('recordReferral error: $e');
+    }
+  }
+
+  /// Inviter: Prüft ob jemand den eigenen Code benutzt hat und vergibt Coins.
+  Future<void> claimPendingReferrals(BuildContext context) async {
+    final base = APIConfig.getBackendBaseUrl();
+    if (base == null || base.isEmpty) return;
+    final myCode = referralCode;
+    try {
+      final resp = await http.get(
+        Uri.parse('$base/referrals/pending/${Uri.encodeComponent(myCode)}'),
+      ).timeout(const Duration(seconds: 10));
+      if (resp.statusCode != 200) return;
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final referrals = data['referrals'] as List<dynamic>? ?? [];
+      if (referrals.isEmpty) return;
+
+      for (final r in referrals) {
+        final name = r['inviteeName'] as String? ?? 'Jemand';
+        await earnCoinFromInvite(name);
+      }
+
+      // Mark as claimed
+      await http.delete(
+        Uri.parse('$base/referrals/claim/${Uri.encodeComponent(myCode)}'),
+      ).timeout(const Duration(seconds: 10));
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${referrals.length} Einladung${referrals.length > 1 ? 'en' : ''} erfolgreich – du hast ${referrals.length} Coin${referrals.length > 1 ? 's' : ''} erhalten! 🎉'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('claimPendingReferrals error: $e');
+    }
   }
 }
 
