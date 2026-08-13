@@ -546,7 +546,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           SizedBox(height: 6),
           Text(
-            'Keine Diagnosen, keine Therapie. Nur GfK-orientierte Orientierung nach Rosenberg. Deine Fragen bleiben privat.',
+            'Keine Diagnosen, keine Therapie. Deine Fragen bleiben privat.',
             style: TextStyle(
               fontSize: 12,
               color: Color(0xFF516072),
@@ -716,49 +716,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 _buildSuggestionChip('Kind braucht mehr Freiheit'),
                 _buildSuggestionChip('Strafe oder Konsequenz?'),
               ],
-            ),
-            const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF5FB),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFBFD3E6),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Theme.of(context).primaryColor,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Pädagogik-KI nach Hüther · Rosenberg · Juul',
-                          style:
-                              Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF1A2A3A),
-                                  ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Neurobiologie (Hüther): Verbundenheit + Autonomie als Grundbedürfnisse. GfK (Rosenberg): konkrete Saetze für heute. Familientherapie (Juul): Kinder als vollwertige Menschen.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF516072),
-                          height: 1.4,
-                        ),
-                  ),
-                ],
-              ),
             ),
             const SizedBox(height: 40),
           ],
