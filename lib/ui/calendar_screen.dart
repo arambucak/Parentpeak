@@ -405,7 +405,8 @@ class _CalendarScreenState extends State<CalendarScreen>
       title: parsed.title,
       start: parsed.dateTime,
       end: parsed.dateTime.add(const Duration(hours: 1)),
-      person: parsed.person ?? 'Eltern',
+      person:
+          parsed.person ?? (_filterPerson != 'Alle' ? _filterPerson : 'Eltern'),
       location: 'Familienkalender',
       recurrence: parsed.isBirthday ? 'Jährlich' : 'Einmalig',
       reminderMinutes: _smartReminderValue,
@@ -539,7 +540,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   Future<void> _openAddSheet() async {
     _titleController.clear();
-    String person = 'Eltern';
+    String person = _filterPerson != 'Alle' ? _filterPerson : 'Eltern';
     TimeOfDay start = const TimeOfDay(hour: 10, minute: 0);
     TimeOfDay end = const TimeOfDay(hour: 11, minute: 0);
     String recurrence = 'Einmalig';
