@@ -1598,6 +1598,16 @@ class _EventCard extends StatelessWidget {
                                 fontSize: 13,
                               ),
                             ),
+                            const SizedBox(width: 4),
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => _showOptions(context),
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.more_vert_rounded,
+                                    size: 18, color: Color(0xFF718096)),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 10),
