@@ -1013,6 +1013,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           .toList(),
                       personColors: _personColors,
                       onDayTap: _selectDay,
+                      onDeleteEvent: _deleteEvent,
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -2166,11 +2167,13 @@ class _WeekPreview extends StatelessWidget {
     required this.events,
     required this.personColors,
     required this.onDayTap,
+    this.onDeleteEvent,
   });
 
   final List<_CalendarEvent> events;
   final Map<String, Color> personColors;
   final void Function(DateTime) onDayTap;
+  final void Function(_CalendarEvent)? onDeleteEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -2214,7 +2217,52 @@ class _WeekPreview extends StatelessWidget {
                   isToday ? 'Heute' : DateFormat.E('de').format(e.start);
 
               return GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => onDayTap(e.start),
+                onLongPress: () {
+                  showModalBottomSheet(
+                    context: context,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    builder: (ctx) => SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 8),
+                            child: Text(e.title,
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w700)),
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.open_in_new_rounded),
+                            title: const Text('Zum Tag springen'),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              onDayTap(e.start);
+                            },
+                          ),
+                          ListTile(
+                            leading: Icon(Icons.delete_rounded,
+                                color: Theme.of(context).colorScheme.error),
+                            title: Text('Löschen',
+                                style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.error)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              onDeleteEvent?.call(e);
+                            },
+                          ),
+                        ]),
+                      ),
+                    ),
+                  );
+                },
                 child: Container(
                   constraints:
                       const BoxConstraints(maxWidth: 160, minWidth: 110),
