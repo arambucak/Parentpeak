@@ -812,6 +812,73 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ),
+                // ─── Wochenrückblick Schnellzugang ────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        horizontalPadding, 0, horizontalPadding, 12),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WochenrueckblickScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: const Color(0xFF8B5CF6)
+                                  .withValues(alpha: 0.15)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Text('\u{1F4AC}',
+                                style: TextStyle(fontSize: 20)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Dein Wochenrückblick',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF6B21A8),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF7C3AED)
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Ansehen \u{2192}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF7C3AED),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 // ─── Chat-Zeile (immer sichtbar, 1 Tap) ────────
                 SliverToBoxAdapter(
                   child: Padding(
@@ -999,8 +1066,8 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               if (showResetTileOrder)
                 IconButton(
-                  tooltip:
-                      AppStringsManager.getString(languageService.currentLanguage, 'reset_tile_order'),
+                  tooltip: AppStringsManager.getString(
+                      languageService.currentLanguage, 'reset_tile_order'),
                   onPressed: onResetTileOrder,
                   icon: const Icon(Icons.restart_alt_rounded,
                       color: Colors.white),
@@ -1045,7 +1112,8 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      AppStringsManager.getString(languageService.currentLanguage, 'all_important'),
+                      AppStringsManager.getString(
+                          languageService.currentLanguage, 'all_important'),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleSmall?.copyWith(
@@ -1056,7 +1124,8 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      AppStringsManager.getString(languageService.currentLanguage, 'plan_together'),
+                      AppStringsManager.getString(
+                          languageService.currentLanguage, 'plan_together'),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -1088,19 +1157,23 @@ class _HomeScreenState extends State<HomeScreen>
       context,
       title: action.label,
       subtitle: isComingSoon
-          ? AppStringsManager.getString(languageService.currentLanguage, 'soon_available')
+          ? AppStringsManager.getString(
+              languageService.currentLanguage, 'soon_available')
           : action.description,
       statusHint: isComingSoon ? null : action.statusHint,
       quickActionLabel: (!isComingSoon && !isPremiumLocked && isParentMatchTile)
           ? (_newParentMatchesCount > 0
-              ? AppStringsManager.getString(languageService.currentLanguage, 'open_new_connections')
-              : AppStringsManager.getString(languageService.currentLanguage, 'open_parent_match'))
+              ? AppStringsManager.getString(
+                  languageService.currentLanguage, 'open_new_connections')
+              : AppStringsManager.getString(
+                  languageService.currentLanguage, 'open_parent_match'))
           : null,
       quickActionHelperText: (!isComingSoon &&
               !isPremiumLocked &&
               isParentMatchTile &&
               _newParentMatchesCount == 0)
-          ? AppStringsManager.getString(languageService.currentLanguage, 'no_new_connections')
+          ? AppStringsManager.getString(
+              languageService.currentLanguage, 'no_new_connections')
           : null,
       onQuickAction: (!isComingSoon && !isPremiumLocked && isParentMatchTile)
           ? () => _openParentMatchQuickAction(
@@ -1144,7 +1217,8 @@ class _HomeScreenState extends State<HomeScreen>
                       size: 12, color: theme.colorScheme.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Text(
-                    AppStringsManager.getString(languageService.currentLanguage, 'soon_badge'),
+                    AppStringsManager.getString(
+                        languageService.currentLanguage, 'soon_badge'),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w700,
