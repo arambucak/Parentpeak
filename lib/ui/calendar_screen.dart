@@ -1291,29 +1291,20 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
               ),
             if (_eventsForSelectedDay.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _openAddSheet,
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Neuen Termin hinzufügen'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      side: BorderSide(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              const SizedBox(height: 80), // Space for FAB
             const SizedBox(height: 24),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAddSheet,
+        icon: const Icon(Icons.add_rounded, size: 20),
+        label:
+            const Text('Termin', style: TextStyle(fontWeight: FontWeight.w600)),
+        elevation: 3,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
