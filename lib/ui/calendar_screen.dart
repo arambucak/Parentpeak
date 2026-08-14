@@ -375,15 +375,13 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Future<void> _editEvent(_CalendarEvent event) async {
-    // Event löschen und Add-Sheet öffnen mit vorausgefüllten Daten
     setState(() {
       _events.removeWhere((e) => e.id == event.id);
       _titleController.text = event.title;
-      // Filter auf die Person des Events setzen (damit Add-Sheet die richtige Person zeigt)
       _filterPerson = event.person;
     });
     await _persistEvents();
-    _openAddSheet();
+    _openAddSheet(prefillTitle: event.title);
   }
 
   Future<void> _persistEvents() async {
@@ -540,8 +538,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  Future<void> _openAddSheet() async {
-    _titleController.clear();
+  Future<void> _openAddSheet({String? prefillTitle}) async {
+    if (prefillTitle == null) _titleController.clear();
     String person = _filterPerson != 'Alle' ? _filterPerson : 'Eltern';
     TimeOfDay start = const TimeOfDay(hour: 10, minute: 0);
     TimeOfDay end = const TimeOfDay(hour: 11, minute: 0);
