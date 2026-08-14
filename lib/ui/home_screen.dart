@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/auth_service.dart';
@@ -90,6 +92,7 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isOpeningParentMatchQuickAction = false;
   late final AnimationController _attentionController;
   late final Animation<double> _attentionAnimation;
+  List<Map<String, dynamic>> _todayEvents = [];
 
   @override
   void initState() {
@@ -102,6 +105,7 @@ class _HomeScreenState extends State<HomeScreen>
       parent: _attentionController,
       curve: Curves.easeInOut,
     );
+    if (kIsWeb) _loadTodayEvents();
     languageService.addListener(_onLanguageChanged);
     _restoreRecentTiles();
     _restoreTileOrder();
@@ -129,6 +133,29 @@ class _HomeScreenState extends State<HomeScreen>
     _attentionController.dispose();
     languageService.removeListener(_onLanguageChanged);
     super.dispose();
+  }
+
+  Future<void> _loadTodayEvents() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('calendar.events');
+    if (raw == null || raw.isEmpty) return;
+    try {
+      final all = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final todayEnd = today.add(const Duration(days: 1));
+      final upcoming = all.where((e) {
+        final start = DateTime.tryParse(e['start']?.toString() ?? '');
+        if (start == null) return false;
+        return !start.isBefore(now) && start.isBefore(todayEnd);
+      }).toList()
+        ..sort((a, b) {
+          final sa = DateTime.parse(a['start'].toString());
+          final sb = DateTime.parse(b['start'].toString());
+          return sa.compareTo(sb);
+        });
+      if (mounted) setState(() => _todayEvents = upcoming);
+    } catch (_) {}
   }
 
   void _openInitialInviteIfNeeded() {
@@ -879,6 +906,99 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ),
+                // ─── Web Termin-Reminder Banner ────────
+                if (kIsWeb && _todayEvents.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          horizontalPadding, 0, horizontalPadding, 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: const Color(0xFF3B82F6)
+                                  .withValues(alpha: 0.2)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text('\u{1F514}',
+                                    style: TextStyle(fontSize: 16)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Heute noch ${_todayEvents.length} ${_todayEvents.length == 1 ? "Termin" : "Termine"}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1E40AF),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ..._todayEvents.take(3).map((e) {
+                              final start = DateTime.tryParse(
+                                  e['start']?.toString() ?? '');
+                              final time = start != null
+                                  ? DateFormat.Hm('de').format(start)
+                                  : '';
+                              final title = e['title']?.toString() ?? '';
+                              final person = e['person']?.toString() ?? '';
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF3B82F6),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(time,
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF1E40AF))),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        '$title${person.isNotEmpty ? " • $person" : ""}',
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF374151)),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                            if (_todayEvents.length > 3)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  '+${_todayEvents.length - 3} weitere',
+                                  style: TextStyle(
+                                      fontSize: 11, color: Colors.grey[600]),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 // ─── Chat-Zeile (immer sichtbar, 1 Tap) ────────
                 SliverToBoxAdapter(
                   child: Padding(
