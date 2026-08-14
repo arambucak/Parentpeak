@@ -136,7 +136,10 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       final uri = Uri.parse(
         '$base/friend-chat/messages?roomId=${Uri.encodeComponent(widget.profileId)}',
       );
-      final resp = await http.get(uri).timeout(const Duration(seconds: 10));
+      final headers = await _authHeaders();
+      final resp = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 10));
       if (!mounted) return;
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final body = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -170,7 +173,10 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    final optimistic = _Msg(id: 'optimistic-${DateTime.now().microsecondsSinceEpoch}', text: text, isMe: true);
+    final optimistic = _Msg(
+        id: 'optimistic-${DateTime.now().microsecondsSinceEpoch}',
+        text: text,
+        isMe: true);
 
     setState(() {
       _messages.add(optimistic);
@@ -198,7 +204,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     await _loadMessages();
   }
 
-  Future<Map<String, String>> _authHeaders() async {
+  Future<Map<String, String>> _authHeaders({bool forceRefresh = false}) async {
     // currentUser can be null on web while Firebase restores the session
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -209,7 +215,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             .timeout(const Duration(seconds: 4));
       } catch (_) {}
     }
-    final token = await user?.getIdToken();
+    final token = await user?.getIdToken(forceRefresh);
     return {
       'Content-Type': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
@@ -246,7 +252,31 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         return body['item'] as Map<String, dynamic>?;
       }
       if (resp.statusCode == 401) {
-        _showError('Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
+        // Retry once with forced token refresh
+        final freshHeaders = await _authHeaders(forceRefresh: true);
+        if (!freshHeaders.containsKey('Authorization')) {
+          _showError(
+              'Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
+          return null;
+        }
+        final retryResp = await http
+            .post(
+              Uri.parse('$base/friend-chat/messages'),
+              headers: freshHeaders,
+              body: jsonEncode({
+                'roomId': widget.profileId,
+                'userId': _currentUserId,
+                'userName': _currentUserName,
+                'content': text,
+              }),
+            )
+            .timeout(const Duration(seconds: 15));
+        if (retryResp.statusCode == 201) {
+          final body = jsonDecode(retryResp.body) as Map<String, dynamic>;
+          return body['item'] as Map<String, dynamic>?;
+        }
+        _showError(
+            'Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
       } else {
         _showError('Fehler ${resp.statusCode}');
       }
@@ -259,7 +289,8 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 6)));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), duration: const Duration(seconds: 6)));
   }
 
   @override
