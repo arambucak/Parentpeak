@@ -1296,15 +1296,32 @@ class _CalendarScreenState extends State<CalendarScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddSheet,
-        icon: const Icon(Icons.add_rounded, size: 20),
-        label:
-            const Text('Termin', style: TextStyle(fontWeight: FontWeight.w600)),
-        elevation: 3,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      floatingActionButton: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF4CAF50).withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: _openAddSheet,
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+          ),
+        ),
       ),
     );
   }
