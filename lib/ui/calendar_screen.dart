@@ -328,6 +328,12 @@ class _CalendarScreenState extends State<CalendarScreen>
         _events.removeWhere((e) => e.id == event.id);
       });
       await _persistEvents();
+      // Auch vom Backend löschen
+      try {
+        await _calendarService.deleteEvent(event.id);
+      } catch (_) {
+        // Lokal gelöscht reicht als Fallback
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Termin gelöscht.')),
