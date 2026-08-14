@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/theme_service.dart';
 import 'package:parentpeak/logic/language_service.dart';
@@ -31,6 +34,7 @@ class ProfileSafetyScreen extends StatefulWidget {
 
 class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   List<_ChildInfo> _children = [];
+  String _appVersion = '';
 
   String _t(String key) =>
       AppStringsManager.getString(languageService.currentLanguage, key);
@@ -39,6 +43,18 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   void initState() {
     super.initState();
     _loadChildren();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() => _appVersion = '${info.version}+${info.buildNumber}');
+      }
+    } catch (_) {
+      if (mounted) setState(() => _appVersion = '1.0.0');
+    }
   }
 
   Future<void> _loadChildren() async {
@@ -472,6 +488,28 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   title: _t('terms'),
                   onTap: () => _openUrl(APIConfig.getTermsOfServiceUrl())),
               _buildTile(theme,
+                  icon: Icons.business_rounded,
+                  title: 'Impressum',
+                  onTap: _showImpressum),
+              _buildTile(theme,
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'KI-Nutzungshinweis',
+                  onTap: _showAIDisclosure),
+              _buildTile(theme,
+                  icon: Icons.code_rounded,
+                  title: 'Open-Source-Lizenzen',
+                  onTap: () => showLicensePage(
+                        context: context,
+                        applicationName: 'Parentpeak',
+                        applicationVersion: _appVersion,
+                        applicationLegalese:
+                            '\u{00A9} 2026 Parentpeak. Alle Rechte vorbehalten.',
+                      )),
+              _buildTile(theme,
+                  icon: Icons.download_rounded,
+                  title: 'Meine Daten exportieren',
+                  onTap: _exportUserData),
+              _buildTile(theme,
                   icon: Icons.mail_rounded,
                   title: 'Kontakt & Support',
                   onTap: () => _openUrl(APIConfig.getContactSupportUrl())),
@@ -506,7 +544,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               ),
               const SizedBox(height: 8),
               Center(
-                child: Text('Parentpeak v1.0.0',
+                child: Text(
+                    _appVersion.isNotEmpty
+                        ? 'Parentpeak v$_appVersion'
+                        : 'Parentpeak',
                     style: theme.textTheme.labelSmall
                         ?.copyWith(color: theme.colorScheme.outline)),
               ),
@@ -837,6 +878,238 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showImpressum() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Row(children: [
+                Icon(Icons.business_rounded, size: 22),
+                SizedBox(width: 10),
+                Text('Impressum',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              ]),
+              const SizedBox(height: 16),
+              const Text('Angaben gemäß § 5 TMG / § 25 MStV',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Color(0xFF6B7280))),
+              const SizedBox(height: 14),
+              _impressumRow(
+                  'Anbieter', 'Parentpeak UG (haftungsbeschränkt) i.G.'),
+              _impressumRow('Vertreten durch',
+                  'Geschäftsführer (wird bei Eintragung ergänzt)'),
+              _impressumRow('Adresse', 'Wird bei Gewerbeanmeldung ergänzt'),
+              _impressumRow('E-Mail',
+                  APIConfig.getContactEmail() ?? 'parentpeakapp@gmail.com'),
+              _impressumRow('Verantwortlich für Inhalte', 'Parentpeak Team'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'Hinweis: Parentpeak befindet sich in der Beta-Phase. '
+                  'Die vollständigen Impressumsdaten werden bei Gewerbeanmeldung / '
+                  'Handelsregistereintragung ergänzt.',
+                  style: TextStyle(
+                      fontSize: 12, color: Color(0xFF6B7280), height: 1.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _impressumRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151))),
+          ),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAIDisclosure() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Row(children: [
+                Text('\u{1F916}', style: TextStyle(fontSize: 22)),
+                SizedBox(width: 10),
+                Text('KI-Nutzungshinweis',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              ]),
+              const SizedBox(height: 16),
+              const Text(
+                'Parentpeak nutzt Künstliche Intelligenz (Google Gemini) in folgenden Bereichen:',
+                style: TextStyle(fontSize: 14, height: 1.5),
+              ),
+              const SizedBox(height: 14),
+              _aiFeatureItem('\u{1F4AC}', 'KI-Elternberatung',
+                  'Pädagogische Tipps basierend auf GfK'),
+              _aiFeatureItem('\u{1F372}', 'Rezept-Generator',
+                  'Altersgerechte Familienrezepte'),
+              _aiFeatureItem('\u{1F4C5}', 'Events-Suche',
+                  'Lokale Aktivitäten in deiner Nähe'),
+              _aiFeatureItem('\u{1F4DC}', 'Wochenrückblick-Feedback',
+                  'Empathische Rückmeldung'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFED7AA)),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Wichtig zu wissen:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 13)),
+                    SizedBox(height: 6),
+                    Text(
+                      '\u{2022} KI-Antworten sind keine professionelle Beratung\n'
+                      '\u{2022} Keine Speicherung von Chatverläufen auf externen Servern\n'
+                      '\u{2022} Keine echten Kindernamen an die KI übermitteln\n'
+                      '\u{2022} Bei Notfällen immer professionelle Hilfe suchen',
+                      style: TextStyle(
+                          fontSize: 12, height: 1.6, color: Color(0xFF92400E)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _aiFeatureItem(String emoji, String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(desc,
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    final data = <String, dynamic>{};
+    for (final key in keys) {
+      final val = prefs.get(key);
+      data[key] = val;
+    }
+    final jsonStr = const JsonEncoder.withIndent('  ').convert({
+      'exportDate': DateTime.now().toIso8601String(),
+      'app': 'Parentpeak',
+      'version': _appVersion,
+      'dataKeys': data.length,
+      'data': data,
+    });
+
+    await Clipboard.setData(ClipboardData(text: jsonStr));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Daten exportiert (${data.length} Einträge in Zwischenablage kopiert)',
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ]),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF16A34A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
