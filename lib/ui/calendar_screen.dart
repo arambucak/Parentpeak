@@ -1318,13 +1318,136 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
+  void _showPersonOptions(String personName) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Text(personName,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_rounded),
+              title: const Text('Umbenennen'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _renameCustomPerson(personName);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete_rounded,
+                  color: Theme.of(context).colorScheme.error),
+              title: Text('Löschen',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _deleteCustomPerson(personName);
+              },
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _renameCustomPerson(String oldName) async {
+    final ctrl = TextEditingController(text: oldName);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Person umbenennen'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Neuer Name'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Abbrechen')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Speichern')),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty || newName == oldName) return;
+    setState(() {
+      // Custom-Personen Liste updaten
+      final idx = _customPersons.indexOf(oldName);
+      if (idx != -1) _customPersons[idx] = newName;
+      // Farbe übertragen
+      final color = _personColors.remove(oldName);
+      if (color != null) _personColors[newName] = color;
+      // Alle Events mit altem Namen updaten
+      for (int i = 0; i < _events.length; i++) {
+        if (_events[i].person == oldName) {
+          _events[i] = _events[i].copyWith(person: newName);
+        }
+      }
+      // Filter updaten
+      if (_filterPerson == oldName) _filterPerson = newName;
+    });
+    await _saveCustomPersons();
+    await _persistEvents();
+  }
+
+  Future<void> _deleteCustomPerson(String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('"$name" löschen?'),
+        content: const Text(
+            'Die Person wird aus dem Kalender entfernt. Zugehörige Termine werden zu "Eltern" verschoben.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() {
+      _customPersons.remove(name);
+      _personColors.remove(name);
+      // Events dieser Person zu "Eltern" verschieben
+      for (int i = 0; i < _events.length; i++) {
+        if (_events[i].person == name) {
+          _events[i] = _events[i].copyWith(person: 'Eltern');
+        }
+      }
+      if (_filterPerson == name) _filterPerson = 'Alle';
+    });
+    await _saveCustomPersons();
+    await _persistEvents();
+  }
+
   Widget _buildFilterChip(String label) {
     final selected = _filterPerson == label;
     final color = label == 'Alle'
         ? const Color(0xFF2D3748)
         : _personColors[label] ?? const Color(0xFF4CAF50);
+    final isCustom = _customPersons.contains(label);
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _filterPerson = label),
+      onLongPress: isCustom ? () => _showPersonOptions(label) : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
@@ -1335,14 +1458,25 @@ class _CalendarScreenState extends State<CalendarScreen>
             width: selected ? 1.2 : 0.8,
           ),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: selected ? color : const Color(0xFF4A5568),
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: selected ? color : const Color(0xFF4A5568),
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
           ),
-        ),
+          if (isCustom && selected) ...[
+            const SizedBox(width: 4),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _showPersonOptions(label),
+              child: Icon(Icons.more_vert_rounded,
+                  size: 12, color: color.withValues(alpha: 0.7)),
+            ),
+          ],
+        ]),
       ),
     );
   }
