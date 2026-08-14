@@ -9,8 +9,8 @@ import 'package:parentpeak/models/family_profile_model.dart';
 /// KI-Rezept-Service — generiert kinderfreundliche Rezepte via Gemini.
 ///
 /// Funktionsweise:
-///   - Laedt Kind-Alter + Allergien aus dem Profil
-///   - Beruecksichtigt aktuelle Saison
+///   - Lädt Kind-Alter + Allergien aus dem Profil
+///   - Berücksichtigt aktuelle Saison
 ///   - Generiert 1 Rezept pro Aufruf (schnell, fokussiert)
 ///   - Cached letzte 10 Rezepte lokal
 class FamilyRecipeService {
@@ -27,7 +27,7 @@ class FamilyRecipeService {
 
   List<FamilyRecipe> get savedRecipes => List.unmodifiable(_savedRecipes);
 
-  /// Initialisiert den Service (laedt Profil-Daten + Cache).
+  /// Initialisiert den Service (lädt Profil-Daten + Cache).
   Future<void> initialize() async {
     final profile = await FamilyMatchProfile.load();
     if (profile != null && profile.children.isNotEmpty) {
@@ -63,7 +63,7 @@ class FamilyRecipeService {
     final ageText = _childAge < 1
         ? 'Baby (6-12 Monate, Brei/Fingerfood)'
         : _childAge < 3
-            ? 'Kleinkind ($_childAge Jahre, weich, kleine Stuecke)'
+            ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
             : _childAge < 6
                 ? 'Kita-Kind ($_childAge Jahre, normal)'
                 : 'Schulkind ($_childAge Jahre, alles)';
@@ -72,23 +72,23 @@ class FamilyRecipeService {
 Generiere EIN kinderfreundliches Familien-Rezept auf Deutsch.
 
 Kontext:
-- Juengstes Kind: $ageText
+- Jüngstes Kind: $ageText
 - Saison: $season (nutze saisonale Zutaten)
 - $allergyText
-- Budget: guenstig (unter 4 EUR pro Portion)
+- Budget: günstig (unter 4 EUR pro Portion)
 - Zeit: maximal 35 Minuten
 - Portionen: 4
 
 Regeln:
-- VIELFALT: Wechsle zwischen Fleisch (Haehnchen, Hackfleisch, Schnitzel), Fisch (Lachs, Fischstaebchen), und vegetarisch. NICHT immer das gleiche.
+- VIELFALT: Wechsle zwischen Fleisch (Hähnchen, Hackfleisch, Schnitzel), Fisch (Lachs, Fischstäbchen), und vegetarisch. NICHT immer das gleiche.
 - Das Rezept MUSS für das angegebene Kindesalter sicher und geeignet sein
 - Einfache Zutaten die man im Supermarkt bekommt
-- Kinder müssen es MOEGEN (nicht zu scharf, nicht zu bitter)
-- Beliebt bei Kindern: Nudeln, Reis, Kartoffeln, Chicken Nuggets, Pizza, Pfannkuchen, Fischstaebchen, Bolognese, Schnitzel, Mac&Cheese
+- Kinder müssen es MÖGEN (nicht zu scharf, nicht zu bitter)
+- Beliebt bei Kindern: Nudeln, Reis, Kartoffeln, Chicken Nuggets, Pizza, Pfannkuchen, Fischstäbchen, Bolognese, Schnitzel, Mac&Cheese
 - Gib einen konkreten Eltern-Tipp (picky eater trick, gemeinsam kochen, etc.)
-- allergensFree: nur auflisten wenn das Rezept tatsaechlich FREI von Allergenen ist. Wenn Milch drin ist, NICHT "laktose" listen.
+- allergensFree: nur auflisten wenn das Rezept tatsächlich FREI von Allergenen ist. Wenn Milch drin ist, NICHT "laktose" listen.
 
-Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/danach):
+Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/danach):
 {
   "title": "Name des Gerichts",
   "description": "1 Satz warum Kinder das lieben",
@@ -100,20 +100,20 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
   "steps": ["Hack anbraten.", "Tomaten dazu.", "Mit Nudeln servieren."],
   "allergensFree": [],
   "season": "$season",
-  "tip": "Lass dein Kind das Hack kruemeln - wer mithilft isst lieber."
+  "tip": "Lass dein Kind das Hack krümeln - wer mithilft isst lieber."
 }
 ''';
 
     try {
       final modelName = APIConfig.getGeminiModelName();
       debugPrint(
-          'FamilyRecipeService: Verwende Modell=$modelName, Key-Laenge=${apiKey.length}');
+          'FamilyRecipeService: Verwende Modell=$modelName, Key-Länge=${apiKey.length}');
 
       final model = GenerativeModel(
         model: modelName,
         apiKey: apiKey,
         systemInstruction: Content.text(
-            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gueltigem JSON. '
+            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
             'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.'),
       );
 
@@ -257,34 +257,34 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
           '1 Dose Tomaten',
           '1 Karotte',
           '1 Zwiebel',
-          'Olivenoel'
+          'Olivenöl'
         ],
         steps: [
-          'Zwiebel + Karotte fein hacken, in Oel anbraten.',
-          'Hack dazu, kruemelig braten.',
-          'Tomaten dazu, 15 Min koecheln.',
+          'Zwiebel + Karotte fein hacken, in Öl anbraten.',
+          'Hack dazu, krümelig braten.',
+          'Tomaten dazu, 15 Min köcheln.',
           'Nudeln kochen, servieren.'
         ],
         allergensFree: ['nuesse'],
         season: '',
         tip:
-            'Lass dein Kind das Hackfleisch kruemeln — wer mithilft isst lieber.'),
+            'Lass dein Kind das Hackfleisch krümeln — wer mithilft isst lieber.'),
     FamilyRecipe(
         id: '',
-        title: 'Haehnchen-Nuggets aus dem Ofen',
+        title: 'Hähnchen-Nuggets aus dem Ofen',
         description: 'Knusprig wie aus dem Restaurant aber gesunder.',
         prepMinutes: 25,
         costPerPortion: 2.20,
         minChildAge: 1,
         ingredients: [
-          '500g Haenchenbrust',
+          '500g Hähnchenbrust',
           '100g Semmelbrösel',
           '1 Ei',
           'Paprikapulver',
           'Salz'
         ],
         steps: [
-          'Haehnchen in Stuecke schneiden.',
+          'Hähnchen in Stücke schneiden.',
           'In Ei wenden, dann in Semmelbrösel.',
           '15 Min bei 200 Grad backen.',
           'Mit Ketchup oder Gurkensticks servieren.'
@@ -295,8 +295,8 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
             'Kinder ab 3 können beim Panieren helfen — Hände eintauchen macht Spass!'),
     FamilyRecipe(
         id: '',
-        title: 'Mini-Schnitzel mit Kartoffelpueree',
-        description: 'Schnell, saftig, und das Pueree ist wie eine Umarmung.',
+        title: 'Mini-Schnitzel mit Kartoffelpüree',
+        description: 'Schnell, saftig, und das Püree ist wie eine Umarmung.',
         prepMinutes: 30,
         costPerPortion: 2.50,
         minChildAge: 1,
@@ -312,7 +312,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
           'Kartoffeln kochen, stampfen mit Milch + Butter.',
           'Schnitzel klopfen, in Ei + Brösel wenden.',
           'In Pfanne goldbraun braten.',
-          'Mit Pueree + Gurkensalat servieren.'
+          'Mit Püree + Gurkensalat servieren.'
         ],
         allergensFree: ['nuesse'],
         season: '',
@@ -321,7 +321,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
     // FISCH
     FamilyRecipe(
         id: '',
-        title: 'Selbstgemachte Fischstaebchen',
+        title: 'Selbstgemachte Fischstäbchen',
         description: 'Besser als TK — und in 20 Min fertig.',
         prepMinutes: 20,
         costPerPortion: 2.30,
@@ -334,7 +334,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
           'Salz'
         ],
         steps: [
-          'Fisch in Staebchen schneiden.',
+          'Fisch in Stäbchen schneiden.',
           'In Ei, dann Semmelbrösel wenden.',
           'In Pfanne mit wenig Oel 3-4 Min pro Seite braten.',
           'Mit Zitrone und Kartoffeln servieren.'
@@ -342,7 +342,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         allergensFree: ['nuesse', 'laktose'],
         season: '',
         tip:
-            'Fischstaebchen-Form macht Fisch für Kinder attraktiver als ein ganzes Filet.'),
+            'Fischstäbchen-Form macht Fisch für Kinder attraktiver als ein ganzes Filet.'),
     FamilyRecipe(
         id: '',
         title: 'Lachs-Nudeln mit Sahne-Sauce',
@@ -360,14 +360,14 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         ],
         steps: [
           'Nudeln kochen.',
-          'Lachs in Stuecke schneiden, in Butter anbraten.',
+          'Lachs in Stücke schneiden, in Butter anbraten.',
           'Sahne dazu, kurz aufkochen.',
           'Mit Nudeln vermischen, Dill drauf.'
         ],
         allergensFree: ['nuesse', 'ei'],
         season: '',
         tip:
-            'Lachs ist mild genug für Kinder die keinen Fischgeschmack moegen.'),
+            'Lachs ist mild genug für Kinder die keinen Fischgeschmack mögen.'),
     // VEGETARISCH
     FamilyRecipe(
         id: '',
@@ -379,7 +379,7 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         ingredients: [
           '1 Fertig-Pizzateig (oder 500g Mehl + Hefe)',
           '200ml Tomatensauce',
-          '200g Kaese',
+          '200g Käse',
           'Belag nach Wunsch: Mais, Salami, Paprika'
         ],
         steps: [
@@ -393,35 +393,35 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         tip: 'Jedes Familienmitglied bekommt ein Viertel zum Selbst-Belegen.'),
     FamilyRecipe(
         id: '',
-        title: 'Mac and Cheese (Nudeln mit Kaese)',
+        title: 'Mac and Cheese (Nudeln mit Käse)',
         description:
-            'Cremig, kaesig, geht immer. Comfort-Food für die ganze Familie.',
+            'Cremig, käsig, geht immer. Comfort-Food für die ganze Familie.',
         prepMinutes: 20,
         costPerPortion: 1.30,
         minChildAge: 1,
         ingredients: [
           '400g Makkaroni',
           '200ml Milch',
-          '150g geriebener Kaese',
+          '150g geriebener Käse',
           '1 EL Butter',
           '1 EL Mehl',
           'Muskat'
         ],
         steps: [
           'Nudeln kochen.',
-          'Butter schmelzen, Mehl einruehren.',
-          'Milch dazu, glatt ruehren.',
-          'Kaese unterheben bis cremig.',
+          'Butter schmelzen, Mehl einrühren.',
+          'Milch dazu, glatt rühren.',
+          'Käse unterheben bis cremig.',
           'Nudeln in Sauce wenden.'
         ],
         allergensFree: ['nuesse', 'ei'],
         season: '',
         tip:
-            'Kaese-Faeden ziehen finden Kinder faszinierend — das ist Teil des Spassses!'),
+            'Käse-Fäden ziehen finden Kinder faszinierend — das ist Teil des Spaßes!'),
     FamilyRecipe(
         id: '',
         title: 'Pfannkuchen mit Apfelmus',
-        description: 'Suess, schnell, beliebt bei JEDEM Kind.',
+        description: 'Süß, schnell, beliebt bei JEDEM Kind.',
         prepMinutes: 15,
         costPerPortion: 0.80,
         minChildAge: 1,
@@ -433,9 +433,9 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
           'Apfelmus'
         ],
         steps: [
-          'Teig glatt ruehren.',
+          'Teig glatt rühren.',
           'Pfanne erhitzen, Butter rein.',
-          'Duenn ausgiessen, goldbraun wenden.',
+          'Dünn ausgießen, goldbraun wenden.',
           'Mit Apfelmus servieren.'
         ],
         allergensFree: ['nuesse'],
@@ -444,38 +444,38 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
             'Pfannkuchen eignen sich perfekt zum gemeinsam Wenden-Ueben ab 4 Jahren.'),
     FamilyRecipe(
         id: '',
-        title: 'Kartoffelsuppe mit Wuerstchen',
+        title: 'Kartoffelsuppe mit Würstchen',
         description:
-            'Waermt von innen. Kinder lieben die Wuerstchen-Stuecke drin.',
+            'Wärmt von innen. Kinder lieben die Würstchen-Stücke drin.',
         prepMinutes: 25,
         costPerPortion: 1.40,
         minChildAge: 1,
         ingredients: [
           '600g Kartoffeln',
           '1 Karotte',
-          '500ml Bruehe',
-          '2 Wiener Wuerstchen',
+          '500ml Brühe',
+          '2 Wiener Würstchen',
           '100ml Sahne'
         ],
         steps: [
-          'Kartoffeln + Karotte wuerfeln, in Bruehe kochen.',
-          'Puerieren (nicht ganz glatt — Stuecke lassen).',
-          'Sahne einruehren.',
-          'Wuerstchen in Scheiben schneiden, dazu geben.'
+          'Kartoffeln + Karotte würfeln, in Brühe kochen.',
+          'Pürieren (nicht ganz glatt — Stücke lassen).',
+          'Sahne einrühren.',
+          'Würstchen in Scheiben schneiden, dazu geben.'
         ],
         allergensFree: ['nuesse', 'ei'],
         season: '',
-        tip: 'Lass dein Kind die Wuerstchen mit dem Kindermesser schneiden.'),
+        tip: 'Lass dein Kind die Würstchen mit dem Kindermesser schneiden.'),
     FamilyRecipe(
         id: '',
-        title: 'Reis-Pfanne mit Haehnchen und Gemuese',
+        title: 'Reis-Pfanne mit Hähnchen und Gemüse',
         description: 'Bunt, schnell, alles in einer Pfanne.',
         prepMinutes: 25,
         costPerPortion: 2.00,
         minChildAge: 1,
         ingredients: [
           '250g Reis',
-          '300g Haenchenbrust',
+          '300g Hähnchenbrust',
           '1 Paprika',
           '1 kleine Zucchini',
           '2 EL Sojasauce',
@@ -483,13 +483,13 @@ Antworte NUR mit einem gueltigen JSON-Objekt (kein Markdown, kein Text davor/dan
         ],
         steps: [
           'Reis kochen.',
-          'Haehnchen in Streifen schneiden, anbraten.',
-          'Gemuese dazu, 5 Min braten.',
+          'Hähnchen in Streifen schneiden, anbraten.',
+          'Gemüse dazu, 5 Min braten.',
           'Reis unterheben, Sojasauce drueber.'
         ],
         allergensFree: ['nuesse', 'ei', 'laktose'],
         season: '',
         tip:
-            'Wenn Kinder das Gemuese in lustigen Formen schneiden hilft das beim Probieren.'),
+            'Wenn Kinder das Gemüse in lustigen Formen schneiden hilft das beim Probieren.'),
   ];
 }

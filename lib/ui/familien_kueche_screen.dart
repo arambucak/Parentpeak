@@ -467,53 +467,53 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         'emoji': '\u{1F966}',
         'title': 'Picky Eater?',
         'text':
-            'Kinder brauchen bis zu 15 Versuche bevor sie etwas Neues moegen. Nicht aufgeben — immer wieder anbieten, nie zwingen.'
+            'Kinder brauchen bis zu 15 Versuche bevor sie etwas Neues mögen. Nicht aufgeben — immer wieder anbieten, nie zwingen.'
       },
       {
         'emoji': '\u{1F44C}',
-        'title': 'Heute Tiefkuehlpizza?',
+        'title': 'Heute Tiefkühlpizza?',
         'text':
-            'Voellig okay. Nicht jeder Tag muss Perfektion sein. Morgen wird frisch gekocht.'
+            'Völlig okay. Nicht jeder Tag muss Perfektion sein. Morgen wird frisch gekocht.'
       },
       {
         'emoji': '\u{1F9D1}\u{200D}\u{1F373}',
         'title': 'Gemeinsam kochen',
         'text':
-            'Kinder die mithelfen essen eher was auf dem Teller liegt. Ab 2 Jahren: Ruehren, Waschen. Ab 4: Schneiden mit Kindermesser.'
+            'Kinder die mithelfen essen eher was auf dem Teller liegt. Ab 2 Jahren: Rühren, Waschen. Ab 4: Schneiden mit Kindermesser.'
       },
       if (season == 'sommer')
         {
           'emoji': '\u{1F353}',
           'title': 'Saison-Tipp',
           'text':
-              'Erdbeeren, Kirschen, Tomaten — gerade frisch und guenstig. Perfekt als Snack ohne Kochen.'
+              'Erdbeeren, Kirschen, Tomaten — gerade frisch und günstig. Perfekt als Snack ohne Kochen.'
         },
       if (season == 'herbst')
         {
           'emoji': '\u{1F383}',
           'title': 'Saison-Tipp',
           'text':
-              'Kuerbis, Aepfel, Birnen: suess, guenstig und vielseitig. Kuerbissuppe geht in 20 Minuten.'
+              'Kürbis, Äpfel, Birnen: süß, günstig und vielseitig. Kürbissuppe geht in 20 Minuten.'
         },
       if (season == 'winter')
         {
           'emoji': '\u{2744}\u{FE0F}',
           'title': 'Saison-Tipp',
           'text':
-              'Kohlrabi, Karotten, Kartoffeln: Eintopf waermt, ist guenstig und laesst sich gut vorkochen.'
+              'Kohlrabi, Karotten, Kartoffeln: Eintopf wärmt, ist günstig und lässt sich gut vorkochen.'
         },
       if (season == 'frühling')
         {
           'emoji': '\u{1F331}',
           'title': 'Saison-Tipp',
           'text':
-              'Spargel, Radieschen, Spinat: frisch vom Markt. Kinder lieben Radieschen wenn sie selbst ernten duerfen.'
+              'Spargel, Radieschen, Spinat: frisch vom Markt. Kinder lieben Radieschen wenn sie selbst ernten dürfen.'
         },
       {
         'emoji': '\u{1F4B0}',
         'title': 'Budget-Tipp',
         'text':
-            'Huelsenfruchte (Linsen, Kichererbsen) sind guenstig, gesund und machen satt. Perfekt für Familien.'
+            'Hülsenfrüchte (Linsen, Kichererbsen) sind günstig, gesund und machen satt. Perfekt für Familien.'
       },
     ];
 
