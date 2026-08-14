@@ -2292,6 +2292,64 @@ class _WeekPreview extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20)),
+                                ),
+                                builder: (ctx) => SafeArea(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 20, vertical: 8),
+                                            child: Text(e.title,
+                                                style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.w700)),
+                                          ),
+                                          ListTile(
+                                            leading: const Icon(
+                                                Icons.open_in_new_rounded),
+                                            title:
+                                                const Text('Zum Tag springen'),
+                                            onTap: () {
+                                              Navigator.pop(ctx);
+                                              onDayTap(e.start);
+                                            },
+                                          ),
+                                          ListTile(
+                                            leading: Icon(Icons.delete_rounded,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .error),
+                                            title: Text('Löschen',
+                                                style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .error)),
+                                            onTap: () {
+                                              Navigator.pop(ctx);
+                                              onDeleteEvent?.call(e);
+                                            },
+                                          ),
+                                        ]),
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Icon(Icons.more_vert_rounded,
+                                size: 14, color: Color(0xFF718096)),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 2),
