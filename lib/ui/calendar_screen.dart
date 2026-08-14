@@ -9,6 +9,7 @@ import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/calendar_backend_service.dart';
 import 'package:parentpeak/logic/notification_service.dart';
+import 'package:parentpeak/services/holiday_service.dart';
 import 'package:parentpeak/widgets/language_change_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -72,6 +73,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     _focusedDay = DateTime.now();
     _selectedDay =
         DateTime(_focusedDay.year, _focusedDay.month, _focusedDay.day);
+    HolidayService.initialize();
     _loadCustomPersons();
     _loadPersonColors();
     _loadEvents();
@@ -971,6 +973,11 @@ class _CalendarScreenState extends State<CalendarScreen>
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.tune_rounded, size: 20),
+            onPressed: _showHolidaySettings,
+            tooltip: 'Feiertage & Region',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
             onPressed: _loadEvents,
             tooltip: 'Sync',
@@ -1235,6 +1242,8 @@ class _CalendarScreenState extends State<CalendarScreen>
               ],
             ),
             const SizedBox(height: 12),
+            // Holiday & School holiday info cards
+            ..._buildHolidayCards(),
             ..._eventsForSelectedDay.map((e) => _EventCard(
                 event: e,
                 color: _personColors[e.person] ?? theme.colorScheme.primary,
@@ -1320,6 +1329,248 @@ class _CalendarScreenState extends State<CalendarScreen>
             borderRadius: BorderRadius.circular(24),
             onTap: _openAddSheet,
             child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── HOLIDAY INFO CARDS ─────────────────────────────────────────────────
+  List<Widget> _buildHolidayCards() {
+    final cards = <Widget>[];
+    final holiday = HolidayService.getHolidayForDay(_selectedDay);
+    final schoolHoliday = HolidayService.getSchoolHolidayForDay(_selectedDay);
+
+    if (holiday != null) {
+      final countryData = HolidayService.availableCountries.firstWhere(
+          (c) => c['code'] == holiday.country,
+          orElse: () => {'flag': '\u{1F3F3}\u{FE0F}', 'name': ''});
+      cards.add(Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFEF2F2), Color(0xFFFFF1F2)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFFECACA)),
+        ),
+        child: Row(
+          children: [
+            Text(countryData['flag'] ?? '\u{1F3F3}\u{FE0F}',
+                style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(holiday.name,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFDC2626))),
+                  const Text('Gesetzlicher Feiertag',
+                      style: TextStyle(fontSize: 11, color: Color(0xFFEF4444))),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ));
+    }
+
+    if (schoolHoliday != null) {
+      cards.add(Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFF7ED), Color(0xFFFFFBEB)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFFED7AA)),
+        ),
+        child: Row(
+          children: [
+            const Text('\u{1F3D6}\u{FE0F}', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(schoolHoliday.name,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFEA580C))),
+                  Text('${schoolHoliday.region} • Schulferien',
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFFF97316))),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ));
+    }
+
+    return cards;
+  }
+
+  // ─── HOLIDAY SETTINGS ───────────────────────────────────────────────────
+  void _showHolidaySettings() {
+    String tempCountry = HolidayService.country;
+    String tempRegion = HolidayService.region;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Feiertage & Schulferien',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text('Wähle dein Land und deine Region',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                const SizedBox(height: 20),
+                const Text('Land',
+                    style:
+                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: HolidayService.availableCountries.map((c) {
+                    final selected = tempCountry == c['code'];
+                    return GestureDetector(
+                      onTap: () {
+                        setSheetState(() {
+                          tempCountry = c['code']!;
+                          final regions =
+                              HolidayService.getRegionsForCountry(tempCountry);
+                          if (regions.isNotEmpty) {
+                            tempRegion = regions.first['code']!;
+                          }
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
+                              : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: selected
+                                ? const Color(0xFF8B5CF6)
+                                : Colors.grey[300]!,
+                            width: selected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text(c['flag']!,
+                              style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 6),
+                          Text(c['name']!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: selected
+                                    ? const Color(0xFF8B5CF6)
+                                    : Colors.grey[700],
+                              )),
+                        ]),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+                const Text('Region / Bundesland',
+                    style:
+                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children:
+                      HolidayService.getRegionsForCountry(tempCountry).map((r) {
+                    final selected = tempRegion == r['code'];
+                    return GestureDetector(
+                      onTap: () => setSheetState(() => tempRegion = r['code']!),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: selected
+                                ? const Color(0xFF8B5CF6)
+                                : Colors.grey[300]!,
+                          ),
+                        ),
+                        child: Text(r['name']!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w500,
+                              color: selected
+                                  ? const Color(0xFF8B5CF6)
+                                  : Colors.grey[700],
+                            )),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () async {
+                      await HolidayService.setCountry(tempCountry);
+                      await HolidayService.setRegion(tempRegion);
+                      if (mounted) setState(() {});
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Speichern',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1611,9 +1862,15 @@ class _MonthGrid extends StatelessWidget {
               final isSelected = _isSameDay(day, selectedDay);
               final isToday = _isSameDay(day, now);
               final eventCount = eventCounter(day);
+              final holiday = HolidayService.getHolidayForDay(day);
+              final schoolHoliday = HolidayService.getSchoolHolidayForDay(day);
+              final isHoliday = holiday != null;
+              final isSchoolHoliday = schoolHoliday != null;
 
               Color textColor = const Color(0xFF2D3748);
               if (!isCurrentMonth) textColor = Colors.grey[350]!;
+              if (isHoliday && isCurrentMonth)
+                textColor = const Color(0xFFDC2626);
               if (isToday && !isSelected) textColor = Colors.white;
               if (isSelected) textColor = const Color(0xFF8B5CF6);
 
@@ -1626,7 +1883,10 @@ class _MonthGrid extends StatelessWidget {
                         ? const Color(0xFF8B5CF6)
                         : isSelected
                             ? const Color(0xFF8B5CF6).withValues(alpha: 0.08)
-                            : Colors.transparent,
+                            : isSchoolHoliday && isCurrentMonth
+                                ? const Color(0xFFF97316)
+                                    .withValues(alpha: 0.06)
+                                : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -1643,17 +1903,36 @@ class _MonthGrid extends StatelessWidget {
                           color: textColor,
                         ),
                       ),
-                      if (eventCount > 0) ...[
+                      if (eventCount > 0 || isHoliday) ...[
                         const SizedBox(height: 2),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: isToday && !isSelected
-                                ? Colors.white
-                                : const Color(0xFF8B5CF6),
-                            shape: BoxShape.circle,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isHoliday)
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: isToday && !isSelected
+                                      ? Colors.white
+                                      : const Color(0xFFDC2626),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            if (isHoliday && eventCount > 0)
+                              const SizedBox(width: 2),
+                            if (eventCount > 0)
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: isToday && !isSelected
+                                      ? Colors.white
+                                      : const Color(0xFF8B5CF6),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ],
