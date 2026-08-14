@@ -479,40 +479,73 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               // ─── Rechtliches ───────────────────────────────────────
               _buildSectionHeader(theme, '\u{1F4C4}', _t('legal')),
               const SizedBox(height: 10),
-              _buildTile(theme,
-                  icon: Icons.shield_rounded,
-                  title: _t('privacy'),
-                  onTap: () => _openUrl(APIConfig.getPrivacyPolicyUrl())),
-              _buildTile(theme,
-                  icon: Icons.gavel_rounded,
-                  title: _t('terms'),
-                  onTap: () => _openUrl(APIConfig.getTermsOfServiceUrl())),
-              _buildTile(theme,
-                  icon: Icons.business_rounded,
-                  title: 'Impressum',
-                  onTap: _showImpressum),
-              _buildTile(theme,
-                  icon: Icons.auto_awesome_rounded,
-                  title: 'KI-Nutzungshinweis',
-                  onTap: _showAIDisclosure),
-              _buildTile(theme,
-                  icon: Icons.code_rounded,
-                  title: 'Open-Source-Lizenzen',
-                  onTap: () => showLicensePage(
-                        context: context,
-                        applicationName: 'Parentpeak',
-                        applicationVersion: _appVersion,
-                        applicationLegalese:
-                            '\u{00A9} 2026 Parentpeak. Alle Rechte vorbehalten.',
-                      )),
-              _buildTile(theme,
-                  icon: Icons.download_rounded,
-                  title: 'Meine Daten exportieren',
-                  onTap: _exportUserData),
-              _buildTile(theme,
-                  icon: Icons.mail_rounded,
-                  title: 'Kontakt & Support',
-                  onTap: () => _openUrl(APIConfig.getContactSupportUrl())),
+              // Gruppe 1: Recht & Transparenz
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(children: [
+                  _buildCompactTile(theme,
+                      icon: Icons.shield_rounded,
+                      title: _t('privacy'),
+                      subtitle: 'DSGVO-konform',
+                      onTap: () => _openUrl(APIConfig.getPrivacyPolicyUrl())),
+                  _thinDivider(theme),
+                  _buildCompactTile(theme,
+                      icon: Icons.gavel_rounded,
+                      title: _t('terms'),
+                      subtitle: 'AGB & Nutzung',
+                      onTap: () => _openUrl(APIConfig.getTermsOfServiceUrl())),
+                  _thinDivider(theme),
+                  _buildCompactTile(theme,
+                      icon: Icons.business_rounded,
+                      title: 'Impressum',
+                      subtitle: '§5 TMG',
+                      onTap: _showImpressum),
+                  _thinDivider(theme),
+                  _buildCompactTile(theme,
+                      icon: Icons.auto_awesome_rounded,
+                      title: 'KI-Nutzungshinweis',
+                      subtitle: 'EU AI Act',
+                      onTap: _showAIDisclosure),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              // Gruppe 2: Daten & Support
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(children: [
+                  _buildCompactTile(theme,
+                      icon: Icons.download_rounded,
+                      title: 'Meine Daten exportieren',
+                      subtitle: 'DSGVO Art. 20',
+                      onTap: _exportUserData),
+                  _thinDivider(theme),
+                  _buildCompactTile(theme,
+                      icon: Icons.code_rounded,
+                      title: 'Open-Source-Lizenzen',
+                      subtitle: 'Verwendete Packages',
+                      onTap: () => showLicensePage(
+                            context: context,
+                            applicationName: 'Parentpeak',
+                            applicationVersion: _appVersion,
+                            applicationLegalese:
+                                '\u{00A9} 2026 Parentpeak. Alle Rechte vorbehalten.',
+                          )),
+                  _thinDivider(theme),
+                  _buildCompactTile(theme,
+                      icon: Icons.mail_rounded,
+                      title: 'Kontakt & Support',
+                      subtitle: APIConfig.getContactEmail() ?? 'E-Mail',
+                      onTap: () => _openUrl(APIConfig.getContactSupportUrl())),
+                ]),
+              ),
               const SizedBox(height: 20),
 
               // ─── Beta-Feedback ─────────────────────────────────
@@ -1111,6 +1144,49 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         backgroundColor: const Color(0xFF16A34A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+    );
+  }
+
+  Widget _buildCompactTile(ThemeData theme,
+      {required IconData icon,
+      required String title,
+      String? subtitle,
+      VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  if (subtitle != null)
+                    Text(subtitle,
+                        style:
+                            TextStyle(fontSize: 11, color: Colors.grey[500])),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                size: 18, color: Colors.grey[400]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _thinDivider(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Divider(height: 1, color: Colors.grey[200]),
     );
   }
 
