@@ -79,6 +79,9 @@ jobs:
       - name: SPA fallback for deep links
         run: cp build/web/index.html build/web/404.html
 
+      - name: Preserve custom domain
+        run: cp CNAME build/web/CNAME
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
