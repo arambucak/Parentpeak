@@ -375,10 +375,12 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Future<void> _editEvent(_CalendarEvent event) async {
-    // Für jetzt: Event löschen und Add-Sheet öffnen mit vorausgefüllten Daten
+    // Event löschen und Add-Sheet öffnen mit vorausgefüllten Daten
     setState(() {
       _events.removeWhere((e) => e.id == event.id);
       _titleController.text = event.title;
+      // Filter auf die Person des Events setzen (damit Add-Sheet die richtige Person zeigt)
+      _filterPerson = event.person;
     });
     await _persistEvents();
     _openAddSheet();
