@@ -162,7 +162,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final user = AuthService.instance.currentUser;
     final name = (user?.displayName.trim().isNotEmpty ?? false)
         ? user!.displayName.trim()
-        : 'Elternteil';
+        : user?.friendlyName ?? 'Familien-Kontakt';
     final email = user?.email ?? '';
     final isPremium = user?.isPremium ?? false;
     final trialDays = user?.trialDaysRemaining ?? 0;

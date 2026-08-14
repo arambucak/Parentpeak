@@ -182,7 +182,7 @@ class CommunityEventService extends ChangeNotifier {
     try {
       final uid = AuthService.instance.currentUser?.uid ?? 'guest';
       final name =
-          AuthService.instance.currentUser?.displayName ?? 'Elternteil';
+          AuthService.instance.currentUser?.displayName ?? 'Familien-Kontakt';
 
       if (_api != null) {
         await _api!.postJson('/api/community-events/$eventId/interest', {

@@ -410,7 +410,7 @@ class ParentMatchingBackendService {
     try {
       final result = await createProfile(
         userId: userId,
-        name: profile['name'] ?? 'Elternteil',
+        name: profile['name'] ?? 'Familien-Kontakt',
         age: profile['age'],
         city: profile['city'] ?? 'Berlin',
         latitude: profile['latitude'],

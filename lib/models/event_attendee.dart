@@ -25,7 +25,7 @@ class EventAttendee {
 
   factory EventAttendee.fromJson(Map<String, dynamic> j) => EventAttendee(
         userId: j['userId'] as String? ?? '',
-        displayName: j['displayName'] as String? ?? 'Elternteil',
+        displayName: j['displayName'] as String? ?? 'Familien-Kontakt',
         message: j['message'] as String?,
         createdAt:
             DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),

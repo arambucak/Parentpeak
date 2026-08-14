@@ -201,8 +201,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       if (_setupEntranceVisible) {
         _setupEntranceVisible = false;
       }
-      _phoneVerifiedLocal =
-          profile['phoneVerified'] == true || profile['isPhoneVerified'] == true;
+      _phoneVerifiedLocal = profile['phoneVerified'] == true ||
+          profile['isPhoneVerified'] == true;
       if (_profileNameController.text.trim().isEmpty) {
         _profileNameController.text = (profile['name'] ?? '').toString();
       }
@@ -210,9 +210,11 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     }
 
     if (!mounted) return false;
-    _profileNameController.text = AuthService.instance.currentUser?.displayName.trim().isNotEmpty == true
-        ? AuthService.instance.currentUser!.displayName.trim()
-        : 'Elternteil';
+    _profileNameController.text =
+        AuthService.instance.currentUser?.displayName.trim().isNotEmpty == true
+            ? AuthService.instance.currentUser!.displayName.trim()
+            : AuthService.instance.currentUser?.friendlyName ??
+                'Familien-Kontakt';
     setState(() {
       _requiresProfileSetup = true;
       _isRestoring = false;
@@ -233,13 +235,14 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       );
 
       final matchResults = discovery.matches;
-      
+
       // Convert MatchResult objects to internal _ParentProfile format
       final profiles = matchResults.map((result) {
         final profile = result.profile;
         // Convert breakdown map values to doubles
         final breakdownAsDoubles = result.breakdown.map(
-          (key, value) => MapEntry(key, (value is num) ? value.toDouble() : 0.0),
+          (key, value) =>
+              MapEntry(key, (value is num) ? value.toDouble() : 0.0),
         );
         final age = profile.age;
         final familyForm = profile.familyForm;
@@ -261,7 +264,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
           breakdown: breakdownAsDoubles,
         );
       }).toList();
-      
+
       if (!mounted) return;
       setState(() {
         _showDiscoveryInviteBanner = discovery.showInviteBanner;
@@ -424,19 +427,21 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     try {
       // Fetch latest matches using smart algorithm
       final matchResults = await _service.findMatches(userId: _effectiveUserId);
-      
+
       // Get connected profile IDs from backend
-      final connectedIds = await _service.fetchConnectedProfileIds(userId: _effectiveUserId);
+      final connectedIds =
+          await _service.fetchConnectedProfileIds(userId: _effectiveUserId);
       final newlyConfirmedIds = connectedIds.difference(_seenMatchedProfileIds);
 
       if (!mounted) return;
-      
+
       // Update both all profiles and matched profiles
       final profiles = matchResults.map((result) {
         final profile = result.profile;
         // Convert breakdown map values to doubles
         final breakdownAsDoubles = result.breakdown.map(
-          (key, value) => MapEntry(key, (value is num) ? value.toDouble() : 0.0),
+          (key, value) =>
+              MapEntry(key, (value is num) ? value.toDouble() : 0.0),
         );
         final age = profile.age;
         final familyForm = profile.familyForm;
@@ -463,7 +468,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
         _allProfiles
           ..clear()
           ..addAll(profiles);
-        
+
         _matchedProfiles
           ..clear()
           ..addAll(_allProfiles.where((p) => connectedIds.contains(p.id)));
@@ -810,7 +815,9 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     if (raw == 'checked' || raw == 'verified') {
       return _VerificationLevel.checked;
     }
-    if (profile.identityVerified || profile.phoneVerified || profile.moderationChecked) {
+    if (profile.identityVerified ||
+        profile.phoneVerified ||
+        profile.moderationChecked) {
       return _VerificationLevel.checked;
     }
     return _VerificationLevel.basic;
@@ -904,10 +911,10 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     }
 
     setState(() => _isSavingProfile = true);
-    
+
     // Get city coordinates
     final cityCenter = _cityCenters[_homeCity] ?? _cityCenters['Berlin']!;
-    
+
     final saved = await _service.createProfile(
       userId: _effectiveUserId,
       name: name,
@@ -930,7 +937,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _service.lastSyncError ?? 'Matching-Profil konnte nicht gespeichert werden.',
+            _service.lastSyncError ??
+                'Matching-Profil konnte nicht gespeichert werden.',
           ),
         ),
       );
@@ -1087,7 +1095,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _isVerifyingPhone ? null : _requestPhoneOtp,
-                  child: Text(_isVerifyingPhone ? 'Senden...' : 'OTP anfordern'),
+                  child:
+                      Text(_isVerifyingPhone ? 'Senden...' : 'OTP anfordern'),
                 ),
               ),
               if (_otpRequested) ...[
@@ -1223,7 +1232,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                 builder: (context, progress, _) {
                   Widget staged({required int index, required Widget child}) {
                     final start = (index * 0.12).clamp(0.0, 0.72);
-                    final local = ((progress - start) / (1 - start)).clamp(0.0, 1.0);
+                    final local =
+                        ((progress - start) / (1 - start)).clamp(0.0, 1.0);
                     return Opacity(
                       opacity: local,
                       child: Transform.translate(
@@ -1236,380 +1246,413 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
                     children: [
-                  staged(
-                    index: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFE9F3FF), Color(0xFFF4EEFF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        border: Border.all(color: const Color(0xFFD6E4F9)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                      staged(
+                        index: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFE9F3FF), Color(0xFFF4EEFF)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            border: Border.all(color: const Color(0xFFD6E4F9)),
+                          ),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.groups_rounded,
-                                  color: Color(0xFF1E5CD7),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              const Expanded(
-                                child: Text(
-                                  'Mit einem kurzen Profil finden euch Familien schneller und passender.',
-                                  style: TextStyle(
-                                    color: Color(0xFF2D4560),
-                                    fontSize: 14,
-                                    height: 1.35,
-                                    fontWeight: FontWeight.w600,
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.9),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.groups_rounded,
+                                      color: Color(0xFF1E5CD7),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 10),
+                                  const Expanded(
+                                    child: Text(
+                                      'Mit einem kurzen Profil finden euch Familien schneller und passender.',
+                                      style: TextStyle(
+                                        color: Color(0xFF2D4560),
+                                        fontSize: 14,
+                                        height: 1.35,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              const Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _SetupStepChip(
+                                      icon: Icons.person_rounded,
+                                      label: 'Profil'),
+                                  _SetupStepChip(
+                                      icon: Icons.location_city_rounded,
+                                      label: 'Ort'),
+                                  _SetupStepChip(
+                                      icon: Icons.family_restroom_rounded,
+                                      label: 'Familie'),
+                                ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          const Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _SetupStepChip(icon: Icons.person_rounded, label: 'Profil'),
-                              _SetupStepChip(icon: Icons.location_city_rounded, label: 'Ort'),
-                              _SetupStepChip(icon: Icons.family_restroom_rounded, label: 'Familie'),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  staged(
-                    index: 1,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFDDE6F3)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x12000000),
-                            blurRadius: 16,
-                            offset: Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildAnimatedInputShell(
-                            focused: _profileNameFocusNode.hasFocus,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _buildAnimatedFieldLabel(
-                                  label: 'Name',
-                                  focused: _profileNameFocusNode.hasFocus,
-                                ),
-                                TextField(
-                                  controller: _profileNameController,
-                                  focusNode: _profileNameFocusNode,
-                                  textInputAction: TextInputAction.next,
-                                  onSubmitted: (_) => _cityFocusNode.requestFocus(),
-                                  decoration: InputDecoration(
-                                    hintText: 'Name',
-                                    filled: true,
-                                    fillColor: const Color(0xFFF4F7FC),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF1E5CD7),
-                                        width: 1.4,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildAnimatedInputShell(
-                                  focused: _cityFocusNode.hasFocus,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      _buildAnimatedFieldLabel(
-                                        label: 'Stadt',
-                                        focused: _cityFocusNode.hasFocus,
-                                      ),
-                                      DropdownButtonFormField<String>(
-                                        focusNode: _cityFocusNode,
-                                        initialValue: _homeCity,
-                                        decoration: InputDecoration(
-                                          hintText: 'Stadt',
-                                          filled: true,
-                                          fillColor: const Color(0xFFF4F7FC),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF1E5CD7),
-                                              width: 1.4,
-                                            ),
-                                          ),
-                                        ),
-                                        items: _cityCenters.keys
-                                            .map((city) => DropdownMenuItem<String>(
-                                                  value: city,
-                                                  child: Text(city),
-                                                ))
-                                            .toList(),
-                                        onChanged: (value) {
-                                          if (value == null) return;
-                                          setState(() => _homeCity = value);
-                                          _ageFocusNode.requestFocus();
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _buildAnimatedInputShell(
-                                  focused: _ageFocusNode.hasFocus,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      _buildAnimatedFieldLabel(
-                                        label: 'Alter',
-                                        focused: _ageFocusNode.hasFocus,
-                                      ),
-                                      DropdownButtonFormField<int>(
-                                        focusNode: _ageFocusNode,
-                                        initialValue: _profileAge,
-                                        decoration: InputDecoration(
-                                          hintText: 'Alter',
-                                          filled: true,
-                                          fillColor: const Color(0xFFF4F7FC),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF1E5CD7),
-                                              width: 1.4,
-                                            ),
-                                          ),
-                                        ),
-                                        items: List.generate(54, (i) => i + 18)
-                                            .map((age) => DropdownMenuItem<int>(
-                                                  value: age,
-                                                  child: Text('$age'),
-                                                ))
-                                            .toList(),
-                                        onChanged: (value) {
-                                          if (value == null) return;
-                                          setState(() => _profileAge = value);
-                                          _familyFormFocusNode.requestFocus();
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _buildAnimatedInputShell(
-                            focused: _familyFormFocusNode.hasFocus,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _buildAnimatedFieldLabel(
-                                  label: 'Familienform',
-                                  focused: _familyFormFocusNode.hasFocus,
-                                ),
-                                DropdownButtonFormField<String>(
-                                  focusNode: _familyFormFocusNode,
-                                  initialValue: _profileFamilyForm,
-                                  decoration: InputDecoration(
-                                    hintText: 'Familienform',
-                                    filled: true,
-                                    fillColor: const Color(0xFFF4F7FC),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF1E5CD7),
-                                        width: 1.4,
-                                      ),
-                                    ),
-                                  ),
-                                  items: const [
-                                    'Alleinerziehend',
-                                    'Patchwork',
-                                    'Kernfamilie',
-                                    'Mehrgeneration',
-                                  ]
-                                      .map((form) => DropdownMenuItem<String>(
-                                            value: form,
-                                            child: Text(form),
-                                          ))
-                                      .toList(),
-                                  onChanged: (value) {
-                                    if (value == null) return;
-                                    setState(() => _profileFamilyForm = value);
-                                    _familyFormFocusNode.unfocus();
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F8FF),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFCFE0F8)),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _phoneVerifiedLocal
-                                      ? Icons.verified_rounded
-                                      : Icons.shield_outlined,
-                                  color: _phoneVerifiedLocal
-                                      ? const Color(0xFF0B9A74)
-                                      : const Color(0xFF1E5CD7),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    _phoneVerifiedLocal
-                                        ? 'Telefon verifiziert'
-                                        : 'Verifiziere dein Telefon für mehr Sicherheit',
-                                    style: const TextStyle(
-                                      color: Color(0xFF24405E),
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: _phoneVerifiedLocal
-                                      ? null
-                                      : _openPhoneVerificationSheet,
-                                  child: Text(
-                                    _phoneVerifiedLocal ? 'OK' : 'Verifizieren',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          AnimatedScale(
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOutBack,
-                            scale: _saveSuccessFlash ? 1.03 : 1,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              curve: Curves.easeOut,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: _saveSuccessFlash
-                                    ? const [
-                                        BoxShadow(
-                                          color: Color(0x3319A884),
-                                          blurRadius: 16,
-                                          offset: Offset(0, 6),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: FilledButton.icon(
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(50),
-                                  backgroundColor: _saveSuccessFlash
-                                      ? const Color(0xFF0B9A74)
-                                      : const Color(0xFF0E7F77),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                onPressed: _isSavingProfile ? null : _saveMyProfile,
-                                icon: _isSavingProfile
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : Icon(
-                                        _saveSuccessFlash
-                                            ? Icons.verified_rounded
-                                            : Icons.check_rounded,
-                                      ),
-                                label: Text(
-                                  _isSavingProfile
-                                      ? 'Speichern...'
-                                      : _saveSuccessFlash
-                                          ? 'Gespeichert'
-                                          : 'Profil speichern',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  staged(
-                    index: 2,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        'Datenschutz: Nur relevante Profilangaben werden für passende Matches genutzt.',
-                        style: TextStyle(
-                          color: Color(0xFF62758C),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ),
+                      const SizedBox(height: 14),
+                      staged(
+                        index: 1,
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFDDE6F3)),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x12000000),
+                                blurRadius: 16,
+                                offset: Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildAnimatedInputShell(
+                                focused: _profileNameFocusNode.hasFocus,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildAnimatedFieldLabel(
+                                      label: 'Name',
+                                      focused: _profileNameFocusNode.hasFocus,
+                                    ),
+                                    TextField(
+                                      controller: _profileNameController,
+                                      focusNode: _profileNameFocusNode,
+                                      textInputAction: TextInputAction.next,
+                                      onSubmitted: (_) =>
+                                          _cityFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        hintText: 'Name',
+                                        filled: true,
+                                        fillColor: const Color(0xFFF4F7FC),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFF1E5CD7),
+                                            width: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildAnimatedInputShell(
+                                      focused: _cityFocusNode.hasFocus,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _buildAnimatedFieldLabel(
+                                            label: 'Stadt',
+                                            focused: _cityFocusNode.hasFocus,
+                                          ),
+                                          DropdownButtonFormField<String>(
+                                            focusNode: _cityFocusNode,
+                                            initialValue: _homeCity,
+                                            decoration: InputDecoration(
+                                              hintText: 'Stadt',
+                                              filled: true,
+                                              fillColor:
+                                                  const Color(0xFFF4F7FC),
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: const BorderSide(
+                                                  color: Color(0xFF1E5CD7),
+                                                  width: 1.4,
+                                                ),
+                                              ),
+                                            ),
+                                            items: _cityCenters.keys
+                                                .map((city) =>
+                                                    DropdownMenuItem<String>(
+                                                      value: city,
+                                                      child: Text(city),
+                                                    ))
+                                                .toList(),
+                                            onChanged: (value) {
+                                              if (value == null) return;
+                                              setState(() => _homeCity = value);
+                                              _ageFocusNode.requestFocus();
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _buildAnimatedInputShell(
+                                      focused: _ageFocusNode.hasFocus,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _buildAnimatedFieldLabel(
+                                            label: 'Alter',
+                                            focused: _ageFocusNode.hasFocus,
+                                          ),
+                                          DropdownButtonFormField<int>(
+                                            focusNode: _ageFocusNode,
+                                            initialValue: _profileAge,
+                                            decoration: InputDecoration(
+                                              hintText: 'Alter',
+                                              filled: true,
+                                              fillColor:
+                                                  const Color(0xFFF4F7FC),
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: const BorderSide(
+                                                  color: Color(0xFF1E5CD7),
+                                                  width: 1.4,
+                                                ),
+                                              ),
+                                            ),
+                                            items:
+                                                List.generate(54, (i) => i + 18)
+                                                    .map((age) =>
+                                                        DropdownMenuItem<int>(
+                                                          value: age,
+                                                          child: Text('$age'),
+                                                        ))
+                                                    .toList(),
+                                            onChanged: (value) {
+                                              if (value == null) return;
+                                              setState(
+                                                  () => _profileAge = value);
+                                              _familyFormFocusNode
+                                                  .requestFocus();
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildAnimatedInputShell(
+                                focused: _familyFormFocusNode.hasFocus,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildAnimatedFieldLabel(
+                                      label: 'Familienform',
+                                      focused: _familyFormFocusNode.hasFocus,
+                                    ),
+                                    DropdownButtonFormField<String>(
+                                      focusNode: _familyFormFocusNode,
+                                      initialValue: _profileFamilyForm,
+                                      decoration: InputDecoration(
+                                        hintText: 'Familienform',
+                                        filled: true,
+                                        fillColor: const Color(0xFFF4F7FC),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFF1E5CD7),
+                                            width: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                      items: const [
+                                        'Alleinerziehend',
+                                        'Patchwork',
+                                        'Kernfamilie',
+                                        'Mehrgeneration',
+                                      ]
+                                          .map((form) =>
+                                              DropdownMenuItem<String>(
+                                                value: form,
+                                                child: Text(form),
+                                              ))
+                                          .toList(),
+                                      onChanged: (value) {
+                                        if (value == null) return;
+                                        setState(
+                                            () => _profileFamilyForm = value);
+                                        _familyFormFocusNode.unfocus();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F8FF),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                      color: const Color(0xFFCFE0F8)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _phoneVerifiedLocal
+                                          ? Icons.verified_rounded
+                                          : Icons.shield_outlined,
+                                      color: _phoneVerifiedLocal
+                                          ? const Color(0xFF0B9A74)
+                                          : const Color(0xFF1E5CD7),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        _phoneVerifiedLocal
+                                            ? 'Telefon verifiziert'
+                                            : 'Verifiziere dein Telefon für mehr Sicherheit',
+                                        style: const TextStyle(
+                                          color: Color(0xFF24405E),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: _phoneVerifiedLocal
+                                          ? null
+                                          : _openPhoneVerificationSheet,
+                                      child: Text(
+                                        _phoneVerifiedLocal
+                                            ? 'OK'
+                                            : 'Verifizieren',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              AnimatedScale(
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOutBack,
+                                scale: _saveSuccessFlash ? 1.03 : 1,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOut,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: _saveSuccessFlash
+                                        ? const [
+                                            BoxShadow(
+                                              color: Color(0x3319A884),
+                                              blurRadius: 16,
+                                              offset: Offset(0, 6),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: FilledButton.icon(
+                                    style: FilledButton.styleFrom(
+                                      minimumSize: const Size.fromHeight(50),
+                                      backgroundColor: _saveSuccessFlash
+                                          ? const Color(0xFF0B9A74)
+                                          : const Color(0xFF0E7F77),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    onPressed: _isSavingProfile
+                                        ? null
+                                        : _saveMyProfile,
+                                    icon: _isSavingProfile
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2),
+                                          )
+                                        : Icon(
+                                            _saveSuccessFlash
+                                                ? Icons.verified_rounded
+                                                : Icons.check_rounded,
+                                          ),
+                                    label: Text(
+                                      _isSavingProfile
+                                          ? 'Speichern...'
+                                          : _saveSuccessFlash
+                                              ? 'Gespeichert'
+                                              : 'Profil speichern',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      staged(
+                        index: 2,
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            'Datenschutz: Nur relevante Profilangaben werden für passende Matches genutzt.',
+                            style: TextStyle(
+                              color: Color(0xFF62758C),
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -2026,10 +2069,10 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     final compactToolbar = MediaQuery.of(context).size.width < 390;
     final compactScreen = MediaQuery.of(context).size.width < 390;
     final infoBannerText = compactScreen
-      ? 'Freundschaft & Playdates · Radius ${_maxDistanceKm.toStringAsFixed(0)} km ab $_homeCity'
-      : 'Nur für Freundschaft, Playdates und Eltern-Austausch · Radius ${_maxDistanceKm.toStringAsFixed(0)} km ab $_homeCity';
+        ? 'Freundschaft & Playdates · Radius ${_maxDistanceKm.toStringAsFixed(0)} km ab $_homeCity'
+        : 'Nur für Freundschaft, Playdates und Eltern-Austausch · Radius ${_maxDistanceKm.toStringAsFixed(0)} km ab $_homeCity';
     final pendingSectionTitle =
-      compactScreen ? 'Offene Anfragen' : 'Ausstehende Anfragen';
+        compactScreen ? 'Offene Anfragen' : 'Ausstehende Anfragen';
 
     if (_requiresProfileSetup) {
       return _buildProfileSetupRequired();
@@ -2200,14 +2243,17 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                   height: 1.3,
                 ),
                 maxLines: compactScreen ? 2 : null,
-                overflow: compactScreen ? TextOverflow.ellipsis : TextOverflow.visible,
+                overflow: compactScreen
+                    ? TextOverflow.ellipsis
+                    : TextOverflow.visible,
               ),
             ),
             if (_showDiscoveryInviteBanner) ...[
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF7E8),
                   borderRadius: BorderRadius.circular(12),
@@ -2216,7 +2262,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.campaign_outlined, color: Color(0xFF9A5A11), size: 18),
+                    const Icon(Icons.campaign_outlined,
+                        color: Color(0xFF9A5A11), size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -2247,7 +2294,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                 name: room['title'] ?? 'Globaler Elternchat',
                                 age: 30,
                                 city: 'Online',
-                                bio: room['subtitle'] ?? 'Themenbasierter Online-Austausch',
+                                bio: room['subtitle'] ??
+                                    'Themenbasierter Online-Austausch',
                                 interests: const ['Online', 'Austausch'],
                                 languages: const ['Deutsch'],
                                 valuesFocus: const ['Respekt'],
@@ -2289,7 +2337,9 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       builder: (context, scale, child) {
                         final highlighted = _showWelcomeMatchHighlight &&
                             _welcomeMatchProfileId == profile.id;
-                        final opacity = highlighted ? (0.78 + ((scale - 0.97) / 0.03) * 0.22) : 1.0;
+                        final opacity = highlighted
+                            ? (0.78 + ((scale - 0.97) / 0.03) * 0.22)
+                            : 1.0;
                         return Opacity(
                           opacity: opacity.clamp(0.0, 1.0),
                           child: Transform.scale(scale: scale, child: child),
@@ -2325,7 +2375,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                           'Weiter',
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
-                          style: TextStyle(fontSize: compactActions ? 15 : null),
+                          style:
+                              TextStyle(fontSize: compactActions ? 15 : null),
                         ),
                       ),
                     ),
@@ -2341,7 +2392,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                           compactActions ? 'Verb.' : 'Verbinden',
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
-                          style: TextStyle(fontSize: compactActions ? 15 : null),
+                          style:
+                              TextStyle(fontSize: compactActions ? 15 : null),
                         ),
                       ),
                     ),
@@ -2579,7 +2631,8 @@ class _ProfileCard extends StatelessWidget {
                                           fontSize: 20,
                                           fontWeight: FontWeight.w700)),
                                 ),
-                                _VerificationBadge(level: profile.verificationLevel),
+                                _VerificationBadge(
+                                    level: profile.verificationLevel),
                               ],
                             ),
                             const SizedBox(height: 4),
@@ -2594,15 +2647,16 @@ class _ProfileCard extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text('$compatibility%',
                             style: const TextStyle(
-                                color: Colors.white, fontWeight: FontWeight.w700)),
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700)),
                       ),
                       PopupMenuButton<String>(
                         color: Colors.white,
@@ -2630,15 +2684,18 @@ class _ProfileCard extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     children: [
                       Text(profile.bio,
-                          style: theme.textTheme.bodyLarge?.copyWith(height: 1.35)),
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(height: 1.35)),
                       const SizedBox(height: 14),
-                      _TagSection(title: 'Interessen', values: profile.interests),
+                      _TagSection(
+                          title: 'Interessen', values: profile.interests),
                       const SizedBox(height: 10),
                       _TagSection(title: 'Sprachen', values: profile.languages),
                       const SizedBox(height: 10),
                       _TagSection(title: 'Werte', values: profile.valuesFocus),
                       const SizedBox(height: 10),
-                      _TagSection(title: 'Kinderalter', values: profile.childAges),
+                      _TagSection(
+                          title: 'Kinderalter', values: profile.childAges),
                       const SizedBox(height: 10),
                       _MatchQualityRow(quality: quality),
                       const SizedBox(height: 10),
@@ -2942,12 +2999,14 @@ class _GlobalParentRoomsState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 room['title'] ?? 'Globaler Elternchat',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 4),
               Text(
                 room['subtitle'] ?? 'Online Austausch für Eltern',
-                style: const TextStyle(color: Color(0xFF607286), fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: Color(0xFF607286), fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 10),
               Align(
@@ -3081,4 +3140,3 @@ class _VerificationBadge extends StatelessWidget {
     );
   }
 }
-

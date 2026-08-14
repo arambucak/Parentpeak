@@ -77,14 +77,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final myCode = ParentFriendsService.instance.myCode;
     final myName = _profile?.displayName ??
         AuthService.instance.currentUser?.displayName ??
-        'Elternteil';
+        'Familien-Kontakt';
     unawaited(_backend.registerFriendCode(myCode, myName));
 
     // Auto-add anyone who scanned our QR since last open
     final pending = await _backend.claimPendingFriendConnections(myCode);
     for (final conn in pending) {
       final code = (conn['fromCode'] as String? ?? '').toLowerCase();
-      final name = (conn['fromName'] as String? ?? 'Elternteil');
+      final name = (conn['fromName'] as String? ?? 'Familien-Kontakt');
       if (code.isNotEmpty) {
         await ParentFriendsService.instance.addFriend(
           ParentFriend(code: code, name: name, addedAt: DateTime.now()),
@@ -1467,7 +1467,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         : () async {
                             final raw = codeCtrl.text.trim().toLowerCase();
                             final code = raw.startsWith('pp-') ? raw : raw;
-                            final name = resolvedName ?? 'Elternteil';
+                            final name = resolvedName ?? 'Familien-Kontakt';
                             await ParentFriendsService.instance.addFriend(
                               ParentFriend(
                                   code: code,
@@ -1478,7 +1478,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                             final myCode = ParentFriendsService.instance.myCode;
                             final myName = _profile?.displayName ??
                                 AuthService.instance.currentUser?.displayName ??
-                                'Elternteil';
+                                'Familien-Kontakt';
                             unawaited(_backend.notifyFriendConnect(
                                 myCode, myName, code));
                             if (ctx.mounted) Navigator.pop(ctx);

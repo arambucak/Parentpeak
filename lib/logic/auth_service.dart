@@ -86,6 +86,20 @@ class ParentUser {
     return DateTime.now().isBefore(trialEnd);
   }
 
+  /// Returns the best display name available:
+  /// displayName > email prefix > 'Familien-Kontakt'
+  String get friendlyName {
+    if (displayName.trim().isNotEmpty) return displayName.trim();
+    if (email.contains('@')) {
+      final prefix = email.split('@').first;
+      // Capitalize first letter
+      if (prefix.isNotEmpty) {
+        return prefix[0].toUpperCase() + prefix.substring(1);
+      }
+    }
+    return 'Familien-Kontakt';
+  }
+
   int get trialDaysRemaining {
     if (serverTrialDaysRemaining != null) {
       return serverTrialDaysRemaining! < 0 ? 0 : serverTrialDaysRemaining!;
@@ -468,7 +482,6 @@ class AuthService with ChangeNotifier {
     required String email,
     required String password,
   }) async {
-
     final emailError = _validateEmail(email);
     if (emailError != null) return emailError;
     if (password.isEmpty) {
@@ -498,7 +511,8 @@ class AuthService with ChangeNotifier {
       final authMap = jsonDecode(authRaw) as Map<String, dynamic>;
       final salt = (authMap['salt'] ?? '').toString();
       final hash = (authMap['hash'] ?? '').toString();
-      if (!_verifyPassword(password: password, salt: salt, expectedHash: hash)) {
+      if (!_verifyPassword(
+          password: password, salt: salt, expectedHash: hash)) {
         return AuthResult.fail(
           AuthErrorCode.wrongPassword,
           'E-Mail oder Passwort ist nicht korrekt.',
@@ -640,6 +654,7 @@ class AuthService with ChangeNotifier {
       }
     });
   }
+
   Future<void> logout() async {
     final currentUserId = _currentUser?.uid;
     if (currentUserId != null) {
@@ -695,7 +710,8 @@ class AuthService with ChangeNotifier {
       try {
         final apiClient = backendApiClientFactory();
         if (apiClient != null) {
-          await fcmUnregisterHandler(apiClient: apiClient, userId: currentUserId);
+          await fcmUnregisterHandler(
+              apiClient: apiClient, userId: currentUserId);
         }
       } catch (_) {}
     }
@@ -734,7 +750,8 @@ class AuthService with ChangeNotifier {
     final email = user.email;
     if (email == null || email.isEmpty) return 'Keine E-Mail-Adresse gefunden.';
     try {
-      final credential = EmailAuthProvider.credential(email: email, password: password);
+      final credential =
+          EmailAuthProvider.credential(email: email, password: password);
       await user.reauthenticateWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
@@ -791,8 +808,9 @@ class AuthService with ChangeNotifier {
             : <String, dynamic>{};
 
         final status = (raw['status'] ?? '').toString().toLowerCase();
-        backendVerified =
-            raw['isPremium'] == true || raw['activated'] == true || status == 'active';
+        backendVerified = raw['isPremium'] == true ||
+            raw['activated'] == true ||
+            status == 'active';
       } catch (e) {
         debugPrint('AuthService.activatePremium(): backend sync failed: $e');
         if (kReleaseMode) {
@@ -815,7 +833,8 @@ class AuthService with ChangeNotifier {
       displayName: currentUser.displayName,
       registeredAt: currentUser.registeredAt,
       isPremium: true,
-      serverHasFullAccess: backendVerified ? true : currentUser.serverHasFullAccess,
+      serverHasFullAccess:
+          backendVerified ? true : currentUser.serverHasFullAccess,
       serverTrialDaysRemaining: currentUser.serverTrialDaysRemaining,
     );
     final prefs = await SharedPreferences.getInstance();
@@ -1052,8 +1071,8 @@ class AuthService with ChangeNotifier {
     }
     final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailRegex.hasMatch(clean)) {
-      return AuthResult.fail(
-          AuthErrorCode.invalidEmail, 'Bitte gib eine gültige E-Mail-Adresse ein.');
+      return AuthResult.fail(AuthErrorCode.invalidEmail,
+          'Bitte gib eine gültige E-Mail-Adresse ein.');
     }
     return null;
   }
@@ -1079,5 +1098,4 @@ class AuthService with ChangeNotifier {
     }
     return null;
   }
-
 }
