@@ -25,6 +25,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   final CalendarBackendService _calendarService =
       BackendServiceFactory.createCalendarService();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _quickAddController = TextEditingController();
   String? _syncError;
   String _filterPerson = 'Alle';
   static const int _smartReminderValue = -1;
@@ -33,7 +34,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     'Einmalig',
     'Täglich',
     'Wöchentlich',
-    'Monatlich'
+    'Monatlich',
+    'Jährlich',
   ];
   final List<String> _recurrenceEndOptions = [
     'Kein Ende',
@@ -61,6 +63,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   Map<String, Color> _personColors = {
     'Eltern': const Color(0xFF4CAF50),
     'Kindergarten': const Color(0xFFFFC107),
+    '\u{1F382} Geburtstag': const Color(0xFFE91E63),
   };
 
   @override
@@ -113,6 +116,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       }
     }
     colors['Kindergarten'] = const Color(0xFFFFC107);
+    colors['\u{1F382} Geburtstag'] = const Color(0xFFE91E63);
     setState(() => _personColors = colors);
   }
 
@@ -188,6 +192,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   @override
   void dispose() {
     _titleController.dispose();
+    _quickAddController.dispose();
     super.dispose();
   }
 
@@ -205,6 +210,9 @@ class _CalendarScreenState extends State<CalendarScreen>
       case 'Monatlich':
         // approximate by 30 days for demo
         step = const Duration(days: 30);
+        break;
+      case 'Jährlich':
+        step = const Duration(days: 365);
         break;
       default:
         return list;
@@ -343,6 +351,152 @@ class _CalendarScreenState extends State<CalendarScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         'calendar.events', jsonEncode(_events.map((e) => e.toJson()).toList()));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Quick-Add: Natural Language Parsing
+  // ═══════════════════════════════════════════════════════════════════════
+  void _handleQuickAdd(String input) {
+    if (input.trim().isEmpty) return;
+
+    final parsed = _parseQuickInput(input.trim());
+    final now = DateTime.now();
+
+    final event = _CalendarEvent(
+      id: 'event_${now.millisecondsSinceEpoch}',
+      title: parsed.title,
+      start: parsed.dateTime,
+      end: parsed.dateTime.add(const Duration(hours: 1)),
+      person: parsed.person ?? 'Eltern',
+      location: 'Familienkalender',
+      recurrence: parsed.isBirthday ? 'Jährlich' : 'Einmalig',
+      reminderMinutes: _smartReminderValue,
+    );
+
+    setState(() {
+      _events.add(event);
+      _selectedDay = DateTime(
+          parsed.dateTime.year, parsed.dateTime.month, parsed.dateTime.day);
+      _focusedDay = DateTime(parsed.dateTime.year, parsed.dateTime.month, 1);
+    });
+    _persistEvents();
+    _quickAddController.clear();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'event_added')),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
+
+  _QuickAddResult _parseQuickInput(String input) {
+    String title = input;
+    DateTime dateTime = DateTime(
+        _selectedDay.year, _selectedDay.month, _selectedDay.day, 10, 0);
+    String? person;
+    bool isBirthday = false;
+
+    // Check for birthday keywords
+    final birthdayPatterns = ['geburtstag', 'birthday', 'bday'];
+    for (final bp in birthdayPatterns) {
+      if (input.toLowerCase().contains(bp)) {
+        isBirthday = true;
+        person = '\u{1F382} Geburtstag';
+        break;
+      }
+    }
+
+    // Parse time: "10:00" or "10 Uhr" or "14:30"
+    final timeRegex = RegExp(r'(\d{1,2}):(\d{2})');
+    final timeUhrRegex = RegExp(r'(\d{1,2})\s*[Uu]hr');
+    final timeMatch = timeRegex.firstMatch(input);
+    final timeUhrMatch = timeUhrRegex.firstMatch(input);
+
+    int hour = 10;
+    int minute = 0;
+
+    if (timeMatch != null) {
+      hour = int.parse(timeMatch.group(1)!);
+      minute = int.parse(timeMatch.group(2)!);
+      title = title.replaceFirst(timeMatch.group(0)!, '').trim();
+    } else if (timeUhrMatch != null) {
+      hour = int.parse(timeUhrMatch.group(1)!);
+      title = title.replaceFirst(timeUhrMatch.group(0)!, '').trim();
+    }
+
+    // Parse day name: Mo, Di, Mi, Do, Fr, Sa, So (or full names)
+    final dayMap = {
+      'mo': 1,
+      'montag': 1,
+      'di': 2,
+      'dienstag': 2,
+      'mi': 3,
+      'mittwoch': 3,
+      'do': 4,
+      'donnerstag': 4,
+      'fr': 5,
+      'freitag': 5,
+      'sa': 6,
+      'samstag': 6,
+      'so': 7,
+      'sonntag': 7,
+      'mon': 1,
+      'tue': 2,
+      'wed': 3,
+      'thu': 4,
+      'fri': 5,
+      'sat': 6,
+      'sun': 7,
+    };
+
+    DateTime targetDate = _selectedDay;
+    final now = DateTime.now();
+
+    for (final entry in dayMap.entries) {
+      final pattern = RegExp('\\b${entry.key}\\b', caseSensitive: false);
+      if (pattern.hasMatch(input)) {
+        // Find next occurrence of this weekday
+        final targetWeekday = entry.value;
+        int daysAhead = targetWeekday - now.weekday;
+        if (daysAhead <= 0) daysAhead += 7;
+        targetDate = DateTime(now.year, now.month, now.day + daysAhead);
+        title = title.replaceFirst(pattern, '').trim();
+        break;
+      }
+    }
+
+    // Parse date: "25.12." or "25.12.2026"
+    final dateRegex = RegExp(r'(\d{1,2})\.(\d{1,2})\.(\d{4})?');
+    final dateMatch = dateRegex.firstMatch(input);
+    if (dateMatch != null) {
+      final day = int.parse(dateMatch.group(1)!);
+      final month = int.parse(dateMatch.group(2)!);
+      final year = dateMatch.group(3) != null
+          ? int.parse(dateMatch.group(3)!)
+          : now.year;
+      targetDate = DateTime(year, month, day);
+      title = title.replaceFirst(dateMatch.group(0)!, '').trim();
+    }
+
+    // Clean up title
+    title = title.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (title.isEmpty) title = input.split(' ').first;
+
+    dateTime = DateTime(
+        targetDate.year, targetDate.month, targetDate.day, hour, minute);
+
+    return _QuickAddResult(
+      title: title,
+      dateTime: dateTime,
+      person: person,
+      isBirthday: isBirthday,
+    );
   }
 
   Future<void> _openAddSheet() async {
@@ -497,7 +651,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     setSheetState(() => person = name);
                                   });
                                 } else if (v != null) {
-                                  setSheetState(() => person = v);
+                                  setSheetState(() {
+                                    person = v;
+                                    // Auto-set recurrence to yearly for birthdays
+                                    if (v == '\u{1F382} Geburtstag') {
+                                      recurrence = 'Jährlich';
+                                    }
+                                  });
                                 }
                               },
                             ),
@@ -857,39 +1017,89 @@ class _CalendarScreenState extends State<CalendarScreen>
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                          horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.chevron_left_rounded),
+                            icon: const Icon(Icons.chevron_left_rounded,
+                                size: 22),
                             onPressed: () => _changeMonth(-1),
+                            style: IconButton.styleFrom(
+                              padding: const EdgeInsets.all(6),
+                              minimumSize: const Size(32, 32),
+                            ),
                           ),
                           Expanded(
                             child: Center(
                               child: Text(
                                 monthTitle,
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.2,
                                 ),
                               ),
                             ),
                           ),
+                          // Feature 1: Heute-Button
+                          if (!_isSameDay(_selectedDay, DateTime.now()))
+                            Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: FilledButton.tonal(
+                                onPressed: () {
+                                  final now = DateTime.now();
+                                  setState(() {
+                                    _focusedDay = now;
+                                    _selectedDay =
+                                        DateTime(now.year, now.month, now.day);
+                                  });
+                                },
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.today_rounded, size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      AppStringsManager.getString(
+                                          languageService.currentLanguage,
+                                          'today_button'),
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           IconButton(
-                            icon: const Icon(Icons.chevron_right_rounded),
+                            icon: const Icon(Icons.chevron_right_rounded,
+                                size: 22),
                             onPressed: () => _changeMonth(1),
+                            style: IconButton.styleFrom(
+                              padding: const EdgeInsets.all(6),
+                              minimumSize: const Size(32, 32),
+                            ),
                           ),
                         ],
                       ),
@@ -939,6 +1149,51 @@ class _CalendarScreenState extends State<CalendarScreen>
                       eventCounter: _countEventsForDay,
                     ),
                     const SizedBox(height: 16),
+                    // Feature 2: Quick-Add Natural Language Input
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _quickAddController,
+                        decoration: InputDecoration(
+                          hintText: AppStringsManager.getString(
+                              languageService.currentLanguage,
+                              'quick_add_hint'),
+                          hintStyle: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[400],
+                          ),
+                          border: InputBorder.none,
+                          prefixIcon: Icon(
+                            Icons.bolt_rounded,
+                            color: Colors.amber[600],
+                            size: 20,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.send_rounded, size: 20),
+                            color: const Color(0xFF4CAF50),
+                            onPressed: () =>
+                                _handleQuickAdd(_quickAddController.text),
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        style: const TextStyle(fontSize: 14),
+                        onSubmitted: _handleQuickAdd,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Text(
@@ -970,51 +1225,42 @@ class _CalendarScreenState extends State<CalendarScreen>
                         onTap: _openAddSheet,
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.2),
+                                  .withValues(alpha: 0.15),
                               style: BorderStyle.solid,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
                           child: Column(
                             children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary
-                                      .withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Icon(
-                                  Icons.calendar_month_rounded,
-                                  color: theme.colorScheme.primary,
-                                  size: 24,
-                                ),
+                              const Text(
+                                '\u{1F33F}',
+                                style: TextStyle(fontSize: 36),
                               ),
                               const SizedBox(height: 12),
                               Text(
                                 AppStringsManager.getString(
                                     languageService.currentLanguage,
-                                    'no_events'),
+                                    'no_events_today'),
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
                                   color: theme.colorScheme.onSurface,
                                 ),
+                                textAlign: TextAlign.center,
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Text(
                                 'Tippe hier um einen Termin hinzuzufügen',
                                 style: TextStyle(
@@ -1266,22 +1512,29 @@ class _EventCard extends StatelessWidget {
     return DateFormat.Hm('de').format(dt);
   }
 
+  bool get _isBirthday => event.person == '\u{1F382} Geburtstag';
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onLongPress: () => _showOptions(context),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: color.withValues(alpha: 0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -1289,13 +1542,21 @@ class _EventCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Gradient left bar
                 Container(
-                  width: 6,
+                  width: 5,
                   decoration: BoxDecoration(
-                    color: color,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        color,
+                        color.withValues(alpha: 0.5),
+                      ],
+                    ),
                     borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
+                      topLeft: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
                     ),
                   ),
                 ),
@@ -1311,7 +1572,7 @@ class _EventCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.12),
+                                color: color.withValues(alpha: 0.10),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -1323,12 +1584,18 @@ class _EventCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            if (_isBirthday) ...[
+                              const SizedBox(width: 6),
+                              const Text('\u{1F382}',
+                                  style: TextStyle(fontSize: 16)),
+                            ],
                             const Spacer(),
                             Text(
                               '${_fmt(event.start)} - ${_fmt(event.end)}',
                               style: const TextStyle(
                                 color: Color(0xFF4A5568),
                                 fontWeight: FontWeight.w600,
+                                fontSize: 13,
                               ),
                             ),
                           ],
@@ -2009,4 +2276,21 @@ class _WeekPreview extends StatelessWidget {
       ],
     );
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Quick-Add Result Model
+// ═══════════════════════════════════════════════════════════════════════════
+class _QuickAddResult {
+  final String title;
+  final DateTime dateTime;
+  final String? person;
+  final bool isBirthday;
+
+  const _QuickAddResult({
+    required this.title,
+    required this.dateTime,
+    this.person,
+    this.isBirthday = false,
+  });
 }

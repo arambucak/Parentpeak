@@ -394,6 +394,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — mit dieser Energie kannst du viel bewegen! 🌟',
       'mood_default_suffix': '! Wie geht\'s dir heute?',
       'stale_days_warning': 'älter als {days} Tage. Bitte Inhalt prüfen.',
+      'today_button': 'Heute',
+      'quick_add_hint': 'Schnell eintragen: z.B. Arzt Mo 10:00',
+      'birthday_category': 'Geburtstag',
+      'no_events_today': 'Keine Termine — Zeit für Spontanes! ✨',
+      'event_added': 'Termin hinzugefügt!',
+      'yearly': 'Jährlich',
     },
     // English
     'en': {
@@ -784,6 +790,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — with that energy you can achieve great things! 🌟',
       'mood_default_suffix': '! How are you today?',
       'stale_days_warning': 'older than {days} days. Please review content.',
+      'today_button': 'Today',
+      'quick_add_hint': 'Quick add: e.g. Doctor Mon 10:00',
+      'birthday_category': 'Birthday',
+      'no_events_today': 'No events — time for spontaneity! ✨',
+      'event_added': 'Event added!',
+      'yearly': 'Yearly',
     },
     // Français
     'fr': {
@@ -1176,6 +1188,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — avec cette énergie tu peux faire beaucoup ! 🌟',
       'mood_default_suffix': ' ! Comment vas-tu aujourd\'hui ?',
       'stale_days_warning': 'plus ancien que {days} jours. Veuillez vérifier le contenu.',
+      'today_button': 'Aujourd\'hui',
+      'quick_add_hint': 'Ajout rapide: ex. Médecin Lun 10:00',
+      'birthday_category': 'Anniversaire',
+      'no_events_today': 'Aucun événement — place à la spontanéité! ✨',
+      'event_added': 'Événement ajouté!',
+      'yearly': 'Annuel',
     },
     // Español
     'es': {
@@ -1568,6 +1586,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — con esa energía puedes lograr mucho! 🌟',
       'mood_default_suffix': '! ¿Cómo estás hoy?',
       'stale_days_warning': 'más antiguo que {days} días. Por favor revisa el contenido.',
+      'today_button': 'Hoy',
+      'quick_add_hint': 'Añadir rápido: ej. Doctor Lun 10:00',
+      'birthday_category': 'Cumpleaños',
+      'no_events_today': 'Sin eventos — ¡tiempo para lo espontáneo! ✨',
+      'event_added': '¡Evento añadido!',
+      'yearly': 'Anual',
     },
     // Italiano
     'it': {
@@ -1959,6 +1983,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — con questa energia puoi fare molto! 🌟',
       'mood_default_suffix': '! Come stai oggi?',
       'stale_days_warning': 'più vecchio di {days} giorni. Verifica il contenuto.',
+      'today_button': 'Oggi',
+      'quick_add_hint': 'Aggiungi veloce: es. Dottore Lun 10:00',
+      'birthday_category': 'Compleanno',
+      'no_events_today': 'Nessun evento — tempo per la spontaneità! ✨',
+      'event_added': 'Evento aggiunto!',
+      'yearly': 'Annuale',
     },
     // Português
     'pt': {
@@ -2349,6 +2379,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — com essa energia você pode conquistar muito! 🌟',
       'mood_default_suffix': '! Como você está hoje?',
       'stale_days_warning': 'mais antigo que {days} dias. Verifique o conteúdo.',
+      'today_button': 'Hoje',
+      'quick_add_hint': 'Adicionar rápido: ex. Médico Seg 10:00',
+      'birthday_category': 'Aniversário',
+      'no_events_today': 'Sem eventos — hora de ser espontâneo! ✨',
+      'event_added': 'Evento adicionado!',
+      'yearly': 'Anual',
     },
     // Nederlands
     'nl': {
@@ -2741,6 +2777,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — met die energie kun je veel bereiken! 🌟',
       'mood_default_suffix': '! Hoe gaat het vandaag?',
       'stale_days_warning': 'ouder dan {days} dagen. Controleer de inhoud.',
+      'today_button': 'Vandaag',
+      'quick_add_hint': 'Snel toevoegen: bijv. Arts Ma 10:00',
+      'birthday_category': 'Verjaardag',
+      'no_events_today': 'Geen afspraken — tijd voor spontaniteit! ✨',
+      'event_added': 'Afspraak toegevoegd!',
+      'yearly': 'Jaarlijks',
     },
     // العربية (Arabic)
     'ar': {
@@ -3131,6 +3173,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — بهذه الطاقة يمكنك تحقيق الكثير! 🌟',
       'mood_default_suffix': '! كيف حالك اليوم؟',
       'stale_days_warning': 'أقدم من {days} أيام. يرجى مراجعة المحتوى.',
+      'today_button': 'اليوم',
+      'quick_add_hint': 'إضافة سريعة: مثل طبيب الاثنين 10:00',
+      'birthday_category': 'عيد ميلاد',
+      'no_events_today': 'لا أحداث — وقت للعفوية! ✨',
+      'event_added': 'تمت إضافة الحدث!',
+      'yearly': 'سنوي',
     },
     // فارسی (Persian/Farsi)
     'fa': {
@@ -3522,6 +3570,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — با این انرژی می‌توانی کارهای بزرگ انجام دهی! 🌟',
       'mood_default_suffix': '! امروز چطوری؟',
       'stale_days_warning': 'قدیمی‌تر از {days} روز. لطفا محتوا را بررسی کنید.',
+      'today_button': 'امروز',
+      'quick_add_hint': 'افزودن سریع: مثلا دکتر دوشنبه 10:00',
+      'birthday_category': 'تولد',
+      'no_events_today': 'رویدادی نیست — وقت خودجوشی! ✨',
+      'event_added': 'رویداد اضافه شد!',
+      'yearly': 'سالانه',
     },
     // کوردی Kurmancî (ku)
     'ku': {
@@ -3912,6 +3966,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — bi vê enerjiyê tu dikarî gelek tiştan bikî! 🌟',
       'mood_default_suffix': '! Îro tu çawa yî?',
       'stale_days_warning': 'ji {days} rojan kevntir e. Ji kerema xwe naverokê kontrol bike.',
+      'today_button': 'Îro',
+      'quick_add_hint': 'Zû lê zêde bike: mînak Bijîşk Duş 10:00',
+      'birthday_category': 'Rojbûn',
+      'no_events_today': 'Bûyer tune — dem ji bo spontaniyê ye! ✨',
+      'event_added': 'Bûyer hat zêdekirin!',
+      'yearly': 'Salane',
     },
     // کوردی سۆرانی (ckb)
     'ckb': {
@@ -4302,6 +4362,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — بەم وزەیە دەتوانیت زۆر شت بکەیت! 🌟',
       'mood_default_suffix': '! ئەمڕۆ چۆنیت?',
       'stale_days_warning': 'زیاتر لە {days} ڕۆژ. تکایە ناوەڕۆکەکە بپشکنە.',
+      'today_button': 'ئەمڕۆ',
+      'quick_add_hint': 'زیادکردنی خێرا: بۆ نمونە دکتۆر دووشەممە 10:00',
+      'birthday_category': 'لەدایکبوون',
+      'no_events_today': 'بۆنە نییە — کاتی خۆجوانبوونە! ✨',
+      'event_added': 'بۆنە زیادکرا!',
+      'yearly': 'ساڵانە',
     },
     // 中文 (Chinese Simplified)
     'zh': {
@@ -4691,6 +4757,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — 这股能量能让你做很多事！🌟',
       'mood_default_suffix': '！今天怎么样？',
       'stale_days_warning': '超过{days}天。请检查内容。',
+      'today_button': '今天',
+      'quick_add_hint': '快速添加：如 医生 周一 10:00',
+      'birthday_category': '生日',
+      'no_events_today': '没有日程 — 享受自由时光！✨',
+      'event_added': '日程已添加！',
+      'yearly': '每年',
     },
     // 日本語 (Japanese)
     'ja': {
@@ -5080,6 +5152,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — このエネルギーで多くのことができる！🌟',
       'mood_default_suffix': '！今日の調子はどう？',
       'stale_days_warning': '{days}日以上前。内容を確認してください。',
+      'today_button': '今日',
+      'quick_add_hint': 'クイック追加：例 医者 月曜 10:00',
+      'birthday_category': '誕生日',
+      'no_events_today': '予定なし — 自由な時間を楽しんで！✨',
+      'event_added': '予定を追加しました！',
+      'yearly': '毎年',
     },
     // हिन्दी (Hindi)
     'hi': {
@@ -5470,6 +5548,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — इस ऊर्जा से तुम बहुत कुछ कर सकते हो! 🌟',
       'mood_default_suffix': '! आज कैसे हो?',
       'stale_days_warning': '{days} दिनों से पुराना। कृपया सामग्री जाँचें।',
+      'today_button': 'आज',
+      'quick_add_hint': 'त्वरित जोड़ें: जैसे डॉक्टर सोम 10:00',
+      'birthday_category': 'जन्मदिन',
+      'no_events_today': 'कोई कार्यक्रम नहीं — सहजता का समय! ✨',
+      'event_added': 'कार्यक्रम जोड़ा गया!',
+      'yearly': 'वार्षिक',
     },
     // Türkçe (Turkish)
     'tr': {
@@ -5861,6 +5945,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — bu enerjiyle çok şey başarabilirsin! 🌟',
       'mood_default_suffix': '! Bugün nasılsın?',
       'stale_days_warning': '{days} günden eski. Lütfen içeriği kontrol edin.',
+      'today_button': 'Bugün',
+      'quick_add_hint': 'Hızlı ekle: örn. Doktor Pzt 10:00',
+      'birthday_category': 'Doğum günü',
+      'no_events_today': 'Etkinlik yok — spontanlık zamanı! ✨',
+      'event_added': 'Etkinlik eklendi!',
+      'yearly': 'Yıllık',
     },
     // Русский (Russian)
     'ru': {
@@ -6251,6 +6341,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — с такой энергией ты многое можешь! 🌟',
       'mood_default_suffix': '! Как дела сегодня?',
       'stale_days_warning': 'старше {days} дней. Проверьте содержание.',
+      'today_button': 'Сегодня',
+      'quick_add_hint': 'Быстро добавить: напр. Врач Пн 10:00',
+      'birthday_category': 'День рождения',
+      'no_events_today': 'Нет событий — время для спонтанности! ✨',
+      'event_added': 'Событие добавлено!',
+      'yearly': 'Ежегодно',
     },
     // Українська (Ukrainian)
     'uk': {
@@ -6641,6 +6737,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — з такою енергією ти можеш багато досягти! 🌟',
       'mood_default_suffix': '! Як справи сьогодні?',
       'stale_days_warning': 'старіше за {days} днів. Перевірте вміст.',
+      'today_button': 'Сьогодні',
+      'quick_add_hint': 'Швидко додати: напр. Лікар Пн 10:00',
+      'birthday_category': 'День народження',
+      'no_events_today': 'Немає подій — час для спонтанності! ✨',
+      'event_added': 'Подію додано!',
+      'yearly': 'Щорічно',
     },
     // Polski (Polish)
     'pl': {
@@ -7031,6 +7133,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — z taką energią możesz wiele osiągnąć! 🌟',
       'mood_default_suffix': '! Jak się dziś czujesz?',
       'stale_days_warning': 'starsze niż {days} dni. Sprawdź treść.',
+      'today_button': 'Dziś',
+      'quick_add_hint': 'Szybko dodaj: np. Lekarz Pon 10:00',
+      'birthday_category': 'Urodziny',
+      'no_events_today': 'Brak wydarzeń — czas na spontaniczność! ✨',
+      'event_added': 'Wydarzenie dodane!',
+      'yearly': 'Rocznie',
     },
     // Hrvatski (Croatian)
     'hr': {
@@ -7421,6 +7529,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — s tom energijom možeš puno postići! 🌟',
       'mood_default_suffix': '! Kako si danas?',
       'stale_days_warning': 'starije od {days} dana. Provjerite sadržaj.',
+      'today_button': 'Danas',
+      'quick_add_hint': 'Brzo dodaj: npr. Liječnik Pon 10:00',
+      'birthday_category': 'Rođendan',
+      'no_events_today': 'Nema događaja — vrijeme za spontanost! ✨',
+      'event_added': 'Događaj dodan!',
+      'yearly': 'Godišnje',
     },
     // Српски (Serbian)
     'sr': {
@@ -7812,6 +7926,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — са том енергијом можеш много постићи! 🌟',
       'mood_default_suffix': '! Како си данас?',
       'stale_days_warning': 'старије од {days} дана. Проверите садржај.',
+      'today_button': 'Данас',
+      'quick_add_hint': 'Брзо додај: нпр. Лекар Пон 10:00',
+      'birthday_category': 'Рођендан',
+      'no_events_today': 'Нема догађаја — време за спонтаност! ✨',
+      'event_added': 'Догађај додат!',
+      'yearly': 'Годишње',
     },
     // Suomi (Finnish)
     'fi': {
@@ -8202,6 +8322,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — tuolla energialla voit saavuttaa paljon! 🌟',
       'mood_default_suffix': '! Miten menee tänään?',
       'stale_days_warning': 'yli {days} päivää vanha. Tarkista sisältö.',
+      'today_button': 'Tänään',
+      'quick_add_hint': 'Lisää nopeasti: esim. Lääkäri Ma 10:00',
+      'birthday_category': 'Syntymäpäivä',
+      'no_events_today': 'Ei tapahtumia — aikaa spontaaniudelle! ✨',
+      'event_added': 'Tapahtuma lisätty!',
+      'yearly': 'Vuosittain',
     },
     // Dansk (Danish)
     'da': {
@@ -8592,6 +8718,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — med den energi kan du nå meget! 🌟',
       'mood_default_suffix': '! Hvordan har du det i dag?',
       'stale_days_warning': 'ældre end {days} dage. Tjek venligst indholdet.',
+      'today_button': 'I dag',
+      'quick_add_hint': 'Hurtig tilføj: f.eks. Læge Man 10:00',
+      'birthday_category': 'Fødselsdag',
+      'no_events_today': 'Ingen begivenheder — tid til spontanitet! ✨',
+      'event_added': 'Begivenhed tilføjet!',
+      'yearly': 'Årligt',
     },
     // Ελληνικά (Greek)
     'el': {
@@ -8984,6 +9116,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — με αυτή την ενέργεια μπορείς να πετύχεις πολλά! 🌟',
       'mood_default_suffix': '! Πώς είσαι σήμερα;',
       'stale_days_warning': 'παλαιότερο από {days} ημέρες. Ελέγξτε το περιεχόμενο.',
+      'today_button': 'Σήμερα',
+      'quick_add_hint': 'Γρήγορη προσθήκη: π.χ. Γιατρός Δευ 10:00',
+      'birthday_category': 'Γενέθλια',
+      'no_events_today': 'Κανένα γεγονός — ώρα για αυθορμητισμό! ✨',
+      'event_added': 'Γεγονός προστέθηκε!',
+      'yearly': 'Ετήσιο',
     },
     // Kiswahili (Swahili)
     'sw': {
@@ -9374,6 +9512,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — kwa nishati hiyo unaweza kufanya mengi! 🌟',
       'mood_default_suffix': '! Habari ya leo?',
       'stale_days_warning': 'zaidi ya siku {days}. Tafadhali kagua maudhui.',
+      'today_button': 'Leo',
+      'quick_add_hint': 'Ongeza haraka: mf. Daktari Jtt 10:00',
+      'birthday_category': 'Siku ya kuzaliwa',
+      'no_events_today': 'Hakuna matukio — wakati wa hiari! ✨',
+      'event_added': 'Tukio limeongezwa!',
+      'yearly': 'Kila mwaka',
     },
     // አማርኛ (Amharic)
     'am': {
@@ -9764,6 +9908,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — በዚህ ጉልበት ብዙ ማሳካት ትችላለህ! 🌟',
       'mood_default_suffix': '! ዛሬ እንዴት ነህ?',
       'stale_days_warning': 'ከ{days} ቀናት በላይ። እባክዎ ይዘቱን ያረጋግጡ።',
+      'today_button': 'ዛሬ',
+      'quick_add_hint': 'ፈጥኖ ጨምር: ለምሳሌ ሐኪም ሰኞ 10:00',
+      'birthday_category': 'ልደት',
+      'no_events_today': 'ዝግጅት የለም — ለድንገተኛ ጊዜ! ✨',
+      'event_added': 'ዝግጅት ተጨምሯል!',
+      'yearly': 'በየዓመቱ',
     },
     // Hausa
     'ha': {
@@ -10154,6 +10304,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — da wannan ƙarfi za ka iya cimma abubuwa da yawa! 🌟',
       'mood_default_suffix': '! Yaya ka ke yau?',
       'stale_days_warning': 'ya fi kwana {days}. Da fatan za a duba abun ciki.',
+      'today_button': 'Yau',
+      'quick_add_hint': 'Ƙara da sauri: mis. Likita Lit 10:00',
+      'birthday_category': 'Ranar haihuwa',
+      'no_events_today': 'Babu taron — lokacin yin abin da baka shirya ba! ✨',
+      'event_added': 'An ƙara taron!',
+      'yearly': 'Kowace shekara',
     },
     // Soomaali (Somali)
     'so': {
@@ -10545,6 +10701,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — tamar taas waad wax badan gaari kartaa! 🌟',
       'mood_default_suffix': '! Sidee tahay maanta?',
       'stale_days_warning': 'ka weyn {days} maalmood. Fadlan hubso macluumaadka.',
+      'today_button': 'Maanta',
+      'quick_add_hint': 'Ku dar degdeg: tus. Dhaktar Isn 10:00',
+      'birthday_category': 'Dhalasho',
+      'no_events_today': 'Munaasabad ma jirto — waqti ikhtiyaari ah! ✨',
+      'event_added': 'Munaasabad la daray!',
+      'yearly': 'Sannadkiiba',
     },
     // ትግርኛ (Tigrinya)
     'ti': {
@@ -10935,6 +11097,12 @@ class AppStringsManager {
       'mood_energetic_suffix': ' — በዚ ጉልበት ብዙሕ ክትገብር ትኽእል! 🌟',
       'mood_default_suffix': '! ሎሚ ከመይ ኣለኻ?',
       'stale_days_warning': 'ካብ {days} መዓልታት ዝያዳ። ብኽብረትካ ትሕዝቶ ኣረጋግጽ።',
+      'today_button': 'ሎሚ',
+      'quick_add_hint': 'ቀልጢፍ ወስኹ: ንኣብነት ሓኪም ሰኑይ 10:00',
+      'birthday_category': 'ልደት',
+      'no_events_today': 'ፍጻመ የለን — ንድንገት ግዜ! ✨',
+      'event_added': 'ፍጻመ ተወሲኹ!',
+      'yearly': 'ዓመታዊ',
     },
   };
 
