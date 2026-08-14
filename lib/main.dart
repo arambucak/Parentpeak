@@ -27,9 +27,7 @@ import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/entitlement_service.dart';
 import 'package:parentpeak/logic/theme_service.dart';
 import 'package:parentpeak/logic/language_service.dart';
-import 'package:parentpeak/widgets/language_aware_widget.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
-import 'package:parentpeak/widgets/language_provider.dart';
 
 // Global service instances
 final themeService = ThemeService();
@@ -233,7 +231,9 @@ String? _extractStartupReferralCode() {
     final uri = Uri.tryParse(candidate);
     if (uri == null) continue;
     final segs = uri.pathSegments;
-    if (segs.length >= 2 && segs.first == 'invite' && segs[1].startsWith('PP-')) {
+    if (segs.length >= 2 &&
+        segs.first == 'invite' &&
+        segs[1].startsWith('PP-')) {
       return segs[1].toUpperCase();
     }
   }
@@ -248,8 +248,11 @@ String? _extractInviteInputFromString(String? raw) {
   if (uri != null) {
     final segs = uri.pathSegments;
     // /freund/ = friend code, /invite/PP-* = referral code — both are NOT event codes
-    if (segs.isNotEmpty && (segs.first == 'freund' ||
-        (segs.first == 'invite' && segs.length >= 2 && segs[1].startsWith('PP-')))) {
+    if (segs.isNotEmpty &&
+        (segs.first == 'freund' ||
+            (segs.first == 'invite' &&
+                segs.length >= 2 &&
+                segs[1].startsWith('PP-')))) {
       return null;
     }
     final code = uri.queryParameters['code']?.trim();
@@ -269,7 +272,11 @@ class DemoApp extends StatefulWidget {
   final String? startupFriendCode;
   final String? startupReferralCode;
 
-  const DemoApp({super.key, this.startupInviteInput, this.startupFriendCode, this.startupReferralCode});
+  const DemoApp(
+      {super.key,
+      this.startupInviteInput,
+      this.startupFriendCode,
+      this.startupReferralCode});
 
   static void setThemeMode(ThemeMode mode) {
     debugPrint('📱 DemoApp.setThemeMode() called with mode=$mode');
@@ -367,20 +374,18 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
         AppLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: LanguageProviderWrapper(
-        child: AuthGate(
-          devices: const [],
-          startupInviteInput: widget.startupInviteInput,
-          startupFriendCode: widget.startupFriendCode,
-          startupReferralCode: widget.startupReferralCode,
-          onRevoke: (uuid, name) async {
-            try {
-              return await service.revokeDevice(uuid, 'Revoke');
-            } catch (e) {
-              return false;
-            }
-          },
-        ),
+      home: AuthGate(
+        devices: const [],
+        startupInviteInput: widget.startupInviteInput,
+        startupFriendCode: widget.startupFriendCode,
+        startupReferralCode: widget.startupReferralCode,
+        onRevoke: (uuid, name) async {
+          try {
+            return await service.revokeDevice(uuid, 'Revoke');
+          } catch (e) {
+            return false;
+          }
+        },
       ),
     );
   }
@@ -435,20 +440,17 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
     final theme = Theme.of(context);
 
     final tabs = <Widget>[
-      LanguageAwareWidget(
-        key: ValueKey('home-${languageService.currentLanguage}'),
-        child: HomeScreen(
-            initialInviteInput: widget.startupInviteInput,
-            initialFriendCode: widget.startupFriendCode,
-            initialReferralCode: widget.startupReferralCode),
+      HomeScreen(
+          key: ValueKey('home-${languageService.currentLanguage}'),
+          initialInviteInput: widget.startupInviteInput,
+          initialFriendCode: widget.startupFriendCode,
+          initialReferralCode: widget.startupReferralCode),
+      ProfileSafetyScreen(
+        key: ValueKey('family-${languageService.currentLanguage}'),
+        devices: widget.devices,
+        onRevoke: widget.onRevoke,
+        onBack: () => setState(() => _index = 0),
       ),
-      LanguageAwareWidget(
-          key: ValueKey('family-${languageService.currentLanguage}'),
-          child: ProfileSafetyScreen(
-            devices: widget.devices,
-            onRevoke: widget.onRevoke,
-            onBack: () => setState(() => _index = 0),
-          )),
     ];
 
     return Scaffold(
