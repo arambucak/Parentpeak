@@ -515,6 +515,72 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         'text':
             'Hülsenfrüchte (Linsen, Kichererbsen) sind günstig, gesund und machen satt. Perfekt für Familien.'
       },
+      {
+        'emoji': '\u{1F9CA}',
+        'title': 'Meal-Prep Hack',
+        'text':
+            'Sonntags doppelt kochen und einfrieren. Unter der Woche hast du in 10 Min ein gesundes Essen auf dem Tisch.'
+      },
+      {
+        'emoji': '\u{1F34E}',
+        'title': 'Snack-Idee',
+        'text':
+            'Apfelscheiben mit Erdnussbutter oder Gurken-Sticks mit Frischkäse. Schnell, gesund, null Aufwand.'
+      },
+      {
+        'emoji': '\u{1F4A7}',
+        'title': 'Trinken nicht vergessen',
+        'text':
+            'Kinder vergessen oft zu trinken. Eine bunte Trinkflasche und feste Trink-Zeiten helfen enorm.'
+      },
+      {
+        'emoji': '\u{1F955}',
+        'title': 'Gemüse verstecken',
+        'text':
+            'Zucchini in Bolognese reiben, Karotten in Pfannkuchen. Kinder merken es nicht — du schon.'
+      },
+      {
+        'emoji': '\u{1F91D}',
+        'title': 'Familien-Ritual',
+        'text':
+            'Einmal pro Woche gemeinsam kochen — Kinder dürfen das Gericht wählen. Stärkt Zusammenhalt und Appetit.'
+      },
+      {
+        'emoji': '\u{23F0}',
+        'title': 'Morgen-Hack',
+        'text':
+            'Frühstück am Abend vorbereiten: Overnight Oats, Brote schneiden, Obst waschen. Morgens = Stress-frei.'
+      },
+      {
+        'emoji': '\u{1F9D1}\u{200D}\u{1F33E}',
+        'title': 'Kinder & Natur',
+        'text':
+            'Kräuter auf der Fensterbank ziehen lassen. Wer selbst erntet, probiert eher — auch Petersilie.'
+      },
+      {
+        'emoji': '\u{1F36A}',
+        'title': 'Gesund naschen',
+        'text':
+            'Gefrorene Trauben, Bananen-Eis (nur pürierte Banane), Energiebällchen. Süß ohne Zucker-Crash.'
+      },
+      {
+        'emoji': '\u{1F37D}\u{FE0F}',
+        'title': 'Kein Kampf am Tisch',
+        'text':
+            'Essen anbieten, nicht erzwingen. Kinder regulieren ihre Menge selbst. Vertrauen statt Druck.'
+      },
+      {
+        'emoji': '\u{1F9C0}',
+        'title': 'Reste-Kreativ',
+        'text':
+            'Aus Resten werden Wraps, Aufläufe oder Fried Rice. Weniger Wegwerfen, mehr Überraschung.'
+      },
+      {
+        'emoji': '\u{2744}\u{FE0F}',
+        'title': 'TK-Gemüse ist okay',
+        'text':
+            'Tiefkühl-Erbsen und Brokkoli haben genauso viele Vitamine wie frisch. Und sind in 5 Min fertig.'
+      },
     ];
 
     // 3 Tipps anzeigen (rotierend nach Tag)
