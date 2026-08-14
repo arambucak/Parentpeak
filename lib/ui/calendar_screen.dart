@@ -923,382 +923,356 @@ class _CalendarScreenState extends State<CalendarScreen>
     final monthTitle = DateFormat.yMMMM('de').format(_focusedDay);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5EFE7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(AppStringsManager.getString(
             languageService.currentLanguage, 'calendar')),
-        backgroundColor: const Color(0xFFF5EFE7),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+            onPressed: _loadEvents,
+            tooltip: 'Sync',
+          ),
+        ],
       ),
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_syncError != null && APIConfig.isBackendConfigured())
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Material(
+                  color: Colors.amber[50],
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    child: Row(
                       children: [
-                        const Text(
-                          'Familienkalender',
-                          style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF2D3748)),
+                        Icon(Icons.cloud_off_rounded,
+                            size: 16, color: Colors.amber[800]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Offline-Modus — Termine werden lokal gespeichert',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.amber[900],
+                            ),
+                          ),
                         ),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.refresh_rounded),
+                        TextButton(
                           onPressed: _loadEvents,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.notifications_outlined),
-                          onPressed: () {},
-                        ),
-                      ],
-                    ),
-                    if (_syncError != null && APIConfig.isBackendConfigured())
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 8),
-                        child: Material(
-                          color: Colors.amber[100],
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
-                            child: Row(
-                              children: [
-                                Icon(Icons.cloud_off_rounded,
-                                    size: 18, color: Colors.amber[800]),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Offline-Modus — Termine werden lokal gespeichert',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.amber[900],
-                                    ),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: _loadEvents,
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text(
-                                      AppStringsManager.getString(
-                                          languageService.currentLanguage,
-                                          'sync_btn'),
-                                      style: TextStyle(fontSize: 12)),
-                                ),
-                              ],
-                            ),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                        ),
-                      ),
-                    // Feature 5: Diese Woche Vorschau
-                    _WeekPreview(
-                      events: _events
-                          .where((e) =>
-                              _filterPerson == 'Alle' ||
-                              e.person == _filterPerson)
-                          .toList(),
-                      personColors: _personColors,
-                      onDayTap: _selectDay,
-                      onDeleteEvent: _deleteEvent,
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.chevron_left_rounded,
-                                size: 22),
-                            onPressed: () => _changeMonth(-1),
-                            style: IconButton.styleFrom(
-                              padding: const EdgeInsets.all(6),
-                              minimumSize: const Size(32, 32),
-                            ),
-                          ),
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                monthTitle,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Feature 1: Heute-Button
-                          if (!_isSameDay(_selectedDay, DateTime.now()))
-                            Padding(
-                              padding: const EdgeInsets.only(right: 4),
-                              child: FilledButton.tonal(
-                                onPressed: () {
-                                  final now = DateTime.now();
-                                  setState(() {
-                                    _focusedDay = now;
-                                    _selectedDay =
-                                        DateTime(now.year, now.month, now.day);
-                                  });
-                                },
-                                style: FilledButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 6),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.today_rounded, size: 14),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      AppStringsManager.getString(
-                                          languageService.currentLanguage,
-                                          'today_button'),
-                                      style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          IconButton(
-                            icon: const Icon(Icons.chevron_right_rounded,
-                                size: 22),
-                            onPressed: () => _changeMonth(1),
-                            style: IconButton.styleFrom(
-                              padding: const EdgeInsets.all(6),
-                              minimumSize: const Size(32, 32),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _buildFilterChip('Alle'),
-                        ..._personColors.keys.map(_buildFilterChip),
-                        // Add person chip
-                        GestureDetector(
-                          onTap: () => _showAddPersonDialog(
-                              onAdded: (name) =>
-                                  setState(() => _filterPerson = name)),
-                          child: Chip(
-                            avatar: const Icon(Icons.add_rounded,
-                                size: 16, color: Color(0xFF4CAF50)),
-                            label: const Text('Person',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF4CAF50),
-                                    fontWeight: FontWeight.w600)),
-                            backgroundColor: const Color(0xFFE8F5E9),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14)),
-                            side: const BorderSide(
-                                color: Color(0xFF4CAF50), width: 0.8),
-                            padding: EdgeInsets.zero,
-                          ),
+                          child: Text(
+                              AppStringsManager.getString(
+                                  languageService.currentLanguage, 'sync_btn'),
+                              style: const TextStyle(fontSize: 11)),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    // Feature 1: Wochenstreifen
-                    _WeekStrip(
-                      selectedDay: _selectedDay,
-                      onSelectDay: _selectDay,
-                      eventCounter: _countEventsForDay,
-                    ),
-                    const SizedBox(height: 16),
-                    _MonthGrid(
-                      focusedDay: _focusedDay,
-                      selectedDay: _selectedDay,
-                      onSelectDay: _selectDay,
-                      eventCounter: _countEventsForDay,
-                    ),
-                    const SizedBox(height: 16),
-                    // Feature 2: Quick-Add Natural Language Input
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _quickAddController,
-                        decoration: InputDecoration(
-                          hintText: AppStringsManager.getString(
-                              languageService.currentLanguage,
-                              'quick_add_hint'),
-                          hintStyle: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[400],
-                          ),
-                          border: InputBorder.none,
-                          prefixIcon: Icon(
-                            Icons.bolt_rounded,
-                            color: Colors.amber[600],
-                            size: 20,
-                          ),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.send_rounded, size: 20),
-                            color: const Color(0xFF4CAF50),
-                            onPressed: () =>
-                                _handleQuickAdd(_quickAddController.text),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        style: const TextStyle(fontSize: 14),
-                        onSubmitted: _handleQuickAdd,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text(
-                          DateFormat.EEEE('de').add_d().format(_selectedDay),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF2D3748),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          _eventsForSelectedDay.isEmpty
-                              ? 'Keine Termine'
-                              : '${_eventsForSelectedDay.length} Termine',
-                          style: const TextStyle(color: Color(0xFF718096)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    ..._eventsForSelectedDay.map((e) => _EventCard(
-                        event: e,
-                        color: _personColors[e.person] ??
-                            theme.colorScheme.primary,
-                        onDelete: () => _deleteEvent(e),
-                        onEdit: () => _editEvent(e))),
-                    if (_eventsForSelectedDay.isEmpty)
-                      GestureDetector(
-                        onTap: _openAddSheet,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.15),
-                              style: BorderStyle.solid,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              const Text(
-                                '\u{1F33F}',
-                                style: TextStyle(fontSize: 36),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                AppStringsManager.getString(
-                                    languageService.currentLanguage,
-                                    'no_events_today'),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Tippe hier um einen Termin hinzuzufügen',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (_eventsForSelectedDay.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _openAddSheet,
-                            icon: const Icon(Icons.add_rounded, size: 18),
-                            label: const Text('Neuen Termin hinzufügen'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              side: BorderSide(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
               ),
+            // Diese Woche Vorschau — compact
+            _WeekPreview(
+              events: _events
+                  .where((e) =>
+                      _filterPerson == 'Alle' || e.person == _filterPerson)
+                  .toList(),
+              personColors: _personColors,
+              onDayTap: _selectDay,
+              onDeleteEvent: _deleteEvent,
             ),
+            const SizedBox(height: 16),
+            // Filter chips — single horizontal scroll line
+            SizedBox(
+              height: 28,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _buildFilterChip('Alle'),
+                  const SizedBox(width: 6),
+                  ..._personColors.keys.expand((k) => [
+                        _buildFilterChip(k),
+                        const SizedBox(width: 6),
+                      ]),
+                  // Add person chip
+                  GestureDetector(
+                    onTap: () => _showAddPersonDialog(
+                        onAdded: (name) =>
+                            setState(() => _filterPerson = name)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0xFF4CAF50), width: 0.8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_rounded,
+                              size: 13, color: Color(0xFF4CAF50)),
+                          SizedBox(width: 3),
+                          Text('Person',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF4CAF50),
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Month navigation bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded, size: 22),
+                    onPressed: () => _changeMonth(-1),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(4),
+                      minimumSize: const Size(28, 28),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        monthTitle,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Heute-Button
+                  if (!_isSameDay(_selectedDay, DateTime.now()))
+                    Padding(
+                      padding: const EdgeInsets.only(right: 2),
+                      child: FilledButton.tonal(
+                        onPressed: () {
+                          final now = DateTime.now();
+                          setState(() {
+                            _focusedDay = now;
+                            _selectedDay =
+                                DateTime(now.year, now.month, now.day);
+                          });
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.today_rounded, size: 13),
+                            const SizedBox(width: 3),
+                            Text(
+                              AppStringsManager.getString(
+                                  languageService.currentLanguage,
+                                  'today_button'),
+                              style: const TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded, size: 22),
+                    onPressed: () => _changeMonth(1),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(4),
+                      minimumSize: const Size(28, 28),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Month Grid
+            _MonthGrid(
+              focusedDay: _focusedDay,
+              selectedDay: _selectedDay,
+              onSelectDay: _selectDay,
+              eventCounter: _countEventsForDay,
+            ),
+            const SizedBox(height: 16),
+            // Quick-Add Natural Language Input
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _quickAddController,
+                decoration: InputDecoration(
+                  hintText: AppStringsManager.getString(
+                      languageService.currentLanguage, 'quick_add_hint'),
+                  hintStyle: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[400],
+                  ),
+                  border: InputBorder.none,
+                  prefixIcon: Icon(
+                    Icons.bolt_rounded,
+                    color: Colors.amber[600],
+                    size: 20,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.send_rounded, size: 20),
+                    color: const Color(0xFF8B5CF6),
+                    onPressed: () => _handleQuickAdd(_quickAddController.text),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                style: const TextStyle(fontSize: 14),
+                onSubmitted: _handleQuickAdd,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Text(
+                  DateFormat.EEEE('de').add_d().format(_selectedDay),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF2D3748),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  _eventsForSelectedDay.isEmpty
+                      ? 'Keine Termine'
+                      : '${_eventsForSelectedDay.length} Termine',
+                  style:
+                      const TextStyle(color: Color(0xFF718096), fontSize: 13),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ..._eventsForSelectedDay.map((e) => _EventCard(
+                event: e,
+                color: _personColors[e.person] ?? theme.colorScheme.primary,
+                onDelete: () => _deleteEvent(e),
+                onEdit: () => _editEvent(e))),
+            if (_eventsForSelectedDay.isEmpty)
+              GestureDetector(
+                onTap: _openAddSheet,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      style: BorderStyle.solid,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        '\u{1F33F}',
+                        style: TextStyle(fontSize: 36),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        AppStringsManager.getString(
+                            languageService.currentLanguage, 'no_events_today'),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Tippe hier um einen Termin hinzuzufügen',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_eventsForSelectedDay.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _openAddSheet,
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Neuen Termin hinzufügen'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -1310,17 +1284,27 @@ class _CalendarScreenState extends State<CalendarScreen>
     final color = label == 'Alle'
         ? const Color(0xFF2D3748)
         : _personColors[label] ?? const Color(0xFF4CAF50);
-    return ChoiceChip(
-      selected: selected,
-      label: Text(label),
-      selectedColor: color.withValues(alpha: 0.15),
-      labelStyle: TextStyle(
-        color: selected ? color : const Color(0xFF4A5568),
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+    return GestureDetector(
+      onTap: () => setState(() => _filterPerson = label),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected ? color.withValues(alpha: 0.12) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? color : Colors.grey[300]!,
+            width: selected ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: selected ? color : const Color(0xFF4A5568),
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
       ),
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      onSelected: (_) => setState(() => _filterPerson = label),
     );
   }
 }
@@ -1362,14 +1346,14 @@ class _MonthGrid extends StatelessWidget {
     final now = DateTime.now();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
@@ -1379,31 +1363,66 @@ class _MonthGrid extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'day_mo')),
-              Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'day_di')),
-              Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'day_mi')),
-              Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'day_do')),
-              Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'day_fr')),
-              Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'day_sa')),
-              Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'day_so')),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'day_mo'),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096))),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'day_di'),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096))),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'day_mi'),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096))),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'day_do'),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096))),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'day_fr'),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096))),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'day_sa'),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096))),
+              Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'day_so'),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096))),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: days.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 8,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
             ),
             itemBuilder: (_, i) {
               final day = days[i];
@@ -1412,83 +1431,51 @@ class _MonthGrid extends StatelessWidget {
               final isToday = _isSameDay(day, now);
               final eventCount = eventCounter(day);
 
-              Color textColor = const Color(0xFF4A5568);
-              if (!isCurrentMonth) textColor = Colors.grey[400]!;
-              if (isSelected) textColor = Colors.white;
+              Color textColor = const Color(0xFF2D3748);
+              if (!isCurrentMonth) textColor = Colors.grey[350]!;
+              if (isToday && !isSelected) textColor = Colors.white;
+              if (isSelected) textColor = const Color(0xFF8B5CF6);
 
               return GestureDetector(
                 onTap: () => onSelectDay(day),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFF4CAF50)
-                        : isToday
-                            ? const Color(0xFF4CAF50).withValues(alpha: 0.1)
-                            : Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: isSelected
-                          ? const Color(0xFF4CAF50)
-                          : isToday
-                              ? const Color(0xFF4CAF50).withValues(alpha: 0.4)
-                              : Colors.grey[200]!,
-                      width: isSelected ? 1.4 : 1,
-                    ),
+                    color: isToday && !isSelected
+                        ? const Color(0xFF8B5CF6)
+                        : isSelected
+                            ? const Color(0xFF8B5CF6).withValues(alpha: 0.08)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final compactTile = constraints.maxHeight < 44;
-
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${day.day}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: textColor,
-                            ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${day.day}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isToday || isSelected
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                      if (eventCount > 0) ...[
+                        const SizedBox(height: 2),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: isToday && !isSelected
+                                ? Colors.white
+                                : const Color(0xFF8B5CF6),
+                            shape: BoxShape.circle,
                           ),
-                          if (eventCount > 0) ...[
-                            SizedBox(height: compactTile ? 2 : 4),
-                            compactTile
-                                ? Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : const Color(0xFF4CAF50),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  )
-                                : Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? Colors.white.withValues(alpha: 0.2)
-                                          : const Color(0xFF4CAF50)
-                                              .withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      '$eventCount',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : const Color(0xFF2D3748),
-                                      ),
-                                    ),
-                                  ),
-                          ],
-                        ],
-                      );
-                    },
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               );
@@ -1518,22 +1505,22 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onLongPress: () => _showOptions(context),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: color.withValues(alpha: 0.08),
+                color: color.withValues(alpha: 0.06),
                 blurRadius: 16,
-                offset: const Offset(0, 6),
+                offset: const Offset(0, 4),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1543,9 +1530,9 @@ class _EventCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Gradient left bar
+                // Gradient left bar — thinner
                 Container(
-                  width: 5,
+                  width: 4,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -1556,14 +1543,14 @@ class _EventCard extends StatelessWidget {
                       ],
                     ),
                     borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(18),
-                      bottomLeft: Radius.circular(18),
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
                     ),
                   ),
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1571,24 +1558,24 @@ class _EventCard extends StatelessWidget {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(12),
+                                color: color.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 event.person,
                                 style: TextStyle(
                                   color: color,
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                 ),
                               ),
                             ),
                             if (_isBirthday) ...[
                               const SizedBox(width: 6),
                               const Text('\u{1F382}',
-                                  style: TextStyle(fontSize: 16)),
+                                  style: TextStyle(fontSize: 14)),
                             ],
                             const Spacer(),
                             Text(
@@ -1596,31 +1583,31 @@ class _EventCard extends StatelessWidget {
                               style: const TextStyle(
                                 color: Color(0xFF4A5568),
                                 fontWeight: FontWeight.w600,
-                                fontSize: 13,
+                                fontSize: 12,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 2),
                             GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               onTap: () => _showOptions(context),
                               child: const Padding(
                                 padding: EdgeInsets.all(4),
                                 child: Icon(Icons.more_vert_rounded,
-                                    size: 18, color: Color(0xFF718096)),
+                                    size: 16, color: Color(0xFF718096)),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         Text(
                           event.title,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF2D3748),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Wrap(
                           spacing: 8,
                           runSpacing: 6,
@@ -2191,21 +2178,21 @@ class _WeekPreview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         const Text(
           'Diese Woche',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF4A5568),
+            color: Color(0xFF718096),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         SizedBox(
-          height: 66,
+          height: 50,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemCount: upcoming.length,
             itemBuilder: (context, i) {
               final e = upcoming[i];
@@ -2264,19 +2251,18 @@ class _WeekPreview extends StatelessWidget {
                   );
                 },
                 child: Container(
-                  constraints:
-                      const BoxConstraints(maxWidth: 160, minWidth: 110),
+                  width: 130,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: color.withValues(alpha: 0.35)),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withValues(alpha: 0.25)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: Colors.black.withValues(alpha: 0.03),
                         blurRadius: 8,
-                        offset: const Offset(0, 3),
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -2287,43 +2273,38 @@ class _WeekPreview extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            width: 7,
-                            height: 7,
+                            width: 6,
+                            height: 6,
                             decoration: BoxDecoration(
                               color: color,
                               shape: BoxShape.circle,
                             ),
                           ),
-                          const SizedBox(width: 5),
-                          Text(
-                            '$dayLabel ${DateFormat.Hm('de').format(e.start)}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: color,
-                              fontWeight: FontWeight.w700,
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '$dayLabel ${DateFormat.Hm('de').format(e.start)}',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: color,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         e.title,
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF2D3748),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (e.bringer != null && e.bringer!.isNotEmpty)
-                        Text(
-                          '\u{1F697} ${e.bringer!}',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF718096),
-                          ),
-                        ),
                     ],
                   ),
                 ),
