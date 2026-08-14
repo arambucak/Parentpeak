@@ -753,6 +753,91 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
   }
 
   // ─── ARCHIVE ──────────────────────────────────────────────────────────────
+
+  void _showArchiveOptions(WeeklyReflection r) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Text(r.weekId,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_rounded),
+              title: const Text('Bearbeiten'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _editReflection(r);
+              },
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.delete_rounded, color: Color(0xFFDC2626)),
+              title: const Text('Löschen',
+                  style: TextStyle(color: Color(0xFFDC2626))),
+              onTap: () {
+                Navigator.pop(ctx);
+                _deleteReflection(r);
+              },
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _editReflection(WeeklyReflection r) {
+    setState(() {
+      _showArchive = false;
+      _step = 0;
+      _selectedMood = r.overallMood;
+      _wellCtrl.text = r.whatWentWell;
+      _challengeCtrl.text = r.whatWasChallenging;
+      _learnedCtrl.text = r.whatILearned;
+      _lookingForwardCtrl.text = r.lookingForwardTo;
+      _aiFeedback = null;
+      _currentWeekReflection = null;
+      _fadeCtrl.reset();
+      _fadeCtrl.forward();
+    });
+  }
+
+  Future<void> _deleteReflection(WeeklyReflection r) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('${r.weekId} löschen?'),
+        content: const Text('Der Rückblick wird unwiderruflich gelöscht.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626)),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await WeeklyReflectionService.delete(r.weekId);
+    final updated = await WeeklyReflectionService.loadAll();
+    if (mounted) {
+      setState(() => _archive = updated);
+    }
+  }
+
   Widget _buildArchive() {
     if (_archive.isEmpty) {
       return Center(
@@ -854,6 +939,16 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: moodColor),
+                ),
+              ),
+              const SizedBox(width: 4),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _showArchiveOptions(r),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.more_vert_rounded,
+                      size: 18, color: Color(0xFF9CA3AF)),
                 ),
               ),
             ],

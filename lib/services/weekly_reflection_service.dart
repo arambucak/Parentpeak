@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class WeeklyReflection {
   final String weekId; // e.g. "2026-W33"
   final DateTime createdAt;
-  final String overallMood; // Emoji key: Super, Gut, Gemischt, Anstrengend, Dankbar
+  final String
+      overallMood; // Emoji key: Super, Gut, Gemischt, Anstrengend, Dankbar
   final String whatWentWell;
   final String whatWasChallenging;
   final String whatILearned;
@@ -34,8 +35,7 @@ class WeeklyReflection {
         if (aiFeedback != null) 'aiFeedback': aiFeedback,
       };
 
-  factory WeeklyReflection.fromJson(Map<String, dynamic> j) =>
-      WeeklyReflection(
+  factory WeeklyReflection.fromJson(Map<String, dynamic> j) => WeeklyReflection(
         weekId: j['weekId'] as String,
         createdAt: DateTime.parse(j['createdAt'] as String),
         overallMood: j['overallMood'] as String,
@@ -70,8 +70,7 @@ class WeeklyReflectionService {
   }
 
   static int _isoWeekNumber(DateTime date) {
-    final dayOfYear =
-        date.difference(DateTime(date.year, 1, 1)).inDays + 1;
+    final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
     final woy = ((dayOfYear - date.weekday + 10) / 7).floor();
     return woy;
   }
@@ -106,6 +105,15 @@ class WeeklyReflectionService {
     } catch (_) {
       return [];
     }
+  }
+
+  /// Delete a reflection by weekId
+  static Future<void> delete(String weekId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final all = await loadAll();
+    all.removeWhere((r) => r.weekId == weekId);
+    await prefs.setString(
+        _key, jsonEncode(all.map((e) => e.toJson()).toList()));
   }
 
   /// Get reflection for current week (if exists)
