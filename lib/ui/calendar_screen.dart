@@ -168,13 +168,36 @@ class _CalendarScreenState extends State<CalendarScreen>
     final syncError = _calendarService.lastSyncError;
     if (!mounted) return;
 
-    if (saved.isEmpty) {
-      if (!mounted) return;
-      setState(() {
-        _events.clear();
-        _syncError = syncError;
-      });
+    // Gelöschte IDs laden (damit Backend-Events die lokal gelöscht wurden nicht zurückkommen)
+    final prefs = await SharedPreferences.getInstance();
+    final deletedIds =
+        (prefs.getStringList('calendar.deleted_ids') ?? []).toSet();
 
+    if (saved.isEmpty) {
+      // Versuche lokale Events zu laden
+      final localRaw = prefs.getString('calendar.events');
+      if (localRaw != null && localRaw.isNotEmpty) {
+        try {
+          final localEvents = (jsonDecode(localRaw) as List)
+              .map((e) => _CalendarEvent.fromJson(e as Map<String, dynamic>))
+              .where((e) => !deletedIds.contains(e.id))
+              .toList();
+          if (mounted) {
+            setState(() {
+              _events
+                ..clear()
+                ..addAll(localEvents);
+              _syncError = syncError;
+            });
+          }
+        } catch (_) {}
+      } else {
+        if (mounted)
+          setState(() {
+            _events.clear();
+            _syncError = syncError;
+          });
+      }
       await _scheduleRemindersFor(_events);
       return;
     }
@@ -182,10 +205,14 @@ class _CalendarScreenState extends State<CalendarScreen>
     setState(() {
       _events
         ..clear()
-        ..addAll(saved.map(_CalendarEvent.fromJson));
+        ..addAll(saved
+            .map(_CalendarEvent.fromJson)
+            .where((e) => !deletedIds.contains(e.id)));
       _syncError = syncError;
     });
 
+    // Lokal auch aktualisieren
+    await _persistEvents();
     await _scheduleRemindersFor(_events);
   }
 
@@ -328,6 +355,11 @@ class _CalendarScreenState extends State<CalendarScreen>
         _events.removeWhere((e) => e.id == event.id);
       });
       await _persistEvents();
+      // Auf die "gelöscht" Liste setzen (damit Backend-Events nicht zurückkommen)
+      final prefs = await SharedPreferences.getInstance();
+      final deletedIds = prefs.getStringList('calendar.deleted_ids') ?? [];
+      deletedIds.add(event.id);
+      await prefs.setStringList('calendar.deleted_ids', deletedIds);
       // Auch vom Backend löschen
       try {
         await _calendarService.deleteEvent(event.id);
