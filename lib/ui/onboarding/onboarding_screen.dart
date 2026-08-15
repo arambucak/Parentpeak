@@ -110,7 +110,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       case 1:
         return _familyNameController.text.trim().isNotEmpty;
       case 2:
-        return _selectedChildAges.isNotEmpty;
+        return true; // Phasen optional — auch ohne Auswahl weiter
       case 3:
         return _selectedRegion.isNotEmpty;
       case 4:

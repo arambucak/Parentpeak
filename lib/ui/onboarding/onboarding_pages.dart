@@ -758,6 +758,24 @@ class OnboardingChildAgePage extends StatelessWidget {
       'label': 'Schwanger',
       'desc': 'Wir erwarten'
     },
+    {
+      'id': 'bezugsperson',
+      'emoji': '\u{1F49B}',
+      'label': 'Bezugsperson',
+      'desc': 'Oma, Opa, Patenonkel, Tagesmutter'
+    },
+    {
+      'id': 'auf_dem_weg',
+      'emoji': '\u{1F331}',
+      'label': 'Noch auf dem Weg',
+      'desc': 'Adoption, Pflegefamilie, Kinderwunsch'
+    },
+    {
+      'id': 'fachlich',
+      'emoji': '\u{1F4DA}',
+      'label': 'Fachlich interessiert',
+      'desc': 'Pädagogik, Sozialarbeit, Fortbildung'
+    },
   ];
 
   @override
