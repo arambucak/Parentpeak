@@ -1,3 +1,4 @@
+import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:flutter/material.dart';
 
 class SimpleLanguageTest extends StatefulWidget {
@@ -46,7 +47,7 @@ class _SimpleLanguageTestState extends State<SimpleLanguageTest> {
                 final lang = languages[index];
                 final isSelected = lang['code'] == _selectedLanguage;
                 return ListTile(
-                  leading: Text(lang['flag'] ?? '', style: const TextStyle(fontSize: 28)),
+                  leading: (lang['code'] == 'ku' || lang['code'] == 'ckb') ? const AlaRenginFlag(width: 32, height: 20) : Text(lang['flag'] ?? '', style: const TextStyle(fontSize: 28)),
                   title: Text(lang['name'] ?? ''),
                   trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.green) : null,
                   selected: isSelected,

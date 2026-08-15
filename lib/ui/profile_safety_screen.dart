@@ -807,7 +807,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     _LanguageOption('da', 'Dansk', '\u{1F1E9}\u{1F1F0}'),
     _LanguageOption(
         'fa', '\u{0641}\u{0627}\u{0631}\u{0633}\u{06CC}', '\u{1F1EE}\u{1F1F7}'),
-    _LanguageOption('ku', 'Kurdî', '\u{1F3F3}\u{FE0F}'),
+    _LanguageOption('ku', 'Kurdî', 'ala_rengin'),
     _LanguageOption('ja', '\u{65E5}\u{672C}\u{8A9E}', '\u{1F1EF}\u{1F1F5}'),
     _LanguageOption('zh', '\u{4E2D}\u{6587}', '\u{1F1E8}\u{1F1F3}'),
     _LanguageOption('hi', '\u{0939}\u{093F}\u{0928}\u{094D}\u{0926}\u{0940}',
