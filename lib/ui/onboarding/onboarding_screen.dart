@@ -45,6 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final List<String> _selectedChildAges = [];
   String _selectedCountry = 'DE';
   String _selectedRegion = 'NRW';
+  final TextEditingController _familyNameController = TextEditingController();
 
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
@@ -80,6 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void dispose() {
     _pageController.dispose();
+    _familyNameController.dispose();
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
@@ -106,7 +108,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       case 0:
         return true; // Welcome page, immer weiter
       case 1:
-        return _selectedRoles.isNotEmpty;
+        return _familyNameController.text.trim().isNotEmpty;
       case 2:
         return _selectedChildAges.isNotEmpty;
       case 3:
@@ -124,6 +126,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     HapticFeedback.mediumImpact();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_completedKey, true);
+
+    // Save family name
+    final familyName = _familyNameController.text.trim();
+    if (familyName.isNotEmpty) {
+      await prefs.setString('onboarding.family_name', familyName);
+    }
+
     if (_selectedRoles.isNotEmpty) {
       await prefs.setString(_roleKey, _selectedRoles.first);
       await prefs.setStringList(
@@ -222,25 +231,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     fadeAnimation: _fadeAnimation,
                     slideAnimation: _slideAnimation,
                   ),
-                  OnboardingRolePage(
-                    selectedRole: _selectedRole,
-                    selectedRoles: _selectedRoles,
-                    fadeAnimation: _fadeAnimation,
-                    slideAnimation: _slideAnimation,
-                    onRoleSelected: (role) {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        if (_selectedRoles.contains(role)) {
-                          _selectedRoles.remove(role);
-                        } else {
-                          _selectedRoles.add(role);
-                        }
-                        _selectedRole = _selectedRoles.isNotEmpty
-                            ? _selectedRoles.first
-                            : null;
-                      });
-                    },
-                  ),
+                  _buildNamePage(),
                   OnboardingChildAgePage(
                     selectedAges: _selectedChildAges,
                     fadeAnimation: _fadeAnimation,
@@ -307,6 +298,73 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               child: _buildBottomNav(theme),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNamePage() {
+    final theme = Theme.of(context);
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 48),
+              const Center(
+                child: Text('\u{1F46A}', style: TextStyle(fontSize: 48)),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                'Wie heißt eure Familie?',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Dein Vorname oder Familienname — damit wir dich persönlich begrüßen können.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 32),
+              TextField(
+                controller: _familyNameController,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  hintText: 'z.B. Familie Müller oder Anna',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceContainerLow,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                        color: theme.colorScheme.primary, width: 1.5),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Wird für die Begrüßung und im Netzwerk verwendet.',
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
+            ],
+          ),
         ),
       ),
     );
