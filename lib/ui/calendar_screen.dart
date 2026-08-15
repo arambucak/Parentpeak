@@ -141,7 +141,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
@@ -340,14 +340,14 @@ class _CalendarScreenState extends State<CalendarScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Löschen'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action')),
           ),
         ],
       ),
@@ -1595,7 +1595,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             ),
             ListTile(
               leading: const Icon(Icons.edit_rounded),
-              title: const Text('Umbenennen'),
+              title: Text(AppStringsManager.getString(languageService.currentLanguage, 'rename')),
               onTap: () {
                 Navigator.pop(ctx);
                 _renameCustomPerson(personName);
@@ -1604,7 +1604,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             ListTile(
               leading: Icon(Icons.delete_rounded,
                   color: Theme.of(context).colorScheme.error),
-              title: Text('Löschen',
+              title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1623,7 +1623,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Person umbenennen'),
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'rename_person')),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -1632,10 +1632,10 @@ class _CalendarScreenState extends State<CalendarScreen>
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen')),
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: const Text('Speichern')),
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'save'))),
         ],
       ),
     );
@@ -1671,12 +1671,12 @@ class _CalendarScreenState extends State<CalendarScreen>
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel'))),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.error),
-            child: const Text('Löschen'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action')),
           ),
         ],
       ),
@@ -2212,7 +2212,7 @@ class _EventCard extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.delete_rounded,
                   color: Theme.of(context).colorScheme.error),
-              title: Text('Löschen',
+              title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -2696,7 +2696,7 @@ class _WeekPreview extends StatelessWidget {
                           ListTile(
                             leading: Icon(Icons.delete_rounded,
                                 color: Theme.of(context).colorScheme.error),
-                            title: Text('Löschen',
+                            title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action'),
                                 style: TextStyle(
                                     color:
                                         Theme.of(context).colorScheme.error)),
@@ -2792,7 +2792,7 @@ class _WeekPreview extends StatelessWidget {
                                                 color: Theme.of(context)
                                                     .colorScheme
                                                     .error),
-                                            title: Text('Löschen',
+                                            title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action'),
                                                 style: TextStyle(
                                                     color: Theme.of(context)
                                                         .colorScheme

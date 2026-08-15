@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/main.dart';
 import 'package:parentpeak/services/weekly_reflection_service.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
 
@@ -185,7 +187,9 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
         elevation: 0,
         scrolledUnderElevation: 0,
         foregroundColor: const Color(0xFF1F2937),
-        title: const Text('Wochenrückblick',
+        title: Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'weekly_review'),
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
         centerTitle: false,
         actions: [
@@ -820,12 +824,14 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'cancel'))),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Löschen'),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'delete_action')),
           ),
         ],
       ),

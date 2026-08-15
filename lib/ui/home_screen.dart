@@ -875,7 +875,7 @@ class _HomeScreenState extends State<HomeScreen>
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Dein Wochenrückblick',
+                                AppStringsManager.getString(languageService.currentLanguage, 'your_weekly_review'),
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -891,8 +891,8 @@ class _HomeScreenState extends State<HomeScreen>
                                     .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Text(
-                                'Ansehen \u{2192}',
+                              child: Text(
+                                AppStringsManager.getString(languageService.currentLanguage, 'view_it'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
