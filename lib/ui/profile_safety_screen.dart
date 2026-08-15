@@ -479,9 +479,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               // ─── Rechtliches ───────────────────────────────────────
               _buildSectionHeader(theme, '\u{1F4C4}', _t('legal')),
               const SizedBox(height: 10),
-              // Gruppe 1: Recht & Transparenz
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(16),
@@ -510,17 +509,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       title: 'KI-Nutzungshinweis',
                       subtitle: 'EU AI Act',
                       onTap: _showAIDisclosure),
-                ]),
-              ),
-              const SizedBox(height: 10),
-              // Gruppe 2: Daten & Support
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(children: [
+                  _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.download_rounded,
                       title: 'Meine Daten exportieren',
@@ -1154,29 +1143,31 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(width: 12),
+            Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 10),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(title,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  Expanded(
+                    child: Text(title,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600, fontSize: 13)),
+                  ),
                   if (subtitle != null)
                     Text(subtitle,
                         style:
-                            TextStyle(fontSize: 11, color: Colors.grey[500])),
+                            TextStyle(fontSize: 10, color: Colors.grey[400])),
                 ],
               ),
             ),
+            const SizedBox(width: 4),
             Icon(Icons.chevron_right_rounded,
-                size: 18, color: Colors.grey[400]),
+                size: 15, color: Colors.grey[350]),
           ],
         ),
       ),
