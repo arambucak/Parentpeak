@@ -335,20 +335,38 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 60),
-              const Text('\u{1F30D}', style: TextStyle(fontSize: 48)),
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.primary.withValues(alpha: 0.1),
+                      const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Center(
+                  child: Text('\u{1F30D}', style: TextStyle(fontSize: 36)),
+                ),
+              ),
+              const SizedBox(height: 24),
               Text(
                 'Choose your language',
                 style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
               Text(
-                'Wähle deine Sprache • Dilinizi seçin',
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                'Wähle deine Sprache • Select your language',
+                style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
