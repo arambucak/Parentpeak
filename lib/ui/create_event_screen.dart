@@ -1,3 +1,5 @@
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

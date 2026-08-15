@@ -130,6 +130,8 @@ PODS:
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
+  - package_info_plus (0.4.5):
+    - Flutter
   - printing (1.0.0):
     - Flutter
   - PromisesObjC (2.4.1)
@@ -221,6 +223,7 @@ DEPENDENCIES:
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - just_audio (from `.symlinks/plugins/just_audio/darwin`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - printing (from `.symlinks/plugins/printing/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -286,6 +289,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
   just_audio:
     :path: ".symlinks/plugins/just_audio/darwin"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
   printing:
     :path: ".symlinks/plugins/printing/ios"
   share_plus:
@@ -329,6 +334,7 @@ SPEC CHECKSUMS:
   integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
   just_audio: a42c63806f16995daf5b219ae1d679deb76e6a79
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   printing: 233e1b73bd1f4a05615548e9b5a324c98588640b
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b

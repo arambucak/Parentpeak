@@ -1,3 +1,5 @@
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 import 'dart:math';
 import 'dart:convert';
 
