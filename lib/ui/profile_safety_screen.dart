@@ -947,7 +947,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               const SizedBox(height: 14),
               _impressumRow('Anbieter', 'Fatih Bucak – Parentpeak'),
               _impressumRow('Inhaber', 'Fatih Bucak'),
-              _impressumRow('Adresse', 'Wird bei Gewerbeanmeldung ergänzt'),
+              _impressumRow('Adresse', 'Alexandrinenstraße 93, 10969 Berlin'),
               _impressumRow('E-Mail',
                   APIConfig.getContactEmail() ?? 'support@parentpeak.com'),
               _impressumRow('Verantwortlich für Inhalte', 'Fatih Bucak'),
@@ -959,8 +959,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
-                  'Hinweis: Parentpeak befindet sich in der Beta-Phase. '
-                  'Die vollständige Anschrift wird bei Gewerbeanmeldung ergänzt.',
+                  'Hinweis: Parentpeak befindet sich in der Beta-Phase.',
                   style: TextStyle(
                       fontSize: 12, color: Color(0xFF6B7280), height: 1.4),
                 ),
