@@ -1033,13 +1033,31 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               ),
               const SizedBox(height: 14),
               _aiFeatureItem('\u{1F4AC}', 'KI-Elternberatung',
-                  'Pädagogische Tipps basierend auf GfK'),
+                  'Integrativer pädagogischer Ansatz'),
               _aiFeatureItem('\u{1F372}', 'Rezept-Generator',
                   'Altersgerechte Familienrezepte'),
               _aiFeatureItem('\u{1F4C5}', 'Events-Suche',
                   'Lokale Aktivitäten in deiner Nähe'),
               _aiFeatureItem('\u{1F4DC}', 'Wochenrückblick-Feedback',
                   'Empathische Rückmeldung'),
+              const SizedBox(height: 14),
+              const Text(
+                'Pädagogische Basis:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '\u{2022} Gewaltfreie Kommunikation (Rosenberg)\n'
+                '\u{2022} Neurobiologie (Gerald Hüther)\n'
+                '\u{2022} Montessori — "Hilf mir, es selbst zu tun"\n'
+                '\u{2022} Reggio — Das Kind hat 100 Sprachen\n'
+                '\u{2022} Freinet — Lernen am realen Leben\n'
+                '\u{2022} Fröbel — Spielen ist die höchste Form des Lernens\n'
+                '\u{2022} Situationsansatz\n'
+                '\u{2022} Jesper Juul — Beziehung vor Erziehung',
+                style: TextStyle(
+                    fontSize: 12, height: 1.6, color: Color(0xFF4B5563)),
+              ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(14),
