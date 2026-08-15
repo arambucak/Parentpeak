@@ -422,12 +422,12 @@ class APIConfig {
 
   /// Support/Contact Email
   static String? getContactEmail() {
-    return _getEnvOrDefault('CONTACT_EMAIL', '');
+    return _getEnvOrDefault('CONTACT_EMAIL', 'support@parentpeak.com');
   }
 
-  /// Support/Contact URL
   static String? getContactSupportUrl() {
-    return _getEnvOrDefault('CONTACT_SUPPORT_URL', '');
+    return _getEnvOrDefault(
+        'CONTACT_SUPPORT_URL', 'mailto:support@parentpeak.com');
   }
 
   static String _getEnvOrDefault(String key, String fallback) {
