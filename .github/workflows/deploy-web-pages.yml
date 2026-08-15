@@ -44,6 +44,8 @@ jobs:
           STRIPE_PUBLISHABLE_KEY: ${{ vars.STRIPE_PUBLISHABLE_KEY }}
           GEMINI_MODEL_NAME: ${{ vars.GEMINI_MODEL_NAME }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PP_BETA_FREE_ACCESS: ${{ vars.PP_BETA_FREE_ACCESS }}
+          PP_PUBLIC_LAUNCH_DATE: ${{ vars.PP_PUBLIC_LAUNCH_DATE }}
         run: |
           set -o pipefail
 
@@ -65,6 +67,8 @@ jobs:
             --dart-define=STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \
             --dart-define=GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME}" \
             --dart-define=GEMINI_API_KEY="${GEMINI_API_KEY}" \
+            --dart-define=PP_BETA_FREE_ACCESS="${PP_BETA_FREE_ACCESS:-true}" \
+            --dart-define=PP_PUBLIC_LAUNCH_DATE="${PP_PUBLIC_LAUNCH_DATE:-}" \
             2>&1 | tee flutter-build.log
 
           touch build/web/.nojekyll

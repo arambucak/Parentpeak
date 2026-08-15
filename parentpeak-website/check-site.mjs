@@ -29,7 +29,7 @@ for (const snippet of requiredSnippets) {
   }
 }
 
-if (/UG \(haftungsbeschränkt\)|komplett kostenlos|DSGVO-konform|Open Source Transparenz/i.test(html)) {
+if (/UG \(haftungsbeschränkt\)|komplett kostenlos|DSGVO-konform|Open Source Transparenz|14 Tage|Keine Kreditkarte/i.test(html)) {
   throw new Error('Found an outdated or unsupported public claim.');
 }
 

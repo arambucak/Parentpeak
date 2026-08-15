@@ -225,7 +225,7 @@ Die App wurde von Anfang an datenschutzfreundlich entwickelt. Eltern entscheiden
 - „500 Kinderkleidungsstücke, die niemand mehr braucht. → Verschenkmarkt."
 
 **Facebook (Elterngruppen):**
-- „Kostenlos 14 Tage alle Funktionen testen — keine Kreditkarte nötig."
+- „Aktuell kostenlos in der Beta. Nach dem offiziellen Start folgt ein kostenloser Probemonat."
 - „Welche Frage würdest du um 3 Uhr deinem KI-Erziehungsberater stellen?"
 
 ---

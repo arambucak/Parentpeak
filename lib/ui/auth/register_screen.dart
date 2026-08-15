@@ -284,7 +284,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '30 Tage kostenlos',
+                  'Aktuell kostenlos in der Beta',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -292,7 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Alle Funktionen, keine Kreditkarte nötig.',
+                  'Nach dem offiziellen Start: 1 Monat kostenlos testen.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
                   ),

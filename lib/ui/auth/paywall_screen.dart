@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/config/feature_flags.dart';
+import 'package:parentpeak/config/access_config.dart';
 
 class PaywallScreen extends StatelessWidget {
   final VoidCallback? onSubscribed;
@@ -106,6 +107,10 @@ class PaywallScreen extends StatelessWidget {
   }
 
   String _getHeaderSubtitle(ParentUser? user) {
+    if (AccessConfig.isBetaFreeAccess) {
+      return 'Aktuell kostenlos in der Beta.\n'
+          'Nach dem offiziellen Start: 1 Monat kostenlos testen.';
+    }
     if (user == null) return 'Schalte alle Funktionen frei.';
     if (user.trialDaysRemaining > 0) {
       return 'Noch ${user.trialDaysRemaining} Tage kostenlos testen.\nDanach wähle deinen Plan.';

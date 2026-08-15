@@ -4,7 +4,7 @@
 ///   - Alle Methoden sind async und geben typisierte Results zurück.
 ///   - Passwörter werden NIEMALS im Klartext gespeichert (SHA-256 + Salt).
 ///   - Firebase Auth kann 1:1 als Drop-in eingesetzt werden (gleiche API).
-///   - Trial-Logik: 14 Tage ab Registrierung, dann Paywall.
+///   - Beta: kostenloser Vollzugriff; danach 30 Tage Trial ab Launch/Registrierung.
 ///
 /// Sicherheit:
 ///   - Passwort-Hashing: SHA-256 mit zufälligem Salt (hex)
@@ -23,6 +23,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/firebase_options.dart';
 import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/config/access_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 
@@ -82,8 +83,10 @@ class ParentUser {
   });
 
   bool get isTrialActive {
-    final trialEnd = registeredAt.add(const Duration(days: 180));
-    return DateTime.now().isBefore(trialEnd);
+    if (AccessConfig.isBetaFreeAccess) return true;
+    return DateTime.now().toUtc().isBefore(
+          AccessConfig.trialEndsAt(registeredAt),
+        );
   }
 
   /// Returns the best display name available:
@@ -101,15 +104,15 @@ class ParentUser {
   }
 
   int get trialDaysRemaining {
+    if (AccessConfig.isBetaFreeAccess) return 0;
     if (serverTrialDaysRemaining != null) {
       return serverTrialDaysRemaining! < 0 ? 0 : serverTrialDaysRemaining!;
     }
-    final trialEnd = registeredAt.add(const Duration(days: 180));
-    final diff = trialEnd.difference(DateTime.now()).inDays;
-    return diff < 0 ? 0 : diff;
+    return AccessConfig.trialDaysRemaining(registeredAt);
   }
 
   bool get hasFullAccess {
+    if (AccessConfig.isBetaFreeAccess) return true;
     if (isPremium) return true;
     if (serverHasFullAccess != null) return serverHasFullAccess!;
     return isTrialActive;

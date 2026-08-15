@@ -2865,21 +2865,29 @@ function ensureEntitlement(userId, options = {}) {
 }
 
 function buildEntitlementStatus(record) {
-  const trialDays = 180;
+  const betaFreeAccess = `${process.env.BETA_FREE_ACCESS || '1'}`.toLowerCase() !== '0'
+    && `${process.env.BETA_FREE_ACCESS || '1'}`.toLowerCase() !== 'false';
+  const trialDays = 30;
   const now = new Date();
   const registeredAt = new Date(record.registeredAt);
-  const trialEndsAt = new Date(registeredAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
+  const configuredLaunchDate = asIsoDate(process.env.PUBLIC_LAUNCH_DATE);
+  const publicLaunchDate = configuredLaunchDate ? new Date(configuredLaunchDate) : null;
+  const trialStartsAt = publicLaunchDate && registeredAt < publicLaunchDate
+    ? publicLaunchDate
+    : registeredAt;
+  const trialEndsAt = new Date(trialStartsAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
   const trialMillisRemaining = trialEndsAt.getTime() - now.getTime();
   const trialDaysRemaining = Math.max(0, Math.ceil(trialMillisRemaining / (24 * 60 * 60 * 1000)));
-  const trialActive = trialMillisRemaining > 0;
-  const hasFullAccess = Boolean(record.isPremium) || trialActive;
+  const trialActive = betaFreeAccess || trialMillisRemaining > 0;
+  const hasFullAccess = betaFreeAccess || Boolean(record.isPremium) || trialActive;
 
   return {
     userId: record.userId,
     isPremium: Boolean(record.isPremium),
     trialActive,
-    trialDaysRemaining,
-    trialEndsAt: trialEndsAt.toISOString(),
+    trialDaysRemaining: betaFreeAccess ? 0 : trialDaysRemaining,
+    trialEndsAt: betaFreeAccess ? null : trialEndsAt.toISOString(),
+    betaFreeAccess,
     hasFullAccess,
     source: 'server',
     updatedAt: new Date().toISOString(),

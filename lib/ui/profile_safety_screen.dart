@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:parentpeak/logic/auth_service.dart';
-import 'package:parentpeak/logic/theme_service.dart';
-import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
@@ -15,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
+import 'package:parentpeak/config/access_config.dart';
 
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
 class ProfileSafetyScreen extends StatefulWidget {
@@ -267,6 +266,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                           Text(
                             isPremium
                                 ? 'Premium'
+                              : AccessConfig.isBetaFreeAccess
+                                ? 'Beta · kostenlos'
                                 : hasAccess
                                     ? _t('trial_days_template')
                                         .replaceAll('{days}', '$trialDays')
