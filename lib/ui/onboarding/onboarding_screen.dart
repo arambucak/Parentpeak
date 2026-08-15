@@ -90,7 +90,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _goToPage(int page) {
-    if (page < 0 || page > 5) return;
+    if (page < 0 || page > 6) return;
     HapticFeedback.lightImpact();
     _pageController.animateToPage(
       page,
@@ -100,7 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _nextPage() {
-    if (_currentPage < 5) {
+    if (_currentPage < 6) {
       _goToPage(_currentPage + 1);
     }
   }
@@ -108,16 +108,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   bool get _canProceed {
     switch (_currentPage) {
       case 0:
-        return true; // Welcome page, immer weiter
+        return true; // Language page, immer weiter
       case 1:
-        return _familyNameController.text.trim().isNotEmpty;
+        return true; // Welcome page, immer weiter
       case 2:
-        return true; // Phasen optional — auch ohne Auswahl weiter
+        return _familyNameController.text.trim().isNotEmpty;
       case 3:
-        return _selectedRegion.isNotEmpty;
+        return true; // Phasen optional
       case 4:
-        return _selectedPriorities.isNotEmpty;
+        return _selectedRegion.isNotEmpty;
       case 5:
+        return _selectedPriorities.isNotEmpty;
+      case 6:
         return true; // Summary page
       default:
         return false;
@@ -229,6 +231,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   _slideController.forward();
                 },
                 children: [
+                  _buildLanguagePage(),
                   OnboardingWelcomePage(
                     fadeAnimation: _fadeAnimation,
                     slideAnimation: _slideAnimation,
@@ -300,6 +303,116 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               child: _buildBottomNav(theme),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguagePage() {
+    final theme = Theme.of(context);
+    const languages = [
+      {'code': 'de', 'flag': '\u{1F1E9}\u{1F1EA}', 'name': 'Deutsch'},
+      {'code': 'en', 'flag': '\u{1F1EC}\u{1F1E7}', 'name': 'English'},
+      {'code': 'tr', 'flag': '\u{1F1F9}\u{1F1F7}', 'name': 'Türkçe'},
+      {'code': 'ku', 'flag': '\u{1F3F3}\u{FE0F}', 'name': 'Kurdî'},
+      {'code': 'ar', 'flag': '\u{1F1F8}\u{1F1E6}', 'name': 'العربية'},
+      {'code': 'fr', 'flag': '\u{1F1EB}\u{1F1F7}', 'name': 'Français'},
+      {'code': 'es', 'flag': '\u{1F1EA}\u{1F1F8}', 'name': 'Español'},
+      {'code': 'ru', 'flag': '\u{1F1F7}\u{1F1FA}', 'name': 'Русский'},
+      {'code': 'pl', 'flag': '\u{1F1F5}\u{1F1F1}', 'name': 'Polski'},
+      {'code': 'it', 'flag': '\u{1F1EE}\u{1F1F9}', 'name': 'Italiano'},
+      {'code': 'nl', 'flag': '\u{1F1F3}\u{1F1F1}', 'name': 'Nederlands'},
+      {'code': 'uk', 'flag': '\u{1F1FA}\u{1F1E6}', 'name': 'Українська'},
+    ];
+
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 60),
+              const Text('\u{1F30D}', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 20),
+              Text(
+                'Choose your language',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Wähle deine Sprache • Dilinizi seçin',
+                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Expanded(
+                child: GridView.builder(
+                  itemCount: languages.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.3,
+                  ),
+                  itemBuilder: (_, i) {
+                    final lang = languages[i];
+                    final selected =
+                        languageService.currentLanguage == lang['code'];
+                    return GestureDetector(
+                      onTap: () async {
+                        HapticFeedback.selectionClick();
+                        await languageService
+                            .setLanguage(lang['code']! as String);
+                        if (mounted) setState(() {});
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                              : theme.colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : Colors.transparent,
+                            width: selected ? 2 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(lang['flag']!,
+                                style: const TextStyle(fontSize: 24)),
+                            const SizedBox(height: 4),
+                            Text(
+                              lang['name']!,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: selected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -377,7 +490,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildProgressBar(ThemeData theme) {
     return Row(
-      children: List.generate(6, (index) {
+      children: List.generate(7, (index) {
         final isActive = index <= _currentPage;
         final isCurrent = index == _currentPage;
         return Expanded(
@@ -399,7 +512,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _buildBottomNav(ThemeData theme) {
-    final isLastPage = _currentPage == 5;
+    final isLastPage = _currentPage == 6;
 
     return Row(
       children: [
