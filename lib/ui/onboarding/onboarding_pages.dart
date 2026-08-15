@@ -709,3 +709,357 @@ class OnboardingReadyPage extends StatelessWidget {
     );
   }
 }
+
+// ─── Page: Kind-Alter ─────────────────────────────────────────────────────────
+
+class OnboardingChildAgePage extends StatelessWidget {
+  final List<String> selectedAges;
+  final Animation<double> fadeAnimation;
+  final Animation<Offset> slideAnimation;
+  final ValueChanged<String> onAgeToggled;
+
+  const OnboardingChildAgePage({
+    super.key,
+    required this.selectedAges,
+    required this.fadeAnimation,
+    required this.slideAnimation,
+    required this.onAgeToggled,
+  });
+
+  static const _ageOptions = [
+    {'id': 'baby', 'emoji': '\u{1F476}', 'label': 'Baby', 'desc': '0–1 Jahr'},
+    {
+      'id': 'kleinkind',
+      'emoji': '\u{1F9D2}',
+      'label': 'Kleinkind',
+      'desc': '1–3 Jahre'
+    },
+    {
+      'id': 'kindergarten',
+      'emoji': '\u{1F466}',
+      'label': 'Kindergarten',
+      'desc': '3–6 Jahre'
+    },
+    {
+      'id': 'grundschule',
+      'emoji': '\u{1F393}',
+      'label': 'Grundschule',
+      'desc': '6–10 Jahre'
+    },
+    {
+      'id': 'teenager',
+      'emoji': '\u{1F9D1}',
+      'label': 'Teenager',
+      'desc': '10+ Jahre'
+    },
+    {
+      'id': 'schwanger',
+      'emoji': '\u{1F930}',
+      'label': 'Schwanger',
+      'desc': 'Wir erwarten'
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return FadeTransition(
+      opacity: fadeAnimation,
+      child: SlideTransition(
+        position: slideAnimation,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 48),
+              Text(
+                'In welcher Phase seid ihr?',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Mehrfachauswahl möglich — wir passen Inhalte an.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _ageOptions.length,
+                  itemBuilder: (_, i) {
+                    final opt = _ageOptions[i];
+                    final selected = selectedAges.contains(opt['id']);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => onAgeToggled(opt['id']!),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? theme.colorScheme.primary
+                                    .withValues(alpha: 0.08)
+                                : theme.colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: selected
+                                  ? theme.colorScheme.primary
+                                  : Colors.transparent,
+                              width: selected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(children: [
+                            Text(opt['emoji']!,
+                                style: const TextStyle(fontSize: 28)),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(opt['label']!,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: selected
+                                            ? FontWeight.w700
+                                            : FontWeight.w600,
+                                        color: theme.colorScheme.onSurface,
+                                      )),
+                                  Text(opt['desc']!,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant)),
+                                ],
+                              ),
+                            ),
+                            if (selected)
+                              Icon(Icons.check_circle_rounded,
+                                  color: theme.colorScheme.primary, size: 22),
+                          ]),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Page: Land & Region ─────────────────────────────────────────────────────
+
+class OnboardingCountryPage extends StatelessWidget {
+  final String selectedCountry;
+  final String selectedRegion;
+  final Animation<double> fadeAnimation;
+  final Animation<Offset> slideAnimation;
+  final ValueChanged<String> onCountrySelected;
+  final ValueChanged<String> onRegionSelected;
+
+  const OnboardingCountryPage({
+    super.key,
+    required this.selectedCountry,
+    required this.selectedRegion,
+    required this.fadeAnimation,
+    required this.slideAnimation,
+    required this.onCountrySelected,
+    required this.onRegionSelected,
+  });
+
+  static const _countries = [
+    {'code': 'DE', 'flag': '\u{1F1E9}\u{1F1EA}', 'name': 'Deutschland'},
+    {'code': 'AT', 'flag': '\u{1F1E6}\u{1F1F9}', 'name': 'Österreich'},
+    {'code': 'CH', 'flag': '\u{1F1E8}\u{1F1ED}', 'name': 'Schweiz'},
+    {'code': 'TR', 'flag': '\u{1F1F9}\u{1F1F7}', 'name': 'Türkei'},
+    {'code': 'GB', 'flag': '\u{1F1EC}\u{1F1E7}', 'name': 'Großbritannien'},
+  ];
+
+  static const Map<String, List<Map<String, String>>> regions = {
+    'DE': [
+      {'code': 'NRW', 'name': 'Nordrhein-Westfalen'},
+      {'code': 'BY', 'name': 'Bayern'},
+      {'code': 'BW', 'name': 'Baden-Württemberg'},
+      {'code': 'NI', 'name': 'Niedersachsen'},
+      {'code': 'HE', 'name': 'Hessen'},
+      {'code': 'BE', 'name': 'Berlin'},
+      {'code': 'HH', 'name': 'Hamburg'},
+      {'code': 'SN', 'name': 'Sachsen'},
+      {'code': 'SH', 'name': 'Schleswig-Holstein'},
+      {'code': 'RP', 'name': 'Rheinland-Pfalz'},
+      {'code': 'TH', 'name': 'Thüringen'},
+      {'code': 'BB', 'name': 'Brandenburg'},
+      {'code': 'SA', 'name': 'Sachsen-Anhalt'},
+      {'code': 'MV', 'name': 'Mecklenburg-Vorpommern'},
+      {'code': 'HB', 'name': 'Bremen'},
+      {'code': 'SL', 'name': 'Saarland'},
+    ],
+    'AT': [
+      {'code': 'Wien', 'name': 'Wien'},
+      {'code': 'NÖ', 'name': 'Niederösterreich'},
+      {'code': 'OÖ', 'name': 'Oberösterreich'},
+      {'code': 'Tirol', 'name': 'Tirol'},
+      {'code': 'Sbg', 'name': 'Salzburg'},
+      {'code': 'Stmk', 'name': 'Steiermark'},
+    ],
+    'CH': [
+      {'code': 'ZH', 'name': 'Zürich'},
+      {'code': 'BE', 'name': 'Bern'},
+      {'code': 'BS', 'name': 'Basel'},
+      {'code': 'AG', 'name': 'Aargau'},
+    ],
+    'TR': [
+      {'code': 'TR', 'name': 'Türkei (national)'},
+    ],
+    'GB': [
+      {'code': 'ENG', 'name': 'England'},
+      {'code': 'SCO', 'name': 'Scotland'},
+      {'code': 'WAL', 'name': 'Wales'},
+    ],
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final regions = OnboardingCountryPage.regions[selectedCountry] ?? [];
+
+    return FadeTransition(
+      opacity: fadeAnimation,
+      child: SlideTransition(
+        position: slideAnimation,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 48),
+              Text(
+                'Wo lebt eure Familie?',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Für Feiertage, Schulferien und regionale Leistungen.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Country selection
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _countries.map((c) {
+                  final selected = selectedCountry == c['code'];
+                  return GestureDetector(
+                    onTap: () => onCountrySelected(c['code']!),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                            : theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected
+                              ? theme.colorScheme.primary
+                              : Colors.transparent,
+                          width: selected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text(c['flag']!, style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Text(c['name']!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w500,
+                              color: selected
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface,
+                            )),
+                      ]),
+                    ),
+                  );
+                }).toList(),
+              ),
+              if (regions.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text(
+                  'Region / Bundesland',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: regions.length,
+                    itemBuilder: (_, i) {
+                      final r = regions[i];
+                      final selected = selectedRegion == r['code'];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => onRegionSelected(r['code']!),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 11),
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? theme.colorScheme.primary
+                                      .withValues(alpha: 0.08)
+                                  : theme.colorScheme.surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: selected
+                                    ? theme.colorScheme.primary
+                                    : Colors.transparent,
+                              ),
+                            ),
+                            child: Row(children: [
+                              Expanded(
+                                child: Text(r['name']!,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: selected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                    )),
+                              ),
+                              if (selected)
+                                Icon(Icons.check_circle_rounded,
+                                    color: theme.colorScheme.primary, size: 20),
+                            ]),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

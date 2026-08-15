@@ -42,6 +42,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   String? _selectedRole;
   final Set<String> _selectedRoles = {};
   final Set<String> _selectedPriorities = {};
+  final List<String> _selectedChildAges = [];
+  String _selectedCountry = 'DE';
+  String _selectedRegion = 'NRW';
 
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
@@ -83,7 +86,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _goToPage(int page) {
-    if (page < 0 || page > 3) return;
+    if (page < 0 || page > 5) return;
     HapticFeedback.lightImpact();
     _pageController.animateToPage(
       page,
@@ -93,7 +96,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _nextPage() {
-    if (_currentPage < 3) {
+    if (_currentPage < 5) {
       _goToPage(_currentPage + 1);
     }
   }
@@ -105,8 +108,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       case 1:
         return _selectedRoles.isNotEmpty;
       case 2:
-        return _selectedPriorities.isNotEmpty;
+        return _selectedChildAges.isNotEmpty;
       case 3:
+        return _selectedRegion.isNotEmpty;
+      case 4:
+        return _selectedPriorities.isNotEmpty;
+      case 5:
         return true; // Summary page
       default:
         return false;
@@ -126,6 +133,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       _prioritiesKey,
       _selectedPriorities.toList(),
     );
+
+    // Save child ages
+    await prefs.setStringList('onboarding.child_ages', _selectedChildAges);
+
+    // Save country & region → auto-configures Kalender holidays
+    await prefs.setString('holiday.country', _selectedCountry);
+    await prefs.setString('holiday.region', _selectedRegion);
 
     // Speichere die personalisierte Kachel-Reihenfolge
     final tileOrder = _buildTileOrder();
@@ -227,6 +241,42 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       });
                     },
                   ),
+                  OnboardingChildAgePage(
+                    selectedAges: _selectedChildAges,
+                    fadeAnimation: _fadeAnimation,
+                    slideAnimation: _slideAnimation,
+                    onAgeToggled: (age) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        if (_selectedChildAges.contains(age)) {
+                          _selectedChildAges.remove(age);
+                        } else {
+                          _selectedChildAges.add(age);
+                        }
+                      });
+                    },
+                  ),
+                  OnboardingCountryPage(
+                    selectedCountry: _selectedCountry,
+                    selectedRegion: _selectedRegion,
+                    fadeAnimation: _fadeAnimation,
+                    slideAnimation: _slideAnimation,
+                    onCountrySelected: (country) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _selectedCountry = country;
+                        // Reset region to first available
+                        final regions = OnboardingCountryPage.regions[country];
+                        _selectedRegion = regions != null && regions.isNotEmpty
+                            ? regions.first['code']!
+                            : '';
+                      });
+                    },
+                    onRegionSelected: (region) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _selectedRegion = region);
+                    },
+                  ),
                   OnboardingPrioritiesPage(
                     selectedPriorities: _selectedPriorities,
                     fadeAnimation: _fadeAnimation,
@@ -264,7 +314,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildProgressBar(ThemeData theme) {
     return Row(
-      children: List.generate(4, (index) {
+      children: List.generate(6, (index) {
         final isActive = index <= _currentPage;
         final isCurrent = index == _currentPage;
         return Expanded(
@@ -286,7 +336,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _buildBottomNav(ThemeData theme) {
-    final isLastPage = _currentPage == 3;
+    final isLastPage = _currentPage == 5;
 
     return Row(
       children: [
