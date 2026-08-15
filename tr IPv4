@@ -1,5 +1,0 @@
-[33m4c7b762[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mcleanup/security-and-demo[m[33m)[m Add Marketplace feature with backend (Node.js + JSON) and Flutter UI
-[33md325a05[m Update Gemini API key with billing enabled
-[33m7f8c84f[m Add GeminiAIService with Gemini 2.0 Flash model
-[33md3ae1d5[m[33m ([m[1;31morigin/cleanup/security-and-demo[m[33m)[m Parentpeak v1: Modern design with Home dashboard, KI-Pädagogik chat, family features, and new Bottom Navigation with central FAB
-[33m576d27f[m fix: correct UTF-8 encoding in test and dialog strings
