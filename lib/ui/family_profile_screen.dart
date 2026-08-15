@@ -392,7 +392,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Backup exportiert'),
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'backup_exported')),
         content: const Text(
           'Das Familienprofil-Backup wurde als JSON in die Zwischenablage kopiert.',
         ),
@@ -433,7 +433,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Backup als QR'),
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'backup_qr')),
           content: SizedBox(
             width: 320,
             child: Column(
@@ -486,7 +486,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 if (chunks.length > 1)
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Auto-Weiter'),
+                    title: Text(AppStringsManager.getString(languageService.currentLanguage, 'auto_next')),
                     subtitle: Text(
                       'Wechselt alle $autoPlaySeconds Sek. den QR-Teil',
                     ),
@@ -558,7 +558,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 autoTimer?.cancel();
                 Navigator.pop(context);
               },
-              child: const Text('Schliessen'),
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'close')),
             ),
           ],
         ),
@@ -580,7 +580,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Backup importieren'),
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'backup_import')),
           content: SizedBox(
             width: 520,
             child: Column(
@@ -633,7 +633,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                           });
                         },
                         icon: const Icon(Icons.content_paste),
-                        label: const Text('Zwischenablage'),
+                        label: Text(AppStringsManager.getString(languageService.currentLanguage, 'clipboard')),
                       ),
                       TextButton.icon(
                         onPressed: () async {
@@ -675,7 +675,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 }
                 Navigator.pop(context, true);
               },
-              child: const Text('Importieren'),
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'import_action')),
             ),
           ],
         ),
@@ -784,7 +784,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Backup wiederhergestellt'),
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'backup_restored')),
           content: Text(
             'Version: v$importedVersion\nMitglieder: ${parsedMembers.length}\nInteressen: ${selectedInterests.length}\nAktive Rolle: ${_activeRole.isEmpty ? '-' : _activeRole}\nSigniert: ${importedSigned ? 'Ja' : 'Nein'}',
           ),
@@ -954,7 +954,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Text('Familienmitglied hinzufuegen'),
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'add_member')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -995,12 +995,12 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: selectedRole,
-                items: const [
+                items: [
                   DropdownMenuItem(
-                      value: 'Elternteil', child: Text('Elternteil')),
-                  DropdownMenuItem(value: 'Kind', child: Text('Kind')),
+                      value: 'Elternteil', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'parent_role'))),
+                  DropdownMenuItem(value: 'Kind', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'child_role'))),
                   DropdownMenuItem(
-                      value: 'Bezugsperson', child: Text('Bezugsperson')),
+                      value: 'Bezugsperson', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'caregiver_role'))),
                 ],
                 onChanged: (value) {
                   if (value == null) {
@@ -1065,7 +1065,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 }
                 Navigator.pop(context, true);
               },
-              child: const Text('Hinzufuegen'),
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'add_member')),
             ),
           ],
         ),
@@ -1112,7 +1112,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Text('Mitglied bearbeiten'),
+          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'edit_member')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1149,12 +1149,12 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: selectedRole,
-                items: const [
+                items: [
                   DropdownMenuItem(
-                      value: 'Elternteil', child: Text('Elternteil')),
-                  DropdownMenuItem(value: 'Kind', child: Text('Kind')),
+                      value: 'Elternteil', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'parent_role'))),
+                  DropdownMenuItem(value: 'Kind', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'child_role'))),
                   DropdownMenuItem(
-                      value: 'Bezugsperson', child: Text('Bezugsperson')),
+                      value: 'Bezugsperson', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'caregiver_role'))),
                 ],
                 onChanged: canEditRole
                     ? (value) {
@@ -1214,7 +1214,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   _removeFamilyMember(member);
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Entfernen'),
+                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'remove_action')),
               ),
             const Spacer(),
             TextButton(
@@ -1304,7 +1304,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     final shouldRemove = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Mitglied entfernen?'),
+            title: Text(AppStringsManager.getString(languageService.currentLanguage, 'remove_member')),
             content:
                 Text('${member.name} wird aus dem Familienprofil entfernt.'),
             actions: [
@@ -1318,7 +1318,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Entfernen'),
+                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'remove_action')),
               ),
             ],
           ),
@@ -1533,7 +1533,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Abmelden?',
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'logout_question'),
             style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text(
             'Ihr werdet von diesem Gerät abgemeldet. Eure Familiendaten bleiben gespeichert.'),
@@ -1550,7 +1550,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Abmelden'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'logout_action')),
           ),
         ],
       ),
@@ -1658,7 +1658,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 (route) => false,
               );
             },
-            child: const Text('Endgültig löschen'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_final')),
           ),
         ],
       ),
@@ -2521,8 +2521,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     top: 6,
                     bottom: 6,
                   ),
-                  title: const Text('Notfaelle'),
-                  subtitle: const Text('Sofortige Benachrichtigungen'),
+                  title: Text(AppStringsManager.getString(languageService.currentLanguage, 'emergencies')),
+                  subtitle: Text(AppStringsManager.getString(languageService.currentLanguage, 'instant_notifications')),
                   value: _notifyEmergencies,
                   onChanged: (value) =>
                       _updateGranularNotifications(emergencies: value),
@@ -2535,8 +2535,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     top: 6,
                     bottom: 6,
                   ),
-                  title: const Text('Erinnerungen'),
-                  subtitle: const Text('Termine und Aufgaben'),
+                  title: Text(AppStringsManager.getString(languageService.currentLanguage, 'reminders')),
+                  subtitle: Text(AppStringsManager.getString(languageService.currentLanguage, 'appointments_tasks')),
                   value: _notifyReminders,
                   onChanged: (value) =>
                       _updateGranularNotifications(reminders: value),
@@ -2549,8 +2549,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     top: 6,
                     bottom: 6,
                   ),
-                  title: const Text('Produkt-Updates'),
-                  subtitle: const Text('Neue Funktionen und Hinweise'),
+                  title: Text(AppStringsManager.getString(languageService.currentLanguage, 'product_updates')),
+                  subtitle: Text(AppStringsManager.getString(languageService.currentLanguage, 'new_features')),
                   value: _notifyUpdates,
                   onChanged: (value) =>
                       _updateGranularNotifications(updates: value),
@@ -2642,7 +2642,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 secondary:
                     const Icon(Icons.verified_user, color: Color(0xFFBDB2FF)),
-                title: const Text('Signierte Backups'),
+                title: Text(AppStringsManager.getString(languageService.currentLanguage, 'signed_backups')),
                 subtitle: const Text(
                     'Fügt eine HMAC-Signatur zur Integritätsprüfung hinzu'),
                 value: _signedBackupEnabled,

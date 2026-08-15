@@ -96,7 +96,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Marktplatz'),
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'marketplace')),
         elevation: 0,
         backgroundColor: Colors.blue.shade600,
         bottom: TabBar(
@@ -139,7 +139,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
-                        child: const Text('Erneut versuchen'),
+                        child: Text(AppStringsManager.getString(languageService.currentLanguage, 'try_again')),
                       ),
                     ],
                   ),
@@ -283,7 +283,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                         style: Theme.of(context).textTheme.titleMedium),
                     TextButton(
                       onPressed: _resetFilters,
-                      child: const Text('Zurücksetzen'),
+                      child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reset_filter')),
                     ),
                   ],
                 ),
@@ -325,11 +325,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                     children: [
                       const Icon(Icons.search_off, size: 64, color: Colors.grey),
                       const SizedBox(height: 16),
-                      const Text('Keine Angebote gefunden'),
+                      Text(AppStringsManager.getString(languageService.currentLanguage, 'no_offers')),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: _resetFilters,
-                        child: const Text('Filter zurücksetzen'),
+                        child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reset_filter')),
                       ),
                     ],
                   ),
@@ -482,7 +482,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       style: Theme.of(context).textTheme.titleMedium),
                   TextButton(
                     onPressed: _resetFilters,
-                    child: const Text('Zurücksetzen'),
+                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reset_filter')),
                   ),
                 ],
               ),
@@ -522,11 +522,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                     children: [
                       const Icon(Icons.search_off, size: 64, color: Colors.grey),
                       const SizedBox(height: 16),
-                      const Text('Keine Angebote gefunden'),
+                      Text(AppStringsManager.getString(languageService.currentLanguage, 'no_offers')),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: _resetFilters,
-                        child: const Text('Filter zurücksetzen'),
+                        child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reset_filter')),
                       ),
                     ],
                   ),
@@ -881,7 +881,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.message),
-                  label: const Text('Jetzt kontaktieren'),
+                  label: Text(AppStringsManager.getString(languageService.currentLanguage, 'contact_now')),
                   onPressed: () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(

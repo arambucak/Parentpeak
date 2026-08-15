@@ -231,7 +231,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           await showDialog<void>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Event ist bereit'),
+              title: Text(AppStringsManager.getString(languageService.currentLanguage, 'event_ready')),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,7 +272,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       Clipboard.setData(ClipboardData(text: code));
                       Navigator.of(context).pop();
                     },
-                    child: const Text('Code kopieren & schließen'),
+                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'copy_code_close')),
                   ),
                 if (link != null)
                   TextButton(
@@ -280,7 +280,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       Clipboard.setData(ClipboardData(text: link));
                       Navigator.of(context).pop();
                     },
-                    child: const Text('Link kopieren & schließen'),
+                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'copy_link_close')),
                   ),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -313,7 +313,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event planen'),
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'create_event')),
         elevation: 0,
       ),
       body: Container(
@@ -727,7 +727,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.check),
-                    label: const Text('Event veröffentlichen'),
+                    label: Text(AppStringsManager.getString(languageService.currentLanguage, 'publish_event')),
                   ),
                 ),
               ],

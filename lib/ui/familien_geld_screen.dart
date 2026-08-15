@@ -940,7 +940,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               _eligibilityDone = false;
               _saveEligibility();
             }),
-            child: Text('Ändern',
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'change_action'),
                 style: theme.textTheme.labelSmall?.copyWith(
                     color: const Color(0xFF7C3AED), fontWeight: FontWeight.w700)),
           ),

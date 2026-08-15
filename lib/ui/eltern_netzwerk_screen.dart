@@ -317,7 +317,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         }
                       },
                       icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-                      label: const Text('Premium einlösen'),
+                      label: Text(AppStringsManager.getString(languageService.currentLanguage, 'redeem_premium')),
                       style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFFF97316),
                           foregroundColor: Colors.white,
@@ -690,7 +690,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     color:
                         theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(6)),
-                child: Text('Bald',
+                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'soon'),
                     style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
@@ -824,7 +824,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         OutlinedButton.icon(
           onPressed: () => _showAddFriendSheet(theme),
           icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-          label: const Text('Freund per Code hinzufügen'),
+          label: Text(AppStringsManager.getString(languageService.currentLanguage, 'add_friend_code')),
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFF7C3AED),
             side: BorderSide(
@@ -1575,7 +1575,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Profil löschen?'),
+        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_profile')),
         content: const Text('Dein Spielfreunde-Profil wird dauerhaft gelöscht. '
             'Du kannst jederzeit ein neues erstellen.'),
         actions: [

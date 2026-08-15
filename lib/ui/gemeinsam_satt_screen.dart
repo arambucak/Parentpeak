@@ -1131,7 +1131,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                   ),
                   TextButton(
                     onPressed: _loadWeekMealPlan,
-                    child: const Text('Erneut laden'),
+                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reload')),
                   ),
                 ],
               ),
@@ -1562,7 +1562,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             ElevatedButton.icon(
               onPressed: () => onRetry(),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Erneut laden'),
+              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'reload')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _brand,
                 foregroundColor: Colors.white,
@@ -1649,12 +1649,12 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             FilledButton(
               onPressed: () => Navigator.of(context).pop('complete'),
               style: FilledButton.styleFrom(backgroundColor: const Color(0xFF16A34A)),
-              child: const Text('Abholung bestaetigen'),
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'confirm_pickup')),
             ),
             const SizedBox(height: 10),
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop('cancel'),
-              child: const Text('Reservierung aufheben'),
+              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel_reservation')),
             ),
             const SizedBox(height: 6),
             TextButton(
@@ -3774,11 +3774,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
               initialValue: _category,
-              items: const [
-                DropdownMenuItem(value: 'breakfast', child: Text('Fruehstueck')),
-                DropdownMenuItem(value: 'lunch', child: Text('Mittagessen')),
-                DropdownMenuItem(value: 'dinner', child: Text('Abendessen')),
-                DropdownMenuItem(value: 'snack', child: Text('Snack')),
+              items: [
+                DropdownMenuItem(value: 'breakfast', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'breakfast'))),
+                DropdownMenuItem(value: 'lunch', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'lunch'))),
+                DropdownMenuItem(value: 'dinner', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'dinner'))),
+                DropdownMenuItem(value: 'snack', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'snack'))),
               ],
               onChanged: (value) {
                 if (value == null) return;
@@ -4098,7 +4098,7 @@ class _DayPlanCard extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: onAddMeal,
                     icon: const Icon(Icons.add_rounded),
-                    label: const Text('Mahlzeit hinzufügen'),
+                    label: Text(AppStringsManager.getString(languageService.currentLanguage, 'add_meal')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFE8543A),
                       side: const BorderSide(color: Color(0xFFE8543A)),

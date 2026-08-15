@@ -587,7 +587,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       if (!context.mounted) return;
                       Navigator.pop(context);
                     },
-                    child: const Text('Alles gesehen'),
+                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'all_seen')),
                   ),
                 ),
               ],
@@ -842,7 +842,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Trotzdem senden'),
+            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'send_anyway')),
           ),
         ],
       ),
@@ -1788,7 +1788,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                     children: [
                       Row(
                         children: [
-                          const Text('Matching-Filter',
+                          Text(AppStringsManager.getString(languageService.currentLanguage, 'matching_filter'),
                               style: TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 18)),
                           const Spacer(),
@@ -1874,7 +1874,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                             _persistState();
                             Navigator.pop(context);
                           },
-                          child: const Text('Filter anwenden'),
+                          child: Text(AppStringsManager.getString(languageService.currentLanguage, 'apply_filter')),
                         ),
                       ),
                     ],
@@ -1945,7 +1945,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                     children: [
                       Row(
                         children: [
-                          const Text('Mein Matching-Profil',
+                          Text(AppStringsManager.getString(languageService.currentLanguage, 'matching_profile'),
                               style: TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 18)),
                           const Spacer(),
@@ -2139,18 +2139,18 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                   _openFilterSheet();
                 }
               },
-              itemBuilder: (context) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem<String>(
                   value: 'profile',
-                  child: Text('Mein Profil'),
+                  child: Text(AppStringsManager.getString(languageService.currentLanguage, 'my_profile')),
                 ),
                 PopupMenuItem<String>(
                   value: 'safety',
-                  child: Text('Sicherheit'),
+                  child: Text(AppStringsManager.getString(languageService.currentLanguage, 'security')),
                 ),
                 PopupMenuItem<String>(
                   value: 'filter',
-                  child: Text('Suche filtern'),
+                  child: Text(AppStringsManager.getString(languageService.currentLanguage, 'filter_search')),
                 ),
               ],
               icon: const Icon(Icons.more_horiz_rounded),
@@ -2667,14 +2667,14 @@ class _ProfileCard extends StatelessWidget {
                           if (value == 'report') onReport();
                           if (value == 'block') onBlock();
                         },
-                        itemBuilder: (context) => const [
+                        itemBuilder: (context) => [
                           PopupMenuItem<String>(
                             value: 'report',
-                            child: Text('Profil melden'),
+                            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'report_profile')),
                           ),
                           PopupMenuItem<String>(
                             value: 'block',
-                            child: Text('Profil blockieren'),
+                            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'block_profile')),
                           ),
                         ],
                       ),
@@ -3016,7 +3016,7 @@ class _GlobalParentRoomsState extends StatelessWidget {
                 child: FilledButton.tonalIcon(
                   onPressed: () => onOpenRoom(room),
                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                  label: const Text('Raum öffnen'),
+                  label: Text(AppStringsManager.getString(languageService.currentLanguage, 'open_room')),
                 ),
               ),
             ],
