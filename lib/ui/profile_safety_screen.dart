@@ -266,12 +266,12 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                           Text(
                             isPremium
                                 ? 'Premium'
-                              : AccessConfig.isBetaFreeAccess
-                                ? 'Beta · kostenlos'
-                                : hasAccess
-                                    ? _t('trial_days_template')
-                                        .replaceAll('{days}', '$trialDays')
-                                    : 'Free',
+                                : AccessConfig.isBetaFreeAccess
+                                    ? 'Beta · kostenlos'
+                                    : hasAccess
+                                        ? _t('trial_days_template')
+                                            .replaceAll('{days}', '$trialDays')
+                                        : 'Free',
                             style: theme.textTheme.labelMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: isPremium
@@ -945,14 +945,12 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       fontSize: 13,
                       color: Color(0xFF6B7280))),
               const SizedBox(height: 14),
-              _impressumRow(
-                  'Anbieter', 'Parentpeak UG (haftungsbeschränkt) i.G.'),
-              _impressumRow('Vertreten durch',
-                  'Geschäftsführer (wird bei Eintragung ergänzt)'),
+              _impressumRow('Anbieter', 'Fatih Bucak – Parentpeak'),
+              _impressumRow('Inhaber', 'Fatih Bucak'),
               _impressumRow('Adresse', 'Wird bei Gewerbeanmeldung ergänzt'),
               _impressumRow('E-Mail',
                   APIConfig.getContactEmail() ?? 'support@parentpeak.com'),
-              _impressumRow('Verantwortlich für Inhalte', 'Parentpeak Team'),
+              _impressumRow('Verantwortlich für Inhalte', 'Fatih Bucak'),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -962,8 +960,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 ),
                 child: const Text(
                   'Hinweis: Parentpeak befindet sich in der Beta-Phase. '
-                  'Die vollständigen Impressumsdaten werden bei Gewerbeanmeldung / '
-                  'Handelsregistereintragung ergänzt.',
+                  'Die vollständige Anschrift wird bei Gewerbeanmeldung ergänzt.',
                   style: TextStyle(
                       fontSize: 12, color: Color(0xFF6B7280), height: 1.4),
                 ),
