@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 
@@ -53,6 +54,13 @@ class FamilyRecipeService {
     if (apiKey == null || apiKey.isEmpty) {
       debugPrint(
           '\u{274C} FamilyRecipeService: KEIN API-Key! .env nicht geladen?');
+      return _fallbackRecipe();
+    }
+
+    // Rate limit check
+    await AIRateLimiter.initialize();
+    if (!AIRateLimiter.canMakeRequest()) {
+      debugPrint('FamilyRecipeService: Rate limit reached');
       return _fallbackRecipe();
     }
 
@@ -118,6 +126,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       );
 
       final response = await model.generateContent([Content.text(prompt)]);
+      await AIRateLimiter.recordRequest();
       final raw = response.text ?? '';
       debugPrint('FamilyRecipeService: Gemini Antwort (${raw.length} Zeichen)');
 

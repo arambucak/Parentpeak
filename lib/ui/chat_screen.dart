@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
@@ -301,6 +302,20 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
+    // Rate limit check
+    await AIRateLimiter.initialize();
+    if (!AIRateLimiter.canMakeRequest()) {
+      setState(() {
+        _messages.add({
+          'role': 'assistant',
+          'content': AIRateLimiter.limitReachedMessage,
+          'timestamp': DateTime.now(),
+        });
+      });
+      _scrollToBottom();
+      return;
+    }
+
     await _trackTopic(text);
 
     setState(() {
@@ -343,15 +358,12 @@ class _ChatScreenState extends State<ChatScreen> {
           _isStreaming = false;
           _currentResponse = '';
         });
+        // Record successful AI request for rate limiting
+        await AIRateLimiter.recordRequest();
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isStreaming = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
-        );
+        setState(() => _isStreaming = false);
       }
       debugPrint('Error calling Gemini: $e');
     }
