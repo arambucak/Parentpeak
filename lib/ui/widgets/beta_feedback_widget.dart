@@ -4,7 +4,7 @@ import 'package:parentpeak/main.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 /// Beta-Feedback Widget — Eltern können Feedback, Wuensche und Bugs melden.
-/// Sendet per E-Mail an parentpeakapp@gmail.com.
+/// Sendet per E-Mail an support@parentpeak.com.
 class BetaFeedbackWidget extends StatelessWidget {
   const BetaFeedbackWidget({super.key});
 
@@ -169,7 +169,7 @@ class BetaFeedbackWidget extends StatelessWidget {
     final subject = Uri.encodeComponent('ParentPeak Beta-Feedback: $type');
     final body = Uri.encodeComponent(message);
     final url =
-        Uri.parse('mailto:parentpeakapp@gmail.com?subject=$subject&body=$body');
+        Uri.parse('mailto:support@parentpeak.com?subject=$subject&body=$body');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     }

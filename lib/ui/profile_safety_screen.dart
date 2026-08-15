@@ -951,7 +951,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   'Geschäftsführer (wird bei Eintragung ergänzt)'),
               _impressumRow('Adresse', 'Wird bei Gewerbeanmeldung ergänzt'),
               _impressumRow('E-Mail',
-                  APIConfig.getContactEmail() ?? 'parentpeakapp@gmail.com'),
+                  APIConfig.getContactEmail() ?? 'support@parentpeak.com'),
               _impressumRow('Verantwortlich für Inhalte', 'Parentpeak Team'),
               const SizedBox(height: 16),
               Container(
