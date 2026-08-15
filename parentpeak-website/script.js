@@ -1,45 +1,66 @@
-const menuButton = document.querySelector('.menu-toggle');
-const navigation = document.querySelector('#main-nav');
+// ═══════════════════════════════════════════════════════════════════════════
+// ParentPeak Website — Interactions
+// ═══════════════════════════════════════════════════════════════════════════
 
-menuButton?.addEventListener('click', () => {
-  const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
-  menuButton.setAttribute('aria-expanded', String(!isOpen));
-  navigation.classList.toggle('is-open', !isOpen);
+// ─── Scroll Animations ───────────────────────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, {
+  threshold: 0.1,
+  rootMargin: '0px 0px -50px 0px'
 });
 
-navigation?.addEventListener('click', (event) => {
-  if (event.target.closest('a')) {
-    menuButton?.setAttribute('aria-expanded', 'false');
-    navigation.classList.remove('is-open');
-  }
+document.querySelectorAll('[data-anim]').forEach((el) => {
+  observer.observe(el);
 });
 
-const weeklyForm = document.querySelector('#weekly-form');
-const weeklyResult = document.querySelector('#weekly-result');
-const resetWeekButton = document.querySelector('#reset-week');
-
-weeklyForm?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const data = new FormData(weeklyForm);
-  const values = ['appointment', 'priority', 'connection']
-    .map((key) => String(data.get(key) || '').trim())
-    .filter(Boolean);
-
-  const list = weeklyResult.querySelector('ol');
-  list.replaceChildren(...values.map((value) => {
-    const item = document.createElement('li');
-    item.textContent = value;
-    return item;
-  }));
-
-  weeklyForm.hidden = true;
-  weeklyResult.hidden = false;
-  weeklyResult.focus({ preventScroll: true });
+// Staggered animation for grid items
+document.querySelectorAll('.features-grid .feature-card, .sicherheit-grid .sicherheit-item').forEach((el, i) => {
+  el.style.transitionDelay = `${i * 80}ms`;
 });
 
-resetWeekButton?.addEventListener('click', () => {
-  weeklyForm.reset();
-  weeklyResult.hidden = true;
-  weeklyForm.hidden = false;
-  weeklyForm.querySelector('input')?.focus();
+// ─── Mobile Menu ─────────────────────────────────────────────────────────────
+const toggle = document.querySelector('.nav-toggle');
+const mobileMenu = document.getElementById('mobile-menu');
+
+if (toggle && mobileMenu) {
+  toggle.addEventListener('click', () => {
+    const isOpen = mobileMenu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen);
+  });
+
+  // Close menu when link is clicked
+  mobileMenu.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
+
+// ─── Smooth scroll for nav links ─────────────────────────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+  anchor.addEventListener('click', function (e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
 });
+
+// ─── Nav background on scroll ────────────────────────────────────────────────
+const nav = document.querySelector('.nav');
+if (nav) {
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 20) {
+      nav.style.boxShadow = '0 2px 20px rgba(0,0,0,0.06)';
+    } else {
+      nav.style.boxShadow = 'none';
+    }
+  });
+}

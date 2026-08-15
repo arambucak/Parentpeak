@@ -15,9 +15,11 @@ await Promise.all(requiredFiles.map((file) => access(new URL(file, import.meta.u
 const html = await readFile(new URL('index.html', import.meta.url), 'utf8');
 const requiredSnippets = [
   '<html lang="de">',
-  '<link rel="canonical" href="https://parentpeak.com/"',
-  'application/ld+json',
-  'id="weekly-form"',
+  '<link rel="canonical" href="https://parentpeak.com/">',
+  'assets/app-home.png',
+  'id="features"',
+  'id="philosophie"',
+  'id="sicherheit"',
   'href="https://parentpeak.de"',
 ];
 
@@ -27,7 +29,7 @@ for (const snippet of requiredSnippets) {
   }
 }
 
-if (/UG \(haftungsbeschränkt\)|komplett kostenlos|Open Source Transparenz/.test(html)) {
+if (/UG \(haftungsbeschränkt\)|komplett kostenlos|DSGVO-konform|Open Source Transparenz/i.test(html)) {
   throw new Error('Found an outdated or unsupported public claim.');
 }
 
