@@ -52,7 +52,7 @@ curl -X POST https://parentpeak.onrender.com/payments/stripe/webhook \
 **Was zu tun ist:**
 1. Finde die Umgebungsvariable `STRIPE_WEBHOOK_SECRET`
 2. Ersetze den Wert:
-   - **ALT:** `whsec_3Lp3U0gA2dseCCtKuSArnMqow75b9rqP` (Test)
+   - **ALT:** das bisherige Test-Secret (Wert absichtlich entfernt)
    - **NEU:** `whsec_...` (Dein Live Secret von Schritt 1)
 3. Klick **Save**
 4. Warte 30 Sekunden auf Auto-Deployment
@@ -161,8 +161,7 @@ Sobald alles konfiguriert ist:
 
 3. **Zurück zu Test-Modus** (wenn nötig):
    ```bash
-   # In Render: STRIPE_WEBHOOK_SECRET zurück auf:
-   whsec_3Lp3U0gA2dseCCtKuSArnMqow75b9rqP
+   # In Render: STRIPE_WEBHOOK_SECRET auf das rotierte Test-Secret setzen.
    ```
 
 ---

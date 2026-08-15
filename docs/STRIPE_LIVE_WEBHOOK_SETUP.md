@@ -12,7 +12,7 @@
 ### Completed Tasks:
 - ✅ Backend webhook endpoint deployed: `POST /payments/stripe/webhook`
 - ✅ Stripe test webhook created in Sandbox mode
-- ✅ Test webhook secret configured: `whsec_3Lp3U0gA2dseCCtKuSArnMqow75b9rqP`
+- ✅ Test webhook secret configured in the deployment environment (value intentionally omitted)
 - ✅ Signature verification working (HMAC-SHA256)
 - ✅ Smoke tests passing (3/3 assertions)
 - ✅ Production auto-deployment verified (Render)

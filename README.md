@@ -1,259 +1,101 @@
-Trusted Circle Parentpeak
-====================
+# Parentpeak
 
-Kurzanleitung zur Parentpeak-App (Blau / DE / Phone)
+> One calm place for family planning, connection and everyday support.
 
-Voraussetzungen:
-- Flutter SDK installiert
-- Ein Android‑Emulator oder Gerät
+Parentpeak is a Flutter-based family companion app that brings planning,
+communication, community and wellbeing into one focused experience.
 
-Starten:
-1. `bash scripts/flutter_repo.sh pub get`
-2. `.env` aus `.env.example` anlegen und `ABACUS_API_KEY` ersetzen
-3. `bash scripts/flutter_repo.sh run` um die App zu starten
+## Product
 
-Wichtige .env Variablen:
-- `GEMINI_API_KEY`: API Key fuer den Paedagogik-Chat
-- `BACKEND_BASE_URL`: Basis-URL deines Backends (z. B. `https://api.example.com`)
-- `BACKEND_API_TOKEN`: Backend-only Bearer Token fuer Service/Admin-Pfade (niemals im App-Bundle ausliefern)
-- `BACKEND_FAMILY_ID`: Familienkontext fuer Requests (z. B. `example-family-001`)
-- `BACKEND_API_VERSION`: Version des Request-Schemas (Standard: `v1`)
-- `BACKEND_TODOS_PATH`, `BACKEND_SHOPPING_PATH`, `BACKEND_CALENDAR_EVENTS_PATH`, `BACKEND_HEALTH_PATH`: optionale Endpoint-Overrides
+Parentpeak helps families stay connected and organized without turning daily
+life into another project-management tool.
 
-Auth-Hinweis (Produktion):
-- Mobile/Web Clients sollen fuer Schreibzugriffe einen gueltigen Firebase ID-Token senden.
-- `BACKEND_API_TOKEN` ist nur fuer Backend-zu-Backend/Notfallpfade gedacht und darf nicht in Client-Config oder Frontend-Bundles landen.
+- **Family hub** for trusted contacts and shared context
+- **Calendar and organization** for appointments, tasks and shopping
+- **Community features** for local activities, parent matching and sharing
+- **Impulse and development** for practical, recurring family support
+- **AI parent guidance** with dedicated safety guardrails
 
-Backend Deploy (Anfaenger)
---------------------------
+The app is currently in active product and release development.
 
-Wenn du noch keine echte Backend-URL hast, starte hier:
+## Tech Stack
 
-1. `docs/BACKEND_DEPLOY_BEGINNER_GUIDE.md`
+| Area | Technology |
+| --- | --- |
+| Mobile and web app | Flutter, Dart, Material 3 |
+| Authentication | Firebase Authentication |
+| Monitoring | Firebase Crashlytics |
+| Backend integration | REST APIs, Node.js services |
+| Data and security | Secure storage, token-based writes, rate limiting, CORS allowlists |
+| Payments | Stripe integration |
+| Platforms | Android, iOS, macOS and web |
 
-Repo enthaelt bereits Starter-Configs:
-- `render.yaml` (Render Blueprint)
-- `railway.json` (Railway Build/Start)
+## Repository Structure
 
-Backend-Hardening (Produktion):
-- `REQUIRE_AUTH_FOR_WRITES=1`: Schuetzt Schreibzugriffe (POST/PUT/PATCH/DELETE) per Bearer-Token.
-- `CORS_ALLOWED_ORIGINS`: Kommagetrennte Origin-Allowlist, z. B. `https://parentpeak.de,https://www.parentpeak.de`.
-- `WRITE_RATE_LIMIT_WINDOW_MS` und `WRITE_RATE_LIMIT_MAX`: Begrenzen Schreibanfragen pro Zeitfenster.
+```text
+lib/                 Flutter application and feature modules
+backend/             Node.js backend, Prisma schema and API tests
+integration_test/    End-to-end Flutter checks
+test/                Unit and widget tests
+docs/                Deployment, security and release documentation
+scripts/             Repository-safe build, analysis and smoke-test commands
+artifacts/           Review screenshots and test evidence
+```
 
-Screenshots:
-- Starte die App im Emulator und nutze `flutter screenshot` oder `adb exec-out screencap -p > screen.png` um Bilder zu erzeugen.
+## Quick Start
 
-Enthaltene Beispielinhalte:
-- Geräteverwaltung für Tests und Entwicklung
-- Revocation-Flow gegen die API
-- Blaues Theme, deutsche Texte
+### Prerequisites
 
-Nächste Schritte:
-- Wenn du möchtest, erstelle ich einen PR in deinem Repo oder sende dir ein ZIP mit diesem Projekt.
+- Flutter SDK
+- Android emulator/device or an Apple development environment
+- Node.js for backend work
 
-\nParentpeak MVP-Erweiterung\n--------------------------\n
-Hinzugefügt in dieser Sitzung:
-- Pädagogik‑Chat (Platzhalter) mit Eingabefeld und Senden‑Button
-- Familienkalender (Platzhalter) mit einfacher Terminliste und "Termin hinzufügen"
-- Geräteverwaltung bleibt als dritter Tab
- 
+### Run the app
 
-Starten (Android per USB empfohlen):
-1. `flutter pub get`
-2. `flutter run -d <deviceId>` (z. B. `RFCY30GWBEB`)
+```bash
+bash scripts/flutter_repo.sh pub get
+bash scripts/flutter_repo.sh run
+```
 
-Lokalisierung: en, de
+For local configuration, create `.env` from `.env.example` and provide only
+the values required for your environment. Never ship backend service tokens or
+provider secrets in a mobile or web bundle.
 
-Apple Build Hinweis (iOS/macOS)
--------------------------------
+## Quality Gates
 
-Einige Plugins (z. B. `printing`, `flutter_tts`) melden aktuell in Flutter nur eine
-SPM-Warnung. Um Builds stabil zu halten, nutze den CocoaPods-Workflow:
+Run the repository-safe checks before opening a release or deployment PR:
 
-Standard fuer lokale Flutter-Kommandos im Repo:
-1. `bash scripts/flutter_repo.sh <flutter-kommando>`
+```bash
+bash scripts/flutter_repo.sh analyze
+bash scripts/verify_backend_security_baseline.sh
+bash scripts/sync_guard.sh check
+```
 
-Beispiele:
-	- `bash scripts/flutter_repo.sh analyze`
-	- `bash scripts/flutter_repo.sh run -d ios`
-	- `bash scripts/flutter_repo.sh build macos`
+For production verification, use the documented security and webhook smoke
+tests in the [release documentation](docs/APP_GO_LIVE_OPERATIONS_CHECKLIST.md).
 
-1. `bash scripts/prepare_apple_build.sh`
-2. Danach normal bauen, z. B.:
-	- `bash scripts/flutter_repo.sh build ios --no-codesign`
-	- `bash scripts/flutter_repo.sh build macos`
+## Documentation
 
-Was das Script macht:
-- Deaktiviert Flutter-Swift-Package-Manager-Plugin-Integration (falls von deiner Flutter-Version unterstuetzt)
-- Fuehrt `flutter pub get` aus
-- Fuehrt `pod install --repo-update` fuer iOS und macOS aus
+- [Backend deployment guide](docs/BACKEND_DEPLOY_BEGINNER_GUIDE.md)
+- [Authentication hardening runbook](docs/AUTH_HARDENING_RUNBOOK.md)
+- [Go-live operations checklist](docs/APP_GO_LIVE_OPERATIONS_CHECKLIST.md)
+- [Release priority board](docs/APP_RELEASE_PRIORITY_BOARD.md)
+- [Family profile implementation guide](docs/FAMILY_PROFILE_README.md)
+- [Testing guide](TESTING_GUIDE.md)
 
-CI Hinweis (Analyzer)
----------------------
+## Security
 
-Fuer CI wird ein robuster Analyzer-Wrapper verwendet:
-1. `bash scripts/ci_flutter_analyze.sh`
+Please do not commit API keys, Firebase credentials, signing files or backend
+service tokens. Report security concerns privately rather than opening a
+public issue with sensitive details.
 
-Der Wrapper bricht bei echten Analyzer-Problemen weiterhin ab, toleriert aber die bekannten
-SPM-Plugin-Hinweise von Flutter, solange keine Analyzer-Issues vorliegen.
+## Project Status
 
-Zusaetzlich prueft CI das Backend-Sicherheits-Baseline-Profil:
-1. `bash scripts/verify_backend_security_baseline.sh`
+Parentpeak is actively being refined across product, accessibility, testing
+and production operations. Release decisions and operational checks are kept
+in the `docs/` directory so the public project overview stays concise.
 
-Weitere Details und Migrationskriterien stehen in:
-- `docs/SPM_PLUGIN_STATUS.md`
+## License
 
-Crash Reporting (Firebase Crashlytics)
--------------------------------------
-
-Crash-Monitoring ist im App-Startpfad zentral verdrahtet und nutzt Firebase Crashlytics,
-wenn Firebase auf der Plattform verfuegbar ist.
-
-- Release-Builds: Crashlytics ist aktiv.
-- Debug-Builds: Crashlytics ist standardmaessig aus.
-- Optional fuer Debug-Tests: mit `--dart-define=PP_ENABLE_CRASHLYTICS_DEBUG=true` aktivierbar.
-
-Der Hook deckt Flutter-Framework-Fehler, Platform-Dispatcher-Fehler und Zone-Fehler ab.
-
-SPM-Plugin-Warnungen: Ticketpaket
----------------------------------
-
-Das priorisierte Massnahmenpaket fuer die aktuellen Apple-SPM-Plugin-Warnungen ist hier gepflegt:
-- `docs/SPM_PLUGIN_STATUS.md` (Abschnitt: Work package)
-
-Security Smoke Test (gegen laufendes Backend)
----------------------------------------------
-
-Mit diesem Script kannst du nach Deployments schnell die wichtigsten Security-Pfade validieren:
-1. `BACKEND_BASE_URL=https://api.example.com bash scripts/backend_security_smoke_test.sh`
-
-Optional:
-- `BACKEND_API_TOKEN=...` fuer authentifizierten Write-Test
-- `EXPECT_WRITE_AUTH=0` falls Write-Auth in der Zielumgebung bewusst deaktiviert ist
-- `SMOKE_ORIGIN=https://parentpeak.de` um CORS mit echter Origin zu testen
-
-Stripe Webhook Smoke Test (Produktion)
---------------------------------------
-
-Zur Verifikation von Stripe-Signaturpruefung und Provider-Event-Haertung:
-
-1. `BACKEND_BASE_URL=https://api.example.com STRIPE_WEBHOOK_SECRET=whsec_... bash scripts/stripe_webhook_smoke_test.sh`
-
-Optional:
-- `STRIPE_TEST_PAYMENT_INTENT_REF=pi_...` um eine konkrete Referenz zu testen
-- `EXPECT_CLIENT_PROVIDER_EVENTS_BLOCKED=0` wenn Client-Provider-Events bewusst offen sind
-
-Release Smoke Suite (Ein Befehl)
---------------------------------
-
-Führt Security + Stripe Webhook Smoke Tests hintereinander aus:
-
-1. `BACKEND_BASE_URL=https://api.example.com BACKEND_API_TOKEN=... STRIPE_WEBHOOK_SECRET=whsec_... bash scripts/release_smoke_suite.sh`
-
-Optionale Schalter:
-- `RUN_BACKEND_SECURITY_SMOKE=0` nur Stripe Test
-- `RUN_STRIPE_WEBHOOK_SMOKE=0` nur Security Test
-- `EXPECT_WRITE_AUTH=0` falls Write-Auth bewusst deaktiviert ist
-- `EXPECT_CLIENT_PROVIDER_EVENTS_BLOCKED=0` falls Provider-Events bewusst offen sind
-
-Release Hub (Empfohlen)
------------------------
-
-Fuer die finale Veroeffentlichung und den Betrieb nach Launch:
-
-1. Priorisierung vor/nach Release:
-	- `docs/APP_RELEASE_PRIORITY_BOARD.md`
-2. Operative Go-Live Checkliste mit Ownern:
-	- `docs/APP_GO_LIVE_OPERATIONS_CHECKLIST.md`
-3. 7-Tage Monitoring und Eskalation nach Launch:
-	- `docs/POST_LAUNCH_7_DAY_MONITORING_PLAN.md`
-4. Auth-Hardening und Token-Rotation Runbook:
-	- `docs/AUTH_HARDENING_RUNBOOK.md`
-5. Kompakte Meeting-Seite fuer Go/No-Go:
-	- `docs/APP_GO_NO_GO_DECISION_PAGE.md`
-6. Druckbare 1-Seiten Uebersicht fuer Management/Partner:
-	- `docs/RELEASE_EXEC_SUMMARY.md`
-7. Ultrakurzer Investor-Brief (DE):
-	- `docs/RELEASE_INVESTOR_BRIEF_DE.md`
-8. Ultra-short investor brief (EN):
-	- `docs/RELEASE_INVESTOR_BRIEF_EN.md`
-9. 30-Sekunden Pitch (DE + EN):
-	- `docs/RELEASE_30S_PITCH.md`
-10. Konkretes Solo-Release-Entscheidungsprotokoll (GO mit Auflagen):
-	- `docs/RELEASE_DECISION_PROTOCOL_2026-07-14.md`
-11. T+24h Entscheidungs-Card fuer Rollout-Stufe 10% -> 25%:
-	- `docs/T_PLUS_24H_ROLLOUT_DECISION_CARD.md`
-12. Automatisches GO/HOLD/STOP Script:
-	- `scripts/t_plus_24h_rollout_gate.sh`
-
-Finale Backend Verkabelung (Android + iOS)
-------------------------------------------
-
-Ziel: Firebase Auth und Backend-Konfiguration so setzen, dass die App auf Android und iOS produktionsnah laeuft.
-
-Exakte Reihenfolge:
-
-1. Firebase Projekt und Apps anlegen
-- In Firebase ein Projekt anlegen oder bestehendes nutzen.
-- Android App mit Paketname com.parentpeak.app anlegen.
-- iOS App mit Bundle ID com.parentpeak.app anlegen.
-
-2. Firebase Auth aktivieren
-- In Firebase Authentication den Provider E-Mail/Passwort aktivieren.
-
-3. Native Firebase Dateien herunterladen und einlegen
-- Android Datei nach android/app/google-services.json legen.
-- iOS Datei nach ios/Runner/GoogleService-Info.plist legen.
-
-4. FlutterFire Konfiguration generieren
-- FlutterFire CLI installieren: dart pub global activate flutterfire_cli
-- Dann im Projekt ausfuehren:
-	flutterfire configure --android-package-name com.parentpeak.app --ios-bundle-id com.parentpeak.app
-- Ergebnis pruefen: lib/firebase_options.dart muss existieren.
-
-5. Umgebungswerte auf Produktion setzen
-- In .env folgende Werte setzen:
-	- GEMINI_API_KEY
-	- BACKEND_API_TOKEN
-	- BACKEND_BASE_URL (https URL, keine lokale Emulator-URL)
-
-6. Apple Build-Prep ausfuehren
-- bash scripts/prepare_apple_build.sh
-
-7. Produktions-Check im Repo ausfuehren
-- bash scripts/verify_prod_backend_setup.sh
-
-8. Build und Lauf testen
-- flutter analyze
-- Android: flutter run -d android
-- iOS: flutter run -d ios
-
-9. Release Smoke-Test
-- Android: flutter build appbundle
-- iOS: flutter build ios --release
-
-Hinweis:
-- Wenn scripts/verify_prod_backend_setup.sh Fehler zeigt, zuerst diese beheben, dann erneut pruefen.
-
-iOS Signing Readiness (Release)
--------------------------------
-
-Bevor du einen echten signierten iOS-Release/Archive-Build machst, pruefe lokal:
-
-1. `bash scripts/verify_ios_signing_readiness.sh`
-
-Wenn der Check fehlschlaegt, in Xcode korrigieren:
-1. `ios/Runner.xcworkspace` in Xcode oeffnen
-2. Target `Runner` -> `Signing & Capabilities`
-3. Team setzen und automatische Provisionierung aktiv lassen
-4. Check erneut ausfuehren
-
-Optional per CLI (wenn du deine Team-ID kennst):
-1. `bash scripts/set_ios_development_team.sh ABCDE12345`
-2. `bash scripts/verify_ios_signing_readiness.sh`
-
-Empfohlene finale Reihenfolge:
-1. `bash scripts/verify_prod_backend_setup.sh`
-2. `bash scripts/verify_ios_signing_readiness.sh`
-3. `flutter build apk --release`
-4. `flutter build ios --release` (mit aktivem Signing)
+The project is currently maintained as a private product codebase. Licensing
+and contribution terms will be published with the public release policy.
