@@ -212,14 +212,19 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         user = await FirebaseAuth.instance
             .authStateChanges()
             .firstWhere((u) => u != null)
-            .timeout(const Duration(seconds: 4));
+            .timeout(const Duration(seconds: 8));
       } catch (_) {}
     }
-    final token = await user?.getIdToken(forceRefresh);
-    return {
-      'Content-Type': 'application/json',
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-    };
+    if (user == null) return {'Content-Type': 'application/json'};
+    try {
+      final token = await user.getIdToken(forceRefresh);
+      return {
+        'Content-Type': 'application/json',
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      };
+    } catch (_) {
+      return {'Content-Type': 'application/json'};
+    }
   }
 
   Future<Map<String, dynamic>?> _sendFriendMessage(String text) async {
@@ -289,8 +294,17 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), duration: const Duration(seconds: 6)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      duration: const Duration(seconds: 8),
+      action: msg.contains('Sitzung') || msg.contains('einloggen')
+          ? SnackBarAction(
+              label: 'Seite neu laden',
+              textColor: Colors.white,
+              onPressed: () => _loadMessages(),
+            )
+          : null,
+    ));
   }
 
   @override
