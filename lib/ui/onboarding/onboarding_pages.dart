@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 // ─── Page 1: Welcome ─────────────────────────────────────────────────────────
 
@@ -793,14 +795,14 @@ class OnboardingChildAgePage extends StatelessWidget {
             children: [
               const SizedBox(height: 48),
               Text(
-                'In welcher Phase seid ihr?',
+                AppStringsManager.getString(languageService.currentLanguage, 'onboarding_phase'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Mehrfachauswahl möglich — wir passen Inhalte an.',
+                AppStringsManager.getString(languageService.currentLanguage, 'phase_multiselect'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -963,14 +965,14 @@ class OnboardingCountryPage extends StatelessWidget {
             children: [
               const SizedBox(height: 48),
               Text(
-                'Wo lebt eure Familie?',
+                AppStringsManager.getString(languageService.currentLanguage, 'where_family_lives'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Für Feiertage, Schulferien und regionale Leistungen.',
+                AppStringsManager.getString(languageService.currentLanguage, 'for_holidays_info'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

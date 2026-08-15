@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_pages.dart';
 
 /// Onboarding-Ergebnis das nach Abschluss zurückgegeben wird.
@@ -320,7 +322,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
               const SizedBox(height: 28),
               Text(
-                'Wie heißt eure Familie?',
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'onboarding_family_name'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -340,7 +343,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: 'z.B. Familie Müller oder Anna',
+                  hintText: AppStringsManager.getString(
+                      languageService.currentLanguage, 'family_name_hint'),
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
                   filled: true,
                   fillColor: theme.colorScheme.surfaceContainerLow,
@@ -360,7 +364,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
               const SizedBox(height: 12),
               Text(
-                'Wird für die Begrüßung und im Netzwerk verwendet.',
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'used_for_greeting'),
                 style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),
             ],
@@ -430,7 +435,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(isLastPage ? 'Los geht\'s' : 'Weiter'),
+              Text(isLastPage
+                  ? AppStringsManager.getString(
+                      languageService.currentLanguage, 'lets_go')
+                  : AppStringsManager.getString(
+                      languageService.currentLanguage, 'next')),
               if (!isLastPage) ...[
                 const SizedBox(width: 6),
                 const Icon(Icons.arrow_forward_rounded, size: 18),
