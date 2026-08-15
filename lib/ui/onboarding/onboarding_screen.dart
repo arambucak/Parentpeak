@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_pages.dart';
+import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 
 /// Onboarding-Ergebnis das nach Abschluss zurückgegeben wird.
 class OnboardingResult {
@@ -388,8 +389,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(lang['flag']!,
-                                style: const TextStyle(fontSize: 24)),
+                            if (lang['code'] == 'ku')
+                              const AlaRenginFlag(width: 32, height: 20)
+                            else
+                              Text(lang['flag']!,
+                                  style: const TextStyle(fontSize: 24)),
                             const SizedBox(height: 4),
                             Text(
                               lang['name']!,
