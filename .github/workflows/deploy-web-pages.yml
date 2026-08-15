@@ -79,6 +79,11 @@ jobs:
       - name: SPA fallback for deep links
         run: cp build/web/index.html build/web/404.html
 
+      - name: Copy legal pages to build output
+        run: |
+          cp -r web/privacy build/web/privacy
+          cp -r web/terms build/web/terms
+
       - name: Preserve custom domain
         run: cp CNAME build/web/CNAME
 
