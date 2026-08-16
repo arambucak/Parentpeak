@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+import 'package:parentpeak/services/image_upload_service.dart';
 import 'dart:io';
 
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -32,8 +34,10 @@ class TreasureBackendService {
       final query = <String, String>{
         'status': status,
         'visibility': visibility,
-        if (category != null && category.trim().isNotEmpty) 'category': category.trim(),
-        if (condition != null && condition.trim().isNotEmpty) 'condition': condition.trim(),
+        if (category != null && category.trim().isNotEmpty)
+          'category': category.trim(),
+        if (condition != null && condition.trim().isNotEmpty)
+          'condition': condition.trim(),
         'maxResults': limit.toString(),
         'offset': offset.toString(),
         if (latitude != null) 'latitude': latitude.toString(),
@@ -41,8 +45,10 @@ class TreasureBackendService {
         'radiusKm': radiusKm.toString(),
       };
 
-      final payload = await _apiClient!.getJson(_appendQuery(_treasuresPath, query));
-      final data = payload is Map<String, dynamic> ? payload['treasures'] : payload;
+      final payload =
+          await _apiClient!.getJson(_appendQuery(_treasuresPath, query));
+      final data =
+          payload is Map<String, dynamic> ? payload['treasures'] : payload;
       if (data is! List) {
         return [];
       }
@@ -69,11 +75,9 @@ class TreasureBackendService {
       String? uploadedImageUrl;
       final primaryImagePath = listing.primaryImagePath;
       if (primaryImagePath != null && primaryImagePath.isNotEmpty) {
-        final imageFile = File(primaryImagePath);
-        if (imageFile.existsSync()) {
-          final upload = await _apiClient!.uploadImageFile('/uploads/image', imageFile);
-          uploadedImageUrl = upload['url']?.toString();
-        }
+        final imageFile = XFile(primaryImagePath);
+        uploadedImageUrl =
+            await ImageUploadService.instance.uploadImage(imageFile);
       }
 
       final payload = await _apiClient!.postJsonAny(_treasuresPath, {
@@ -88,10 +92,13 @@ class TreasureBackendService {
         'isFree': true,
         'visibility': 'nearby',
         'shareRadiusKm': (listing.distanceMeters / 1000).clamp(1, 100),
-        if (uploadedImageUrl != null && uploadedImageUrl.isNotEmpty) 'photoUrl': uploadedImageUrl,
+        if (uploadedImageUrl != null && uploadedImageUrl.isNotEmpty)
+          'photoUrl': uploadedImageUrl,
       });
 
-      final data = payload is Map<String, dynamic> ? payload['treasure'] ?? payload : payload;
+      final data = payload is Map<String, dynamic>
+          ? payload['treasure'] ?? payload
+          : payload;
       if (data is! Map) {
         return null;
       }
@@ -134,15 +141,18 @@ class TreasureBackendService {
     Map<String, dynamic> treasure, {
     TreasureListing? fallbackListing,
   }) {
-    final rawRadiusKm = double.tryParse(treasure['shareRadiusKm']?.toString() ?? '');
+    final rawRadiusKm =
+        double.tryParse(treasure['shareRadiusKm']?.toString() ?? '');
     final rawCondition = treasure['condition']?.toString() ?? '';
     final categoryRaw = treasure['category']?.toString() ?? '';
-    final createdAt = DateTime.tryParse(treasure['createdAt']?.toString() ?? '');
+    final createdAt =
+        DateTime.tryParse(treasure['createdAt']?.toString() ?? '');
     final imageUrl = treasure['photoUrl']?.toString();
     final latitude = double.tryParse(treasure['latitude']?.toString() ?? '');
     final longitude = double.tryParse(treasure['longitude']?.toString() ?? '');
     final rating = double.tryParse(treasure['rating']?.toString() ?? '') ?? 0;
-    final ratingCount = int.tryParse(treasure['ratingCount']?.toString() ?? '') ?? 0;
+    final ratingCount =
+        int.tryParse(treasure['ratingCount']?.toString() ?? '') ?? 0;
     final views = int.tryParse(treasure['views']?.toString() ?? '') ?? 0;
 
     return TreasureListing(
@@ -151,12 +161,15 @@ class TreasureBackendService {
       category: _mapCategoryForUi(categoryRaw),
       sizeAge: fallbackListing?.sizeAge ?? 'Flexible Größe',
       conditionKey: _mapConditionForUi(rawCondition),
-      distanceMeters:
-          ((rawRadiusKm ?? (fallbackListing?.distanceMeters.toDouble() ?? 10000) / 1000) * 1000)
-              .round(),
+      distanceMeters: ((rawRadiusKm ??
+                  (fallbackListing?.distanceMeters.toDouble() ?? 10000) /
+                      1000) *
+              1000)
+          .round(),
       colorLabel: fallbackListing?.colorLabel ?? 'Neutral',
       note: treasure['description']?.toString() ?? fallbackListing?.note ?? '',
-      locationLabel: treasure['location']?.toString() ?? fallbackListing?.locationLabel,
+      locationLabel:
+          treasure['location']?.toString() ?? fallbackListing?.locationLabel,
       latitude: latitude ?? fallbackListing?.latitude,
       longitude: longitude ?? fallbackListing?.longitude,
       rating: rating,
