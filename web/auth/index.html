@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Mail bestätigen — Parentpeak</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 50%, #F5F3FF 100%);
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 48px 36px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.08);
+    }
+    .icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 36px;
+    }
+    .icon-loading { background: #F3F4F6; }
+    .icon-success { background: #DCFCE7; }
+    .icon-error { background: #FEE2E2; }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1F2937;
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 15px;
+      color: #6B7280;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: linear-gradient(135deg, #4CAF50, #2E7D32);
+      color: white;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(76,175,80,0.3);
+    }
+    .footer {
+      margin-top: 32px;
+      font-size: 12px;
+      color: #9CA3AF;
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #E5E7EB;
+      border-top-color: #4CAF50;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #state-loading, #state-success, #state-error { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <!-- Loading State -->
+    <div id="state-loading">
+      <div class="icon icon-loading"><div class="spinner"></div></div>
+      <h1>Wird bestätigt...</h1>
+      <p>Einen Moment bitte — wir verifizieren deine E-Mail-Adresse.</p>
+    </div>
+
+    <!-- Success State -->
+    <div id="state-success">
+      <div class="icon icon-success">&#10003;</div>
+      <h1>E-Mail bestätigt!</h1>
+      <p>Dein Konto ist jetzt vollständig aktiviert. Du kannst Parentpeak jetzt nutzen.</p>
+      <a href="https://parentpeak.de" class="btn">App öffnen</a>
+    </div>
+
+    <!-- Error State -->
+    <div id="state-error">
+      <div class="icon icon-error">&#10007;</div>
+      <h1>Link abgelaufen</h1>
+      <p id="error-msg">Der Bestätigungslink ist ungültig oder bereits verwendet worden. Bitte fordere in der App eine neue Bestätigungs-E-Mail an.</p>
+      <a href="https://parentpeak.de" class="btn">Zurück zur App</a>
+    </div>
+
+    <div class="footer">
+      Parentpeak — Nicht perfekt sein müssen. Einfach da sein.
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+    import { getAuth, applyActionCode } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBo2JwEWAvVlPDvDxT8VO4rTpXjKkxgdqc",
+      authDomain: "parentpeak-prod-2026.firebaseapp.com",
+      projectId: "parentpeak-prod-2026",
+      storageBucket: "parentpeak-prod-2026.firebasestorage.app",
+      messagingSenderId: "89417219632",
+      appId: "1:89417219632:web:51b6fa43ffa2b52f1bf7f5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const oobCode = params.get('oobCode');
+
+    const stateLoading = document.getElementById('state-loading');
+    const stateSuccess = document.getElementById('state-success');
+    const stateError = document.getElementById('state-error');
+
+    function showState(state) {
+      stateLoading.style.display = 'none';
+      stateSuccess.style.display = 'none';
+      stateError.style.display = 'none';
+      state.style.display = 'block';
+    }
+
+    async function handleVerification() {
+      if (mode === 'verifyEmail' && oobCode) {
+        showState(stateLoading);
+        try {
+          await applyActionCode(auth, oobCode);
+          showState(stateSuccess);
+        } catch (error) {
+          console.error('Verification failed:', error);
+          if (error.code === 'auth/expired-action-code') {
+            document.getElementById('error-msg').textContent =
+              'Der Link ist abgelaufen. Bitte fordere in der App eine neue Bestätigungs-E-Mail an.';
+          } else if (error.code === 'auth/invalid-action-code') {
+            document.getElementById('error-msg').textContent =
+              'Dieser Link wurde bereits verwendet oder ist ungültig.';
+          }
+          showState(stateError);
+        }
+      } else if (mode === 'resetPassword') {
+        // Redirect to app for password reset
+        window.location.href = 'https://parentpeak.de?mode=resetPassword&oobCode=' + oobCode;
+      } else {
+        showState(stateError);
+        document.getElementById('error-msg').textContent =
+          'Ungültiger Link. Bitte öffne die App direkt.';
+      }
+    }
+
+    handleVerification();
+  </script>
+</body>
+</html>

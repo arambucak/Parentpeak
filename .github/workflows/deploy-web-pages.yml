@@ -87,6 +87,7 @@ jobs:
         run: |
           cp -r web/privacy build/web/privacy
           cp -r web/terms build/web/terms
+          cp -r web/auth build/web/auth
 
       - name: Preserve custom domain
         run: cp CNAME build/web/CNAME
