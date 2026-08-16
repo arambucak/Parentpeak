@@ -215,7 +215,17 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             .timeout(const Duration(seconds: 8));
       } catch (_) {}
     }
-    if (user == null) return {'Content-Type': 'application/json'};
+    if (user == null) {
+      // Fallback: use backend API token if Firebase session is lost
+      final apiToken = APIConfig.getBackendApiToken();
+      if (apiToken != null && apiToken.isNotEmpty) {
+        return {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiToken',
+        };
+      }
+      return {'Content-Type': 'application/json'};
+    }
     try {
       final token = await user.getIdToken(forceRefresh);
       return {
