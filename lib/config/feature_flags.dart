@@ -112,12 +112,12 @@ class FeatureFlagService extends ChangeNotifier {
       availableInFreeTier: true,
     ),
 
-    // Phase 3 — Marktplatz, braucht Angebot UND Nachfrage
+    // Verschenkmarkt — Community-Feature
     FeatureDefinition(
       id: 'verschenkmarkt',
       label: 'Verschenkmarkt',
-      phase: LaunchPhase.phase3,
-      availableInFreeTier: false,
+      phase: LaunchPhase.phase1,
+      availableInFreeTier: true,
     ),
     FeatureDefinition(
       id: 'gemeinsam_satt',
