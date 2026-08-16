@@ -784,6 +784,19 @@ class _HomeScreenState extends State<HomeScreen>
       return !FeatureFlagService.instance.isHidden(action.featureId!);
     }).toList();
 
+    // Features already accessible via Quick-Actions or Smart-Card
+    const _quickAccessIds = {
+      'kalender',
+      'ki_elternberatung',
+      'gemeinsam_satt',
+      'organisation',
+      'events_aktivitaeten'
+    };
+    final gridActions = visibleGridActions
+        .where((a) =>
+            a.featureId == null || !_quickAccessIds.contains(a.featureId))
+        .toList();
+
     final displayName =
         AuthService.instance.currentUser?.displayName.trim() ?? '';
 
@@ -920,7 +933,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
                         const Spacer(),
-                        if (visibleGridActions.length > 4)
+                        if (gridActions.length > 4)
                           GestureDetector(
                             onTap: () => _showAllFeatures(visibleGridActions),
                             child: Text(
@@ -943,7 +956,7 @@ class _HomeScreenState extends State<HomeScreen>
                   sliver: SliverGrid(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        final action = visibleGridActions[index];
+                        final action = gridActions[index];
                         final isParentMatchTile =
                             action.label == 'Eltern Match';
                         final featureState = action.featureId != null
