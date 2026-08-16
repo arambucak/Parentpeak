@@ -839,259 +839,100 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ),
-                // ─── Wochenrückblick Schnellzugang ────────
+                // ─── Quick Actions (4 Icons) ────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 12),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const WochenrueckblickScreen(),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                              color: const Color(0xFF8B5CF6)
-                                  .withValues(alpha: 0.15)),
+                        horizontalPadding, 0, horizontalPadding, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _quickAction(
+                          icon: Icons.calendar_month_rounded,
+                          label: 'Kalender',
+                          color: const Color(0xFF2563EB),
+                          onTap: () {
+                            final a = visibleGridActions
+                                .where((a) => a.featureId == 'kalender')
+                                .firstOrNull;
+                            if (a != null) _openFeature(a);
+                          },
                         ),
-                        child: Row(
-                          children: [
-                            const Text('\u{1F4AC}',
-                                style: TextStyle(fontSize: 20)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                AppStringsManager.getString(languageService.currentLanguage, 'your_weekly_review'),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF6B21A8),
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF7C3AED)
-                                    .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                AppStringsManager.getString(languageService.currentLanguage, 'view_it'),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF7C3AED),
-                                ),
-                              ),
-                            ),
-                          ],
+                        _quickAction(
+                          icon: Icons.chat_bubble_rounded,
+                          label: 'Chat',
+                          color: const Color(0xFF0EA5E9),
+                          onTap: () {
+                            final a = visibleGridActions
+                                .where(
+                                    (a) => a.featureId == 'ki_elternberatung')
+                                .firstOrNull;
+                            if (a != null) _openFeature(a);
+                          },
                         ),
-                      ),
+                        _quickAction(
+                          icon: Icons.restaurant_rounded,
+                          label: 'Rezepte',
+                          color: const Color(0xFFEA580C),
+                          onTap: () {
+                            final a = visibleGridActions
+                                .where((a) => a.featureId == 'gemeinsam_satt')
+                                .firstOrNull;
+                            if (a != null) _openFeature(a);
+                          },
+                        ),
+                        _quickAction(
+                          icon: Icons.checklist_rounded,
+                          label: 'Listen',
+                          color: const Color(0xFF16A34A),
+                          onTap: () {
+                            final a = visibleGridActions
+                                .where((a) => a.featureId == 'organisation')
+                                .firstOrNull;
+                            if (a != null) _openFeature(a);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                // ─── Web Termin-Reminder Banner ────────
-                if (kIsWeb && _todayEvents.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                          horizontalPadding, 0, horizontalPadding, 12),
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                              color: const Color(0xFF3B82F6)
-                                  .withValues(alpha: 0.2)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Text('\u{1F514}',
-                                    style: TextStyle(fontSize: 16)),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Heute noch ${_todayEvents.length} ${_todayEvents.length == 1 ? "Termin" : "Termine"}',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1E40AF),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            ..._todayEvents.take(3).map((e) {
-                              final start = DateTime.tryParse(
-                                  e['start']?.toString() ?? '');
-                              final time = start != null
-                                  ? DateFormat.Hm('de').format(start)
-                                  : '';
-                              final title = e['title']?.toString() ?? '';
-                              final person = e['person']?.toString() ?? '';
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 4,
-                                      height: 4,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF3B82F6),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(time,
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF1E40AF))),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        '$title${person.isNotEmpty ? " • $person" : ""}',
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Color(0xFF374151)),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                            if (_todayEvents.length > 3)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  '+${_todayEvents.length - 3} weitere',
-                                  style: TextStyle(
-                                      fontSize: 11, color: Colors.grey[600]),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                // ─── Chat-Zeile (immer sichtbar, 1 Tap) ────────
+                // ─── Smart Context Card ────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 12),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        final a = visibleGridActions
-                            .where((a) => a.featureId == 'ki_elternberatung')
-                            .firstOrNull;
-                        if (a != null) _openFeature(a);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color:
-                              const Color(0xFF0284C7).withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: const Color(0xFF0284C7)
-                                  .withValues(alpha: 0.15)),
-                        ),
-                        child: Row(children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.tips_and_updates_rounded,
-                                size: 18, color: Color(0xFF0284C7)),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                                AppStringsManager.getString(
-                                    lang, 'chat_prompt'),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: const Color(0xFF0284C7),
-                                    fontWeight: FontWeight.w600)),
-                          ),
-                          const Icon(Icons.arrow_forward_ios_rounded,
-                              size: 14, color: Color(0xFF0284C7)),
-                        ]),
-                      ),
-                    ),
+                        horizontalPadding, 0, horizontalPadding, 16),
+                    child: _buildSmartCard(visibleGridActions),
                   ),
                 ),
-                // ─── Events-Teaser (kompakt, 1 Zeile) ────────────
+                // ─── Feature Grid Header ─────────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
-                        horizontalPadding, 0, horizontalPadding, 14),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        final a = visibleGridActions
-                            .where((a) => a.featureId == 'events_aktivitaeten')
-                            .firstOrNull;
-                        if (a != null) _openFeature(a);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color:
-                              const Color(0xFF8B5CF6).withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: const Color(0xFF8B5CF6)
-                                  .withValues(alpha: 0.12)),
-                        ),
-                        child: Row(children: [
-                          const Text('\u{1F389}',
-                              style: TextStyle(fontSize: 16)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                                AppStringsManager.getString(
-                                    lang, 'events_nearby'),
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(fontWeight: FontWeight.w700)),
+                        horizontalPadding, 0, horizontalPadding, 10),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Deine Features',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
-                          Text(AppStringsManager.getString(lang, 'all_link'),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                  color: const Color(0xFF8B5CF6),
-                                  fontWeight: FontWeight.w700)),
-                        ]),
-                      ),
+                        ),
+                        const Spacer(),
+                        if (visibleGridActions.length > 4)
+                          GestureDetector(
+                            onTap: () => _showAllFeatures(visibleGridActions),
+                            child: Text(
+                              'Alle \u{2192}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -1124,7 +965,9 @@ class _HomeScreenState extends State<HomeScreen>
                           isParentMatchTile: isParentMatchTile,
                         );
                       },
-                      childCount: visibleGridActions.length,
+                      childCount: visibleGridActions.length > 4
+                          ? 4
+                          : visibleGridActions.length,
                     ),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: gridCrossAxisCount,
@@ -1260,6 +1103,235 @@ class _HomeScreenState extends State<HomeScreen>
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _quickAction({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 6),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmartCard(List<_FeatureAction> actions) {
+    final hour = DateTime.now().hour;
+    final theme = Theme.of(context);
+
+    // Morning: Reminder for today's events
+    if (hour < 12 && _todayEvents.isNotEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2563EB).withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.1)),
+        ),
+        child: Row(children: [
+          Icon(Icons.calendar_today_rounded,
+              color: const Color(0xFF2563EB), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                    'Heute ${_todayEvents.length} ${_todayEvents.length == 1 ? "Termin" : "Termine"}',
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w700)),
+                Text('Tippe um den Kalender zu öffnen',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: Colors.grey[400], size: 20),
+        ]),
+      );
+    }
+
+    // Afternoon/Evening: Weekly review prompt
+    if (hour >= 18) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const WochenrueckblickScreen())),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.12)),
+          ),
+          child: Row(children: [
+            Icon(Icons.self_improvement_rounded,
+                color: const Color(0xFF7C3AED), size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                      AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'your_weekly_review'),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF6B21A8))),
+                  Text('Wie war deine Woche?',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color:
+                              const Color(0xFF7C3AED).withValues(alpha: 0.7))),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: Colors.grey[400], size: 20),
+          ]),
+        ),
+      );
+    }
+
+    // Default: Chat prompt
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        final a = actions
+            .where((a) => a.featureId == 'ki_elternberatung')
+            .firstOrNull;
+        if (a != null) _openFeature(a);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0EA5E9).withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.1)),
+        ),
+        child: Row(children: [
+          Icon(Icons.lightbulb_outline_rounded,
+              color: const Color(0xFF0EA5E9), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'what_concerns_you'),
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0369A1))),
+          ),
+          Icon(Icons.chevron_right_rounded, color: Colors.grey[400], size: 20),
+        ]),
+      ),
+    );
+  }
+
+  void _showAllFeatures(List<_FeatureAction> actions) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, scrollController) => Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Alle Features',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 16),
+            Expanded(
+              child: GridView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.9,
+                ),
+                itemCount: actions.length,
+                itemBuilder: (_, i) {
+                  final action = actions[i];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _openFeature(action);
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: action.color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child:
+                              Icon(action.icon, color: action.color, size: 22),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(action.label,
+                            style: const TextStyle(
+                                fontSize: 10, fontWeight: FontWeight.w600),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

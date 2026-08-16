@@ -474,8 +474,8 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
               label: 'Home',
             ),
             NavigationDestination(
-              icon: Icon(Icons.nest_cam_wired_stand_outlined),
-              selectedIcon: Icon(Icons.nest_cam_wired_stand_rounded),
+              icon: Icon(Icons.family_restroom_outlined),
+              selectedIcon: Icon(Icons.family_restroom_rounded),
               label: 'Profil',
             ),
           ],
