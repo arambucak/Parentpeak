@@ -859,8 +859,8 @@ class _HomeScreenState extends State<HomeScreen>
                           },
                         ),
                         _quickAction(
-                          icon: Icons.chat_bubble_rounded,
-                          label: 'Chat',
+                          icon: Icons.auto_awesome_rounded,
+                          label: 'Frag mich',
                           color: const Color(0xFF0EA5E9),
                           onTap: () {
                             final a = visibleGridActions
@@ -1223,35 +1223,34 @@ class _HomeScreenState extends State<HomeScreen>
       );
     }
 
-    // Default: Chat prompt
+    // Default: Events teaser
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         final a = actions
-            .where((a) => a.featureId == 'ki_elternberatung')
+            .where((a) => a.featureId == 'events_aktivitaeten')
             .firstOrNull;
         if (a != null) _openFeature(a);
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0EA5E9).withValues(alpha: 0.05),
+          color: const Color(0xFF8B5CF6).withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border:
-              Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.1)),
+              Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.1)),
         ),
         child: Row(children: [
-          Icon(Icons.lightbulb_outline_rounded,
-              color: const Color(0xFF0EA5E9), size: 20),
+          Icon(Icons.explore_rounded, color: const Color(0xFF8B5CF6), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
                 AppStringsManager.getString(
-                    languageService.currentLanguage, 'what_concerns_you'),
+                    languageService.currentLanguage, 'events_near_you'),
                 style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0369A1))),
+                    color: Color(0xFF6B21A8))),
           ),
           Icon(Icons.chevron_right_rounded, color: Colors.grey[400], size: 20),
         ]),
