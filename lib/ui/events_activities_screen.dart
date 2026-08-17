@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:parentpeak/services/location_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -118,6 +119,25 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
+        // Fallback: use central LocationService if available
+        if (LocationService.instance.hasLocation) {
+          final loc = LocationService.instance;
+          final newLocation = PickedLocation(
+            displayName: loc.city ?? 'Mein Standort',
+            city: loc.city ?? '',
+            postcode: '',
+            lat: loc.latitude!,
+            lon: loc.longitude!,
+          );
+          if (mounted) {
+            setState(() {
+              _activeLocation = newLocation;
+              _gpsDetecting = false;
+            });
+          }
+          _refreshFeed();
+          return;
+        }
         if (mounted) {
           setState(() => _gpsDetecting = false);
           if (!_hasRealLocation) {

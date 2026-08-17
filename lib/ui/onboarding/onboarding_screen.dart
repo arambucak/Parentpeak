@@ -167,8 +167,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     // Save location if GPS was granted during onboarding or city was entered
     if (!LocationService.instance.hasLocation) {
-      // Try GPS silently (user may have already granted during onboarding)
-      await LocationService.instance.requestGPSLocation();
+      // Show friendly location dialog
+      if (mounted) {
+        await _showLocationDialog();
+      }
     }
 
     // Speichere die personalisierte Kachel-Reihenfolge
@@ -323,6 +325,121 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _showLocationDialog() async {
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.location_on_rounded,
+                color: Color(0xFF4CAF50), size: 22),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text('Standort',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          ),
+        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Damit wir dir Events, Spielfreunde und Verschenk-Angebote in deiner Umgebung zeigen.',
+              style: TextStyle(
+                  fontSize: 13, height: 1.5, color: Color(0xFF6B7280)),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(children: [
+                Icon(Icons.lock_rounded, size: 14, color: Color(0xFF16A34A)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Dein genauer Standort bleibt privat. Andere sehen nur deine Stadt.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                  ),
+                ),
+              ]),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'skip'),
+            child: const Text('Lieber nicht',
+                style: TextStyle(color: Color(0xFF9CA3AF))),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, 'gps'),
+            icon: const Icon(Icons.my_location_rounded, size: 16),
+            label: const Text('Standort erkennen'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF4CAF50),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == 'gps') {
+      final success = await LocationService.instance.requestGPSLocation();
+      if (!success && mounted) {
+        // GPS failed — ask for PLZ
+        final plzController = TextEditingController();
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('PLZ oder Stadt eingeben'),
+            content: TextField(
+              controller: plzController,
+              autofocus: true,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                hintText: 'z.B. 10969 oder Berlin',
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Abbrechen')),
+              FilledButton(
+                onPressed: () {
+                  if (plzController.text.trim().isNotEmpty) {
+                    LocationService.instance
+                        .setManualLocation(plzController.text.trim());
+                  }
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Fertig'),
+              ),
+            ],
+          ),
+        );
+        plzController.dispose();
+      }
+    }
   }
 
   Widget _buildLanguagePage() {
