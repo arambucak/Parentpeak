@@ -7,6 +7,7 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
+import 'package:parentpeak/services/chat_moderation_service.dart';
 
 class MatchConversationScreen extends StatefulWidget {
   const MatchConversationScreen({
@@ -172,6 +173,13 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+
+    // Moderation check
+    final moderationResult = ChatModerationService.instance.checkMessage(text);
+    if (moderationResult != null) {
+      _showError(moderationResult);
+      return;
+    }
 
     final optimistic = _Msg(
         id: 'optimistic-${DateTime.now().microsecondsSinceEpoch}',
