@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/config/access_config.dart';
 
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
@@ -529,6 +530,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                             applicationLegalese:
                                 '\u{00A9} 2026 Parentpeak. Alle Rechte vorbehalten.',
                           )),
+                  _thinDivider(theme),
+                  _buildCompactTile(theme,
+                      icon: Icons.block_rounded,
+                      title: 'Blockierte Kontakte',
+                      subtitle:
+                          '${BlockReportService.instance.blockedUsers.length} blockiert',
+                      onTap: _showBlockedContacts),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.mail_rounded,
@@ -1194,6 +1202,71 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Divider(height: 1, color: Colors.grey[200]),
+    );
+  }
+
+  void _showBlockedContacts() {
+    final blocked = BlockReportService.instance.blockedUsers;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 16),
+            const Text('Blockierte Kontakte',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 12),
+            if (blocked.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(children: [
+                  Icon(Icons.check_circle_outlined,
+                      size: 40, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Text('Keine blockierten Kontakte',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                ]),
+              ),
+            if (blocked.isNotEmpty)
+              ...blocked.map((user) => ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.grey[200],
+                      child: Text(user.displayName.isNotEmpty
+                          ? user.displayName[0].toUpperCase()
+                          : '?'),
+                    ),
+                    title: Text(user.displayName.isNotEmpty
+                        ? user.displayName
+                        : 'Unbekannt'),
+                    subtitle: Text(
+                        'Blockiert am ${user.blockedAt.day}.${user.blockedAt.month}.${user.blockedAt.year}',
+                        style:
+                            TextStyle(fontSize: 11, color: Colors.grey[500])),
+                    trailing: TextButton(
+                      onPressed: () async {
+                        await BlockReportService.instance
+                            .unblockUser(user.userId);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) setState(() {});
+                      },
+                      child: const Text('Aufheben',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                  )),
+          ]),
+        ),
+      ),
     );
   }
 

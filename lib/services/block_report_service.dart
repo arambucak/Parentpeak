@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
 
@@ -67,7 +68,8 @@ class BlockReportService {
     required String reportedUserId,
     required String contentType, // 'message', 'listing', 'event', 'profile'
     required String content,
-    required String reason, // 'insult', 'spam', 'inappropriate', 'fraud', 'other'
+    required String
+        reason, // 'insult', 'spam', 'inappropriate', 'fraud', 'other'
   }) async {
     final report = ContentReport(
       id: 'report_${DateTime.now().millisecondsSinceEpoch}',
@@ -82,13 +84,15 @@ class BlockReportService {
     await _save();
 
     // AI auto-moderation check
-    final moderationResult = ChatModerationService.instance.checkMessage(content);
+    final moderationResult =
+        ChatModerationService.instance.checkMessage(content);
     if (moderationResult != null) {
       // Content is clearly harmful → auto-action
       debugPrint('BlockReportService: Auto-moderated: $moderationResult');
       return ReportResult(
         action: ReportAction.autoRemoved,
-        message: 'Der Inhalt wurde automatisch entfernt. Danke für deine Meldung.',
+        message:
+            'Der Inhalt wurde automatisch entfernt. Danke für deine Meldung.',
       );
     }
 
@@ -98,7 +102,8 @@ class BlockReportService {
     if (userReportCount >= 3) {
       return ReportResult(
         action: ReportAction.userWarned,
-        message: 'Dieser Nutzer wurde bereits mehrfach gemeldet. Wir prüfen den Fall.',
+        message:
+            'Dieser Nutzer wurde bereits mehrfach gemeldet. Wir prüfen den Fall.',
       );
     }
 
@@ -118,7 +123,8 @@ class BlockReportService {
     await prefs.setString(
         _blockedKey, jsonEncode(_blockedUsers.map((u) => u.toJson()).toList()));
     // Keep max 100 reports
-    if (_reports.length > 100) _reports = _reports.sublist(_reports.length - 100);
+    if (_reports.length > 100)
+      _reports = _reports.sublist(_reports.length - 100);
     await prefs.setString(
         _reportsKey, jsonEncode(_reports.map((r) => r.toJson()).toList()));
   }
@@ -199,4 +205,83 @@ class ReportResult {
   final String message;
 
   const ReportResult({required this.action, required this.message});
+}
+
+/// Global helper to show a report bottom sheet from any screen.
+/// Usage: showReportSheet(context, userId: '...', userName: '...', contentType: 'event');
+Future<void> showReportSheet(
+  BuildContext context, {
+  required String userId,
+  required String userName,
+  required String contentType,
+  String content = '',
+}) async {
+  final reasons = [
+    {'label': 'Beleidigung / Hassrede', 'key': 'insult'},
+    {'label': 'Spam / Werbung', 'key': 'spam'},
+    {'label': 'Unangemessene Inhalte', 'key': 'inappropriate'},
+    {'label': 'Betrug / Fake', 'key': 'fraud'},
+    {'label': 'Sonstiges', 'key': 'other'},
+  ];
+
+  await showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 16),
+          const Text('Inhalt melden',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Text('Warum möchtest du "$userName" melden?',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          ...reasons.map((r) => ListTile(
+                title: Text(r['label']!, style: const TextStyle(fontSize: 14)),
+                leading: const Icon(Icons.flag_outlined, size: 20),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final result =
+                      await BlockReportService.instance.reportContent(
+                    reporterUserId: 'current_user',
+                    reportedUserId: userId,
+                    contentType: contentType,
+                    content: content.isNotEmpty ? content : userName,
+                    reason: r['key']!,
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Row(children: [
+                        const Icon(Icons.check_circle_rounded,
+                            color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                            child: Text(result.message,
+                                style: const TextStyle(fontSize: 13))),
+                      ]),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: const Color(0xFF16A34A),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ));
+                  }
+                },
+              )),
+        ]),
+      ),
+    ),
+  );
 }
