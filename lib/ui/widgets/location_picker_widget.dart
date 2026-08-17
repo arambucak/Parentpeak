@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -479,9 +480,11 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
       }
 
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
+        locationSettings: LocationSettings(
             accuracy: LocationAccuracy.medium,
-            timeLimit: Duration(seconds: 10)),
+            timeLimit: kIsWeb
+                ? const Duration(seconds: 20)
+                : const Duration(seconds: 10)),
       );
 
       final pos = LatLng(position.latitude, position.longitude);

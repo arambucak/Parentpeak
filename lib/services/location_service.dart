@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Central location service — single source of truth for user location.
@@ -50,9 +52,12 @@ class LocationService {
   /// Shows system permission dialog if needed.
   Future<bool> requestGPSLocation() async {
     try {
-      // Check if location services are enabled
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return false;
+      // On web, isLocationServiceEnabled() is unreliable — browsers don't expose
+      // a system-level GPS toggle. Skip this check on web.
+      if (!kIsWeb) {
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) return false;
+      }
 
       // Check permission
       var permission = await Geolocator.checkPermission();
@@ -62,17 +67,23 @@ class LocationService {
       }
       if (permission == LocationPermission.deniedForever) return false;
 
-      // Get position
+      // Get position — web uses WiFi/IP geolocation which is slower
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
+        locationSettings: LocationSettings(
           accuracy: LocationAccuracy.low, // City-level, not exact (privacy)
-          timeLimit: Duration(seconds: 10),
+          timeLimit: kIsWeb
+              ? const Duration(seconds: 20)
+              : const Duration(seconds: 10),
         ),
       );
 
       _latitude = position.latitude;
       _longitude = position.longitude;
       _method = 'gps';
+
+      // Reverse geocode to get city name
+      await _reverseGeocodeAndSetCity(position.latitude, position.longitude);
+
       await _save();
       return true;
     } catch (e) {
@@ -138,6 +149,39 @@ class LocationService {
 
   // ─── Private ──────────────────────────────────────────────────────────────
 
+  /// Reverse geocode coordinates to get a city name via Nominatim
+  Future<void> _reverseGeocodeAndSetCity(double lat, double lng) async {
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json&addressdetails=1',
+      );
+      // User-Agent is forbidden in browser Fetch API — skip on web
+      final headers = kIsWeb
+          ? <String, String>{}
+          : {'User-Agent': 'ParentPeak/1.0 (family app)'};
+      final resp = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 8));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        final address = data['address'] as Map<String, dynamic>?;
+        final cityName = address?['city'] as String? ??
+            address?['town'] as String? ??
+            address?['village'] as String?;
+        final suburb =
+            address?['suburb'] as String? ?? address?['quarter'] as String?;
+        if (suburb != null && cityName != null) {
+          _city = '$suburb, $cityName';
+        } else if (cityName != null) {
+          _city = cityName;
+        }
+      }
+    } catch (e) {
+      debugPrint('LocationService._reverseGeocodeAndSetCity failed: $e');
+      // Non-fatal: location still works without city name
+    }
+  }
+
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     if (_latitude != null) await prefs.setDouble(_latKey, _latitude!);
@@ -147,13 +191,16 @@ class LocationService {
   }
 
   /// Haversine formula for distance between two GPS points
-  double _haversineDistance(double lat1, double lng1, double lat2, double lng2) {
+  double _haversineDistance(
+      double lat1, double lng1, double lat2, double lng2) {
     const R = 6371.0; // Earth radius in km
     final dLat = _toRadians(lat2 - lat1);
     final dLng = _toRadians(lng2 - lng1);
     final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_toRadians(lat1)) * cos(_toRadians(lat2)) *
-        sin(dLng / 2) * sin(dLng / 2);
+        cos(_toRadians(lat1)) *
+            cos(_toRadians(lat2)) *
+            sin(dLng / 2) *
+            sin(dLng / 2);
     final c = 2 * asin(sqrt(a));
     return R * c;
   }

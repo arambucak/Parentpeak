@@ -112,6 +112,31 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   /// dann wird die Stadt immer aktualisiert und gespeichert.
   Future<void> _detectGpsAndRefresh({bool forceOverride = false}) async {
     setState(() => _gpsDetecting = true);
+
+    // First: use central LocationService if it already has a location (e.g. from onboarding)
+    if (!forceOverride &&
+        LocationService.instance.hasLocation &&
+        !_hasRealLocation) {
+      final loc = LocationService.instance;
+      final newLocation = PickedLocation(
+        displayName: loc.city ?? 'Mein Standort',
+        city: loc.city ?? '',
+        postcode: '',
+        lat: loc.latitude!,
+        lon: loc.longitude!,
+      );
+      if (mounted) {
+        setState(() {
+          _activeLocation = newLocation;
+          _hasRealLocation = true;
+          _fallbackCity = loc.city ?? '';
+          _gpsDetecting = false;
+        });
+      }
+      _refreshFeed();
+      // Still try GPS silently to get a fresher position
+    }
+
     try {
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {

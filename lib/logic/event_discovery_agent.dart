@@ -50,16 +50,24 @@ class EventDiscoveryAgent {
 
     // When city is raw coordinates (Nominatim failed) or a placeholder, use coords as search location
     final isCoordCity = RegExp(r'^-?\d+\.\d+,-?\d+\.\d+$').hasMatch(cleanCity);
-    final locationDesc = isCoordCity && latitude != null
-        ? '$latitude,$longitude'
-        : cleanCity;
+    final locationDesc =
+        isCoordCity && latitude != null ? '$latitude,$longitude' : cleanCity;
     final agesText = childAges.isEmpty
         ? 'Kinder verschiedener Altersgruppen (0–16 Jahre)'
         : 'Kinder im Alter von ${childAges.map((a) => _sanitize(PrivacySanitizer.sanitizeForAi(a))).join(', ')}';
 
     final now = DateTime.now();
-    final weekdayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
-    final today = '${weekdayNames[now.weekday - 1]}, ${now.day}.${now.month}.${now.year}';
+    final weekdayNames = [
+      'Montag',
+      'Dienstag',
+      'Mittwoch',
+      'Donnerstag',
+      'Freitag',
+      'Samstag',
+      'Sonntag'
+    ];
+    final today =
+        '${weekdayNames[now.weekday - 1]}, ${now.day}.${now.month}.${now.year}';
     final saison = _getSaison(now.month);
 
     // GPS-Koordinaten für Distanz-Info
@@ -71,7 +79,7 @@ class EventDiscoveryAgent {
     final groundingPrompt = '''
 $today. ${gpsHint}Suche 10 aktuelle Familienevents ${isCoordCity ? 'in der Nähe von' : 'in'} "$locationDesc" ($cleanRadius) — $saison. Zielgruppe: $agesText.
 Antworte NUR als JSON-Array (kein Markdown). Trage bei "url" die ECHTE URL aus dem Web-Suchergebnis ein:
-[{"id":"1","title":"...","description":"...","category":"theater","ageLabels":["alle"],"location":"Adresse, Stadtteil","cityHint":"$locationDesc","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"kostenlos","url":"ECHTE_URL_AUS_WEBSUCHE","organizer":"..."}]
+[{"id":"1","title":"...","description":"...","category":"theater","ageLabels":["alle"],"location":"Adresse, Stadtteil","cityHint":"$locationDesc","eventDate":"${now.year}-${now.month.toString().padLeft(2, '0')}-${(now.day + 2).toString().padLeft(2, '0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"kostenlos","url":"ECHTE_URL_AUS_WEBSUCHE","organizer":"..."}]
 Erstelle genau 10 echte Events. Bei "url" MUSS eine echte Webseite stehen (z.B. berlin.de, eventbrite.de, Veranstalter-Website).
 ''';
 
@@ -83,7 +91,7 @@ Erstelle 10 typische Familien-Events ${isCoordCity ? 'in der Nähe von' : 'in'} 
 Zielgruppe: $agesText. Realistische Orte, Preise 0–15€.
 
 Antworte NUR mit einem gültigen JSON-Array:
-[{"id":"ev1","title":"...","description":"2-3 Sätze","category":"theater","ageLabels":["3–6 Jahre"],"location":"Adresse, Stadtteil","cityHint":"$locationDesc","eventDate":"${now.year}-${now.month.toString().padLeft(2,'0')}-${(now.day+2).toString().padLeft(2,'0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"5 €","url":"https://...","organizer":"Veranstalter"}]
+[{"id":"ev1","title":"...","description":"2-3 Sätze","category":"theater","ageLabels":["3–6 Jahre"],"location":"Adresse, Stadtteil","cityHint":"$locationDesc","eventDate":"${now.year}-${now.month.toString().padLeft(2, '0')}-${(now.day + 2).toString().padLeft(2, '0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"5 €","url":"https://...","organizer":"Veranstalter"}]
 Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges) und Stadtteile.
 ''';
 
@@ -106,18 +114,23 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
   // ─── REST API mit Google Search Grounding ──────────────────────────────────
 
+  /// Events brauchen ein Modell mit zuverlässigem Google Search Grounding.
+  /// gemini-3.5-flash ist stabil und günstig für Web-Suche.
+  static const String _groundingModel = 'gemini-3.5-flash';
+
   Future<List<DiscoveredEvent>> _callWithGrounding(
       String apiKey, String prompt, String city) async {
-    final modelName = APIConfig.getGeminiModelName();
-    // Use key as query param to avoid CORS preflight on web (custom headers trigger preflight)
+    // Use dedicated grounding model (not the app default which may be too light)
     final uri = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent?key=${Uri.encodeComponent(apiKey)}',
+      'https://generativelanguage.googleapis.com/v1beta/models/$_groundingModel:generateContent?key=${Uri.encodeComponent(apiKey)}',
     );
 
     final body = jsonEncode({
       'contents': [
         {
-          'parts': [{'text': prompt}],
+          'parts': [
+            {'text': prompt}
+          ],
           'role': 'user',
         }
       ],
@@ -125,7 +138,7 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
         {'google_search': {}}
       ],
       'generationConfig': {
-        'temperature': 0.1,
+        'temperature': 1.0,
         'maxOutputTokens': 6000,
       },
     });
@@ -135,14 +148,21 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
         .timeout(const Duration(seconds: 25));
 
     if (response.statusCode != 200) {
-      throw Exception('Gemini REST ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
+      debugPrint(
+          'EventDiscoveryAgent: Grounding API ${response.statusCode} — ${response.body.substring(0, response.body.length.clamp(0, 300))}');
+      throw Exception(
+          'Gemini REST ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final candidates = data['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) return [];
+    if (candidates == null || candidates.isEmpty) {
+      debugPrint('EventDiscoveryAgent: Grounding returned no candidates');
+      return [];
+    }
 
-    final content = (candidates.first as Map<String, dynamic>)['content'] as Map<String, dynamic>?;
+    final content = (candidates.first as Map<String, dynamic>)['content']
+        as Map<String, dynamic>?;
     final parts = content?['parts'] as List?;
     if (parts == null || parts.isEmpty) return [];
 
@@ -151,7 +171,8 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
         .join('');
 
     // Extrahiere Quell-URLs aus Grounding-Metadaten
-    final groundingMeta = (candidates.first as Map<String, dynamic>)['groundingMetadata'] as Map<String, dynamic>?;
+    final groundingMeta = (candidates.first
+        as Map<String, dynamic>)['groundingMetadata'] as Map<String, dynamic>?;
     final groundingUrls = _extractGroundingUrls(groundingMeta);
 
     return _parseAgentResponse(rawText, city, groundingUrls: groundingUrls);
@@ -162,7 +183,8 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
     final chunks = meta['groundingChunks'] as List?;
     if (chunks == null) return [];
     return chunks
-        .map((c) => ((c as Map<String, dynamic>)['web'] as Map<String, dynamic>?)?['uri'] as String?)
+        .map((c) => ((c as Map<String, dynamic>)['web']
+            as Map<String, dynamic>?)?['uri'] as String?)
         .whereType<String>()
         .toList();
   }
@@ -172,13 +194,13 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
   Future<List<DiscoveredEvent>> _callWithPackage(
       String apiKey, String prompt, String city) async {
     final model = GenerativeModel(
-      model: APIConfig.getGeminiModelName(),
+      model: _groundingModel, // Use same capable model for realistic results
       apiKey: apiKey,
-      generationConfig: GenerationConfig(temperature: 0.3, maxOutputTokens: 8192),
+      generationConfig:
+          GenerationConfig(temperature: 0.3, maxOutputTokens: 8192),
     );
-    final response = await model
-        .generateContent([Content.text(prompt)])
-        .timeout(const Duration(seconds: 30));
+    final response = await model.generateContent(
+        [Content.text(prompt)]).timeout(const Duration(seconds: 30));
     return _parseAgentResponse(response.text ?? '', city);
   }
 
@@ -198,7 +220,8 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
       for (var i = 0; i < list.length; i++) {
         final map = list[i] as Map<String, dynamic>;
-        final categoryStr = (map['category'] as String? ?? 'sonstiges').toLowerCase();
+        final categoryStr =
+            (map['category'] as String? ?? 'sonstiges').toLowerCase();
         final ageLabels = (map['ageLabels'] as List<dynamic>?)
                 ?.map((e) => e.toString())
                 .toList() ??
@@ -206,7 +229,9 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
         DateTime? eventDate;
         final rawDate = map['eventDate'];
-        if (rawDate != null && rawDate.toString().isNotEmpty && rawDate.toString() != 'null') {
+        if (rawDate != null &&
+            rawDate.toString().isNotEmpty &&
+            rawDate.toString() != 'null') {
           try {
             eventDate = DateTime.parse(rawDate.toString());
           } catch (_) {}
@@ -217,8 +242,12 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
         if (url == null) {
           // Try index-matched URL first, then scan pool for any valid URL
           for (var j = i; j < i + groundingUrls.length; j++) {
-            final candidate = _validateUrl(groundingUrls[j % groundingUrls.length]);
-            if (candidate != null) { url = candidate; break; }
+            final candidate =
+                _validateUrl(groundingUrls[j % groundingUrls.length]);
+            if (candidate != null) {
+              url = candidate;
+              break;
+            }
           }
         }
 
@@ -272,7 +301,8 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
     final openBrackets = '['.allMatches(jsonChunk).length;
     final closeBrackets = ']'.allMatches(jsonChunk).length;
-    if (openBrackets > closeBrackets) jsonChunk += ']' * (openBrackets - closeBrackets);
+    if (openBrackets > closeBrackets)
+      jsonChunk += ']' * (openBrackets - closeBrackets);
 
     return jsonChunk.trim();
   }
@@ -281,9 +311,12 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
   String? _validateUrl(String? url) {
     if (url == null || url.trim().isEmpty) return null;
     final trimmed = url.trim();
-    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) return null;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://'))
+      return null;
     // Platzhalter ablehnen
-    if (trimmed == 'https://...' || trimmed == 'http://...' || trimmed.endsWith('/...')) return null;
+    if (trimmed == 'https://...' ||
+        trimmed == 'http://...' ||
+        trimmed.endsWith('/...')) return null;
     final uri = Uri.tryParse(trimmed);
     if (uri == null || !uri.hasAuthority || uri.host.isEmpty) return null;
     return trimmed;
@@ -291,24 +324,38 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
   DiscoveredEventCategory _parseCategory(String raw) {
     switch (raw) {
-      case 'theater': return DiscoveredEventCategory.theater;
-      case 'kino': return DiscoveredEventCategory.kino;
-      case 'sport': return DiscoveredEventCategory.sport;
-      case 'musik': return DiscoveredEventCategory.musik;
-      case 'natur': return DiscoveredEventCategory.natur;
-      case 'basteln': return DiscoveredEventCategory.basteln;
-      case 'familienzentrum': return DiscoveredEventCategory.familienzentrum;
-      case 'museum': return DiscoveredEventCategory.museum;
-      case 'festival': return DiscoveredEventCategory.festival;
-      case 'spielplatz': return DiscoveredEventCategory.spielplatz;
-      default: return DiscoveredEventCategory.sonstiges;
+      case 'theater':
+        return DiscoveredEventCategory.theater;
+      case 'kino':
+        return DiscoveredEventCategory.kino;
+      case 'sport':
+        return DiscoveredEventCategory.sport;
+      case 'musik':
+        return DiscoveredEventCategory.musik;
+      case 'natur':
+        return DiscoveredEventCategory.natur;
+      case 'basteln':
+        return DiscoveredEventCategory.basteln;
+      case 'familienzentrum':
+        return DiscoveredEventCategory.familienzentrum;
+      case 'museum':
+        return DiscoveredEventCategory.museum;
+      case 'festival':
+        return DiscoveredEventCategory.festival;
+      case 'spielplatz':
+        return DiscoveredEventCategory.spielplatz;
+      default:
+        return DiscoveredEventCategory.sonstiges;
     }
   }
 
   String _getSaison(int month) {
-    if (month >= 3 && month <= 5) return 'Frühling (Ostermärkte, Stadtfeste, Fahrrad-Touren)';
-    if (month >= 6 && month <= 8) return 'Sommer (Freibäder, Freilichtbühnen, Stadtfeste, Ferienprogramme)';
-    if (month >= 9 && month <= 11) return 'Herbst (Erntedank, Halloween-Specials, Indoor-Angebote)';
+    if (month >= 3 && month <= 5)
+      return 'Frühling (Ostermärkte, Stadtfeste, Fahrrad-Touren)';
+    if (month >= 6 && month <= 8)
+      return 'Sommer (Freibäder, Freilichtbühnen, Stadtfeste, Ferienprogramme)';
+    if (month >= 9 && month <= 11)
+      return 'Herbst (Erntedank, Halloween-Specials, Indoor-Angebote)';
     return 'Winter (Weihnachtsmärkte, Eislaufen, Winterferienprogramme)';
   }
 
