@@ -331,6 +331,68 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
   }
 
+  Widget _buildEmptyState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color:
+                    theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.waving_hand_rounded,
+                  size: 32, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Sag Hallo!',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Schreib die erste Nachricht — ihr habt bestimmt etwas gemeinsam.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _icebreaker(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ActionChip(
+        label: Text(text, style: const TextStyle(fontSize: 12)),
+        onPressed: () {
+          _controller.text = text;
+          _send();
+        },
+        backgroundColor: Theme.of(context)
+            .colorScheme
+            .primaryContainer
+            .withValues(alpha: 0.3),
+        side: BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    );
+  }
+
   void _showError(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -352,18 +414,44 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.profileName),
-        actions: [
-          if (!widget.isFriendChat && !_streamActive)
-            IconButton(
-              tooltip: 'Live verbinden',
-              onPressed: _startLiveStream,
-              icon: const Icon(Icons.wifi_tethering_rounded),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: theme.colorScheme.primaryContainer,
+              child: Text(
+                widget.profileName.isNotEmpty
+                    ? widget.profileName[0].toUpperCase()
+                    : '?',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
             ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.profileName,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text('Eltern-Netzwerk',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
           IconButton(
             tooltip: 'Aktualisieren',
             onPressed: _loadMessages,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, size: 20),
           ),
         ],
       ),
@@ -372,55 +460,150 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _messages[index];
-                      final align = msg.isMe
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft;
-                      final color = msg.isMe
-                          ? theme.colorScheme.primaryContainer
-                          : theme.colorScheme.surfaceContainerHighest;
+                : _messages.isEmpty
+                    ? _buildEmptyState(theme)
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                        itemCount: _messages.length,
+                        itemBuilder: (context, index) {
+                          final msg = _messages[index];
+                          final isMe = msg.isMe;
+                          final showAvatar = !isMe &&
+                              (index == 0 ||
+                                  _messages[index - 1].isMe != msg.isMe);
 
-                      return Align(
-                        alignment: align,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(msg.text),
-                        ),
-                      );
-                    },
-                  ),
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: 6,
+                              left: isMe ? 48 : 0,
+                              right: isMe ? 0 : 48,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: isMe
+                                  ? MainAxisAlignment.end
+                                  : MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (!isMe && showAvatar)
+                                  CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor:
+                                        theme.colorScheme.primaryContainer,
+                                    child: Text(
+                                      widget.profileName.isNotEmpty
+                                          ? widget.profileName[0].toUpperCase()
+                                          : '?',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ),
+                                  )
+                                else if (!isMe)
+                                  const SizedBox(width: 28),
+                                if (!isMe) const SizedBox(width: 8),
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isMe
+                                          ? theme.colorScheme.primary
+                                          : theme.colorScheme
+                                              .surfaceContainerHighest,
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: const Radius.circular(16),
+                                        topRight: const Radius.circular(16),
+                                        bottomLeft:
+                                            Radius.circular(isMe ? 16 : 4),
+                                        bottomRight:
+                                            Radius.circular(isMe ? 4 : 16),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      msg.text,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isMe
+                                            ? Colors.white
+                                            : theme.colorScheme.onSurface,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
           ),
+          // Suggestion chips when empty or few messages
+          if (_messages.length < 3)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _icebreaker('Wie alt sind eure Kinder?'),
+                    _icebreaker('Welcher Spielplatz in der Nähe?'),
+                    _icebreaker('Treffen diese Woche?'),
+                  ],
+                ),
+              ),
+            ),
+          // Input
           SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      decoration: const InputDecoration(
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
                         hintText: 'Nachricht schreiben...',
-                        border: OutlineInputBorder(),
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerLow,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 12),
                         isDense: true,
                       ),
                       onSubmitted: (_) => _send(),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: () => _send(),
-                    child: const Icon(Icons.send_rounded),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.colorScheme.primary,
+                    ),
+                    child: IconButton(
+                      onPressed: _send,
+                      icon: const Icon(Icons.send_rounded,
+                          size: 18, color: Colors.white),
+                    ),
                   ),
                 ],
               ),
