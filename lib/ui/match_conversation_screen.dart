@@ -253,11 +253,6 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
     try {
       final headers = await _authHeaders();
-      // Abort early if not logged in — avoids a guaranteed 401
-      if (!headers.containsKey('Authorization')) {
-        _showError('Bitte zuerst einloggen um Nachrichten zu senden.');
-        return null;
-      }
       final resp = await http
           .post(
             Uri.parse('$base/friend-chat/messages'),

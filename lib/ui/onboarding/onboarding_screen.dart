@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
@@ -136,6 +137,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final familyName = _familyNameController.text.trim();
     if (familyName.isNotEmpty) {
       await prefs.setString('onboarding.family_name', familyName);
+      // Also set as Firebase display name so it shows in chat & network
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null &&
+            (user.displayName == null || user.displayName!.trim().isEmpty)) {
+          await user.updateDisplayName(familyName);
+        }
+      } catch (_) {}
     }
 
     if (_selectedRoles.isNotEmpty) {
