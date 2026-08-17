@@ -6,6 +6,7 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_pages.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
+import 'package:parentpeak/services/location_service.dart';
 
 /// Onboarding-Ergebnis das nach Abschluss zurückgegeben wird.
 class OnboardingResult {
@@ -163,6 +164,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     // Save country & region → auto-configures Kalender holidays
     await prefs.setString('holiday.country', _selectedCountry);
     await prefs.setString('holiday.region', _selectedRegion);
+
+    // Save location if GPS was granted during onboarding or city was entered
+    if (!LocationService.instance.hasLocation) {
+      // Try GPS silently (user may have already granted during onboarding)
+      await LocationService.instance.requestGPSLocation();
+    }
 
     // Speichere die personalisierte Kachel-Reihenfolge
     final tileOrder = _buildTileOrder();

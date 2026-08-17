@@ -26,6 +26,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/entitlement_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
+import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/theme_service.dart';
 import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
@@ -133,6 +134,7 @@ Future<void> _startApp() async {
   await FeatureFlagService.instance.initialize();
   await EntitlementService.instance.initialize();
   await BlockReportService.instance.initialize();
+  await LocationService.instance.initialize();
 
   // Stripe publishable key (from .env or compile-time dart-define).
   final stripeKey = APIConfig.getStripePublishableKey()?.trim();
