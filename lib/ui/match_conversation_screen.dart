@@ -142,6 +142,32 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 10));
       if (!mounted) return;
+      if (resp.statusCode == 401) {
+        // Retry without auth — GET may not need it
+        final retryResp = await http.get(uri, headers: {
+          'Content-Type': 'application/json'
+        }).timeout(const Duration(seconds: 10));
+        if (!mounted) return;
+        if (retryResp.statusCode >= 200 && retryResp.statusCode < 300) {
+          final body = jsonDecode(retryResp.body) as Map<String, dynamic>;
+          final msgs = List<Map<String, dynamic>>.from(body['messages'] ?? []);
+          setState(() {
+            _messages
+              ..clear()
+              ..addAll(msgs.map((m) => _Msg(
+                    id: (m['id'] ?? '').toString(),
+                    text: (m['content'] ?? '').toString(),
+                    isMe: m['authorUserId'] == _currentUserId,
+                  )));
+            _isLoading = false;
+          });
+          return;
+        }
+        _showError(
+            'Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
+        setState(() => _isLoading = false);
+        return;
+      }
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final body = jsonDecode(resp.body) as Map<String, dynamic>;
         final msgs = List<Map<String, dynamic>>.from(body['messages'] ?? []);
