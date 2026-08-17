@@ -4880,11 +4880,27 @@ app.post('/friend-chat/messages', async (req, res) => {
       `INSERT INTO "FriendChatMessage" ("id", "roomId", "authorUserId", "authorName", "content", "createdAt") VALUES ($1, $2, $3, $4, $5, NOW())`,
       item.id, roomId, userId, userName, content
     );
+    // Send push notification to the other person
+    try {
+      await sendPushToUser(roomId, {
+        title: userName || 'Neue Nachricht',
+        body: content.length > 100 ? content.substring(0, 100) + '...' : content,
+        data: { type: 'friend_chat', roomId, senderId: userId },
+      });
+    } catch (_) {}
     return res.status(201).json({ item });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /friend-chat/messages', error)) return;
     if (!friendChatMessages.has(roomId)) friendChatMessages.set(roomId, []);
     friendChatMessages.get(roomId).push(item);
+    // Send push notification to the other person (fallback path)
+    try {
+      await sendPushToUser(roomId, {
+        title: userName || 'Neue Nachricht',
+        body: content.length > 100 ? content.substring(0, 100) + '...' : content,
+        data: { type: 'friend_chat', roomId, senderId: userId },
+      });
+    } catch (_) {}
     return res.status(201).json({ item });
   }
 });
