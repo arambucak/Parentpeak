@@ -57,7 +57,13 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     super.initState();
     _loadMessages();
     if (!widget.isFriendChat) _startLiveStream();
+    // Auto-poll for new messages every 5 seconds
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted && !_isLoading) _loadMessages();
+    });
   }
+
+  Timer? _pollTimer;
 
   void _startLiveStream() {
     _streamSub?.cancel();
@@ -191,6 +197,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _streamSub?.cancel();
     _controller.dispose();
     super.dispose();

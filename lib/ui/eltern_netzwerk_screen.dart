@@ -91,6 +91,29 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         );
       }
     }
+    // Show notification if new friends were auto-added
+    if (pending.isNotEmpty && mounted) {
+      final names =
+          pending.map((c) => c['fromName']?.toString() ?? 'Jemand').join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [
+          const Icon(Icons.people_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              pending.length == 1
+                  ? '$names hat sich mit dir verbunden! 🎉'
+                  : '${pending.length} neue Verbindungen: $names 🎉',
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ]),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF16A34A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 5),
+      ));
+    }
     try {
       final sug = await _backend.getProfiles();
       if (mounted) {
@@ -317,7 +340,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         }
                       },
                       icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-                      label: Text(AppStringsManager.getString(languageService.currentLanguage, 'redeem_premium')),
+                      label: Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'redeem_premium')),
                       style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFFF97316),
                           foregroundColor: Colors.white,
@@ -690,7 +714,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     color:
                         theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(6)),
-                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'soon'),
+                child: Text(
+                    AppStringsManager.getString(
+                        languageService.currentLanguage, 'soon'),
                     style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
@@ -824,7 +850,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         OutlinedButton.icon(
           onPressed: () => _showAddFriendSheet(theme),
           icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-          label: Text(AppStringsManager.getString(languageService.currentLanguage, 'add_friend_code')),
+          label: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'add_friend_code')),
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFF7C3AED),
             side: BorderSide(
@@ -1575,7 +1602,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_profile')),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'delete_profile')),
         content: const Text('Dein Spielfreunde-Profil wird dauerhaft gelöscht. '
             'Du kannst jederzeit ein neues erstellen.'),
         actions: [
