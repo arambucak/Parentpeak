@@ -1,1 +1,33 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"parentpeak-prod-2026","appId":"1:89417219632:android:7a0411f9f86feeb61bf7f5","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"parentpeak-prod-2026","appId":"1:89417219632:ios:bad207c3c3a5b0bf1bf7f5","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"parentpeak-prod-2026","configurations":{"android":"1:89417219632:android:7a0411f9f86feeb61bf7f5","ios":"1:89417219632:ios:bad207c3c3a5b0bf1bf7f5"}}}}}}
+{
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "parentpeak-prod-2026",
+          "appId": "1:89417219632:android:7a0411f9f86feeb61bf7f5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "parentpeak-prod-2026",
+          "appId": "1:89417219632:ios:bad207c3c3a5b0bf1bf7f5",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "parentpeak-prod-2026",
+          "configurations": {
+            "android": "1:89417219632:android:7a0411f9f86feeb61bf7f5",
+            "ios": "1:89417219632:ios:bad207c3c3a5b0bf1bf7f5"
+          }
+        }
+      }
+    }
+  }
+}
