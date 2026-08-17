@@ -246,7 +246,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         user = await FirebaseAuth.instance
             .authStateChanges()
             .firstWhere((u) => u != null)
-            .timeout(const Duration(seconds: 8));
+            .timeout(const Duration(seconds: 1));
       } catch (_) {}
     }
     if (user == null) {
