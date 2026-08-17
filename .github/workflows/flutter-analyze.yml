@@ -31,6 +31,9 @@ jobs:
       - name: Flutter Pub Get
         run: bash scripts/flutter_repo.sh pub get
 
+      - name: Run Tests
+        run: flutter test --no-pub
+
       - name: Run Analyzer (CI-safe)
         run: bash scripts/ci_flutter_analyze.sh
 
