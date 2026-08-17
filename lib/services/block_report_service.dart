@@ -1,0 +1,202 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/services/chat_moderation_service.dart';
+
+/// Manages blocked users and content reports across the entire app.
+/// Used in: Chat, Verschenkmarkt, Events, Netzwerk.
+class BlockReportService {
+  static final BlockReportService instance = BlockReportService._();
+  BlockReportService._();
+
+  static const String _blockedKey = 'safety.blocked_users';
+  static const String _reportsKey = 'safety.reports';
+
+  List<BlockedUser> _blockedUsers = [];
+  List<ContentReport> _reports = [];
+
+  List<BlockedUser> get blockedUsers => List.unmodifiable(_blockedUsers);
+
+  /// Initialize — load from SharedPreferences
+  Future<void> initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final blockedRaw = prefs.getString(_blockedKey);
+    if (blockedRaw != null && blockedRaw.isNotEmpty) {
+      try {
+        _blockedUsers = (jsonDecode(blockedRaw) as List)
+            .map((e) => BlockedUser.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } catch (_) {}
+    }
+    final reportsRaw = prefs.getString(_reportsKey);
+    if (reportsRaw != null && reportsRaw.isNotEmpty) {
+      try {
+        _reports = (jsonDecode(reportsRaw) as List)
+            .map((e) => ContentReport.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } catch (_) {}
+    }
+  }
+
+  /// Check if a user is blocked
+  bool isBlocked(String userId) {
+    return _blockedUsers.any((u) => u.userId == userId);
+  }
+
+  /// Block a user
+  Future<void> blockUser(String userId, String displayName) async {
+    if (isBlocked(userId)) return;
+    _blockedUsers.add(BlockedUser(
+      userId: userId,
+      displayName: displayName,
+      blockedAt: DateTime.now(),
+    ));
+    await _save();
+  }
+
+  /// Unblock a user
+  Future<void> unblockUser(String userId) async {
+    _blockedUsers.removeWhere((u) => u.userId == userId);
+    await _save();
+  }
+
+  /// Report content (message, listing, event, profile)
+  /// Returns a moderation result from the AI.
+  Future<ReportResult> reportContent({
+    required String reporterUserId,
+    required String reportedUserId,
+    required String contentType, // 'message', 'listing', 'event', 'profile'
+    required String content,
+    required String reason, // 'insult', 'spam', 'inappropriate', 'fraud', 'other'
+  }) async {
+    final report = ContentReport(
+      id: 'report_${DateTime.now().millisecondsSinceEpoch}',
+      reporterUserId: reporterUserId,
+      reportedUserId: reportedUserId,
+      contentType: contentType,
+      content: content,
+      reason: reason,
+      createdAt: DateTime.now(),
+    );
+    _reports.add(report);
+    await _save();
+
+    // AI auto-moderation check
+    final moderationResult = ChatModerationService.instance.checkMessage(content);
+    if (moderationResult != null) {
+      // Content is clearly harmful → auto-action
+      debugPrint('BlockReportService: Auto-moderated: $moderationResult');
+      return ReportResult(
+        action: ReportAction.autoRemoved,
+        message: 'Der Inhalt wurde automatisch entfernt. Danke für deine Meldung.',
+      );
+    }
+
+    // Check if user has multiple reports
+    final userReportCount =
+        _reports.where((r) => r.reportedUserId == reportedUserId).length;
+    if (userReportCount >= 3) {
+      return ReportResult(
+        action: ReportAction.userWarned,
+        message: 'Dieser Nutzer wurde bereits mehrfach gemeldet. Wir prüfen den Fall.',
+      );
+    }
+
+    return ReportResult(
+      action: ReportAction.reviewPending,
+      message: 'Danke für deine Meldung. Wir prüfen den Inhalt.',
+    );
+  }
+
+  /// Get report count for a user (for warning system)
+  int getReportCount(String userId) {
+    return _reports.where((r) => r.reportedUserId == userId).length;
+  }
+
+  Future<void> _save() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        _blockedKey, jsonEncode(_blockedUsers.map((u) => u.toJson()).toList()));
+    // Keep max 100 reports
+    if (_reports.length > 100) _reports = _reports.sublist(_reports.length - 100);
+    await prefs.setString(
+        _reportsKey, jsonEncode(_reports.map((r) => r.toJson()).toList()));
+  }
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+class BlockedUser {
+  final String userId;
+  final String displayName;
+  final DateTime blockedAt;
+
+  const BlockedUser({
+    required this.userId,
+    required this.displayName,
+    required this.blockedAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'userId': userId,
+        'displayName': displayName,
+        'blockedAt': blockedAt.toIso8601String(),
+      };
+
+  factory BlockedUser.fromJson(Map<String, dynamic> j) => BlockedUser(
+        userId: j['userId'] as String,
+        displayName: j['displayName'] as String? ?? '',
+        blockedAt: DateTime.tryParse(j['blockedAt']?.toString() ?? '') ??
+            DateTime.now(),
+      );
+}
+
+class ContentReport {
+  final String id;
+  final String reporterUserId;
+  final String reportedUserId;
+  final String contentType;
+  final String content;
+  final String reason;
+  final DateTime createdAt;
+
+  const ContentReport({
+    required this.id,
+    required this.reporterUserId,
+    required this.reportedUserId,
+    required this.contentType,
+    required this.content,
+    required this.reason,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'reporterUserId': reporterUserId,
+        'reportedUserId': reportedUserId,
+        'contentType': contentType,
+        'content': content,
+        'reason': reason,
+        'createdAt': createdAt.toIso8601String(),
+      };
+
+  factory ContentReport.fromJson(Map<String, dynamic> j) => ContentReport(
+        id: j['id'] as String,
+        reporterUserId: j['reporterUserId'] as String,
+        reportedUserId: j['reportedUserId'] as String,
+        contentType: j['contentType'] as String? ?? '',
+        content: j['content'] as String? ?? '',
+        reason: j['reason'] as String? ?? '',
+        createdAt: DateTime.tryParse(j['createdAt']?.toString() ?? '') ??
+            DateTime.now(),
+      );
+}
+
+enum ReportAction { autoRemoved, userWarned, reviewPending }
+
+class ReportResult {
+  final ReportAction action;
+  final String message;
+
+  const ReportResult({required this.action, required this.message});
+}

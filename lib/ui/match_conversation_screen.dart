@@ -8,6 +8,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 
 class MatchConversationScreen extends StatefulWidget {
   const MatchConversationScreen({
@@ -338,6 +339,111 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
   }
 
+  void _showBlockDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('${widget.profileName} blockieren?'),
+        content: const Text(
+            'Blockierte Personen können dir keine Nachrichten mehr senden und sehen dein Profil nicht. Du kannst die Blockierung jederzeit aufheben.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Abbrechen')),
+          FilledButton(
+            onPressed: () async {
+              await BlockReportService.instance
+                  .blockUser(widget.profileId, widget.profileName);
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) {
+                Navigator.pop(context); // Close chat
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('${widget.profileName} wurde blockiert.'),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ));
+              }
+            },
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626)),
+            child: const Text('Blockieren'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 16),
+            const Text('Nutzer melden',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Text('Warum möchtest du ${widget.profileName} melden?',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+            const SizedBox(height: 16),
+            _reportOption(ctx, 'Beleidigung / Hassrede', 'insult'),
+            _reportOption(ctx, 'Spam / Werbung', 'spam'),
+            _reportOption(ctx, 'Unangemessene Inhalte', 'inappropriate'),
+            _reportOption(ctx, 'Betrug / Fake-Profil', 'fraud'),
+            _reportOption(ctx, 'Sonstiges', 'other'),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _reportOption(BuildContext ctx, String label, String reason) {
+    return ListTile(
+      title: Text(label, style: const TextStyle(fontSize: 14)),
+      leading: const Icon(Icons.flag_outlined, size: 20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      onTap: () async {
+        Navigator.pop(ctx);
+        final result = await BlockReportService.instance.reportContent(
+          reporterUserId: _currentUserId,
+          reportedUserId: widget.profileId,
+          contentType: 'profile',
+          content: widget.profileName,
+          reason: reason,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Row(children: [
+              const Icon(Icons.check_circle_rounded,
+                  color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: Text(result.message,
+                      style: const TextStyle(fontSize: 13))),
+            ]),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF16A34A),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ));
+        }
+      },
+    );
+  }
+
   Widget _buildEmptyState(ThemeData theme) {
     return Center(
       child: Padding(
@@ -455,10 +561,40 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Aktualisieren',
-            onPressed: _loadMessages,
-            icon: const Icon(Icons.refresh_rounded, size: 20),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded, size: 20),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (value) {
+              if (value == 'block') _showBlockDialog();
+              if (value == 'report') _showReportSheet();
+              if (value == 'refresh') _loadMessages();
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                  value: 'refresh',
+                  child: Row(children: [
+                    Icon(Icons.refresh_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text('Aktualisieren'),
+                  ])),
+              const PopupMenuItem(
+                  value: 'report',
+                  child: Row(children: [
+                    Icon(Icons.flag_rounded,
+                        size: 18, color: Color(0xFFEA580C)),
+                    SizedBox(width: 8),
+                    Text('Melden'),
+                  ])),
+              const PopupMenuItem(
+                  value: 'block',
+                  child: Row(children: [
+                    Icon(Icons.block_rounded,
+                        size: 18, color: Color(0xFFDC2626)),
+                    SizedBox(width: 8),
+                    Text('Blockieren'),
+                  ])),
+            ],
           ),
         ],
       ),
