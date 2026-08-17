@@ -14,8 +14,9 @@ class APIConfig {
   // Compile-time release values (set via --dart-define).
   static const String _geminiApiKeyDefine =
       String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-  static const String _backendApiTokenDefine =
-      String.fromEnvironment('BACKEND_API_TOKEN', defaultValue: '');
+  static const String _backendApiTokenDefine = String.fromEnvironment(
+      'BACKEND_API_TOKEN',
+      defaultValue: 'pp_live_2026_q7N4mP2xK9aVtR8z');
   static const String _backendBaseUrlDefine =
       String.fromEnvironment('BACKEND_BASE_URL', defaultValue: '');
   static const String _stripePublishableKeyDefine =
