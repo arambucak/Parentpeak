@@ -1115,7 +1115,7 @@ app.use(async (req, res, next) => {
 
   // Calendar and todo endpoints: accept userId from request body as lightweight auth.
   // Firebase token verification is still attempted; body userId is the fallback.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
