@@ -933,7 +933,7 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
                         const Spacer(),
-                        if (gridActions.length > 4)
+                        if (visibleGridActions.length > 4)
                           GestureDetector(
                             onTap: () => _showAllFeatures(visibleGridActions),
                             child: Text(
