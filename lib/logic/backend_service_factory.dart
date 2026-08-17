@@ -23,12 +23,17 @@ Future<String?> _getFirebaseIdToken() async {
       user = await FirebaseAuth.instance
           .authStateChanges()
           .firstWhere((u) => u != null)
-          .timeout(const Duration(seconds: 4));
+          .timeout(const Duration(seconds: 2));
     } catch (_) {}
   }
-  return user?.getIdToken();
+  if (user != null) {
+    try {
+      return await user.getIdToken();
+    } catch (_) {}
+  }
+  // Fallback: return null so BackendApiClient uses static authToken
+  return null;
 }
-
 
 class BackendServiceFactory {
   static BackendApiClient? createApiClient() {
