@@ -150,7 +150,7 @@ Future<void> _startApp() async {
 
   // Wire FCM push notifications for the already-authenticated user.
   final currentUser = AuthService.instance.currentUser;
-  if (currentUser != null && !kIsWeb) {
+  if (currentUser != null) {
     final apiClient = BackendServiceFactory.createApiClient();
     unawaited(
       NotificationService.instance.initFcm(
