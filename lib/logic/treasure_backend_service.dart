@@ -1,6 +1,5 @@
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/services/image_upload_service.dart';
-import 'dart:io';
 
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
