@@ -1499,161 +1499,166 @@ class _HomeScreenState extends State<HomeScreen>
     final theme = Theme.of(context);
     final tileCard = Card(
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final compactTile = compact ||
-                constraints.maxWidth < 150 ||
-                constraints.maxHeight < 210;
+      child: Semantics(
+        button: true,
+        label: '$title. $subtitle',
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compactTile = compact ||
+                  constraints.maxWidth < 150 ||
+                  constraints.maxHeight < 210;
 
-            return Container(
-              padding: EdgeInsets.all(compactTile ? 9 : 14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color.withValues(alpha: 0.16),
-                    color.withValues(alpha: 0.06),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+              return Container(
+                padding: EdgeInsets.all(compactTile ? 9 : 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      color.withValues(alpha: 0.16),
+                      color.withValues(alpha: 0.06),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: compactTile ? 28 : 42,
-                    height: compactTile ? 28 : 42,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius:
-                          BorderRadius.circular(compactTile ? 10 : 14),
-                    ),
-                    child: Icon(icon,
-                        color: Colors.white, size: compactTile ? 15 : 22),
-                  ),
-                  SizedBox(height: compactTile ? 4 : 8),
-                  Text(
-                    title,
-                    maxLines: compactTile ? 1 : 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: (compactTile
-                            ? theme.textTheme.labelLarge
-                            : theme.textTheme.titleMedium)
-                        ?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: compactTile ? 12.5 : null,
-                    ),
-                  ),
-                  SizedBox(height: compactTile ? 1 : 3),
-                  Text(
-                    subtitle,
-                    style: (compactTile
-                            ? theme.textTheme.bodySmall
-                            : theme.textTheme.bodyMedium)
-                        ?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: compactTile ? 1.2 : 1.3,
-                      fontSize: compactTile ? 10.5 : null,
-                    ),
-                    maxLines: compactTile ? 1 : 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (statusHint != null && statusHint.trim().isNotEmpty) ...[
-                    SizedBox(height: compactTile ? 4 : 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
+                      width: compactTile ? 28 : 42,
+                      height: compactTile ? 28 : 42,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: const Color(0xFF86EFAC),
-                        ),
+                        color: color,
+                        borderRadius:
+                            BorderRadius.circular(compactTile ? 10 : 14),
                       ),
-                      child: Text(
-                        statusHint,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF166534),
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Icon(icon,
+                          color: Colors.white, size: compactTile ? 15 : 22),
+                    ),
+                    SizedBox(height: compactTile ? 4 : 8),
+                    Text(
+                      title,
+                      maxLines: compactTile ? 1 : 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: (compactTile
+                              ? theme.textTheme.labelLarge
+                              : theme.textTheme.titleMedium)
+                          ?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: compactTile ? 12.5 : null,
                       ),
                     ),
-                  ],
-                  if (quickActionLabel != null &&
-                      quickActionLabel.trim().isNotEmpty &&
-                      onQuickAction != null) ...[
-                    SizedBox(height: compactTile ? 4 : 6),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: InkWell(
-                        onTap: onQuickAction,
-                        borderRadius: BorderRadius.circular(999),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                    SizedBox(height: compactTile ? 1 : 3),
+                    Text(
+                      subtitle,
+                      style: (compactTile
+                              ? theme.textTheme.bodySmall
+                              : theme.textTheme.bodyMedium)
+                          ?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: compactTile ? 1.2 : 1.3,
+                        fontSize: compactTile ? 10.5 : null,
+                      ),
+                      maxLines: compactTile ? 1 : 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (statusHint != null && statusHint.trim().isNotEmpty) ...[
+                      SizedBox(height: compactTile ? 4 : 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: const Color(0xFF86EFAC),
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: color.withValues(alpha: 0.45),
+                        ),
+                        child: Text(
+                          statusHint,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFF166534),
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                    if (quickActionLabel != null &&
+                        quickActionLabel.trim().isNotEmpty &&
+                        onQuickAction != null) ...[
+                      SizedBox(height: compactTile ? 4 : 6),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: InkWell(
+                          onTap: onQuickAction,
+                          borderRadius: BorderRadius.circular(999),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: color.withValues(alpha: 0.45),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.open_in_new_rounded,
+                                  size: 12,
+                                  color: color,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  quickActionLabel,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: color,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.open_in_new_rounded,
-                                size: 12,
-                                color: color,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                quickActionLabel,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: color,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
-                    ),
-                    if (quickActionHelperText != null &&
-                        quickActionHelperText.trim().isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        quickActionHelperText,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
+                      if (quickActionHelperText != null &&
+                          quickActionHelperText.trim().isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          quickActionHelperText,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      ],
+                    ],
+                    if (!compactTile) ...[
+                      const Spacer(),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Icon(Icons.arrow_forward_ios_rounded,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ],
-                  if (!compactTile) ...[
-                    const Spacer(),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Icon(Icons.arrow_forward_ios_rounded,
-                          size: 14, color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          },
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

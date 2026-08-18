@@ -945,6 +945,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   List<DevDomain> _devDomains = [];
   final Map<String, int> _devAnswers = {};
   bool _devDone = false;
+  bool _hasSpecialNeeds = false;
   String? _aiReport;
   bool _generatingReport = false;
 
@@ -958,6 +959,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       if (birth != null) {
         _childProfile = ChildProfile(
             name: name, birthDate: birth, careType: care ?? 'zuhause');
+        _hasSpecialNeeds = prefs.getBool('dev.child_special_needs') ?? false;
         _devDomains = DevelopmentQuestionBank.getQuestionsForAge(
             _childProfile!.ageGroupId);
       }
@@ -981,15 +983,17 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         _devAnswers.entries.map((e) => '${e.key}:${e.value}').join(','));
   }
 
-  Future<void> _saveChildProfile(
-      String name, DateTime birth, String care) async {
+  Future<void> _saveChildProfile(String name, DateTime birth, String care,
+      {bool hasSpecialNeeds = false}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('dev.child_name', name);
     await prefs.setString('dev.child_birth', birth.toIso8601String());
     await prefs.setString('dev.child_care', care);
+    await prefs.setBool('dev.child_special_needs', hasSpecialNeeds);
     setState(() {
       _childProfile =
           ChildProfile(name: name, birthDate: birth, careType: care);
+      _hasSpecialNeeds = hasSpecialNeeds;
       _devDomains =
           DevelopmentQuestionBank.getQuestionsForAge(_childProfile!.ageGroupId);
       _devAnswers.clear();
@@ -1042,17 +1046,23 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       }
       sb.writeln('');
     }
+    final specialNeedsNote = _hasSpecialNeeds
+        ? '\n- WICHTIG: Dieses Kind hat besondere Bedürfnisse. Vergleiche NICHT mit Altersnormen. '
+            'Beschreibe nur den individuellen Fortschritt. Statt "Förderbedarf" sage "wächst in eigenem Tempo". '
+            'Sei besonders wertschätzend und stärkend.\n'
+        : '';
     final prompt =
-        'Du schreibst eine paedagogische Entwicklungseinschaetzung für Eltern. '
+        'Du schreibst eine pädagogische Entwicklungseinschätzung für Eltern. '
         'WICHTIGE REGELN:\n'
         '- Schreibe AUS DER PERSPEKTIVE DER APP (nicht Kita, nicht Erzieher).\n'
         '- Erster Satz: "Basierend auf euren Angaben zeigt [Name] folgendes Entwicklungsprofil:"\n'
-        '- KEINE Bewertungswoerter wie "toll", "super", "gut", "wunderbar", "schlecht", "sehr gut".\n'
-        '- Stattdessen: fachlich, objektiv, wertschaetzend. Beschreibe WAS das Kind zeigt, nicht WIE GUT.\n'
-        '- Benutze Formulierungen wie: "zeigt sich sicher in...", "befindet sich im typischen Entwicklungsfenster fuer...", "beginnt zunehmend...", "uebt aktuell..."\n'
-        '- Struktur: 1) Sichtbare Kompetenzen (was das Kind bereits zeigt), 2) Aktuelle Entwicklungsfelder (woran es gerade waechst), 3) Impulse für den Alltag (2-3 konkrete Ideen)\n'
-        '- Maximal 180 Woerter. Keine Emojis. Keine Sterne-Formatierung.\n'
-        '- Kein "Liebe Eltern" am Anfang.\n\n$sb';
+        '- KEINE Bewertungswörter wie "toll", "super", "gut", "wunderbar", "schlecht", "sehr gut".\n'
+        '- Stattdessen: fachlich, objektiv, wertschätzend. Beschreibe WAS das Kind zeigt, nicht WIE GUT.\n'
+        '- Benutze Formulierungen wie: "zeigt sich sicher in...", "befindet sich im typischen Entwicklungsfenster für...", "beginnt zunehmend...", "übt aktuell..."\n'
+        '- Struktur: 1) Sichtbare Kompetenzen (was das Kind bereits zeigt), 2) Aktuelle Entwicklungsfelder (woran es gerade wächst), 3) Impulse für den Alltag (2-3 konkrete Ideen)\n'
+        '- Maximal 180 Wörter. Keine Emojis. Keine Sterne-Formatierung.\n'
+        '- Kein "Liebe Eltern" am Anfang.\n'
+        '$specialNeedsNote\n$sb';
 
     try {
       final apiKey = APIConfig.getGeminiApiKey();
@@ -1350,6 +1360,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     final nameCtrl = TextEditingController();
     DateTime? selectedDate;
     String selectedCare = 'kita';
+    bool hasSpecialNeeds = false;
     return StatefulBuilder(
         builder: (ctx, setLocal) => SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -1430,6 +1441,34 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   onChanged: (v) {
                     if (v != null) setLocal(() => selectedCare = v);
                   }),
+              const SizedBox(height: 14),
+              // Besondere Bedürfnisse
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F3FF),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.2)),
+                ),
+                child: CheckboxListTile(
+                  value: hasSpecialNeeds,
+                  onChanged: (v) =>
+                      setLocal(() => hasSpecialNeeds = v ?? false),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  activeColor: const Color(0xFF8B5CF6),
+                  title: const Text('Mein Kind hat besondere Bedürfnisse',
+                      style:
+                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  subtitle: const Text(
+                    'z.B. Entwicklungsverzögerung, Behinderung, chronische Erkrankung. '
+                    'Der Bericht vergleicht dann mit dem eigenen Fortschritt — nicht mit Altersnormen.',
+                    style: TextStyle(fontSize: 11, height: 1.4),
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
               SizedBox(
                   width: double.infinity,
@@ -1438,7 +1477,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                         if (nameCtrl.text.trim().isEmpty ||
                             selectedDate == null) return;
                         _saveChildProfile(
-                            nameCtrl.text.trim(), selectedDate!, selectedCare);
+                            nameCtrl.text.trim(), selectedDate!, selectedCare,
+                            hasSpecialNeeds: hasSpecialNeeds);
                       },
                       style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),

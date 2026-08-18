@@ -89,6 +89,28 @@ class CountryFinanceData {
             'https://www.bmfsfj.de/bmfsfj/themen/familie/familienleistungen/unterhaltsvorschuss',
         status: BenefitStatus.checkRequired,
       ),
+      SocialBenefit(
+        id: 'pflegegeld',
+        name: 'Pflegegeld',
+        description:
+            'Für Kinder mit Behinderung oder chronischer Erkrankung die Pflege brauchen.',
+        amount: '332\u{20AC}\u{2013}947\u{20AC}/Monat (je Pflegegrad)',
+        eligibility: 'Kinder mit anerkanntem Pflegegrad (ab Pflegegrad 2).',
+        url:
+            'https://familienportal.de/familienportal/familienleistungen/weitere-leistungen',
+        status: BenefitStatus.checkRequired,
+      ),
+      SocialBenefit(
+        id: 'eingliederungshilfe',
+        name: 'Eingliederungshilfe',
+        description:
+            'Unterstützung für Kinder mit Behinderung: Therapie, Schulbegleitung, Frühförderung.',
+        amount: 'Individuell (Sachleistungen)',
+        eligibility: 'Kinder mit drohender oder bestehender Behinderung.',
+        url:
+            'https://familienportal.de/familienportal/familienleistungen/weitere-leistungen',
+        status: BenefitStatus.checkRequired,
+      ),
     ],
     milestones: [
       MilestoneCost(

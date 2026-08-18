@@ -215,6 +215,52 @@ class OnboardingRolePage extends StatelessWidget {
                       isSelected: selectedRoles.contains('teenager'),
                       onTap: () => onRoleSelected('teenager'),
                     ),
+                    const SizedBox(height: 20),
+                    // Diverse Familien-Rollen
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text('Deine Rolle (optional)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          )),
+                    ),
+                    _RoleCard(
+                      role: 'alleinerziehend',
+                      emoji: '\u{1F4AA}',
+                      title: 'Alleinerziehend',
+                      subtitle: 'Du machst das allein — und das ist stark',
+                      isSelected: selectedRoles.contains('alleinerziehend'),
+                      onTap: () => onRoleSelected('alleinerziehend'),
+                    ),
+                    const SizedBox(height: 12),
+                    _RoleCard(
+                      role: 'grosseltern',
+                      emoji: '\u{1F9D3}',
+                      title: 'Großeltern / Verwandte',
+                      subtitle: 'Du betreust oder erziehst ein Enkelkind',
+                      isSelected: selectedRoles.contains('grosseltern'),
+                      onTap: () => onRoleSelected('grosseltern'),
+                    ),
+                    const SizedBox(height: 12),
+                    _RoleCard(
+                      role: 'pflegeeltern',
+                      emoji: '\u{1F49B}',
+                      title: 'Pflege- oder Adoptiveltern',
+                      subtitle: 'Ein Kind in eurem Herzen und Zuhause',
+                      isSelected: selectedRoles.contains('pflegeeltern'),
+                      onTap: () => onRoleSelected('pflegeeltern'),
+                    ),
+                    const SizedBox(height: 12),
+                    _RoleCard(
+                      role: 'patchwork',
+                      emoji: '\u{1F3E1}',
+                      title: 'Patchwork-Familie',
+                      subtitle: 'Zusammengewachsen aus verschiedenen Wegen',
+                      isSelected: selectedRoles.contains('patchwork'),
+                      onTap: () => onRoleSelected('patchwork'),
+                    ),
                   ],
                 ),
               ),
@@ -795,14 +841,16 @@ class OnboardingChildAgePage extends StatelessWidget {
             children: [
               const SizedBox(height: 48),
               Text(
-                AppStringsManager.getString(languageService.currentLanguage, 'onboarding_phase'),
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'onboarding_phase'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                AppStringsManager.getString(languageService.currentLanguage, 'phase_multiselect'),
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'phase_multiselect'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -965,14 +1013,16 @@ class OnboardingCountryPage extends StatelessWidget {
             children: [
               const SizedBox(height: 48),
               Text(
-                AppStringsManager.getString(languageService.currentLanguage, 'where_family_lives'),
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'where_family_lives'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                AppStringsManager.getString(languageService.currentLanguage, 'for_holidays_info'),
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'for_holidays_info'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
