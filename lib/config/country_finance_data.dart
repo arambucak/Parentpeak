@@ -54,7 +54,8 @@ class CountryFinanceData {
         description: 'Mietzuschuss für Familien mit niedrigem Einkommen.',
         amount: 'individuell berechnet',
         eligibility: 'Haushaltseinkommen unter bestimmter Grenze.',
-        url: 'https://www.bmwsb.bund.de/Webs/BMWSB/DE/themen/wohnen/wohngeld',
+        url:
+            'https://www.bmwsb.bund.de/Webs/BMWSB/DE/themen/stadt-wohnen/wohnraumfoerderung/wohngeld/wohngeldrechner-2025-artikel.html',
         status: BenefitStatus.incomeDependent,
       ),
       SocialBenefit(
@@ -64,7 +65,8 @@ class CountryFinanceData {
             'Schulbedarf, Ausfluege, Nachhilfe, Mittagessen, Sport-Verein.',
         amount: 'Sachleistungen + 195\u{20AC}/Jahr Schulbedarf',
         eligibility: 'Familien mit KiZ, Wohngeld oder Buergergeld.',
-        url: 'https://www.bmas.de/DE/Arbeit/Grundsicherung/Bildungspaket',
+        url:
+            'https://familienportal.de/familienportal/familienleistungen/bildung-und-teilhabe',
         status: BenefitStatus.checkRequired,
       ),
       SocialBenefit(

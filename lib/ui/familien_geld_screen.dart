@@ -1301,7 +1301,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             ),
             (
               'Bildung & Teilhabe (BuT) beantragen',
-              'https://www.bmas.de/DE/Arbeit/Grundsicherung/Bildungspaket/bildungspaket.html'
+              'https://familienportal.de/familienportal/familienleistungen/bildung-und-teilhabe'
             ),
             (
               'Kostenlose Schuldnerberatung (VZ)',
