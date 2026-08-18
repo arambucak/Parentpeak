@@ -234,20 +234,20 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'klein_06',
-    question: 'Wie höre ich auf zu schreien wenn ich wütend bin',
+    question: 'Wenn meine Stimme lauter wird als ich will',
     akut:
-        'Geh einen Schritt zurück. Atme. Du darfst den Raum kurz verlassen (Kind muss sicher sein).',
+        'Dein Körper zeigt dir gerade: Ich bin an meiner Grenze. Das ist ein Signal — kein Versagen.',
     beduerfnis:
-        'Auch DEINE Gefühle sind real und wichtig. Schreien ist ein Zeichen DEINER Überlastung — nicht deines Versagens.',
+        'Hinter deiner Lautstärke liegt ein Bedürfnis: Nach Gehörtwerden, nach Ruhe, nach Unterstützung. Du darfst das spüren.',
     gfkSatz:
-        'Ich merke ich bin gerade überfordert. Ich brauche kurz eine Pause um ruhig zu werden.',
+        'Ich merke, mein Körper ist angespannt. Ich brauche kurz einen Moment für mich, um wieder klar zu werden.',
     aktion: [
-      'Erkenne deine Warnsignale (Kiefer, Schultern, Hitze)',
-      'Sag laut: "Ich brauche kurz Pause" (modelliert Selbstregulation)',
-      'Danach: Reparieren ("Es tut mir leid dass ich laut wurde")'
+      'Lerne deine Vorboten kennen (Kiefer, Schultern, flache Atmung) — sie kommen Sekunden VOR dem Schreien',
+      'Sage deinem Kind: "Ich brauche kurz Pause" — das ist kein Weggehen, das ist Selbstfürsorge vorleben',
+      'Danach: Repariere die Verbindung ("Es tut mir leid, ich war gerade nicht bei mir. Ich hab dich lieb.")'
     ],
     ermutigung:
-        'Dass du diese Frage stellst zeigt: Du bist ein reflektierter Elternteil. Perfekt muss niemand sein.',
+        'Dass du das hier liest zeigt: Du willst es anders machen. Das allein verändert schon alles.',
     minAge: 0,
     maxAge: 18,
     tags: [
