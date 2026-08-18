@@ -5,9 +5,11 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
+import 'package:parentpeak/config/benefit_application_de.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/ui/antragshelfer_screen.dart';
 import 'package:parentpeak/main.dart';
 
 /// Familien-Geld — Ruhiger Finanz-Helfer für Eltern.
@@ -52,8 +54,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
 
   TextEditingController _controllerFor(String id, double amount) {
     if (!_controllers.containsKey(id)) {
-      _controllers[id] =
-          TextEditingController(text: amount > 0 ? amount.toStringAsFixed(0) : '');
+      _controllers[id] = TextEditingController(
+          text: amount > 0 ? amount.toStringAsFixed(0) : '');
     }
     return _controllers[id]!;
   }
@@ -138,10 +140,12 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   Future<void> _shareOverview() async {
     final total = _monthlyAmounts.values.fold(0.0, (a, b) => a + b);
     final sb = StringBuffer();
-    sb.writeln('${_country.flag} Familien-Geld Übersicht \u2013 ${_country.name}');
+    sb.writeln(
+        '${_country.flag} Familien-Geld Übersicht \u2013 ${_country.name}');
     sb.writeln('');
     if (total > 0) {
-      sb.writeln('\u{1F4B0} Monatliche Kinderkosten: ~${_country.formatAmount(total)}/Monat');
+      sb.writeln(
+          '\u{1F4B0} Monatliche Kinderkosten: ~${_country.formatAmount(total)}/Monat');
       sb.writeln('   ${_country.formatAmount(total * 12)}/Jahr');
       sb.writeln('');
     }
@@ -152,15 +156,17 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           : b.status == BenefitStatus.incomeDependent
               ? '\u{1F7E0}'
               : '\u{1F535}';
-      sb.writeln('$symbol ${b.name}${b.amount != null ? ' \u00B7 ${b.amount}' : ''}');
+      sb.writeln(
+          '$symbol ${b.name}${b.amount != null ? ' \u00B7 ${b.amount}' : ''}');
     }
     if (_children.isNotEmpty) {
       sb.writeln('');
       sb.writeln('\u{1F3AF} Nächste Meilensteine:');
       for (final child in _children) {
         final ageYears = (child.ageMonths / 12).round();
-        final upcoming =
-            _country.milestones.where((m) => m.childAgeYears > ageYears).take(2);
+        final upcoming = _country.milestones
+            .where((m) => m.childAgeYears > ageYears)
+            .take(2);
         for (final m in upcoming) {
           final years = m.childAgeYears - ageYears;
           sb.writeln(
@@ -169,7 +175,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
       }
     }
     sb.writeln('');
-    sb.writeln('\u{1F4F1} Erstellt mit ParentPeak \u2013 Dein Eltern-Begleiter');
+    sb.writeln(
+        '\u{1F4F1} Erstellt mit ParentPeak \u2013 Dein Eltern-Begleiter');
     await Share.share(sb.toString(), subject: 'Familien-Geld Übersicht');
   }
 
@@ -183,7 +190,10 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   Widget _countrySelector(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(AppStringsManager.getString(languageService.currentLanguage, 'familien_geld_title')), elevation: 0),
+      appBar: AppBar(
+          title: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'familien_geld_title')),
+          elevation: 0),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -192,12 +202,16 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(height: 20),
             const Text('\u{1F30D}', style: TextStyle(fontSize: 40)),
             const SizedBox(height: 16),
-            Text(AppStringsManager.getString(languageService.currentLanguage, 'country_question'),
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'country_question'),
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w800),
                 textAlign: TextAlign.center),
             const SizedBox(height: 6),
-            Text(AppStringsManager.getString(languageService.currentLanguage, 'country_hint'),
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'country_hint'),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.outline),
                 textAlign: TextAlign.center),
@@ -217,28 +231,28 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                             .withValues(alpha: 0.4)),
                   ),
                   child: Material(
-                    color: Colors.transparent,
-                    child: ListTile(
-                    onTap: () {
-                      setState(() {
-                        _country = c;
-                        _countrySelected = true;
-                      });
-                      _saveCountry(c.code);
-                    },
-                    leading: Text(c.flag, style: const TextStyle(fontSize: 28)),
-                    title: Text(c.name,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                    subtitle: Text('${c.currency} (${c.currencySymbol})',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.colorScheme.outline)),
-                    trailing:
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                  )
-                  ),
+                      color: Colors.transparent,
+                      child: ListTile(
+                        onTap: () {
+                          setState(() {
+                            _country = c;
+                            _countrySelected = true;
+                          });
+                          _saveCountry(c.code);
+                        },
+                        leading:
+                            Text(c.flag, style: const TextStyle(fontSize: 28)),
+                        title: Text(c.name,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700)),
+                        subtitle: Text('${c.currency} (${c.currencySymbol})',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: theme.colorScheme.outline)),
+                        trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                            size: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                      )),
                 );
               },
             )),
@@ -256,7 +270,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(_country.flag, style: const TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
-          Text(AppStringsManager.getString(languageService.currentLanguage, 'familien_geld_title')),
+          Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'familien_geld_title')),
         ]),
         elevation: 0,
         actions: [
@@ -318,7 +333,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           child: Column(children: [
             Text('\u{1F4B0}', style: const TextStyle(fontSize: 28)),
             const SizedBox(height: 8),
-            Text(AppStringsManager.getString(languageService.currentLanguage, 'monthly_child_costs'),
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'monthly_child_costs'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
@@ -341,7 +358,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ]),
         ),
         const SizedBox(height: 20),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'your_monthly_costs'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'your_monthly_costs'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
@@ -368,7 +387,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text(AppStringsManager.getString(languageService.currentLanguage, 'saving_tip'),
+                  Text(
+                      AppStringsManager.getString(
+                          languageService.currentLanguage, 'saving_tip'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFFEA580C))),
@@ -475,7 +496,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           child: Column(children: [
             const Text('\u{1F4CB}', style: TextStyle(fontSize: 28)),
             const SizedBox(height: 8),
-            Text(AppStringsManager.getString(languageService.currentLanguage, 'what_you_deserve'),
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'what_you_deserve'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
@@ -606,6 +629,36 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                     color: const Color(0xFF8B5CF6))),
           ),
         ],
+        // Antragshelfer Button (nur für DE mit vorhandenen Daten)
+        if (_country.code == 'de' &&
+            BenefitApplicationDE.getById(b.id) != null) ...[
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                final appData = BenefitApplicationDE.getById(b.id)!;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => AntragshelferScreen(benefit: appData)),
+                );
+              },
+              icon: const Icon(Icons.assignment_turned_in_rounded, size: 16),
+              label: const Text('Antragshelfer starten'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF16A34A),
+                side: const BorderSide(color: Color(0xFF16A34A)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                textStyle:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
       ]),
     );
   }
@@ -635,7 +688,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           child: Column(children: [
             const Text('\u{1F3AF}', style: TextStyle(fontSize: 28)),
             const SizedBox(height: 8),
-            Text(AppStringsManager.getString(languageService.currentLanguage, 'whats_coming'),
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'whats_coming'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
@@ -774,7 +829,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(AppStringsManager.getString(languageService.currentLanguage, 'saving_recommendation'),
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'saving_recommendation'),
               style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w700, color: const Color(0xFF16A34A))),
           const SizedBox(height: 4),
@@ -800,7 +857,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+          border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
         ),
         child: Row(children: [
           Text('\u{1F4B0}', style: const TextStyle(fontSize: 18)),
@@ -810,7 +868,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               _country.code == 'de'
                   ? 'Trag deine Kita-Kosten oben ein \u2013 dann berechne ich deine Steuerersparnis.'
                   : 'Trag deine Kinderbetreuungskosten ein \u2013 dann zeige ich die Absetzbarkeit.',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
         ]),
@@ -819,7 +878,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
 
     final double deductibleMax = _country.code == 'de' ? 4000.0 : 2300.0;
     final kitaAnnual = kitaMonthly * 12;
-    final double deductiblePart = _country.code == 'de' ? kitaAnnual * 2 / 3 : kitaAnnual;
+    final double deductiblePart =
+        _country.code == 'de' ? kitaAnnual * 2 / 3 : kitaAnnual;
     final double deductible = deductiblePart.clamp(0, deductibleMax);
     final estimatedSavings = deductible * 0.30; // ~30% Grenzsteuersatz
 
@@ -830,28 +890,35 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         decoration: BoxDecoration(
           color: const Color(0xFFECFDF5),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+          border:
+              Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
             const SizedBox(width: 10),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  'Steuer-Spar-Potenzial',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700, color: const Color(0xFF065F46)),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Bis zu ${_country.formatAmount(deductible)} absetzbar \u2192 ca. ${_country.formatAmount(estimatedSavings)} Steuerersparnis/Jahr',
-                  style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF065F46), height: 1.3),
-                ),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Steuer-Spar-Potenzial',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF065F46)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Bis zu ${_country.formatAmount(deductible)} absetzbar \u2192 ca. ${_country.formatAmount(estimatedSavings)} Steuerersparnis/Jahr',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF065F46), height: 1.3),
+                    ),
+                  ]),
             ),
             Icon(
-              _showTaxDetail ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+              _showTaxDetail
+                  ? Icons.expand_less_rounded
+                  : Icons.expand_more_rounded,
               color: const Color(0xFF10B981),
               size: 20,
             ),
@@ -860,12 +927,18 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(height: 10),
             const Divider(color: Color(0xFF10B981), height: 1),
             const SizedBox(height: 10),
-            _taxDetailRow(theme, 'Kita-Kosten/Jahr', _country.formatAmount(kitaAnnual)),
+            _taxDetailRow(
+                theme, 'Kita-Kosten/Jahr', _country.formatAmount(kitaAnnual)),
             if (_country.code == 'de')
-              _taxDetailRow(theme, 'Davon absetzbar (2/3)', _country.formatAmount(deductiblePart)),
-            _taxDetailRow(theme, 'Max. Sonderausgabe', _country.formatAmount(deductibleMax)),
-            _taxDetailRow(theme, 'Tats\u00e4chlich absetzbar', _country.formatAmount(deductible)),
-            _taxDetailRow(theme, 'Gesch\u00e4tzte Ersparnis (30%)', _country.formatAmount(estimatedSavings), highlight: true),
+              _taxDetailRow(theme, 'Davon absetzbar (2/3)',
+                  _country.formatAmount(deductiblePart)),
+            _taxDetailRow(theme, 'Max. Sonderausgabe',
+                _country.formatAmount(deductibleMax)),
+            _taxDetailRow(theme, 'Tats\u00e4chlich absetzbar',
+                _country.formatAmount(deductible)),
+            _taxDetailRow(theme, 'Gesch\u00e4tzte Ersparnis (30%)',
+                _country.formatAmount(estimatedSavings),
+                highlight: true),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () => _openUrl(
@@ -876,7 +949,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               child: Text(
                 '\u{1F517} Mehr Infos beim Finanzamt \u2192',
                 style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF059669), fontWeight: FontWeight.w700),
+                    color: const Color(0xFF059669),
+                    fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -885,19 +959,23 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     );
   }
 
-  Widget _taxDetailRow(ThemeData theme, String label, String value, {bool highlight = false}) {
+  Widget _taxDetailRow(ThemeData theme, String label, String value,
+      {bool highlight = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(children: [
         Expanded(
           child: Text(label,
-              style: theme.textTheme.labelSmall?.copyWith(color: const Color(0xFF065F46))),
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: const Color(0xFF065F46))),
         ),
         Text(
           value,
           style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
-              color: highlight ? const Color(0xFF047857) : const Color(0xFF065F46)),
+              color: highlight
+                  ? const Color(0xFF047857)
+                  : const Color(0xFF065F46)),
         ),
       ]),
     );
@@ -924,7 +1002,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         decoration: BoxDecoration(
           color: const Color(0xFFF5F3FF),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+          border:
+              Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
         ),
         child: Row(children: [
           const Text('\u{2705}', style: TextStyle(fontSize: 14)),
@@ -932,7 +1011,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           Expanded(
             child: Text(
               'Leistungen gefiltert basierend auf eurer Situation.',
-              style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF5B21B6)),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: const Color(0xFF5B21B6)),
             ),
           ),
           GestureDetector(
@@ -940,9 +1020,12 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               _eligibilityDone = false;
               _saveEligibility();
             }),
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'change_action'),
+            child: Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'change_action'),
                 style: theme.textTheme.labelSmall?.copyWith(
-                    color: const Color(0xFF7C3AED), fontWeight: FontWeight.w700)),
+                    color: const Color(0xFF7C3AED),
+                    fontWeight: FontWeight.w700)),
           ),
         ]),
       );
@@ -953,70 +1036,96 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
       decoration: BoxDecoration(
         color: const Color(0xFFF5F3FF),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+        border:
+            Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
-          Text(AppStringsManager.getString(languageService.currentLanguage, 'quick_check'),
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w700, color: const Color(0xFF4C1D95))),
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'quick_check'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700, color: const Color(0xFF4C1D95))),
         ]),
         const SizedBox(height: 12),
         // Frage 1: Berufstaetigkeit
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'employed_question'),
-            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'employed_question'),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
-          _eligChip(theme, 'Ja', _isEmployee, () => setState(() => _isEmployee = true)),
-          _eligChip(theme, 'Nein / Elternzeit', !_isEmployee, () => setState(() => _isEmployee = false)),
+          _eligChip(theme, 'Ja', _isEmployee,
+              () => setState(() => _isEmployee = true)),
+          _eligChip(theme, 'Nein / Elternzeit', !_isEmployee,
+              () => setState(() => _isEmployee = false)),
         ]),
         const SizedBox(height: 10),
         // Frage 2: Alleinerziehend
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'single_parent'),
-            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'single_parent'),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
-          _eligChip(theme, 'Ja', _isSingleParent, () => setState(() => _isSingleParent = true)),
-          _eligChip(theme, 'Nein', !_isSingleParent, () => setState(() => _isSingleParent = false)),
+          _eligChip(theme, 'Ja', _isSingleParent,
+              () => setState(() => _isSingleParent = true)),
+          _eligChip(theme, 'Nein', !_isSingleParent,
+              () => setState(() => _isSingleParent = false)),
         ]),
         const SizedBox(height: 10),
         // Frage 3: Einkommen
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'net_income'),
-            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'net_income'),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
-          _eligChip(theme, 'Unter 2.000\u20ac', _incomeLevel == 0, () => setState(() => _incomeLevel = 0)),
-          _eligChip(theme, '2.000\u20134.000\u20ac', _incomeLevel == 1, () => setState(() => _incomeLevel = 1)),
-          _eligChip(theme, '\u00dcber 4.000\u20ac', _incomeLevel == 2, () => setState(() => _incomeLevel = 2)),
+          _eligChip(theme, 'Unter 2.000\u20ac', _incomeLevel == 0,
+              () => setState(() => _incomeLevel = 0)),
+          _eligChip(theme, '2.000\u20134.000\u20ac', _incomeLevel == 1,
+              () => setState(() => _incomeLevel = 1)),
+          _eligChip(theme, '\u00dcber 4.000\u20ac', _incomeLevel == 2,
+              () => setState(() => _incomeLevel = 2)),
         ]),
         const SizedBox(height: 14),
         SizedBox(
           width: double.infinity,
           child: FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF7C3AED)),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7C3AED)),
             onPressed: () {
               setState(() => _eligibilityDone = true);
               _saveEligibility();
             },
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'filter_benefits')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'filter_benefits')),
           ),
         ),
       ]),
     );
   }
 
-  Widget _eligChip(ThemeData theme, String label, bool selected, VoidCallback onTap) {
+  Widget _eligChip(
+      ThemeData theme, String label, bool selected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF7C3AED) : theme.colorScheme.surfaceContainerLow,
+          color: selected
+              ? const Color(0xFF7C3AED)
+              : theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: selected ? const Color(0xFF7C3AED) : theme.colorScheme.outlineVariant),
+              color: selected
+                  ? const Color(0xFF7C3AED)
+                  : theme.colorScheme.outlineVariant),
         ),
         child: Text(label,
             style: theme.textTheme.labelSmall?.copyWith(
@@ -1064,7 +1173,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     final progress = (_totalSaved / target).clamp(0.0, 1.0);
 
     final goalController = TextEditingController(
-      text: _monthlySavingsGoal > 0 ? _monthlySavingsGoal.toStringAsFixed(0) : '',
+      text:
+          _monthlySavingsGoal > 0 ? _monthlySavingsGoal.toStringAsFixed(0) : '',
     );
 
     return Container(
@@ -1072,20 +1182,24 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7ED),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3)),
+        border:
+            Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text(nextMilestone.emoji, style: const TextStyle(fontSize: 20)),
           const SizedBox(width: 8),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Spar-Ziel: ${nextMilestone.label}',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700, color: const Color(0xFFEA580C))),
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFEA580C))),
               Text(
                 'In $yearsLeft Jahr${yearsLeft == 1 ? '' : 'en'} \u00b7 ~${_country.formatAmount(target)}',
-                style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF9A3412)),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: const Color(0xFF9A3412)),
               ),
             ]),
           ),
@@ -1104,9 +1218,11 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         const SizedBox(height: 6),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text('Gespart: ${_country.formatAmount(_totalSaved)}',
-              style: theme.textTheme.labelSmall?.copyWith(color: const Color(0xFF9A3412))),
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: const Color(0xFF9A3412))),
           Text('Ziel: ${_country.formatAmount(target)}',
-              style: theme.textTheme.labelSmall?.copyWith(color: const Color(0xFF9A3412))),
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: const Color(0xFF9A3412))),
         ]),
         const SizedBox(height: 12),
         // Eingabe: aktuell gespart
@@ -1116,10 +1232,13 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               decoration: InputDecoration(
                 labelText: 'Bisher gespart (\u20ac)',
                 isDense: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               onSubmitted: (v) {
                 final val = double.tryParse(v) ?? _totalSaved;
                 setState(() => _totalSaved = val);
@@ -1135,10 +1254,13 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               decoration: InputDecoration(
                 labelText: 'Spar-Rate/Monat (\u20ac)',
                 isDense: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               controller: goalController,
               onSubmitted: (v) {
                 final val = double.tryParse(v) ?? _monthlySavingsGoal;
@@ -1159,7 +1281,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           const SizedBox(height: 8),
           Text(
             'Empfehlung: ${_country.formatAmount(autoGoal)}/Monat zurücklegen.',
-            style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF9A3412)),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: const Color(0xFF9A3412)),
           ),
         ],
       ]),
@@ -1172,20 +1295,47 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   Widget _buildKnappSection(ThemeData theme) {
     final resources = _country.code == 'de'
         ? [
-            ('Lebensmittelhilfe \u2013 Tafel Deutschland', 'https://www.tafel.de/infos-hilfe/tafel-suche/'),
-            ('Bildung & Teilhabe (BuT) beantragen', 'https://www.bmas.de/DE/Arbeit/Grundsicherung/Bildungspaket/bildungspaket.html'),
-            ('Kostenlose Schuldnerberatung (VZ)', 'https://www.verbraucherzentrale.de/themen/geld-versicherungen/kredit-und-schulden/schuldnerberatung'),
-            ('Kleiderkammer \u2013 Caritasverband', 'https://www.caritas.de/hilfeundberatung/onlineberatung/sozialedienste'),
+            (
+              'Lebensmittelhilfe \u2013 Tafel Deutschland',
+              'https://www.tafel.de/infos-hilfe/tafel-suche/'
+            ),
+            (
+              'Bildung & Teilhabe (BuT) beantragen',
+              'https://www.bmas.de/DE/Arbeit/Grundsicherung/Bildungspaket/bildungspaket.html'
+            ),
+            (
+              'Kostenlose Schuldnerberatung (VZ)',
+              'https://www.verbraucherzentrale.de/themen/geld-versicherungen/kredit-und-schulden/schuldnerberatung'
+            ),
+            (
+              'Kleiderkammer \u2013 Caritasverband',
+              'https://www.caritas.de/hilfeundberatung/onlineberatung/sozialedienste'
+            ),
           ]
         : _country.code == 'at'
             ? [
-                ('Lebensmittelhilfe \u2013 Tafel Oesterreich', 'https://www.tafel.at/'),
-                ('Kostenlose Schuldnerberatung', 'https://www.schuldnerberatung.at/'),
-                ('Caritas Beratungsstellen', 'https://www.caritas.at/hilfe-einrichtungen/beratung/'),
+                (
+                  'Lebensmittelhilfe \u2013 Tafel Oesterreich',
+                  'https://www.tafel.at/'
+                ),
+                (
+                  'Kostenlose Schuldnerberatung',
+                  'https://www.schuldnerberatung.at/'
+                ),
+                (
+                  'Caritas Beratungsstellen',
+                  'https://www.caritas.at/hilfe-einrichtungen/beratung/'
+                ),
               ]
             : [
-                ('Lokale Lebensmittelbank finden', 'https://www.foodbankingeurope.org/'),
-                ('Familienhilfe & Beratung', 'https://www.unicef.org/parenting/'),
+                (
+                  'Lokale Lebensmittelbank finden',
+                  'https://www.foodbankingeurope.org/'
+                ),
+                (
+                  'Familienhilfe & Beratung',
+                  'https://www.unicef.org/parenting/'
+                ),
               ];
 
     return Column(children: [
@@ -1209,7 +1359,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const Text('\u{1F91D}', style: TextStyle(fontSize: 16)),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'month_tight'),
+              child: Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'month_tight'),
                   style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: _showKnappSection
@@ -1233,9 +1385,11 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           decoration: BoxDecoration(
             color: const Color(0xFFFEF2F2),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
+            border: Border.all(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
           ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
               'Kostenlose Anlaufstellen in ${_country.name}:',
               style: theme.textTheme.bodySmall?.copyWith(
@@ -1243,23 +1397,24 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             ),
             const SizedBox(height: 10),
             ...resources.map((r) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: GestureDetector(
-                onTap: () => _openUrl(r.$2),
-                child: Row(children: [
-                  const Icon(Icons.link_rounded, size: 14, color: Color(0xFFDC2626)),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(r.$1,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFFDC2626),
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                            decorationColor: const Color(0xFFDC2626))),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GestureDetector(
+                    onTap: () => _openUrl(r.$2),
+                    child: Row(children: [
+                      const Icon(Icons.link_rounded,
+                          size: 14, color: Color(0xFFDC2626)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(r.$1,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFFDC2626),
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: const Color(0xFFDC2626))),
+                      ),
+                    ]),
                   ),
-                ]),
-              ),
-            )),
+                )),
           ]),
         ),
       ],
