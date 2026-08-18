@@ -154,7 +154,7 @@ class ExpertRecommendations {
       type: ExpertContentType.podcast,
       category: ExpertCategory.wutKonflikte,
       language: 'de',
-      url: 'https://open.spotify.com/show/0bpXBPRHnOiJZMBCB2kCYO',
+      url: 'https://kw-herzenssache.de/podcast/',
       whyItHelps:
           'Wenn du gerade denkst du machst alles falsch — Kathy nimmt dir in 20 Minuten dieses Gefühl. Ohne Vorwürfe, nur Verständnis.',
       duration: 'Podcast · ca. 20 Min./Folge',
@@ -167,7 +167,8 @@ class ExpertRecommendations {
       type: ExpertContentType.youtube,
       category: ExpertCategory.wutKonflikte,
       language: 'de',
-      url: 'https://www.youtube.com/@geraldhuether',
+      url:
+          'https://www.youtube.com/results?search_query=gerald+hüther+vortrag+kinder',
       whyItHelps:
           'Wenn du verstehen willst warum dein Kind so reagiert — Hüther erklärt die Hirnforschung dahinter. Ruhig, klar, ohne Fachjargon.',
       duration: 'YouTube · 8–45 Min.',
@@ -180,7 +181,7 @@ class ExpertRecommendations {
       type: ExpertContentType.book,
       category: ExpertCategory.wutKonflikte,
       language: 'de',
-      url: 'https://www.noraimlau.de/buecher/',
+      url: 'https://www.nora-imlau.de/',
       whyItHelps:
           'Dein Kind fühlt alles intensiver als andere? Nora Imlau versteht gefühlsstarke Kinder — und zeigt dir dass es kein Problem ist.',
       duration: 'Buch · 304 Seiten',
@@ -208,7 +209,7 @@ class ExpertRecommendations {
       type: ExpertContentType.podcast,
       category: ExpertCategory.schlafen,
       language: 'de',
-      url: 'https://open.spotify.com/show/6HRVrxNgGb80LTx8EBuGnG',
+      url: 'https://podtail.com/de/podcast/das-gewunschteste-wunschkind/',
       whyItHelps:
           'Zwei Mütter die selbst durch alles durchgegangen sind. Ehrlich, warmherzig, ohne erhobenen Zeigefinger.',
       duration: 'Podcast · ca. 30 Min./Folge',
@@ -223,7 +224,7 @@ class ExpertRecommendations {
       type: ExpertContentType.youtube,
       category: ExpertCategory.geschwister,
       language: 'de',
-      url: 'https://www.youtube.com/@familylabDeutschland',
+      url: 'https://familylab.de/videos',
       whyItHelps:
           'Wenn deine Kinder sich ständig streiten und du nicht weißt ob du eingreifen sollst — Juul gibt klare, ruhige Orientierung.',
       duration: 'YouTube · 5–20 Min.',
@@ -251,7 +252,7 @@ class ExpertRecommendations {
       type: ExpertContentType.book,
       category: ExpertCategory.schuleLernen,
       language: 'de',
-      url: 'https://www.gerald-huether.de/bucher/',
+      url: 'https://www.gerald-huether.de/',
       whyItHelps:
           'Wenn du das Gefühl hast, die Schule bricht dein Kind — Hüther erinnert dich daran, dass Noten nicht alles sind.',
       duration: 'Buch · 256 Seiten',
@@ -266,7 +267,7 @@ class ExpertRecommendations {
       type: ExpertContentType.podcast,
       category: ExpertCategory.ichAmLimit,
       language: 'de',
-      url: 'https://open.spotify.com/show/0bpXBPRHnOiJZMBCB2kCYO',
+      url: 'https://kw-herzenssache.de/podcast/',
       whyItHelps:
           'Du gibst jeden Tag alles und es fühlt sich trotzdem nie genug an? Kathy zeigt: Du darfst auch deine eigenen Bedürfnisse sehen.',
       duration: 'Podcast · ca. 20 Min.',
@@ -279,7 +280,7 @@ class ExpertRecommendations {
       type: ExpertContentType.book,
       category: ExpertCategory.ichAmLimit,
       language: 'de',
-      url: 'https://www.noraimlau.de/buecher/',
+      url: 'https://www.nora-imlau.de/',
       whyItHelps:
           'Wenn du merkst, du bist leer — dieses Buch sagt dir: Du bist nicht schuld. Und es zeigt einen Weg raus.',
       duration: 'Buch · 288 Seiten',
@@ -294,7 +295,8 @@ class ExpertRecommendations {
       type: ExpertContentType.youtube,
       category: ExpertCategory.spielenBindung,
       language: 'de',
-      url: 'https://www.youtube.com/results?search_query=herbert+renz-polster+vortrag',
+      url:
+          'https://www.youtube.com/results?search_query=herbert+renz-polster+vortrag',
       whyItHelps:
           'Warum Kinder so sind wie sie sind — evolutionär erklärt, liebevoll erzählt. Danach siehst du dein Kind mit neuen Augen.',
       duration: 'YouTube · 15–60 Min.',
@@ -324,7 +326,7 @@ class ExpertRecommendations {
       type: ExpertContentType.podcast,
       category: ExpertCategory.wutKonflikte,
       language: 'en',
-      url: 'https://open.spotify.com/show/5gFJHri4eBaXJ8L4uBOYBH',
+      url: 'https://www.janetlansbury.com/podcast/',
       whyItHelps:
           "When you feel like you're failing — Janet's calm voice reminds you that your child's big feelings are not your fault.",
       duration: 'Podcast · 10–20 min/episode',
@@ -411,7 +413,8 @@ class ExpertRecommendations {
       type: ExpertContentType.youtube,
       category: ExpertCategory.wutKonflikte,
       language: 'tr',
-      url: 'https://www.youtube.com/@PedagogTV',
+      url:
+          'https://www.youtube.com/results?search_query=pedagog+tv+cocuk+gelisimi',
       whyItHelps:
           'Çocuğunuz öfkelendiğinde ne yapacağınızı bilmiyorsanız — bu kanal size sakin ve pratik yollar gösterir.',
       duration: 'YouTube · 10–30 dk.',
@@ -424,7 +427,8 @@ class ExpertRecommendations {
       type: ExpertContentType.youtube,
       category: ExpertCategory.schuleLernen,
       language: 'tr',
-      url: 'https://www.youtube.com/results?search_query=özgür+bolat+çocuk+gelişimi',
+      url:
+          'https://www.youtube.com/results?search_query=cocuk+gelisimi+okul+stresi+pedagog',
       whyItHelps:
           'Okul stresi, sınav kaygısı, motivasyon — Türkçe, bilimsel ve anlaşılır anlatımla.',
       duration: 'YouTube · 10–20 dk.',
@@ -466,7 +470,8 @@ class ExpertRecommendations {
       type: ExpertContentType.youtube,
       category: ExpertCategory.spielenBindung,
       language: 'ku',
-      url: 'https://www.youtube.com/@geraldhuether',
+      url:
+          'https://www.youtube.com/results?search_query=gerald+hüther+vortrag+kinder',
       whyItHelps:
           'Hüther bi almancî qala mezinbûna zarokan dike — bi jêrnivîsan hûn dikarin bişopînin. Aram, zelal û ji dil.',
       duration: 'YouTube · 8–45 dk. (Almancî)',
