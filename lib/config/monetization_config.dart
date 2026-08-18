@@ -16,10 +16,10 @@ class MonetizationConfig {
   static const bool premiumEnabled = false;
 
   /// Monatspreis (nur für Anzeige — echter Preis kommt von App Store)
-  static const double premiumMonthlyPrice = 4.99;
+  static const double premiumMonthlyPrice = 3.99;
 
   /// Jahrespreis
-  static const double premiumYearlyPrice = 39.99;
+  static const double premiumYearlyPrice = 34.99;
 
   /// Premium Product IDs (Apple App Store / Google Play)
   static const String premiumMonthlyProductId = 'parentpeak_premium_monthly';
@@ -75,8 +75,7 @@ class MonetizationConfig {
   /// Anbieter-Paket Monatspreis
   static const double providerMonthlyPrice = 9.99;
 
-  static const String providerPackageProductId =
-      'parentpeak_provider_monthly';
+  static const String providerPackageProductId = 'parentpeak_provider_monthly';
 
   // ─── Self-Service Ads Portal ─────────────────────────────────────────────
 
