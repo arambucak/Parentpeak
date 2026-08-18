@@ -494,7 +494,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
           'Reis kochen.',
           'Hähnchen in Streifen schneiden, anbraten.',
           'Gemüse dazu, 5 Min braten.',
-          'Reis unterheben, Sojasauce drueber.'
+          'Reis unterheben, Sojasauce drüber.'
         ],
         allergensFree: ['nuesse', 'ei', 'laktose'],
         season: '',

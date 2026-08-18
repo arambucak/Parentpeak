@@ -132,16 +132,16 @@ const List<_DevelopmentDomainProfile> _kParentSelfCheckDomains = [
 
 const Map<String, List<String>> _kSixMonthDetailedQuestions = {
   'motorik': [
-    'Mein Kind kann Bewegungsablaeufe ueber mehrere Schritte planen und ausfuehren.',
-    'Mein Kind haelt bei feinmotorischen Aufgaben laenger konzentriert durch.',
+    'Mein Kind kann Bewegungsabläufe über mehrere Schritte planen und ausführen.',
+    'Mein Kind hält bei feinmotorischen Aufgaben länger konzentriert durch.',
     'Mein Kind reagiert bei neuen motorischen Herausforderungen flexibel.',
     'Mein Kind kann zwischen grobmotorischen und feinmotorischen Aufgaben gut wechseln.',
     'Mein Kind zeigt ein stabiles Gleichgewicht beim Rennen, Springen oder Klettern.',
     'Mein Kind kann Bewegungen zunehmend genau dosieren (z. B. Kraft, Tempo, Richtung).',
     'Mein Kind koordiniert beide Hände bei komplexeren Aufgaben sinnvoll.',
-    'Mein Kind bleibt bei koerperlich anstrengenden Aufgaben altersangemessen ausdauernd.',
-    'Mein Kind erkennt eigene koerperliche Grenzen und passt Verhalten darauf an.',
-    'Mein Kind uebertraegt bekannte Bewegungsstrategien auf neue Situationen.',
+    'Mein Kind bleibt bei körperlich anstrengenden Aufgaben altersangemessen ausdauernd.',
+    'Mein Kind erkennt eigene körperliche Grenzen und passt Verhalten darauf an.',
+    'Mein Kind überträgt bekannte Bewegungsstrategien auf neue Situationen.',
   ],
   'sprache': [
     'Mein Kind kann Erlebnisse in einer nachvollziehbaren Reihenfolge erzählen.',
@@ -172,7 +172,7 @@ const Map<String, List<String>> _kSixMonthDetailedQuestions = {
     'Mein Kind zeigt Empathie und nimmt die Perspektive anderer wahr.',
     'Mein Kind kann sich nach starker Emotion schneller selbst regulieren.',
     'Mein Kind kann Grenzen anderer respektieren und eigene Grenzen angemessen zeigen.',
-    'Mein Kind kann in Gruppenregeln zunehmend verlaesslich mitgehen.',
+    'Mein Kind kann in Gruppenregeln zunehmend verlässlich mitgehen.',
     'Mein Kind sucht bei Unsicherheit konstruktiv nach Unterstuetzung.',
     'Mein Kind kann Rueckmeldung annehmen, ohne sofort abzublocken.',
     'Mein Kind kann Enttaeuschungen sozial angemessen ausdruecken.',
@@ -180,11 +180,11 @@ const Map<String, List<String>> _kSixMonthDetailedQuestions = {
     'Mein Kind zeigt prosoziales Verhalten (helfen, teilen, troesten) im Alltag.',
   ],
   'selbst': [
-    'Mein Kind organisiert einfache Alltagsroutinen zunehmend eigenstaendig.',
+    'Mein Kind organisiert einfache Alltagsroutinen zunehmend eigenständig.',
     'Mein Kind bittet passend um Hilfe, statt sofort aufzugeben.',
-    'Mein Kind uebernimmt Verantwortung für kleine Aufgaben verlaesslich.',
+    'Mein Kind uebernimmt Verantwortung für kleine Aufgaben verlässlich.',
     'Mein Kind kann eigene Materialien mit wenig Hilfe ordnen und pflegen.',
-    'Mein Kind beginnt Aufgaben selbststaendig und bleibt dabei bis zu einem sinnvollen Ende.',
+    'Mein Kind beginnt Aufgaben selbstständig und bleibt dabei bis zu einem sinnvollen Ende.',
     'Mein Kind kann zwischen Pflichtaufgaben und freien Wuenschen besser ausbalancieren.',
     'Mein Kind zeigt bei Rueckschlaegen zunehmende Selbstwirksamkeit.',
     'Mein Kind kann einfache Tagesstrukturen verstehen und einhalten.',
@@ -197,7 +197,7 @@ const double _kCoreQuestionWeight = 1.35;
 const double _kDetailedQuestionWeight = 1.0;
 const String _kSelfCheckScoringModelVersion = 'phase_weighted_v3';
 const bool _kDebugSuppressIntro =
-  bool.fromEnvironment('PP_DEBUG_SUPPRESS_INTRO', defaultValue: false);
+    bool.fromEnvironment('PP_DEBUG_SUPPRESS_INTRO', defaultValue: false);
 
 const Map<String, Map<String, double>> _kPhaseDomainWeights = {
   'early': {
@@ -294,11 +294,14 @@ class _TrendSparklinePainter extends CustomPainter {
 
     final minValue = values.reduce((a, b) => a < b ? a : b);
     final maxValue = values.reduce((a, b) => a > b ? a : b);
-    final range = (maxValue - minValue).abs() < 0.001 ? 1.0 : maxValue - minValue;
+    final range =
+        (maxValue - minValue).abs() < 0.001 ? 1.0 : maxValue - minValue;
 
     final points = <Offset>[];
     for (var i = 0; i < values.length; i++) {
-      final x = values.length == 1 ? size.width / 2 : (size.width * i) / (values.length - 1);
+      final x = values.length == 1
+          ? size.width / 2
+          : (size.width * i) / (values.length - 1);
       final normalized = (values[i] - minValue) / range;
       final y = size.height - (normalized * size.height);
       points.add(Offset(x, y));
@@ -522,7 +525,7 @@ class DevelopmentSchemaCard extends StatefulWidget {
 }
 
 class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
-  with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   int _selectedPhaseIndex = 0;
   String _selectedChildId = _childProfiles.first.id;
   bool _isLoading = true;
@@ -603,16 +606,16 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   String _selfCheckKey() =>
       'development_parent_selfcheck_${widget.childId}_${_selectedChildId}_phase$_selectedPhaseIndex';
 
-    String _onboardingSeenKey() =>
+  String _onboardingSeenKey() =>
       'development_onboarding_seen_${widget.childId}_$_selectedChildId';
 
-    String _introOverlaySeenKey() =>
+  String _introOverlaySeenKey() =>
       'development_intro_overlay_seen_${widget.childId}_$_selectedChildId';
 
-    String _reminderSettingsKey() =>
+  String _reminderSettingsKey() =>
       'development_reminder_settings_${widget.childId}_$_selectedChildId';
 
-    String _detailedCheckMetaKey() =>
+  String _detailedCheckMetaKey() =>
       'development_detailed_check_meta_${widget.childId}_$_selectedChildId';
 
   Future<void> _loadSelectionAndProgress() async {
@@ -783,7 +786,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         builder: (context) {
           final theme = Theme.of(context);
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: const Text('Willkommen bei Impulse & Entwicklung'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -798,9 +802,11 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 const SizedBox(height: 10),
                 const Text('1. Monats-Kurzcheck auswählen.'),
                 const SizedBox(height: 6),
-                const Text('2. Schnellmodus aktivieren und nur den Fokusbereich ausfuellen.'),
+                const Text(
+                    '2. Schnellmodus aktivieren und nur den Fokusbereich ausfuellen.'),
                 const SizedBox(height: 6),
-                const Text('3. Mit Monatskarte den Verlauf später vergleichen.'),
+                const Text(
+                    '3. Mit Monatskarte den Verlauf später vergleichen.'),
               ],
             ),
             actions: [
@@ -873,7 +879,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Detailcheck gespeichert. Naechste Empfehlung ab ${_formatDate(now.add(const Duration(days: 180)))}.'),
+        content: Text(
+            'Detailcheck gespeichert. Naechste Empfehlung ab ${_formatDate(now.add(const Duration(days: 180)))}.'),
       ),
     );
   }
@@ -1060,7 +1067,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
       'completed': snapshot.completed,
       'inProgress': snapshot.inProgress,
       'notStarted': snapshot.notStarted,
-      'phaseAgeRange': kDevelopmentMilestoneDatabase.phases[_selectedPhaseIndex].ageRange,
+      'phaseAgeRange':
+          kDevelopmentMilestoneDatabase.phases[_selectedPhaseIndex].ageRange,
       'selfCheckScores': selfCheckScores,
       'selfCheckAverage': _selfCheckAverage(),
       'selfCheckScoringModel': _kSelfCheckScoringModelVersion,
@@ -1124,7 +1132,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     color: const Color(0xFF0EA5E9).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF0284C7)),
+                  child: const Icon(Icons.notifications_none_rounded,
+                      color: Color(0xFF0284C7)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1156,7 +1165,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Kurzcheck ist aktiviert. Du kannst unten direkt starten.'),
+                        content: Text(
+                            'Kurzcheck ist aktiviert. Du kannst unten direkt starten.'),
                       ),
                     );
                   },
@@ -1256,7 +1266,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   List<int> _detailedStageQuestionIndices(int totalQuestionCount) {
     final stageCount = _detailedStageCount();
     final stageSize = (totalQuestionCount / stageCount).ceil();
-    final start = (_detailedCheckStage * stageSize).clamp(0, totalQuestionCount);
+    final start =
+        (_detailedCheckStage * stageSize).clamp(0, totalQuestionCount);
     final end = math.min(totalQuestionCount, start + stageSize);
     if (end <= start) return const <int>[];
     return List<int>.generate(end - start, (i) => start + i);
@@ -1272,7 +1283,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           children: [
             Row(
               children: [
-                const Icon(Icons.rocket_launch_rounded, color: Color(0xFF0EA5E9)),
+                const Icon(Icons.rocket_launch_rounded,
+                    color: Color(0xFF0EA5E9)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -1312,7 +1324,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         ? focusDomain.parentActions.first
         : 'Heute 5 ruhige Minuten für eine gemeinsame Uebung einplanen.';
     final strongDomains = _kParentSelfCheckDomains
-        .where((domain) => _domainPriorityScore(
+        .where((domain) =>
+            _domainPriorityScore(
               domain,
               detailedFlow: _isSixMonthDetailedCheck,
             ) >=
@@ -1363,11 +1376,14 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     final lines = <String>[];
 
     if (_history.isEmpty) {
-      lines.add('Noch keine Verlaufsgeschichte vorhanden. Der erste Eintrag startet eure Entwicklungslinie.');
+      lines.add(
+          'Noch keine Verlaufsgeschichte vorhanden. Der erste Eintrag startet eure Entwicklungslinie.');
     } else {
       final thisMonth = DateTime.now().subtract(const Duration(days: 30));
-      final recentCount = _history.where((event) => event.updatedAt.isAfter(thisMonth)).length;
-      lines.add('In den letzten 30 Tagen gab es $recentCount dokumentierte Entwicklungsschritte.');
+      final recentCount =
+          _history.where((event) => event.updatedAt.isAfter(thisMonth)).length;
+      lines.add(
+          'In den letzten 30 Tagen gab es $recentCount dokumentierte Entwicklungsschritte.');
       if (improvements.isNotEmpty) {
         lines.add('Neu verbessert: ${improvements.first.title}.');
       }
@@ -1391,9 +1407,9 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ),
             const SizedBox(height: 8),
             ...lines.map((line) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text('• $line', style: theme.textTheme.bodyMedium),
-            )),
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text('• $line', style: theme.textTheme.bodyMedium),
+                )),
           ],
         ),
       ),
@@ -1441,7 +1457,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
       final key = '${domain.id}::$i';
       final answer = (_selfCheckAnswers[key] ?? 0).toDouble();
       final isCoreQuestion = i < domain.questions.length;
-      final weight = isCoreQuestion ? _kCoreQuestionWeight : _kDetailedQuestionWeight;
+      final weight =
+          isCoreQuestion ? _kCoreQuestionWeight : _kDetailedQuestionWeight;
       weightedSum += answer * weight;
       maxWeightedSum += 3 * weight;
     }
@@ -1508,7 +1525,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   }) {
     if (_kParentSelfCheckDomains.isEmpty) return 0;
     final sum = _kParentSelfCheckDomains
-        .map((domain) => _domainPriorityScore(domain, detailedFlow: detailedFlow))
+        .map((domain) =>
+            _domainPriorityScore(domain, detailedFlow: detailedFlow))
         .fold<double>(0, (current, value) => current + value);
     return sum / _kParentSelfCheckDomains.length;
   }
@@ -1517,7 +1535,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     final snapshot = _lastMonthlyCardSnapshot;
     if (snapshot == null) return null;
     final scoringModel = snapshot['selfCheckScoringModel'] as String?;
-    if (scoringModel != null && scoringModel != _kSelfCheckScoringModelVersion) {
+    if (scoringModel != null &&
+        scoringModel != _kSelfCheckScoringModelVersion) {
       return null;
     }
     final rawScores = snapshot['selfCheckScores'];
@@ -1537,8 +1556,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
       }
     }
 
-    final sortedDomains = [..._kParentSelfCheckDomains]
-      ..sort((a, b) => _domainPriorityScore(a).compareTo(_domainPriorityScore(b)));
+    final sortedDomains = [..._kParentSelfCheckDomains]..sort(
+        (a, b) => _domainPriorityScore(a).compareTo(_domainPriorityScore(b)));
     return sortedDomains.first;
   }
 
@@ -1606,7 +1625,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ))
         .length;
     final strongDomains = _kParentSelfCheckDomains
-      .where((domain) => _domainPriorityScore(
+        .where((domain) =>
+            _domainPriorityScore(
               domain,
               detailedFlow: _isSixMonthDetailedCheck,
             ) >=
@@ -1616,19 +1636,24 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     final wins = <String>[];
 
     if (weeklyImprovements > 0) {
-      wins.add('Ihr habt in den letzten 7 Tagen $weeklyImprovements Entwicklungsschritte verbessert.');
+      wins.add(
+          'Ihr habt in den letzten 7 Tagen $weeklyImprovements Entwicklungsschritte verbessert.');
     }
     if (snapshot.completed > 0) {
-      wins.add('${snapshot.completed} Merkmale wirken aktuell stabil und zuverlaessig.');
+      wins.add(
+          '${snapshot.completed} Merkmale wirken aktuell stabil und zuverlaessig.');
     }
     if (completeSelfCheckDomains > 0) {
-      wins.add('Selbstcheck in $completeSelfCheckDomains/${_kParentSelfCheckDomains.length} Bereichen vollstaendig ausgefuellt.');
+      wins.add(
+          'Selbstcheck in $completeSelfCheckDomains/${_kParentSelfCheckDomains.length} Bereichen vollstaendig ausgefuellt.');
     }
     if (strongDomains > 0) {
-      wins.add('$strongDomains Entwicklungsbereiche zeigen bereits ein starkes Profil.');
+      wins.add(
+          '$strongDomains Entwicklungsbereiche zeigen bereits ein starkes Profil.');
     }
     if (wins.isEmpty) {
-      wins.add('Starker Start: Schon kleine, regelmaessige Schritte machen Entwicklung in kurzer Zeit sichtbar.');
+      wins.add(
+          'Starker Start: Schon kleine, regelmäßige Schritte machen Entwicklung in kurzer Zeit sichtbar.');
     }
 
     return Card(
@@ -1647,7 +1672,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     color: const Color(0xFFF59E0B).withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFFB45309)),
+                  child: const Icon(Icons.workspace_premium_rounded,
+                      color: Color(0xFFB45309)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1659,7 +1685,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFF16A34A).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
@@ -1683,14 +1710,14 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ),
             const SizedBox(height: 10),
             ...wins.take(3).map(
-              (win) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '• $win',
-                  style: theme.textTheme.bodyMedium,
+                  (win) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      '• $win',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
                 ),
-              ),
-            ),
             const SizedBox(height: 4),
             Text(
               'Naechster Mini-Schritt: 1 kurze Beobachtung heute eintragen.',
@@ -1706,8 +1733,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   }
 
   List<String> _priorityParentActions() {
-    final sortedDomains = [..._kParentSelfCheckDomains]
-      ..sort((a, b) => _domainPriorityScore(a).compareTo(_domainPriorityScore(b)));
+    final sortedDomains = [..._kParentSelfCheckDomains]..sort(
+        (a, b) => _domainPriorityScore(a).compareTo(_domainPriorityScore(b)));
     final actions = <String>[];
     for (final domain in sortedDomains.take(2)) {
       for (final action in domain.parentActions) {
@@ -1744,7 +1771,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         improved.add(
           _TrendItem(
             title: item.title,
-            subtitle: '${kMilestoneStatusLabels[previous] ?? previous} -> ${kMilestoneStatusLabels[current] ?? current}',
+            subtitle:
+                '${kMilestoneStatusLabels[previous] ?? previous} -> ${kMilestoneStatusLabels[current] ?? current}',
             color: const Color(0xFF16A34A),
             icon: Icons.trending_up_rounded,
             delta: delta,
@@ -1772,7 +1800,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
       result.add(
         const _TrendItem(
           title: 'Noch keine Verlaufseinträge',
-          subtitle: 'Sobald du etwas bewertest, zeigt die Karte Entwicklungen an.',
+          subtitle:
+              'Sobald du etwas bewertest, zeigt die Karte Entwicklungen an.',
           color: Color(0xFF0EA5E9),
           icon: Icons.timeline_rounded,
           delta: 0,
@@ -1975,7 +2004,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     ),
                     if (item.delta != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: item.delta! >= 0
                               ? const Color(0xFF16A34A).withValues(alpha: 0.14)
@@ -2032,7 +2062,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     color: theme.colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(Icons.auto_graph_rounded, color: theme.colorScheme.primary),
+                  child: Icon(Icons.auto_graph_rounded,
+                      color: theme.colorScheme.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -2067,7 +2098,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             const SizedBox(height: 14),
             Text(
               'Verbessert',
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             if (improvements.isEmpty)
@@ -2087,7 +2119,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             const SizedBox(height: 10),
             Text(
               'Braucht noch Begleitung',
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             if (supportItems.isEmpty)
@@ -2117,12 +2150,16 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         .map((domain) => MapEntry(domain, _domainPhaseWeight(domain.id)))
         .toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final strongerWeighted = weightedDomains.where((entry) => entry.value > 1.0).toList();
-    final lowerWeighted = weightedDomains.where((entry) => entry.value < 1.0).toList();
+    final strongerWeighted =
+        weightedDomains.where((entry) => entry.value > 1.0).toList();
+    final lowerWeighted =
+        weightedDomains.where((entry) => entry.value < 1.0).toList();
     final values = _kParentSelfCheckDomains
-        .map((domain) => _domainPriorityScore(domain, detailedFlow: isDetailedFlow))
+        .map((domain) =>
+            _domainPriorityScore(domain, detailedFlow: isDetailedFlow))
         .toList();
-    final colors = _kParentSelfCheckDomains.map((domain) => domain.color).toList();
+    final colors =
+        _kParentSelfCheckDomains.map((domain) => domain.color).toList();
     final completeness = _kParentSelfCheckDomains
         .where((domain) => _isSelfCheckComplete(
               domain,
@@ -2159,7 +2196,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     color: const Color(0xFF0EA5E9).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.radar_rounded, color: Color(0xFF0284C7)),
+                  child:
+                      const Icon(Icons.radar_rounded, color: Color(0xFF0284C7)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -2183,7 +2221,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(999),
@@ -2278,7 +2317,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               decoration: BoxDecoration(
                 color: const Color(0xFF0EA5E9).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.18)),
+                border: Border.all(
+                    color: const Color(0xFF0EA5E9).withValues(alpha: 0.18)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2329,7 +2369,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   detailedFlow: isDetailedFlow,
                 );
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     color: domain.color.withValues(alpha: 0.1),
@@ -2358,7 +2399,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               decoration: BoxDecoration(
                 color: focusDomain.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: focusDomain.color.withValues(alpha: 0.25)),
+                border: Border.all(
+                    color: focusDomain.color.withValues(alpha: 0.25)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2413,11 +2455,12 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     final previousModel = _lastMonthlyCardSnapshot?['selfCheckScoringModel'];
     final isComparable = previousModel == null ||
         previousModel == _kSelfCheckScoringModelVersion;
-    final previousAverageRaw = isComparable
-      ? (_lastMonthlyCardSnapshot?['selfCheckAverage'])
-      : null;
-    final previousAverage = previousAverageRaw is num ? previousAverageRaw.toDouble() : null;
-    final deltaAverage = previousAverage == null ? null : (currentAverage - previousAverage);
+    final previousAverageRaw =
+        isComparable ? (_lastMonthlyCardSnapshot?['selfCheckAverage']) : null;
+    final previousAverage =
+        previousAverageRaw is num ? previousAverageRaw.toDouble() : null;
+    final deltaAverage =
+        previousAverage == null ? null : (currentAverage - previousAverage);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -2438,7 +2481,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 ),
                 if (deltaAverage != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: deltaAverage >= 0
                           ? const Color(0xFF16A34A).withValues(alpha: 0.12)
@@ -2482,7 +2526,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 domain,
                 detailedFlow: _isSixMonthDetailedCheck,
               );
-              final previous = isComparable ? _previousSelfCheckScore(domain.id) : null;
+              final previous =
+                  isComparable ? _previousSelfCheckScore(domain.id) : null;
               final delta = previous == null ? null : current - previous;
               final widthFactor = current.clamp(0.0, 1.0);
 
@@ -2547,10 +2592,10 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     final focusDomain = _focusDomainForSession();
     final isDetailedFlow = _isSixMonthDetailedCheck;
     final visibleDomains = isDetailedFlow
-      ? _kParentSelfCheckDomains
-      : _selfCheckQuickMode
-        ? <_DevelopmentDomainProfile>[focusDomain]
-        : _kParentSelfCheckDomains;
+        ? _kParentSelfCheckDomains
+        : _selfCheckQuickMode
+            ? <_DevelopmentDomainProfile>[focusDomain]
+            : _kParentSelfCheckDomains;
     final detailedDue = _isDetailedCheckDue();
     final detailedAnswered = _detailedAnsweredCount();
     final detailedTotal = _detailedTotalQuestionCount();
@@ -2591,7 +2636,9 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 ChoiceChip(
                   selected: _isSixMonthDetailedCheck,
                   label: Text(
-                    detailedDue ? '6-Monats-Detailcheck (empfohlen)' : '6-Monats-Detailcheck',
+                    detailedDue
+                        ? '6-Monats-Detailcheck (empfohlen)'
+                        : '6-Monats-Detailcheck',
                   ),
                   onSelected: (_) {
                     setState(() {
@@ -2615,7 +2662,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             const SizedBox(height: 8),
             Text(
               _isSixMonthDetailedCheck
-                  ? 'Detailcheck (alle 6 Monate): umfassender Blick ueber alle Entwicklungsbereiche, ohne Zeitdruck.'
+                  ? 'Detailcheck (alle 6 Monate): umfassender Blick über alle Entwicklungsbereiche, ohne Zeitdruck.'
                   : _selfCheckQuickMode
                       ? 'Schnellmodus: Heute nur ein Fokusbereich. Das spart Zeit und bleibt alltagstauglich.'
                       : 'Vollansicht: Alle Bereiche sichtbar. Fragen bleiben adaptiv priorisiert.',
@@ -2631,7 +2678,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 decoration: BoxDecoration(
                   color: const Color(0xFF0EA5E9).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.18)),
+                  border: Border.all(
+                      color: const Color(0xFF0EA5E9).withValues(alpha: 0.18)),
                 ),
                 child: Text(
                   'Fortschritt Detailcheck: $detailedAnswered/$detailedTotal Fragen beantwortet.${_lastDetailedCheckAt == null ? '' : ' Letzter Detailcheck: ${_formatDate(_lastDetailedCheckAt!)}.'}',
@@ -2692,11 +2740,13 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 decoration: BoxDecoration(
                   color: const Color(0xFF0EA5E9).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.18)),
+                  border: Border.all(
+                      color: const Color(0xFF0EA5E9).withValues(alpha: 0.18)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.snooze_rounded, size: 18, color: Color(0xFF0284C7)),
+                    const Icon(Icons.snooze_rounded,
+                        size: 18, color: Color(0xFF0284C7)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -2733,7 +2783,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   );
                 }).toList(),
               ),
-            if (_selfCheckQuickMode && !_isSixMonthDetailedCheck) const SizedBox(height: 10),
+            if (_selfCheckQuickMode && !_isSixMonthDetailedCheck)
+              const SizedBox(height: 10),
             ...visibleDomains.map((domain) {
               final score = _domainPriorityScore(
                 domain,
@@ -2759,7 +2810,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: domain.color.withValues(alpha: 0.26)),
+                  border:
+                      Border.all(color: domain.color.withValues(alpha: 0.26)),
                   color: domain.color.withValues(alpha: 0.06),
                 ),
                 child: Column(
@@ -2850,16 +2902,19 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                             Wrap(
                               spacing: 6,
                               runSpacing: 6,
-                              children: kSelfCheckOptionLabels.entries.map((option) {
+                              children:
+                                  kSelfCheckOptionLabels.entries.map((option) {
                                 return ChoiceChip(
                                   selected: selected == option.key,
-                                  selectedColor: domain.color.withValues(alpha: 0.2),
+                                  selectedColor:
+                                      domain.color.withValues(alpha: 0.2),
                                   backgroundColor: Colors.white,
                                   side: BorderSide(
                                     color: domain.color.withValues(alpha: 0.4),
                                   ),
                                   label: Text(option.value),
-                                  onSelected: (_) => _setSelfCheckAnswer(domain, questionIndex, option.key),
+                                  onSelected: (_) => _setSelfCheckAnswer(
+                                      domain, questionIndex, option.key),
                                 );
                               }).toList(),
                             ),
@@ -2875,9 +2930,10 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               Align(
                 alignment: Alignment.centerLeft,
                 child: FilledButton.icon(
-                  onPressed: detailedAnswered == detailedTotal && detailedTotal > 0
-                      ? _markDetailedCheckCompleted
-                      : null,
+                  onPressed:
+                      detailedAnswered == detailedTotal && detailedTotal > 0
+                          ? _markDetailedCheckCompleted
+                          : null,
                   icon: const Icon(Icons.task_alt_rounded),
                   label: const Text('Detailcheck als erledigt markieren'),
                 ),
@@ -2905,7 +2961,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         bold: boldFont,
       );
     } catch (e) {
-      debugPrint('DevelopmentSchemaFeature._shareCurrentOverview(): PDF font fallback: $e');
+      debugPrint(
+          'DevelopmentSchemaFeature._shareCurrentOverview(): PDF font fallback: $e');
       pdfTheme = null;
     }
 
@@ -2934,12 +2991,14 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   decoration: pw.BoxDecoration(
                     borderRadius: pw.BorderRadius.circular(20),
                   ),
-                  child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain),
+                  child: pw.Image(pw.MemoryImage(logoBytes),
+                      fit: pw.BoxFit.contain),
                 ),
                 pw.SizedBox(height: 14),
                 pw.Text(
                   'Parentpeak',
-                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(
+                      fontSize: 24, fontWeight: pw.FontWeight.bold),
                 ),
                 pw.SizedBox(height: 6),
                 pw.Text(
@@ -2976,7 +3035,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             children: _phaseStatusCounts(phase).entries.map((entry) {
               final label = kMilestoneStatusLabels[entry.key] ?? entry.key;
               return pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding:
+                    const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: pw.BoxDecoration(
                   border: const pw.Border.fromBorderSide(
                     pw.BorderSide(color: pdf.PdfColor.fromInt(0xFFCCCCCC)),
@@ -2994,11 +3054,14 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               children: [
                 pw.Text(
                   category.name,
-                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(
+                      fontSize: 13, fontWeight: pw.FontWeight.bold),
                 ),
                 pw.SizedBox(height: 4),
                 ...category.items.map((item) {
-                  final status = kMilestoneStatusLabels[_statusFor(item.code)] ?? _statusFor(item.code);
+                  final status =
+                      kMilestoneStatusLabels[_statusFor(item.code)] ??
+                          _statusFor(item.code);
                   return pw.Padding(
                     padding: const pw.EdgeInsets.only(bottom: 4),
                     child: pw.Text('- ${item.code} ${item.title}: $status'),
@@ -3015,7 +3078,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ),
             pw.SizedBox(height: 6),
             ..._history.take(5).map((event) {
-              final status = kMilestoneStatusLabels[event.status] ?? event.status;
+              final status =
+                  kMilestoneStatusLabels[event.status] ?? event.status;
               return pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 4),
                 child: pw.Text(
@@ -3046,11 +3110,11 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     final currentScores = _selfCheckScoresMap();
     final previousModel = _lastMonthlyCardSnapshot?['selfCheckScoringModel'];
     final isComparable = previousModel == null ||
-      previousModel == _kSelfCheckScoringModelVersion;
+        previousModel == _kSelfCheckScoringModelVersion;
     final previousScoresRaw = _lastMonthlyCardSnapshot?['selfCheckScores'];
     final previousScores = previousScoresRaw is Map<String, dynamic>
-      ? previousScoresRaw
-      : <String, dynamic>{};
+        ? previousScoresRaw
+        : <String, dynamic>{};
 
     pw.ThemeData? pdfTheme;
     try {
@@ -3058,7 +3122,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
       final boldFont = await PdfGoogleFonts.notoSansBold();
       pdfTheme = pw.ThemeData.withFont(base: baseFont, bold: boldFont);
     } catch (e) {
-      debugPrint('DevelopmentSchemaFeature._shareMonthlyCard(): PDF font fallback: $e');
+      debugPrint(
+          'DevelopmentSchemaFeature._shareMonthlyCard(): PDF font fallback: $e');
       pdfTheme = null;
     }
 
@@ -3079,7 +3144,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   decoration: pw.BoxDecoration(
                     borderRadius: pw.BorderRadius.circular(16),
                   ),
-                  child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain),
+                  child: pw.Image(pw.MemoryImage(logoBytes),
+                      fit: pw.BoxFit.contain),
                 ),
                 pw.SizedBox(width: 14),
                 pw.Expanded(
@@ -3102,7 +3168,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   ),
                 ),
                 pw.Container(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
                   decoration: pw.BoxDecoration(
                     color: pdf.PdfColor.fromHex('#0EA5E9'),
                     borderRadius: pw.BorderRadius.circular(999),
@@ -3132,7 +3199,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 children: [
                   pw.Text(
                     'Kurzüberblick',
-                    style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+                    style: pw.TextStyle(
+                        fontSize: 13, fontWeight: pw.FontWeight.bold),
                   ),
                   pw.SizedBox(height: 8),
                   pw.Text('Fortschritt: ${(snapshot.progress * 100).round()}%'),
@@ -3207,8 +3275,10 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             pw.SizedBox(height: 8),
             ..._kParentSelfCheckDomains.map((domain) {
               final current = (currentScores[domain.id] ?? 0) * 100;
-              final previousValue = isComparable ? previousScores[domain.id] : null;
-              final previous = previousValue is num ? previousValue.toDouble() * 100 : null;
+              final previousValue =
+                  isComparable ? previousScores[domain.id] : null;
+              final previous =
+                  previousValue is num ? previousValue.toDouble() * 100 : null;
               final delta = previous == null ? null : (current - previous);
 
               return pw.Container(
@@ -3249,9 +3319,12 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
-            pw.Text('• Stark: weiter stabilisieren und neue kleine Impulse geben.'),
-            pw.Text('• Im Aufbau: kurze Wiederholung und feste Routinen helfen.'),
-            pw.Text('• Fokusbereich: in kleinen Schritten begleiten statt Druck aufzubauen.'),
+            pw.Text(
+                '• Stark: weiter stabilisieren und neue kleine Impulse geben.'),
+            pw.Text(
+                '• Im Aufbau: kurze Wiederholung und feste Routinen helfen.'),
+            pw.Text(
+                '• Fokusbereich: in kleinen Schritten begleiten statt Druck aufzubauen.'),
           ],
         ),
       ),
@@ -3271,10 +3344,13 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     final supportItems = _buildSupportItems(phase);
 
     final isDark = _monthlyCardDarkStyle;
-    final backgroundColor = isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC);
+    final backgroundColor =
+        isDark ? const Color(0xFF020617) : const Color(0xFFF8FAFC);
     final cardColor = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A);
-    final secondaryTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155);
+    final textColor =
+        isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A);
+    final secondaryTextColor =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155);
     const accentColor = Color(0xFF0EA5E9);
 
     final recorder = ui.PictureRecorder();
@@ -3292,9 +3368,11 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     final cardPaint = Paint()..color = cardColor;
     canvas.drawRRect(cardRect, cardPaint);
 
-    final accentPaint = Paint()..color = accentColor.withValues(alpha: isDark ? 0.24 : 0.14);
+    final accentPaint = Paint()
+      ..color = accentColor.withValues(alpha: isDark ? 0.24 : 0.14);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTWH(100, 118, width - 200, 180), const Radius.circular(26)),
+      RRect.fromRectAndRadius(const Rect.fromLTWH(100, 118, width - 200, 180),
+          const Radius.circular(26)),
       accentPaint,
     );
 
@@ -3323,41 +3401,53 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
       painter.paint(canvas, Offset(x, y));
     }
 
-    drawText('Parentpeak Monatskarte', 120, 146, size: 38, weight: FontWeight.w800);
-    drawText('${_selectedChildLabel()} • ${phase.ageRange}', 120, 198, size: 24, color: secondaryTextColor);
-    drawText('Fortschritt ${(snapshot.progress * 100).round()}%', 760, 178, size: 34, weight: FontWeight.w800, color: accentColor, maxWidth: 220);
+    drawText('Parentpeak Monatskarte', 120, 146,
+        size: 38, weight: FontWeight.w800);
+    drawText('${_selectedChildLabel()} • ${phase.ageRange}', 120, 198,
+        size: 24, color: secondaryTextColor);
+    drawText('Fortschritt ${(snapshot.progress * 100).round()}%', 760, 178,
+        size: 34, weight: FontWeight.w800, color: accentColor, maxWidth: 220);
 
     var cursorY = 340.0;
     drawText('Verbessert', 120, cursorY, size: 30, weight: FontWeight.w700);
     cursorY += 52;
     for (final item in improvements.take(3)) {
-      drawText('• ${item.title} — ${item.subtitle}', 120, cursorY, size: 24, weight: FontWeight.w500, color: secondaryTextColor);
+      drawText('• ${item.title} — ${item.subtitle}', 120, cursorY,
+          size: 24, weight: FontWeight.w500, color: secondaryTextColor);
       cursorY += 42;
     }
 
     cursorY += 24;
-    drawText('Braucht noch Begleitung', 120, cursorY, size: 30, weight: FontWeight.w700);
+    drawText('Braucht noch Begleitung', 120, cursorY,
+        size: 30, weight: FontWeight.w700);
     cursorY += 52;
     for (final item in supportItems.take(3)) {
-      drawText('• ${item.title} — ${item.subtitle}', 120, cursorY, size: 24, weight: FontWeight.w500, color: secondaryTextColor);
+      drawText('• ${item.title} — ${item.subtitle}', 120, cursorY,
+          size: 24, weight: FontWeight.w500, color: secondaryTextColor);
       cursorY += 42;
     }
 
     cursorY += 24;
-    drawText('Nächste Schritte', 120, cursorY, size: 30, weight: FontWeight.w700);
+    drawText('Nächste Schritte', 120, cursorY,
+        size: 30, weight: FontWeight.w700);
     cursorY += 52;
-    drawText('• einmal pro Woche kurz prüfen', 120, cursorY, size: 24, weight: FontWeight.w500);
+    drawText('• einmal pro Woche kurz prüfen', 120, cursorY,
+        size: 24, weight: FontWeight.w500);
     cursorY += 38;
-    drawText('• einen offenen Bereich fokussieren', 120, cursorY, size: 24, weight: FontWeight.w500);
+    drawText('• einen offenen Bereich fokussieren', 120, cursorY,
+        size: 24, weight: FontWeight.w500);
     cursorY += 38;
-    drawText('• in 4 Wochen erneut vergleichen', 120, cursorY, size: 24, weight: FontWeight.w500);
+    drawText('• in 4 Wochen erneut vergleichen', 120, cursorY,
+        size: 24, weight: FontWeight.w500);
 
-    final image = await recorder.endRecording().toImage(width.toInt(), height.toInt());
+    final image =
+        await recorder.endRecording().toImage(width.toInt(), height.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bildkarte konnte nicht erstellt werden.')),
+        const SnackBar(
+            content: Text('Bildkarte konnte nicht erstellt werden.')),
       );
       return;
     }
@@ -3381,17 +3471,20 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     if (previous == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Noch keine vorige Monatskarte vorhanden.')),
+        const SnackBar(
+            content: Text('Noch keine vorige Monatskarte vorhanden.')),
       );
       return;
     }
 
     final phase = kDevelopmentMilestoneDatabase.phases[_selectedPhaseIndex];
     final current = _phaseSnapshot(phase);
-    final previousProgress = ((previous['progress'] as num?)?.toDouble() ?? 0) * 100;
+    final previousProgress =
+        ((previous['progress'] as num?)?.toDouble() ?? 0) * 100;
     final currentProgress = current.progress * 100;
     final delta = (currentProgress - previousProgress).round();
-    final previousDate = DateTime.tryParse(previous['generatedAt']?.toString() ?? '')?.toLocal();
+    final previousDate =
+        DateTime.tryParse(previous['generatedAt']?.toString() ?? '')?.toLocal();
 
     final document = pw.Document();
     document.addPage(
@@ -3400,7 +3493,9 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Text('Monatsvergleich', style: pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold)),
+            pw.Text('Monatsvergleich',
+                style:
+                    pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 8),
             pw.Text('${_selectedChildLabel()} • ${phase.ageRange}'),
             pw.SizedBox(height: 14),
@@ -3414,7 +3509,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('Vorher: ${previousProgress.round()}% ${previousDate == null ? '' : '(Stand ${_formatDate(previousDate)})'}'),
+                  pw.Text(
+                      'Vorher: ${previousProgress.round()}% ${previousDate == null ? '' : '(Stand ${_formatDate(previousDate)})'}'),
                   pw.Text('Jetzt: ${currentProgress.round()}%'),
                   pw.Text('Differenz: ${delta >= 0 ? '+' : ''}$delta%'),
                 ],
@@ -3442,10 +3538,12 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   }
 
   double _phaseProgress(DevelopmentPhase phase) {
-    final total = phase.categories.fold<int>(0, (sum, category) => sum + category.items.length);
+    final total = phase.categories
+        .fold<int>(0, (sum, category) => sum + category.items.length);
     if (total == 0) return 0;
 
-    final completed = phase.categories.expand((category) => category.items).where((item) {
+    final completed =
+        phase.categories.expand((category) => category.items).where((item) {
       final status = _statusFor(item.code);
       return status == 'WEITGEHEND' || status == 'ZUVERLAESSIG';
     }).length;
@@ -3471,21 +3569,28 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   _PhaseTheme _phaseThemeForIndex(int index) {
     switch (index) {
       case 0:
-        return const _PhaseTheme(color: Color(0xFF0EA5E9), icon: Icons.baby_changing_station_rounded);
+        return const _PhaseTheme(
+            color: Color(0xFF0EA5E9),
+            icon: Icons.baby_changing_station_rounded);
       case 1:
-        return const _PhaseTheme(color: Color(0xFF16A34A), icon: Icons.child_care_rounded);
+        return const _PhaseTheme(
+            color: Color(0xFF16A34A), icon: Icons.child_care_rounded);
       case 2:
-        return const _PhaseTheme(color: Color(0xFFF97316), icon: Icons.park_rounded);
+        return const _PhaseTheme(
+            color: Color(0xFFF97316), icon: Icons.park_rounded);
       case 3:
-        return const _PhaseTheme(color: Color(0xFF2563EB), icon: Icons.school_rounded);
+        return const _PhaseTheme(
+            color: Color(0xFF2563EB), icon: Icons.school_rounded);
       case 4:
       default:
-        return const _PhaseTheme(color: Color(0xFF9333EA), icon: Icons.groups_rounded);
+        return const _PhaseTheme(
+            color: Color(0xFF9333EA), icon: Icons.groups_rounded);
     }
   }
 
   _PhaseSnapshot _phaseSnapshot(DevelopmentPhase phase) {
-    final total = phase.categories.fold<int>(0, (sum, category) => sum + category.items.length);
+    final total = phase.categories
+        .fold<int>(0, (sum, category) => sum + category.items.length);
     var completed = 0;
     var inProgress = 0;
     var notStarted = 0;
@@ -3710,278 +3815,291 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         ),
       ),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildAnimatedSection(
-          order: 0,
-          child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                phaseTheme.color,
-                phaseTheme.color.withValues(alpha: 0.82),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: phaseTheme.color.withValues(alpha: 0.22),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAnimatedSection(
+            order: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    phaseTheme.color,
+                    phaseTheme.color.withValues(alpha: 0.82),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: phaseTheme.color.withValues(alpha: 0.22),
+                    blurRadius: 22,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Icon(
-                        phaseTheme.icon,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Entwicklung auf einen Blick',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(18),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '$childLabel • ${phase.ageRange}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            phase.title,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    _buildProgressRing(theme, phaseTheme, snapshot),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    _buildStatTile(
-                      theme,
-                      phaseTheme,
-                      'Stark',
-                      snapshot.completed.toString(),
-                      Icons.trending_up_rounded,
-                    ),
-                    const SizedBox(width: 10),
-                    _buildStatTile(
-                      theme,
-                      phaseTheme,
-                      'Im Aufbau',
-                      snapshot.inProgress.toString(),
-                      Icons.timelapse_rounded,
-                    ),
-                    const SizedBox(width: 10),
-                    _buildStatTile(
-                      theme,
-                      phaseTheme,
-                      'Noch offen',
-                      snapshot.notStarted.toString(),
-                      Icons.hourglass_bottom_rounded,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: highlights
-                      .map(
-                        (text) => Chip(
-                          label: Text(text),
-                          backgroundColor: Colors.white.withValues(alpha: 0.12),
-                          side: BorderSide.none,
-                          labelStyle: theme.textTheme.bodySmall?.copyWith(
+                          child: Icon(
+                            phaseTheme.icon,
                             color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Entwicklung auf einen Blick',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$childLabel • ${phase.ageRange}',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                phase.title,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _buildProgressRing(theme, phaseTheme, snapshot),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        _buildStatTile(
+                          theme,
+                          phaseTheme,
+                          'Stark',
+                          snapshot.completed.toString(),
+                          Icons.trending_up_rounded,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildStatTile(
+                          theme,
+                          phaseTheme,
+                          'Im Aufbau',
+                          snapshot.inProgress.toString(),
+                          Icons.timelapse_rounded,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildStatTile(
+                          theme,
+                          phaseTheme,
+                          'Noch offen',
+                          snapshot.notStarted.toString(),
+                          Icons.hourglass_bottom_rounded,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: highlights
+                          .map(
+                            (text) => Chip(
+                              label: Text(text),
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.12),
+                              side: BorderSide.none,
+                              labelStyle: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: _shareCurrentOverview,
+                          icon: const Icon(Icons.picture_as_pdf_rounded),
+                          label: const Text('Als PDF teilen'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: phaseTheme.color,
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _shareMonthlyCard,
+                          icon: const Icon(Icons.auto_graph_rounded),
+                          label: const Text('Monatskarte'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.35)),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _history.isEmpty
+                              ? null
+                              : () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Der Verlauf wird unten angezeigt.'),
+                                    ),
+                                  );
+                                },
+                          icon: const Icon(Icons.history_rounded),
+                          label: const Text('Verlauf ansehen'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.35)),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _shareMonthlyImageCard,
+                          icon: const Icon(Icons.image_rounded),
+                          label: const Text('Als Bild teilen'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.35)),
+                          ),
+                        ),
+                        FilterChip(
+                          selected: _monthlyCardDarkStyle,
+                          label: const Text('Bildkarte dunkel'),
+                          onSelected: (selected) {
+                            setState(() {
+                              _monthlyCardDarkStyle = selected;
+                            });
+                          },
+                          selectedColor: Colors.white.withValues(alpha: 0.22),
+                          checkmarkColor: Colors.white,
+                          labelStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.96),
                             fontWeight: FontWeight.w600,
                           ),
+                          side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.35)),
                         ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: _shareCurrentOverview,
-                      icon: const Icon(Icons.picture_as_pdf_rounded),
-                      label: const Text('Als PDF teilen'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: phaseTheme.color,
-                      ),
-                    ),
-                      OutlinedButton.icon(
-                        onPressed: _shareMonthlyCard,
-                        icon: const Icon(Icons.auto_graph_rounded),
-                        label: const Text('Monatskarte'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
+                        OutlinedButton.icon(
+                          onPressed: _lastMonthlyCardSnapshot == null
+                              ? null
+                              : _shareMonthlyComparisonCard,
+                          icon: const Icon(Icons.compare_arrows_rounded),
+                          label: const Text('Monatsvergleich'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.35)),
+                          ),
                         ),
-                      ),
-                    OutlinedButton.icon(
-                      onPressed: _history.isEmpty
-                          ? null
-                          : () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Der Verlauf wird unten angezeigt.'),
-                                ),
-                              );
-                            },
-                      icon: const Icon(Icons.history_rounded),
-                      label: const Text('Verlauf ansehen'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
-                      ),
+                        if (_lastMonthlyCardAt != null)
+                          OutlinedButton.icon(
+                            onPressed: _shareMonthlyCard,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: Text(
+                                'Erneut (${_formatDate(_lastMonthlyCardAt!)})'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.35)),
+                            ),
+                          ),
+                      ],
                     ),
-                    OutlinedButton.icon(
-                      onPressed: _shareMonthlyImageCard,
-                      icon: const Icon(Icons.image_rounded),
-                      label: const Text('Als Bild teilen'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
-                      ),
-                    ),
-                    FilterChip(
-                      selected: _monthlyCardDarkStyle,
-                      label: const Text('Bildkarte dunkel'),
-                      onSelected: (selected) {
-                        setState(() {
-                          _monthlyCardDarkStyle = selected;
-                        });
-                      },
-                      selectedColor: Colors.white.withValues(alpha: 0.22),
-                      checkmarkColor: Colors.white,
-                      labelStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.96),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _lastMonthlyCardSnapshot == null
-                          ? null
-                          : _shareMonthlyComparisonCard,
-                      icon: const Icon(Icons.compare_arrows_rounded),
-                      label: const Text('Monatsvergleich'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
-                      ),
-                    ),
-                    if (_lastMonthlyCardAt != null)
-                      OutlinedButton.icon(
-                        onPressed: _shareMonthlyCard,
-                        icon: const Icon(Icons.refresh_rounded),
-                        label: Text('Erneut (${_formatDate(_lastMonthlyCardAt!)})'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
-                        ),
-                      ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
+          const SizedBox(height: 12),
+          if (!_onboardingDismissed)
+            _buildAnimatedSection(order: 1, child: _buildQuickStartCard(theme)),
+          if (!_onboardingDismissed) const SizedBox(height: 12),
+          _buildAnimatedSection(
+            order: 2,
+            child: _buildTrendCard(
+              theme,
+              'Verlauf auf einen Blick',
+              'Hier siehst du, was sich verbessert hat und welche Bereiche noch Begleitung brauchen.',
+              trendItems,
+              trendValues,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        if (!_onboardingDismissed)
-          _buildAnimatedSection(order: 1, child: _buildQuickStartCard(theme)),
-        if (!_onboardingDismissed) const SizedBox(height: 12),
-        _buildAnimatedSection(
-          order: 2,
-          child: _buildTrendCard(
-          theme,
-          'Verlauf auf einen Blick',
-          'Hier siehst du, was sich verbessert hat und welche Bereiche noch Begleitung brauchen.',
-          trendItems,
-          trendValues,
-        ),
-        ),
-        const SizedBox(height: 12),
-        if (_shouldShowGentleReminder())
-          _buildAnimatedSection(order: 3, child: _buildGentleReminderCard(theme)),
-        if (_shouldShowGentleReminder()) const SizedBox(height: 12),
-        _buildAnimatedSection(
-          order: 4,
-          child: _buildAlltagGuidanceCard(theme),
-        ),
-        const SizedBox(height: 12),
-        _buildAnimatedSection(
-          order: 5,
-          child: _buildWeeklyWinsCard(
-          theme,
-          phase,
-          snapshot,
-        ),
-        ),
-        const SizedBox(height: 12),
-        _buildAnimatedSection(
-          order: 6,
-          child: _buildStoryCard(theme, phase),
-        ),
-        const SizedBox(height: 12),
-        _buildAnimatedSection(
-          order: 7,
-          child: _buildMonthlyCardPreview(
-          theme,
-          phase,
-          snapshot,
-          trendItems,
-          supportItems,
-        ),
-        ),
-        const SizedBox(height: 12),
-        _buildAnimatedSection(order: 8, child: _buildBellerInspiredRadarCard(theme)),
-        const SizedBox(height: 12),
-        _buildAnimatedSection(order: 9, child: _buildSelfCheckMonthlyComparisonCard(theme)),
-        const SizedBox(height: 12),
-        _buildAnimatedSection(order: 10, child: _buildParentSelfCheckCard(theme)),
-        const SizedBox(height: 12),
-        _buildAnimatedSection(order: 11, child: _buildTrustCard(theme)),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
+          if (_shouldShowGentleReminder())
+            _buildAnimatedSection(
+                order: 3, child: _buildGentleReminderCard(theme)),
+          if (_shouldShowGentleReminder()) const SizedBox(height: 12),
+          _buildAnimatedSection(
+            order: 4,
+            child: _buildAlltagGuidanceCard(theme),
+          ),
+          const SizedBox(height: 12),
+          _buildAnimatedSection(
+            order: 5,
+            child: _buildWeeklyWinsCard(
+              theme,
+              phase,
+              snapshot,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildAnimatedSection(
+            order: 6,
+            child: _buildStoryCard(theme, phase),
+          ),
+          const SizedBox(height: 12),
+          _buildAnimatedSection(
+            order: 7,
+            child: _buildMonthlyCardPreview(
+              theme,
+              phase,
+              snapshot,
+              trendItems,
+              supportItems,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildAnimatedSection(
+              order: 8, child: _buildBellerInspiredRadarCard(theme)),
+          const SizedBox(height: 12),
+          _buildAnimatedSection(
+              order: 9, child: _buildSelfCheckMonthlyComparisonCard(theme)),
+          const SizedBox(height: 12),
+          _buildAnimatedSection(
+              order: 10, child: _buildParentSelfCheckCard(theme)),
+          const SizedBox(height: 12),
+          _buildAnimatedSection(order: 11, child: _buildTrustCard(theme)),
+          const SizedBox(height: 12),
           Text(
             'Kind wählen',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -4011,260 +4129,269 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ),
           ),
           const SizedBox(height: 12),
-        Text(
-          'Alter wählen',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 44,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: kDevelopmentMilestoneDatabase.phases.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final currentPhase = kDevelopmentMilestoneDatabase.phases[index];
-              final selected = index == _selectedPhaseIndex;
-              return ChoiceChip(
-                selected: selected,
-                label: Text(currentPhase.ageRange),
-                labelStyle: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-                onSelected: (_) {
-                  _selectPhase(index);
-                },
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildAnimatedSection(
-          order: 6,
-          child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: phaseTheme.color.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        phaseTheme.icon,
-                        color: phaseTheme.color,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Was Eltern hier sehen',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Die Kachel zeigt Entwicklung als Orientierung, nicht als Bewertung.',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                LinearProgressIndicator(value: _phaseProgress(phase)),
-                const SizedBox(height: 8),
-                Text(
-                  'Fortschritt: ${(_phaseProgress(phase) * 100).round()}%',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _phaseStatusCounts(phase).entries.map((entry) {
-                    final label = kMilestoneStatusLabels[entry.key] ?? entry.key;
-                    return Chip(
-                      avatar: CircleAvatar(
-                        radius: 8,
-                        backgroundColor: _statusColor(theme, entry.key).withValues(alpha: 0.18),
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: _statusColor(theme, entry.key),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      label: Text('$label: ${entry.value}'),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Kurz erklärt',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Die Bewertung hilft dir, Stärken, offene Themen und nächste kleine Schritte sichtbar zu machen. So bleibt die Nutzung leicht und entlastend.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'In der Praxis',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '• Fortschritt über Zeit sehen\n• Schwierige Bereiche gezielt begleiten\n• Ergebnisse als PDF teilen oder später erneut ansehen',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.45,
-                  ),
-                ),
-                if (_history.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Text('Letzte Änderungen für $childLabel',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      )),
-                  const SizedBox(height: 8),
-                  ..._history.take(3).map((event) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        '${event.code} • ${event.title} → ${kMilestoneStatusLabels[event.status] ?? event.status} • ${event.updatedAt.toLocal().day.toString().padLeft(2, '0')}.${event.updatedAt.toLocal().month.toString().padLeft(2, '0')}.${event.updatedAt.toLocal().year}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-              ],
+          Text(
+            'Alter wählen',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...phase.categories.map((category) {
-          final summary = _categorySummary(category);
-          return Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            child: ExpansionTile(
-              title: Text(
-                category.name,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: phaseTheme.color,
-                ),
-              ),
-              subtitle: Text('${category.items.length} Kriterien • $summary'),
-              childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-              children: category.items.map((item) {
-                final selectedStatus = _statusFor(item.code);
-                final stored = _progressByCode[item.code];
-
-                return Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.colorScheme.outlineVariant,
-                    ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: kDevelopmentMilestoneDatabase.phases.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final currentPhase =
+                    kDevelopmentMilestoneDatabase.phases[index];
+                final selected = index == _selectedPhaseIndex;
+                return ChoiceChip(
+                  selected: selected,
+                  label: Text(currentPhase.ageRange),
+                  labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  onSelected: (_) {
+                    _selectPhase(index);
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildAnimatedSection(
+            order: 6,
+            child: Card(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 10,
-                              height: 10,
-                              margin: const EdgeInsets.only(top: 6, right: 10),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: phaseTheme.color.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            phaseTheme.icon,
+                            color: phaseTheme.color,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Was Eltern hier sehen',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Die Kachel zeigt Entwicklung als Orientierung, nicht als Bewertung.',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    LinearProgressIndicator(value: _phaseProgress(phase)),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Fortschritt: ${(_phaseProgress(phase) * 100).round()}%',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _phaseStatusCounts(phase).entries.map((entry) {
+                        final label =
+                            kMilestoneStatusLabels[entry.key] ?? entry.key;
+                        return Chip(
+                          avatar: CircleAvatar(
+                            radius: 8,
+                            backgroundColor: _statusColor(theme, entry.key)
+                                .withValues(alpha: 0.18),
+                            child: Container(
+                              width: 8,
+                              height: 8,
                               decoration: BoxDecoration(
-                                color: _statusColor(theme, selectedStatus),
+                                color: _statusColor(theme, entry.key),
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${item.code}  ${item.title}',
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(item.description),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: kMilestoneStatusLabels.entries.map((entry) {
-                            final isSelected = selectedStatus == entry.key;
-                            return ChoiceChip(
-                              selected: isSelected,
-                              label: Text(entry.value),
-                              onSelected: (_) => _setMilestoneStatus(item, entry.key),
-                            );
-                          }).toList(),
-                        ),
-                        if (stored != null && stored.updatedAt.millisecondsSinceEpoch > 0) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Zuletzt aktualisiert: ${stored.updatedAt.toLocal().day.toString().padLeft(2, '0')}.${stored.updatedAt.toLocal().month.toString().padLeft(2, '0')}.${stored.updatedAt.toLocal().year}',
+                          ),
+                          label: Text('$label: ${entry.value}'),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Kurz erklärt',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Die Bewertung hilft dir, Stärken, offene Themen und nächste kleine Schritte sichtbar zu machen. So bleibt die Nutzung leicht und entlastend.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'In der Praxis',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '• Fortschritt über Zeit sehen\n• Schwierige Bereiche gezielt begleiten\n• Ergebnisse als PDF teilen oder später erneut ansehen',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        height: 1.45,
+                      ),
+                    ),
+                    if (_history.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      Text('Letzte Änderungen für $childLabel',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          )),
+                      const SizedBox(height: 8),
+                      ..._history.take(3).map((event) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            '${event.code} • ${event.title} → ${kMilestoneStatusLabels[event.status] ?? event.status} • ${event.updatedAt.toLocal().day.toString().padLeft(2, '0')}.${event.updatedAt.toLocal().month.toString().padLeft(2, '0')}.${event.updatedAt.toLocal().year}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+                        );
+                      }),
+                    ],
+                  ],
+                ),
+              ),
             ),
-          );
-        }),
-      ],
+          ),
+          const SizedBox(height: 8),
+          ...phase.categories.map((category) {
+            final summary = _categorySummary(category);
+            return Card(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
+              child: ExpansionTile(
+                title: Text(
+                  category.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: phaseTheme.color,
+                  ),
+                ),
+                subtitle: Text('${category.items.length} Kriterien • $summary'),
+                childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                children: category.items.map((item) {
+                  final selectedStatus = _statusFor(item.code);
+                  final stored = _progressByCode[item.code];
+
+                  return Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                margin:
+                                    const EdgeInsets.only(top: 6, right: 10),
+                                decoration: BoxDecoration(
+                                  color: _statusColor(theme, selectedStatus),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${item.code}  ${item.title}',
+                                      style:
+                                          theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(item.description),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children:
+                                kMilestoneStatusLabels.entries.map((entry) {
+                              final isSelected = selectedStatus == entry.key;
+                              return ChoiceChip(
+                                selected: isSelected,
+                                label: Text(entry.value),
+                                onSelected: (_) =>
+                                    _setMilestoneStatus(item, entry.key),
+                              );
+                            }).toList(),
+                          ),
+                          if (stored != null &&
+                              stored.updatedAt.millisecondsSinceEpoch > 0) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Zuletzt aktualisiert: ${stored.updatedAt.toLocal().day.toString().padLeft(2, '0')}.${stored.updatedAt.toLocal().month.toString().padLeft(2, '0')}.${stored.updatedAt.toLocal().year}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
 }
-

@@ -39,8 +39,9 @@ class WeeklyPlannerController extends ChangeNotifier {
 
   int get chaosDayCount => weekPlans.where((plan) => plan.isChaosDay).length;
 
-  int get freezerItemsCount =>
-      _plansByDateKey.values.where((plan) => (plan.leftoverCode ?? '').isNotEmpty).length;
+  int get freezerItemsCount => _plansByDateKey.values
+      .where((plan) => (plan.leftoverCode ?? '').isNotEmpty)
+      .length;
 
   int weekConflictCount() {
     var count = 0;
@@ -81,7 +82,7 @@ class WeeklyPlannerController extends ChangeNotifier {
 
     final tips = <String>[
       'Vor dem Salzen eine Baby-Portion entnehmen.',
-      'Gemuese weich garen und in greifbare Sticks schneiden.',
+      'Gemüse weich garen und in greifbare Sticks schneiden.',
     ];
 
     final hasBabyOptions = recipe.ingredients.any(
@@ -93,7 +94,7 @@ class WeeklyPlannerController extends ChangeNotifier {
     }
 
     if (recipe.hideVegetables) {
-      tips.add('Fuer Babys Gemuese nicht verstecken, sondern sichtbar anbieten.');
+      tips.add('Für Babys Gemüse nicht verstecken, sondern sichtbar anbieten.');
     }
 
     return tips;
@@ -193,7 +194,8 @@ class WeeklyPlannerController extends ChangeNotifier {
   }
 
   void moveToWeek(DateTime newWeekStart) {
-    _weekStart = DateTime(newWeekStart.year, newWeekStart.month, newWeekStart.day);
+    _weekStart =
+        DateTime(newWeekStart.year, newWeekStart.month, newWeekStart.day);
     _ensureWeekPlans();
     notifyListeners();
   }
@@ -207,8 +209,10 @@ class WeeklyPlannerController extends ChangeNotifier {
 
   void replaceWeekPlans(List<DayPlan> plans, {bool notify = true}) {
     for (final plan in plans) {
-      final normalizedDate = DateTime(plan.date.year, plan.date.month, plan.date.day);
-      _plansByDateKey[_dateKey(normalizedDate)] = plan.copyWith(date: normalizedDate);
+      final normalizedDate =
+          DateTime(plan.date.year, plan.date.month, plan.date.day);
+      _plansByDateKey[_dateKey(normalizedDate)] =
+          plan.copyWith(date: normalizedDate);
     }
 
     _ensureWeekPlans();
@@ -258,7 +262,8 @@ class WeeklyPlannerController extends ChangeNotifier {
   Recipe? _findChaosReplacement({String? excludeRecipeId}) {
     final express = _recipes.where((recipe) {
       final title = recipe.title.toLowerCase();
-      final fastEnough = recipe.durationMinutes > 0 && recipe.durationMinutes < 15;
+      final fastEnough =
+          recipe.durationMinutes > 0 && recipe.durationMinutes < 15;
       final pantryHint = title.contains('vorrat') ||
           title.contains('pasta') ||
           title.contains('nudel') ||

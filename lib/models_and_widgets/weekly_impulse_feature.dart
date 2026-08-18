@@ -158,9 +158,10 @@ class WeeklyImpulseCommunityPost {
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       seedLikeCount: json['seed_like_count'] as int? ?? 0,
-      seedComments: (json['seed_comments'] as List<dynamic>? ?? const <dynamic>[])
-          .map((item) => item.toString())
-          .toList(),
+      seedComments:
+          (json['seed_comments'] as List<dynamic>? ?? const <dynamic>[])
+              .map((item) => item.toString())
+              .toList(),
       viewerHasLiked: json['viewer_has_liked'] as bool? ?? false,
     );
   }
@@ -199,8 +200,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   Set<String> _hiddenPostIds = <String>{};
   Set<String> _reportedPostIds = <String>{};
   Map<String, String> _reportReasonByPostId = <String, String>{};
-  Map<String, List<String>> _extraCommentsByPostId =
-      <String, List<String>>{};
+  Map<String, List<String>> _extraCommentsByPostId = <String, List<String>>{};
   String? _selectedResonance;
   bool _isLoaded = false;
 
@@ -241,14 +241,14 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   Future<void> _restoreLocalState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final liked = prefs.getStringList('$_prefsPrefix.liked') ??
-          const <String>[];
-      final saved = prefs.getStringList('$_prefsPrefix.saved') ??
-          const <String>[];
-      final hidden = prefs.getStringList('$_prefsPrefix.hidden') ??
-          const <String>[];
-      final reported = prefs.getStringList('$_prefsPrefix.reported') ??
-          const <String>[];
+      final liked =
+          prefs.getStringList('$_prefsPrefix.liked') ?? const <String>[];
+      final saved =
+          prefs.getStringList('$_prefsPrefix.saved') ?? const <String>[];
+      final hidden =
+          prefs.getStringList('$_prefsPrefix.hidden') ?? const <String>[];
+      final reported =
+          prefs.getStringList('$_prefsPrefix.reported') ?? const <String>[];
       final rawReportReasons = prefs.getString('$_prefsPrefix.reportReasons');
       final resonance = prefs.getString('$_prefsPrefix.resonance');
       final rawComments = prefs.getString('$_prefsPrefix.comments');
@@ -311,9 +311,11 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   Future<void> _persistState() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('$_prefsPrefix.liked', _likedPostIds.toList());
-    await prefs.setStringList('$_prefsPrefix.saved', _savedCompanionIds.toList());
+    await prefs.setStringList(
+        '$_prefsPrefix.saved', _savedCompanionIds.toList());
     await prefs.setStringList('$_prefsPrefix.hidden', _hiddenPostIds.toList());
-    await prefs.setStringList('$_prefsPrefix.reported', _reportedPostIds.toList());
+    await prefs.setStringList(
+        '$_prefsPrefix.reported', _reportedPostIds.toList());
     await prefs.setString(
       '$_prefsPrefix.reportReasons',
       jsonEncode(_reportReasonByPostId),
@@ -356,7 +358,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
           durationLabel: companion.durationLabel,
           formatLabel: companion.formatLabel,
           icon: _iconForCompanion(companion.formatLabel, entry.key),
-          accentColor: _colorForCompanion(companion.formatLabel, accentColor, entry.key),
+          accentColor:
+              _colorForCompanion(companion.formatLabel, accentColor, entry.key),
         );
       }).toList();
     }
@@ -670,7 +673,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        'Fachbeitraege sind moeglich. Ein verifiziertes Fach-Badge wird jedoch nur für gepruefte Profile vergeben.',
+                        'Fachbeiträge sind möglich. Ein verifiziertes Fach-Badge wird jedoch nur für geprüfte Profile vergeben.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -758,7 +761,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
               Text(post.title, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 6),
               Text(
-                'Kommentare und Rueckmeldungen',
+                'Kommentare und Rückmeldungen',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -767,13 +770,12 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Text(
-                    'Noch keine Kommentare. Du kannst die erste hilfreiche Rueckmeldung hinterlassen.',
+                    'Noch keine Kommentare. Du kannst die erste hilfreiche Rückmeldung hinterlassen.',
                   ),
                 )
               else
@@ -812,7 +814,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: () async {
-                    final sent = await _addComment(post.id, commentController.text);
+                    final sent =
+                        await _addComment(post.id, commentController.text);
                     if (!sent || !context.mounted) {
                       return;
                     }
@@ -840,9 +843,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
         ? post.seedComments.length
         : post.seedComments.length +
             (_extraCommentsByPostId[post.id]?.length ?? 0);
-    final isLiked = post.isRemote
-        ? post.viewerHasLiked
-        : _likedPostIds.contains(post.id);
+    final isLiked =
+        post.isRemote ? post.viewerHasLiked : _likedPostIds.contains(post.id);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -914,7 +916,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 children: [
                                   Text(
                                     post.authorName,
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -948,7 +951,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 color: const Color(0xFF0F766E),
                                 icon: Icons.verified_rounded,
                               ),
-                            if (!post.verifiedExpert && post.role == _roleEducator)
+                            if (!post.verifiedExpert &&
+                                post.role == _roleEducator)
                               const _RoleBadge(
                                 label: 'Fachbeitrag ohne Badge',
                                 color: Color(0xFFB45309),
@@ -1040,9 +1044,12 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 Navigator.of(context).pop();
                                 await _showCommentsSheet(post);
                               },
-                              icon: const Icon(Icons.mode_comment_outlined, size: 17),
+                              icon: const Icon(Icons.mode_comment_outlined,
+                                  size: 17),
                               label: Text(
-                                compact ? 'Komm. ($commentCount)' : 'Kommentare ($commentCount)',
+                                compact
+                                    ? 'Komm. ($commentCount)'
+                                    : 'Kommentare ($commentCount)',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1138,7 +1145,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     maxLines: 4,
                     decoration: const InputDecoration(
                       labelText: 'Optionaler Hinweis',
-                      hintText: 'Kurz erklären, was für dich problematisch war.',
+                      hintText:
+                          'Kurz erklären, was für dich problematisch war.',
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1222,9 +1230,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Text(
@@ -1265,7 +1272,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                   ),
                                 ),
                                 _RoleBadge(
-                                  label: isReported ? 'Gemeldet' : 'Ausgeblendet',
+                                  label:
+                                      isReported ? 'Gemeldet' : 'Ausgeblendet',
                                   color: isReported
                                       ? const Color(0xFFB45309)
                                       : const Color(0xFF64748B),
@@ -1280,7 +1288,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                               '${post.authorName}  •  ${post.role}',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
-                            if (reportReason != null && reportReason.isNotEmpty) ...[
+                            if (reportReason != null &&
+                                reportReason.isNotEmpty) ...[
                               const SizedBox(height: 10),
                               Text(
                                 'Grund: $reportReason',
@@ -1391,9 +1400,9 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     final companionCount = _buildCompanionImpulses(accentColor).length;
     final communityCount = _buildCommunityPosts().length;
     final heroHeadline =
-      widget.impulse.heroHeadline ?? 'Dein Themenraum für diese Woche';
+        widget.impulse.heroHeadline ?? 'Dein Themenraum für diese Woche';
     final heroDescription = widget.impulse.heroDescription ??
-      'Nicht nur ein einzelner Impuls: Du bekommst einen klaren Wochenfokus, kurze Praxisformate und Raum für hilfreiche Erfahrungen aus der Community.';
+        'Nicht nur ein einzelner Impuls: Du bekommst einen klaren Wochenfokus, kurze Praxisformate und Raum für hilfreiche Erfahrungen aus der Community.';
 
     return Container(
       width: double.infinity,
@@ -1707,9 +1716,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       role: 'Wochenthema',
       verifiedExpert: false,
       verificationLabel: '',
-      title: prompt?.title.isNotEmpty == true
-          ? prompt!.title
-          : 'Frage der Woche',
+      title:
+          prompt?.title.isNotEmpty == true ? prompt!.title : 'Frage der Woche',
       body: prompt?.body.isNotEmpty == true
           ? prompt!.body
           : 'Welche ruhige Formulierung hat euch in einer angespannten Situation zuletzt geholfen?',
@@ -1873,15 +1881,15 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
           ),
         ...posts.where((post) => !_hiddenPostIds.contains(post.id)).map((post) {
           final likeCount = post.isRemote
-            ? post.seedLikeCount
-            : post.seedLikeCount + (_likedPostIds.contains(post.id) ? 1 : 0);
+              ? post.seedLikeCount
+              : post.seedLikeCount + (_likedPostIds.contains(post.id) ? 1 : 0);
           final commentCount = post.isRemote
-            ? post.seedComments.length
-            : post.seedComments.length +
-              (_extraCommentsByPostId[post.id]?.length ?? 0);
+              ? post.seedComments.length
+              : post.seedComments.length +
+                  (_extraCommentsByPostId[post.id]?.length ?? 0);
           final isLiked = post.isRemote
-            ? post.viewerHasLiked
-            : _likedPostIds.contains(post.id);
+              ? post.viewerHasLiked
+              : _likedPostIds.contains(post.id);
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -1970,7 +1978,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         itemBuilder: (context) => const [
                           PopupMenuItem<String>(
                             value: 'hide',
-                            child: Text('Fuer mich ausblenden'),
+                            child: Text('Für mich ausblenden'),
                           ),
                           PopupMenuItem<String>(
                             value: 'report',
@@ -2179,5 +2187,4 @@ class _CommunityPost {
     this.viewerHasLiked = false,
     this.isRemote = false,
   });
-
 }

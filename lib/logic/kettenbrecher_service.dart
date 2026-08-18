@@ -60,7 +60,8 @@ class KettenbrecherService {
       baseRecipe: baseRecipe,
     );
 
-    final prefersCreamy = prompt.contains('cremig') || prompt.contains('smooth');
+    final prefersCreamy =
+        prompt.contains('cremig') || prompt.contains('smooth');
     final avoidsPieces = prompt.contains('keine stuecke') ||
         prompt.contains('ohne stuecke') ||
         prompt.contains('nicht sichtbar') ||
@@ -115,8 +116,10 @@ class KettenbrecherService {
         if (key.isEmpty) continue;
 
         mapping[key] = AiTarnStep(
-          hiddenIngredient: step['hiddenIngredient']?.toString() ?? _capitalize(key),
-          camouflageMethod: step['camouflageMethod']?.toString() ?? 'fein einarbeiten',
+          hiddenIngredient:
+              step['hiddenIngredient']?.toString() ?? _capitalize(key),
+          camouflageMethod:
+              step['camouflageMethod']?.toString() ?? 'fein einarbeiten',
           textureHint: step['textureHint']?.toString() ?? 'glatt einruehren',
           colorHint: step['colorHint']?.toString() ?? 'farblich angleichen',
         );
@@ -140,7 +143,8 @@ class KettenbrecherService {
     }
   }
 
-  List<AiTarnStep> visibleTarnSteps(GuerillaRecipe recipe, double levelPercent) {
+  List<AiTarnStep> visibleTarnSteps(
+      GuerillaRecipe recipe, double levelPercent) {
     final all = recipe.aiTarnMapping.values.toList();
     if (all.isEmpty || levelPercent <= 0) return const [];
 
@@ -184,7 +188,8 @@ class KettenbrecherService {
     required Map<String, List<String>> childAllergiesByUserId,
     required Map<String, List<String>> childPreferencesByUserId,
   }) {
-    final normalizedStart = DateTime(weekStart.year, weekStart.month, weekStart.day);
+    final normalizedStart =
+        DateTime(weekStart.year, weekStart.month, weekStart.day);
     final fairnessBias = <String, int>{
       for (final member in memberUserIds)
         member: _restrictionScore(
@@ -193,7 +198,9 @@ class KettenbrecherService {
         ),
     };
 
-    final cookCount = <String, int>{for (final member in memberUserIds) member: 0};
+    final cookCount = <String, int>{
+      for (final member in memberUserIds) member: 0
+    };
     final history = <String, Map<String, String>>{};
 
     for (var weekIndex = 0; weekIndex < weeksAhead; weekIndex++) {
@@ -220,7 +227,8 @@ class KettenbrecherService {
     }
 
     final currentWeekKey = DateFormat('yyyy-MM-dd').format(normalizedStart);
-    final currentWeekPlanner = history[currentWeekKey] ?? const <String, String>{};
+    final currentWeekPlanner =
+        history[currentWeekKey] ?? const <String, String>{};
 
     return HubPlanningResult(
       currentWeekPlanner: currentWeekPlanner,
@@ -265,7 +273,8 @@ class KettenbrecherService {
       if (!profile.isTrustedBy(requesterUserId)) return;
 
       final distance = distanceMeters(senderLocation, location);
-      final effectiveRadius = math.min(radiusMeters, profile.maxSupportRadiusMeters);
+      final effectiveRadius =
+          math.min(radiusMeters, profile.maxSupportRadiusMeters);
       if (distance <= effectiveRadius) {
         responders.add(userId);
       }
@@ -287,7 +296,8 @@ class KettenbrecherService {
       'radiusMeters': radiusMeters,
       'createdAt': sos.createdAt.toIso8601String(),
       'recipientUserIds': recipientUserIds,
-      'message': 'SOS in der Nachbarschaft: Eine Familie braucht jetzt Unterstuetzung',
+      'message':
+          'SOS in der Nachbarschaft: Eine Familie braucht jetzt Unterstützung',
     };
   }
 
@@ -300,7 +310,9 @@ class KettenbrecherService {
 
     final haversine = math.pow(math.sin(dLat / 2), 2) +
         math.cos(lat1) * math.cos(lat2) * math.pow(math.sin(dLon / 2), 2);
-    final c = 2 * math.atan2(math.sqrt(haversine as num), math.sqrt(1 - (haversine as num)));
+    final c = 2 *
+        math.atan2(
+            math.sqrt(haversine as num), math.sqrt(1 - (haversine as num)));
     return earthRadius * c;
   }
 
@@ -409,8 +421,9 @@ class KettenbrecherService {
       return trimmed;
     }
 
-    final fenced = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```', caseSensitive: false)
-        .firstMatch(input);
+    final fenced =
+        RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```', caseSensitive: false)
+            .firstMatch(input);
     if (fenced != null) {
       return fenced.group(1)?.trim();
     }

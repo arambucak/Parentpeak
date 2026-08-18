@@ -617,7 +617,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Gemeinsam lesen — auch wenn das Kind schon selbst lesen kann',
-          'Ueber den Tag sprechen: nicht nur "Wie war die Schule?"'
+          'Über den Tag sprechen: nicht nur "Wie war die Schule?"'
         ]),
     DevDomain(
         id: 'denken',
@@ -660,7 +660,7 @@ class DevelopmentQuestionBank {
         color: Color(0xFF8B5CF6),
         description: 'Pflichten, Zeitgefühl & Eigenorganisation',
         questions: [
-          'Uebernimmt dein Kind regelmaessig Pflichten im Haushalt?',
+          'Übernimmt dein Kind regelmäßig Pflichten im Haushalt?',
           'Kann dein Kind seine Schulsachen selbst organisieren?',
           'Hat dein Kind ein Zeitgefühl (Absprachen einhalten)?',
           'Kann dein Kind alleine zur Schule gehen?',
@@ -681,10 +681,10 @@ class DevelopmentQuestionBank {
         title: 'Körper & Gesundheit',
         emoji: '\u{1F3C3}',
         color: Color(0xFF0EA5E9),
-        description: 'Pubertaet, Körperbild & Bewegung',
+        description: 'Pubertät, Körperbild & Bewegung',
         questions: [
-          'Bewegt sich dein Kind regelmaessig (Sport, Fahrrad, draußen)?',
-          'Hat dein Kind ein gesundes Verhaeltnis zu seinem Körper?',
+          'Bewegt sich dein Kind regelmäßig (Sport, Fahrrad, draußen)?',
+          'Hat dein Kind ein gesundes Verhältnis zu seinem Körper?',
           'Schlaeft dein Kind ausreichend (8-10 Stunden)?',
           'Ernaehrt sich dein Kind weitgehend gesund?',
           'Achtet dein Kind auf Körperhygiene selbstständig?'
@@ -741,7 +741,7 @@ class DevelopmentQuestionBank {
           'Beginnt dein Kind eine eigene Identitaet zu entwickeln?'
         ],
         tips: [
-          'Pubertaet = Abgrenzung. Das ist gesund, nicht respektlos.',
+          'Pubertät = Abgrenzung. Das ist gesund, nicht respektlos.',
           'Zuhoren ohne sofort zu lösen — Präsenz reicht oft'
         ]),
     DevDomain(
@@ -751,7 +751,7 @@ class DevelopmentQuestionBank {
         color: Color(0xFF8B5CF6),
         description: 'Selbstorganisation, Geld & Entscheidungen',
         questions: [
-          'Uebernimmt dein Kind Verantwortung für eigene Aufgaben?',
+          'Übernimmt dein Kind Verantwortung für eigene Aufgaben?',
           'Kann dein Kind mit Geld umgehen (Taschengeld)?',
           'Trifft dein Kind eigene Entscheidungen und traegt Konsequenzen?',
           'Kann dein Kind alleine unterwegs sein (Stadt, OEPNV)?',
@@ -774,7 +774,7 @@ class DevelopmentQuestionBank {
         color: Color(0xFF0EA5E9),
         description: 'Körper, Schlaf, Ernaehrung & Bewegung',
         questions: [
-          'Bewegt sich dein Teenager regelmaessig?',
+          'Bewegt sich dein Teenager regelmäßig?',
           'Hat dein Teenager einen gesunden Schlafrhythmus?',
           'Ernaehrt sich dein Teenager bewusst?',
           'Konsumiert dein Teenager verantwortungsvoll (kein Missbrauch)?',
@@ -782,7 +782,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Nicht kontrollieren sondern vorleben',
-          'Ueber psychische Gesundheit offen sprechen — entstigmatisieren'
+          'Über psychische Gesundheit offen sprechen — entstigmatisieren'
         ]),
     DevDomain(
         id: 'sprache',
@@ -816,7 +816,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Zukunftsplaene müssen nicht fest sein — Orientierung reicht',
-          'Praktische Erfahrungen ermoeglichen: Praktika, Nebenjobs, Ehrenamt'
+          'Praktische Erfahrungen ermöglichen: Praktika, Nebenjobs, Ehrenamt'
         ]),
     DevDomain(
         id: 'sozial',
@@ -842,11 +842,11 @@ class DevelopmentQuestionBank {
         color: Color(0xFF8B5CF6),
         description: 'Lebenskompetenz, Finanzen & Verantwortung',
         questions: [
-          'Kann dein Teenager eigenstaendig einen Haushalt fuehren (kochen, waschen)?',
+          'Kann dein Teenager eigenständig einen Haushalt führen (kochen, waschen)?',
           'Geht dein Teenager verantwortungsvoll mit Geld um?',
-          'Kann dein Teenager Behoerdengaenge oder Arzttermine alleine machen?',
+          'Kann dein Teenager Behördengänge oder Arzttermine alleine machen?',
           'Hält dein Teenager Verpflichtungen zuverlässig ein?',
-          'Ist dein Teenager bereit für ein zunehmend eigenstaendiges Leben?'
+          'Ist dein Teenager bereit für ein zunehmend eigenständiges Leben?'
         ],
         tips: [
           'Lebenskompetenzen aktiv lehren: Kochen, Steuererklärung, Waschmaschine',

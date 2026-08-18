@@ -246,7 +246,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             },
             {
               'tip':
-                  'Ball rollen: Setzt euch gegenueber auf den Boden und rollt einen Ball hin und her.',
+                  'Ball rollen: Setzt euch gegenüber auf den Boden und rollt einen Ball hin und her.',
               'materials': 'Weicher Ball',
               'duration': '10 Min'
             },
@@ -385,7 +385,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 },
                 {
                   'tip':
-                      'Familien-Quiz: Jeder schreibt 5 Fragen ueber sich — wer kennt wen am besten?',
+                      'Familien-Quiz: Jeder schreibt 5 Fragen über sich — wer kennt wen am besten?',
                   'materials': 'Papier, Stifte',
                   'duration': '30 Min'
                 },
