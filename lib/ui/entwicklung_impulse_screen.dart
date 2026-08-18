@@ -1672,8 +1672,9 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       if (questions.isEmpty) continue;
       int answered = 0;
       int positive = 0;
-      for (final q in questions) {
-        final answer = _devAnswers[q];
+      for (int i = 0; i < questions.length; i++) {
+        final key = '${domain.id}_$i';
+        final answer = _devAnswers[key];
         if (answer != null) {
           answered++;
           if (answer >= 1) positive++;

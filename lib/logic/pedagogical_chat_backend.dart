@@ -245,12 +245,12 @@ class PedagogicalChatBackend {
         ..add({'role': 'assistant', 'content': response})
         ..add({
           'role': 'user',
-          'content':
-              'Bitte antworte nicht mit einer allgemeinen Grenzformel. '
+          'content': 'Bitte antworte nicht mit einer allgemeinen Grenzformel. '
               'Antworte stattdessen konkret, empathisch und loesungsorientiert für Eltern im Alltag.',
         });
       final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
-      if (!_looksLikeProviderError(retryResponse) && retryResponse.trim().isNotEmpty) {
+      if (!_looksLikeProviderError(retryResponse) &&
+          retryResponse.trim().isNotEmpty) {
         response = retryResponse;
       }
     }
@@ -263,7 +263,8 @@ class PedagogicalChatBackend {
           'content': _contextRetentionRetryInstruction(contextAnchors),
         });
       final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
-      if (!_looksLikeProviderError(retryResponse) && retryResponse.trim().isNotEmpty) {
+      if (!_looksLikeProviderError(retryResponse) &&
+          retryResponse.trim().isNotEmpty) {
         response = retryResponse;
       }
     }
@@ -273,7 +274,8 @@ class PedagogicalChatBackend {
         ..add({'role': 'assistant', 'content': response})
         ..add({'role': 'user', 'content': _qualityRetryInstruction(topicMode)});
       final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
-      if (!_looksLikeProviderError(retryResponse) && retryResponse.trim().isNotEmpty) {
+      if (!_looksLikeProviderError(retryResponse) &&
+          retryResponse.trim().isNotEmpty) {
         response = retryResponse;
       }
     }
@@ -362,7 +364,7 @@ class PedagogicalChatBackend {
         : 'Stelle keine Rueckfrage, wenn die Lage für konkrete Schritte ausreicht.';
     final continuationRule = historyAnchors.isEmpty
         ? 'Wenn kein Verlaufskontext vorliegt, starte ohne Rueckblick und bleibe beim aktuellen Anliegen.'
-        : 'Nutze den Verlauf aktiv und knuepfe natuerlich an fruehere Themen an (z. B. Name, Alter, Muster). Wenn es nach laengerer Pause klingt, frage sanft nach dem aktuellen Stand.';
+        : 'Nutze den Verlauf aktiv und knüpfe natürlich an frühere Themen an (z. B. Name, Alter, Muster). Wenn es nach längerer Pause klingt, frage sanft nach dem aktuellen Stand.';
 
     return '''
 Themenmodus: $topicMode
@@ -478,8 +480,8 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
     final lower = message.toLowerCase();
     final anchors = <String>[];
 
-    final ageMatch = RegExp(r'\b\d{1,2}\s*(jahre?|jahr|monate?|monat)\b')
-        .firstMatch(lower);
+    final ageMatch =
+        RegExp(r'\b\d{1,2}\s*(jahre?|jahr|monate?|monat)\b').firstMatch(lower);
     if (ageMatch != null) {
       anchors.add(ageMatch.group(0)!);
     }
@@ -590,15 +592,18 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
       final sentenceCount = RegExp(r'[.!?]+').allMatches(p).length;
       return sentenceCount > 4;
     });
-    return hasGeneric || !hasEmpathySignal || tooManyQuestions || hasOverlongParagraph;
+    return hasGeneric ||
+        !hasEmpathySignal ||
+        tooManyQuestions ||
+        hasOverlongParagraph;
   }
 
   String _qualityRetryInstruction(String topicMode) {
     return 'Bitte antworte jetzt deutlich konkreter und authentischer für den Modus "$topicMode": '
-      '1) Empathie zuerst, 2) genau ein GfK-Schritt im Fokus, 3) 1-2 Optionen in Kann-Form, 4) genau eine offene Frage. '
-      'Kurze mobile Lesbarkeit: max. 3-4 Saetze pro Absatz. '
-      'Gefühle/Bedürfnisse als Vermutung formulieren. '
-      'Keine Textwand, keine Grenzfloskeln, kein "Du musst".';
+        '1) Empathie zuerst, 2) genau ein GfK-Schritt im Fokus, 3) 1-2 Optionen in Kann-Form, 4) genau eine offene Frage. '
+        'Kurze mobile Lesbarkeit: max. 3-4 Saetze pro Absatz. '
+        'Gefühle/Bedürfnisse als Vermutung formulieren. '
+        'Keine Textwand, keine Grenzfloskeln, kein "Du musst".';
   }
 
   bool _looksLikeDefensiveBoundaryResponse(String input) {
@@ -781,9 +786,9 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
 
   String _emotionalSupportResponse(String message) {
     return 'Das klingt gerade richtig schwer. Du musst da nicht stark sein und du bist damit nicht allein. 🫶\n\n'
-      'Wenn du magst, machen wir es ganz klein: einmal ausatmen, ein Glas Wasser, dann nur den naechsten schwierigen Moment anschauen.\n\n'
-      'Was war direkt davor los - nur der Ablauf, ohne Bewertung?\n\n'
-      'Hinweis: Ich bin eine unterstuetzende KI und kein Ersatz für therapeutische Beratung. Wenn du menschliche Hilfe möchtest, nenne ich dir gern passende Anlaufstellen.';
+        'Wenn du magst, machen wir es ganz klein: einmal ausatmen, ein Glas Wasser, dann nur den naechsten schwierigen Moment anschauen.\n\n'
+        'Was war direkt davor los - nur der Ablauf, ohne Bewertung?\n\n'
+        'Hinweis: Ich bin eine unterstuetzende KI und kein Ersatz für therapeutische Beratung. Wenn du menschliche Hilfe möchtest, nenne ich dir gern passende Anlaufstellen.';
   }
 
   String _providerUnavailableResponse({String? rawError}) {
@@ -791,13 +796,13 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
     const base = 'Die KI-Beratung ist aktuell nicht verfügbar. '
         'Bitte versuche es gleich erneut.';
 
-    final withReason = reason == null ? base : '$base\n\nMoeglicher Grund: $reason';
+    final withReason =
+        reason == null ? base : '$base\n\nMoeglicher Grund: $reason';
 
     if (kDebugMode && rawError != null && rawError.trim().isNotEmpty) {
       final compact = rawError.replaceAll(RegExp(r'\s+'), ' ').trim();
-      final shortened = compact.length > 240
-          ? '${compact.substring(0, 240)}...'
-          : compact;
+      final shortened =
+          compact.length > 240 ? '${compact.substring(0, 240)}...' : compact;
       return '$withReason\n\nDebug: $shortened';
     }
 
@@ -843,5 +848,4 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
 
     return 'Externer Dienst antwortet aktuell nicht stabil.';
   }
-
 }
