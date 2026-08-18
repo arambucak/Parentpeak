@@ -18,6 +18,9 @@ import 'package:parentpeak/ui/event_detail_screen.dart';
 import 'package:parentpeak/ui/event_detail_page.dart';
 import 'package:parentpeak/ui/event_invitations_screen.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
+import 'package:parentpeak/ui/widgets/native_ad_slot.dart';
+import 'package:parentpeak/services/events_limit_service.dart';
+import 'package:parentpeak/ui/widgets/premium_gate.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
@@ -678,6 +681,49 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     }
   }
 
+  // ─── Feed mit Ads ──────────────────────────────────────────────────────────
+
+  List<Widget> _buildFeedWithAds(
+      List<_UnifiedFeedItem> feed, (double, double) coords) {
+    final widgets = <Widget>[];
+    for (var i = 0; i < feed.length; i++) {
+      // Ad-Slot einfügen (1 pro 5 Items, ab Position 3)
+      if (NativeAdSlot.shouldInsertAt(i)) {
+        widgets.add(const Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: NativeAdSlot(context_hint: 'events'),
+        ));
+      }
+
+      final item = feed[i];
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: _UnifiedEventCard(
+          item: item,
+          distanceKm: _distanceKmForDisplay(item, coords.$1, coords.$2),
+          onTap: () {
+            if (item.source == _FeedSource.community && item.eventId != null) {
+              final event = _findCommunityEventById(item.eventId!);
+              if (event == null) {
+                _showAiDetails(item);
+                return;
+              }
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EventDetailScreen(event: event),
+                ),
+              );
+              return;
+            }
+            _showAiDetails(item);
+          },
+        ),
+      ));
+    }
+    return widgets;
+  }
+
   MeetupEvent? _findCommunityEventById(String id) {
     for (final event in _communityEvents) {
       if (event.id == id) return event;
@@ -926,36 +972,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                       ),
                     )
                   else
-                    ...feed.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _UnifiedEventCard(
-                          item: item,
-                          distanceKm:
-                              _distanceKmForDisplay(item, coords.$1, coords.$2),
-                          onTap: () {
-                            if (item.source == _FeedSource.community &&
-                                item.eventId != null) {
-                              final event =
-                                  _findCommunityEventById(item.eventId!);
-                              if (event == null) {
-                                _showAiDetails(item);
-                                return;
-                              }
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      EventDetailScreen(event: event),
-                                ),
-                              );
-                              return;
-                            }
-                            _showAiDetails(item);
-                          },
-                        ),
-                      ),
-                    ),
+                    ..._buildFeedWithAds(feed, coords),
                 ],
               ),
             ),
@@ -1445,6 +1462,26 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   void _showAiDetails(_UnifiedFeedItem item) {
+    // Events-Limit prüfen (nur wenn Monetarisierung aktiv)
+    if (EventsLimitService.instance.isLimitReached) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('Events & Aktivitäten')),
+            body: const PremiumGate(
+              featureLabel: 'Events',
+              gateType: PremiumGateType.events,
+              child: SizedBox.shrink(),
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+    // View registrieren
+    EventsLimitService.instance.recordEventView();
+
     // Finde das originale DiscoveredEvent
     final discoveredEvent =
         _aiEvents.where((e) => e.id == item.eventId).firstOrNull;
