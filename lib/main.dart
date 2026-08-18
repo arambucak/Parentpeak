@@ -30,6 +30,7 @@ import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/services/premium_service.dart';
 import 'package:parentpeak/services/events_limit_service.dart';
 import 'package:parentpeak/services/provider_package_service.dart';
+import 'package:parentpeak/services/development_report_limit_service.dart';
 import 'package:parentpeak/logic/theme_service.dart';
 import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
@@ -141,6 +142,7 @@ Future<void> _startApp() async {
   await PremiumService.instance.initialize();
   await EventsLimitService.instance.initialize();
   await ProviderPackageService.instance.initialize();
+  await DevelopmentReportLimitService.instance.initialize();
 
   // Stripe publishable key (from .env or compile-time dart-define).
   final stripeKey = APIConfig.getStripePublishableKey()?.trim();

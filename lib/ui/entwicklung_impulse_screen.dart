@@ -17,6 +17,11 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:parentpeak/ui/widgets/eltern_wissen_widget.dart';
 import 'package:parentpeak/ui/widgets/expert_bibliothek_section.dart';
+import 'package:parentpeak/ui/widgets/development_progress_chart.dart';
+import 'package:parentpeak/logic/development_pdf_service.dart';
+import 'package:parentpeak/services/development_report_limit_service.dart';
+import 'package:parentpeak/services/premium_service.dart';
+import 'package:parentpeak/config/monetization_config.dart';
 
 /// Impulse & Entwicklung — vereinfacht, elternfreundlich, modern.
 ///
@@ -995,6 +1000,29 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
   Future<void> _generateAIReport() async {
     if (_childProfile == null) return;
+
+    // Report-Limit prüfen
+    final limitService = DevelopmentReportLimitService.instance;
+    if (limitService.isLimitReached) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Dein kostenloser Bericht für dieses Jahr wurde bereits erstellt. '
+            '${limitService.nextFreeReportInfo}',
+          ),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Premium',
+            onPressed: () {
+              // TODO: Open Premium sheet
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() => _generatingReport = true);
     final p = _childProfile!;
     final sb = StringBuffer();
@@ -1041,6 +1069,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       historyRaw.insert(0, entry);
       if (historyRaw.length > 12) historyRaw.removeRange(12, historyRaw.length);
       await prefs.setStringList('dev.report_history', historyRaw);
+      // Report-Limit tracken
+      await DevelopmentReportLimitService.instance.recordReportCreated();
       if (mounted)
         setState(() {
           _aiReport = text;
@@ -1607,34 +1637,108 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   }
 
   Widget _buildReportCard(ThemeData theme) {
-    return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.15))),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Text('\u{1F4CB}', style: TextStyle(fontSize: 20)),
-            const SizedBox(width: 10),
+    return Column(children: [
+      Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.15))),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Text('\u{1F4CB}', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                    AppStringsManager.getString(languageService.currentLanguage,
+                        'pedagogical_assessment'),
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w800)),
+              ),
+              // PDF Export button (Premium)
+              if (PremiumService.instance.isPremium ||
+                  !MonetizationConfig.enabled)
+                IconButton(
+                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),
+                  tooltip: 'Als PDF speichern',
+                  color: const Color(0xFFDC2626),
+                  onPressed: _exportPdf,
+                ),
+            ]),
+            const SizedBox(height: 4),
             Text(
                 AppStringsManager.getString(
-                    languageService.currentLanguage, 'pedagogical_assessment'),
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w800))
-          ]),
-          const SizedBox(height: 4),
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'ai_based_report'),
-              style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
-          const SizedBox(height: 14),
-          Text(_aiReport ?? '',
-              style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
-        ]));
+                    languageService.currentLanguage, 'ai_based_report'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
+            const SizedBox(height: 14),
+            Text(_aiReport ?? '',
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
+          ])),
+      // Entwicklungs-Verlauf-Chart (Premium oder Beta)
+      if (PremiumService.instance.isPremium || !MonetizationConfig.enabled) ...[
+        const SizedBox(height: 16),
+        DevelopmentProgressChart(
+          currentScores: _currentDevScores(),
+          previousScores: _previousDevScores(),
+          previousDate: _previousCheckDate(),
+        ),
+      ],
+    ]);
+  }
+
+  Map<String, double> _currentDevScores() {
+    final scores = <String, double>{};
+    for (final domain in _devDomains) {
+      final questions = domain.questions;
+      if (questions.isEmpty) continue;
+      int answered = 0;
+      int positive = 0;
+      for (final q in questions) {
+        final answer = _devAnswers[q];
+        if (answer != null) {
+          answered++;
+          if (answer >= 1) positive++;
+        }
+      }
+      if (answered > 0) {
+        scores[domain.id] = positive / answered;
+      }
+    }
+    return scores;
+  }
+
+  Map<String, double>? _previousDevScores() {
+    // Laden aus dem MonthlyCardMeta (letzter gespeicherter Check)
+    // Wird beim nächsten Check verfügbar
+    return null; // TODO: Load from SharedPreferences when history exists
+  }
+
+  DateTime? _previousCheckDate() {
+    return null; // TODO: Load from SharedPreferences
+  }
+
+  Future<void> _exportPdf() async {
+    if (_childProfile == null) return;
+    final childName =
+        _childProfile!.name.isNotEmpty ? _childProfile!.name : 'Kind';
+    final ageMonths = _childProfile!.ageInMonths;
+    final years = ageMonths ~/ 12;
+    final months = ageMonths % 12;
+    final ageText =
+        months > 0 ? '$years Jahre, $months Monate' : '$years Jahre';
+
+    await DevelopmentPdfService.generateAndShow(
+      childName: childName,
+      childAge: ageText,
+      currentScores: _currentDevScores(),
+      previousScores: _previousDevScores(),
+      previousDate: _previousCheckDate(),
+      aiReportText: _aiReport,
+    );
   }
 
   // ─── TAB 3: WISSEN ────────────────────────────────────────────────────────
