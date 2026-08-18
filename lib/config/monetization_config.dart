@@ -73,7 +73,7 @@ class MonetizationConfig {
   static const int freeProviderEventsPerMonth = 3;
 
   /// Anbieter-Paket Monatspreis
-  static const double providerMonthlyPrice = 9.99;
+  static const double providerMonthlyPrice = 6.99;
 
   static const String providerPackageProductId = 'parentpeak_provider_monthly';
 
