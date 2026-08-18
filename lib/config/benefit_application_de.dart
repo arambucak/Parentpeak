@@ -13,6 +13,9 @@ class BenefitApplicationDE {
     wohngeld,
     bildungTeilhabe,
     elterngeld,
+    unterhaltsvorschuss,
+    pflegegeld,
+    eingliederungshilfe,
   ];
 
   static BenefitApplicationData? getById(String id) {
@@ -366,6 +369,204 @@ class BenefitApplicationDE {
         title: 'Einreichen + Geduld',
         description:
             'Per Post oder digital einreichen. Bearbeitungszeit variiert stark (4–12 Wochen). Tipp: Nachfragen nach 6 Wochen wenn nichts kommt.',
+      ),
+    ],
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 6. UNTERHALTSVORSCHUSS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const unterhaltsvorschuss = BenefitApplicationData(
+    benefitId: 'unterhaltsvorschuss',
+    benefitName: 'Unterhaltsvorschuss',
+    emoji: '💪',
+    countryCode: 'de',
+    responsibleAuthority: 'Jugendamt deiner Stadt/Gemeinde',
+    processingTime: '4–8 Wochen',
+    renewalNote:
+        'Kein Folgeantrag nötig. Wird automatisch bis 18 gezahlt (solange Voraussetzungen bestehen).',
+    onlineApplicationUrl: null,
+    proTip:
+        'Du kannst Unterhaltsvorschuss auch rückwirkend für 1 Monat beantragen. Also nicht warten — sofort stellen!',
+    aiTemplatePrompt:
+        'Schreibe einen kurzen sachlichen Antrag auf Unterhaltsvorschuss. Ein alleinerziehender Elternteil erhält keinen Unterhalt vom anderen Elternteil. Halte es sachlich und klar, 3-4 Sätze.',
+    documents: [
+      RequiredDocument(
+        name: 'Geburtsurkunde des Kindes',
+        whereToGet: 'Standesamt',
+      ),
+      RequiredDocument(
+        name: 'Personalausweis (Kopie)',
+      ),
+      RequiredDocument(
+        name: 'Meldebestätigung (alleinige Wohnung)',
+        whereToGet: 'Bürgeramt — zeigt dass du allein mit dem Kind wohnst',
+      ),
+      RequiredDocument(
+        name: 'Nachweis über ausbleibenden Unterhalt',
+        whereToGet:
+            'z.B. Schreiben an den Ex ohne Antwort, Unterhaltstitel, oder eigene Erklärung',
+      ),
+      RequiredDocument(
+        name: 'Vaterschaftsanerkennung oder Geburtsurkunde mit Vater',
+        whereToGet: 'Standesamt oder Jugendamt',
+        isOptional: true,
+      ),
+    ],
+    steps: [
+      ApplicationStep(
+        stepNumber: 1,
+        title: 'Jugendamt kontaktieren',
+        description:
+            'Ruf bei deinem Jugendamt an oder geh persönlich hin. Die helfen dir direkt beim Ausfüllen.',
+      ),
+      ApplicationStep(
+        stepNumber: 2,
+        title: 'Antrag ausfüllen',
+        description:
+            'Das Formular bekommst du beim Jugendamt. Manche Städte bieten es auch online als PDF an.',
+      ),
+      ApplicationStep(
+        stepNumber: 3,
+        title: 'Unterlagen einreichen',
+        description:
+            'Geburtsurkunde, Meldebestätigung und Nachweis über fehlenden Unterhalt beifügen.',
+      ),
+      ApplicationStep(
+        stepNumber: 4,
+        title: 'Bescheid abwarten',
+        description:
+            'Nach 4–8 Wochen kommt der Bescheid. Die Zahlung erfolgt monatlich rückwirkend ab Antragstellung.',
+      ),
+    ],
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 7. PFLEGEGELD
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const pflegegeld = BenefitApplicationData(
+    benefitId: 'pflegegeld',
+    benefitName: 'Pflegegeld',
+    emoji: '🫶',
+    countryCode: 'de',
+    responsibleAuthority: 'Pflegekasse (bei deiner Krankenkasse)',
+    processingTime: '4–12 Wochen (inkl. Begutachtung)',
+    renewalNote:
+        'Kein Folgeantrag. Bei Verschlechterung: Höherstufungsantrag stellen.',
+    onlineApplicationUrl: null,
+    proTip:
+        'Den Antrag formlos per Telefon stellen — ein Anruf bei der Pflegekasse reicht! Das Datum zählt für die rückwirkende Zahlung.',
+    aiTemplatePrompt:
+        'Schreibe einen kurzen formlosen Antrag auf Pflegeleistungen für ein Kind. Das Kind hat eine Behinderung/chronische Erkrankung und braucht tägliche Unterstützung. Sachlich, 3-4 Sätze.',
+    documents: [
+      RequiredDocument(
+        name: 'Formloser Antrag (reicht per Telefon oder Brief)',
+        whereToGet: 'Anruf bei deiner Krankenkasse/Pflegekasse genügt',
+      ),
+      RequiredDocument(
+        name: 'Ärztliche Unterlagen / Diagnosen',
+        whereToGet: 'Kinderarzt, Facharzt oder Krankenhaus',
+      ),
+      RequiredDocument(
+        name: 'Pflegetagebuch (2 Wochen vor Begutachtung)',
+        whereToGet: 'Vorlage von der Pflegekasse oder online',
+        isOptional: true,
+      ),
+    ],
+    steps: [
+      ApplicationStep(
+        stepNumber: 1,
+        title: 'Pflegekasse anrufen',
+        description:
+            'Ein Anruf reicht als Antrag! Sage: "Ich möchte Pflegeleistungen für mein Kind beantragen." Das Datum des Anrufs zählt.',
+      ),
+      ApplicationStep(
+        stepNumber: 2,
+        title: 'Pflegetagebuch führen (2 Wochen)',
+        description:
+            'Notiere täglich was dein Kind an Hilfe braucht: Waschen, Anziehen, Essen, Nacht, Aufsicht. Je genauer, desto besser für die Begutachtung.',
+      ),
+      ApplicationStep(
+        stepNumber: 3,
+        title: 'MD-Begutachtung (Hausbesuch)',
+        description:
+            'Der Medizinische Dienst kommt zu euch nach Hause. Zeige offen was dein Kind braucht — nicht den "guten Tag" zeigen!',
+      ),
+      ApplicationStep(
+        stepNumber: 4,
+        title: 'Bescheid + ggf. Widerspruch',
+        description:
+            'Nach 4–12 Wochen kommt der Pflegegrad-Bescheid. Bei zu niedrigem Grad: innerhalb 4 Wochen Widerspruch einlegen (kostenlos).',
+      ),
+    ],
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 8. EINGLIEDERUNGSHILFE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const eingliederungshilfe = BenefitApplicationData(
+    benefitId: 'eingliederungshilfe',
+    benefitName: 'Eingliederungshilfe',
+    emoji: '🤝',
+    countryCode: 'de',
+    responsibleAuthority:
+        'Sozialamt oder Jugendamt (je nach Art der Behinderung)',
+    processingTime: '4–12 Wochen',
+    renewalNote:
+        'Wird für einen festgelegten Zeitraum bewilligt. Rechtzeitig Folgeantrag stellen.',
+    onlineApplicationUrl: null,
+    proTip:
+        'Bei seelischer Behinderung (z.B. Autismus, ADHS) ist das Jugendamt zuständig (§35a SGB VIII). Bei körperlicher/geistiger Behinderung das Sozialamt.',
+    aiTemplatePrompt:
+        'Schreibe einen kurzen formlosen Antrag auf Eingliederungshilfe für ein Kind. Das Kind hat eine Behinderung und braucht Unterstützung für Teilhabe (z.B. Schulbegleitung, Frühförderung). Sachlich, 3-4 Sätze.',
+    documents: [
+      RequiredDocument(
+        name: 'Ärztliche Stellungnahme / Diagnose',
+        whereToGet:
+            'Kinderarzt, SPZ (Sozialpädiatrisches Zentrum) oder Facharzt',
+      ),
+      RequiredDocument(
+        name: 'Formloser Antrag auf Eingliederungshilfe',
+        whereToGet: 'Eigener Brief an das Sozialamt/Jugendamt',
+      ),
+      RequiredDocument(
+        name: 'Entwicklungsbericht (Kita/Schule)',
+        whereToGet: 'Erzieher*in oder Lehrkraft schreibt einen kurzen Bericht',
+        isOptional: true,
+      ),
+      RequiredDocument(
+        name: 'Stellungnahme der Schule (bei Schulbegleitung)',
+        whereToGet: 'Schulleitung oder Klassenlehrer*in',
+        isOptional: true,
+      ),
+    ],
+    steps: [
+      ApplicationStep(
+        stepNumber: 1,
+        title: 'Zuständigkeit klären',
+        description:
+            'Seelische Behinderung (Autismus, ADHS, Ängste) → Jugendamt. Körperliche/geistige Behinderung → Sozialamt. Im Zweifel: Jugendamt fragen.',
+      ),
+      ApplicationStep(
+        stepNumber: 2,
+        title: 'Formloser Antrag stellen',
+        description:
+            'Ein Brief reicht: "Ich beantrage Eingliederungshilfe für mein Kind [Name] wegen [Diagnose]." Dazu die ärztliche Stellungnahme beifügen.',
+      ),
+      ApplicationStep(
+        stepNumber: 3,
+        title: 'Hilfeplan-Gespräch',
+        description:
+            'Das Amt lädt dich zu einem Gespräch ein. Dort wird besprochen welche Hilfe dein Kind braucht (Frühförderung, Schulbegleitung, Therapie etc.).',
+      ),
+      ApplicationStep(
+        stepNumber: 4,
+        title: 'Bewilligung + Beginn der Hilfe',
+        description:
+            'Nach der Bewilligung beginnt die Hilfe. Bei Ablehnung: Widerspruch einlegen (innerhalb 4 Wochen, kostenlos).',
       ),
     ],
   );
