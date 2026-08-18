@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
 import 'package:parentpeak/logic/treasure_backend_service.dart';
+import 'package:parentpeak/services/location_service.dart';
 
 class TreasureDiscoveryResult {
   final List<TreasureListing> listings;
@@ -38,8 +39,16 @@ class TreasureListingService {
       const radii = <double>[10, 50, 100, 1200];
       const scopes = <String>['10km', '50km', '100km', 'country'];
 
+      final loc = LocationService.instance;
+      final lat = loc.latitude;
+      final lng = loc.longitude;
+
       for (var i = 0; i < radii.length; i++) {
-        final remoteListings = await _backendService.fetchTreasures(radiusKm: radii[i]);
+        final remoteListings = await _backendService.fetchTreasures(
+          radiusKm: radii[i],
+          latitude: lat,
+          longitude: lng,
+        );
         if (remoteListings.isNotEmpty) {
           _cache = remoteListings;
           await _persist();
@@ -62,7 +71,8 @@ class TreasureListingService {
           conditionKey: 'round2',
           distanceMeters: 0,
           colorLabel: 'Online',
-          note: 'Digitale Matching-Liste für Familien, die Kinderbücher verschenken oder suchen.',
+          note:
+              'Digitale Matching-Liste für Familien, die Kinderbücher verschenken oder suchen.',
           locationLabel: 'Online',
           createdAt: DateTime.now(),
         ),
@@ -74,7 +84,8 @@ class TreasureListingService {
           conditionKey: 'round2',
           distanceMeters: 0,
           colorLabel: 'Online',
-          note: 'Kleidungspakete nach Größe sortiert mit direktem Elternkontakt.',
+          note:
+              'Kleidungspakete nach Größe sortiert mit direktem Elternkontakt.',
           locationLabel: 'Online',
           createdAt: DateTime.now(),
         ),
@@ -86,7 +97,8 @@ class TreasureListingService {
           conditionKey: 'round2',
           distanceMeters: 0,
           colorLabel: 'Online',
-          note: 'Themenbasierter digitaler Marktplatz für Spielsachen und Lernmaterialien.',
+          note:
+              'Themenbasierter digitaler Marktplatz für Spielsachen und Lernmaterialien.',
           locationLabel: 'Online',
           createdAt: DateTime.now(),
         ),
@@ -115,7 +127,11 @@ class TreasureListingService {
     }
 
     if (_backendService.isEnabled) {
-      final remoteListings = await _backendService.fetchTreasures();
+      final loc = LocationService.instance;
+      final remoteListings = await _backendService.fetchTreasures(
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+      );
       if (remoteListings.isNotEmpty || _backendService.lastSyncError == null) {
         _cache = remoteListings;
         await _persist();
@@ -132,7 +148,8 @@ class TreasureListingService {
         final decoded = jsonDecode(raw);
         if (decoded is List) {
           _cache = decoded
-              .map((item) => TreasureListing.fromMap(Map<String, dynamic>.from(item)))
+              .map((item) =>
+                  TreasureListing.fromMap(Map<String, dynamic>.from(item)))
               .toList();
           return List<TreasureListing>.from(_cache!);
         }
