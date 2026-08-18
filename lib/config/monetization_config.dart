@@ -64,6 +64,19 @@ class MonetizationConfig {
   /// Maximale Rezepte pro Tag (Free)
   static const int freeRecipesPerDay = 1;
 
+  // ─── Eltern-Netzwerk Limit (Free-Nutzer) ───────────────────────────────────
+
+  /// Eltern-Netzwerk Kontaktanfragen-Limit für Free-Nutzer
+  static const bool networkLimitEnabled = false;
+
+  /// Maximale Kontaktanfragen pro Monat (Free)
+  static const int freeNetworkContactsPerMonth = 3;
+
+  // ─── Familien-Geld Limit (Free-Nutzer) ────────────────────────────────────
+
+  /// Familien-Geld persönlicher Check nur für Premium
+  static const bool financeCheckPremiumOnly = false;
+
   // ─── Anbieter-Paket ──────────────────────────────────────────────────────
 
   /// Anbieter-Paket (9,99€/Monat für Power-Poster)
