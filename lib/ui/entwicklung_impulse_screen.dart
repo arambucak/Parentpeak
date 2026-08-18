@@ -1087,62 +1087,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
   Future<void> _downloadPDF() async {
     HapticFeedback.mediumImpact();
-    final p = _childProfile!;
-    final date = DateTime.now();
-    final doc = pw.Document();
-    doc.addPage(pw.Page(
-        build: (ctx) => pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('ParentPeak Entwicklungsbericht',
-                      style: pw.TextStyle(
-                          fontSize: 20, fontWeight: pw.FontWeight.bold)),
-                  pw.SizedBox(height: 6),
-                  pw.Text(
-                      '${p.name}, ${p.ageLabel} | Erstellt am ${date.day}.${date.month}.${date.year}'),
-                  pw.SizedBox(height: 16),
-                  ..._devDomains.map((d) {
-                    final scores = d.questions
-                        .asMap()
-                        .entries
-                        .map((e) => _devAnswers['${d.id}_${e.key}'] ?? 0)
-                        .toList();
-                    final avg =
-                        scores.fold(0, (int a, b) => a + b) / scores.length;
-                    final level = avg >= 1.7
-                        ? 'Stark'
-                        : avg >= 0.8
-                            ? 'In Entwicklung'
-                            : 'Foerderbedarf';
-                    return pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text('${d.title}: $level',
-                              style: pw.TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: pw.FontWeight.bold)),
-                          ...d.questions.asMap().entries.map((e) {
-                            final a = _devAnswers['${d.id}_${e.key}'] ?? 0;
-                            return pw.Text(
-                                '  ${e.value} - ${a == 2 ? "Ja" : a == 1 ? "Manchmal" : "Noch nicht"}',
-                                style: const pw.TextStyle(fontSize: 10));
-                          }),
-                          pw.SizedBox(height: 8)
-                        ]);
-                  }),
-                  pw.SizedBox(height: 12),
-                  pw.Text('Paedagogische Einschaetzung:',
-                      style: pw.TextStyle(
-                          fontSize: 13, fontWeight: pw.FontWeight.bold)),
-                  pw.SizedBox(height: 4),
-                  pw.Text(_aiReport ?? '',
-                      style: const pw.TextStyle(fontSize: 10)),
-                  pw.SizedBox(height: 16),
-                  pw.Text(
-                      'Hinweis: Dieser Bericht ist eine Orientierung und ersetzt keine professionelle Diagnostik.',
-                      style: const pw.TextStyle(fontSize: 8)),
-                ])));
-    await Printing.layoutPdf(onLayout: (f) => doc.save());
+    await _exportPdf();
   }
 
   Widget _buildHistoryButton(ThemeData theme) {
@@ -1308,6 +1253,36 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
           ]),
           const SizedBox(height: 18),
           ..._devDomains.map((d) => _buildDevDomain(theme, d)),
+          // Hinweis wenn nicht alle Fragen beantwortet
+          if (!_devDone &&
+              answered > 0 &&
+              !_generatingReport &&
+              _aiReport == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: const Color(0xFFF97316).withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('💡', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                          child: Text(
+                        'Noch ${tQ - answered} Fragen offen. Beantworte alle Fragen um deinen persönlichen KI-Bericht zu erhalten.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFF9A3412), height: 1.4),
+                      )),
+                    ]),
+              ),
+            ),
           if (_devDone && _aiReport == null && !_generatingReport)
             Padding(
                 padding: const EdgeInsets.only(top: 16),

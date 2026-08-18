@@ -102,7 +102,7 @@ class AppStringsManager {
       'save_as_pdf': 'Als PDF speichern',
       'do_again': 'Nochmal machen',
       'other_child': 'Anderes Kind',
-      'previous_reports': 'Fruehere Berichte',
+      'previous_reports': 'Frühere Berichte',
       'report_history': 'Bericht-Verlauf',
       'current': 'Aktuell',
       'no_reports_yet': 'Noch keine Berichte vorhanden.',
