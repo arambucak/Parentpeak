@@ -49,3 +49,12 @@ certs_temp/
 fastlane/report.xml
 fastlane/.env
 webapp/
+
+# Repo Cleanup — nicht für den Build nötig
+.tmp/
+artifacts/
+coverage/
+parentpeak-website/
+cypress/
+devtools_options.yaml
+public/
