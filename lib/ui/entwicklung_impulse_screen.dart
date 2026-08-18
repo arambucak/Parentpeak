@@ -16,6 +16,7 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:parentpeak/ui/widgets/eltern_wissen_widget.dart';
+import 'package:parentpeak/ui/widgets/expert_bibliothek_section.dart';
 
 /// Impulse & Entwicklung — vereinfacht, elternfreundlich, modern.
 ///
@@ -1640,15 +1641,21 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   Widget _buildWissenTab(ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: ElternWissenWidget(
-        key: ValueKey(_wissenTopic), // rebuild when topic changes
-        initialTopic: _wissenTopic,
-        onOpenChat: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChatScreen()),
-          );
-        },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ElternWissenWidget(
+            key: ValueKey(_wissenTopic), // rebuild when topic changes
+            initialTopic: _wissenTopic,
+            onOpenChat: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChatScreen()),
+              );
+            },
+          ),
+          const ExpertBibliothekSection(),
+        ],
       ),
     );
   }
