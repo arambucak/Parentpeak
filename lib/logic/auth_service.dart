@@ -626,7 +626,7 @@ class AuthService with ChangeNotifier {
         case 'too-many-requests':
           return 'Zu viele Versuche. Bitte später erneut versuchen.';
         case 'network-request-failed':
-          return 'Netzwerkfehler. Bitte pruefe deine Verbindung.';
+          return 'Netzwerkfehler. Bitte prüfe deine Verbindung.';
         case 'internal-error':
         case 'app-not-authorized':
         case 'operation-not-allowed':

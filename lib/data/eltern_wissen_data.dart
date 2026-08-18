@@ -301,7 +301,7 @@ const List<ElternWissenEntry> elternWissenData = [
     gfkSatz:
         'Du bist genauso wichtig wie vorher. Es ist okay dass du gerade traurig oder wütend bist.',
     aktion: [
-        'Exklusive Mama/Papa-Zeit NUR für das ältere Kind (10 Min/Tag reicht)',
+      'Exklusive Mama/Papa-Zeit NUR für das ältere Kind (10 Min/Tag reicht)',
       'Älteres Kind in Baby-Pflege einbeziehen (Windel bringen, singen)',
       'Gefühle benennen ohne zu bewerten: "Du bist sauer auf das Baby — das verstehe ich"'
     ],
@@ -532,7 +532,7 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'grund_04',
-    question: 'Mein Kind hat Pruefungsangst',
+    question: 'Mein Kind hat Prüfungsangst',
     akut:
         'Normalisiere: Aufregung vor Prüfungen ist menschlich. Sage: Dein Wert hängt nicht von einer Note ab.',
     beduerfnis:

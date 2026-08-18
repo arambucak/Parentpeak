@@ -529,7 +529,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(width: 8),
             Expanded(
                 child: Text(
-              'Dies ist keine Rechtsberatung. Bitte prüfe deine Ansprüche beim zustaendigen Amt oder einer Beratungsstelle.',
+              'Dies ist keine Rechtsberatung. Bitte prüfe deine Ansprüche beim zuständigen Amt oder einer Beratungsstelle.',
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
             )),
@@ -623,7 +623,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               HapticFeedback.lightImpact();
               _openUrl(b.url!);
             },
-            child: Text('\u{1F517} Hier pruefen \u{2192}',
+            child: Text('\u{1F517} Hier prüfen \u{2192}',
                 style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF8B5CF6))),

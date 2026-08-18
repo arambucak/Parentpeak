@@ -113,8 +113,7 @@ class FamilyMatchProfile {
 
 class ChildEntry {
   final String name;
-  final int
-      ageMonths; // Alter in Monaten für Babys, in Jahren * 12 für Größere
+  final int ageMonths; // Alter in Monaten für Babys, in Jahren * 12 für Größere
   final String? gender; // maennlich, weiblich, divers, null = keine Angabe
   final List<String> interests;
   final String? interestsCustom;
@@ -251,9 +250,9 @@ class MatchOptions {
     'babysitting_tausch': '\u{1F91D} Babysitting-Tausch',
     'kita_fahrgemeinschaft': '\u{1F697} Kita-Fahrgemeinschaft',
     'kindergeburtstage': '\u{1F382} Kindergeburtstage',
-    'ausflug': '\u{1F3DE}\u{FE0F} Ausfluege & Reisen',
+    'ausflug': '\u{1F3DE}\u{FE0F} Ausflüge & Reisen',
     'indoor_treffen': '\u{1F3E0} Indoor-Treffen',
-    'regelmaessig': '\u{1F504} Regelmaessige Gruppe',
+    'regelmaessig': '\u{1F504} Regelmäßige Gruppe',
     'spontan': '\u{26A1} Spontane Treffen',
     'online_austausch': '\u{1F4AC} Online-Austausch',
   };

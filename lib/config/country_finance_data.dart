@@ -42,7 +42,7 @@ class CountryFinanceData {
         id: 'kinderzuschlag',
         name: 'Kinderzuschlag (KiZ)',
         description:
-            'Zusaetzliche Unterstuetzung für Familien mit geringem Einkommen.',
+            'Zusätzliche Unterstützung für Familien mit geringem Einkommen.',
         amount: 'bis 292\u{20AC}/Kind',
         eligibility: 'Einkommen reicht für euch, aber nicht für die Kinder.',
         url: 'https://www.arbeitsagentur.de/familie-und-kinder/kinderzuschlag',
@@ -62,9 +62,9 @@ class CountryFinanceData {
         id: 'but',
         name: 'Bildung & Teilhabe (BuT)',
         description:
-            'Schulbedarf, Ausfluege, Nachhilfe, Mittagessen, Sport-Verein.',
+            'Schulbedarf, Ausflüge, Nachhilfe, Mittagessen, Sport-Verein.',
         amount: 'Sachleistungen + 195\u{20AC}/Jahr Schulbedarf',
-        eligibility: 'Familien mit KiZ, Wohngeld oder Buergergeld.',
+        eligibility: 'Familien mit KiZ, Wohngeld oder Bürgergeld.',
         url:
             'https://familienportal.de/familienportal/familienleistungen/bildung-und-teilhabe',
         status: BenefitStatus.checkRequired,
@@ -97,7 +97,7 @@ class CountryFinanceData {
           emoji: '\u{1F392}',
           estimatedCost: 350,
           childAgeYears: 6,
-          note: 'Ranzen, Stifte, Turnbeutel, Schultuete'),
+          note: 'Ranzen, Stifte, Turnbeutel, Schultüte'),
       MilestoneCost(
           id: 'fahrrad',
           label: 'Erstes Fahrrad',
@@ -118,14 +118,14 @@ class CountryFinanceData {
           emoji: '\u{1F4F1}',
           estimatedCost: 300,
           childAgeYears: 11,
-          note: 'Geraet + Huelle + erster Vertrag'),
+          note: 'Gerät + Hülle + erster Vertrag'),
       MilestoneCost(
           id: 'fuehrerschein',
-          label: 'Fuehrerschein',
+          label: 'Führerschein',
           emoji: '\u{1F697}',
           estimatedCost: 3500,
           childAgeYears: 17,
-          note: 'Fahrstunden + Pruefungen'),
+          note: 'Fahrstunden + Prüfungen'),
       MilestoneCost(
           id: 'ausbildung',
           label: 'Ausbildung/Studium',
@@ -184,7 +184,7 @@ class CountryFinanceData {
 
   static const austria = CountryFinanceConfig(
     code: 'at',
-    name: 'Oesterreich',
+    name: 'Österreich',
     flag: '\u{1F1E6}\u{1F1F9}',
     currency: 'EUR',
     currencySymbol: '\u{20AC}',
@@ -193,7 +193,7 @@ class CountryFinanceData {
           id: 'familienbeihilfe',
           name: 'Familienbeihilfe',
           description:
-              'Monatliche Unterstuetzung pro Kind, gestaffelt nach Alter.',
+              'Monatliche Unterstützung pro Kind, gestaffelt nach Alter.',
           amount: '132\u{20AC}\u{2013}191\u{20AC}/Kind',
           status: BenefitStatus.universal),
       SocialBenefit(
@@ -337,7 +337,7 @@ class CountryFinanceData {
 
   static const turkey = CountryFinanceConfig(
     code: 'tr',
-    name: 'Tuerkiye',
+    name: 'Türkiye',
     flag: '\u{1F1F9}\u{1F1F7}',
     currency: 'TRY',
     currencySymbol: '\u{20BA}',
@@ -353,12 +353,12 @@ class CountryFinanceData {
           id: 'cocuk_parasi',
           name: 'Cocuk Parasi',
           description: 'Monatliches Kindergeld für Familien.',
-          amount: 'einkommensabhaengig',
+          amount: 'einkommensabhängig',
           status: BenefitStatus.incomeDependent),
       SocialBenefit(
           id: 'sed',
           name: 'Sosyal Yardim (SED)',
-          description: 'Soziale Unterstuetzung ueber SYDV.',
+          description: 'Soziale Unterstützung über SYDV.',
           eligibility: 'Familien unter der Armutsgrenze.',
           status: BenefitStatus.checkRequired),
     ],
@@ -504,17 +504,17 @@ class CountryFinanceData {
           id: 'generic_kindergeld',
           name: 'Kindergeld / Child Benefit',
           description:
-              'Die meisten Laender zahlen monatliche Familienleistungen. Pruefe bei deiner lokalen Behoerde.',
+              'Die meisten Länder zahlen monatliche Familienleistungen. Prüfe bei deiner lokalen Behörde.',
           status: BenefitStatus.checkRequired),
       SocialBenefit(
           id: 'generic_housing',
-          name: 'Wohn-Unterstuetzung',
-          description: 'Viele Laender bieten Mietzuschuesse für Familien an.',
+          name: 'Wohn-Unterstützung',
+          description: 'Viele Länder bieten Mietzuschüsse für Familien an.',
           status: BenefitStatus.checkRequired),
       SocialBenefit(
           id: 'generic_childcare',
           name: 'Betreuungs-Zuschuss',
-          description: 'Pruefe ob dein Land Kinderbetreuung subventioniert.',
+          description: 'Prüfe ob dein Land Kinderbetreuung subventioniert.',
           status: BenefitStatus.checkRequired),
     ],
     milestones: [
