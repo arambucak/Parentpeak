@@ -73,12 +73,12 @@ enum EventCategory {
 }
 
 enum EventAgeGroup {
-  baby,       // 0-1 Jahre
-  kleinkind,  // 1-3 Jahre
-  kita,       // 3-6 Jahre
-  grundschule,// 6-10 Jahre
-  teenie,     // 10-16 Jahre
-  alle;       // Alle Altersgruppen
+  baby, // 0-1 Jahre
+  kleinkind, // 1-3 Jahre
+  kita, // 3-6 Jahre
+  grundschule, // 6-10 Jahre
+  teenie, // 10-16 Jahre
+  alle; // Alle Altersgruppen
 
   String get label {
     switch (this) {
@@ -116,14 +116,14 @@ enum EventVenue {
 }
 
 enum EventSource {
-  kiAgent,     // Vom KI-Agent generiert
-  community,   // Von Eltern eingetragen
-  partner,     // Von verifiziertem Partner eingetragen
+  kiAgent, // Vom KI-Agent generiert
+  community, // Von Eltern eingetragen
+  partner, // Von verifiziertem Partner eingetragen
 }
 
 enum CreatorType {
-  eltern,      // Privatperson / Eltern-Tipp
-  verein,      // Verein / Eltern-Initiative
+  eltern, // Privatperson / Eltern-Tipp
+  verein, // Verein / Eltern-Initiative
   institution, // Kita, Schule, Familienzentrum
   unternehmen, // Kommerzieller Anbieter
 }
@@ -136,7 +136,12 @@ enum AccessibilityTag {
   kinderwagen,
   parkplaetze,
   oepnv,
-  stillen;
+  stillen,
+  // Inklusive Eignung für Kinder mit besonderen Bedürfnissen
+  reizarm,
+  gebaerdensprache,
+  inklusiv,
+  mobilitaet;
 
   String get label {
     switch (this) {
@@ -147,11 +152,19 @@ enum AccessibilityTag {
       case AccessibilityTag.kinderwagen:
         return '\u{1F6D2} Kinderwagenfreundlich';
       case AccessibilityTag.parkplaetze:
-        return '\u{1F697} Parkplaetze';
+        return '\u{1F697} Parkplätze';
       case AccessibilityTag.oepnv:
-        return '\u{1F687} OEPNV erreichbar';
+        return '\u{1F687} ÖPNV erreichbar';
       case AccessibilityTag.stillen:
         return '\u{1F930} Stillfreundlich';
+      case AccessibilityTag.reizarm:
+        return '\u{1F49C} Reizarme Umgebung';
+      case AccessibilityTag.gebaerdensprache:
+        return '\u{1F91F} Gebärdensprache';
+      case AccessibilityTag.inklusiv:
+        return '\u{1F308} Inklusiv — alle willkommen';
+      case AccessibilityTag.mobilitaet:
+        return '\u{1F9BD} Für Kinder mit Mobilitätseinschränkung';
     }
   }
 }
@@ -165,35 +178,35 @@ class CommunityEvent {
   final EventCategory category;
   final List<EventAgeGroup> ageGroups;
   final EventVenue venue;
-  final String location;         // Adresse oder Ortsname
-  final String city;             // Stadt/Stadtteil für Suche
+  final String location; // Adresse oder Ortsname
+  final String city; // Stadt/Stadtteil für Suche
   final double? lat;
   final double? lon;
-  final bool isPrivateAddress;   // Wenn true: nur Stadtteil anzeigen
+  final bool isPrivateAddress; // Wenn true: nur Stadtteil anzeigen
   final DateTime eventDate;
   final DateTime? eventEndDate;
   final bool isRecurring;
-  final String? recurringNote;   // z.B. "Jeden Samstag 10-12 Uhr"
-  final String? rainPlan;        // Bei Regen: faellt aus / Alternative
-  final String price;            // "kostenlos" oder "5 EUR" etc.
+  final String? recurringNote; // z.B. "Jeden Samstag 10-12 Uhr"
+  final String? rainPlan; // Bei Regen: faellt aus / Alternative
+  final String price; // "kostenlos" oder "5 EUR" etc.
   final bool isFree;
-  final String? url;             // Link zur Quelle/Veranstalter
+  final String? url; // Link zur Quelle/Veranstalter
   final String? imageUrl;
-  final String organizer;        // Name des Veranstalters
+  final String organizer; // Name des Veranstalters
   final CreatorType creatorType;
-  final String? contactName;     // Ansprechpartner (nur bei Teilnahme sichtbar)
-  final String? contactPhone;    // Telefon (nur bei Teilnahme sichtbar)
+  final String? contactName; // Ansprechpartner (nur bei Teilnahme sichtbar)
+  final String? contactPhone; // Telefon (nur bei Teilnahme sichtbar)
   final String? contactEmail;
   final List<AccessibilityTag> accessibility;
-  final String eventLanguage;    // "de", "tr", "en" etc.
+  final String eventLanguage; // "de", "tr", "en" etc.
   final EventSource source;
-  final bool isVerified;         // Verifizierter Partner
-  final String creatorId;        // User-ID des Erstellers
+  final bool isVerified; // Verifizierter Partner
+  final String creatorId; // User-ID des Erstellers
   final DateTime createdAt;
-  final int interestCount;       // Familien die Interesse zeigen
-  final int flagCount;           // Meldungen
-  final bool isHidden;           // Versteckt nach zu vielen Meldungen
-  final int maxPerDay;           // Rate-Limit Tracking
+  final int interestCount; // Familien die Interesse zeigen
+  final int flagCount; // Meldungen
+  final bool isHidden; // Versteckt nach zu vielen Meldungen
+  final int maxPerDay; // Rate-Limit Tracking
 
   const CommunityEvent({
     required this.id,
@@ -236,12 +249,10 @@ class CommunityEvent {
   // ─── Computed Properties ──────────────────────────────────────────────────
 
   /// Event ist in der Vergangenheit (soll ausgeblendet werden)
-  bool get isExpired =>
-      !isRecurring && eventDate.isBefore(DateTime.now());
+  bool get isExpired => !isRecurring && eventDate.isBefore(DateTime.now());
 
   /// Soll angezeigt werden (nicht expired, nicht hidden, nicht zu viele Flags)
-  bool get isVisible =>
-      !isHidden && !isExpired && flagCount < 3;
+  bool get isVisible => !isHidden && !isExpired && flagCount < 3;
 
   /// Sicherer Ort-Text (versteckt private Adressen)
   String get safeLocation {

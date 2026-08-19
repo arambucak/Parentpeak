@@ -1,5 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
@@ -26,6 +31,7 @@ class _CreateCommunityEventScreenState
   final _pageCtrl = PageController();
   int _step = 0;
   bool _saving = false;
+  bool _scanning = false;
 
   // Schritt 1
   CreatorType _creatorType = CreatorType.eltern;
@@ -89,6 +95,201 @@ class _CreateCommunityEventScreenState
     }
   }
 
+  // ─── Flyer-Scan (Kamera → KI → Auto-Fill) ──────────────────────────────────
+
+  Future<void> _scanFlyer() async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 12),
+          Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          const Text('Flyer / Poster scannen',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text('Die KI erkennt automatisch: Titel, Datum, Ort, Beschreibung',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          ListTile(
+            leading:
+                const Icon(Icons.camera_alt_rounded, color: Color(0xFF8B5CF6)),
+            title: const Text('Foto aufnehmen'),
+            onTap: () => Navigator.pop(ctx, ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_rounded,
+                color: Color(0xFF8B5CF6)),
+            title: const Text('Aus Galerie wählen'),
+            onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+          ),
+          const SizedBox(height: 16),
+        ]),
+      ),
+    );
+
+    if (source == null) return;
+
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    setState(() => _scanning = true);
+
+    try {
+      final apiKey = APIConfig.getGeminiApiKey();
+      if (apiKey == null || apiKey.isEmpty) throw Exception('Kein API-Key');
+
+      final bytes = await picked.readAsBytes();
+      final model = GenerativeModel(
+        model: APIConfig.getGeminiModelName(),
+        apiKey: apiKey,
+      );
+
+      final response = await model.generateContent([
+        Content.multi([
+          DataPart('image/jpeg', bytes),
+          TextPart(
+            'Analysiere diesen Flyer/Poster für ein Familien-Event. '
+            'Extrahiere folgende Informationen als JSON:\n'
+            '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
+            '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
+            '"location":"Adresse/Ort oder null","price":"kostenlos oder Betrag oder null",'
+            '"organizer":"Veranstalter oder null"}\n'
+            'Antworte NUR mit dem JSON, kein Markdown.',
+          ),
+        ]),
+      ]).timeout(const Duration(seconds: 20));
+
+      final text = response.text?.trim() ?? '';
+      final jsonStr = text.replaceAll(RegExp(r'^```json\s*|\s*```$'), '');
+
+      if (jsonStr.startsWith('{')) {
+        final data = _parseFlyer(jsonStr);
+
+        if (mounted) {
+          setState(() {
+            if (data['title'] != null) _titleCtrl.text = data['title'];
+            if (data['description'] != null)
+              _descCtrl.text = data['description'];
+            if (data['location'] != null) _locationCtrl.text = data['location'];
+            if (data['price'] != null && data['price'] != 'kostenlos') {
+              _isFree = false;
+              _priceCtrl.text = data['price'];
+            }
+            if (data['organizer'] != null)
+              _organizerCtrl.text = data['organizer'];
+            if (data['date'] != null) {
+              final parsed = DateTime.tryParse(data['date']);
+              if (parsed != null) _eventDate = parsed;
+            }
+            if (data['time'] != null) {
+              final parts = data['time'].toString().split(':');
+              if (parts.length == 2) {
+                _eventTime = TimeOfDay(
+                  hour: int.tryParse(parts[0]) ?? 10,
+                  minute: int.tryParse(parts[1]) ?? 0,
+                );
+              }
+            }
+            _scanning = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('✅ Flyer erkannt! Bitte prüfe die Angaben.'),
+            backgroundColor: Color(0xFF16A34A),
+          ));
+        }
+      } else {
+        throw Exception('KI konnte den Flyer nicht lesen');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _scanning = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Flyer konnte nicht erkannt werden: $e'),
+        ));
+      }
+    }
+  }
+
+  Map<String, dynamic> _parseFlyer(String raw) {
+    try {
+      final start = raw.indexOf('{');
+      final end = raw.lastIndexOf('}');
+      if (start == -1 || end == -1) return {};
+      final chunk = raw.substring(start, end + 1);
+      final decoded = jsonDecode(chunk);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  // ─── Duplikat-Erkennung ────────────────────────────────────────────────────
+
+  Future<CommunityEvent?> _checkDuplicate() async {
+    final title = _titleCtrl.text.trim().toLowerCase();
+    if (title.isEmpty) return null;
+
+    try {
+      final existing = await CommunityEventService.instance.loadEvents(
+        city: _city.isNotEmpty ? _city : _locationCtrl.text.trim(),
+      );
+
+      for (final event in existing) {
+        final existingTitle = event.title.toLowerCase();
+        // Einfacher Ähnlichkeitscheck: Titel enthält den anderen oder umgekehrt
+        final similar = existingTitle.contains(title) ||
+            title.contains(existingTitle) ||
+            _levenshteinSimilarity(title, existingTitle) > 0.7;
+
+        // Gleiches Datum (±1 Tag)
+        final samePeriod =
+            (event.eventDate.difference(_eventDate).inDays).abs() <= 1;
+
+        if (similar && samePeriod) return event;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  double _levenshteinSimilarity(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return 0;
+    final maxLen = a.length > b.length ? a.length : b.length;
+    final dist = _levenshteinDistance(a, b);
+    return 1.0 - (dist / maxLen);
+  }
+
+  int _levenshteinDistance(String a, String b) {
+    final m = a.length;
+    final n = b.length;
+    final d = List.generate(m + 1, (_) => List.filled(n + 1, 0));
+    for (var i = 0; i <= m; i++) d[i][0] = i;
+    for (var j = 0; j <= n; j++) d[0][j] = j;
+    for (var i = 1; i <= m; i++) {
+      for (var j = 1; j <= n; j++) {
+        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
+        d[i][j] = [d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost]
+            .reduce((a, b) => a < b ? a : b);
+      }
+    }
+    return d[m][n];
+  }
+
   Future<void> _submit() async {
     if (_titleCtrl.text.trim().isEmpty) {
       _showError('Bitte gib einen Titel ein (Schritt 2)');
@@ -97,6 +298,47 @@ class _CreateCommunityEventScreenState
     if (_locationCtrl.text.trim().isEmpty) {
       _showError('Bitte gib einen Ort ein (Schritt 2)');
       return;
+    }
+
+    // Duplikat-Erkennung
+    final duplicate = await _checkDuplicate();
+    if (duplicate != null && mounted) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(children: [
+            Text('⚠️', style: TextStyle(fontSize: 20)),
+            SizedBox(width: 8),
+            Text('Ähnliches Event gefunden'),
+          ]),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              '"${duplicate.title}" wurde bereits am '
+              '${duplicate.createdAt.day}.${duplicate.createdAt.month}.${duplicate.createdAt.year} '
+              'von ${duplicate.organizer} geteilt.',
+              style: const TextStyle(height: 1.5),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Möchtest du dein Event trotzdem hinzufügen?',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ]),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Trotzdem erstellen'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) return;
     }
 
     setState(() => _saving = true);
@@ -178,7 +420,8 @@ class _CreateCommunityEventScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'create_event_title')),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'create_event_title')),
         elevation: 0,
         actions: [
           Padding(
@@ -270,7 +513,8 @@ class _CreateCommunityEventScreenState
               FilledButton.icon(
                 onPressed: _next,
                 icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'next_btn_wizard')),
+                label: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'next_btn_wizard')),
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
@@ -325,7 +569,9 @@ class _CreateCommunityEventScreenState
           ]),
         ),
         const SizedBox(height: 20),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'i_am'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'i_am'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
@@ -398,6 +644,35 @@ class _CreateCommunityEventScreenState
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 12),
+        // Flyer-Scan Button
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _scanning ? null : _scanFlyer,
+            icon: _scanning
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.document_scanner_rounded, size: 18),
+            label: Text(
+                _scanning ? 'KI liest Flyer...' : '📷 Flyer/Poster scannen'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF8B5CF6),
+              side: const BorderSide(color: Color(0xFF8B5CF6)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Center(
+          child: Text('Foto machen → KI füllt alles automatisch aus',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: theme.colorScheme.outline)),
+        ),
+        const SizedBox(height: 16),
         TextField(
           controller: _titleCtrl,
           decoration: InputDecoration(
@@ -419,7 +694,9 @@ class _CreateCommunityEventScreenState
           ),
         ),
         const SizedBox(height: 12),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'category_required'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'category_required'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -437,7 +714,9 @@ class _CreateCommunityEventScreenState
                     ))
                 .toList()),
         const SizedBox(height: 16),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'age_group_required'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'age_group_required'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -508,7 +787,9 @@ class _CreateCommunityEventScreenState
         SwitchListTile(
           value: _isRecurring,
           onChanged: (v) => setState(() => _isRecurring = v),
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'recurring_event'),
+          title: Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'recurring_event'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           dense: true,
@@ -539,7 +820,9 @@ class _CreateCommunityEventScreenState
         SwitchListTile(
           value: _isPrivateAddress,
           onChanged: (v) => setState(() => _isPrivateAddress = v),
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'private_address'),
+          title: Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'private_address'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(fontWeight: FontWeight.w600)),
           dense: true,
@@ -550,7 +833,9 @@ class _CreateCommunityEventScreenState
         SwitchListTile(
           value: _isFree,
           onChanged: (v) => setState(() => _isFree = v),
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'free_event'),
+          title: Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'free_event'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           secondary: const Text('\u{1F389}', style: TextStyle(fontSize: 20)),
@@ -579,7 +864,9 @@ class _CreateCommunityEventScreenState
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 12),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'indoor_outdoor'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'indoor_outdoor'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -610,7 +897,9 @@ class _CreateCommunityEventScreenState
           ),
         ],
         const SizedBox(height: 20),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'accessibility_label'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'accessibility_label'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -629,7 +918,9 @@ class _CreateCommunityEventScreenState
                     ))
                 .toList()),
         const SizedBox(height: 20),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'event_language'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'event_language'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -655,11 +946,15 @@ class _CreateCommunityEventScreenState
                     ))
                 .toList()),
         const SizedBox(height: 20),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'contact_optional'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'contact_optional'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text(AppStringsManager.getString(languageService.currentLanguage, 'contact_hint'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'contact_hint'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 10),
