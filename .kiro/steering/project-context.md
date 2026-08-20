@@ -126,6 +126,6 @@ Backend läuft auf Render. API-Key und DATABASE_URL sind als Environment Variabl
 
 ## Git-Workflow
 - Branch: `main`
-- Push zu: `github.com/fatihbucak56-beep/Parentpeak`
+- Push zu: `github.com/arambucak/Parentpeak`
 - GitHub Actions deployed automatisch zu `parentpeak.de`
 - Prisma DB Push: Nutze die DATABASE_URL aus den Render Environment Variables

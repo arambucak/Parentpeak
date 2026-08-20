@@ -9,7 +9,7 @@
 **Alle im Team:**
 ```bash
 # 1. Öffne diesen Link
-open https://github.com/fatihbucak56-beep/Parentpeak/blob/main/QUICK_START_RELEASE.md
+open https://github.com/arambucak/Parentpeak/blob/main/QUICK_START_RELEASE.md
 
 # Oder von der Kommandozeile:
 cat QUICK_START_RELEASE.md

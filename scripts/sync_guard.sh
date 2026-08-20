@@ -2,7 +2,7 @@
 set -euo pipefail
 
 MODE="${1:-check}"
-EXPECTED_REMOTE="https://github.com/fatihbucak56-beep/Parentpeak.git"
+EXPECTED_REMOTE="https://github.com/arambucak/Parentpeak.git"
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "ERROR: Bitte im Parentpeak Git-Repository ausfuehren."

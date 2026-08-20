@@ -4,8 +4,8 @@
   <p><strong>Nicht perfekt sein müssen. Einfach da sein.</strong></p>
   <p>Die App für Eltern die alles geben — und selbst Halt brauchen.</p>
 
-  [![Flutter Analyze](https://github.com/fatihbucak56-beep/Parentpeak/actions/workflows/flutter-analyze.yml/badge.svg)](https://github.com/fatihbucak56-beep/Parentpeak/actions/workflows/flutter-analyze.yml)
-  [![Deploy Web](https://github.com/fatihbucak56-beep/Parentpeak/actions/workflows/deploy-web-pages.yml/badge.svg)](https://github.com/fatihbucak56-beep/Parentpeak/actions/workflows/deploy-web-pages.yml)
+  [![Flutter Analyze](https://github.com/arambucak/Parentpeak/actions/workflows/flutter-analyze.yml/badge.svg)](https://github.com/arambucak/Parentpeak/actions/workflows/flutter-analyze.yml)
+  [![Deploy Web](https://github.com/arambucak/Parentpeak/actions/workflows/deploy-web-pages.yml/badge.svg)](https://github.com/arambucak/Parentpeak/actions/workflows/deploy-web-pages.yml)
   ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
   ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
   ![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Crash-FFCA28?logo=firebase&logoColor=black)
