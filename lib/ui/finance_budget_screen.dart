@@ -15,6 +15,12 @@ import 'package:parentpeak/logic/finance_storage_service.dart';
 import 'package:parentpeak/logic/receipt_ocr_service.dart';
 import 'package:parentpeak/models/care_activity.dart';
 import 'package:parentpeak/models/expense.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
+
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
 
 class FinanceBudgetScreen extends StatefulWidget {
   const FinanceBudgetScreen({super.key});
@@ -37,6 +43,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
   bool _importingReceipt = false;
   String? _syncInfo;
   ExpenseCategory? _expenseCategoryFilter;
+
 
   @override
   void initState() {
@@ -118,20 +125,20 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Finanzen & Budget'),
+        title: Text(_t('finance_title')),
         actions: [
           IconButton(
-            tooltip: 'CSV exportieren',
+            tooltip: _t('finance_export_csv'),
             onPressed: _exportCsv,
             icon: const Icon(Icons.table_view_rounded),
           ),
           IconButton(
-            tooltip: 'PDF teilen',
+            tooltip: _t('finance_export_pdf'),
             onPressed: _exportPdf,
             icon: const Icon(Icons.picture_as_pdf_rounded),
           ),
           IconButton(
-            tooltip: 'QR-Ausgleich',
+            tooltip: _t('finance_qr_settlement'),
             onPressed: _showSettlementQr,
             icon: const Icon(Icons.qr_code_2_rounded),
           ),
@@ -225,7 +232,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Schnellstart',
+                            _t('finance_quick_start'),
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -240,8 +247,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                     size: 18),
                                 label: Text(
                                   _importingReceipt
-                                      ? 'Scan laeuft...'
-                                      : 'Bon scannen',
+                                      ? _t('finance_scan_running')
+                                      : _t('finance_scan_receipt'),
                                 ),
                                 onPressed: _importingReceipt
                                     ? null
@@ -250,28 +257,28 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                               ActionChip(
                                 avatar: const Icon(Icons.favorite_rounded,
                                     size: 18),
-                                label: const Text('Care-Eintrag erfassen'),
+                                label: Text(_t('finance_add_care')),
                                 onPressed: _addManualCareActivity,
                               ),
                               ActionChip(
                                 avatar:
                                     const Icon(Icons.sell_rounded, size: 18),
-                                label: const Text('Sparchance erfassen'),
+                                label: Text(_t('finance_add_saving')),
                                 onPressed: _addManualSavingsOpportunity,
                               ),
                               ActionChip(
                                 avatar: const Icon(Icons.add_card_rounded,
                                     size: 18),
-                                label: const Text('Position manuell'),
+                                label: Text(_t('finance_add_manual')),
                                 onPressed: _addManualExpense,
                               ),
                             ],
                           ),
                           const SizedBox(height: 14),
                           _SectionTitle(
-                            title: 'Letzte OCR-Positionen',
+                            title: _t('finance_recent_ocr'),
                             subtitle:
-                                '${visibleExpenses.length} Eintraege in ${DateFormat('MMMM yyyy', 'de_DE').format(_provider.selectedMonth)}',
+                                '${visibleExpenses.length} ${_t('finance_entries_in')} ${DateFormat('MMMM yyyy', 'de_DE').format(_provider.selectedMonth)}',
                           ),
                           const SizedBox(height: 8),
                           _CategoryFilterBar(
@@ -312,9 +319,9 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                 ),
                           const SizedBox(height: 12),
                           _SectionTitle(
-                            title: 'Care-Aktivitaeten',
+                            title: _t('finance_care_activities'),
                             subtitle:
-                                '${_provider.filteredCareActivities.length} Eintraege · ${_currency(_provider.monthlyCareCredits)} Bonus',
+                                '${_provider.filteredCareActivities.length} ${_t('finance_entries_in')} · ${_currency(_provider.monthlyCareCredits)} Bonus',
                           ),
                           const SizedBox(height: 8),
                           if (_provider.filteredCareActivities.isEmpty)
@@ -362,12 +369,12 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt_rounded),
-                title: const Text('Kamera'),
+                title: Text(_t('finance_camera')),
                 onTap: () => Navigator.of(context).pop(ImageSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_rounded),
-                title: const Text('Galerie'),
+                title: Text(_t('finance_gallery')),
                 onTap: () => Navigator.of(context).pop(ImageSource.gallery),
               ),
             ],
@@ -389,8 +396,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
       final drafts = _buildDraftsFromOcr(lines);
       if (drafts.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Keine verarbeitbaren Positionen erkannt.')),
+          SnackBar(content: Text(_t('finance_no_items_recognized'))),
         );
         return;
       }
@@ -429,9 +435,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
       debugPrint('FinanceBudgetScreen._importReceiptFromPhoto(): failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('OCR-Import fehlgeschlagen. Bitte erneut versuchen.')),
+        SnackBar(content: Text(_t('finance_ocr_failed'))),
       );
     } finally {
       if (mounted) {
@@ -756,7 +760,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                         ),
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Abbrechen'),
+                          child: Text(_t('cancel')),
                         ),
                       ],
                     ),
@@ -782,7 +786,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                           });
                         },
                         icon: const Icon(Icons.add_rounded),
-                        label: const Text('Position manuell hinzufuegen'),
+                        label: Text(_t('finance_add_position_manual')),
                       ),
                     ),
                     Flexible(
@@ -819,8 +823,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                   const SizedBox(height: 8),
                                   TextFormField(
                                     initialValue: item.title,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Titel',
+                                    decoration: InputDecoration(
+                                      labelText: _t('finance_label_title'),
                                       isDense: true,
                                     ),
                                     onChanged: (value) {
@@ -840,8 +844,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                     keyboardType:
                                         const TextInputType.numberWithOptions(
                                             decimal: true),
-                                    decoration: const InputDecoration(
-                                      labelText: 'Betrag',
+                                    decoration: InputDecoration(
+                                      labelText: _t('finance_label_amount'),
                                       suffixText: 'EUR',
                                       isDense: true,
                                     ),
@@ -859,18 +863,18 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                   const SizedBox(height: 8),
                                   DropdownButtonFormField<String>(
                                     initialValue: item.paidById,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Bezahlt von',
+                                    decoration: InputDecoration(
+                                      labelText: _t('finance_label_paid_by'),
                                       isDense: true,
                                     ),
-                                    items: const [
+                                    items: [
                                       DropdownMenuItem(
                                         value: _mamaId,
-                                        child: Text('Mama'),
+                                        child: Text(_t('finance_mama')),
                                       ),
                                       DropdownMenuItem(
                                         value: _papaId,
-                                        child: Text('Papa'),
+                                        child: Text(_t('finance_papa')),
                                       ),
                                     ],
                                     onChanged: (value) {
@@ -913,24 +917,26 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                   const SizedBox(height: 8),
                                   DropdownButtonFormField<ExpenseSplitType>(
                                     initialValue: item.splitType,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Split-Typ',
+                                    decoration: InputDecoration(
+                                      labelText: _t('finance_label_split_type'),
                                       isDense: true,
                                     ),
                                     isExpanded: true,
-                                    items: const [
+                                    items: [
                                       DropdownMenuItem(
                                         value: ExpenseSplitType
                                             .intelligentOcrSplit,
-                                        child: Text('OCR-Split (60/40)'),
+                                        child: Text(_t('finance_ocr_split')),
                                       ),
                                       DropdownMenuItem(
                                         value: ExpenseSplitType.individual,
-                                        child: Text('100% individuell'),
+                                        child: Text(
+                                            _t('finance_individual_split')),
                                       ),
                                       DropdownMenuItem(
                                         value: ExpenseSplitType.standardSplit,
-                                        child: Text('Standard-Split'),
+                                        child:
+                                            Text(_t('finance_standard_split')),
                                       ),
                                     ],
                                     onChanged: (value) {
@@ -999,7 +1005,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                       width: double.infinity,
                       child: FilledButton(
                         onPressed: () => Navigator.of(context).pop(editable),
-                        child: const Text('Positionen übernehmen'),
+                        child: Text(_t('finance_apply_positions')),
                       ),
                     ),
                   ],
@@ -1028,7 +1034,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     _provider.addCareActivity(created);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Care-Eintrag gespeichert.')),
+      SnackBar(content: Text(_t('finance_care_saved'))),
     );
   }
 
@@ -1043,39 +1049,41 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Sparchance erfassen'),
+          title: Text(_t('finance_add_saving')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: goalController,
-                  decoration:
-                      const InputDecoration(labelText: 'Produkt / Ziel'),
+                  decoration: InputDecoration(
+                      labelText: _t('finance_label_product_goal')),
                 ),
                 TextField(
                   controller: retailController,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Neupreis (€)'),
+                  decoration: InputDecoration(
+                      labelText: _t('finance_label_retail_price')),
                 ),
                 TextField(
                   controller: secondHandController,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration:
-                      const InputDecoration(labelText: 'Second-Hand Preis (€)'),
+                  decoration: InputDecoration(
+                      labelText: _t('finance_label_secondhand_price')),
                 ),
                 TextField(
                   controller: distanceController,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration:
-                      const InputDecoration(labelText: 'Entfernung (km)'),
+                      InputDecoration(labelText: _t('finance_label_distance')),
                 ),
                 TextField(
                   controller: marketplaceController,
-                  decoration: const InputDecoration(labelText: 'Marktplatz'),
+                  decoration: InputDecoration(
+                      labelText: _t('finance_label_marketplace')),
                 ),
               ],
             ),
@@ -1083,7 +1091,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Abbrechen'),
+              child: Text(_t('cancel')),
             ),
             FilledButton(
               onPressed: () {
@@ -1115,7 +1123,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                   ),
                 );
               },
-              child: const Text('Speichern'),
+              child: Text(_t('finance_save')),
             ),
           ],
         );
@@ -1213,7 +1221,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('QR-Ausgleich'),
+          title: Text(_t('finance_qr_settlement')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1233,14 +1241,14 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                 if (!mounted) return;
                 Navigator.of(this.context).pop();
                 ScaffoldMessenger.of(this.context).showSnackBar(
-                  const SnackBar(content: Text('QR-Daten kopiert.')),
+                  SnackBar(content: Text(_t('finance_qr_copied'))),
                 );
               },
-              child: const Text('Daten kopieren'),
+              child: Text(_t('finance_copy_data')),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Schliessen'),
+              child: Text(_t('finance_close')),
             ),
           ],
         );
@@ -1274,12 +1282,12 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.edit_rounded),
-                title: const Text('Ausgabe bearbeiten'),
+                title: Text(_t('finance_edit_expense')),
                 onTap: () => Navigator.of(context).pop('edit'),
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded),
-                title: const Text('Ausgabe löschen'),
+                title: Text(_t('finance_delete_expense')),
                 onTap: () => Navigator.of(context).pop('delete'),
               ),
             ],
@@ -1293,7 +1301,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
     if (action == 'delete') {
       _provider.removeExpense(expense.id);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ausgabe entfernt.')),
+        SnackBar(content: Text(_t('finance_expense_removed'))),
       );
       return;
     }
@@ -1303,7 +1311,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     _provider.updateExpense(edited);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ausgabe aktualisiert.')),
+      SnackBar(content: Text(_t('finance_expense_updated'))),
     );
   }
 
@@ -1317,12 +1325,12 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.edit_rounded),
-                title: const Text('Care-Eintrag bearbeiten'),
+                title: Text(_t('finance_edit_care')),
                 onTap: () => Navigator.of(context).pop('edit'),
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded),
-                title: const Text('Care-Eintrag loeschen'),
+                title: Text(_t('finance_delete_care')),
                 onTap: () => Navigator.of(context).pop('delete'),
               ),
             ],
@@ -1336,7 +1344,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
     if (action == 'delete') {
       _provider.removeCareActivity(activity.id);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Care-Eintrag entfernt.')),
+        SnackBar(content: Text(_t('finance_care_removed'))),
       );
       return;
     }
@@ -1346,7 +1354,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     _provider.updateCareActivity(edited);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Care-Eintrag aktualisiert.')),
+      SnackBar(content: Text(_t('finance_care_updated'))),
     );
   }
 
@@ -1387,11 +1395,13 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       initialValue: parentId,
-                      decoration:
-                          const InputDecoration(labelText: 'Elternteil'),
-                      items: const [
-                        DropdownMenuItem(value: _mamaId, child: Text('Mama')),
-                        DropdownMenuItem(value: _papaId, child: Text('Papa')),
+                      decoration: InputDecoration(
+                          labelText: _t('finance_label_parent')),
+                      items: [
+                        DropdownMenuItem(
+                            value: _mamaId, child: Text(_t('finance_mama'))),
+                        DropdownMenuItem(
+                            value: _papaId, child: Text(_t('finance_papa'))),
                       ],
                       onChanged: (value) {
                         if (value == null) return;
@@ -1403,7 +1413,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<CareActivityType>(
                       initialValue: activityType,
-                      decoration: const InputDecoration(labelText: 'Care-Typ'),
+                      decoration: InputDecoration(
+                          labelText: _t('finance_label_care_type')),
                       items: CareActivityType.values
                           .map(
                             (item) => DropdownMenuItem(
@@ -1424,8 +1435,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                       controller: hoursController,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Stunden',
+                      decoration: InputDecoration(
+                        labelText: _t('finance_label_hours'),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1433,8 +1444,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                       controller: creditController,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Guthabenwert',
+                      decoration: InputDecoration(
+                        labelText: _t('finance_label_credit_value'),
                         suffixText: 'EUR',
                       ),
                     ),
@@ -1442,7 +1453,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                     TextField(
                       controller: noteController,
                       maxLines: 2,
-                      decoration: const InputDecoration(labelText: 'Notiz'),
+                      decoration:
+                          InputDecoration(labelText: _t('finance_label_note')),
                     ),
                     const SizedBox(height: 10),
                     SizedBox(
@@ -1473,7 +1485,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                             ),
                           );
                         },
-                        child: const Text('Speichern'),
+                        child: Text(_t('finance_save')),
                       ),
                     ),
                   ],
@@ -1532,26 +1544,29 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: titleController,
-                      decoration: const InputDecoration(labelText: 'Titel'),
+                      decoration:
+                          InputDecoration(labelText: _t('finance_label_title')),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: amountController,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Betrag',
+                      decoration: InputDecoration(
+                        labelText: _t('finance_label_amount'),
                         suffixText: 'EUR',
                       ),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: paidById,
-                      decoration:
-                          const InputDecoration(labelText: 'Bezahlt von'),
-                      items: const [
-                        DropdownMenuItem(value: _mamaId, child: Text('Mama')),
-                        DropdownMenuItem(value: _papaId, child: Text('Papa')),
+                      decoration: InputDecoration(
+                          labelText: _t('finance_label_paid_by')),
+                      items: [
+                        DropdownMenuItem(
+                            value: _mamaId, child: Text(_t('finance_mama'))),
+                        DropdownMenuItem(
+                            value: _papaId, child: Text(_t('finance_papa'))),
                       ],
                       onChanged: (value) {
                         if (value == null) return;
@@ -1563,7 +1578,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<ExpenseCategory>(
                       initialValue: category,
-                      decoration: const InputDecoration(labelText: 'Kategorie'),
+                      decoration: InputDecoration(
+                          labelText: _t('finance_label_category')),
                       items: ExpenseCategory.values
                           .map((item) => DropdownMenuItem(
                                 value: item,
@@ -1580,19 +1596,20 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<ExpenseSplitType>(
                       initialValue: splitType,
-                      decoration: const InputDecoration(labelText: 'Split-Typ'),
-                      items: const [
+                      decoration: InputDecoration(
+                          labelText: _t('finance_label_split_type')),
+                      items: [
                         DropdownMenuItem(
                           value: ExpenseSplitType.intelligentOcrSplit,
-                          child: Text('OCR-Split'),
+                          child: Text(_t('finance_ocr_split')),
                         ),
                         DropdownMenuItem(
                           value: ExpenseSplitType.standardSplit,
-                          child: Text('Standard-Split'),
+                          child: Text(_t('finance_standard_split')),
                         ),
                         DropdownMenuItem(
                           value: ExpenseSplitType.individual,
-                          child: Text('100% individuell'),
+                          child: Text(_t('finance_individual_split')),
                         ),
                       ],
                       onChanged: (value) {
@@ -1649,7 +1666,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                             ),
                           );
                         },
-                        child: const Text('Speichern'),
+                        child: Text(_t('finance_save')),
                       ),
                     ),
                   ],
@@ -1781,7 +1798,7 @@ class _CategoryFilterBar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: const Text('Alle'),
+              label: Text(_t('all')),
               selected: selected == null,
               onSelected: (_) => onSelected(null),
             ),
@@ -1863,7 +1880,7 @@ class _MonthSelector extends StatelessWidget {
         children: [
           const Icon(Icons.calendar_month_rounded, size: 18),
           const SizedBox(width: 8),
-          const Text('Monat:'),
+          Text(_t('finance_month')),
           const SizedBox(width: 8),
           Expanded(
             child: DropdownButtonHideUnderline(
@@ -1918,7 +1935,8 @@ class _HeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Family Finance, neu gedacht',
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'finance_hero_title'),
             style: theme.textTheme.titleMedium?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -1926,7 +1944,8 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Weniger Tabellen, mehr Zeit mit den Kindern: OCR-Split, Care-Fairness und Spar-Detektor in einem Dashboard.',
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'finance_hero_subtitle'),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.92),
               height: 1.35,
@@ -2005,7 +2024,8 @@ class _MonthlyCategoryOverview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Monatsmix auf einen Blick',
+          AppStringsManager.getString(
+              languageService.currentLanguage, 'finance_monthly_mix'),
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -2138,7 +2158,8 @@ class _SettlementCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Fairer Monatsausgleich',
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'finance_fair_settlement'),
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
             ),

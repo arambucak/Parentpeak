@@ -16,6 +16,10 @@ import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
 import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/config/access_config.dart';
 
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
+
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
 class ProfileSafetyScreen extends StatefulWidget {
   const ProfileSafetyScreen({
@@ -37,8 +41,6 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   List<_ChildInfo> _children = [];
   String _appVersion = '';
 
-  String _t(String key) =>
-      AppStringsManager.getString(languageService.currentLanguage, key);
 
   @override
   void initState() {
@@ -682,7 +684,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   size: 28, color: theme.colorScheme.onPrimaryContainer),
             ),
             const SizedBox(height: 16),
-            Text('Abmelden?',
+            Text(_t('profile_logout_title'),
                 style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
@@ -702,7 +704,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Abbrechen'),
+                  child: Text(_t('cancel')),
                 ),
               ),
               const SizedBox(width: 12),
@@ -714,7 +716,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Abmelden'),
+                  child: Text(_t('logout')),
                 ),
               ),
             ]),
@@ -861,7 +863,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 children: [
                   const Text('\u{1F310}', style: TextStyle(fontSize: 22)),
                   const SizedBox(width: 10),
-                  Text('Sprache wählen',
+                  Text(_t('profile_choose_language'),
                       style: theme.textTheme.titleMedium
                           ?.copyWith(fontWeight: FontWeight.w800)),
                   const Spacer(),
@@ -939,15 +941,15 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Row(children: [
+              Row(children: [
                 Icon(Icons.business_rounded, size: 22),
                 SizedBox(width: 10),
-                Text('Impressum',
+                Text(_t('profile_imprint'),
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
-              const Text('Angaben gemäß § 5 TMG / § 25 MStV',
+              Text(_t('profile_legal_info'),
                   style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -1027,10 +1029,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Row(children: [
+              Row(children: [
                 Text('\u{1F916}', style: TextStyle(fontSize: 22)),
                 SizedBox(width: 10),
-                Text('KI-Nutzungshinweis',
+                Text(_t('profile_ai_notice'),
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
@@ -1074,10 +1076,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFFED7AA)),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Wichtig zu wissen:',
+                    Text(_t('profile_important_info'),
                         style: TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13)),
                     SizedBox(height: 6),
@@ -1224,7 +1226,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 16),
-            const Text('Blockierte Kontakte',
+            Text(_t('profile_blocked_contacts'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
             if (blocked.isEmpty)
@@ -1234,7 +1236,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   Icon(Icons.check_circle_outlined,
                       size: 40, color: Colors.grey[400]),
                   const SizedBox(height: 12),
-                  Text('Keine blockierten Kontakte',
+                  Text(_t('profile_no_blocked'),
                       style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                 ]),
               ),
@@ -1260,7 +1262,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (mounted) setState(() {});
                       },
-                      child: const Text('Aufheben',
+                      child: Text(_t('profile_unblock'),
                           style: TextStyle(fontSize: 12)),
                     ),
                   )),
@@ -1348,7 +1350,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
           ),
           const SizedBox(height: 16),
           Center(
-            child: Text('Konto löschen',
+            child: Text(_t('delete_account'),
                 style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
           ),
@@ -1362,7 +1364,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Zur Bestätigung "LÖSCHEN" eingeben:',
+          Text(_t('profile_confirm_delete'),
               style: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
@@ -1393,7 +1395,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Abbrechen'),
+                child: Text(_t('cancel')),
               ),
             ),
             const SizedBox(width: 12),
@@ -1409,7 +1411,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Endgültig löschen',
+                child: Text(_t('profile_delete_final'),
                     style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -1444,7 +1446,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
     return AlertDialog(
-      title: const Text('Anmeldung bestätigen'),
+      title: Text(_t('profile_confirm_login')),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1472,7 +1474,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: const Text('Abbrechen'),
+          child: Text(_t('cancel')),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -1483,7 +1485,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
             if (pw.isNotEmpty) Navigator.pop(context, pw);
           },
           child:
-              const Text('Bestätigen', style: TextStyle(color: Colors.white)),
+              Text(_t('profile_confirm'), style: const TextStyle(color: Colors.white)),
         ),
       ],
     );

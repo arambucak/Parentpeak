@@ -104,6 +104,9 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
   String get _effectiveUserId => _currentUserId ?? 'local-parent-user';
 
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
+
   @override
   void initState() {
     super.initState();
@@ -281,7 +284,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       // Fallback for errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Smart Matching konnte nicht geladen werden: $e'),
+          content: Text('${_t('matching_load_failed')}: $e'),
           duration: const Duration(seconds: 3),
         ),
       );
@@ -563,7 +566,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                 ),
                 const SizedBox(height: 8),
                 if (names.isEmpty)
-                  const Text('Aktuell keine neuen bestätigten Verbindungen.')
+                  Text(_t('matching_no_new_connections'))
                 else
                   Wrap(
                     spacing: 8,
@@ -587,7 +590,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       if (!context.mounted) return;
                       Navigator.pop(context);
                     },
-                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'all_seen')),
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'all_seen')),
                   ),
                 ),
               ],
@@ -801,8 +805,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anfrage gesendet. Verbindung wird bestätigt.'),
+        SnackBar(
+          content: Text(_t('matching_request_sent')),
           duration: Duration(seconds: 2),
         ),
       );
@@ -829,7 +833,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sicherheits-Check'),
+        title: Text(_t('matching_safety_check')),
         content: Text(
           'Das Profil ${profile.name} ist aktuell nur auf Basisniveau verifiziert. '
           'Teile keine privaten Kontaktdaten oder genaue Kinder-Standorte im ersten Kontakt. '
@@ -842,7 +846,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'send_anyway')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'send_anyway')),
           ),
         ],
       ),
@@ -907,7 +912,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     final name = _profileNameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte gib einen Namen ein.')),
+        SnackBar(content: Text(_t('matching_enter_name'))),
       );
       return;
     }
@@ -973,7 +978,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     final phone = _phoneNumberController.text.trim();
     if (phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte Telefonnummer eingeben.')),
+        SnackBar(content: Text(_t('matching_enter_phone'))),
       );
       return;
     }
@@ -1003,7 +1008,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('OTP gesendet. Bitte Code eingeben.')),
+      SnackBar(content: Text(_t('matching_otp_sent'))),
     );
   }
 
@@ -1011,7 +1016,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     final code = _otpCodeController.text.trim();
     if (code.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte 6-stelligen OTP-Code eingeben.')),
+        SnackBar(content: Text(_t('matching_enter_otp'))),
       );
       return;
     }
@@ -1043,7 +1048,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Telefon erfolgreich verifiziert.')),
+      SnackBar(content: Text(_t('matching_phone_verified'))),
     );
   }
 
@@ -1683,28 +1688,28 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              const ListTile(
+              ListTile(
                 leading: Icon(Icons.flag_outlined),
-                title: Text('Profile melden'),
+                title: Text(_t('matching_report_profiles')),
                 subtitle: Text(
                     'Unpassende Inhalte können jederzeit gemeldet werden.'),
               ),
-              const ListTile(
+              ListTile(
                 leading: Icon(Icons.block_rounded),
-                title: Text('Profile blockieren'),
+                title: Text(_t('matching_block_profiles')),
                 subtitle:
-                    Text('Blockierte Profile werden nicht mehr angezeigt.'),
+                    Text(_t('matching_blocked_info')),
               ),
               ListTile(
                 leading: const Icon(Icons.verified_user_outlined),
-                title: const Text('Aktueller Status'),
+                title: Text(_t('matching_current_status')),
                 subtitle: Text(
                     '${_matchedProfiles.length} Verbindungen, ${_blockedProfileIds.length} blockierte Profile, ${_reportedProfileIds.length} gemeldete Profile'),
               ),
               if (_reportedProfileIds.isNotEmpty)
                 ListTile(
                   leading: const Icon(Icons.inventory_2_outlined),
-                  title: const Text('Safety-Queue'),
+                  title: Text(_t('matching_safety_queue')),
                   subtitle: Text(
                       '${_reportedProfileIds.length} Profile in Prüfung (lokal markiert)'),
                 ),
@@ -1788,7 +1793,10 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(AppStringsManager.getString(languageService.currentLanguage, 'matching_filter'),
+                          Text(
+                              AppStringsManager.getString(
+                                  languageService.currentLanguage,
+                                  'matching_filter'),
                               style: TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 18)),
                           const Spacer(),
@@ -1802,7 +1810,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                 _childAgeFilter.clear();
                               });
                             },
-                            child: const Text('Reset'),
+                            child: Text(_t('matching_reset')),
                           ),
                         ],
                       ),
@@ -1874,7 +1882,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                             _persistState();
                             Navigator.pop(context);
                           },
-                          child: Text(AppStringsManager.getString(languageService.currentLanguage, 'apply_filter')),
+                          child: Text(AppStringsManager.getString(
+                              languageService.currentLanguage, 'apply_filter')),
                         ),
                       ),
                     ],
@@ -1945,7 +1954,10 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(AppStringsManager.getString(languageService.currentLanguage, 'matching_profile'),
+                          Text(
+                              AppStringsManager.getString(
+                                  languageService.currentLanguage,
+                                  'matching_profile'),
                               style: TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 18)),
                           const Spacer(),
@@ -1965,7 +1977,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                 _maxDistanceKm = 20;
                               });
                             },
-                            child: const Text('Reset'),
+                            child: Text(_t('matching_reset')),
                           ),
                         ],
                       ),
@@ -2142,15 +2154,18 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
               itemBuilder: (context) => [
                 PopupMenuItem<String>(
                   value: 'profile',
-                  child: Text(AppStringsManager.getString(languageService.currentLanguage, 'my_profile')),
+                  child: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'my_profile')),
                 ),
                 PopupMenuItem<String>(
                   value: 'safety',
-                  child: Text(AppStringsManager.getString(languageService.currentLanguage, 'security')),
+                  child: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'security')),
                 ),
                 PopupMenuItem<String>(
                   value: 'filter',
-                  child: Text(AppStringsManager.getString(languageService.currentLanguage, 'filter_search')),
+                  child: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'filter_search')),
                 ),
               ],
               icon: const Icon(Icons.more_horiz_rounded),
@@ -2670,11 +2685,15 @@ class _ProfileCard extends StatelessWidget {
                         itemBuilder: (context) => [
                           PopupMenuItem<String>(
                             value: 'report',
-                            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'report_profile')),
+                            child: Text(AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'report_profile')),
                           ),
                           PopupMenuItem<String>(
                             value: 'block',
-                            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'block_profile')),
+                            child: Text(AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'block_profile')),
                           ),
                         ],
                       ),
@@ -3016,7 +3035,8 @@ class _GlobalParentRoomsState extends StatelessWidget {
                 child: FilledButton.tonalIcon(
                   onPressed: () => onOpenRoom(room),
                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                  label: Text(AppStringsManager.getString(languageService.currentLanguage, 'open_room')),
+                  label: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'open_room')),
                 ),
               ),
             ],

@@ -17,6 +17,9 @@ class WochenrueckblickScreen extends StatefulWidget {
 class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
     with TickerProviderStateMixin {
   int _step = 0; // 0-4 = questions, 5 = summary
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   bool _loading = true;
   bool _aiLoading = false;
   String? _aiFeedback;
@@ -476,7 +479,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
             TextButton.icon(
               onPressed: _prevStep,
               icon: const Icon(Icons.arrow_back_rounded, size: 18),
-              label: const Text('Zurück'),
+              label: Text(_t('network_back')),
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF6B7280),
               ),
@@ -667,7 +670,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
               );
             },
             icon: const Text('\u{1F4AC}', style: TextStyle(fontSize: 16)),
-            label: const Text('Mit KI über meine Woche sprechen'),
+            label: Text(_t('review_talk_to_ai')),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -681,7 +684,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
         Center(
           child: TextButton(
             onPressed: _startNewReflection,
-            child: const Text('Nochmal ausfüllen',
+            child: Text(_t('review_fill_again'),
                 style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
           ),
         ),
@@ -776,7 +779,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
             ),
             ListTile(
               leading: const Icon(Icons.edit_rounded),
-              title: const Text('Bearbeiten'),
+              title: Text(_t('calendar_edit')),
               onTap: () {
                 Navigator.pop(ctx);
                 _editReflection(r);
@@ -785,7 +788,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
             ListTile(
               leading:
                   const Icon(Icons.delete_rounded, color: Color(0xFFDC2626)),
-              title: const Text('Löschen',
+              title: Text(_t('review_delete'),
                   style: TextStyle(color: Color(0xFFDC2626))),
               onTap: () {
                 Navigator.pop(ctx);
@@ -820,7 +823,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('${r.weekId} löschen?'),
-        content: const Text('Der Rückblick wird unwiderruflich gelöscht.'),
+        content: Text(_t('review_delete_confirm')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -854,7 +857,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
             children: [
               const Text('\u{1F4D6}', style: TextStyle(fontSize: 48)),
               const SizedBox(height: 16),
-              Text('Noch keine Rückblicke',
+              Text(_t('review_no_reviews'),
                   style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

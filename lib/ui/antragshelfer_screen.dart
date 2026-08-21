@@ -7,6 +7,8 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/config/monetization_config.dart';
 import 'package:parentpeak/models/benefit_application_data.dart';
 import 'package:parentpeak/services/premium_service.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 /// Antragshelfer — geführter 3-Schritt-Flow für Sozialleistungs-Anträge.
 ///
@@ -25,6 +27,9 @@ class AntragshelferScreen extends StatefulWidget {
 class _AntragshelferScreenState extends State<AntragshelferScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   final Set<int> _checkedDocs = {};
   bool _aiLoading = false;
   String? _aiText;
@@ -92,9 +97,13 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
         bottom: TabBar(
           controller: _tabs,
           tabs: const [
-            Tab(icon: Icon(Icons.checklist_rounded, size: 18), text: 'Unterlagen'),
+            Tab(
+                icon: Icon(Icons.checklist_rounded, size: 18),
+                text: 'Unterlagen'),
             Tab(icon: Icon(Icons.route_rounded, size: 18), text: 'Anleitung'),
-            Tab(icon: Icon(Icons.auto_awesome_rounded, size: 18), text: 'KI-Hilfe'),
+            Tab(
+                icon: Icon(Icons.auto_awesome_rounded, size: 18),
+                text: 'KI-Hilfe'),
           ],
         ),
       ),
@@ -128,7 +137,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
               colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
             ),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.2)),
+            border: Border.all(
+                color: const Color(0xFF16A34A).withValues(alpha: 0.2)),
           ),
           child: Column(children: [
             Text(
@@ -138,14 +148,16 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             const SizedBox(height: 8),
             Text(
               allChecked ? 'Alles bereit!' : 'Das brauchst du',
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
             Text(
               allChecked
                   ? 'Du hast alle Unterlagen zusammen. Weiter zu Schritt 2!'
                   : '${_checkedDocs.length} von ${_b.documents.length} Unterlagen bereit',
-              style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF166534)),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: const Color(0xFF166534)),
               textAlign: TextAlign.center,
             ),
           ]),
@@ -156,7 +168,9 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
-            value: _b.documents.isEmpty ? 0 : _checkedDocs.length / _b.documents.length,
+            value: _b.documents.isEmpty
+                ? 0
+                : _checkedDocs.length / _b.documents.length,
             minHeight: 6,
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
             valueColor: const AlwaysStoppedAnimation(Color(0xFF16A34A)),
@@ -179,7 +193,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             decoration: BoxDecoration(
               color: const Color(0xFFFFF7ED),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.2)),
+              border: Border.all(
+                  color: const Color(0xFFF97316).withValues(alpha: 0.2)),
             ),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('💡', style: TextStyle(fontSize: 16)),
@@ -205,11 +220,12 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             child: FilledButton.icon(
               onPressed: () => _tabs.animateTo(1),
               icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: const Text('Weiter zur Anleitung'),
+              label: Text(_t('antrag_next_guide')),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF16A34A),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ),
@@ -218,7 +234,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
     );
   }
 
-  Widget _documentTile(ThemeData theme, RequiredDocument doc, int index, bool checked) {
+  Widget _documentTile(
+      ThemeData theme, RequiredDocument doc, int index, bool checked) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -260,7 +277,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             ? Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(children: [
-                  Icon(Icons.info_outline_rounded, size: 12, color: theme.colorScheme.outline),
+                  Icon(Icons.info_outline_rounded,
+                      size: 12, color: theme.colorScheme.outline),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -280,8 +298,11 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
                   color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text('Optional',
-                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B))),
+                child: Text(_t('antrag_optional'),
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFF59E0B))),
               )
             : null,
       ),
@@ -307,23 +328,30 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
           decoration: BoxDecoration(
             color: const Color(0xFFF5F3FF),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.2)),
+            border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2)),
           ),
           child: Row(children: [
             const Text('🏛️', style: TextStyle(fontSize: 22)),
             const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Zuständig: ${_b.responsibleAuthority}',
-                  style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 2),
-              Text('⏱️ Bearbeitungszeit: ${_b.processingTime}',
-                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline)),
-              if (_b.renewalNote != null) ...[
-                const SizedBox(height: 2),
-                Text('🔄 ${_b.renewalNote}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: const Color(0xFFF97316))),
-              ],
-            ])),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('Zuständig: ${_b.responsibleAuthority}',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text('⏱️ Bearbeitungszeit: ${_b.processingTime}',
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(color: theme.colorScheme.outline)),
+                  if (_b.renewalNote != null) ...[
+                    const SizedBox(height: 2),
+                    Text('🔄 ${_b.renewalNote}',
+                        style: theme.textTheme.labelSmall
+                            ?.copyWith(color: const Color(0xFFF97316))),
+                  ],
+                ])),
           ]),
         ),
         const SizedBox(height: 24),
@@ -342,11 +370,12 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             child: FilledButton.icon(
               onPressed: () => _openUrl(_b.onlineApplicationUrl!),
               icon: const Icon(Icons.open_in_new_rounded, size: 18),
-              label: const Text('Online-Antrag öffnen'),
+              label: Text(_t('antrag_open_online')),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF8B5CF6),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ),
@@ -371,7 +400,10 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             child: Center(
               child: Text(
                 '${step.stepNumber}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14),
               ),
             ),
           ),
@@ -391,22 +423,28 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+              border: Border.all(
+                  color:
+                      theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(step.title,
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),
               Text(step.description,
-                  style: theme.textTheme.bodySmall?.copyWith(height: 1.4, color: theme.colorScheme.onSurfaceVariant)),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      height: 1.4, color: theme.colorScheme.onSurfaceVariant)),
               if (step.url != null) ...[
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () => _openUrl(step.url!),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.open_in_new_rounded, size: 13, color: Color(0xFF8B5CF6)),
+                    const Icon(Icons.open_in_new_rounded,
+                        size: 13, color: Color(0xFF8B5CF6)),
                     const SizedBox(width: 4),
-                    Text('Link öffnen',
+                    Text(_t('antrag_open_link'),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: const Color(0xFF8B5CF6),
                           fontWeight: FontWeight.w700,
@@ -442,17 +480,20 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
               colors: [Color(0xFFFDF4FF), Color(0xFFFCE7F3)],
             ),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFEC4899).withValues(alpha: 0.2)),
+            border: Border.all(
+                color: const Color(0xFFEC4899).withValues(alpha: 0.2)),
           ),
           child: Column(children: [
             const Text('✨', style: TextStyle(fontSize: 28)),
             const SizedBox(height: 8),
-            Text('KI-Textvorlage',
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+            Text(_t('antrag_ai_template'),
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(
               'Die KI erstellt dir einen Begleitbrief oder eine Begründung — fertig zum Kopieren.',
-              style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF831843)),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: const Color(0xFF831843)),
               textAlign: TextAlign.center,
             ),
           ]),
@@ -470,7 +511,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFEC4899),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ),
@@ -478,11 +520,13 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
         // Loading
         if (_aiLoading) ...[
           const SizedBox(height: 20),
-          const Center(child: CircularProgressIndicator(color: Color(0xFFEC4899))),
+          const Center(
+              child: CircularProgressIndicator(color: Color(0xFFEC4899))),
           const SizedBox(height: 12),
           Center(
-            child: Text('KI schreibt...',
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline)),
+            child: Text(_t('antrag_ai_writing'),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
           ),
         ],
 
@@ -495,7 +539,9 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
               color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(_aiError!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
+            child: Text(_aiError!,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.error)),
           ),
         ],
 
@@ -510,14 +556,21 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: theme.colorScheme.outlineVariant),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2)),
               ],
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Icon(Icons.description_rounded, size: 16, color: Color(0xFF8B5CF6)),
+                const Icon(Icons.description_rounded,
+                    size: 16, color: Color(0xFF8B5CF6)),
                 const SizedBox(width: 6),
-                Text('Vorlage', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700)),
+                Text('Vorlage',
+                    style: theme.textTheme.labelMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.copy_rounded, size: 18),
@@ -525,7 +578,9 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: _aiText!));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('📋 In die Zwischenablage kopiert!'), duration: Duration(seconds: 2)),
+                      const SnackBar(
+                          content: Text('📋 In die Zwischenablage kopiert!'),
+                          duration: Duration(seconds: 2)),
                     );
                   },
                 ),
@@ -543,7 +598,7 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
               child: OutlinedButton.icon(
                 onPressed: _generateAiText,
                 icon: const Icon(Icons.refresh_rounded, size: 16),
-                label: const Text('Neu generieren'),
+                label: Text(_t('antrag_regenerate')),
               ),
             ),
           ]),
@@ -563,7 +618,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             Expanded(
               child: Text(
                 'Dies ist eine Vorlage, keine Rechtsberatung. Passe den Text an deine persönliche Situation an.',
-                style: theme.textTheme.labelSmall?.copyWith(color: const Color(0xFF92400E), height: 1.3),
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
               ),
             ),
           ]),
@@ -607,9 +663,8 @@ Regeln:
 - Format: Direkt als Brief-Text (kein "Betreff:", kein Header)
 ''';
 
-      final response = await model
-          .generateContent([Content.text(prompt)])
-          .timeout(const Duration(seconds: 20));
+      final response = await model.generateContent(
+          [Content.text(prompt)]).timeout(const Duration(seconds: 20));
 
       final text = response.text;
       if (text == null || text.trim().isEmpty) {
@@ -625,7 +680,8 @@ Regeln:
     } catch (e) {
       if (mounted) {
         setState(() {
-          _aiError = 'Textvorlage konnte nicht erstellt werden. Bitte versuche es erneut.';
+          _aiError =
+              'Textvorlage konnte nicht erstellt werden. Bitte versuche es erneut.';
           _aiLoading = false;
         });
       }
@@ -646,31 +702,37 @@ Regeln:
               color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.workspace_premium_rounded, size: 36, color: Color(0xFF8B5CF6)),
+            child: const Icon(Icons.workspace_premium_rounded,
+                size: 36, color: Color(0xFF8B5CF6)),
           ),
           const SizedBox(height: 20),
           Text(featureName,
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           Text(
             'Mit Premium bekommst du die volle Anleitung, KI-Textvorlagen und Erinnerungen.',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline, height: 1.5),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.outline, height: 1.5),
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {
               // TODO: Open Premium sheet
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Premium kommt bald! Während der Beta ist alles kostenlos.')),
+                const SnackBar(
+                    content: Text(
+                        'Premium kommt bald! Während der Beta ist alles kostenlos.')),
               );
             },
             icon: const Icon(Icons.star_rounded, size: 18),
-            label: const Text('Premium freischalten'),
+            label: Text(_t('antrag_unlock_premium')),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF8B5CF6),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
             ),
           ),
         ]),

@@ -22,6 +22,9 @@ class CreateEventScreen extends StatefulWidget {
 class _CreateEventScreenState extends State<CreateEventScreen> {
   final _formKey = GlobalKey<FormState>();
   final _eventService = EventService();
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   final _familyCircleService = FamilyCircleService.instance;
 
   late TextEditingController _titleController;
@@ -155,8 +158,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     final currentUserId = AuthService.instance.currentUser?.uid;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Bitte melde dich an, um ein Event zu erstellen.')),
+        SnackBar(
+            content: Text(_t('event_login_required'))),
       );
       return;
     }
@@ -164,8 +167,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedAgeGroups.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Bitte wähle mindestens eine Altersgruppe.')),
+        SnackBar(
+            content: Text(_t('event_select_age_group'))),
       );
       return;
     }
@@ -173,8 +176,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (_visibility == EventVisibility.inviteOnly &&
         _selectedInvitees.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bitte lade mindestens einen Kontakt ein.'),
+        SnackBar(
+          content: Text(_t('event_invite_contact')),
         ),
       );
       return;
@@ -231,15 +234,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           await showDialog<void>(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text(AppStringsManager.getString(languageService.currentLanguage, 'event_ready')),
+              title: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'event_ready')),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Dein Event wurde erfolgreich erstellt.'),
+                  Text(_t('event_created_success')),
                   const SizedBox(height: 10),
                   if (code != null) ...[
-                    const Text('Dein Code:'),
+                    Text(_t('your_code')),
                     const SizedBox(height: 4),
                     SelectableText(
                       code,
@@ -248,7 +252,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     const SizedBox(height: 10),
                   ],
                   if (link != null) ...[
-                    const Text('Dein Link:'),
+                    Text(_t('your_link')),
                     const SizedBox(height: 4),
                     SelectableText(link),
                     const SizedBox(height: 10),
@@ -272,7 +276,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       Clipboard.setData(ClipboardData(text: code));
                       Navigator.of(context).pop();
                     },
-                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'copy_code_close')),
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'copy_code_close')),
                   ),
                 if (link != null)
                   TextButton(
@@ -280,18 +285,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       Clipboard.setData(ClipboardData(text: link));
                       Navigator.of(context).pop();
                     },
-                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'copy_link_close')),
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'copy_link_close')),
                   ),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Weiter'),
+                  child: Text(_t('event_next')),
                 ),
               ],
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Event ist jetzt live.')),
+            SnackBar(content: Text(_t('event_is_live'))),
           );
         }
 
@@ -313,7 +319,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'create_event')),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'create_event')),
         elevation: 0,
       ),
       body: Container(
@@ -679,7 +686,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                                 });
                               },
                         icon: const Icon(Icons.delete_outline_rounded),
-                        label: const Text('Entfernen'),
+                        label: Text(_t('circle_remove')),
                       ),
                     ],
                   ),
@@ -727,7 +734,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.check),
-                    label: Text(AppStringsManager.getString(languageService.currentLanguage, 'publish_event')),
+                    label: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'publish_event')),
                   ),
                 ),
               ],

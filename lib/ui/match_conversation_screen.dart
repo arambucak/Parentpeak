@@ -9,6 +9,8 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class MatchConversationScreen extends StatefulWidget {
   const MatchConversationScreen({
@@ -29,6 +31,9 @@ class MatchConversationScreen extends StatefulWidget {
 
 class _MatchConversationScreenState extends State<MatchConversationScreen> {
   final TextEditingController _controller = TextEditingController();
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   final ParentMatchingBackendService _service =
       BackendServiceFactory.createParentMatchingService();
   final List<_Msg> _messages = [];
@@ -349,8 +354,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             'Blockierte Personen können dir keine Nachrichten mehr senden und sehen dein Profil nicht. Du kannst die Blockierung jederzeit aufheben.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen')),
+              onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
           FilledButton(
             onPressed: () async {
               await BlockReportService.instance
@@ -368,7 +372,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             },
             style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Blockieren'),
+            child: Text(_t('convo_block')),
           ),
         ],
       ),
@@ -393,7 +397,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                   borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 16),
-            const Text('Nutzer melden',
+            Text(_t('convo_report_user'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
             Text('Warum möchtest du ${widget.profileName} melden?',
@@ -551,7 +555,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                   Text(widget.profileName,
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700)),
-                  Text('Eltern-Netzwerk',
+                  Text(_t('convo_parent_network'),
                       style: TextStyle(
                           fontSize: 11,
                           color: theme.colorScheme.onSurfaceVariant)),
@@ -571,28 +575,28 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
               if (value == 'refresh') _loadMessages();
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                   value: 'refresh',
                   child: Row(children: [
                     Icon(Icons.refresh_rounded, size: 18),
                     SizedBox(width: 8),
-                    Text('Aktualisieren'),
+                    Text(_t('convo_refresh')),
                   ])),
-              const PopupMenuItem(
+              PopupMenuItem(
                   value: 'report',
                   child: Row(children: [
                     Icon(Icons.flag_rounded,
                         size: 18, color: Color(0xFFEA580C)),
                     SizedBox(width: 8),
-                    Text('Melden'),
+                    Text(_t('chat_report')),
                   ])),
-              const PopupMenuItem(
+              PopupMenuItem(
                   value: 'block',
                   child: Row(children: [
                     Icon(Icons.block_rounded,
                         size: 18, color: Color(0xFFDC2626)),
                     SizedBox(width: 8),
-                    Text('Blockieren'),
+                    Text(_t('convo_block')),
                   ])),
             ],
           ),

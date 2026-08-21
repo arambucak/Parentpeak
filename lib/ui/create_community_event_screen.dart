@@ -29,6 +29,9 @@ class CreateCommunityEventScreen extends StatefulWidget {
 class _CreateCommunityEventScreenState
     extends State<CreateCommunityEventScreen> {
   final _pageCtrl = PageController();
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   int _step = 0;
   bool _saving = false;
   bool _scanning = false;
@@ -114,22 +117,22 @@ class _CreateCommunityEventScreenState
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
-          const Text('Flyer / Poster scannen',
+          Text(_t('community_event_scan_flyer'),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text('Die KI erkennt automatisch: Titel, Datum, Ort, Beschreibung',
+          Text(_t('community_event_ai_recognizes'),
               style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           const SizedBox(height: 16),
           ListTile(
             leading:
                 const Icon(Icons.camera_alt_rounded, color: Color(0xFF8B5CF6)),
-            title: const Text('Foto aufnehmen'),
+            title: Text(_t('community_event_take_photo')),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
             leading: const Icon(Icons.photo_library_rounded,
                 color: Color(0xFF8B5CF6)),
-            title: const Text('Aus Galerie wählen'),
+            title: Text(_t('community_event_from_gallery')),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
           const SizedBox(height: 16),
@@ -308,10 +311,10 @@ class _CreateCommunityEventScreenState
         builder: (ctx) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(children: [
-            Text('⚠️', style: TextStyle(fontSize: 20)),
-            SizedBox(width: 8),
-            Text('Ähnliches Event gefunden'),
+          title: Row(children: [
+            const Text('⚠️', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text(_t('community_event_similar_found')),
           ]),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             Text(
@@ -329,11 +332,11 @@ class _CreateCommunityEventScreenState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen'),
+              child: Text(_t('cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Trotzdem erstellen'),
+              child: Text(_t('community_event_create_anyway')),
             ),
           ],
         ),
@@ -504,7 +507,7 @@ class _CreateCommunityEventScreenState
               TextButton.icon(
                 onPressed: _prev,
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: const Text('Zurück'),
+                label: Text(_t('network_back')),
               )
             else
               const Spacer(),
@@ -668,7 +671,7 @@ class _CreateCommunityEventScreenState
         ),
         const SizedBox(height: 6),
         Center(
-          child: Text('Foto machen → KI füllt alles automatisch aus',
+          child: Text(_t('community_event_photo_hint'),
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.outline)),
         ),

@@ -6,6 +6,8 @@ import 'package:parentpeak/models/payment_transaction.dart';
 import 'package:parentpeak/logic/payment_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class PaymentScreen extends StatefulWidget {
   final MeetupEvent event;
@@ -25,6 +27,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final _paymentService = PaymentService();
   final _eventService = EventService();
 
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
+
   String _selectedPaymentMethod = 'stripe'; // stripe oder paypal
   bool _isProcessing = false;
   bool _agreeToTerms = false;
@@ -35,7 +40,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Link konnte nicht geöffnet werden.')),
+        SnackBar(content: Text(_t('payment_link_failed'))),
       );
     }
   }
@@ -47,7 +52,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _processPayment() async {
     if (!_agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte akzeptiere die Bedingungen')),
+        SnackBar(content: Text(_t('payment_accept_terms'))),
       );
       return;
     }
@@ -141,7 +146,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             icon: Icon(Icons.check_circle, color: Colors.green[700], size: 48),
-            title: const Text('Zahlung erfolgreich!'),
+            title: Text(_t('payment_success')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -179,7 +184,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   Navigator.of(context).pop();
                   Navigator.of(context).pop();
                 },
-                child: const Text('Fertig'),
+                child: Text(_t('done')),
               ),
             ],
           ),
@@ -251,7 +256,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       canPop: !_isProcessing,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Zahlung abschließen'),
+          title: Text(_t('payment_complete')),
           elevation: 0,
           automaticallyImplyLeading: !_isProcessing,
         ),
@@ -384,7 +389,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Veröffentlichungsgebühr'),
+                              Text(_t('payment_publish_fee')),
                               Text(
                                 '${widget.amount.toStringAsFixed(2)} €',
                                 style: const TextStyle(
@@ -463,7 +468,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                     // Terms & Conditions
                     CheckboxListTile(
-                      title: const Text('AGB & Datenschutz akzeptieren'),
+                      title: Text(_t('payment_accept_agb')),
                       subtitle: const Text(
                         'Ich akzeptiere die AGB und Datenschutzhinweise. Zahlungen werden über Stripe/PayPal abgewickelt.',
                       ),
@@ -492,14 +497,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 onPressed: () => _openLegalUrl(termsUrl),
                                 icon: const Icon(Icons.description_outlined,
                                     size: 16),
-                                label: const Text('AGB ansehen'),
+                                label: Text(_t('payment_view_agb')),
                               ),
                             if (privacyUrl != null && privacyUrl.isNotEmpty)
                               TextButton.icon(
                                 onPressed: () => _openLegalUrl(privacyUrl),
                                 icon: const Icon(Icons.privacy_tip_outlined,
                                     size: 16),
-                                label: const Text('Datenschutz ansehen'),
+                                label: Text(_t('payment_view_privacy')),
                               ),
                           ],
                         );

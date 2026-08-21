@@ -228,8 +228,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
 
   void _showPermissionDeniedMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Diese Aktion ist in dieser Rolle nicht erlaubt.'),
+      SnackBar(
+        content: Text(_t('family_action_not_allowed')),
       ),
     );
   }
@@ -399,7 +399,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(_t('family_ok')),
           ),
         ],
       ),
@@ -532,7 +532,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                                   syncAutoPlay(setDialogState);
                                 }
                               : null,
-                          child: const Text('Zurück'),
+                          child: Text(_t('network_back')),
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton(
@@ -544,7 +544,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                                   syncAutoPlay(setDialogState);
                                 }
                               : null,
-                          child: const Text('Weiter'),
+                          child: Text(_t('event_next')),
                         ),
                       ],
                     ),
@@ -652,7 +652,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                           });
                         },
                         icon: const Icon(Icons.qr_code_scanner),
-                        label: const Text('QR scannen'),
+                        label: Text(_t('family_scan_qr')),
                       ),
                     ],
                   ),
@@ -791,7 +791,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+              child: Text(_t('family_ok')),
             ),
           ],
         ),
@@ -809,7 +809,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Import fehlgeschlagen. JSON ungueltig.')),
+        SnackBar(content: Text(_t('family_import_invalid'))),
       );
     }
   }
@@ -1246,7 +1246,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 }
                 Navigator.pop(context, true);
               },
-              child: const Text('Speichern'),
+              child: Text(_t('finance_save')),
             ),
           ],
         ),
@@ -1270,7 +1270,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name ist bereits vorhanden.')),
+        SnackBar(content: Text(_t('family_name_exists'))),
       );
       return;
     }
@@ -1296,7 +1296,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
 
     if (_familyMembers.length <= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mindestens ein Mitglied muss bleiben.')),
+        SnackBar(content: Text(_t('family_min_member'))),
       );
       return;
     }
@@ -1373,7 +1373,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(_t('family_ok')),
           ),
         ],
       ),

@@ -5,6 +5,10 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
 import 'package:parentpeak/models/family_contact.dart';
 
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
+
 class FamilyCircleScreen extends StatefulWidget {
   const FamilyCircleScreen({super.key});
 
@@ -14,6 +18,7 @@ class FamilyCircleScreen extends StatefulWidget {
 
 class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
   final _service = FamilyCircleService.instance;
+
 
   List<FamilyContact> _contacts = [];
   List<FamilyConnectionRequest> _requests = [];
@@ -35,7 +40,8 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
       setState(() {
         _contacts = [];
         _requests = [];
-        _errorMessage = 'Bitte melde dich an, um deinen Familienkreis zu sehen.';
+        _errorMessage =
+            'Bitte melde dich an, um deinen Familienkreis zu sehen.';
         _isLoading = false;
       });
       return;
@@ -65,7 +71,8 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Anfrage konnte nicht synchronisiert werden: $e')),
+        SnackBar(
+            content: Text('Anfrage konnte nicht synchronisiert werden: $e')),
       );
       return;
     }
@@ -74,9 +81,8 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(accept
-            ? 'Kontaktanfrage angenommen'
-            : 'Kontaktanfrage abgelehnt'),
+        content: Text(
+            accept ? 'Kontaktanfrage angenommen' : 'Kontaktanfrage abgelehnt'),
       ),
     );
   }
@@ -88,7 +94,7 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
     final targetUserId = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Kontakt einladen'),
+        title: Text(_t('circle_invite_contact')),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -100,11 +106,11 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Abbrechen'),
+            child: Text(_t('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Anfrage senden'),
+            child: Text(_t('circle_send_request')),
           ),
         ],
       ),
@@ -114,7 +120,8 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
     if (targetUserId == currentUserId) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Du kannst keine Anfrage an dich selbst senden.')),
+        const SnackBar(
+            content: Text('Du kannst keine Anfrage an dich selbst senden.')),
       );
       return;
     }
@@ -144,16 +151,17 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Kontakt entfernen'),
-        content: Text('Möchtest du ${contact.displayName} aus deinem Kreis entfernen?'),
+        title: Text(_t('circle_remove_contact')),
+        content: Text(
+            'Möchtest du ${contact.displayName} aus deinem Kreis entfernen?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(_t('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Entfernen'),
+            child: Text(_t('circle_remove')),
           ),
         ],
       ),
@@ -185,12 +193,12 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Familienkreis'),
+        title: Text(_t('circle_title')),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _sendNewRequest,
         icon: const Icon(Icons.person_add_rounded),
-        label: const Text('Einladen'),
+        label: Text(_t('circle_invite')),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -205,113 +213,113 @@ class _FamilyCircleScreenState extends State<FamilyCircleScreen> {
                     ),
                   ),
                 )
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Dein vertrauensvoller Kreis',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant
+                                .withValues(alpha: 0.4),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Teile private Events gezielt mit deinen Kontakten und bearbeite Anfragen in einem ruhigen Flow.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            height: 1.35,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: _InfoPill(
-                                icon: Icons.people_alt_rounded,
-                                label: 'Kontakte',
-                                value: _contacts.length.toString(),
-                                color: const Color(0xFF2563EB),
+                            Text(
+                              'Dein vertrauensvoller Kreis',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _InfoPill(
-                                icon: Icons.mark_email_unread_rounded,
-                                label: 'Offene Anfragen',
-                                value: _requests.length.toString(),
-                                color: const Color(0xFFF59E0B),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Teile private Events gezielt mit deinen Kontakten und bearbeite Anfragen in einem ruhigen Flow.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                height: 1.35,
                               ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _InfoPill(
+                                    icon: Icons.people_alt_rounded,
+                                    label: 'Kontakte',
+                                    value: _contacts.length.toString(),
+                                    color: const Color(0xFF2563EB),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _InfoPill(
+                                    icon: Icons.mark_email_unread_rounded,
+                                    label: 'Offene Anfragen',
+                                    value: _requests.length.toString(),
+                                    color: const Color(0xFFF59E0B),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  _SectionHeader(
-                    title: 'Kontaktanfragen',
-                    subtitle: _requests.isEmpty
-                        ? 'Keine offenen Anfragen'
-                        : '${_requests.length} offen',
-                  ),
-                  const SizedBox(height: 10),
-                  if (_requests.isEmpty)
-                    const _EmptyStateTile(
-                      icon: Icons.inbox_rounded,
-                      text: 'Aktuell keine offenen Anfragen.',
-                    )
-                  else
-                    ..._requests.map(
-                      (r) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _RequestRow(
-                          request: r,
-                          onAccept: () => _respond(r, true),
-                          onDecline: () => _respond(r, false),
-                        ),
                       ),
-                    ),
-                  const SizedBox(height: 18),
-                  _SectionHeader(
-                    title: 'Deine Kontakte',
-                    subtitle: _contacts.isEmpty
-                        ? 'Noch keine Kontakte verbunden'
-                        : '${_contacts.length} verbunden',
-                  ),
-                  const SizedBox(height: 10),
-                  if (_contacts.isEmpty)
-                    const _EmptyStateTile(
-                      icon: Icons.people_outline_rounded,
-                      text: 'Noch keine Kontakte verbunden.',
-                    )
-                  else
-                    ..._contacts.map(
-                      (c) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _ContactRow(
-                          contact: c,
-                          onDelete: () => _deleteContact(c),
-                        ),
+                      const SizedBox(height: 18),
+                      _SectionHeader(
+                        title: 'Kontaktanfragen',
+                        subtitle: _requests.isEmpty
+                            ? 'Keine offenen Anfragen'
+                            : '${_requests.length} offen',
                       ),
-                    ),
-                ],
-              ),
-            ),
+                      const SizedBox(height: 10),
+                      if (_requests.isEmpty)
+                        const _EmptyStateTile(
+                          icon: Icons.inbox_rounded,
+                          text: 'Aktuell keine offenen Anfragen.',
+                        )
+                      else
+                        ..._requests.map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _RequestRow(
+                              request: r,
+                              onAccept: () => _respond(r, true),
+                              onDecline: () => _respond(r, false),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 18),
+                      _SectionHeader(
+                        title: 'Deine Kontakte',
+                        subtitle: _contacts.isEmpty
+                            ? 'Noch keine Kontakte verbunden'
+                            : '${_contacts.length} verbunden',
+                      ),
+                      const SizedBox(height: 10),
+                      if (_contacts.isEmpty)
+                        const _EmptyStateTile(
+                          icon: Icons.people_outline_rounded,
+                          text: 'Noch keine Kontakte verbunden.',
+                        )
+                      else
+                        ..._contacts.map(
+                          (c) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _ContactRow(
+                              contact: c,
+                              onDelete: () => _deleteContact(c),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
     );
   }
 }
@@ -449,14 +457,14 @@ class _RequestRow extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: onDecline,
-                  child: const Text('Ablehnen'),
+                  child: Text(_t('circle_decline')),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton(
                   onPressed: onAccept,
-                  child: const Text('Annehmen'),
+                  child: Text(_t('circle_accept')),
                 ),
               ),
             ],

@@ -10,6 +10,10 @@ import 'package:parentpeak/models/meal_memory.dart';
 import 'package:parentpeak/models/recipe.dart';
 import 'package:parentpeak/ui/weekly_planner_view.dart';
 
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
+
 class WeeklyPlannerScreen extends StatefulWidget {
   const WeeklyPlannerScreen({super.key});
 
@@ -27,6 +31,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
   bool _pendingPersist = false;
   String? _syncInfo;
   PlannerTone _tone = PlannerTone.warm;
+
   Set<String> _pantryItems = {
     'reis',
     'pasta',
@@ -51,7 +56,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
     _controller.setDinnerRecipe(monday, 'r-1');
     _controller.setDinnerRecipe(monday.add(const Duration(days: 1)), 'r-3');
     _controller.setDinnerRecipe(monday.add(const Duration(days: 2)), 'r-5');
-    _controller.setKitaLunch(monday.add(const Duration(days: 2)), 'Gemuesesuppe');
+    _controller.setKitaLunch(
+        monday.add(const Duration(days: 2)), 'Gemuesesuppe');
 
     _controller.addListener(_onPlannerChanged);
     _loadInitialWeek();
@@ -126,7 +132,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Essensplaner Pro'),
+        title: Text(_t('planner_title')),
         actions: [
           PopupMenuButton<PlannerTone>(
             tooltip: 'Sprachstil',
@@ -136,18 +142,18 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
                 _tone = value;
               });
             },
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem(
                 value: PlannerTone.warm,
-                child: Text('Ton: Warm'),
+                child: Text(_t('planner_tone_warm')),
               ),
               PopupMenuItem(
                 value: PlannerTone.clear,
-                child: Text('Ton: Klar'),
+                child: Text(_t('planner_tone_clear')),
               ),
               PopupMenuItem(
                 value: PlannerTone.premium,
-                child: Text('Ton: Premium ruhig'),
+                child: Text(_t('planner_tone_premium')),
               ),
             ],
             icon: const Icon(Icons.tune_rounded),
@@ -182,7 +188,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
                       ),
                     if (_yearMemories.isNotEmpty)
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: horizontalPadding),
                         child: _YearRecapCard(
                           memories: _yearMemories,
                           recipes: _demoRecipes,
@@ -194,7 +201,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
                         tone: _tone,
                         onImportKitaPlan: _openKitaImport,
                         onEditPantry: _openPantryEditor,
-                        pantryMissingIngredientsBuilder: _pantryMissingIngredients,
+                        pantryMissingIngredientsBuilder:
+                            _pantryMissingIngredients,
                         onSaveFamilyMoment: _saveFamilyMoment,
                       ),
                     ),
@@ -211,8 +219,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
       final token = ingredient.name.trim().toLowerCase();
       if (token.isEmpty) continue;
 
-      final exists = _pantryItems.any((item) =>
-          token.contains(item) || item.contains(token));
+      final exists = _pantryItems
+          .any((item) => token.contains(item) || item.contains(token));
 
       if (!exists) {
         missing.add(ingredient.name);
@@ -230,7 +238,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Vorrat aktualisieren'),
+          title: Text(_t('planner_update_pantry')),
           content: TextField(
             controller: temp,
             maxLines: 4,
@@ -241,11 +249,11 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Abbrechen'),
+              child: Text(_t('cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Speichern'),
+              child: Text(_t('finance_save')),
             ),
           ],
         );
@@ -299,7 +307,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
                 maxLines: 8,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: 'Montag: Milchreis\nDienstag: Nudeln\nMittwoch: Suppe',
+                  hintText:
+                      'Montag: Milchreis\nDienstag: Nudeln\nMittwoch: Suppe',
                 ),
               ),
               const SizedBox(height: 12),
@@ -307,12 +316,12 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Abbrechen'),
+                    child: Text(_t('cancel')),
                   ),
                   const Spacer(),
                   FilledButton(
                     onPressed: () => Navigator.pop(context, true),
-                    child: const Text('Importieren'),
+                    child: Text(_t('planner_import')),
                   ),
                 ],
               ),
@@ -327,7 +336,9 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
     final extracted = _extractKitaLunchByWeekday(textController.text);
     if (extracted.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kein gueltiger Wochentag erkannt. Bitte Format pruefen.')),
+        const SnackBar(
+            content: Text(
+                'Kein gueltiger Wochentag erkannt. Bitte Format pruefen.')),
       );
       return;
     }
@@ -388,7 +399,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Familienmoment festhalten'),
+          title: Text(_t('planner_capture_moment')),
           content: TextField(
             controller: noteController,
             minLines: 2,
@@ -400,11 +411,11 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Abbrechen'),
+              child: Text(_t('cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Speichern'),
+              child: Text(_t('finance_save')),
             ),
           ],
         );
@@ -423,7 +434,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
       photoPath: null,
     );
     await _storage.saveMealMemory(memory);
-    final memories = await _storage.loadMealMemoriesForYear(DateTime.now().year);
+    final memories =
+        await _storage.loadMealMemoriesForYear(DateTime.now().year);
 
     if (!mounted) return;
     setState(() {
@@ -431,7 +443,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Familienmoment gespeichert.')),
+      SnackBar(content: Text(_t('planner_moment_saved'))),
     );
   }
 
@@ -481,11 +493,12 @@ class _YearRecapCard extends StatelessWidget {
         children: [
           Text(
             'Jahresrueckblick ${DateTime.now().year}: Eure Top 5 Gerichte',
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           if (top.isEmpty)
-            const Text('Noch keine gespeicherten Familienmomente. Startet heute mit eurem ersten Highlight.')
+            Text(_t('planner_no_moments'))
           else
             for (final entry in top.take(5))
               Padding(
@@ -518,9 +531,16 @@ const List<Recipe> _demoRecipes = [
     isOnePot: true,
     hideVegetables: true,
     ingredients: [
-      RecipeIngredient(name: 'Pasta', amount: '300 g', babyOption: 'Sehr weich kochen'),
-      RecipeIngredient(name: 'Brokkoli', amount: '200 g', babyOption: 'In kleine Roeschen dämpfen'),
-      RecipeIngredient(name: 'Frischkaese', amount: '150 g', babyOption: 'Ohne Salz für Baby-Portion'),
+      RecipeIngredient(
+          name: 'Pasta', amount: '300 g', babyOption: 'Sehr weich kochen'),
+      RecipeIngredient(
+          name: 'Brokkoli',
+          amount: '200 g',
+          babyOption: 'In kleine Roeschen dämpfen'),
+      RecipeIngredient(
+          name: 'Frischkaese',
+          amount: '150 g',
+          babyOption: 'Ohne Salz für Baby-Portion'),
     ],
   ),
   Recipe(
@@ -531,9 +551,14 @@ const List<Recipe> _demoRecipes = [
     isOnePot: true,
     hideVegetables: false,
     ingredients: [
-      RecipeIngredient(name: 'Reis (vorgekocht)', amount: '400 g', babyOption: 'Mit Gemuesebrei mischen'),
-      RecipeIngredient(name: 'Erbsen', amount: '120 g', babyOption: 'Gut zerdruecken'),
-      RecipeIngredient(name: 'Ei', amount: '2 Stk', babyOption: 'Komplett durchgaren'),
+      RecipeIngredient(
+          name: 'Reis (vorgekocht)',
+          amount: '400 g',
+          babyOption: 'Mit Gemuesebrei mischen'),
+      RecipeIngredient(
+          name: 'Erbsen', amount: '120 g', babyOption: 'Gut zerdruecken'),
+      RecipeIngredient(
+          name: 'Ei', amount: '2 Stk', babyOption: 'Komplett durchgaren'),
     ],
   ),
   Recipe(
@@ -544,9 +569,18 @@ const List<Recipe> _demoRecipes = [
     isOnePot: false,
     hideVegetables: true,
     ingredients: [
-      RecipeIngredient(name: 'Lasagneplatten', amount: '12 Stk', babyOption: 'Sehr weich backen'),
-      RecipeIngredient(name: 'Hack oder Linsen', amount: '400 g', babyOption: 'Sehr fein zerkleinern'),
-      RecipeIngredient(name: 'Tomatensosse', amount: '500 ml', babyOption: 'Ohne Salz entnehmen'),
+      RecipeIngredient(
+          name: 'Lasagneplatten',
+          amount: '12 Stk',
+          babyOption: 'Sehr weich backen'),
+      RecipeIngredient(
+          name: 'Hack oder Linsen',
+          amount: '400 g',
+          babyOption: 'Sehr fein zerkleinern'),
+      RecipeIngredient(
+          name: 'Tomatensosse',
+          amount: '500 ml',
+          babyOption: 'Ohne Salz entnehmen'),
     ],
   ),
   Recipe(
@@ -557,9 +591,14 @@ const List<Recipe> _demoRecipes = [
     isOnePot: true,
     hideVegetables: false,
     ingredients: [
-      RecipeIngredient(name: 'Kartoffeln', amount: '600 g', babyOption: 'Fein stampfen'),
-      RecipeIngredient(name: 'Karotten', amount: '2 Stk', babyOption: 'Sehr weich kochen'),
-      RecipeIngredient(name: 'Gemuesebruehe', amount: '750 ml', babyOption: 'Fuer Baby nur Wasser verwenden'),
+      RecipeIngredient(
+          name: 'Kartoffeln', amount: '600 g', babyOption: 'Fein stampfen'),
+      RecipeIngredient(
+          name: 'Karotten', amount: '2 Stk', babyOption: 'Sehr weich kochen'),
+      RecipeIngredient(
+          name: 'Gemuesebruehe',
+          amount: '750 ml',
+          babyOption: 'Fuer Baby nur Wasser verwenden'),
     ],
   ),
   Recipe(
@@ -570,9 +609,14 @@ const List<Recipe> _demoRecipes = [
     isOnePot: false,
     hideVegetables: false,
     ingredients: [
-      RecipeIngredient(name: 'Reis', amount: '300 g', babyOption: 'Etwas laenger garen'),
-      RecipeIngredient(name: 'Paprika', amount: '2 Stk', babyOption: 'Geschält und fein gewuerfelt'),
-      RecipeIngredient(name: 'Zucchini', amount: '1 Stk', babyOption: 'Weich dünsten'),
+      RecipeIngredient(
+          name: 'Reis', amount: '300 g', babyOption: 'Etwas laenger garen'),
+      RecipeIngredient(
+          name: 'Paprika',
+          amount: '2 Stk',
+          babyOption: 'Geschält und fein gewuerfelt'),
+      RecipeIngredient(
+          name: 'Zucchini', amount: '1 Stk', babyOption: 'Weich dünsten'),
     ],
   ),
 ];

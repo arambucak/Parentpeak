@@ -16,6 +16,10 @@ import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
+
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
   const ElternNetzwerkScreen({super.key, this.initialFriendCode});
@@ -33,6 +37,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   Set<String> _dismissedSuggestions = {};
   List<_SuggestedParent> _suggestedProfiles = [];
   bool _loadingSuggestions = true;
+
 
   @override
   void initState() {
@@ -358,7 +363,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('Für jede Registrierung: 1 ParentCoin.',
+        Text(_t('network_coin_per_registration'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 14),
@@ -548,7 +553,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _confirmDeleteProfile(theme),
-                      child: Text('Löschen',
+                      child: Text(_t('delete'),
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -826,7 +831,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                       _shareActionBtn(Icons.copy_all_rounded, 'Kopieren', () {
                 Clipboard.setData(ClipboardData(text: myCode));
                 ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Code kopiert ✓!')));
+                    SnackBar(content: Text(_t('network_code_copied'))));
               })),
               const SizedBox(width: 8),
               Expanded(
@@ -916,7 +921,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             style: theme.textTheme.bodyMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
-        Text('Teile deinen Code – ein Tap und ihr seid verbunden!',
+        Text(_t('network_share_code_hint'),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant, height: 1.5),
             textAlign: TextAlign.center),
@@ -1160,7 +1165,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               style: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          Text('Beim Treffen einfach scannen – sofort verbunden!',
+          Text(_t('network_scan_to_connect'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline, height: 1.4),
               textAlign: TextAlign.center),
@@ -1463,7 +1468,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                               Text(resolvedName!,
                                   style: theme.textTheme.bodyMedium
                                       ?.copyWith(fontWeight: FontWeight.w700)),
-                              const Text('Gefunden \u2713',
+                              Text(_t('network_found'),
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: Color(0xFF059669),
@@ -1604,17 +1609,16 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(AppStringsManager.getString(
             languageService.currentLanguage, 'delete_profile')),
-        content: const Text('Dein Spielfreunde-Profil wird dauerhaft gelöscht. '
-            'Du kannst jederzeit ein neues erstellen.'),
+        content: Text(_t('network_delete_profile_confirm')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(_t('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(
                   backgroundColor: theme.colorScheme.error),
-              child: const Text('Löschen')),
+              child: Text(_t('delete'))),
         ],
       ),
     );
@@ -1720,7 +1724,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text('Fertig',
+              child: Text(_t('done'),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
@@ -1952,7 +1956,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             TextButton.icon(
                 onPressed: _prev,
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: const Text('Zurück'))
+                label: Text(_t('network_back')))
           else
             const Spacer(),
           const Spacer(),
@@ -2012,7 +2016,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 20),
           _sectionTitle(theme, '\u{1F46A} Familienform'),
           const SizedBox(height: 8),
-          Text('Wähle was am besten passt — oder schreib deine eigene:',
+          Text(_t('network_wizard_choose'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -2049,7 +2053,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SizedBox(height: 8),
-          Text('Für wen sucht ihr Spielfreunde?',
+          Text(_t('network_wizard_for_whom'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 14),
@@ -2280,7 +2284,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 8),
           _sectionTitle(theme, '\u{1F3AF} Was sucht ihr?'),
           const SizedBox(height: 6),
-          Text('Wähle Aktivitäten die euch Spaß machen:',
+          Text(_t('network_wizard_activities'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -2395,7 +2399,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 8),
           _sectionTitle(theme, '\u{1F30D} Welche Sprachen sprecht ihr?'),
           const SizedBox(height: 6),
-          Text('Alle Sprachen eurer Familie — auch die der Kinder:',
+          Text(_t('network_wizard_languages'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -2437,7 +2441,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 22),
           _sectionTitle(theme, '\u{1F49C} Besonderheiten (optional)'),
           const SizedBox(height: 6),
-          Text('Damit wir passende Familien vorschlagen können:',
+          Text(_t('network_wizard_location'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -2539,7 +2543,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                           Navigator.pop(ctx);
                           setState(() {});
                         },
-                        child: const Text('Fertig'))),
+                        child: Text(_t('done')))),
               ]),
             ),
           );

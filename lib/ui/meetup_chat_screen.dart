@@ -5,6 +5,8 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/logic/meetup_chat_service.dart';
 import 'package:parentpeak/models/meetup_chat.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class MeetupChatScreen extends StatefulWidget {
   final MeetupEvent event;
@@ -18,6 +20,9 @@ class MeetupChatScreen extends StatefulWidget {
 class _MeetupChatScreenState extends State<MeetupChatScreen> {
   final _chatService = MeetupChatService();
   final _messageController = TextEditingController();
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   final _scrollController = ScrollController();
 
   List<MeetupChatMessage> _messages = [];
@@ -25,10 +30,10 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
   bool _isSending = false;
   bool _hasAccess = false;
   Timer? _refreshTimer;
-    bool _requiresSignIn = false;
+  bool _requiresSignIn = false;
 
-    String get _currentUserId => AuthService.instance.currentUser?.uid ?? '';
-    String get _currentUserName =>
+  String get _currentUserId => AuthService.instance.currentUser?.uid ?? '';
+  String get _currentUserName =>
       AuthService.instance.currentUser?.displayName ?? 'Unbekannt';
   String get _currentUserAvatar => '';
 
@@ -141,24 +146,24 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
     final reason = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Nachricht melden'),
+        title: Text(_t('chat_report_message')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('Unangemessener Inhalt'),
+              title: Text(_t('chat_inappropriate')),
               onTap: () => Navigator.pop(context, 'inappropriate'),
             ),
             ListTile(
-              title: const Text('Spam'),
+              title: Text(_t('chat_spam')),
               onTap: () => Navigator.pop(context, 'spam'),
             ),
             ListTile(
-              title: const Text('Sicherheitsbedenken'),
+              title: Text(_t('chat_safety_concern')),
               onTap: () => Navigator.pop(context, 'safety'),
             ),
             ListTile(
-              title: const Text('Andere'),
+              title: Text(_t('chat_other')),
               onTap: () => Navigator.pop(context, 'other'),
             ),
           ],
@@ -178,7 +183,7 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Danke! Wir überprüfen dies.')),
+            SnackBar(content: Text(_t('chat_report_thanks'))),
           );
         }
       } catch (e) {
@@ -201,7 +206,7 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.flag),
-              title: const Text('Melden'),
+              title: Text(_t('chat_report')),
               onTap: () {
                 Navigator.pop(context);
                 _reportMessage(message);
@@ -210,7 +215,7 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
             if (message.userId == _currentUserId)
               ListTile(
                 leading: const Icon(Icons.delete),
-                title: const Text('Löschen'),
+                title: Text(_t('chat_delete')),
                 onTap: () {
                   Navigator.pop(context);
                   _deleteMessage(message);
@@ -261,7 +266,7 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Chat-Richtlinien'),
+                  title: Text(_t('chat_guidelines')),
                   content: const Text(
                     '• Sei respektvoll gegenüber anderen\n'
                     '• Kein Spam oder unangemessener Inhalt\n'
@@ -271,7 +276,7 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Verstanden'),
+                      child: Text(_t('chat_understood')),
                     ),
                   ],
                 ),
@@ -305,38 +310,38 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
                           ),
                         ),
                       )
-                : _messages.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble_outline,
-                                size: 64, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Keine Nachrichten noch',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                    : _messages.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.chat_bubble_outline,
+                                    size: 64, color: Colors.grey[300]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Keine Nachrichten noch',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Sei der Erste, der schreibt!',
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Sei der Erste, der schreibt!',
-                              style: TextStyle(color: Colors.grey[500]),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) =>
-                            _buildMessageBubble(_messages[index]),
-                      ),
+                          )
+                        : ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) =>
+                                _buildMessageBubble(_messages[index]),
+                          ),
           ),
           // Input Area
           if (_hasAccess)
@@ -363,8 +368,8 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                       ),
                       maxLines: null,
                       enabled: !_isSending,
@@ -463,11 +468,12 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
                         ),
                         child: Text(
                           'HOST',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.amber[800],
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.amber[800],
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
                         ),
                       ),
                     ),
@@ -505,7 +511,8 @@ class _MessageAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase();
+    final initial =
+        name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase();
     if (avatarUrl.isNotEmpty) {
       return CircleAvatar(
         radius: 16,
