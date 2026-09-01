@@ -314,9 +314,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         }
       }
 
-      if (aiEvents.isEmpty && communityEvents.isEmpty) {
-        aiEvents = _buildLocalFallbackAiEvents(city, _originCoords);
-      }
+      // Keine erfundenen Fallback-Events mehr: Wenn AI und Community leer sind,
+      // zeigen wir einen ehrlichen Leer-Zustand statt Platzhalter-Events.
 
       if (!mounted) return;
       setState(() {
@@ -351,65 +350,6 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
     return '$day.$month.$year, $hour:$minute';
-  }
-
-  List<DiscoveredEvent> _buildLocalFallbackAiEvents(
-    String city,
-    (double, double) coords,
-  ) {
-    final now = DateTime.now();
-    // Base at midnight so fallback events get clean daytime hours, not current clock time
-    final today = DateTime(now.year, now.month, now.day);
-    return <DiscoveredEvent>[
-      DiscoveredEvent(
-        id: 'fallback_event_1',
-        title: 'Spielplatz-Treff im Kiez',
-        description:
-            'Offenes Treffen für Eltern mit Kindern. Lockeres Kennenlernen mit kurzer Bewegungsrunde.',
-        category: DiscoveredEventCategory.spielplatz,
-        ageLabels: const ['Alle Altersklassen'],
-        location: 'Stadtpark Nord',
-        cityHint: city,
-        latitude: coords.$1,
-        longitude: coords.$2,
-        eventDate: today.add(const Duration(days: 1, hours: 10)),
-        price: 'kostenlos',
-        organizer: 'Parentpeak Community',
-        discoveredAt: now,
-      ),
-      DiscoveredEvent(
-        id: 'fallback_event_2',
-        title: 'Kreativnachmittag für Familien',
-        description:
-            'Basteln mit Alltagsmaterialien, kleine Mitmachstationen und Zeit für Austausch.',
-        category: DiscoveredEventCategory.basteln,
-        ageLabels: const ['Alle Altersklassen'],
-        location: 'Familienzentrum Mitte',
-        cityHint: city,
-        latitude: coords.$1 + 0.01,
-        longitude: coords.$2 + 0.01,
-        eventDate: today.add(const Duration(days: 3, hours: 15)),
-        price: 'kostenlos',
-        organizer: 'Lokales Familienzentrum',
-        discoveredAt: now,
-      ),
-      DiscoveredEvent(
-        id: 'fallback_event_3',
-        title: 'Waldspaziergang mit Kindern',
-        description:
-            'Gemeinsamer Spaziergang mit kleinen Naturspielen. Kinderwagenfreundliche Strecke.',
-        category: DiscoveredEventCategory.natur,
-        ageLabels: const ['Alle Altersklassen'],
-        location: 'Waldpark Treffpunkt Ost',
-        cityHint: city,
-        latitude: coords.$1 - 0.015,
-        longitude: coords.$2 + 0.008,
-        eventDate: today.add(const Duration(days: 5, hours: 10)),
-        price: 'kostenlos',
-        organizer: 'Elterninitiative',
-        discoveredAt: now,
-      ),
-    ];
   }
 
   Future<List<MeetupEvent>> _loadCommunityEventsForCity(
@@ -962,13 +902,44 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                     )
                   else if (feed.isEmpty)
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 32, horizontal: 20),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: const Text(
-                        'Keine echten Events sind aktuell verfügbar.',
+                      child: Column(
+                        children: [
+                          const Text('\u{1F50D}',
+                              style: TextStyle(fontSize: 40)),
+                          const SizedBox(height: 12),
+                          Text(
+                            AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'events_empty_title'),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'events_empty_subtitle'),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.outline, height: 1.4),
+                          ),
+                          const SizedBox(height: 20),
+                          FilledButton.icon(
+                            onPressed: _refreshFeed,
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
+                            label: Text(AppStringsManager.getString(
+                                languageService.currentLanguage, 'reload_btn')),
+                          ),
+                        ],
                       ),
                     )
                   else

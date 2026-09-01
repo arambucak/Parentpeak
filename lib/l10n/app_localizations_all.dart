@@ -662,6 +662,10 @@ class AppStringsManager {
           'Alle Sprachen eurer Familie — auch die der Kinder:',
       'network_wizard_location':
           'Damit wir passende Familien vorschlagen können:',
+      // Events & Aktivitäten
+      'events_empty_title': 'Gerade keine Events in deiner Nähe',
+      'events_empty_subtitle':
+          'Aktuell finden wir keine passenden Veranstaltungen. Versuch es mit einem größeren Umkreis, einer anderen Stadt oder schau später nochmal rein.',
       // Profile Safety Screen
       'profile_logout_title': 'Abmelden?',
       'profile_choose_language': 'Sprache wählen',
@@ -7021,6 +7025,10 @@ class AppStringsManager {
       'network_wizard_languages':
           'Ailenizin tüm dilleri — çocukların dilleri dahil:',
       'network_wizard_location': 'Size uygun aileler önerebilmemiz için:',
+      // Events & Aktivitäten
+      'events_empty_title': 'Şu an yakınında etkinlik yok',
+      'events_empty_subtitle':
+          'Şu anda uygun bir etkinlik bulamadık. Daha geniş bir mesafe veya başka bir şehir deneyin ya da daha sonra tekrar bakın.',
       // Profile Safety Screen
       'profile_logout_title': 'Çıkış yap?',
       'profile_choose_language': 'Dil seç',
