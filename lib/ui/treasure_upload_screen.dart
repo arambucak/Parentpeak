@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
@@ -1075,27 +1074,17 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   }
 
   Future<void> _analyzeImageWithAI(XFile image) async {
-    if (!APIConfig.isGeminiApiKeyConfigured()) return;
     try {
       setState(() => _isAnalyzingImage = true);
       final bytes = await image.readAsBytes();
-      final model = GenerativeModel(
-        model: APIConfig.getGeminiModelName(),
-        apiKey: APIConfig.getGeminiApiKey()!,
+      final text = await GeminiAIService().generateText(
+        'Du siehst ein Foto eines Gegenstands den eine Familie verschenken möchte. '
+        'Antworte NUR mit einem JSON-Objekt (kein Markdown):\n'
+        '{"title": "Kurzer Titel (max 5 Wörter)", "description": "Eine freundliche Beschreibung zum Verschenken (2 Sätze, elternfreundlich)", "category": "toy|clothing|book|furniture|other"}\n'
+        'Beispiel: {"title": "Rotes Laufrad", "description": "Gut erhaltenes Laufrad für Kinder ab 2 Jahren. Perfekt für erste Fahrversuche im Park!", "category": "toy"}',
+        imageBytes: bytes,
       );
-      final response = await model.generateContent([
-        Content.multi([
-          TextPart(
-            'Du siehst ein Foto eines Gegenstands den eine Familie verschenken möchte. '
-            'Antworte NUR mit einem JSON-Objekt (kein Markdown):\n'
-            '{"title": "Kurzer Titel (max 5 Wörter)", "description": "Eine freundliche Beschreibung zum Verschenken (2 Sätze, elternfreundlich)", "category": "toy|clothing|book|furniture|other"}\n'
-            'Beispiel: {"title": "Rotes Laufrad", "description": "Gut erhaltenes Laufrad für Kinder ab 2 Jahren. Perfekt für erste Fahrversuche im Park!", "category": "toy"}',
-          ),
-          DataPart('image/jpeg', bytes),
-        ]),
-      ]);
       if (!mounted) return;
-      final text = response.text ?? '';
       // Parse JSON from response
       final jsonMatch = RegExp(r'\{[^}]+\}').firstMatch(text);
       if (jsonMatch != null) {

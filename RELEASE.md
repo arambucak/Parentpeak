@@ -2,16 +2,16 @@
 
 So baust du sichere Release-Builds für Google Play und den iOS App Store.
 
-> **Wichtigstes Prinzip:** Echte Secrets (API-Keys, Tokens) werden **niemals**
-> in die App gebündelt. Sie kommen ausschließlich zur Build-Zeit über
-> `--dart-define`. Die gebündelte `assets/env.template` enthält nur Platzhalter.
+> **Wichtigstes Prinzip:** Privilegierte Backend-Secrets werden **niemals**
+> in die App gebündelt. Auch Werte aus `--dart-define` sind aus einem Build
+> extrahierbar. Die App authentifiziert Benutzerzugriffe mit Firebase-ID-Tokens.
 
 ---
 
 ## 1. Secrets vorbereiten
 
-Die App liest Secrets in dieser Priorität:
-1. `--dart-define` (Build-Zeit) — **so machen wir es für Releases**
+Die App liest Client-Konfiguration in dieser Priorität:
+1. `--dart-define` (Build-Zeit)
 2. Laufzeit-Cache
 3. Gebündelte `assets/env.template` (nur Platzhalter/Defaults)
 
@@ -20,10 +20,8 @@ Render-Dashboard bzw. Google/Stripe-Konsole):
 
 | Variable | Beschreibung |
 |----------|-------------|
-| `GEMINI_API_KEY` | Google Gemini API Key |
 | `GEMINI_MODEL_NAME` | z.B. `gemini-3.5-flash-lite` |
 | `BACKEND_BASE_URL` | z.B. `https://parentpeak.onrender.com` |
-| `BACKEND_API_TOKEN` | Backend Auth Token |
 | `STRIPE_PUBLISHABLE_KEY` | `pk_live_...` (kein Secret, aber via define) |
 | `PRIVACY_POLICY_URL` | `https://parentpeak.de/privacy` |
 | `TERMS_OF_SERVICE_URL` | `https://parentpeak.de/terms` |
@@ -72,10 +70,8 @@ storeFile=../keystores/upload-keystore.jks
 
 ```bash
 flutter build appbundle --release \
-  --dart-define=GEMINI_API_KEY="$GEMINI_API_KEY" \
   --dart-define=GEMINI_MODEL_NAME="gemini-3.5-flash-lite" \
   --dart-define=BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-  --dart-define=BACKEND_API_TOKEN="$BACKEND_API_TOKEN" \
   --dart-define=STRIPE_PUBLISHABLE_KEY="$STRIPE_PUBLISHABLE_KEY" \
   --dart-define=PRIVACY_POLICY_URL="https://parentpeak.de/privacy" \
   --dart-define=TERMS_OF_SERVICE_URL="https://parentpeak.de/terms" \
@@ -96,10 +92,8 @@ Voraussetzung: Apple Developer Account (99 €/Jahr) + Signing in Xcode eingeric
 
 ```bash
 flutter build ipa --release \
-  --dart-define=GEMINI_API_KEY="$GEMINI_API_KEY" \
   --dart-define=GEMINI_MODEL_NAME="gemini-3.5-flash-lite" \
   --dart-define=BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-  --dart-define=BACKEND_API_TOKEN="$BACKEND_API_TOKEN" \
   --dart-define=STRIPE_PUBLISHABLE_KEY="$STRIPE_PUBLISHABLE_KEY" \
   --dart-define=PRIVACY_POLICY_URL="https://parentpeak.de/privacy" \
   --dart-define=TERMS_OF_SERVICE_URL="https://parentpeak.de/terms" \
@@ -116,7 +110,9 @@ Ergebnis: `build/ios/ipa/*.ipa`
 - [ ] `flutter analyze` → 0 Errors
 - [ ] `flutter test` → alle grün
 - [ ] Version in `pubspec.yaml` erhöht
-- [ ] Alle `--dart-define` Werte gesetzt (kein leerer Key)
+- [ ] Alle benötigten Client-`--dart-define` Werte gesetzt
+- [ ] Kein `BACKEND_API_TOKEN` an Flutter-Builds übergeben
+- [ ] Kein `GEMINI_API_KEY` an Flutter-Builds übergeben
 - [ ] Keine echten Secrets im Git (`git grep pp_live_` sollte leer sein)
 - [ ] Datenschutz + AGB URLs erreichbar (parentpeak.de/privacy, /terms)
 
@@ -126,9 +122,13 @@ Ergebnis: `build/ios/ipa/*.ipa`
 
 - Die App startet auch ohne gesetzte Secrets (degradierter Modus), aber
   KI-Features und Backend-Sync brauchen die echten Keys.
-- Der Node-Backend-Token (`BACKEND_API_TOKEN`) sollte regelmäßig rotiert werden.
-  Falls der alte Token `pp_live_2026_...` je im Git war: **rotieren** (neuen im
-  Render-Dashboard setzen, alten invalidieren).
+- Der Node-Backend-Token (`BACKEND_API_TOKEN`) bleibt ausschließlich in Render
+  und vertrauenswürdigen serverseitigen Smoke-Tests. Falls er je im Git war:
+  **rotieren**, im Render-Dashboard ersetzen und den alten Wert invalidieren.
+- App-Schreibzugriffe verwenden kurzlebige Firebase-ID-Tokens. Den Backend-Token
+  weder als GitHub Secret für App-Builds noch als `--dart-define` hinterlegen.
+- Der Gemini-API-Key bleibt ausschließlich im Render-Backend. Die App ruft KI
+  über den authentifizierten Parentpeak-Backend-Proxy auf.
 - Firebase-`apiKey` in `lib/firebase_options.dart` ist per Design öffentlich und
   durch Firebase Security Rules geschützt — kein Geheimnis.
 - Stripe Publishable Key (`pk_...`) ist ebenfalls kein Geheimnis. Der Stripe

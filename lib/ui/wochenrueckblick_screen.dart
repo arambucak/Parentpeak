@@ -142,13 +142,9 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
     setState(() => _currentWeekReflection = reflection);
 
     // Generate AI feedback
-    if (APIConfig.isGeminiApiKeyConfigured()) {
-      setState(() => _aiLoading = true);
-      try {
-        final ai = GeminiAIService(
-          apiKey: APIConfig.getGeminiApiKey(),
-          modelName: APIConfig.getGeminiModelName(),
-        );
+    setState(() => _aiLoading = true);
+    try {
+      final ai = GeminiAIService(modelName: APIConfig.getGeminiModelName());
         final prompt = _buildAIPrompt(reflection);
         final response = await ai.chat(prompt);
         final updated = reflection.copyWith(aiFeedback: response);
@@ -160,9 +156,8 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
             _currentWeekReflection = updated;
           });
         }
-      } catch (e) {
-        if (mounted) setState(() => _aiLoading = false);
-      }
+    } catch (e) {
+      if (mounted) setState(() => _aiLoading = false);
     }
   }
 

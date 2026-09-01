@@ -12,6 +12,8 @@ services:
         value: production
       - key: REQUIRE_AUTH_FOR_WRITES
         value: "1"
+      - key: FIREBASE_REQUIRE_AUTH
+        value: "1"
       - key: ALLOW_CLIENT_PROVIDER_EVENTS
         value: "0"
       - key: STRIPE_WEBHOOK_TOLERANCE_SEC

@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
@@ -153,31 +152,17 @@ class _CreateCommunityEventScreenState
     setState(() => _scanning = true);
 
     try {
-      final apiKey = APIConfig.getGeminiApiKey();
-      if (apiKey == null || apiKey.isEmpty) throw Exception('Kein API-Key');
-
       final bytes = await picked.readAsBytes();
-      final model = GenerativeModel(
-        model: APIConfig.getGeminiModelName(),
-        apiKey: apiKey,
-      );
-
-      final response = await model.generateContent([
-        Content.multi([
-          DataPart('image/jpeg', bytes),
-          TextPart(
-            'Analysiere diesen Flyer/Poster für ein Familien-Event. '
-            'Extrahiere folgende Informationen als JSON:\n'
-            '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
-            '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
-            '"location":"Adresse/Ort oder null","price":"kostenlos oder Betrag oder null",'
-            '"organizer":"Veranstalter oder null"}\n'
-            'Antworte NUR mit dem JSON, kein Markdown.',
-          ),
-        ]),
-      ]).timeout(const Duration(seconds: 20));
-
-      final text = response.text?.trim() ?? '';
+      final text = await GeminiAIService().generateText(
+        'Analysiere diesen Flyer/Poster für ein Familien-Event. '
+        'Extrahiere folgende Informationen als JSON:\n'
+        '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
+        '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
+        '"location":"Adresse/Ort oder null","price":"kostenlos oder Betrag oder null",'
+        '"organizer":"Veranstalter oder null"}\n'
+        'Antworte NUR mit dem JSON, kein Markdown.',
+        imageBytes: bytes,
+      ).timeout(const Duration(seconds: 20));
       final jsonStr = text.replaceAll(RegExp(r'^```json\s*|\s*```$'), '');
 
       if (jsonStr.startsWith('{')) {

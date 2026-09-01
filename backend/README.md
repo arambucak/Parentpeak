@@ -23,6 +23,8 @@ Das Backend läuft dann auf: **http://localhost:3000**
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:
 
 - `BACKEND_API_TOKEN`: Erwarteter Bearer-Token für Schreibzugriffe
+- `GEMINI_API_KEY`: Server-seitiger Gemini-Schlüssel für `/ai/generate` (nie im Client-Build)
+- `FIREBASE_REQUIRE_AUTH=1`: Verifiziert Firebase-ID-Tokens für Client-Schreibzugriffe
 - `REQUIRE_AUTH_FOR_WRITES=1`: Aktiviert Auth-Pflicht für `POST/PUT/PATCH/DELETE`
 - `CORS_ALLOWED_ORIGINS`: Kommagetrennte Origin-Allowlist
 - `WRITE_RATE_LIMIT_WINDOW_MS`: Zeitfenster für Write-Rate-Limit (ms)
@@ -38,6 +40,8 @@ Beispiel:
 
 ```bash
 export BACKEND_API_TOKEN="..."
+export GEMINI_API_KEY="..."
+export FIREBASE_REQUIRE_AUTH=1
 export REQUIRE_AUTH_FOR_WRITES=1
 export CORS_ALLOWED_ORIGINS="https://parentpeak.de,https://www.parentpeak.de"
 export INTERNAL_MODERATOR_EMAILS="lead@parentpeak.de,ops@parentpeak.de"

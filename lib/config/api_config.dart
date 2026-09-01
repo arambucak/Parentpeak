@@ -12,8 +12,6 @@ class APIConfig {
   static bool _runtimeEnvInitialized = false;
 
   // Compile-time release values (set via --dart-define).
-  static const String _geminiApiKeyDefine =
-      String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
   static const String _backendApiTokenDefine =
       String.fromEnvironment('BACKEND_API_TOKEN', defaultValue: '');
   static const String _backendBaseUrlDefine =
@@ -45,11 +43,6 @@ class APIConfig {
   // Backend API configuration
   static const String backendBaseUrlFallback = '';
 
-  /// Hole den Gemini API-Key aus --dart-define oder .env.
-  static String? getGeminiApiKey() {
-    return _readEnvOrDefine('GEMINI_API_KEY');
-  }
-
   /// Ensure dotenv is loaded before reading runtime values.
   static Future<void> ensureRuntimeEnvLoaded() async {
     _loadRuntimeEnvCacheIfNeeded();
@@ -60,28 +53,6 @@ class APIConfig {
     } catch (e) {
       debugPrint('APIConfig.ensureRuntimeEnvLoaded(): $e');
     }
-  }
-
-  /// Validiere ob ein API-Key vorhanden ist
-  static bool isGeminiApiKeyConfigured() {
-    final apiKey = getGeminiApiKey();
-    return apiKey != null && apiKey.isNotEmpty;
-  }
-
-  /// Gibt fehlende Pflicht-Secrets für produktive Builds zurück.
-  static List<String> getMissingRequiredSecrets() {
-    final missing = <String>[];
-
-    // Web bundles are public. Do not require privileged tokens there.
-    if (kIsWeb) {
-      return missing;
-    }
-
-    if (!isGeminiApiKeyConfigured()) {
-      missing.add('GEMINI_API_KEY');
-    }
-
-    return missing;
   }
 
   /// Gibt Fehlkonfigurationen zurück, die in Release Builds blockieren sollten.
@@ -562,8 +533,6 @@ class APIConfig {
 
   static String? _readCompileTimeValue(String key) {
     switch (key) {
-      case 'GEMINI_API_KEY':
-        return _geminiApiKeyDefine.isNotEmpty ? _geminiApiKeyDefine : null;
       case 'BACKEND_API_TOKEN':
         return _backendApiTokenDefine.isNotEmpty
             ? _backendApiTokenDefine

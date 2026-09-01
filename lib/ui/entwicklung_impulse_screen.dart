@@ -7,14 +7,13 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/weekly_impulse_service.dart';
 import 'package:parentpeak/models_and_widgets/weekly_impulse_feature.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:parentpeak/models/child_development_data.dart';
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:parentpeak/ui/widgets/eltern_wissen_widget.dart';
 import 'package:parentpeak/ui/widgets/expert_bibliothek_section.dart';
 import 'package:parentpeak/ui/widgets/development_progress_chart.dart';
@@ -1065,12 +1064,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         '$specialNeedsNote\n$sb';
 
     try {
-      final apiKey = APIConfig.getGeminiApiKey();
-      if (apiKey == null || apiKey.isEmpty) throw Exception('API Key fehlt');
-      final model = GenerativeModel(
-          model: APIConfig.getGeminiModelName(), apiKey: apiKey);
-      final response = await model.generateContent([Content.text(prompt)]);
-      final text = response.text ?? 'Bericht konnte nicht erstellt werden.';
+      final text = await GeminiAIService().generateText(prompt);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('dev.ai_report.v3', text);
       // Bericht-Historie speichern

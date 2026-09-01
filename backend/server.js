@@ -107,6 +107,7 @@ async function initializePrisma() {
 const app = express();
 const PORT = Number.parseInt(process.env.PORT || '3000', 10);
 const backendApiToken = (process.env.BACKEND_API_TOKEN || '').trim();
+const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
 const requireAuthForWrites =
   (process.env.REQUIRE_AUTH_FOR_WRITES ||
     (process.env.NODE_ENV === 'production' ? '1' : '0')) === '1';
@@ -953,6 +954,10 @@ async function firebaseAuthMiddleware(req, res, next) {
   if (!firebaseRequireAuth || !firebaseAdmin || !WRITE_METHODS.has(req.method)) {
     return next();
   }
+  const authHeader = req.headers.authorization || '';
+  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
+    return next();
+  }
   const { uid, verified } = await verifyFirebaseIdToken(req);
   if (!verified) {
     return res.status(401).json({ error: 'Gültiger Firebase ID-Token erforderlich' });
@@ -1075,6 +1080,7 @@ app.post('/payments/stripe/webhook', express.raw({ type: 'application/json' }), 
   });
 });
 
+app.use('/ai/generate', express.json({ limit: '6mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.use(async (req, res, next) => {
@@ -1150,6 +1156,96 @@ app.use(async (req, res, next) => {
   }
 
   res.status(401).json({ error: 'Unauthorized' });
+});
+
+const allowedGeminiModels = new Set([
+  'gemini-3.5-flash-lite',
+  'gemini-3.5-flash',
+]);
+
+app.post('/ai/generate', async (req, res) => {
+  if (!geminiApiKey) {
+    return res.status(503).json({ error: 'KI-Dienst nicht konfiguriert' });
+  }
+
+  const model = String(req.body?.model || 'gemini-3.5-flash-lite').trim();
+  const prompt = String(req.body?.prompt || '').trim();
+  const systemInstruction = String(req.body?.systemInstruction || '').trim();
+  const useGoogleSearch = req.body?.useGoogleSearch === true;
+  const imageBase64 = String(req.body?.imageBase64 || '').trim();
+  const imageMimeType = String(req.body?.imageMimeType || '').trim();
+  const allowedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+  if (!allowedGeminiModels.has(model)) {
+    return res.status(400).json({ error: 'Nicht unterstütztes KI-Modell' });
+  }
+  if (!prompt || prompt.length > 30000 || systemInstruction.length > 10000) {
+    return res.status(400).json({ error: 'Ungültige Prompt-Länge' });
+  }
+  if (imageBase64) {
+    if (!allowedImageMimeTypes.has(imageMimeType)) {
+      return res.status(400).json({ error: 'Nicht unterstütztes Bildformat' });
+    }
+    const estimatedBytes = Math.floor(imageBase64.length * 0.75);
+    if (estimatedBytes > 4 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Bild ist zu groß' });
+    }
+  }
+
+  const requestBody = {
+    contents: [{
+      role: 'user',
+      parts: [
+        { text: prompt },
+        ...(imageBase64
+          ? [{ inline_data: { mime_type: imageMimeType, data: imageBase64 } }]
+          : []),
+      ],
+    }],
+    generationConfig: {
+      temperature: useGoogleSearch ? 1.0 : 0.7,
+      maxOutputTokens: useGoogleSearch ? 6000 : 8192,
+    },
+    ...(systemInstruction
+      ? { systemInstruction: { parts: [{ text: systemInstruction }] } }
+      : {}),
+    ...(useGoogleSearch ? { tools: [{ google_search: {} }] } : {}),
+  };
+
+  try {
+    const upstream = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiApiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(35000),
+      },
+    );
+    const payload = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      console.error(`Gemini upstream failed: ${upstream.status}`);
+      return res.status(502).json({ error: 'KI-Dienst vorübergehend nicht verfügbar' });
+    }
+
+    const candidate = Array.isArray(payload.candidates) ? payload.candidates[0] : null;
+    const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+    const text = parts.map(part => String(part?.text || '')).join('').trim();
+    const groundingChunks = Array.isArray(candidate?.groundingMetadata?.groundingChunks)
+      ? candidate.groundingMetadata.groundingChunks
+      : [];
+    const groundingUrls = groundingChunks
+      .map(chunk => chunk?.web?.uri)
+      .filter(uri => typeof uri === 'string' && uri.startsWith('https://'));
+
+    if (!text) {
+      return res.status(502).json({ error: 'KI-Dienst lieferte keine Antwort' });
+    }
+    return res.json({ text, groundingUrls });
+  } catch (error) {
+    console.error(`Gemini proxy failed: ${error.message}`);
+    return res.status(502).json({ error: 'KI-Dienst vorübergehend nicht verfügbar' });
+  }
 });
 
 // Providers-Daten aus JSON laden

@@ -1,21 +1,19 @@
 /// EventDiscoveryAgent – KI-Agent für standortbasierte Familien-Events.
 ///
 /// Architektur:
-///   - Ruft Gemini REST API direkt auf mit Google Search Grounding.
+///   - Ruft den Parentpeak KI-Proxy mit Google Search Grounding auf.
 ///   - Findet ECHTE Events von berlin.de, Familienzentren, Kinos, Theatern usw.
 ///   - Standort-präzise: Kreuzberg ≠ Mitte ≠ München.
 ///   - Saisonal + aktuell (heutiges Datum im Prompt).
-///   - Fallback auf Package-Aufruf wenn REST fehlschlägt.
+///   - Fallback auf einen Proxy-Aufruf ohne Grounding.
 ///
 /// Sicherheit:
-///   - Kein API-Key im Code; lädt via APIConfig aus .env.
+///   - Kein API-Key im Client; das Backend verwaltet den Schlüssel.
 ///   - Inputs werden vor dem Prompt sanitiert.
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/models/discovered_event.dart';
 import 'package:parentpeak/logic/privacy_sanitizer.dart';
 
@@ -39,12 +37,6 @@ class EventDiscoveryAgent {
     double? latitude,
     double? longitude,
   }) async {
-    final apiKey = APIConfig.getGeminiApiKey();
-    if (apiKey == null || apiKey.isEmpty) {
-      debugPrint('EventDiscoveryAgent: Kein API-Key.');
-      return <DiscoveredEvent>[];
-    }
-
     final cleanCity = _sanitize(PrivacySanitizer.sanitizeForAi(city));
     final cleanRadius = _sanitize(PrivacySanitizer.sanitizeForAi(radiusHint));
 
@@ -97,7 +89,7 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
     // Primär: REST API mit Google Search Grounding (kurzer Prompt für < 20s)
     try {
-      final events = await _callWithGrounding(apiKey, groundingPrompt, city);
+      final events = await _callWithGrounding(groundingPrompt, city);
       if (events.isNotEmpty) return events;
     } catch (e) {
       debugPrint('EventDiscoveryAgent: Grounding-Aufruf fehlgeschlagen: $e');
@@ -105,103 +97,39 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
     // Fallback: Package-Aufruf ohne Grounding (ausführlicher Prompt)
     try {
-      return await _callWithPackage(apiKey, prompt, city);
+      return await _callWithoutGrounding(prompt, city);
     } catch (e) {
       debugPrint('EventDiscoveryAgent: Fallback-Aufruf fehlgeschlagen: $e');
       return <DiscoveredEvent>[];
     }
   }
 
-  // ─── REST API mit Google Search Grounding ──────────────────────────────────
+  // ─── Backend-Proxy mit Google Search Grounding ─────────────────────────────
 
   /// Events brauchen ein Modell mit zuverlässigem Google Search Grounding.
   /// gemini-3.5-flash ist stabil und günstig für Web-Suche.
   static const String _groundingModel = 'gemini-3.5-flash';
 
   Future<List<DiscoveredEvent>> _callWithGrounding(
-      String apiKey, String prompt, String city) async {
-    // Use dedicated grounding model (not the app default which may be too light)
-    final uri = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/$_groundingModel:generateContent?key=${Uri.encodeComponent(apiKey)}',
+      String prompt, String city) async {
+    final response = await GeminiAIService(modelName: _groundingModel)
+        .generate(prompt, useGoogleSearch: true)
+        .timeout(const Duration(seconds: 35));
+    return _parseAgentResponse(
+      response.text,
+      city,
+      groundingUrls: response.groundingUrls,
     );
-
-    final body = jsonEncode({
-      'contents': [
-        {
-          'parts': [
-            {'text': prompt}
-          ],
-          'role': 'user',
-        }
-      ],
-      'tools': [
-        {'google_search': {}}
-      ],
-      'generationConfig': {
-        'temperature': 1.0,
-        'maxOutputTokens': 6000,
-      },
-    });
-
-    final response = await http
-        .post(uri, headers: {'Content-Type': 'application/json'}, body: body)
-        .timeout(const Duration(seconds: 25));
-
-    if (response.statusCode != 200) {
-      debugPrint(
-          'EventDiscoveryAgent: Grounding API ${response.statusCode} — ${response.body.substring(0, response.body.length.clamp(0, 300))}');
-      throw Exception(
-          'Gemini REST ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final candidates = data['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) {
-      debugPrint('EventDiscoveryAgent: Grounding returned no candidates');
-      return [];
-    }
-
-    final content = (candidates.first as Map<String, dynamic>)['content']
-        as Map<String, dynamic>?;
-    final parts = content?['parts'] as List?;
-    if (parts == null || parts.isEmpty) return [];
-
-    final rawText = parts
-        .map((p) => ((p as Map<String, dynamic>)['text'] as String?) ?? '')
-        .join('');
-
-    // Extrahiere Quell-URLs aus Grounding-Metadaten
-    final groundingMeta = (candidates.first
-        as Map<String, dynamic>)['groundingMetadata'] as Map<String, dynamic>?;
-    final groundingUrls = _extractGroundingUrls(groundingMeta);
-
-    return _parseAgentResponse(rawText, city, groundingUrls: groundingUrls);
   }
 
-  List<String> _extractGroundingUrls(Map<String, dynamic>? meta) {
-    if (meta == null) return [];
-    final chunks = meta['groundingChunks'] as List?;
-    if (chunks == null) return [];
-    return chunks
-        .map((c) => ((c as Map<String, dynamic>)['web']
-            as Map<String, dynamic>?)?['uri'] as String?)
-        .whereType<String>()
-        .toList();
-  }
+  // ─── Fallback: Proxy-Aufruf ohne Grounding ─────────────────────────────────
 
-  // ─── Fallback: Package-Aufruf ───────────────────────────────────────────────
-
-  Future<List<DiscoveredEvent>> _callWithPackage(
-      String apiKey, String prompt, String city) async {
-    final model = GenerativeModel(
-      model: _groundingModel, // Use same capable model for realistic results
-      apiKey: apiKey,
-      generationConfig:
-          GenerationConfig(temperature: 0.3, maxOutputTokens: 8192),
-    );
-    final response = await model.generateContent(
-        [Content.text(prompt)]).timeout(const Duration(seconds: 30));
-    return _parseAgentResponse(response.text ?? '', city);
+  Future<List<DiscoveredEvent>> _callWithoutGrounding(
+      String prompt, String city) async {
+    final text = await GeminiAIService(modelName: _groundingModel)
+        .generateText(prompt)
+        .timeout(const Duration(seconds: 35));
+    return _parseAgentResponse(text, city);
   }
 
   // ─── Parser ────────────────────────────────────────────────────────────────

@@ -182,16 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _initializeGemini() {
     try {
-      final apiKey = APIConfig.getGeminiApiKey();
-      if (apiKey == null || apiKey.isEmpty) {
-        _chatBackend = null;
-        setState(() {
-          _initError =
-              'KI-Beratung ist aktuell nicht verfügbar (API-Konfiguration fehlt).';
-        });
-        return;
-      }
-      _geminiService = GeminiAIService(apiKey: apiKey);
+      _geminiService = GeminiAIService();
       _chatBackend = PedagogicalChatBackend(geminiService: _geminiService);
       setState(() {
         _initError = null;

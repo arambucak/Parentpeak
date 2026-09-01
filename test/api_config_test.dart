@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -10,7 +12,6 @@ void main() {
     final envContents = await rootBundle.loadString('assets/env.template');
 
     // The template must expose the expected keys...
-    expect(envContents, contains('GEMINI_API_KEY='));
     expect(envContents, contains('GEMINI_MODEL_NAME='));
     expect(envContents, contains('BACKEND_API_TOKEN='));
 
@@ -27,5 +28,17 @@ void main() {
     // Model name has a safe default in the template.
     final modelName = APIConfig.getGeminiModelName();
     expect(modelName, isNotEmpty);
+  });
+
+  test('release build configuration does not embed backend admin token', () {
+    final releaseSources = [
+      File('.github/workflows/deploy-web-pages.yml').readAsStringSync(),
+      File('RELEASE.md').readAsStringSync(),
+    ];
+
+    for (final source in releaseSources) {
+      expect(source, isNot(contains('--dart-define=BACKEND_API_TOKEN')));
+      expect(source, isNot(contains('--dart-define=GEMINI_API_KEY')));
+    }
   });
 }

@@ -43,8 +43,6 @@ jobs:
           CONTACT_SUPPORT_URL: ${{ vars.CONTACT_SUPPORT_URL }}
           STRIPE_PUBLISHABLE_KEY: ${{ vars.STRIPE_PUBLISHABLE_KEY }}
           GEMINI_MODEL_NAME: ${{ vars.GEMINI_MODEL_NAME }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          BACKEND_API_TOKEN: ${{ secrets.BACKEND_API_TOKEN }}
           PP_BETA_FREE_ACCESS: ${{ vars.PP_BETA_FREE_ACCESS }}
           PP_PUBLIC_LAUNCH_DATE: ${{ vars.PP_PUBLIC_LAUNCH_DATE }}
         run: |
@@ -61,14 +59,12 @@ jobs:
             --no-wasm-dry-run \
             --base-href "/" \
             --dart-define=BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-            --dart-define=BACKEND_API_TOKEN="${BACKEND_API_TOKEN}" \
             --dart-define=PRIVACY_POLICY_URL="$PRIVACY_POLICY_URL" \
             --dart-define=TERMS_OF_SERVICE_URL="$TERMS_OF_SERVICE_URL" \
             --dart-define=CONTACT_EMAIL="$CONTACT_EMAIL" \
             --dart-define=CONTACT_SUPPORT_URL="$CONTACT_SUPPORT_URL" \
             --dart-define=STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \
             --dart-define=GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME}" \
-            --dart-define=GEMINI_API_KEY="${GEMINI_API_KEY}" \
             --dart-define=PP_BETA_FREE_ACCESS="${PP_BETA_FREE_ACCESS:-true}" \
             --dart-define=PP_PUBLIC_LAUNCH_DATE="${PP_PUBLIC_LAUNCH_DATE:-}" \
             2>&1 | tee flutter-build.log

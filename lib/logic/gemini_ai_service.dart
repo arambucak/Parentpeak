@@ -1,128 +1,122 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/privacy_sanitizer.dart';
 
 class GeminiAIService {
+  GeminiAIService({String? modelName, BackendApiClient? apiClient})
+      : _modelName = modelName ?? APIConfig.getGeminiModelName(),
+        _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
+
   final String _modelName;
-  final String? _apiKey;
+  final BackendApiClient? _apiClient;
 
-  late final GenerativeModel _model;
-
-  GeminiAIService({String? apiKey, String? modelName})
-      : _apiKey = apiKey,
-        _modelName = modelName ?? APIConfig.getGeminiModelName() {
-    _initializeModel();
+  Future<String> generateText(
+    String prompt, {
+    String? systemInstruction,
+    bool useGoogleSearch = false,
+    Uint8List? imageBytes,
+    String imageMimeType = 'image/jpeg',
+  }) async {
+    final response = await generate(
+      prompt,
+      systemInstruction: systemInstruction,
+      useGoogleSearch: useGoogleSearch,
+      imageBytes: imageBytes,
+      imageMimeType: imageMimeType,
+    );
+    return response.text;
   }
 
-  void _initializeModel() {
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      throw Exception('Gemini API-Key nicht gesetzt. '
-          'Bitte setze GEMINI_API_KEY als Umgebungsvariable oder übergebe ihn dem Constructor.');
+  Future<GeminiProxyResponse> generate(
+    String prompt, {
+    String? systemInstruction,
+    bool useGoogleSearch = false,
+    Uint8List? imageBytes,
+    String imageMimeType = 'image/jpeg',
+  }) async {
+    final client = _apiClient;
+    if (client == null) {
+      throw Exception('Backend-URL nicht konfiguriert.');
     }
 
-    _model = GenerativeModel(
-      model: _modelName,
-      apiKey: _apiKey!,
-      systemInstruction: Content.text(APIConfig.parentAssistantSystemPrompt),
-    );
+    final response = await client.postJson('/ai/generate', {
+      'model': _modelName,
+      'prompt': PrivacySanitizer.sanitizeForAi(prompt),
+      if (systemInstruction != null && systemInstruction.trim().isNotEmpty)
+        'systemInstruction': systemInstruction.trim(),
+      'useGoogleSearch': useGoogleSearch,
+      if (imageBytes != null) 'imageBase64': base64Encode(imageBytes),
+      if (imageBytes != null) 'imageMimeType': imageMimeType,
+    });
+    final text = response['text']?.toString().trim();
+    if (text == null || text.isEmpty) {
+      throw Exception('KI-Dienst lieferte keine Antwort.');
+    }
+    final groundingUrls = (response['groundingUrls'] as List<dynamic>?)
+            ?.map((url) => url.toString())
+            .where((url) => url.startsWith('https://'))
+            .toList() ??
+        const <String>[];
+    return GeminiProxyResponse(text: text, groundingUrls: groundingUrls);
   }
 
-  /// Sende eine Nachricht an Gemini und erhalte einen Stream der Antwort
   Stream<String> chatWithStreaming(String userMessage) async* {
     try {
-      debugPrint('DEBUG: Sende Nachricht mit Modell: $_modelName');
-      debugPrint('DEBUG: API-Key Länge: ${_apiKey?.length}');
-
-      final safeMessage = PrivacySanitizer.sanitizeForAi(userMessage);
-
-      final content = [
-        Content.text(safeMessage),
-      ];
-
-      final response = _model.generateContentStream(content);
-
-      await for (final chunk in response) {
-        if (chunk.text != null) {
-          yield chunk.text!;
-        }
-      }
-    } catch (e) {
-      debugPrint('ERROR: $_modelName -> $e');
-      yield 'Fehler: $e';
+      yield await generateText(
+        userMessage,
+        systemInstruction: APIConfig.parentAssistantSystemPrompt,
+      );
+    } catch (error) {
+      debugPrint('GeminiAIService.chatWithStreaming(): $error');
+      yield 'Fehler: $error';
     }
   }
 
-  /// Sende mehrere Nachrichten als Chat-Historie und erhalte die gesamte Antwort.
   Future<String> chatWithHistory(List<Map<String, String>> messages) async {
     try {
-      final safeMessages = PrivacySanitizer.sanitizeHistoryForAi(messages);
-      final contentList = <Content>[];
-
-      for (final msg in safeMessages) {
-        final isUser = msg['role'] == 'user';
-        final roleValue = isUser ? 'user' : 'model';
-        contentList.add(
-          Content(roleValue, [TextPart(msg['content'] ?? '')]),
-        );
-      }
-
-      final response = await _model.generateContent(contentList);
-      return response.text?.trim().isNotEmpty == true
-          ? response.text!.trim()
-          : 'Ich bin für pädagogische Elternberatung da. Beschreibe mir gern kurz deine Situation.';
-    } catch (e) {
-      return 'Fehler: $e';
+      return await generateText(
+        _historyPrompt(messages),
+        systemInstruction: APIConfig.parentAssistantSystemPrompt,
+      );
+    } catch (error) {
+      return 'Fehler: $error';
     }
   }
 
-  /// Sende eine Nachricht und erhalte die komplette Antwort auf einmal
   Future<String> chat(String userMessage) async {
     try {
-      final safeMessage = PrivacySanitizer.sanitizeForAi(userMessage);
-      final content = [
-        Content.text(safeMessage),
-      ];
-
-      final response = await _model.generateContent(content);
-
-      if (response.text != null) {
-        return response.text!;
-      } else {
-        return 'Keine Antwort erhalten.';
-      }
-    } catch (e) {
-      return 'Fehler: $e';
+      return await generateText(
+        userMessage,
+        systemInstruction: APIConfig.parentAssistantSystemPrompt,
+      );
+    } catch (error) {
+      return 'Fehler: $error';
     }
   }
 
-  /// Sende mehrere Nachrichten als Chat-Historie
   Stream<String> chatWithHistoryStreaming(
     List<Map<String, String>> messages,
   ) async* {
-    try {
-      final safeMessages = PrivacySanitizer.sanitizeHistoryForAi(messages);
-      // Convert messages to Content objects
-      final contentList = <Content>[];
-
-      for (final msg in safeMessages) {
-        final isUser = msg['role'] == 'user';
-        final roleValue = isUser ? 'user' : 'model';
-
-        contentList.add(
-          Content(roleValue, [TextPart(msg['content'] ?? '')]),
-        );
-      }
-
-      final response = _model.generateContentStream(contentList);
-
-      await for (final chunk in response) {
-        if (chunk.text != null) {
-          yield chunk.text!;
-        }
-      }
-    } catch (e) {
-      yield 'Fehler: $e';
-    }
+    yield await chatWithHistory(messages);
   }
+
+  String _historyPrompt(List<Map<String, String>> messages) {
+    final safeMessages = PrivacySanitizer.sanitizeHistoryForAi(messages);
+    return safeMessages.map((message) {
+      final role = message['role'] == 'user' ? 'Nutzer' : 'Assistent';
+      return '$role: ${message['content'] ?? ''}';
+    }).join('\n\n');
+  }
+}
+
+class GeminiProxyResponse {
+  const GeminiProxyResponse({required this.text, required this.groundingUrls});
+
+  final String text;
+  final List<String> groundingUrls;
 }

@@ -111,6 +111,12 @@ else
   echo "[INFO] EXPECT_WRITE_AUTH=0, skipping strict unauthorized assertion (status=$status)"
 fi
 
+ai_body='{"prompt":"security smoke","model":"gemini-3.5-flash-lite"}'
+status="$(request_status POST "$BASE_URL/ai/generate" "" "$ai_body")"
+if [[ "$EXPECT_WRITE_AUTH" == "1" ]]; then
+  assert_exact_status "$status" "401" "POST /ai/generate without auth"
+fi
+
 # 4) Write endpoint with auth token (if available)
 if [[ -n "$AUTH_TOKEN" ]]; then
   status="$(request_status POST "$BASE_URL/todos" "$AUTH_TOKEN" "$todo_body")"

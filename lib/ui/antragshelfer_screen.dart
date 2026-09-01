@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/config/monetization_config.dart';
 import 'package:parentpeak/models/benefit_application_data.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/services/premium_service.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
@@ -640,16 +639,6 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
     });
 
     try {
-      final apiKey = APIConfig.getGeminiApiKey();
-      if (apiKey == null || apiKey.isEmpty) {
-        throw Exception('Kein API-Key konfiguriert');
-      }
-
-      final model = GenerativeModel(
-        model: APIConfig.getGeminiModelName(),
-        apiKey: apiKey,
-      );
-
       final prompt = '''
 Du bist ein freundlicher Sozialberater-Assistent. Erstelle eine Textvorlage für Eltern.
 
@@ -663,13 +652,9 @@ Regeln:
 - Format: Direkt als Brief-Text (kein "Betreff:", kein Header)
 ''';
 
-      final response = await model.generateContent(
-          [Content.text(prompt)]).timeout(const Duration(seconds: 20));
-
-      final text = response.text;
-      if (text == null || text.trim().isEmpty) {
-        throw Exception('Keine Antwort erhalten');
-      }
+      final text = await GeminiAIService().generateText(prompt).timeout(
+            const Duration(seconds: 20),
+          );
 
       if (mounted) {
         setState(() {

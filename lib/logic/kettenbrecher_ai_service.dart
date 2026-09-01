@@ -1,12 +1,8 @@
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 
 class KettenbrecherAiService {
   KettenbrecherAiService({GeminiAIService? geminiService})
-      : _geminiService = geminiService ??
-            (APIConfig.isGeminiApiKeyConfigured()
-                ? GeminiAIService(apiKey: APIConfig.getGeminiApiKey())
-                : null);
+      : _geminiService = geminiService ?? GeminiAIService();
 
   final GeminiAIService? _geminiService;
 

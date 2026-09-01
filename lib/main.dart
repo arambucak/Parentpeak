@@ -96,33 +96,18 @@ Future<void> _startApp() async {
   final hasDotEnv = await _loadOptionalDotEnv();
   await APIConfig.ensureRuntimeEnvLoaded();
   debugPrint('Gemini runtime model: ${APIConfig.getGeminiModelName()}');
-  debugPrint('Gemini API configured: ${APIConfig.isGeminiApiKeyConfigured()}');
 
-  final missingSecrets = APIConfig.getMissingRequiredSecrets();
   final releaseConfigIssues = APIConfig.getReleaseConfigIssues();
   const isBlockingReleaseConfig = kReleaseMode && !kIsWeb;
 
-  if (isBlockingReleaseConfig && missingSecrets.isNotEmpty) {
-    throw StateError(
-        'Fehlende Pflicht-Secrets für Release: ${missingSecrets.join(', ')}');
-  }
   if (isBlockingReleaseConfig && releaseConfigIssues.isNotEmpty) {
     throw StateError(
         'Unsichere Release-Konfiguration: ${releaseConfigIssues.join('; ')}');
-  }
-  if (kReleaseMode && kIsWeb && missingSecrets.isNotEmpty) {
-    debugPrint(
-      'Web Release Hinweis: Secrets fehlen (${missingSecrets.join(', ')}). Features werden ggf. deaktiviert.',
-    );
   }
   if (kReleaseMode && kIsWeb && releaseConfigIssues.isNotEmpty) {
     debugPrint(
       'Web Release Hinweis: ${releaseConfigIssues.join('; ')}. App startet im degradieren Modus.',
     );
-  }
-  if (!kReleaseMode && hasDotEnv && missingSecrets.isNotEmpty) {
-    debugPrint(
-        'Konfigurationshinweis: Fehlende Secrets (${missingSecrets.join(', ')}).');
   }
   if (!kReleaseMode && hasDotEnv && releaseConfigIssues.isNotEmpty) {
     debugPrint('Konfigurationshinweis: ${releaseConfigIssues.join('; ')}');
@@ -186,14 +171,10 @@ Future<bool> _loadOptionalDotEnv() async {
   }
 
   try {
-    // Loads the bundled placeholder (assets/env.template). Real secrets come
-    // from --dart-define and always take priority in APIConfig.
+    // Loads public client configuration from the bundled placeholder.
     await dotenv.load(fileName: 'assets/env.template', isOptional: true);
-    final hasGemini = (dotenv.env['GEMINI_API_KEY'] ?? '').trim().isNotEmpty;
     final hasAny = dotenv.env.isNotEmpty;
-    debugPrint(
-      'dotenv: loaded=$hasAny, geminiKeyPresent=$hasGemini, keyCount=${dotenv.env.length}',
-    );
+    debugPrint('dotenv: loaded=$hasAny, keyCount=${dotenv.env.length}');
     return hasAny;
   } catch (e) {
     debugPrint('Warnung: env.template konnte nicht geladen werden: $e');

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -50,13 +50,6 @@ class FamilyRecipeService {
 
   /// Generiert ein neues Rezept via Gemini.
   Future<FamilyRecipe?> generateRecipe() async {
-    final apiKey = APIConfig.getGeminiApiKey();
-    if (apiKey == null || apiKey.isEmpty) {
-      debugPrint(
-          '\u{274C} FamilyRecipeService: KEIN API-Key! .env nicht geladen?');
-      return _fallbackRecipe();
-    }
-
     // Rate limit check
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
@@ -115,19 +108,15 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     try {
       final modelName = APIConfig.getGeminiModelName();
       debugPrint(
-          'FamilyRecipeService: Verwende Modell=$modelName, Key-Länge=${apiKey.length}');
+          'FamilyRecipeService: Verwende Backend-KI mit Modell=$modelName');
 
-      final model = GenerativeModel(
-        model: modelName,
-        apiKey: apiKey,
-        systemInstruction: Content.text(
-            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
-            'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.'),
-      );
-
-      final response = await model.generateContent([Content.text(prompt)]);
+        final raw = await GeminiAIService(modelName: modelName).generateText(
+        prompt,
+        systemInstruction:
+          'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
+          'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+        );
       await AIRateLimiter.recordRequest();
-      final raw = response.text ?? '';
       debugPrint('FamilyRecipeService: Gemini Antwort (${raw.length} Zeichen)');
 
       if (raw.isEmpty) {
