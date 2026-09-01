@@ -6,21 +6,26 @@ import 'package:parentpeak/config/api_config.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('bundles dotenv as an asset for runtime loading', () async {
-    final dotenvContents = await rootBundle.loadString('.env');
+  test('bundles a placeholder env template (no real secrets)', () async {
+    final envContents = await rootBundle.loadString('assets/env.template');
 
-    expect(dotenvContents, contains('GEMINI_API_KEY='));
-    expect(dotenvContents, contains('GEMINI_MODEL_NAME='));
+    // The template must expose the expected keys...
+    expect(envContents, contains('GEMINI_API_KEY='));
+    expect(envContents, contains('GEMINI_MODEL_NAME='));
+    expect(envContents, contains('BACKEND_API_TOKEN='));
+
+    // ...but must NOT contain any real secret values.
+    expect(envContents.contains('pp_live_'), isFalse,
+        reason: 'Real backend token must never be bundled.');
+    expect(RegExp(r'AIza[A-Za-z0-9_-]{20,}').hasMatch(envContents), isFalse,
+        reason: 'Real API keys must never be bundled.');
   });
 
-  test('loads Gemini config from the bundled dotenv file', () async {
-    await dotenv.load(fileName: '.env', isOptional: true);
+  test('loads model config from the bundled placeholder template', () async {
+    await dotenv.load(fileName: 'assets/env.template', isOptional: true);
 
-    final apiKey = APIConfig.getGeminiApiKey();
+    // Model name has a safe default in the template.
     final modelName = APIConfig.getGeminiModelName();
-
-    expect(apiKey, isNotNull);
-    expect(apiKey, isNotEmpty);
     expect(modelName, isNotEmpty);
   });
 }

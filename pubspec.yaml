@@ -54,6 +54,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - .env
+    # Placeholder env only. Real secrets are injected via --dart-define at build time.
+    # The real local .env is NEVER bundled (would leak keys in APK/Web build).
+    - assets/env.template
     - assets/images/
     - assets/icons/

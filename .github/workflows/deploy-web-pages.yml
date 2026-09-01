@@ -61,7 +61,7 @@ jobs:
             --no-wasm-dry-run \
             --base-href "/" \
             --dart-define=BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-            --dart-define=BACKEND_API_TOKEN="${BACKEND_API_TOKEN:-pp_live_2026_q7N4mP2xK9aVtR8z}" \
+            --dart-define=BACKEND_API_TOKEN="${BACKEND_API_TOKEN}" \
             --dart-define=PRIVACY_POLICY_URL="$PRIVACY_POLICY_URL" \
             --dart-define=TERMS_OF_SERVICE_URL="$TERMS_OF_SERVICE_URL" \
             --dart-define=CONTACT_EMAIL="$CONTACT_EMAIL" \

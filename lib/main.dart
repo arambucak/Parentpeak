@@ -186,7 +186,9 @@ Future<bool> _loadOptionalDotEnv() async {
   }
 
   try {
-    await dotenv.load(fileName: '.env', isOptional: true);
+    // Loads the bundled placeholder (assets/env.template). Real secrets come
+    // from --dart-define and always take priority in APIConfig.
+    await dotenv.load(fileName: 'assets/env.template', isOptional: true);
     final hasGemini = (dotenv.env['GEMINI_API_KEY'] ?? '').trim().isNotEmpty;
     final hasAny = dotenv.env.isNotEmpty;
     debugPrint(
@@ -194,7 +196,7 @@ Future<bool> _loadOptionalDotEnv() async {
     );
     return hasAny;
   } catch (e) {
-    debugPrint('Warnung: .env konnte nicht geladen werden: $e');
+    debugPrint('Warnung: env.template konnte nicht geladen werden: $e');
     return false;
   }
 }
