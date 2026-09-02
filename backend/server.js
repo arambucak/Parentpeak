@@ -16,20 +16,27 @@ const multer = require('multer');
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
 let firebaseAdmin = null;
 try {
-  const admin = require('firebase-admin');
+  const {
+    applicationDefault,
+    cert,
+    getApps,
+    initializeApp,
+  } = require('firebase-admin/app');
+  const { getAuth } = require('firebase-admin/auth');
+  const { getMessaging } = require('firebase-admin/messaging');
   const serviceAccountJson = (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
   if (serviceAccountJson) {
     const serviceAccount = JSON.parse(serviceAccountJson);
-    if (!admin.apps.length) {
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    if (getApps().length === 0) {
+      initializeApp({ credential: cert(serviceAccount) });
     }
-    firebaseAdmin = admin;
+    firebaseAdmin = { auth: getAuth, messaging: getMessaging };
     console.log('🔑 Firebase Admin SDK initialisiert');
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    if (!admin.apps.length) {
-      admin.initializeApp({ credential: admin.credential.applicationDefault() });
+    if (getApps().length === 0) {
+      initializeApp({ credential: applicationDefault() });
     }
-    firebaseAdmin = admin;
+    firebaseAdmin = { auth: getAuth, messaging: getMessaging };
     console.log('🔑 Firebase Admin SDK initialisiert (Application Default Credentials)');
   }
 } catch (err) {
