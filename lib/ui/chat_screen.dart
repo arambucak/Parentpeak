@@ -24,7 +24,6 @@ const Color _kBrand = Color(0xFF8B5CF6); // Lila (Marke)
 const Color _kBrand2 = Color(0xFF7C3AED); // Dunkleres Lila
 const Color _kGreen = Color(0xFF16A34A); // Grün (Marke)
 const Color _kBg = Color(0xFFF7F5FF); // Sanfter lila-weißer Hintergrund
-const Color _kUserBubble = Color(0xFF8B5CF6);
 const Color _kAiBubble = Colors.white;
 const Color _kInk = Color(0xFF1F2937);
 
@@ -526,53 +525,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSafetyBanner() {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1EE),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE8543A).withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.verified_user_rounded,
-                  size: 18, color: Color(0xFFE8543A)),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Sicher & transparent',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: Color(0xFF1A2A3A),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 6),
-          Text(
-            'Keine Diagnosen, keine Therapie. Deine Fragen bleiben privat.',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF516072),
-              height: 1.4,
-            ),
-          ),
-        ],
       ),
     );
   }

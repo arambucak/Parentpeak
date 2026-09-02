@@ -74,9 +74,15 @@ class TreasureBackendService {
       String? uploadedImageUrl;
       final primaryImagePath = listing.primaryImagePath;
       if (primaryImagePath != null && primaryImagePath.isNotEmpty) {
-        final imageFile = XFile(primaryImagePath);
-        uploadedImageUrl =
-            await ImageUploadService.instance.uploadImage(imageFile);
+        // Bereits hochgeladene URL? Direkt verwenden (keine Re-Upload).
+        if (primaryImagePath.startsWith('http://') ||
+            primaryImagePath.startsWith('https://')) {
+          uploadedImageUrl = primaryImagePath;
+        } else {
+          final imageFile = XFile(primaryImagePath);
+          uploadedImageUrl =
+              await ImageUploadService.instance.uploadImage(imageFile);
+        }
       }
 
       final payload = await _apiClient!.postJsonAny(_treasuresPath, {

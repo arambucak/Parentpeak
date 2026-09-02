@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
@@ -187,6 +188,22 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     );
                     return;
                   }
+                  // Bilder JETZT hochladen (XFiles sind hier frisch/gültig)
+                  final uploadedUrls = await ImageUploadService.instance
+                      .uploadImages(_selectedImages);
+                  if (uploadedUrls.isEmpty) {
+                    messenger.hideCurrentSnackBar();
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.t('treasureImageUploadFailed',
+                            fallback:
+                                'Bild-Upload fehlgeschlagen. Bitte versuch es erneut.')),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
                   final categoryLabel =
                       _categoryLabelForKey(l10n, _selectedCategoryKey);
                   final locationLabel =
@@ -216,9 +233,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     locationLabel: locationLabel,
                     latitude: locationCoords.$1,
                     longitude: locationCoords.$2,
-                    imagePath: _primarySelectedImage!.path,
-                    imagePaths:
-                        _selectedImages.map((image) => image.path).toList(),
+                    imagePath: uploadedUrls.first,
+                    imagePaths: uploadedUrls,
                     createdAt: DateTime.now(),
                   );
                   final savedListings =
@@ -1078,32 +1094,98 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       setState(() => _isAnalyzingImage = true);
       final bytes = await image.readAsBytes();
       final text = await GeminiAIService().generateText(
-        'Du siehst ein Foto eines Gegenstands den eine Familie verschenken möchte. '
-        'Antworte NUR mit einem JSON-Objekt (kein Markdown):\n'
-        '{"title": "Kurzer Titel (max 5 Wörter)", "description": "Eine freundliche Beschreibung zum Verschenken (2 Sätze, elternfreundlich)", "category": "toy|clothing|book|furniture|other"}\n'
-        'Beispiel: {"title": "Rotes Laufrad", "description": "Gut erhaltenes Laufrad für Kinder ab 2 Jahren. Perfekt für erste Fahrversuche im Park!", "category": "toy"}',
+        'Du siehst ein Foto eines Gegenstands, den eine Familie verschenken möchte. '
+        'Analysiere das Bild genau und antworte NUR mit einem JSON-Objekt (kein Markdown):\n'
+        '{'
+        '"title": "Kurzer Titel (max 5 Wörter)", '
+        '"description": "Freundliche Beschreibung zum Verschenken (2 Sätze, elternfreundlich)", '
+        '"category": "vehicles|clothing|toys|books|equipment", '
+        '"color": "Hauptfarbe(n) des Gegenstands, z.B. Blau oder Rot-Weiß", '
+        '"sizeAge": "Passende Größe oder Altersempfehlung, z.B. Gr. 98 oder ab 3 Jahre", '
+        '"condition": "new|good|used"'
+        '}\n'
+        'Kategorie-Hilfe: vehicles=Fahrzeuge/Laufrad/Roller, clothing=Kleidung, '
+        'toys=Spielzeug, books=Bücher, equipment=Ausstattung/Möbel/Zubehör.\n'
+        'condition: new=wie neu, good=gut erhalten, used=gebraucht mit Spuren.\n'
+        'Beispiel: {"title":"Rotes Laufrad","description":"Gut erhaltenes Laufrad für erste Fahrversuche. Perfekt für den Park!","category":"vehicles","color":"Rot","sizeAge":"ab 2 Jahre","condition":"good"}',
         imageBytes: bytes,
       );
       if (!mounted) return;
-      // Parse JSON from response
-      final jsonMatch = RegExp(r'\{[^}]+\}').firstMatch(text);
-      if (jsonMatch != null) {
-        final parsed = jsonDecode(jsonMatch.group(0)!) as Map<String, dynamic>;
-        final title = parsed['title']?.toString() ?? '';
-        final description = parsed['description']?.toString() ?? '';
-        if (title.isNotEmpty && _titleController.text.trim() == _defaultTitle) {
-          setState(() {
-            _titleController.text = title;
-            if (description.isNotEmpty) {
-              _noteController.text = description;
-            }
-          });
+      final parsed = _extractJson(text);
+      if (parsed == null) return;
+
+      final title = parsed['title']?.toString().trim() ?? '';
+      final description = parsed['description']?.toString().trim() ?? '';
+      final category =
+          parsed['category']?.toString().trim().toLowerCase() ?? '';
+      final color = parsed['color']?.toString().trim() ?? '';
+      final sizeAge = parsed['sizeAge']?.toString().trim() ?? '';
+      final condition =
+          parsed['condition']?.toString().trim().toLowerCase() ?? '';
+
+      const validCategories = {
+        'vehicles',
+        'clothing',
+        'toys',
+        'books',
+        'equipment'
+      };
+
+      setState(() {
+        // Titel nur überschreiben wenn noch Default
+        if (title.isNotEmpty &&
+            (_titleController.text.trim() == _defaultTitle ||
+                _titleController.text.trim().isEmpty)) {
+          _titleController.text = title;
         }
-      }
+        // Beschreibung nur wenn noch leer
+        if (description.isNotEmpty && _noteController.text.trim().isEmpty) {
+          _noteController.text = description;
+        }
+        // Kategorie setzen wenn gültig
+        if (validCategories.contains(category)) {
+          _selectedCategoryKey = category;
+        }
+        // Farbe nur wenn noch Default
+        if (color.isNotEmpty &&
+            (_colorController.text.trim() == _defaultColor ||
+                _colorController.text.trim().isEmpty)) {
+          _colorController.text = color;
+        }
+        // Größe/Alter nur wenn noch Default
+        if (sizeAge.isNotEmpty &&
+            (_sizeAgeController.text.trim() == _defaultSizeAge ||
+                _sizeAgeController.text.trim().isEmpty)) {
+          _sizeAgeController.text = sizeAge;
+        }
+        // Zustand
+        if (condition == 'new') {
+          _conditionIndex = 0;
+        } else if (condition == 'good') {
+          _conditionIndex = 1;
+        } else if (condition == 'used') {
+          _conditionIndex = 2;
+        }
+      });
     } catch (e) {
       debugPrint('Image analysis failed: $e');
     } finally {
       if (mounted) setState(() => _isAnalyzingImage = false);
+    }
+  }
+
+  /// Extrahiert das erste vollständige JSON-Objekt aus dem KI-Text.
+  Map<String, dynamic>? _extractJson(String raw) {
+    try {
+      final start = raw.indexOf('{');
+      final end = raw.lastIndexOf('}');
+      if (start == -1 || end == -1 || end <= start) return null;
+      final chunk = raw.substring(start, end + 1);
+      final decoded = jsonDecode(chunk);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 
