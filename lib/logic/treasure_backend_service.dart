@@ -85,6 +85,11 @@ class TreasureBackendService {
         }
       }
 
+      // Alle bereits hochgeladenen Bild-URLs sammeln (Multi-Bild-Support)
+      final allImageUrls = listing.resolvedImagePaths
+          .where((p) => p.startsWith('http://') || p.startsWith('https://'))
+          .toList();
+
       final payload = await _apiClient!.postJsonAny(_treasuresPath, {
         'userId': userId,
         'title': listing.title,
@@ -99,6 +104,7 @@ class TreasureBackendService {
         'shareRadiusKm': (listing.distanceMeters / 1000).clamp(1, 100),
         if (uploadedImageUrl != null && uploadedImageUrl.isNotEmpty)
           'photoUrl': uploadedImageUrl,
+        if (allImageUrls.isNotEmpty) 'photoUrls': allImageUrls,
       });
 
       final data = payload is Map<String, dynamic>
@@ -138,6 +144,36 @@ class TreasureBackendService {
       return true;
     } catch (e) {
       lastSyncError = 'Meldung konnte nicht an den Server gesendet werden: $e';
+      return false;
+    }
+  }
+
+  /// Reserviert einen Schatz für den anfragenden Nutzer.
+  /// Der Backend-Endpoint /api/treasures/{id}/reserve ist optional —
+  /// schlägt er fehl, wird die Reservierung lokal gehalten (siehe Service).
+  Future<bool> reserveTreasure({
+    required String treasureId,
+    required String requesterUserId,
+    String? preferredSlot,
+    String? handoverMode,
+    String? message,
+  }) async {
+    if (_apiClient == null) return false;
+
+    try {
+      await _apiClient!.postJsonAny(
+        '$_treasuresPath/$treasureId/reserve',
+        {
+          'requesterUserId': requesterUserId,
+          if (preferredSlot != null) 'preferredSlot': preferredSlot,
+          if (handoverMode != null) 'handoverMode': handoverMode,
+          if (message != null && message.trim().isNotEmpty)
+            'message': message.trim(),
+        },
+      );
+      return true;
+    } catch (e) {
+      lastSyncError = 'Reservierung konnte nicht gesendet werden: $e';
       return false;
     }
   }
@@ -183,6 +219,10 @@ class TreasureBackendService {
       imagePath: imageUrl ?? fallbackListing?.imagePath,
       imagePaths: [
         if (imageUrl != null && imageUrl.isNotEmpty) imageUrl,
+        if (treasure['photoUrls'] is List)
+          ...(treasure['photoUrls'] as List)
+              .map((e) => e.toString())
+              .where((e) => e.isNotEmpty),
         ...?fallbackListing?.imagePaths,
       ],
       createdAt: createdAt ?? fallbackListing?.createdAt ?? DateTime.now(),

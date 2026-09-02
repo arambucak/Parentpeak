@@ -200,6 +200,47 @@ class TreasureListingService {
     return List<TreasureListing>.from(_cache!);
   }
 
+  static const String _reservedStorageKey = 'treasure_reserved_ids.v1';
+
+  /// IDs der reservierten Schätze (lokal, damit "reserviert" sofort sichtbar ist).
+  Future<Set<String>> loadReservedIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    return (prefs.getStringList(_reservedStorageKey) ?? const []).toSet();
+  }
+
+  /// Reserviert einen Schatz: sendet an Backend (falls verfügbar) UND
+  /// speichert lokal, damit die UI sofort "reserviert" anzeigt.
+  Future<bool> reserveListing({
+    required String listingId,
+    String? preferredSlot,
+    String? handoverMode,
+    String? message,
+  }) async {
+    final userId = AuthService.instance.currentUser?.uid ?? 'guest';
+
+    // Lokal merken (immer, damit UI sofort reagiert)
+    final prefs = await SharedPreferences.getInstance();
+    final reserved =
+        (prefs.getStringList(_reservedStorageKey) ?? <String>[]).toSet();
+    reserved.add(listingId);
+    await prefs.setStringList(_reservedStorageKey, reserved.toList());
+
+    // Backend-Reservierung versuchen (best effort)
+    if (_backendService.isEnabled) {
+      final ok = await _backendService.reserveTreasure(
+        treasureId: listingId,
+        requesterUserId: userId,
+        preferredSlot: preferredSlot,
+        handoverMode: handoverMode,
+        message: message,
+      );
+      lastSyncError = ok ? null : _backendService.lastSyncError;
+      // Auch wenn Backend (noch) keinen Endpoint hat: lokal reserviert.
+      return true;
+    }
+    return true;
+  }
+
   Future<bool> reportListing({
     required String listingId,
     required String reason,

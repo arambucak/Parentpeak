@@ -2,14 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/services/image_upload_service.dart';
+import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
+import 'package:parentpeak/ui/widgets/safe_image.dart';
 
 class TreasureUploadScreen extends StatefulWidget {
   const TreasureUploadScreen({super.key});
@@ -206,10 +209,14 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
 
                   final categoryLabel =
                       _categoryLabelForKey(l10n, _selectedCategoryKey);
-                  final locationLabel =
-                      _locationLabelForKey(l10n, _selectedLocationKey);
-                  final locationCoords =
-                      _locationCoordsForKey(_selectedLocationKey);
+                  // Echten Standort des Nutzers verwenden (Fallback: Stadtteil-Auswahl)
+                  final loc = LocationService.instance;
+                  final locationLabel = loc.hasLocation && loc.city != null
+                      ? loc.city!
+                      : _locationLabelForKey(l10n, _selectedLocationKey);
+                  final locationCoords = loc.hasLocation
+                      ? (loc.latitude!, loc.longitude!)
+                      : _locationCoordsForKey(_selectedLocationKey);
                   final title = _titleController.text.trim().isEmpty
                       ? l10n.t('treasureTitlePlaceholder',
                           fallback: 'Rotes Laufrad')
@@ -312,8 +319,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
             Positioned.fill(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: Image.file(
-                  File(primaryImage.path),
+                child: SafeXFileImage(
+                  file: primaryImage,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -505,13 +512,9 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(17),
-                      child: Image.file(
-                        File(image.path),
+                      child: SafeXFileImage(
+                        file: image,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const DecoratedBox(
-                          decoration: BoxDecoration(color: Color(0xFFF4F7FC)),
-                          child: SizedBox.expand(),
-                        ),
                       ),
                     ),
                   ),
@@ -1280,7 +1283,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                   _defaultConditionIndex;
           _voiceCaptured = _noteController.text.trim().isNotEmpty;
           _selectedImages = imagePaths
-              .where((path) => File(path).existsSync())
+              .where((path) => kIsWeb || File(path).existsSync())
               .map(XFile.new)
               .toList();
         });
@@ -1479,8 +1482,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                   Positioned.fill(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(18),
-                      child: Image.file(
-                        File(primaryImage.path),
+                      child: SafeXFileImage(
+                        file: primaryImage,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -1637,8 +1640,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) => ClipRRect(
                   borderRadius: BorderRadius.circular(14),
-                  child: Image.file(
-                    File(_selectedImages[index].path),
+                  child: SafeXFileImage(
+                    file: _selectedImages[index],
                     width: 64,
                     height: 64,
                     fit: BoxFit.cover,
