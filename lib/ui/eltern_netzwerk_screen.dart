@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
+import 'package:parentpeak/logic/parent_matching_backend_service.dart';
+import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
@@ -19,7 +21,6 @@ import 'package:parentpeak/main.dart';
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
-
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
   const ElternNetzwerkScreen({super.key, this.initialFriendCode});
@@ -31,13 +32,16 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   final _backend = SpielfreundeBackendService();
+  final _matching = ParentMatchingBackendService();
   FamilyMatchProfile? _profile;
-  WaitlistStatus _waitlist =
-      const WaitlistStatus(total: 0, threshold: 20, remaining: 20, progress: 0);
   Set<String> _dismissedSuggestions = {};
   List<_SuggestedParent> _suggestedProfiles = [];
   bool _loadingSuggestions = true;
 
+  // Echte Spielfreunde-Discovery (nutzt /api/parent-matching/find)
+  List<MatchResult> _matches = [];
+  bool _loadingMatches = false;
+  String _matchScope = '10km';
 
   @override
   void initState() {
@@ -74,8 +78,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final p = await FamilyMatchProfile.load();
     if (mounted) setState(() => _profile = p);
     if (p != null) {
-      final w = await _backend.getWaitlistCount(p.district);
-      if (mounted) setState(() => _waitlist = w);
+      unawaited(_loadMatches());
     }
 
     // Register own code+name so others can find us by code
@@ -463,7 +466,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   Widget _spielfreundeTab(ThemeData theme) {
     if (_profile == null) return _profileSetup(theme);
-    return _waitlistView(theme);
+    return _discoveryView(theme);
   }
 
   Widget _profileSetup(ThemeData theme) {
@@ -499,15 +502,91 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         await p.save();
         final uid = AuthService.instance.currentUser?.uid ?? 'guest';
         await _backend.saveProfile(p, uid);
+        // In den echten Matching-Store schreiben, damit andere Familien uns
+        // per Standort + Interessen finden koennen (echtes Matching).
+        await _syncProfileToMatching(p, uid);
         await _init();
+        await _loadMatches();
       })),
     ]);
   }
 
-  Widget _waitlistView(ThemeData theme) {
-    return SingleChildScrollView(
+  /// Mappt das Spielfreunde-Wizard-Profil auf den echten Matching-Store
+  /// (/api/parent-matching/find nutzt genau diese Felder inkl. GPS + Interessen).
+  Future<void> _syncProfileToMatching(FamilyMatchProfile p, String uid) async {
+    // Standort: bevorzugt echte GPS-Koordinaten aus dem LocationService.
+    final loc = LocationService.instance;
+    if (!loc.hasLocation) {
+      // Versuch, GPS zu holen (Web/Native). Schlaegt es fehl, bleibt es ohne
+      // Koordinaten – dann matcht der Server ueber Interessen/Alter/Werte.
+      await loc.requestGPSLocation();
+    }
+
+    // Kinder-Alter als lesbare Tags ("3J", "8M") fuer das Matching.
+    final childAges = p.children.map((c) {
+      final years = c.ageMonths ~/ 12;
+      final months = c.ageMonths % 12;
+      return years >= 1 ? '${years}J' : '${months}M';
+    }).toList();
+
+    // Interessen = wonach die Familie sucht + besondere Merkmale.
+    final interests = <String>{
+      ...p.lookingFor,
+      ...p.specials,
+    }.where((e) => e.trim().isNotEmpty).toList();
+
+    await _matching.createProfile(
+      userId: uid,
+      name: p.displayName.isNotEmpty ? 'Familie ${p.displayName}' : 'Familie',
+      city: (loc.city != null && loc.city!.isNotEmpty)
+          ? loc.city!
+          : (p.district.isNotEmpty ? p.district : 'Deutschland'),
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      interests: interests,
+      languages: p.languages,
+      valuesFocus: p.values,
+      childAges: childAges,
+      familyForm: p.familyForm,
+      bio: p.bio,
+    );
+  }
+
+  /// Laedt echte Familien in der Naehe ueber das bestehende Matching-Backend.
+  Future<void> _loadMatches() async {
+    if (_profile == null) return;
+    if (mounted) setState(() => _loadingMatches = true);
+    final uid = AuthService.instance.currentUser?.uid ?? 'guest';
+    final childAges = _profile!.children.map((c) {
+      final years = c.ageMonths ~/ 12;
+      return years >= 1 ? '${years}J' : '${c.ageMonths % 12}M';
+    }).toList();
+    try {
+      final result = await _matching.findMatchesWithFallback(
+        userId: uid,
+        limit: 20,
+        childAges: childAges,
+      );
+      if (mounted) {
+        setState(() {
+          _matches = result.matches;
+          _matchScope = result.scope;
+          _loadingMatches = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMatches = false);
+    }
+  }
+
+  Widget _discoveryView(ThemeData theme) {
+    return RefreshIndicator(
+      onRefresh: _loadMatches,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ── Eigenes Profil (Header) ──────────────────────────────────────
           Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -561,123 +640,132 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 ])
               ])),
           const SizedBox(height: 20),
-          Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.5))),
-              child: Column(children: [
-                const Text('\u{1F389}', style: TextStyle(fontSize: 36)),
-                const SizedBox(height: 14),
-                Text(
-                    AppStringsManager.getString(
-                        languageService.currentLanguage, 'profile_ready'),
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text(
-                    'Wir öffnen die Spielfreunde-Suche sobald genug Familien in deiner Nähe sind.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant, height: 1.4),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.people_rounded,
-                          size: 18, color: Color(0xFF8B5CF6)),
-                      const SizedBox(width: 8),
-                      Text('${_waitlist.total} Familien warten auch',
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8B5CF6)))
-                    ])),
-                const SizedBox(height: 12),
-                ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                        value: _waitlist.progress,
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFFE2E8F0),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color(0xFF8B5CF6)))),
-                const SizedBox(height: 6),
-                Text('Noch ${_waitlist.remaining} Familien bis Freischaltung',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: theme.colorScheme.outline)),
-              ])),
-          const SizedBox(height: 20),
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'how_it_will_look'),
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
+
+          // ── Titelzeile Discovery ─────────────────────────────────────────
+          Row(children: [
+            const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text('Familien in deiner Nähe',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+            ),
+            if (_loadingMatches)
+              const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+            else
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _loadMatches,
+                child: Icon(Icons.refresh_rounded,
+                    size: 20, color: theme.colorScheme.primary),
+              ),
+          ]),
+          if (!_loadingMatches && _matches.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+                _matchScope == '10km'
+                    ? 'Im Umkreis von ~10 km'
+                    : _matchScope == '50km'
+                        ? 'Im Umkreis von ~50 km'
+                        : _matchScope == '100km'
+                            ? 'Im Umkreis von ~100 km'
+                            : 'Deutschlandweit',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+          ],
           const SizedBox(height: 12),
-          _familyCard(
-              theme,
-              'Familie M.',
-              'Kreuzberg',
-              '\u{1F467} Lina (3) \u{2022} \u{1F466} Ben (5)',
-              'Wir suchen Familien für Spielplatz-Treffen und gemeinsames Kochen.',
-              ['Bedürfnisorientiert', 'Natur'],
-              'Nachmittags \u{2022} DE, TR'),
-          const SizedBox(height: 10),
-          _familyCard(
-              theme,
-              'Familie S.',
-              'Mitte',
-              '\u{1F476} Noah (2)',
-              'Alleinerziehend, suche Austausch und spontane Treffen.',
-              ['Offen', 'Spontan'],
-              'Vormittags \u{2022} DE, AR'),
-          const SizedBox(height: 20),
-          GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _tabs.animateTo(0),
-              child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                      color: const Color(0xFF0EA5A4).withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                          color:
-                              const Color(0xFF0EA5A4).withValues(alpha: 0.12))),
-                  child: Row(children: [
-                    const Text('\u{1F4A1}', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Text(
-                            'Lade Freunde ein — schneller freischalten!',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w600))),
-                    Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                            color: const Color(0xFF0EA5A4),
-                            borderRadius: BorderRadius.circular(8)),
-                        child: Text(
-                            AppStringsManager.getString(
-                                languageService.currentLanguage, 'invite_btn'),
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700)))
-                  ]))),
+
+          // ── Ergebnis: Liste, Loading oder ehrlicher Empty-State ──────────
+          if (_loadingMatches)
+            _matchesLoadingSkeleton(theme)
+          else if (_matches.isEmpty)
+            _emptyDiscoveryState(theme)
+          else
+            ..._matches.map((m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _matchCard(theme, m),
+                )),
+        ]),
+      ),
+    );
+  }
+
+  /// Ehrlicher Empty-State: keine Fake-Familien, echter Aufruf zum Mitmachen.
+  Widget _emptyDiscoveryState(ThemeData theme) {
+    return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color:
+                    theme.colorScheme.outlineVariant.withValues(alpha: 0.5))),
+        child: Column(children: [
+          const Text('\u{1F331}', style: TextStyle(fontSize: 40)),
+          const SizedBox(height: 14),
+          Text('Sei die erste Familie in deiner Gegend',
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w800),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text(
+              'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
+              'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
+              'Lade Nachbarn & Freunde ein – so wächst euer Netzwerk am schnellsten.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant, height: 1.4),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _tabs.animateTo(2),
+              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+              label: const Text('Spielkameraden einladen'),
+              style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+            ),
+          ),
         ]));
   }
 
-  Widget _familyCard(ThemeData theme, String name, String district, String kids,
-      String bio, List<String> tags, String meta) {
+  Widget _matchesLoadingSkeleton(ThemeData theme) {
+    return Column(
+      children: List.generate(
+          2,
+          (_) => Container(
+                height: 120,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(18)),
+              )),
+    );
+  }
+
+  /// Karte einer echten gematchten Familie mit Verbinden-Aktion.
+  Widget _matchCard(ThemeData theme, MatchResult m) {
+    final p = m.profile;
+    final kids = p.childAges.isEmpty
+        ? ''
+        : '\u{1F9D2} ${p.childAges.join(' \u{2022} ')}';
+    final distanceKm = m.breakdown['distanceKm'];
+    final meta = <String>[
+      if (distanceKm != null) '\u{1F4CD} $distanceKm km',
+      if (p.languages.isNotEmpty) p.languages.take(3).join(', '),
+    ].join('  \u{2022}  ');
+    final tags = <String>[
+      ...p.valuesFocus.take(2),
+      ...p.interests.take(2),
+    ];
+
     return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -706,57 +794,104 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text(name,
+                  Text(p.name,
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
-                  Text(district,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+                  if (p.city.isNotEmpty)
+                    Text(p.city,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant))
                 ])),
-            Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                    color:
-                        theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(6)),
-                child: Text(
-                    AppStringsManager.getString(
-                        languageService.currentLanguage, 'soon'),
-                    style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.outline)))
+            if (m.score > 0)
+              Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Text('${m.score}% Match',
+                      style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF16A34A)))),
           ]),
-          const SizedBox(height: 10),
-          Text(kids,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          Text(bio,
-              style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
-          const SizedBox(height: 10),
-          Wrap(
-              spacing: 6,
-              children: tags
-                  .map((t) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                          color:
-                              const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(6)),
-                      child: Text(t,
-                          style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF7C3AED)))))
-                  .toList()),
-          const SizedBox(height: 8),
-          Text(meta,
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.outline)),
+          if (kids.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(kids,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+          ],
+          if (p.bio != null && p.bio!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(p.bio!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
+          ],
+          if (tags.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: tags
+                    .map((t) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6)),
+                        child: Text(t,
+                            style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF7C3AED)))))
+                    .toList()),
+          ],
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(meta,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _connectWithMatch(m),
+              icon: const Icon(Icons.waving_hand_rounded, size: 16),
+              label: const Text('Hallo sagen'),
+              style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF7C3AED),
+                  side: const BorderSide(color: Color(0xFF8B5CF6)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+            ),
+          ),
         ]));
+  }
+
+  /// Verbindungswunsch senden (echte Aktion im Matching-Backend).
+  Future<void> _connectWithMatch(MatchResult m) async {
+    final uid = AuthService.instance.currentUser?.uid ?? 'guest';
+    final messenger = ScaffoldMessenger.of(context);
+    final errorColor = Theme.of(context).colorScheme.error;
+    final ok = await _matching.recordAction(
+      userId: uid,
+      matchedProfileId: m.profile.id,
+      action: 'like',
+    );
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(
+      content: Text(ok
+          ? 'Dein Hallo ist unterwegs zu ${m.profile.name} 👋'
+          : 'Konnte gerade nicht senden – bitte später erneut versuchen.'),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: ok ? const Color(0xFF16A34A) : errorColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
