@@ -5104,17 +5104,21 @@ app.get('/api/friends/lookup/:code', async (req, res) => {
   try {
     await ensureSocialSchemaReady();
     const rows = await prisma.$queryRawUnsafe(
-      `SELECT "name" FROM "FriendRegistry" WHERE "code" = $1`, code
+      `SELECT "name", "userId" FROM "FriendRegistry" WHERE "code" = $1`, code
     );
-    if (rows.length > 0) return res.json({ name: rows[0].name });
+    // Gibt jetzt auch die userId zurueck -> Code kann in eine UID-Freundschaft
+    // ueberfuehrt werden (Bruecke vom alten Code-Weg ins neue UID-System).
+    if (rows.length > 0) {
+      return res.json({ name: rows[0].name, uid: rows[0].userId || null });
+    }
     const mem = friendRegistry.get(code);
-    if (mem) return res.json({ name: mem.name });
+    if (mem) return res.json({ name: mem.name, uid: mem.userId || null });
     return res.status(404).json({ error: 'Nicht gefunden' });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'GET /api/friends/lookup', error)) return;
     const entry = friendRegistry.get(code);
     if (!entry) return res.status(404).json({ error: 'Nicht gefunden' });
-    return res.json({ name: entry.name });
+    return res.json({ name: entry.name, uid: entry.userId || null });
   }
 });
 

@@ -107,12 +107,34 @@ class FriendshipService extends ChangeNotifier {
     return null;
   }
 
+  /// Bruecke: einen (alten) Freundes-Code -> {uid, name} aufloesen, damit man
+  /// auch per Code eine UID-Freundschaftsanfrage senden kann.
+  Future<Map<String, String>?> resolveCode(String code) async {
+    final api = _api;
+    if (api == null || code.isEmpty) return null;
+    try {
+      final res = await api.getJson('/api/friends/lookup/$code');
+      if (res is Map<String, dynamic> &&
+          res['uid'] is String &&
+          (res['uid'] as String).isNotEmpty) {
+        return {
+          'uid': res['uid'] as String,
+          'name': (res['name'] as String?)?.trim() ?? '',
+        };
+      }
+    } catch (e) {
+      debugPrint('FriendshipService.resolveCode failed: $e');
+    }
+    return null;
+  }
+
   /// Freundschaftsanfrage an eine UID senden. Ist das Ziel nicht privat, wird
   /// die Freundschaft sofort bestaetigt (Server entscheidet).
   Future<bool> sendRequest(String toUid) async {
     final api = _api;
     final uid = _uid;
-    if (api == null || uid == null || uid.isEmpty || toUid.isEmpty) return false;
+    if (api == null || uid == null || uid.isEmpty || toUid.isEmpty)
+      return false;
     if (uid == toUid) return false;
     try {
       await api.postJsonAny('/api/friendships/request', {
@@ -131,7 +153,8 @@ class FriendshipService extends ChangeNotifier {
   Future<bool> accept(String otherUid) async {
     final api = _api;
     final uid = _uid;
-    if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty) return false;
+    if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty)
+      return false;
     try {
       await api.postJsonAny('/api/friendships/accept', {
         'uid': uid,
@@ -149,7 +172,8 @@ class FriendshipService extends ChangeNotifier {
   Future<bool> remove(String otherUid) async {
     final api = _api;
     final uid = _uid;
-    if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty) return false;
+    if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty)
+      return false;
     try {
       await api.delete('/api/friendships?uid=$uid&otherUid=$otherUid');
       await load();

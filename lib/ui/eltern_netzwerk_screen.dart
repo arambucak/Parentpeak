@@ -1862,26 +1862,36 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                             resolvedName == null
                         ? null
                         : () async {
-                            // Kanonischer Code (immer pp-xxxxxx, ein Bindestrich).
                             final code = canonicalFriendCode(codeCtrl.text);
-                            final myName = _profile?.displayName ??
-                                AuthService.instance.currentUser?.displayName ??
-                                'Familien-Kontakt';
-                            final myUserId =
-                                AuthService.instance.currentUser?.uid ?? '';
-                            // Atomare beidseitige Verbindung (beide sofort
-                            // befreundet, echter Name + geteilte roomId).
-                            await ParentFriendsService.instance.connectMutual(
-                              friendCode: code,
-                              myName: myName,
-                              myUserId: myUserId,
-                            );
-                            // Fallback: alte Ping-Mechanik, falls die Gegenseite
-                            // gerade nicht erreichbar war.
-                            final myCode = ParentFriendsService.instance.myCode;
-                            unawaited(_backend.notifyFriendConnect(
-                                myCode, myName, code));
+                            final messenger = ScaffoldMessenger.of(context);
+                            // Bruecke ins neue UID-System: Code -> UID auflösen
+                            // und eine echte Freundschaftsanfrage senden.
+                            final resolved = await FriendshipService.instance
+                                .resolveCode(code);
                             if (ctx.mounted) Navigator.pop(ctx);
+                            if (resolved != null && resolved['uid'] != null) {
+                              final ok = await FriendshipService.instance
+                                  .sendRequest(resolved['uid']!);
+                              if (!mounted) return;
+                              final n = (resolved['name']?.isNotEmpty == true)
+                                  ? resolved['name']!
+                                  : 'diese Familie';
+                              messenger.showSnackBar(SnackBar(
+                                content: Text(ok
+                                    ? 'Anfrage an $n gesendet. 👋'
+                                    : 'Konnte nicht verbinden.'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor:
+                                    ok ? const Color(0xFF16A34A) : null,
+                              ));
+                            } else if (mounted) {
+                              messenger.showSnackBar(const SnackBar(
+                                content: Text(
+                                    'Dieser Code ist noch nicht aktiv. Bitte '
+                                    'nutze den Einladungslink der anderen Familie.'),
+                                behavior: SnackBarBehavior.floating,
+                              ));
+                            }
                           },
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF8B5CF6),
