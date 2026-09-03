@@ -15,10 +15,10 @@ import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
 import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/config/access_config.dart';
+import 'package:parentpeak/ui/admin_moderation_screen.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
-
 
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
 class ProfileSafetyScreen extends StatefulWidget {
@@ -40,7 +40,6 @@ class ProfileSafetyScreen extends StatefulWidget {
 class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   List<_ChildInfo> _children = [];
   String _appVersion = '';
-
 
   @override
   void initState() {
@@ -539,6 +538,21 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       subtitle:
                           '${BlockReportService.instance.blockedUsers.length} blockiert',
                       onTap: _showBlockedContacts),
+                  // Moderations-Dashboard — nur fuer Admin-UIDs sichtbar.
+                  // Server prueft die Berechtigung zusaetzlich (ADMIN_USER_IDS).
+                  if (APIConfig.isAdminUser(
+                      AuthService.instance.currentUser?.uid)) ...[
+                    _thinDivider(theme),
+                    _buildCompactTile(theme,
+                        icon: Icons.shield_rounded,
+                        title: 'Moderation',
+                        subtitle: 'Meldungen prüfen & Accounts sperren',
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const AdminModerationScreen()))),
+                  ],
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.mail_rounded,
@@ -1484,8 +1498,8 @@ class _ReauthDialogState extends State<_ReauthDialog> {
             final pw = _ctrl.text;
             if (pw.isNotEmpty) Navigator.pop(context, pw);
           },
-          child:
-              Text(_t('profile_confirm'), style: const TextStyle(color: Colors.white)),
+          child: Text(_t('profile_confirm'),
+              style: const TextStyle(color: Colors.white)),
         ),
       ],
     );

@@ -115,6 +115,14 @@ const app = express();
 const PORT = Number.parseInt(process.env.PORT || '3000', 10);
 const backendApiToken = (process.env.BACKEND_API_TOKEN || '').trim();
 const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
+// Moderations-Admins: kommagetrennte Firebase-UIDs aus der Render-Env.
+// Niemals hardcodiert — nur ueber ADMIN_USER_IDS konfiguriert.
+const adminUserIds = new Set(
+  (process.env.ADMIN_USER_IDS || '')
+    .split(',')
+    .map(id => id.trim())
+    .filter(Boolean)
+);
 const requireAuthForWrites =
   (process.env.REQUIRE_AUTH_FOR_WRITES ||
     (process.env.NODE_ENV === 'production' ? '1' : '0')) === '1';
@@ -1917,6 +1925,15 @@ async function ensureSocialSchemaReady() {
     );
   `);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_safetyreport_reported" ON "SafetyReport"("reportedUserId");`);
+  // Soft-Suspend (umkehrbar): gesperrte Accounts, gesetzt durch Moderation.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SafetySuspension" (
+      "userId" TEXT PRIMARY KEY,
+      "reason" TEXT NOT NULL DEFAULT '',
+      "suspendedBy" TEXT NOT NULL DEFAULT '',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
   socialSchemaEnsured = true;
 }
 
@@ -5083,6 +5100,7 @@ app.get('/api/friends/pending/:code', async (req, res) => {
 const friendEdges = new Map();   // in-memory fallback: ownerCode -> [{friendCode, friendName}]
 const safetyBlocks = new Map();  // in-memory fallback: blockerUserId -> Set(blockedUserId)
 const safetyReports = [];        // in-memory fallback
+const safetySuspensions = new Map(); // in-memory fallback: userId -> {reason, suspendedBy, createdAt}
 
 // Save a friend edge for the owner (one direction). The client calls this for
 // both sides so each user can later restore their own list.
@@ -5243,6 +5261,138 @@ app.post('/api/safety/report', async (req, res) => {
     safetyReports.push({ id, reporterUserId, reportedUserId, contentType, content, reason, createdAt: new Date().toISOString() });
     const reportCount = safetyReports.filter(r => r.reportedUserId === reportedUserId).length;
     return res.json({ ok: true, id, reportCount });
+  }
+});
+
+// ─── Moderations-Dashboard (Admin) ─────────────────────────────────────────
+// Zugriff nur fuer Firebase-UIDs aus ADMIN_USER_IDS (Render-Env). Der
+// Backend-API-Token wird als Fallback fuer serverseitige Tools akzeptiert.
+async function requireAdmin(req, res, next) {
+  // Fallback: statischer Server-Token (nur fuer serverseitige Tools).
+  const authHeader = req.headers.authorization || '';
+  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
+    return next();
+  }
+  // Regulaer: Firebase-ID-Token pruefen und UID gegen die Admin-Liste.
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (!verified || !uid) {
+    return res.status(401).json({ error: 'Anmeldung erforderlich' });
+  }
+  if (adminUserIds.size === 0 || !adminUserIds.has(uid)) {
+    return res.status(403).json({ error: 'Kein Admin-Zugriff' });
+  }
+  req.firebaseUid = uid;
+  return next();
+}
+
+// Liste aller Meldungen, gruppiert pro gemeldetem User.
+app.get('/admin/reports', requireAdmin, async (req, res) => {
+  const status = (req.query.status || 'pending').toString().trim();
+  try {
+    await ensureSocialSchemaReady();
+    const where = status === 'all' ? '' : `WHERE r."status" = '${status.replace(/'/g, '')}'`;
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT r."reportedUserId",
+              COUNT(*)::int AS "reportCount",
+              MAX(r."createdAt") AS "lastReportedAt",
+              (ARRAY_AGG(r."reason" ORDER BY r."createdAt" DESC))[1] AS "lastReason",
+              BOOL_OR(s."userId" IS NOT NULL) AS "suspended"
+       FROM "SafetyReport" r
+       LEFT JOIN "SafetySuspension" s ON s."userId" = r."reportedUserId"
+       ${where}
+       GROUP BY r."reportedUserId"
+       ORDER BY "lastReportedAt" DESC
+       LIMIT 200`
+    );
+    // Detail-Meldungen mitliefern (kompakt), damit das Dashboard sie zeigen kann.
+    const detailRows = await prisma.$queryRawUnsafe(
+      `SELECT "id", "reportedUserId", "reporterUserId", "contentType", "content", "reason", "status", "createdAt"
+       FROM "SafetyReport"
+       ${status === 'all' ? '' : `WHERE "status" = '${status.replace(/'/g, '')}'`}
+       ORDER BY "createdAt" DESC
+       LIMIT 500`
+    );
+    return res.json({ groups: rows, reports: detailRows });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /admin/reports', error)) return;
+    // In-memory Fallback
+    const byUser = new Map();
+    for (const r of safetyReports) {
+      if (status !== 'all' && (r.status || 'pending') !== status) continue;
+      const g = byUser.get(r.reportedUserId) || { reportedUserId: r.reportedUserId, reportCount: 0, lastReportedAt: r.createdAt, lastReason: r.reason, suspended: safetySuspensions.has(r.reportedUserId) };
+      g.reportCount += 1;
+      if (r.createdAt > g.lastReportedAt) { g.lastReportedAt = r.createdAt; g.lastReason = r.reason; }
+      byUser.set(r.reportedUserId, g);
+    }
+    return res.json({ groups: [...byUser.values()], reports: safetyReports.slice(-500).reverse() });
+  }
+});
+
+// Meldung(en) als geprueft/ignoriert markieren. Ohne :id -> alle eines Users.
+app.post('/admin/reports/resolve', requireAdmin, async (req, res) => {
+  const reportId = (req.body.reportId || '').toString().trim();
+  const reportedUserId = (req.body.reportedUserId || '').toString().trim();
+  if (!reportId && !reportedUserId) {
+    return res.status(400).json({ error: 'reportId oder reportedUserId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    if (reportId) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "SafetyReport" SET "status" = 'resolved' WHERE "id" = $1`, reportId
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "SafetyReport" SET "status" = 'resolved' WHERE "reportedUserId" = $1`, reportedUserId
+      );
+    }
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /admin/reports/resolve', error)) return;
+    for (const r of safetyReports) {
+      if ((reportId && r.id === reportId) || (reportedUserId && r.reportedUserId === reportedUserId)) {
+        r.status = 'resolved';
+      }
+    }
+    return res.json({ ok: true });
+  }
+});
+
+// Account sperren (Soft-Suspend, umkehrbar).
+app.post('/admin/users/:userId/suspend', requireAdmin, async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  const reason = (req.body.reason || '').toString().trim().slice(0, 300);
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SafetySuspension" ("userId", "reason", "suspendedBy", "createdAt")
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT ("userId") DO UPDATE SET "reason" = $2, "suspendedBy" = $3`,
+      userId, reason, req.firebaseUid || 'admin'
+    );
+    return res.json({ ok: true, suspended: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /admin/users/suspend', error)) return;
+    safetySuspensions.set(userId, { reason, suspendedBy: req.firebaseUid || 'admin', createdAt: new Date().toISOString() });
+    return res.json({ ok: true, suspended: true });
+  }
+});
+
+// Account entsperren.
+app.post('/admin/users/:userId/unsuspend', requireAdmin, async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "SafetySuspension" WHERE "userId" = $1`, userId
+    );
+    return res.json({ ok: true, suspended: false });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /admin/users/unsuspend', error)) return;
+    safetySuspensions.delete(userId);
+    return res.json({ ok: true, suspended: false });
   }
 });
 
@@ -7932,6 +8082,7 @@ app.get('/api/parent-matching/find', async (req, res) => {
 
     // Prio 4: hide blocked users from discovery (server-side).
     let blockedIds = new Set();
+    let suspendedIds = new Set();
     try {
       await ensureSocialSchemaReady();
       const blockRows = await prisma.$queryRawUnsafe(
@@ -7939,12 +8090,18 @@ app.get('/api/parent-matching/find', async (req, res) => {
         userId
       );
       blockedIds = new Set(blockRows.map(r => r.blockedUserId));
+      // Moderation: gesperrte (suspended) Accounts nie in Discovery zeigen.
+      const suspRows = await prisma.$queryRawUnsafe(
+        `SELECT "userId" FROM "SafetySuspension"`
+      );
+      suspendedIds = new Set(suspRows.map(r => r.userId));
     } catch (_) {
       const set = safetyBlocks.get(userId);
       if (set) blockedIds = set;
+      suspendedIds = new Set([...safetySuspensions.keys()]);
     }
     const allProfiles = allProfilesRaw.filter(
-      p => !blockedIds.has(p.ownerUserId)
+      p => !blockedIds.has(p.ownerUserId) && !suspendedIds.has(p.ownerUserId)
     );
 
     const scored = allProfiles.map(candidate => {

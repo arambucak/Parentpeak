@@ -340,28 +340,43 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             ]),
             if (coins.balance >= ParentCoinService.coinsForFreePremium) ...[
               const SizedBox(height: 14),
-              SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                      onPressed: () async {
-                        await coins.redeemForPremium();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text('\u{1F389} Premium freigeschaltet!')),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-                      label: Text(AppStringsManager.getString(
-                          languageService.currentLanguage, 'redeem_premium')),
-                      style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFF97316),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)))))
+              // Prio 5: Einloesen ist noch nicht scharf geschaltet. Statt einer
+              // Schein-Einloesung zeigen wir ehrlich 'Bald verfuegbar' — die
+              // gesammelten Coins bleiben natuerlich erhalten.
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(14),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.hourglass_top_rounded,
+                      size: 18, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Bald verfügbar',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white)),
+                          SizedBox(height: 2),
+                          Text(
+                              'Deine Coins sind gesichert. Bald kannst du damit Features freischalten. 🎁',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                  height: 1.3)),
+                        ]),
+                  ),
+                ]),
+              ),
             ],
           ]),
         ),

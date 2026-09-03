@@ -28,6 +28,11 @@ class APIConfig {
       String.fromEnvironment('CONTACT_EMAIL', defaultValue: '');
   static const String _contactSupportUrlDefine =
       String.fromEnvironment('CONTACT_SUPPORT_URL', defaultValue: '');
+  // Kommagetrennte Firebase-UIDs, die den Moderations-Admin-Bereich sehen
+  // duerfen. Nur fuer die Sichtbarkeit im Client — die echte Absicherung
+  // passiert serverseitig (ADMIN_USER_IDS auf Render).
+  static const String _adminUserIdsDefine =
+      String.fromEnvironment('ADMIN_USER_IDS', defaultValue: '');
 
   // gemini-3.5-flash-lite: grounding in ~6s, no thinking overhead.
   static const String geminiModelName = 'gemini-3.5-flash-lite';
@@ -107,6 +112,24 @@ class APIConfig {
 
   static String? getBackendApiToken() {
     return _readEnvOrDefine('BACKEND_API_TOKEN');
+  }
+
+  /// Firebase-UIDs, die den Moderations-Admin-Bereich sehen duerfen.
+  /// Nur fuer die Client-Sichtbarkeit; die echte Absicherung ist serverseitig.
+  static Set<String> getAdminUserIds() {
+    final raw = _readEnvOrDefine('ADMIN_USER_IDS');
+    if (raw == null || raw.trim().isEmpty) return <String>{};
+    return raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
+  }
+
+  /// Ist die aktuelle UID ein Moderations-Admin?
+  static bool isAdminUser(String? uid) {
+    if (uid == null || uid.isEmpty) return false;
+    return getAdminUserIds().contains(uid);
   }
 
   /// Stripe publishable key — set STRIPE_PUBLISHABLE_KEY in your .env.
@@ -561,6 +584,8 @@ class APIConfig {
         return _contactSupportUrlDefine.isNotEmpty
             ? _contactSupportUrlDefine
             : null;
+      case 'ADMIN_USER_IDS':
+        return _adminUserIdsDefine.isNotEmpty ? _adminUserIdsDefine : null;
       default:
         return null;
     }
