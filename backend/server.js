@@ -1136,7 +1136,7 @@ app.use(async (req, res, next) => {
 
   // Calendar and todo endpoints: accept userId from request body as lightweight auth.
   // Firebase token verification is still attempted; body userId is the fallback.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
@@ -1949,6 +1949,43 @@ async function ensureSocialSchemaReady() {
       "parentRole" TEXT NOT NULL DEFAULT '',
       "priorities" TEXT NOT NULL DEFAULT '',
       "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  // ── NEUES FUNDAMENT: UserProfile (uid = Identitaet, Name app-weit) ────────
+  // displayName kommt aus der Registrierung. username optional, Default privat
+  // + nicht auffindbar (Datenschutz fuer Familien).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "UserProfile" (
+      "userId" TEXT PRIMARY KEY,
+      "displayName" TEXT NOT NULL DEFAULT '',
+      "username" TEXT,
+      "searchable" BOOLEAN NOT NULL DEFAULT FALSE,
+      "isPrivate" BOOLEAN NOT NULL DEFAULT TRUE,
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "idx_userprofile_username" ON "UserProfile"(LOWER("username")) WHERE "username" IS NOT NULL;`);
+  // Freundschaft als UID-zu-UID-Beziehung. userLow/userHigh sind die beiden
+  // UIDs kanonisch sortiert (userLow < userHigh) -> genau EINE Zeile pro Paar.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Friendship" (
+      "userLow" TEXT NOT NULL,
+      "userHigh" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'pending',
+      "requestedBy" TEXT NOT NULL DEFAULT '',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("userLow", "userHigh")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_friendship_low" ON "Friendship"("userLow");`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_friendship_high" ON "Friendship"("userHigh");`);
+  // Kurzlebige Einladungs-Token (Link/QR): token -> einladende UID.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "FriendInvite" (
+      "token" TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
   socialSchemaEnsured = true;
@@ -5535,6 +5572,276 @@ app.post('/api/onboarding', async (req, res) => {
   }
 });
 
+// ─── UserProfile (Identitaet: uid -> Name) ─────────────────────────────────
+const userProfiles = new Map(); // in-memory fallback: uid -> {displayName, username, searchable, isPrivate}
+
+// Aufloesen des Anzeigenamens fuer eine UID (UserProfile bevorzugt).
+async function resolveDisplayName(uid) {
+  const id = (uid || '').toString().trim();
+  if (!id) return '';
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "displayName" FROM "UserProfile" WHERE "userId" = $1`, id
+    );
+    if (rows.length > 0 && rows[0].displayName) return rows[0].displayName;
+  } catch (_) {
+    const mem = userProfiles.get(id);
+    if (mem && mem.displayName) return mem.displayName;
+  }
+  return '';
+}
+
+app.get('/api/profile/:userId', async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "displayName", "username", "searchable", "isPrivate" FROM "UserProfile" WHERE "userId" = $1`,
+      userId
+    );
+    if (rows.length === 0) return res.json({ exists: false });
+    const r = rows[0];
+    return res.json({
+      exists: true,
+      displayName: r.displayName || '',
+      username: r.username || null,
+      searchable: r.searchable === true,
+      isPrivate: r.isPrivate !== false,
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/profile', error)) return;
+    const mem = userProfiles.get(userId);
+    if (!mem) return res.json({ exists: false });
+    return res.json({ exists: true, ...mem });
+  }
+});
+
+app.post('/api/profile', async (req, res) => {
+  const userId = (req.body.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const displayName = (req.body.displayName || '').toString().trim().slice(0, 100);
+  const hasUsername = Object.prototype.hasOwnProperty.call(req.body, 'username');
+  const username = hasUsername
+      ? (req.body.username || '').toString().trim().toLowerCase().slice(0, 30)
+      : undefined;
+  const hasSearchable = Object.prototype.hasOwnProperty.call(req.body, 'searchable');
+  const searchable = req.body.searchable === true;
+  const hasPrivate = Object.prototype.hasOwnProperty.call(req.body, 'isPrivate');
+  const isPrivate = req.body.isPrivate !== false;
+  try {
+    await ensureSocialSchemaReady();
+    // Upsert; leere Felder ueberschreiben bestehende Werte nicht.
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "UserProfile" ("userId", "displayName", "username", "searchable", "isPrivate", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       ON CONFLICT ("userId") DO UPDATE SET
+         "displayName" = COALESCE(NULLIF($2, ''), "UserProfile"."displayName"),
+         "username" = ${hasUsername ? 'NULLIF($3, \'\')' : '"UserProfile"."username"'},
+         "searchable" = ${hasSearchable ? '$4' : '"UserProfile"."searchable"'},
+         "isPrivate" = ${hasPrivate ? '$5' : '"UserProfile"."isPrivate"'},
+         "updatedAt" = NOW()`,
+      userId, displayName, username ?? '', searchable, isPrivate
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/profile', error)) return;
+    const prev = userProfiles.get(userId) || { displayName: '', username: null, searchable: false, isPrivate: true };
+    userProfiles.set(userId, {
+      displayName: displayName || prev.displayName,
+      username: hasUsername ? (username || null) : prev.username,
+      searchable: hasSearchable ? searchable : prev.searchable,
+      isPrivate: hasPrivate ? isPrivate : prev.isPrivate,
+    });
+    return res.json({ ok: true });
+  }
+});
+
+// ─── Freundschaft (UID-zu-UID, Anfrage/Annehmen) ───────────────────────────
+const friendships = new Map(); // in-memory fallback: "low__high" -> {status, requestedBy}
+const friendInvites = new Map(); // token -> uid
+
+function pairKey(a, b) {
+  return [a, b].sort();
+}
+
+// App-weiter Check: sind zwei UIDs bestaetigte Freunde?
+async function areFriends(uidA, uidB) {
+  const a = (uidA || '').toString().trim();
+  const b = (uidB || '').toString().trim();
+  if (!a || !b || a === b) return false;
+  const [low, high] = pairKey(a, b);
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "Friendship" WHERE "userLow" = $1 AND "userHigh" = $2 AND "status" = 'accepted' LIMIT 1`,
+      low, high
+    );
+    return rows.length > 0;
+  } catch (_) {
+    const f = friendships.get(`${low}__${high}`);
+    return !!f && f.status === 'accepted';
+  }
+}
+
+// Deterministische Chat-Raum-ID aus zwei UIDs (beide Seiten identisch).
+function friendRoomId(uidA, uidB) {
+  return pairKey(uidA, uidB).join('__');
+}
+
+// Freundschaftsanfrage senden (oder direkt bestaetigen, wenn Ziel nicht privat).
+app.post('/api/friendships/request', async (req, res) => {
+  const fromUid = (req.body.fromUid || '').toString().trim();
+  const toUid = (req.body.toUid || '').toString().trim();
+  if (!fromUid || !toUid) return res.status(400).json({ error: 'fromUid und toUid erforderlich' });
+  if (fromUid === toUid) return res.status(400).json({ error: 'Eigene UID nicht erlaubt' });
+  const [low, high] = pairKey(fromUid, toUid);
+  try {
+    await ensureSocialSchemaReady();
+    // Ist das Ziel-Profil oeffentlich (nicht privat)? Dann sofort 'accepted'.
+    let targetPrivate = true;
+    try {
+      const p = await prisma.$queryRawUnsafe(
+        `SELECT "isPrivate" FROM "UserProfile" WHERE "userId" = $1`, toUid
+      );
+      if (p.length > 0) targetPrivate = p[0].isPrivate !== false;
+    } catch (_) {}
+    const status = targetPrivate ? 'pending' : 'accepted';
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Friendship" ("userLow", "userHigh", "status", "requestedBy", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, NOW(), NOW())
+       ON CONFLICT ("userLow", "userHigh") DO UPDATE SET
+         "status" = CASE WHEN "Friendship"."status" = 'accepted' THEN 'accepted' ELSE $3 END,
+         "updatedAt" = NOW()`,
+      low, high, status, fromUid
+    );
+    return res.json({ ok: true, status, roomId: friendRoomId(fromUid, toUid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friendships/request', error)) return;
+    const key = `${low}__${high}`;
+    const prev = friendships.get(key);
+    friendships.set(key, { status: prev?.status === 'accepted' ? 'accepted' : 'pending', requestedBy: fromUid });
+    return res.json({ ok: true, status: 'pending', roomId: friendRoomId(fromUid, toUid) });
+  }
+});
+
+// Anfrage annehmen.
+app.post('/api/friendships/accept', async (req, res) => {
+  const uid = (req.body.uid || '').toString().trim();
+  const otherUid = (req.body.otherUid || '').toString().trim();
+  if (!uid || !otherUid) return res.status(400).json({ error: 'uid und otherUid erforderlich' });
+  const [low, high] = pairKey(uid, otherUid);
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Friendship" SET "status" = 'accepted', "updatedAt" = NOW() WHERE "userLow" = $1 AND "userHigh" = $2`,
+      low, high
+    );
+    return res.json({ ok: true, roomId: friendRoomId(uid, otherUid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friendships/accept', error)) return;
+    const key = `${low}__${high}`;
+    if (friendships.has(key)) friendships.get(key).status = 'accepted';
+    else friendships.set(key, { status: 'accepted', requestedBy: otherUid });
+    return res.json({ ok: true, roomId: friendRoomId(uid, otherUid) });
+  }
+});
+
+// Freundschaft/Anfrage entfernen (unfriend / ablehnen).
+app.delete('/api/friendships', async (req, res) => {
+  const uid = (req.query.uid || req.body?.uid || '').toString().trim();
+  const otherUid = (req.query.otherUid || req.body?.otherUid || '').toString().trim();
+  if (!uid || !otherUid) return res.status(400).json({ error: 'uid und otherUid erforderlich' });
+  const [low, high] = pairKey(uid, otherUid);
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "Friendship" WHERE "userLow" = $1 AND "userHigh" = $2`, low, high
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/friendships', error)) return;
+    friendships.delete(`${low}__${high}`);
+    return res.json({ ok: true });
+  }
+});
+
+// Freundesliste + offene Anfragen (mit Namen) fuer eine UID.
+app.get('/api/friendships/:uid', async (req, res) => {
+  const uid = (req.params.uid || '').toString().trim();
+  if (!uid) return res.status(400).json({ error: 'uid erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT f."userLow", f."userHigh", f."status", f."requestedBy",
+              pl."displayName" AS "lowName", ph."displayName" AS "highName"
+       FROM "Friendship" f
+       LEFT JOIN "UserProfile" pl ON pl."userId" = f."userLow"
+       LEFT JOIN "UserProfile" ph ON ph."userId" = f."userHigh"
+       WHERE f."userLow" = $1 OR f."userHigh" = $1`,
+      uid
+    );
+    const friends = [];
+    const incoming = []; // Anfragen an mich
+    const outgoing = []; // von mir gesendete Anfragen
+    for (const r of rows) {
+      const otherUid = r.userLow === uid ? r.userHigh : r.userLow;
+      const otherName =
+          (r.userLow === uid ? r.highName : r.lowName) || 'Familie';
+      const entry = { uid: otherUid, name: otherName, roomId: friendRoomId(uid, otherUid) };
+      if (r.status === 'accepted') friends.push(entry);
+      else if (r.requestedBy === uid) outgoing.push(entry);
+      else incoming.push(entry);
+    }
+    return res.json({ friends, incoming, outgoing });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/friendships', error)) return;
+    return res.json({ friends: [], incoming: [], outgoing: [] });
+  }
+});
+
+// Einladungs-Token erzeugen (fuer Link/QR).
+app.post('/api/friendships/invite', async (req, res) => {
+  const userId = (req.body.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const token = generateId('inv').replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "FriendInvite" ("token", "userId", "createdAt") VALUES ($1, $2, NOW())
+       ON CONFLICT ("token") DO NOTHING`,
+      token, userId
+    );
+    return res.json({ ok: true, token });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friendships/invite', error)) return;
+    friendInvites.set(token, userId);
+    return res.json({ ok: true, token });
+  }
+});
+
+// Einladungs-Token aufloesen -> UID + Name des Einladenden.
+app.get('/api/friendships/resolve-invite/:token', async (req, res) => {
+  const token = (req.params.token || '').toString().trim();
+  if (!token) return res.status(400).json({ error: 'token erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "userId" FROM "FriendInvite" WHERE "token" = $1`, token
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Einladung ungueltig' });
+    const uid = rows[0].userId;
+    const name = await resolveDisplayName(uid);
+    return res.json({ ok: true, uid, name });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/friendships/resolve-invite', error)) return;
+    const uid = friendInvites.get(token);
+    if (!uid) return res.status(404).json({ error: 'Einladung ungueltig' });
+    return res.json({ ok: true, uid, name: userProfiles.get(uid)?.displayName || '' });
+  }
+});
+
 // ─── DSGVO: Konto-Loeschung (Recht auf Loeschung, Art. 17) ─────────────────
 // Entfernt ALLE personenbezogenen Zeilen zu einem Nutzer (per userId UND per
 // zugehoerigem Freundes-Code). Token-exempt (/api/onboarding-Muster: userId
@@ -5564,8 +5871,14 @@ app.delete('/api/account/:userId', async (req, res) => {
       }
     };
 
-    // Onboarding
+    // Onboarding + Profil
     await run('onboarding', `DELETE FROM "OnboardingProfile" WHERE "userId" = $1`, userId);
+    await run('userProfile', `DELETE FROM "UserProfile" WHERE "userId" = $1`, userId);
+    // UID-Freundschaften + Einladungen
+    await run('friendships', `DELETE FROM "Friendship" WHERE "userLow" = $1 OR "userHigh" = $1`, userId);
+    await run('friendInvites', `DELETE FROM "FriendInvite" WHERE "userId" = $1`, userId);
+    // UID-basierte Chat-Raeume (roomId enthaelt die UID)
+    await run('chatRoomsUid', `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${userId}%`);
     // Freundschafts-Registry + Kanten (per userId-Code)
     await run('friendEdges', `DELETE FROM "FriendEdge" WHERE "ownerCode" = ANY($1::text[]) OR "friendCode" = ANY($1::text[])`, idList);
     await run('friendRegistry', `DELETE FROM "FriendRegistry" WHERE "userId" = $1 OR "code" = ANY($2::text[])`, userId, idList);
@@ -5582,6 +5895,9 @@ app.delete('/api/account/:userId', async (req, res) => {
 
     // In-Memory-Fallbacks ebenfalls saeubern (best-effort).
     onboardingProfiles.delete(userId);
+    userProfiles.delete(userId);
+    friendInvites.forEach((v, k) => { if (v === userId) friendInvites.delete(k); });
+    friendships.forEach((v, k) => { if (k.includes(userId)) friendships.delete(k); });
     for (const id of idList) {
       friendRegistry.delete(id);
       friendEdges.delete(id);
@@ -6031,17 +6347,26 @@ app.post('/friend-chat/messages', async (req, res) => {
   // userId via FriendRegistry auf. Fehler hier sind unkritisch (best effort).
   const pushToRecipient = async () => {
     try {
-      // roomId = pp-aaaaaa-pp-bbbbbb. Beide Codes robust extrahieren.
-      const codes = roomId.match(/pp-[a-z0-9]+/gi) || [];
-      if (codes.length < 2) return;
-      // Sender-Code = pp- + erste 6 Zeichen der Sender-UID.
-      const senderCode = ('pp-' + userId.substring(0, 6)).toLowerCase();
-      const recipientCode =
-          codes.find(c => c.toLowerCase() !== senderCode) || codes[0];
-      if (!recipientCode) return;
-      const reg = await resolveFriendRegistry(recipientCode);
-      if (!reg.userId) return;
-      await sendPushToUser(reg.userId, {
+      let recipientUid = null;
+      if (roomId.includes('__')) {
+        // NEUES Format: roomId = uidA__uidB -> Empfaenger = Haelfte != Sender.
+        const parts = roomId.split('__');
+        recipientUid = parts.find(p => p && p !== userId) || null;
+      } else {
+        // ALTES Format: roomId = pp-aaaaaa-pp-bbbbbb -> Code -> userId.
+        const codes = roomId.match(/pp-[a-z0-9]+/gi) || [];
+        if (codes.length >= 2) {
+          const senderCode = ('pp-' + userId.substring(0, 6)).toLowerCase();
+          const recipientCode =
+              codes.find(c => c.toLowerCase() !== senderCode) || codes[0];
+          if (recipientCode) {
+            const reg = await resolveFriendRegistry(recipientCode);
+            recipientUid = reg.userId || null;
+          }
+        }
+      }
+      if (!recipientUid) return;
+      await sendPushToUser(recipientUid, {
         title: userName || 'Neue Nachricht',
         body: content.length > 100 ? content.substring(0, 100) + '...' : content,
         data: { type: 'friend_chat', roomId, senderId: userId },
