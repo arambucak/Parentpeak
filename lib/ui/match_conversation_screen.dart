@@ -9,6 +9,7 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
+import 'package:parentpeak/logic/parent_friends_service.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
@@ -57,6 +58,25 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       return value;
     }
     return 'Ich';
+  }
+
+  /// Stabile Identitaet des Gegenuebers fuer Melden/Blockieren.
+  /// Im Freund-Chat ist widget.profileId die roomId 'pp-a-pp-b' -> wir leiten
+  /// den Freundes-Code des Gegenuebers ab (die Haelfte, die NICHT mein Code
+  /// ist). Der Server uebersetzt Code<->UID. Im Match-Chat ist profileId
+  /// bereits die echte Profil-/User-ID.
+  String get _otherPartyId {
+    if (!widget.isFriendChat) return widget.profileId;
+    final myCode = ParentFriendsService.instance.myCode.toLowerCase();
+    final codes = RegExp(r'pp-[a-z0-9]+', caseSensitive: false)
+        .allMatches(widget.profileId.toLowerCase())
+        .map((m) => m.group(0)!)
+        .toList();
+    for (final c in codes) {
+      if (c != myCode) return c;
+    }
+    // Fallback: falls nichts Passendes gefunden wurde, roomId beibehalten.
+    return widget.profileId;
   }
 
   @override
@@ -372,7 +392,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           FilledButton(
             onPressed: () async {
               await BlockReportService.instance
-                  .blockUser(widget.profileId, widget.profileName);
+                  .blockUser(_otherPartyId, widget.profileName);
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
                 Navigator.pop(context); // Close chat
@@ -437,7 +457,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         Navigator.pop(ctx);
         final result = await BlockReportService.instance.reportContent(
           reporterUserId: _currentUserId,
-          reportedUserId: widget.profileId,
+          reportedUserId: _otherPartyId,
           contentType: 'profile',
           content: widget.profileName,
           reason: reason,

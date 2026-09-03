@@ -5122,15 +5122,46 @@ async function isUserSuspended(userId) {
   if (cached && Date.now() - cached.ts < _suspensionCacheTtlMs) {
     return cached.suspended;
   }
-  let suspended = false;
+  // "Check both": Der uebergebene Wert kann eine Firebase-UID ODER ein
+  // Freundes-Code sein. Wir sammeln beide Identitaeten (UID + Code) und
+  // pruefen, ob EINE davon gesperrt ist. So greift der Bann unabhaengig davon,
+  // ob per Code oder per UID gesperrt wurde.
+  const candidates = new Set([id]);
   try {
     await ensureSocialSchemaReady();
+    if (id.startsWith('pp-')) {
+      // id ist ein Code -> zugehoerige userId ergaenzen.
+      const reg = await resolveFriendRegistry(id);
+      if (reg.userId) candidates.add(reg.userId);
+    } else {
+      // id ist (vermutlich) eine UID -> zugehoerige(n) Code(s) ergaenzen.
+      const codeRows = await prisma.$queryRawUnsafe(
+        `SELECT "code" FROM "FriendRegistry" WHERE "userId" = $1`, id
+      );
+      for (const r of codeRows) if (r.code) candidates.add(r.code);
+    }
+  } catch (_) {
+    // Fallback: Registry ueber In-Memory-Map.
+    if (id.startsWith('pp-')) {
+      const mem = friendRegistry.get(id);
+      if (mem && mem.userId) candidates.add(mem.userId);
+    } else {
+      for (const [code, v] of friendRegistry.entries()) {
+        if (v && v.userId === id) candidates.add(code);
+      }
+    }
+  }
+
+  let suspended = false;
+  const list = [...candidates];
+  try {
     const rows = await prisma.$queryRawUnsafe(
-      `SELECT 1 FROM "SafetySuspension" WHERE "userId" = $1 LIMIT 1`, id
+      `SELECT 1 FROM "SafetySuspension" WHERE "userId" = ANY($1::text[]) LIMIT 1`,
+      list
     );
     suspended = rows.length > 0;
   } catch (_) {
-    suspended = safetySuspensions.has(id);
+    suspended = list.some(c => safetySuspensions.has(c));
   }
   _suspensionCache.set(id, { suspended, ts: Date.now() });
   return suspended;
@@ -5149,6 +5180,36 @@ function respondSuspended(res) {
 function invalidateSuspensionCache(userId) {
   const id = (userId || '').toString().trim();
   if (id) _suspensionCache.delete(id);
+}
+
+/// Liefert alle Identitaeten (UID + Code) zu einem gegebenen Wert, damit
+/// Sperren/Entsperren immer beide Seiten trifft.
+async function expandIdentities(rawId) {
+  const id = (rawId || '').toString().trim();
+  if (!id) return [];
+  const out = new Set([id]);
+  try {
+    await ensureSocialSchemaReady();
+    if (id.startsWith('pp-')) {
+      const reg = await resolveFriendRegistry(id);
+      if (reg.userId) out.add(reg.userId);
+    } else {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT "code" FROM "FriendRegistry" WHERE "userId" = $1`, id
+      );
+      for (const r of rows) if (r.code) out.add(r.code);
+    }
+  } catch (_) {
+    if (id.startsWith('pp-')) {
+      const mem = friendRegistry.get(id);
+      if (mem && mem.userId) out.add(mem.userId);
+    } else {
+      for (const [code, v] of friendRegistry.entries()) {
+        if (v && v.userId === id) out.add(code);
+      }
+    }
+  }
+  return [...out];
 }
 
 // Save a friend edge for the owner (one direction). The client calls this for
@@ -5471,9 +5532,11 @@ app.get('/admin/reports', requireAdmin, async (req, res) => {
               COUNT(*)::int AS "reportCount",
               MAX(r."createdAt") AS "lastReportedAt",
               (ARRAY_AGG(r."reason" ORDER BY r."createdAt" DESC))[1] AS "lastReason",
-              BOOL_OR(s."userId" IS NOT NULL) AS "suspended"
+              BOOL_OR(s."userId" IS NOT NULL) AS "suspended",
+              MAX(reg."name") AS "displayName"
        FROM "SafetyReport" r
        LEFT JOIN "SafetySuspension" s ON s."userId" = r."reportedUserId"
+       LEFT JOIN "FriendRegistry" reg ON reg."code" = r."reportedUserId" OR reg."userId" = r."reportedUserId"
        ${where}
        GROUP BY r."reportedUserId"
        ORDER BY "lastReportedAt" DESC
@@ -5538,21 +5601,27 @@ app.post('/admin/users/:userId/suspend', requireAdmin, async (req, res) => {
   const userId = (req.params.userId || '').toString().trim();
   const reason = (req.body.reason || '').toString().trim().slice(0, 300);
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  // Beide Identitaeten (UID + Code) sperren, damit der Bann ueberall greift.
+  const identities = await expandIdentities(userId);
   try {
     await ensureSocialSchemaReady();
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "SafetySuspension" ("userId", "reason", "suspendedBy", "createdAt")
-       VALUES ($1, $2, $3, NOW())
-       ON CONFLICT ("userId") DO UPDATE SET "reason" = $2, "suspendedBy" = $3`,
-      userId, reason, req.firebaseUid || 'admin'
-    );
-    invalidateSuspensionCache(userId);
-    return res.json({ ok: true, suspended: true });
+    for (const ident of identities) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "SafetySuspension" ("userId", "reason", "suspendedBy", "createdAt")
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT ("userId") DO UPDATE SET "reason" = $2, "suspendedBy" = $3`,
+        ident, reason, req.firebaseUid || 'admin'
+      );
+      invalidateSuspensionCache(ident);
+    }
+    return res.json({ ok: true, suspended: true, identities });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /admin/users/suspend', error)) return;
-    safetySuspensions.set(userId, { reason, suspendedBy: req.firebaseUid || 'admin', createdAt: new Date().toISOString() });
-    invalidateSuspensionCache(userId);
-    return res.json({ ok: true, suspended: true });
+    for (const ident of identities) {
+      safetySuspensions.set(ident, { reason, suspendedBy: req.firebaseUid || 'admin', createdAt: new Date().toISOString() });
+      invalidateSuspensionCache(ident);
+    }
+    return res.json({ ok: true, suspended: true, identities });
   }
 });
 
@@ -5560,17 +5629,17 @@ app.post('/admin/users/:userId/suspend', requireAdmin, async (req, res) => {
 app.post('/admin/users/:userId/unsuspend', requireAdmin, async (req, res) => {
   const userId = (req.params.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const identities = await expandIdentities(userId);
   try {
     await ensureSocialSchemaReady();
     await prisma.$executeRawUnsafe(
-      `DELETE FROM "SafetySuspension" WHERE "userId" = $1`, userId
+      `DELETE FROM "SafetySuspension" WHERE "userId" = ANY($1::text[])`, identities
     );
-    invalidateSuspensionCache(userId);
+    for (const ident of identities) invalidateSuspensionCache(ident);
     return res.json({ ok: true, suspended: false });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /admin/users/unsuspend', error)) return;
-    safetySuspensions.delete(userId);
-    invalidateSuspensionCache(userId);
+    for (const ident of identities) { safetySuspensions.delete(ident); invalidateSuspensionCache(ident); }
     return res.json({ ok: true, suspended: false });
   }
 });
@@ -5612,14 +5681,43 @@ async function findBrokenFriendEdges() {
   return { totalEdges: edges.length, broken };
 }
 
+// Ein Identifikator ist eine roomId (nie eine gueltige Nutzer-Identitaet),
+// wenn er mehr als ein 'pp-' enthaelt (z.B. 'pp-13za66-pp-rkfns8').
+function looksLikeRoomId(id) {
+  const matches = (id || '').toString().toLowerCase().match(/pp-/g);
+  return matches != null && matches.length >= 2;
+}
+
+// Findet verwaiste Safety-Eintraege (Suspension/Report), deren id eine roomId
+// ist — diese entstanden durch den frueheren Melden/Sperren-Bug.
+async function findBrokenSafetyEntries() {
+  await ensureSocialSchemaReady();
+  const suspensions = await prisma.$queryRawUnsafe(
+    `SELECT "userId" FROM "SafetySuspension"`
+  );
+  const reports = await prisma.$queryRawUnsafe(
+    `SELECT "id", "reportedUserId" FROM "SafetyReport"`
+  );
+  const badSuspensions = suspensions
+    .filter(s => looksLikeRoomId(s.userId))
+    .map(s => s.userId);
+  const badReports = reports
+    .filter(r => looksLikeRoomId(r.reportedUserId))
+    .map(r => r.id);
+  return { badSuspensions, badReports };
+}
+
 // Vorschau (Dry-Run): zeigt, WAS geloescht wuerde. Loescht nichts.
 app.get('/admin/friends/cleanup-preview', requireAdmin, async (req, res) => {
   try {
     const { totalEdges, broken } = await findBrokenFriendEdges();
+    const { badSuspensions, badReports } = await findBrokenSafetyEntries();
     return res.json({
       totalEdges,
       brokenCount: broken.length,
       broken,
+      badSuspensions,
+      badReports,
       note: 'Nur Vorschau. Zum Loeschen: POST /admin/friends/cleanup mit {"confirm":true}.',
     });
   } catch (error) {
@@ -5633,12 +5731,16 @@ app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
   const confirm = req.body && req.body.confirm === true;
   try {
     const { totalEdges, broken } = await findBrokenFriendEdges();
+    const { badSuspensions, badReports } = await findBrokenSafetyEntries();
+    const totalBroken = broken.length + badSuspensions.length + badReports.length;
     if (!confirm) {
       return res.json({
         dryRun: true,
         totalEdges,
-        brokenCount: broken.length,
+        brokenCount: totalBroken,
         broken,
+        badSuspensions,
+        badReports,
         note: 'Kein confirm:true -> nichts geloescht. Sende {"confirm":true} zum Loeschen.',
       });
     }
@@ -5647,6 +5749,20 @@ app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
       await prisma.$executeRawUnsafe(
         `DELETE FROM "FriendEdge" WHERE "ownerCode" = $1 AND "friendCode" = $2`,
         e.ownerCode, e.friendCode
+      );
+      deleted += 1;
+    }
+    // Verwaiste roomId-Sperren + -Meldungen entfernen (frueherer Bug).
+    for (const uid of badSuspensions) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "SafetySuspension" WHERE "userId" = $1`, uid
+      );
+      invalidateSuspensionCache(uid);
+      deleted += 1;
+    }
+    for (const rid of badReports) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "SafetyReport" WHERE "id" = $1`, rid
       );
       deleted += 1;
     }
