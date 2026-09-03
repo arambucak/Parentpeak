@@ -11,10 +11,15 @@ class ParentFriend {
   final String name;
   final DateTime addedAt;
 
+  /// Vom Server gelieferte, geteilte Chat-Raum-ID. Optional/abwaertskompatibel:
+  /// wenn null, wird sie deterministisch aus beiden Codes berechnet.
+  final String? roomId;
+
   const ParentFriend({
     required this.code,
     required this.name,
     required this.addedAt,
+    this.roomId,
   });
 
   factory ParentFriend.fromJson(Map<String, dynamic> j) => ParentFriend(
@@ -22,12 +27,16 @@ class ParentFriend {
         name: j['name'] as String? ?? 'Familie',
         addedAt:
             DateTime.tryParse(j['addedAt'] as String? ?? '') ?? DateTime.now(),
+        roomId: (j['roomId'] as String?)?.isNotEmpty == true
+            ? j['roomId'] as String
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
         'code': code,
         'name': name,
         'addedAt': addedAt.toIso8601String(),
+        if (roomId != null) 'roomId': roomId,
       };
 }
 
@@ -104,6 +113,54 @@ class ParentFriendsService extends ChangeNotifier {
     await _persist();
     notifyListeners();
     unawaited(_pushEdge(friend.code, friend.name));
+  }
+
+  /// Atomare beidseitige Verbindung ueber das Backend. Beide Familien sind
+  /// sofort befreundet, echter Name + geteilte roomId kommen vom Server.
+  /// Gibt true zurueck, wenn der Server bestaetigt hat.
+  Future<bool> connectMutual({
+    required String friendCode,
+    required String myName,
+    required String myUserId,
+  }) async {
+    final api = _api;
+    final code = myCode;
+    final normalizedFriend = friendCode.trim().toLowerCase();
+    if (normalizedFriend.isEmpty || normalizedFriend == code) return false;
+
+    String? serverName;
+    String? serverRoomId;
+    if (api != null && code.isNotEmpty) {
+      try {
+        final data = await api.postJsonAny('/api/friends/connect-mutual', {
+          'myCode': code,
+          'myName': myName,
+          'myUserId': myUserId,
+          'friendCode': normalizedFriend,
+        });
+        if (data is Map<String, dynamic>) {
+          serverName = (data['friendName'] as String?)?.trim();
+          serverRoomId = (data['roomId'] as String?)?.trim();
+        }
+      } catch (e) {
+        debugPrint('ParentFriendsService.connectMutual failed: $e');
+      }
+    }
+
+    final friend = ParentFriend(
+      code: normalizedFriend,
+      name: (serverName != null && serverName.isNotEmpty)
+          ? serverName
+          : 'Familie',
+      addedAt: DateTime.now(),
+      roomId: serverRoomId,
+    );
+    // Vorhandenen Eintrag ersetzen (Name/roomId aktualisieren) oder neu anlegen.
+    _friends.removeWhere((f) => f.code == normalizedFriend);
+    _friends.add(friend);
+    await _persist();
+    notifyListeners();
+    return serverRoomId != null;
   }
 
   Future<void> removeFriend(String code) async {

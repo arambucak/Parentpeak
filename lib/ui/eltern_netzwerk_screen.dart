@@ -91,21 +91,25 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       unawaited(_loadMatches());
     }
 
-    // Register own code+name so others can find us by code
+    // Register own code+name+userId so others can find us by code and so
+    // Push-Nachrichten uns erreichen (code -> userId Mapping).
     final myCode = ParentFriendsService.instance.myCode;
     final myName = _profile?.displayName ??
         AuthService.instance.currentUser?.displayName ??
         'Familien-Kontakt';
-    unawaited(_backend.registerFriendCode(myCode, myName));
+    final myUserId = AuthService.instance.currentUser?.uid ?? '';
+    unawaited(_backend.registerFriendCode(myCode, myName, userId: myUserId));
 
-    // Auto-add anyone who scanned our QR since last open
+    // Auto-add anyone who connected with us since last open. Ueber
+    // connectMutual, damit beide Kanten + geteilte roomId sauber gesetzt sind.
     final pending = await _backend.claimPendingFriendConnections(myCode);
     for (final conn in pending) {
       final code = (conn['fromCode'] as String? ?? '').toLowerCase();
-      final name = (conn['fromName'] as String? ?? 'Familien-Kontakt');
       if (code.isNotEmpty) {
-        await ParentFriendsService.instance.addFriend(
-          ParentFriend(code: code, name: name, addedAt: DateTime.now()),
+        await ParentFriendsService.instance.connectMutual(
+          friendCode: code,
+          myName: myName,
+          myUserId: myUserId,
         );
       }
     }
@@ -1457,10 +1461,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   }
 
   Widget _friendCard(ThemeData theme, ParentFriend friend) {
-    // Deterministic room ID: sorted codes ensure both sides open the same chat
+    // Bevorzugt die vom Server gelieferte roomId; sonst deterministisch aus
+    // beiden Codes (beide Seiten berechnen dieselbe).
     final myCode = ParentFriendsService.instance.myCode;
-    final sorted = [myCode, friend.code]..sort();
-    final roomId = sorted.join('-');
+    final roomId = (friend.roomId != null && friend.roomId!.isNotEmpty)
+        ? friend.roomId!
+        : ([myCode, friend.code]..sort()).join('-');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1722,18 +1728,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         : () async {
                             final raw = codeCtrl.text.trim().toLowerCase();
                             final code = raw.startsWith('pp-') ? raw : raw;
-                            final name = resolvedName ?? 'Familien-Kontakt';
-                            await ParentFriendsService.instance.addFriend(
-                              ParentFriend(
-                                  code: code,
-                                  name: name,
-                                  addedAt: DateTime.now()),
-                            );
-                            // Tell the other side that we connected
-                            final myCode = ParentFriendsService.instance.myCode;
                             final myName = _profile?.displayName ??
                                 AuthService.instance.currentUser?.displayName ??
                                 'Familien-Kontakt';
+                            final myUserId =
+                                AuthService.instance.currentUser?.uid ?? '';
+                            // Atomare beidseitige Verbindung (beide sofort
+                            // befreundet, echter Name + geteilte roomId).
+                            await ParentFriendsService.instance.connectMutual(
+                              friendCode: code,
+                              myName: myName,
+                              myUserId: myUserId,
+                            );
+                            // Fallback: alte Ping-Mechanik, falls die Gegenseite
+                            // gerade nicht erreichbar war.
+                            final myCode = ParentFriendsService.instance.myCode;
                             unawaited(_backend.notifyFriendConnect(
                                 myCode, myName, code));
                             if (ctx.mounted) Navigator.pop(ctx);

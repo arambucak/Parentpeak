@@ -1838,6 +1838,10 @@ async function ensureSocialSchemaReady() {
       "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  // code -> userId, damit Push-Nachrichten den echten Empfaenger erreichen.
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "FriendRegistry" ADD COLUMN IF NOT EXISTS "userId" TEXT;`
+  );
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "FriendPendingConnection" (
       "id" TEXT PRIMARY KEY,
@@ -5012,18 +5016,20 @@ const friendPendingConnections = new Map(); // in-memory fallback
 app.post('/api/friends/register', async (req, res) => {
   const code = (req.body.code || '').toString().trim().toLowerCase();
   const name = (req.body.name || '').toString().trim();
+  const userId = (req.body.userId || '').toString().trim();
   if (!code || !name) return res.status(400).json({ error: 'code und name erforderlich' });
   try {
     await ensureSocialSchemaReady();
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "FriendRegistry" ("code", "name", "updatedAt") VALUES ($1, $2, NOW())
-       ON CONFLICT ("code") DO UPDATE SET "name" = $2, "updatedAt" = NOW()`,
-      code, name
+      `INSERT INTO "FriendRegistry" ("code", "name", "userId", "updatedAt") VALUES ($1, $2, $3, NOW())
+       ON CONFLICT ("code") DO UPDATE SET "name" = $2,
+         "userId" = COALESCE(NULLIF($3, ''), "FriendRegistry"."userId"), "updatedAt" = NOW()`,
+      code, name, userId
     );
     return res.json({ ok: true });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /api/friends/register', error)) return;
-    friendRegistry.set(code, { name, updatedAt: new Date().toISOString() });
+    friendRegistry.set(code, { name, userId, updatedAt: new Date().toISOString() });
     return res.json({ ok: true });
   }
 });
@@ -5211,6 +5217,96 @@ app.get('/api/friends/list/:code', async (req, res) => {
     if (respondWithStrictPersistenceError(res, 'GET /api/friends/list', error)) return;
     const list = friendEdges.get(code) || [];
     return res.json({ friends: list.map(e => ({ ...e, createdAt: new Date().toISOString() })) });
+  }
+});
+
+// Loest Name + userId zu einem Freundes-Code auf (DB + In-Memory-Fallback).
+async function resolveFriendRegistry(code) {
+  const c = (code || '').toString().trim().toLowerCase();
+  if (!c) return { name: null, userId: null };
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "name", "userId" FROM "FriendRegistry" WHERE "code" = $1`, c
+    );
+    if (rows.length > 0) {
+      return { name: rows[0].name || null, userId: rows[0].userId || null };
+    }
+  } catch (_) {
+    const mem = friendRegistry.get(c);
+    if (mem) return { name: mem.name || null, userId: mem.userId || null };
+  }
+  return { name: null, userId: null };
+}
+
+// Deterministische, geteilte Raum-ID aus zwei Codes (beide Seiten identisch).
+function computeRoomId(codeA, codeB) {
+  return [codeA, codeB].map(x => x.toLowerCase()).sort().join('-');
+}
+
+/// Atomare beidseitige Freundschaft: schreibt beide Kanten, loest Namen auf,
+/// liefert die geteilte roomId zurueck. Kern des sauberen Chat-Fundaments.
+app.post('/api/friends/connect-mutual', async (req, res) => {
+  const myCode = (req.body.myCode || '').toString().trim().toLowerCase();
+  const myName = (req.body.myName || '').toString().trim().slice(0, 100);
+  const myUserId = (req.body.myUserId || '').toString().trim();
+  const friendCode = (req.body.friendCode || '').toString().trim().toLowerCase();
+  if (!myCode || !friendCode) {
+    return res.status(400).json({ error: 'myCode und friendCode erforderlich' });
+  }
+  if (myCode === friendCode) {
+    return res.status(400).json({ error: 'Eigener Code nicht erlaubt' });
+  }
+
+  // Namen aufloesen: bevorzugt Registry, sonst uebergebener eigener Name.
+  const friendReg = await resolveFriendRegistry(friendCode);
+  const friendName = friendReg.name || 'Familie';
+  const resolvedMyName = myName || (await resolveFriendRegistry(myCode)).name || 'Familie';
+  const roomId = computeRoomId(myCode, friendCode);
+
+  // Eigenen Code (mit Name + userId) registrieren, damit die Gegenseite uns
+  // spaeter ebenfalls aufloesen kann (Name + Push-Ziel).
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "FriendRegistry" ("code", "name", "userId", "updatedAt") VALUES ($1, $2, $3, NOW())
+       ON CONFLICT ("code") DO UPDATE SET "name" = $2,
+         "userId" = COALESCE(NULLIF($3, ''), "FriendRegistry"."userId"), "updatedAt" = NOW()`,
+      myCode, resolvedMyName, myUserId
+    );
+    // Beide Kanten atomar schreiben.
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "FriendEdge" ("ownerCode", "friendCode", "friendName", "createdAt")
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT ("ownerCode", "friendCode") DO UPDATE SET "friendName" = $3`,
+      myCode, friendCode, friendName
+    );
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "FriendEdge" ("ownerCode", "friendCode", "friendName", "createdAt")
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT ("ownerCode", "friendCode") DO UPDATE SET "friendName" = $3`,
+      friendCode, myCode, resolvedMyName
+    );
+    return res.json({
+      ok: true,
+      roomId,
+      friendCode,
+      friendName,
+      myName: resolvedMyName,
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friends/connect-mutual', error)) return;
+    // In-Memory-Fallback: beide Kanten + Registry.
+    friendRegistry.set(myCode, { name: resolvedMyName, userId: myUserId, updatedAt: new Date().toISOString() });
+    if (!friendEdges.has(myCode)) friendEdges.set(myCode, []);
+    if (!friendEdges.get(myCode).some(e => e.friendCode === friendCode)) {
+      friendEdges.get(myCode).push({ friendCode, friendName });
+    }
+    if (!friendEdges.has(friendCode)) friendEdges.set(friendCode, []);
+    if (!friendEdges.get(friendCode).some(e => e.friendCode === myCode)) {
+      friendEdges.get(friendCode).push({ friendCode: myCode, friendName: resolvedMyName });
+    }
+    return res.json({ ok: true, roomId, friendCode, friendName, myName: resolvedMyName });
   }
 });
 
@@ -5470,33 +5566,43 @@ app.post('/friend-chat/messages', async (req, res) => {
   // Echter Bann: gesperrte Nutzer koennen keine Nachrichten mehr senden.
   if (await isUserSuspended(userId)) return respondSuspended(res);
   const item = { id: generateId('fc'), roomId, authorUserId: userId, authorName: userName, content, createdAt: new Date().toISOString() };
+
+  // Push an den ECHTEN Empfaenger: roomId = codeA-codeB. Wir bestimmen den
+  // Empfaenger-Code (die Haelfte, die NICHT der Sender ist) und loesen dessen
+  // userId via FriendRegistry auf. Fehler hier sind unkritisch (best effort).
+  const pushToRecipient = async () => {
+    try {
+      // roomId = pp-aaaaaa-pp-bbbbbb. Beide Codes robust extrahieren.
+      const codes = roomId.match(/pp-[a-z0-9]+/gi) || [];
+      if (codes.length < 2) return;
+      // Sender-Code = pp- + erste 6 Zeichen der Sender-UID.
+      const senderCode = ('pp-' + userId.substring(0, 6)).toLowerCase();
+      const recipientCode =
+          codes.find(c => c.toLowerCase() !== senderCode) || codes[0];
+      if (!recipientCode) return;
+      const reg = await resolveFriendRegistry(recipientCode);
+      if (!reg.userId) return;
+      await sendPushToUser(reg.userId, {
+        title: userName || 'Neue Nachricht',
+        body: content.length > 100 ? content.substring(0, 100) + '...' : content,
+        data: { type: 'friend_chat', roomId, senderId: userId },
+      });
+    } catch (_) {}
+  };
+
   try {
     await ensureSocialSchemaReady();
     await prisma.$executeRawUnsafe(
       `INSERT INTO "FriendChatMessage" ("id", "roomId", "authorUserId", "authorName", "content", "createdAt") VALUES ($1, $2, $3, $4, $5, NOW())`,
       item.id, roomId, userId, userName, content
     );
-    // Send push notification to the other person
-    try {
-      await sendPushToUser(roomId, {
-        title: userName || 'Neue Nachricht',
-        body: content.length > 100 ? content.substring(0, 100) + '...' : content,
-        data: { type: 'friend_chat', roomId, senderId: userId },
-      });
-    } catch (_) {}
+    await pushToRecipient();
     return res.status(201).json({ item });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /friend-chat/messages', error)) return;
     if (!friendChatMessages.has(roomId)) friendChatMessages.set(roomId, []);
     friendChatMessages.get(roomId).push(item);
-    // Send push notification to the other person (fallback path)
-    try {
-      await sendPushToUser(roomId, {
-        title: userName || 'Neue Nachricht',
-        body: content.length > 100 ? content.substring(0, 100) + '...' : content,
-        data: { type: 'friend_chat', roomId, senderId: userId },
-      });
-    } catch (_) {}
+    await pushToRecipient();
     return res.status(201).json({ item });
   }
 });

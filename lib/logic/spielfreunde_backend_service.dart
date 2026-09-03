@@ -155,10 +155,15 @@ class SpielfreundeBackendService {
     }
   }
 
-  Future<void> registerFriendCode(String code, String name) async {
+  Future<void> registerFriendCode(String code, String name,
+      {String? userId}) async {
     if (_api == null) return;
     try {
-      await _api!.postJsonAny('/api/friends/register', {'code': code, 'name': name});
+      await _api!.postJsonAny('/api/friends/register', {
+        'code': code,
+        'name': name,
+        if (userId != null && userId.isNotEmpty) 'userId': userId,
+      });
     } catch (e) {
       debugPrint('registerFriendCode failed: $e');
     }
@@ -167,13 +172,15 @@ class SpielfreundeBackendService {
   Future<String?> lookupFriendName(String code) async {
     if (_api == null) return null;
     try {
-      final data = await _api!.getJson('/api/friends/lookup/${Uri.encodeComponent(code)}');
+      final data = await _api!
+          .getJson('/api/friends/lookup/${Uri.encodeComponent(code)}');
       if (data is Map<String, dynamic>) return data['name'] as String?;
     } catch (_) {}
     return null;
   }
 
-  Future<void> notifyFriendConnect(String fromCode, String fromName, String toCode) async {
+  Future<void> notifyFriendConnect(
+      String fromCode, String fromName, String toCode) async {
     if (_api == null) return;
     try {
       await _api!.postJsonAny('/api/friends/connect', {
@@ -187,10 +194,12 @@ class SpielfreundeBackendService {
   }
 
   /// Returns list of { fromCode, fromName } who added this code since last call.
-  Future<List<Map<String, dynamic>>> claimPendingFriendConnections(String code) async {
+  Future<List<Map<String, dynamic>>> claimPendingFriendConnections(
+      String code) async {
     if (_api == null) return [];
     try {
-      final data = await _api!.getJson('/api/friends/pending/${Uri.encodeComponent(code)}');
+      final data = await _api!
+          .getJson('/api/friends/pending/${Uri.encodeComponent(code)}');
       if (data is Map<String, dynamic> && data['connections'] is List) {
         return List<Map<String, dynamic>>.from(data['connections']);
       }
