@@ -41,4 +41,12 @@ void main() {
       expect(source, isNot(contains('--dart-define=GEMINI_API_KEY')));
     }
   });
+
+  test('web release receives admin UIDs from the GitHub variable', () {
+    final workflow =
+        File('.github/workflows/deploy-web-pages.yml').readAsStringSync();
+
+    expect(workflow, contains('ADMIN_USER_IDS: \${{ vars.ADMIN_USER_IDS }}'));
+    expect(workflow, contains('--dart-define=ADMIN_USER_IDS='));
+  });
 }

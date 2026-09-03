@@ -43,6 +43,7 @@ jobs:
           CONTACT_SUPPORT_URL: ${{ vars.CONTACT_SUPPORT_URL }}
           STRIPE_PUBLISHABLE_KEY: ${{ vars.STRIPE_PUBLISHABLE_KEY }}
           GEMINI_MODEL_NAME: ${{ vars.GEMINI_MODEL_NAME }}
+          ADMIN_USER_IDS: ${{ vars.ADMIN_USER_IDS }}
           PP_BETA_FREE_ACCESS: ${{ vars.PP_BETA_FREE_ACCESS }}
           PP_PUBLIC_LAUNCH_DATE: ${{ vars.PP_PUBLIC_LAUNCH_DATE }}
           ADMIN_USER_IDS: ${{ secrets.ADMIN_USER_IDS }}
@@ -66,6 +67,7 @@ jobs:
             --dart-define=CONTACT_SUPPORT_URL="$CONTACT_SUPPORT_URL" \
             --dart-define=STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \
             --dart-define=GEMINI_MODEL_NAME="${GEMINI_MODEL_NAME}" \
+            --dart-define=ADMIN_USER_IDS="${ADMIN_USER_IDS}" \
             --dart-define=PP_BETA_FREE_ACCESS="${PP_BETA_FREE_ACCESS:-true}" \
             --dart-define=PP_PUBLIC_LAUNCH_DATE="${PP_PUBLIC_LAUNCH_DATE:-}" \
             --dart-define=ADMIN_USER_IDS="${ADMIN_USER_IDS:-}" \
