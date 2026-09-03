@@ -5575,6 +5575,88 @@ app.post('/admin/users/:userId/unsuspend', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Admin: Cleanup kaputter Freundschafts-Kanten (Altlasten) ──────────────
+// Eine Kante gilt als kaputt, wenn ein Code nicht kanonisch ist
+// (z.B. 'pprkfns8' statt 'pp-rkfns8') ODER auf einen Code ohne Registry-
+// Eintrag zeigt (Phantom-Code, den es als Nutzer nie gab).
+async function findBrokenFriendEdges() {
+  await ensureSocialSchemaReady();
+  const edges = await prisma.$queryRawUnsafe(
+    `SELECT "ownerCode", "friendCode", "friendName" FROM "FriendEdge"`
+  );
+  const regRows = await prisma.$queryRawUnsafe(
+    `SELECT "code" FROM "FriendRegistry"`
+  );
+  const known = new Set(regRows.map(r => r.code));
+  const broken = [];
+  for (const e of edges) {
+    const ownerBad = e.ownerCode !== canonicalCode(e.ownerCode);
+    const friendBad = e.friendCode !== canonicalCode(e.friendCode);
+    // Ein Code ist "Phantom", wenn er kanonisch ist, aber keine Registry hat.
+    const ownerPhantom = !ownerBad && !known.has(e.ownerCode);
+    const friendPhantom = !friendBad && !known.has(e.friendCode);
+    if (ownerBad || friendBad || ownerPhantom || friendPhantom) {
+      broken.push({
+        ownerCode: e.ownerCode,
+        friendCode: e.friendCode,
+        friendName: e.friendName,
+        reasons: [
+          ownerBad ? 'ownerCode nicht kanonisch' : null,
+          friendBad ? 'friendCode nicht kanonisch' : null,
+          ownerPhantom ? 'ownerCode ohne Registry (Phantom)' : null,
+          friendPhantom ? 'friendCode ohne Registry (Phantom)' : null,
+        ].filter(Boolean),
+      });
+    }
+  }
+  return { totalEdges: edges.length, broken };
+}
+
+// Vorschau (Dry-Run): zeigt, WAS geloescht wuerde. Loescht nichts.
+app.get('/admin/friends/cleanup-preview', requireAdmin, async (req, res) => {
+  try {
+    const { totalEdges, broken } = await findBrokenFriendEdges();
+    return res.json({
+      totalEdges,
+      brokenCount: broken.length,
+      broken,
+      note: 'Nur Vorschau. Zum Loeschen: POST /admin/friends/cleanup mit {"confirm":true}.',
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /admin/friends/cleanup-preview', error)) return;
+    return res.status(500).json({ error: 'Cleanup-Vorschau fehlgeschlagen' });
+  }
+});
+
+// Loeschen — nur mit explizitem confirm:true. Ohne confirm -> Vorschau.
+app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
+  const confirm = req.body && req.body.confirm === true;
+  try {
+    const { totalEdges, broken } = await findBrokenFriendEdges();
+    if (!confirm) {
+      return res.json({
+        dryRun: true,
+        totalEdges,
+        brokenCount: broken.length,
+        broken,
+        note: 'Kein confirm:true -> nichts geloescht. Sende {"confirm":true} zum Loeschen.',
+      });
+    }
+    let deleted = 0;
+    for (const e of broken) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "FriendEdge" WHERE "ownerCode" = $1 AND "friendCode" = $2`,
+        e.ownerCode, e.friendCode
+      );
+      deleted += 1;
+    }
+    return res.json({ ok: true, deleted, scanned: totalEdges });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /admin/friends/cleanup', error)) return;
+    return res.status(500).json({ error: 'Cleanup fehlgeschlagen' });
+  }
+});
+
 app.get('/friend-chat/messages', async (req, res) => {
   const roomId = (req.query.roomId || '').toString().trim();
   if (!roomId) return res.status(400).json({ error: 'roomId fehlt' });
