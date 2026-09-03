@@ -4,10 +4,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/ui/auth/register_screen.dart';
 
+typedef LoginHandler =
+    Future<AuthResult> Function({
+      required String email,
+      required String password,
+    });
+
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
+  final LoginHandler? login;
 
-  const LoginScreen({super.key, this.onLoginSuccess});
+  const LoginScreen({super.key, this.onLoginSuccess, this.login});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -63,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final result = await AuthService.instance.login(
+      final result = await (widget.login ?? AuthService.instance.login)(
         email: _emailCtrl.text.trim().toLowerCase(),
         password: _passCtrl.text,
       );
@@ -75,7 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
         widget.onLoginSuccess?.call();
       } else {
         setState(
-          () => _errorMessage = result.errorMessage ??
+          () => _errorMessage =
+              result.errorMessage ??
               'Login fehlgeschlagen. Bitte erneut versuchen.',
         );
       }
@@ -144,13 +152,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.96),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: const Color(0xFFDCE9E6),
-                          ),
+                          border: Border.all(color: const Color(0xFFDCE9E6)),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF103A35)
-                                  .withValues(alpha: 0.08),
+                              color: const Color(
+                                0xFF103A35,
+                              ).withValues(alpha: 0.08),
                               blurRadius: 24,
                               offset: const Offset(0, 12),
                             ),
@@ -211,9 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(32),
           color: Colors.white.withValues(alpha: 0.96),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.14),
@@ -225,10 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
         padding: const EdgeInsets.all(2),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
-          child: Image.asset(
-            'assets/images/neue logo.png',
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset('assets/images/neue logo.png', fit: BoxFit.cover),
         ),
       ),
     );
@@ -382,8 +384,11 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              color: Color(0xFFB14D2F), size: 20),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Color(0xFFB14D2F),
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -483,9 +488,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Gib deine E-Mail-Adresse ein. Wir senden dir einen Link zum Zurücksetzen.',
                       style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF5A6B68),
-                            height: 1.4,
-                          ),
+                        color: const Color(0xFF5A6B68),
+                        height: 1.4,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -504,21 +509,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFD6E3E0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFD6E3E0),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                              color: Color(0xFF1F7A71), width: 1.4),
+                            color: Color(0xFF1F7A71),
+                            width: 1.4,
+                          ),
                         ),
                       ),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
                           return 'E-Mail ist erforderlich.';
                         }
-                        if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                            .hasMatch(v.trim())) {
+                        if (!RegExp(
+                          r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                        ).hasMatch(v.trim())) {
                           return 'Bitte eine gültige E-Mail eingeben.';
                         }
                         return null;
@@ -528,7 +537,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFFF4F1),
                           borderRadius: BorderRadius.circular(10),
@@ -537,7 +548,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Text(
                           errorMsg!,
                           style: const TextStyle(
-                              color: Color(0xFF8C3E28), fontSize: 13),
+                            color: Color(0xFF8C3E28),
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -545,7 +558,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF0FBF8),
                           borderRadius: BorderRadius.circular(10),
@@ -553,14 +568,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.check_circle_outline_rounded,
-                                color: Color(0xFF166A61), size: 18),
+                            const Icon(
+                              Icons.check_circle_outline_rounded,
+                              color: Color(0xFF166A61),
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 successMsg!,
                                 style: const TextStyle(
-                                    color: Color(0xFF14524A), fontSize: 13),
+                                  color: Color(0xFF14524A),
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],
@@ -584,10 +604,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             isSending = true;
                             errorMsg = null;
                           });
-                          final err =
-                              await AuthService.instance.sendPasswordReset(
-                            resetEmailCtrl.text.trim(),
-                          );
+                          final err = await AuthService.instance
+                              .sendPasswordReset(resetEmailCtrl.text.trim());
                           setDialogState(() {
                             isSending = false;
                             if (err == null) {
@@ -609,7 +627,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Text('Link senden'),
                 ),
@@ -672,8 +692,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final googleProvider = GoogleAuthProvider();
       googleProvider.addScope('email');
-      final result =
-          await FirebaseAuth.instance.signInWithPopup(googleProvider);
+      final result = await FirebaseAuth.instance.signInWithPopup(
+        googleProvider,
+      );
       if (result.user != null && mounted) {
         await AuthService.instance.initialize();
         if (mounted) widget.onLoginSuccess?.call();
@@ -682,7 +703,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       // User closed the popup intentionally — no error needed.
       if (e.code == 'popup-closed-by-user' ||
-          e.code == 'cancelled-popup-request') return;
+          e.code == 'cancelled-popup-request')
+        return;
       final String msg;
       if (e.code == 'popup-blocked') {
         msg =
@@ -694,16 +716,19 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Google-Login: $msg'),
-            behavior: SnackBarBehavior.floating),
+          content: Text('Google-Login: $msg'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text(
-                'Google-Login: Bitte versuche es erneut oder nutze E-Mail + Passwort.'),
-            behavior: SnackBarBehavior.floating),
+          content: Text(
+            'Google-Login: Bitte versuche es erneut oder nutze E-Mail + Passwort.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -720,16 +745,12 @@ class _LoginScreenState extends State<LoginScreen> {
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text(
-            'Neu bei Parentpeak? ',
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text('Neu bei Parentpeak? ', style: theme.textTheme.bodyMedium),
           GestureDetector(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => RegisterScreen(
-                  onRegisterSuccess: widget.onLoginSuccess,
-                ),
+                builder: (_) =>
+                    RegisterScreen(onRegisterSuccess: widget.onLoginSuccess),
               ),
             ),
             child: Text(
