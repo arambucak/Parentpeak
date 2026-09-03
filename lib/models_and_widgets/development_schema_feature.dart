@@ -17,7 +17,7 @@ const Map<String, String> kMilestoneStatusLabels = {
   'NOCH_NICHT': 'Noch nicht',
   'ANSATZWEISE': 'Ansatzweise',
   'WEITGEHEND': 'Weitgehend',
-  'ZUVERLAESSIG': 'Zuverlaessig',
+  'ZUVERLAESSIG': 'Zuverlässig',
 };
 
 const Map<int, String> kSelfCheckOptionLabels = {
@@ -51,7 +51,7 @@ const List<_DevelopmentDomainProfile> _kParentSelfCheckDomains = [
   _DevelopmentDomainProfile(
     id: 'motorik',
     title: 'Motorik',
-    description: 'Bewegung, Koordination und Koerpergefühl.',
+    description: 'Bewegung, Koordination und Körpergefühl.',
     icon: Icons.directions_run_rounded,
     color: Color(0xFF0EA5E9),
     questions: [
@@ -60,40 +60,40 @@ const List<_DevelopmentDomainProfile> _kParentSelfCheckDomains = [
       'Feinmotorische Aufgaben (z. B. malen, greifen, schneiden) gelingen zunehmend.',
     ],
     parentActions: [
-      'Kurze Bewegungsparcours zuhause oder draussen aufbauen.',
-      'Alltagshandlungen gemeinsam ueben (anziehen, einschenken, aufraeumen).',
+      'Kurze Bewegungsparcours zuhause oder draußen aufbauen.',
+      'Alltagshandlungen gemeinsam üben (anziehen, einschenken, aufräumen).',
     ],
   ),
   _DevelopmentDomainProfile(
     id: 'sprache',
     title: 'Sprache',
-    description: 'Verstehen, ausdruecken und in Kontakt bleiben.',
+    description: 'Verstehen, ausdrücken und in Kontakt bleiben.',
     icon: Icons.record_voice_over_rounded,
     color: Color(0xFF16A34A),
     questions: [
-      'Mein Kind kann Bedürfnisse verbal oder eindeutig nonverbal ausdruecken.',
+      'Mein Kind kann Bedürfnisse verbal oder eindeutig nonverbal ausdrücken.',
       'Mein Kind versteht alltägliche Anweisungen gut.',
-      'Mein Kind beteiligt sich aktiv an Gespraechen/Fragen im Alltag.',
+      'Mein Kind beteiligt sich aktiv an Gesprächen/Fragen im Alltag.',
     ],
     parentActions: [
       'Täglich 10 Minuten dialogisch sprechen statt nur fragen.',
-      'Neue Begriffe in Alltagssituationen wiederholen und bestaetigen.',
+      'Neue Begriffe in Alltagssituationen wiederholen und bestätigen.',
     ],
   ),
   _DevelopmentDomainProfile(
     id: 'denken',
     title: 'Denken & Lernen',
-    description: 'Aufmerksamkeit, Loesestrategien und Neugier.',
+    description: 'Aufmerksamkeit, Lösestrategien und Neugier.',
     icon: Icons.lightbulb_rounded,
     color: Color(0xFFF59E0B),
     questions: [
       'Mein Kind bleibt bei interessanten Aufgaben eine Weile dran.',
       'Mein Kind probiert mehrere Wege, wenn etwas nicht sofort klappt.',
-      'Mein Kind stellt Fragen und will Zusammenhaenge verstehen.',
+      'Mein Kind stellt Fragen und will Zusammenhänge verstehen.',
     ],
     parentActions: [
       'Kleine Denkspiele mit offenem Ausgang einbauen.',
-      'Nicht sofort loesen, sondern mit Leitfragen begleiten.',
+      'Nicht sofort lösen, sondern mit Leitfragen begleiten.',
     ],
   ),
   _DevelopmentDomainProfile(
@@ -114,14 +114,14 @@ const List<_DevelopmentDomainProfile> _kParentSelfCheckDomains = [
   ),
   _DevelopmentDomainProfile(
     id: 'selbst',
-    title: 'Selbststaendigkeit',
+    title: 'Selbstständigkeit',
     description: 'Eigeninitiative und alltägliche Verantwortung.',
     icon: Icons.task_alt_rounded,
     color: Color(0xFF8B5CF6),
     questions: [
-      'Mein Kind uebernimmt einfache Aufgaben im Alltag mit.',
-      'Mein Kind versucht Dinge zunehmend selbst zu loesen.',
-      'Mein Kind kann einfache Ablaeufe mit wenig Hilfe umsetzen.',
+      'Mein Kind übernimmt einfache Aufgaben im Alltag mit.',
+      'Mein Kind versucht Dinge zunehmend selbst zu lösen.',
+      'Mein Kind kann einfache Abläufe mit wenig Hilfe umsetzen.',
     ],
     parentActions: [
       'Feste Mini-Aufgaben mit klarer Struktur geben.',
@@ -146,12 +146,12 @@ const Map<String, List<String>> _kSixMonthDetailedQuestions = {
   'sprache': [
     'Mein Kind kann Erlebnisse in einer nachvollziehbaren Reihenfolge erzählen.',
     'Mein Kind versteht auch komplexere Anweisungen mit mehreren Schritten.',
-    'Mein Kind findet Worte für Gefühle, Wuensche und Konflikte.',
+    'Mein Kind findet Worte für Gefühle, Wünsche und Konflikte.',
     'Mein Kind kann Fragen passend beantworten und beim Thema bleiben.',
     'Mein Kind nutzt zunehmend differenzierten Wortschatz für Alltag und Interessen.',
     'Mein Kind versteht einfache Erklärungen zu Ursache und Wirkung.',
-    'Mein Kind kann in Gespraechen abwechselnd sprechen und zuhören.',
-    'Mein Kind kann Missverstaendnisse sprachlich klaeren oder nachfragen.',
+    'Mein Kind kann in Gesprächen abwechselnd sprechen und zuhören.',
+    'Mein Kind kann Missverständnisse sprachlich klären oder nachfragen.',
     'Mein Kind passt Sprache situativ an (z. B. ruhig, deutlich, freundlich).',
     'Mein Kind kann kurze Geschichten mit Anfang, Mitte und Ende wiedergeben.',
   ],
@@ -159,12 +159,12 @@ const Map<String, List<String>> _kSixMonthDetailedQuestions = {
     'Mein Kind erkennt Muster und nutzt sie bei neuen Aufgaben.',
     'Mein Kind kann eine begonnene Aufgabe mit wenig Hilfe zu Ende bringen.',
     'Mein Kind reflektiert nach Fehlern und versucht bewusst eine neue Strategie.',
-    'Mein Kind kann Prioritaeten setzen und bei einer Aufgabe fokussiert bleiben.',
-    'Mein Kind verknuepft neues Wissen mit bereits bekannten Erfahrungen.',
-    'Mein Kind plant bei einfachen Problemen mehrere moegliche Loesungswege.',
+    'Mein Kind kann Prioritäten setzen und bei einer Aufgabe fokussiert bleiben.',
+    'Mein Kind verknüpft neues Wissen mit bereits bekannten Erfahrungen.',
+    'Mein Kind plant bei einfachen Problemen mehrere mögliche Lösungswege.',
     'Mein Kind kann Wartezeiten oder Frustration in Lernsituationen besser aushalten.',
     'Mein Kind kann Anweisungen strukturieren und schrittweise umsetzen.',
-    'Mein Kind zeigt Eigeninitiative bei Lernangeboten ohne staendige Aufforderung.',
+    'Mein Kind zeigt Eigeninitiative bei Lernangeboten ohne ständige Aufforderung.',
     'Mein Kind erkennt eigene Lernfortschritte und kann sie benennen.',
   ],
   'sozial': [
@@ -173,20 +173,20 @@ const Map<String, List<String>> _kSixMonthDetailedQuestions = {
     'Mein Kind kann sich nach starker Emotion schneller selbst regulieren.',
     'Mein Kind kann Grenzen anderer respektieren und eigene Grenzen angemessen zeigen.',
     'Mein Kind kann in Gruppenregeln zunehmend verlässlich mitgehen.',
-    'Mein Kind sucht bei Unsicherheit konstruktiv nach Unterstuetzung.',
-    'Mein Kind kann Rueckmeldung annehmen, ohne sofort abzublocken.',
-    'Mein Kind kann Enttaeuschungen sozial angemessen ausdruecken.',
+    'Mein Kind sucht bei Unsicherheit konstruktiv nach Unterstützung.',
+    'Mein Kind kann Rückmeldung annehmen, ohne sofort abzublocken.',
+    'Mein Kind kann Enttäuschungen sozial angemessen ausdrücken.',
     'Mein Kind kann in Spielsituationen kooperieren und Rollen abstimmen.',
-    'Mein Kind zeigt prosoziales Verhalten (helfen, teilen, troesten) im Alltag.',
+    'Mein Kind zeigt prosoziales Verhalten (helfen, teilen, trösten) im Alltag.',
   ],
   'selbst': [
     'Mein Kind organisiert einfache Alltagsroutinen zunehmend eigenständig.',
     'Mein Kind bittet passend um Hilfe, statt sofort aufzugeben.',
-    'Mein Kind uebernimmt Verantwortung für kleine Aufgaben verlässlich.',
+    'Mein Kind übernimmt Verantwortung für kleine Aufgaben verlässlich.',
     'Mein Kind kann eigene Materialien mit wenig Hilfe ordnen und pflegen.',
     'Mein Kind beginnt Aufgaben selbstständig und bleibt dabei bis zu einem sinnvollen Ende.',
-    'Mein Kind kann zwischen Pflichtaufgaben und freien Wuenschen besser ausbalancieren.',
-    'Mein Kind zeigt bei Rueckschlaegen zunehmende Selbstwirksamkeit.',
+    'Mein Kind kann zwischen Pflichtaufgaben und freien Wünschen besser ausbalancieren.',
+    'Mein Kind zeigt bei Rückschlägen zunehmende Selbstwirksamkeit.',
     'Mein Kind kann einfache Tagesstrukturen verstehen und einhalten.',
     'Mein Kind trifft in Alltagssituationen altersangemessene Entscheidungen.',
     'Mein Kind kann eigene Fortschritte wahrnehmen und stolz benennen.',
@@ -803,7 +803,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 const Text('1. Monats-Kurzcheck auswählen.'),
                 const SizedBox(height: 6),
                 const Text(
-                    '2. Schnellmodus aktivieren und nur den Fokusbereich ausfuellen.'),
+                    '2. Schnellmodus aktivieren und nur den Fokusbereich ausfüllen.'),
                 const SizedBox(height: 6),
                 const Text(
                     '3. Mit Monatskarte den Verlauf später vergleichen.'),
@@ -880,7 +880,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-            'Detailcheck gespeichert. Naechste Empfehlung ab ${_formatDate(now.add(const Duration(days: 180)))}.'),
+            'Detailcheck gespeichert. Nächste Empfehlung ab ${_formatDate(now.add(const Duration(days: 180)))}.'),
       ),
     );
   }
@@ -1229,9 +1229,9 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   String _weightProfileLabel(String profile) {
     switch (profile) {
       case 'early':
-        return 'Fruehe Entwicklungsphase';
+        return 'Frühe Entwicklungsphase';
       case 'late':
-        return 'Spaete Entwicklungsphase';
+        return 'Späte Entwicklungsphase';
       case 'middle':
       default:
         return 'Mittlere Entwicklungsphase';
@@ -1243,7 +1243,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
       case 'early':
         return 'In dieser Phase zählen Motorik und Sprache etwas stärker.';
       case 'late':
-        return 'In dieser Phase zählen Denken und Selbststaendigkeit etwas stärker.';
+        return 'In dieser Phase zählen Denken und Selbstständigkeit etwas stärker.';
       case 'middle':
       default:
         return 'In dieser Phase zählen Sprache, Denken und Sozialverhalten etwas stärker.';
@@ -1303,7 +1303,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ),
             const SizedBox(height: 6),
             Text(
-              '1) Kurzcheck starten  2) 1 Fokusbereich ausfuellen  3) Alltagsempfehlung direkt nutzen.',
+              '1) Kurzcheck starten  2) 1 Fokusbereich ausfüllen  3) Alltagsempfehlung direkt nutzen.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -1332,8 +1332,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             0.75)
         .toList();
     final strongText = strongDomains.isNotEmpty
-        ? 'Heute laeuft gut: ${strongDomains.first.title}.'
-        : 'Heute laeuft gut: Ihr bleibt gemeinsam dran.';
+        ? 'Heute läuft gut: ${strongDomains.first.title}.'
+        : 'Heute läuft gut: Ihr bleibt gemeinsam dran.';
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -1641,11 +1641,11 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     }
     if (snapshot.completed > 0) {
       wins.add(
-          '${snapshot.completed} Merkmale wirken aktuell stabil und zuverlaessig.');
+          '${snapshot.completed} Merkmale wirken aktuell stabil und zuverlässig.');
     }
     if (completeSelfCheckDomains > 0) {
       wins.add(
-          'Selbstcheck in $completeSelfCheckDomains/${_kParentSelfCheckDomains.length} Bereichen vollstaendig ausgefuellt.');
+          'Selbstcheck in $completeSelfCheckDomains/${_kParentSelfCheckDomains.length} Bereichen vollständig ausgefüllt.');
     }
     if (strongDomains > 0) {
       wins.add(
@@ -1703,7 +1703,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ),
             const SizedBox(height: 8),
             Text(
-              'Das lief diese Woche gut. Jeder kleine Schritt staerkt euer Gesamtbild.',
+              'Das lief diese Woche gut. Jeder kleine Schritt stärkt euer Gesamtbild.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -1720,7 +1720,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 ),
             const SizedBox(height: 4),
             Text(
-              'Naechster Mini-Schritt: 1 kurze Beobachtung heute eintragen.',
+              'Nächster Mini-Schritt: 1 kurze Beobachtung heute eintragen.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF166534),
                 fontWeight: FontWeight.w700,
@@ -2228,7 +2228,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    '$completeness/${_kParentSelfCheckDomains.length} vollstaendig',
+                    '$completeness/${_kParentSelfCheckDomains.length} vollständig',
                     style: theme.textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: theme.colorScheme.primary,
@@ -2431,7 +2431,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ),
             const SizedBox(height: 10),
             Text(
-              'Naechste alltagstaugliche Schritte',
+              'Nächste alltagstaugliche Schritte',
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -2505,7 +2505,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             Text(
               hasPrevious
                   ? 'Vergleich zur letzten gespeicherten Monatskarte.'
-                  : 'Speichere eine Monatskarte, um ab dem naechsten Monat den Vergleich zu sehen.',
+                  : 'Speichere eine Monatskarte, um ab dem nächsten Monat den Vergleich zu sehen.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -2874,7 +2874,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
                           isFocusDomain
-                              ? 'Fokus heute: ${domain.title}. Bitte kurz aus dem Alltag heraus einschaetzen.'
+                              ? 'Fokus heute: ${domain.title}. Bitte kurz aus dem Alltag heraus einschätzen.'
                               : 'Dieser Bereich ist in dieser Session ausgeblendet.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,

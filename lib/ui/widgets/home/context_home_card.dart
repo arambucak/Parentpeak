@@ -192,20 +192,20 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             // ── Babys & Krabbelalter ──────────────────────────────────────
             {
               'tip':
-                  'Versteckspiel mit Tuechern: Du versteckst, Baby sucht. Foerdert Objektpermanenz.',
-              'materials': 'Tuecher, Decke',
+                  'Versteckspiel mit Tüchern: Du versteckst, Baby sucht. Fördert Objektpermanenz.',
+              'materials': 'Tücher, Decke',
               'duration': '10 Min'
             },
             {
               'tip':
                   'Krabbelwettrennen: Kriecht zusammen durch die Wohnung. Lachen garantiert.',
-              'materials': 'Nichts noetig',
+              'materials': 'Nichts nötig',
               'duration': '10 Min'
             },
             {
               'tip':
-                  'Topf-Orchester: Toepfe und Kochloeffel als Instrumente — Rhythmus foerdert Gehirnentwicklung.',
-              'materials': 'Toepfe, Kochloeffel',
+                  'Topf-Orchester: Töpfe und Kochlöffel als Instrumente — Rhythmus fördert Gehirnentwicklung.',
+              'materials': 'Töpfe, Kochlöffel',
               'duration': '15 Min'
             },
             {
@@ -217,7 +217,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             {
               'tip':
                   'Fingerspiele mit Gesang: "Alle meine Entchen" mit Fingerbewegungen.',
-              'materials': 'Nichts noetig',
+              'materials': 'Nichts nötig',
               'duration': '5 Min'
             },
             {
@@ -234,13 +234,13 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             },
             {
               'tip':
-                  'Wasserspass: Schuessel mit lauwarmem Wasser, Becher und Loeffel eintauchen.',
-              'materials': 'Schuessel, Wasser, Becher, Loeffel',
+                  'Wasserspaß: Schüssel mit lauwarmem Wasser, Becher und Löffel eintauchen.',
+              'materials': 'Schüssel, Wasser, Becher, Löffel',
               'duration': '15 Min'
             },
             {
               'tip':
-                  'Knisterpapier-Erkundung: Verschiedene Papiere und Tuecher befühlen und zerknuellen.',
+                  'Knisterpapier-Erkundung: Verschiedene Papiere und Tücher befühlen und zerknüllen.',
               'materials': 'Zeitungspapier, Alufolie, weiches Tuch',
               'duration': '10 Min'
             },
@@ -253,19 +253,19 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             {
               'tip':
                   'Schaukel-Lied: Kind auf den Knien wiegen und dabei ein ruhiges Lied summen.',
-              'materials': 'Nichts noetig',
+              'materials': 'Nichts nötig',
               'duration': '10 Min'
             },
             {
               'tip':
-                  'Koerperteil-Spiel: "Wo ist deine Nase?" — Baby zeigt und benennt mit.',
-              'materials': 'Nichts noetig',
+                  'Körperteil-Spiel: "Wo ist deine Nase?" — Baby zeigt und benennt mit.',
+              'materials': 'Nichts nötig',
               'duration': '10 Min'
             },
             {
               'tip':
-                  'Schuettelbuechse basteln: Reiskoerner in eine leere Plastikflasche — selbst gemachtes Instrument.',
-              'materials': 'Plastikflasche, Reiskoerner oder Linsen',
+                  'Schüttelbüchse basteln: Reiskörner in eine leere Plastikflasche — selbst gemachtes Instrument.',
+              'materials': 'Plastikflasche, Reiskörner oder Linsen',
               'duration': '10 Min'
             },
             {
@@ -277,7 +277,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             {
               'tip':
                   'Klatsch-Rhythmus: Einfache Klatschspiele wie "Backe backe Kuchen" gemeinsam lernen.',
-              'materials': 'Nichts noetig',
+              'materials': 'Nichts nötig',
               'duration': '5 Min'
             },
           ]
@@ -287,19 +287,19 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 {
                   'tip':
                       'Schatzsuche im Wohnzimmer: Verstecke 5 Dinge und zeichne eine Schatzkarte.',
-                  'materials': 'Papier, Stifte, 5 kleine Gegenstaende',
+                  'materials': 'Papier, Stifte, 5 kleine Gegenstände',
                   'duration': '20 Min'
                 },
                 {
                   'tip':
-                      'Verkleiden aus dem Schrank: Alte Klamotten, Huete, Tuecher — Theater spielen!',
+                      'Verkleiden aus dem Schrank: Alte Klamotten, Hüte, Tücher — Theater spielen!',
                   'materials': 'Alte Kleidung, Accessoires',
                   'duration': '30 Min'
                 },
                 {
                   'tip':
-                      'Barfuss-Parcours: Kissen, Handtuecher, Plastikfolie — verschiedene Texturen fühlen.',
-                  'materials': 'Kissen, Handtuecher, Folie, Decken',
+                      'Barfuß-Parcours: Kissen, Handtücher, Plastikfolie — verschiedene Texturen fühlen.',
+                  'materials': 'Kissen, Handtücher, Folie, Decken',
                   'duration': '15 Min'
                 },
                 {
@@ -310,7 +310,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 },
                 {
                   'tip':
-                      'Karton-Burg: Grosse Kartons werden zu Haeusern, Autos oder Raketen.',
+                      'Karton-Burg: Große Kartons werden zu Häusern, Autos oder Raketen.',
                   'materials': 'Grosse Kartons, Klebeband, Stifte',
                   'duration': '45 Min'
                 },
@@ -340,14 +340,14 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 },
                 {
                   'tip':
-                      'Naturmandala: Blätter, Steine und Zweige draussen kreisfoermig legen.',
+                      'Naturmandala: Blätter, Steine und Zweige draußen kreisförmig legen.',
                   'materials': 'Naturmaterialien',
                   'duration': '20 Min'
                 },
                 {
                   'tip':
                       'Hindernislauf: Stühle, Decken und Kissen als Tunnel und Brücke aufbauen.',
-                  'materials': 'Stuehle, Decken, Kissen',
+                  'materials': 'Stühle, Decken, Kissen',
                   'duration': '20 Min'
                 },
                 {
@@ -364,14 +364,14 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 },
                 {
                   'tip':
-                      'Matschküche draussen: Mit Wasser, Erde und Blaettern "Suppe kochen".',
-                  'materials': 'Schuessel, Wasser, Naturmaterialien',
+                      'Matschküche draußen: Mit Wasser, Erde und Blättern "Suppe kochen".',
+                  'materials': 'Schüssel, Wasser, Naturmaterialien',
                   'duration': '30 Min'
                 },
                 {
                   'tip':
                       'Fingertheater: Gesichter auf Finger malen und gemeinsam eine Geschichte erfinden.',
-                  'materials': 'Filzstifte (hautvertraeglich), Hände',
+                  'materials': 'Filzstifte (hautverträglich), Hände',
                   'duration': '15 Min'
                 },
               ]
@@ -391,7 +391,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 },
                 {
                   'tip':
-                      'Geocaching: Kostenlose App, draussen Schaetze suchen — echtes Abenteuer.',
+                      'Geocaching: Kostenlose App, draußen Schätze suchen — echtes Abenteuer.',
                   'materials': 'Smartphone mit Geocaching-App',
                   'duration': '60 Min'
                 },
@@ -416,7 +416,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 },
                 {
                   'tip':
-                      'Lager im Wohnzimmer: Decken, Kissen, Lichterkette — Zeltuebernachtung drinnen.',
+                      'Lager im Wohnzimmer: Decken, Kissen, Lichterkette — Zeltübernachtung drinnen.',
                   'materials': 'Decken, Kissen, Lichterkette, Taschenlampe',
                   'duration': '60 Min'
                 },
@@ -447,7 +447,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 {
                   'tip':
                       'Kochduell: Jedes Familienmitglied kocht oder bereitet einen Gang zu.',
-                  'materials': 'Kuehlschrankinhalt, Kochgeschirr',
+                  'materials': 'Kühlschrankinhalt, Kochgeschirr',
                   'duration': '45 Min'
                 },
                 {
@@ -458,9 +458,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 },
                 {
                   'tip':
-                      'Familien-Escape-Room: Raetsel für die ganze Familie selber erfinden und loesen.',
+                      'Familien-Escape-Room: Rätsel für die ganze Familie selber erfinden und lösen.',
                   'materials':
-                      'Papier, Stifte, Alltagsgegenstaende als Requisiten',
+                      'Papier, Stifte, Alltagsgegenstände als Requisiten',
                   'duration': '60 Min'
                 },
                 {
