@@ -5388,14 +5388,46 @@ app.post('/api/friends/connect-mutual', async (req, res) => {
 app.get('/api/friends/debug/:code', async (req, res) => {
   const code = (req.params.code || '').toString().trim().toLowerCase();
   if (!code) return res.status(400).json({ error: 'code erforderlich' });
-  const out = { code, registry: null, edges: [], errors: [] };
+  const out = {
+    code,
+    registry: null,
+    uidPrefix: null,
+    identities: [],
+    suspendedCheck: null,
+    suspensionRows: [],
+    reportRows: [],
+    edges: [],
+    errors: [],
+  };
   try {
     await ensureSocialSchemaReady();
     const reg = await prisma.$queryRawUnsafe(
-      `SELECT "code", "name", ("userId" IS NOT NULL AND "userId" <> '') AS "hasUserId" FROM "FriendRegistry" WHERE "code" = $1`,
+      `SELECT "code", "name", "userId" FROM "FriendRegistry" WHERE "code" = $1`,
       code
     );
-    out.registry = reg[0] || null;
+    if (reg[0]) {
+      const uid = reg[0].userId || '';
+      out.registry = {
+        code: reg[0].code,
+        name: reg[0].name,
+        hasUserId: uid !== '',
+      };
+      // Nur ein kurzer Praefix der UID (kein Geheimnis), um Matching zu pruefen.
+      out.uidPrefix = uid ? uid.substring(0, 8) : null;
+    }
+    // Welche Identitaeten leitet der Server aus diesem Code ab?
+    out.identities = await expandIdentities(code);
+    // Greift der Suspension-Check fuer diesen Code?
+    out.suspendedCheck = await isUserSuspended(code);
+    // Welche Suspension-Zeilen betreffen diese Identitaeten?
+    out.suspensionRows = await prisma.$queryRawUnsafe(
+      `SELECT "userId", "reason" FROM "SafetySuspension" WHERE "userId" = ANY($1::text[])`,
+      out.identities
+    );
+    out.reportRows = await prisma.$queryRawUnsafe(
+      `SELECT "id", "reportedUserId", "status" FROM "SafetyReport" WHERE "reportedUserId" = ANY($1::text[]) OR "reportedUserId" = $2`,
+      out.identities, code
+    );
     const edges = await prisma.$queryRawUnsafe(
       `SELECT "ownerCode", "friendCode", "friendName" FROM "FriendEdge" WHERE "ownerCode" = $1 OR "friendCode" = $1`,
       code
