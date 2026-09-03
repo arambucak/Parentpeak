@@ -15,9 +15,9 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
   final _service = AdminModerationService();
   bool _loading = true;
   String? _error;
-  AdminReportsResult _data =
-      const AdminReportsResult(groups: [], reports: []);
+  AdminReportsResult _data = const AdminReportsResult(groups: [], reports: []);
   String _status = 'pending';
+  bool _cleaning = false;
 
   @override
   void initState() {
@@ -75,18 +75,20 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
     if (ok != true) return;
     final success = await _service.suspendUser(g.reportedUserId,
         reason: 'Moderation: ${g.lastReason}');
-    _afterAction(success, success ? 'Account gesperrt.' : 'Sperren fehlgeschlagen.');
+    _afterAction(
+        success, success ? 'Account gesperrt.' : 'Sperren fehlgeschlagen.');
   }
 
   Future<void> _unsuspend(ReportGroup g) async {
     final success = await _service.unsuspendUser(g.reportedUserId);
-    _afterAction(success, success ? 'Sperre aufgehoben.' : 'Aktion fehlgeschlagen.');
+    _afterAction(
+        success, success ? 'Sperre aufgehoben.' : 'Aktion fehlgeschlagen.');
   }
 
   Future<void> _ignore(ReportGroup g) async {
     final success = await _service.resolveReportsForUser(g.reportedUserId);
-    _afterAction(
-        success, success ? 'Meldungen als geprüft markiert.' : 'Aktion fehlgeschlagen.');
+    _afterAction(success,
+        success ? 'Meldungen als geprüft markiert.' : 'Aktion fehlgeschlagen.');
   }
 
   void _afterAction(bool success, String message) {
@@ -100,6 +102,69 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
     if (success) _load();
   }
 
+  /// Datenbank aufräumen: erst Vorschau (brokenCount), dann Bestätigung, dann
+  /// löschen. Nur kaputte Freundschafts-Kanten; echte Daten bleiben.
+  Future<void> _startCleanup() async {
+    setState(() => _cleaning = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final count = await _service.cleanupPreview();
+    if (!mounted) return;
+
+    if (count < 0) {
+      setState(() => _cleaning = false);
+      messenger.showSnackBar(const SnackBar(
+        content:
+            Text('Vorschau fehlgeschlagen. Bitte später erneut versuchen.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    if (count == 0) {
+      setState(() => _cleaning = false);
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Alles sauber – keine kaputten Einträge gefunden. 🎉'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Color(0xFF16A34A),
+      ));
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: const Icon(Icons.cleaning_services_rounded, size: 32),
+        title: const Text('Datenbank aufräumen?'),
+        content: Text('Es wurden $count kaputte Verbindungs-Einträge gefunden '
+            '(fehlerhafte oder verwaiste Codes). Diese werden entfernt.\n\n'
+            'Echte Nutzer, Namen und Chats bleiben unberührt.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('$count entfernen')),
+        ],
+      ),
+    );
+    if (confirm != true) {
+      if (mounted) setState(() => _cleaning = false);
+      return;
+    }
+
+    final deleted = await _service.runCleanup();
+    if (!mounted) return;
+    setState(() => _cleaning = false);
+    messenger.showSnackBar(SnackBar(
+      content: Text(deleted >= 0
+          ? '$deleted Einträge bereinigt. Datenbank ist sauber. ✅'
+          : 'Aufräumen fehlgeschlagen. Bitte später erneut versuchen.'),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: deleted >= 0 ? const Color(0xFF16A34A) : null,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -107,6 +172,11 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       appBar: AppBar(
         title: const Text('Moderation'),
         actions: [
+          IconButton(
+            tooltip: 'Datenbank aufräumen',
+            icon: const Icon(Icons.cleaning_services_rounded),
+            onPressed: _cleaning ? null : _startCleanup,
+          ),
           PopupMenuButton<String>(
             initialValue: _status,
             onSelected: (v) {
@@ -143,8 +213,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(_error!,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium),
+                textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
           ),
         ],
       );
@@ -233,8 +302,8 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                     '${d.content.isNotEmpty ? ' – "${d.content}"' : ''}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant)),
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               )),
         ],
         const Divider(height: 24),

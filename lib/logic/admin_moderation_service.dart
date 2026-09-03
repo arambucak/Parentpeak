@@ -136,4 +136,40 @@ class AdminModerationService {
       return false;
     }
   }
+
+  /// Vorschau: wie viele kaputte Freundschafts-Kanten wuerden bereinigt.
+  /// Loescht nichts. Gibt -1 bei Fehler zurueck.
+  Future<int> cleanupPreview() async {
+    final api = _api;
+    if (api == null) return -1;
+    try {
+      final data = await api.getJson('/admin/friends/cleanup-preview');
+      if (data is Map<String, dynamic>) {
+        return (data['brokenCount'] as num?)?.toInt() ?? 0;
+      }
+      return 0;
+    } catch (e) {
+      debugPrint('AdminModerationService.cleanupPreview failed: $e');
+      return -1;
+    }
+  }
+
+  /// Fuehrt den Cleanup aus (loescht kaputte Kanten). Gibt Anzahl geloeschter
+  /// Eintraege zurueck, -1 bei Fehler.
+  Future<int> runCleanup() async {
+    final api = _api;
+    if (api == null) return -1;
+    try {
+      final data = await api.postJsonAny('/admin/friends/cleanup', {
+        'confirm': true,
+      });
+      if (data is Map<String, dynamic>) {
+        return (data['deleted'] as num?)?.toInt() ?? 0;
+      }
+      return 0;
+    } catch (e) {
+      debugPrint('AdminModerationService.runCleanup failed: $e');
+      return -1;
+    }
+  }
 }
