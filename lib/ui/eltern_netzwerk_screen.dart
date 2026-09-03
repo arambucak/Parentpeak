@@ -107,6 +107,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       unawaited(_loadMatches());
     }
 
+    // Sicherstellen, dass der Freundes-Code zur aktuellen Firebase-UID passt
+    // (account-stabil, gleich auf App + Web). Wichtig, falls der Login erst
+    // nach dem ersten initialize() erfolgte.
+    await ParentCoinService.instance.refreshReferralCodeForCurrentUser();
+
     // Register own code+name+userId so others can find us by code and so
     // Push-Nachrichten uns erreichen (code -> userId Mapping).
     final myCode = ParentFriendsService.instance.myCode;
