@@ -1219,25 +1219,38 @@ app.post('/ai/generate', async (req, res) => {
     ...(useGoogleSearch ? { tools: [{ google_search: {} }] } : {}),
   };
 
-  try {
-    const upstream = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
+  // Hilfsfunktion: einen Gemini-Aufruf ausführen und Text + Grounding-URLs zurückgeben.
+  // Robust: probiert erst den Header, bei 401/403 den Key als Query-Parameter
+  // (neuere AQ.-Keys akzeptieren teils nur eine der beiden Methoden).
+  async function callGemini(body) {
+    const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const jsonBody = JSON.stringify(body);
+
+    async function attempt(useQueryParam) {
+      const url = useQueryParam
+        ? `${baseUrl}?key=${encodeURIComponent(geminiApiKey)}`
+        : baseUrl;
+      const headers = { 'Content-Type': 'application/json' };
+      if (!useQueryParam) headers['x-goog-api-key'] = geminiApiKey;
+      return fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': geminiApiKey,
-        },
-        body: JSON.stringify(requestBody),
+        headers,
+        body: jsonBody,
         signal: AbortSignal.timeout(35000),
-      },
-    );
-    const payload = await upstream.json().catch(() => ({}));
-    if (!upstream.ok) {
-      console.error(`Gemini upstream failed: ${upstream.status}`);
-      return res.status(502).json({ error: 'KI-Dienst vorübergehend nicht verfügbar' });
+      });
     }
 
+    let upstream = await attempt(false);
+    // Bei Auth-Fehler: mit Query-Parameter erneut versuchen
+    if (upstream.status === 401 || upstream.status === 403) {
+      upstream = await attempt(true);
+    }
+
+    const payload = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      const detail = payload?.error?.message || `HTTP ${upstream.status}`;
+      throw new Error(detail);
+    }
     const candidate = Array.isArray(payload.candidates) ? payload.candidates[0] : null;
     const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
     const text = parts.map(part => String(part?.text || '')).join('').trim();
@@ -1247,11 +1260,42 @@ app.post('/ai/generate', async (req, res) => {
     const groundingUrls = groundingChunks
       .map(chunk => chunk?.web?.uri)
       .filter(uri => typeof uri === 'string' && uri.startsWith('https://'));
+    return { text, groundingUrls };
+  }
 
-    if (!text) {
+  try {
+    let result;
+    try {
+      result = await callGemini(requestBody);
+    } catch (groundingError) {
+      // Wenn Grounding fehlschlägt: automatisch OHNE Grounding erneut versuchen.
+      if (useGoogleSearch) {
+        console.warn(`Grounding failed (${groundingError.message}) — retry without grounding`);
+        const fallbackBody = {
+          ...requestBody,
+          generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+        };
+        delete fallbackBody.tools;
+        result = await callGemini(fallbackBody);
+      } else {
+        throw groundingError;
+      }
+    }
+
+    // Wenn Grounding zwar erfolgreich, aber leerer Text: ohne Grounding erneut.
+    if ((!result.text || result.text.length === 0) && useGoogleSearch) {
+      const fallbackBody = {
+        ...requestBody,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+      };
+      delete fallbackBody.tools;
+      result = await callGemini(fallbackBody);
+    }
+
+    if (!result.text) {
       return res.status(502).json({ error: 'KI-Dienst lieferte keine Antwort' });
     }
-    return res.json({ text, groundingUrls });
+    return res.json({ text: result.text, groundingUrls: result.groundingUrls });
   } catch (error) {
     console.error(`Gemini proxy failed: ${error.message}`);
     return res.status(502).json({ error: 'KI-Dienst vorübergehend nicht verfügbar' });

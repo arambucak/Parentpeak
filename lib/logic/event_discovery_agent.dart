@@ -87,21 +87,78 @@ Antworte NUR mit einem gültigen JSON-Array:
 Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges) und Stadtteile.
 ''';
 
-    // Primär: REST API mit Google Search Grounding (kurzer Prompt für < 20s)
+    // Primär: Backend-Proxy mit Google Search Grounding
     try {
       final events = await _callWithGrounding(groundingPrompt, city);
       if (events.isNotEmpty) return events;
+      debugPrint(
+          'EventDiscoveryAgent: Grounding leer — versuche ohne Grounding.');
     } catch (e) {
       debugPrint('EventDiscoveryAgent: Grounding-Aufruf fehlgeschlagen: $e');
     }
 
-    // Fallback: Package-Aufruf ohne Grounding (ausführlicher Prompt)
+    // Fallback 1: Proxy-Aufruf ohne Grounding (KI generiert realistische Events)
     try {
-      return await _callWithoutGrounding(prompt, city);
+      final events = await _callWithoutGrounding(prompt, city);
+      if (events.isNotEmpty) return events;
+      debugPrint('EventDiscoveryAgent: Auch Fallback leer.');
     } catch (e) {
       debugPrint('EventDiscoveryAgent: Fallback-Aufruf fehlgeschlagen: $e');
-      return <DiscoveredEvent>[];
     }
+
+    // Fallback 2: Lokale, ehrliche Vorschläge — damit der Nutzer NIE
+    // einen komplett leeren Screen sieht (wichtig für Launch-Stabilität).
+    return _localSuggestions(locationDesc, latitude, longitude);
+  }
+
+  /// Ehrliche lokale Vorschläge als letzte Rettung (klar als KI-Idee markiert).
+  /// Verhindert einen leeren "Keine Events"-Screen wenn die KI nicht antwortet.
+  List<DiscoveredEvent> _localSuggestions(
+      String city, double? lat, double? lon) {
+    final now = DateTime.now();
+    final base = DateTime(now.year, now.month, now.day);
+    final ideas = <Map<String, dynamic>>[
+      {
+        'title': 'Spielplatz-Treff im Kiez',
+        'desc':
+            'Trefft euch mit anderen Familien auf einem Spielplatz in eurer Nähe. Kinder spielen, Eltern kommen ins Gespräch.',
+        'cat': DiscoveredEventCategory.spielplatz,
+        'days': 1,
+      },
+      {
+        'title': 'Bibliotheks-Besuch',
+        'desc':
+            'Die Stadtbibliothek bietet oft kostenlose Vorlesestunden und eine Kinderecke. Ein ruhiger Ausflug bei jedem Wetter.',
+        'cat': DiscoveredEventCategory.museum,
+        'days': 2,
+      },
+      {
+        'title': 'Waldspaziergang mit Naturspielen',
+        'desc':
+            'Ab in den nächsten Park oder Wald: Blätter sammeln, Verstecken, Balancieren. Bewegung und frische Luft für alle.',
+        'cat': DiscoveredEventCategory.natur,
+        'days': 3,
+      },
+    ];
+    return ideas
+        .map((idea) => DiscoveredEvent(
+              id: _generateId(),
+              title: idea['title'] as String,
+              description: idea['desc'] as String,
+              category: idea['cat'] as DiscoveredEventCategory,
+              ageLabels: const ['Alle Altersgruppen'],
+              location: city,
+              cityHint: city,
+              latitude: lat,
+              longitude: lon,
+              eventDate:
+                  base.add(Duration(days: idea['days'] as int, hours: 10)),
+              price: 'kostenlos',
+              organizer: 'Parentpeak Idee',
+              source: DiscoveredEventSource.kiAgent,
+              discoveredAt: now,
+            ))
+        .toList();
   }
 
   // ─── Backend-Proxy mit Google Search Grounding ─────────────────────────────
