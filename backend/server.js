@@ -1136,7 +1136,7 @@ app.use(async (req, res, next) => {
 
   // Calendar and todo endpoints: accept userId from request body as lightweight auth.
   // Firebase token verification is still attempted; body userId is the fallback.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
@@ -5532,6 +5532,68 @@ app.post('/api/onboarding', async (req, res) => {
       priorities: priorities ? priorities.split('|').filter(Boolean) : prev.priorities,
     });
     return res.json({ ok: true });
+  }
+});
+
+// ─── DSGVO: Konto-Loeschung (Recht auf Loeschung, Art. 17) ─────────────────
+// Entfernt ALLE personenbezogenen Zeilen zu einem Nutzer (per userId UND per
+// zugehoerigem Freundes-Code). Token-exempt (/api/onboarding-Muster: userId
+// identifiziert), aber der Client ruft es mit Firebase-Token auf.
+app.delete('/api/account/:userId', async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const deleted = {};
+  try {
+    await ensureSocialSchemaReady();
+    // Zugehoerige Freundes-Codes dieses Nutzers ermitteln (fuer code-basierte Tabellen).
+    let codes = [];
+    try {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT "code" FROM "FriendRegistry" WHERE "userId" = $1`, userId
+      );
+      codes = rows.map(r => r.code).filter(Boolean);
+    } catch (_) {}
+    const idList = [userId, ...codes];
+
+    const run = async (label, sql, ...params) => {
+      try {
+        const r = await prisma.$executeRawUnsafe(sql, ...params);
+        deleted[label] = typeof r === 'number' ? r : 1;
+      } catch (e) {
+        deleted[label] = `error: ${e?.message || e}`;
+      }
+    };
+
+    // Onboarding
+    await run('onboarding', `DELETE FROM "OnboardingProfile" WHERE "userId" = $1`, userId);
+    // Freundschafts-Registry + Kanten (per userId-Code)
+    await run('friendEdges', `DELETE FROM "FriendEdge" WHERE "ownerCode" = ANY($1::text[]) OR "friendCode" = ANY($1::text[])`, idList);
+    await run('friendRegistry', `DELETE FROM "FriendRegistry" WHERE "userId" = $1 OR "code" = ANY($2::text[])`, userId, idList);
+    await run('pendingConnections', `DELETE FROM "FriendPendingConnection" WHERE "toCode" = ANY($1::text[]) OR "fromCode" = ANY($1::text[])`, idList);
+    // Chat-Nachrichten dieses Autors + Raeume, die seinen Code enthalten
+    await run('chatByAuthor', `DELETE FROM "FriendChatMessage" WHERE "authorUserId" = $1`, userId);
+    for (const c of codes) {
+      await run(`chatRoom_${c}`, `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${c}%`);
+    }
+    // Safety
+    await run('safetyBlocksBy', `DELETE FROM "SafetyBlock" WHERE "blockerUserId" = ANY($1::text[]) OR "blockedUserId" = ANY($1::text[])`, idList);
+    await run('safetyReports', `DELETE FROM "SafetyReport" WHERE "reporterUserId" = ANY($1::text[]) OR "reportedUserId" = ANY($1::text[])`, idList);
+    await run('safetySuspension', `DELETE FROM "SafetySuspension" WHERE "userId" = ANY($1::text[])`, idList);
+
+    // In-Memory-Fallbacks ebenfalls saeubern (best-effort).
+    onboardingProfiles.delete(userId);
+    for (const id of idList) {
+      friendRegistry.delete(id);
+      friendEdges.delete(id);
+      friendPendingConnections.delete(id);
+      safetyBlocks.delete(id);
+      safetySuspensions.delete(id);
+      invalidateSuspensionCache(id);
+    }
+    return res.json({ ok: true, userId, codes, deleted });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/account', error)) return;
+    return res.status(500).json({ error: 'Konto-Loeschung fehlgeschlagen' });
   }
 });
 

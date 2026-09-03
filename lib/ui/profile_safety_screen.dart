@@ -16,6 +16,7 @@ import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
 import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/config/access_config.dart';
 import 'package:parentpeak/ui/admin_moderation_screen.dart';
+import 'package:parentpeak/logic/error_reporting_service.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
@@ -552,6 +553,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                             MaterialPageRoute(
                                 builder: (_) =>
                                     const AdminModerationScreen()))),
+                    _thinDivider(theme),
+                    // Nur fuer Admin: Crashlytics-Nachweis im Release-Build.
+                    _buildCompactTile(theme,
+                        icon: Icons.bug_report_rounded,
+                        title: 'Crashlytics-Test',
+                        subtitle: 'Test-Fehlerbericht an Firebase senden',
+                        onTap: _sendCrashlyticsTest),
                   ],
                   _thinDivider(theme),
                   _buildCompactTile(theme,
@@ -1137,6 +1145,46 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         ],
       ),
     );
+  }
+
+  /// Admin-only: sendet einen Test-Fehlerbericht (non-fatal) an Crashlytics,
+  /// damit man im Release-Build nachweisen kann, dass Berichte in Firebase
+  /// ankommen. Loest KEINEN echten Crash aus (App laeuft normal weiter).
+  Future<void> _sendCrashlyticsTest() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ready = ErrorReportingService.instance.isCrashlyticsReady;
+    if (!ready) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text(
+            'Crashlytics ist in diesem Build nicht aktiv (z.B. Debug/Web). '
+            'Bitte im Release-Build auf Android/iOS testen.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    try {
+      await ErrorReportingService.instance.recordError(
+        Exception('ParentPeak Crashlytics Test (non-fatal) — ausgelöst über '
+            'Admin-Diagnose'),
+        StackTrace.current,
+        context: 'admin_crashlytics_test',
+        fatal: false,
+      );
+      if (!mounted) return;
+      messenger.showSnackBar(const SnackBar(
+        content:
+            Text('Test-Bericht gesendet. Erscheint in ~1–2 Min in Firebase '
+                'Crashlytics (Non-fatals).'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Color(0xFF16A34A),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: Text('Konnte Test-Bericht nicht senden: $e'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   Future<void> _exportUserData() async {

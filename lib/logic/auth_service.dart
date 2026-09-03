@@ -719,6 +719,21 @@ class AuthService with ChangeNotifier {
       } catch (_) {}
     }
 
+    // DSGVO Art. 17: serverseitige personenbezogene Daten loeschen — VOR dem
+    // Firebase-Delete, solange der Auth-Token noch gueltig ist (best-effort).
+    if (currentUserId != null) {
+      try {
+        final apiClient = backendApiClientFactory();
+        if (apiClient != null) {
+          await apiClient.delete('/api/account/$currentUserId');
+        }
+      } catch (e) {
+        debugPrint('deleteAccount: Backend-Loeschung fehlgeschlagen: $e');
+        // Nicht abbrechen: Firebase-Konto + lokale Daten werden trotzdem
+        // geloescht; verwaiste Server-Daten faengt der Cleanup/TTL ab.
+      }
+    }
+
     if (_firebaseReady) {
       final auth = _firebaseAuth;
       if (auth != null) {
@@ -733,11 +748,13 @@ class AuthService with ChangeNotifier {
       }
     }
 
-    // Clear all local data
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kUserKey);
-    if (currentUserId != null) {
-      await prefs.remove('$_kUserProfilePrefix$currentUserId');
+    // Alle lokalen Daten entfernen (nicht nur die zwei Auth-Keys), damit nach
+    // der Loeschung keine Rest-Profildaten auf dem Geraet bleiben.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (e) {
+      debugPrint('deleteAccount: prefs.clear fehlgeschlagen: $e');
     }
     _currentUser = null;
     notifyListeners();
