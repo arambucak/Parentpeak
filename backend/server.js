@@ -5020,8 +5020,18 @@ app.post('/api/friends/register', async (req, res) => {
   if (!code || code === 'pp-' || !name) return res.status(400).json({ error: 'code und name erforderlich' });
   try {
     await ensureSocialSchemaReady();
+    // Selbstheilung: Wenn diese UID bereits an ANDERE (alte) Codes haengt,
+    // deren Zuordnung loesen — so gehoert eine UID zu genau einem aktiven Code.
+    if (userId) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "FriendRegistry" SET "userId" = NULL WHERE "userId" = $1 AND "code" <> $2`,
+        userId, code
+      );
+    }
+    // Name kommt vom Besitzer (der sich selbst registriert). userId verbindlich
+    // setzen, wenn mitgeschickt.
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "FriendRegistry" ("code", "name", "userId", "updatedAt") VALUES ($1, $2, $3, NOW())
+      `INSERT INTO "FriendRegistry" ("code", "name", "userId", "updatedAt") VALUES ($1, $2, NULLIF($3, ''), NOW())
        ON CONFLICT ("code") DO UPDATE SET "name" = $2,
          "userId" = COALESCE(NULLIF($3, ''), "FriendRegistry"."userId"), "updatedAt" = NOW()`,
       code, name, userId
@@ -5029,7 +5039,12 @@ app.post('/api/friends/register', async (req, res) => {
     return res.json({ ok: true });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /api/friends/register', error)) return;
-    friendRegistry.set(code, { name, userId, updatedAt: new Date().toISOString() });
+    if (userId) {
+      for (const [c, v] of friendRegistry.entries()) {
+        if (c !== code && v && v.userId === userId) v.userId = null;
+      }
+    }
+    friendRegistry.set(code, { name, userId: userId || null, updatedAt: new Date().toISOString() });
     return res.json({ ok: true });
   }
 });
@@ -5720,6 +5735,26 @@ function looksLikeRoomId(id) {
   return matches != null && matches.length >= 2;
 }
 
+// Findet Registry-Fehlmappings: mehrere Codes, die auf dieselbe userId zeigen.
+// Behalten wird der zuletzt aktualisierte Code; die aelteren werden entkoppelt.
+async function findBrokenRegistryMappings() {
+  await ensureSocialSchemaReady();
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT "code", "userId", "updatedAt" FROM "FriendRegistry"
+     WHERE "userId" IS NOT NULL AND "userId" <> '' ORDER BY "updatedAt" DESC`
+  );
+  const seen = new Set();
+  const staleCodes = []; // aeltere Codes, die dieselbe UID doppeln
+  for (const r of rows) {
+    if (seen.has(r.userId)) {
+      staleCodes.push(r.code); // aelter (weil nach DESC-Sortierung spaeter)
+    } else {
+      seen.add(r.userId);
+    }
+  }
+  return staleCodes;
+}
+
 // Findet verwaiste Safety-Eintraege (Suspension/Report), deren id eine roomId
 // ist — diese entstanden durch den frueheren Melden/Sperren-Bug.
 async function findBrokenSafetyEntries() {
@@ -5744,12 +5779,16 @@ app.get('/admin/friends/cleanup-preview', requireAdmin, async (req, res) => {
   try {
     const { totalEdges, broken } = await findBrokenFriendEdges();
     const { badSuspensions, badReports } = await findBrokenSafetyEntries();
+    const staleRegistryCodes = await findBrokenRegistryMappings();
     return res.json({
       totalEdges,
-      brokenCount: broken.length,
+      brokenCount:
+          broken.length + badSuspensions.length + badReports.length +
+          staleRegistryCodes.length,
       broken,
       badSuspensions,
       badReports,
+      staleRegistryCodes,
       note: 'Nur Vorschau. Zum Loeschen: POST /admin/friends/cleanup mit {"confirm":true}.',
     });
   } catch (error) {
@@ -5764,7 +5803,9 @@ app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
   try {
     const { totalEdges, broken } = await findBrokenFriendEdges();
     const { badSuspensions, badReports } = await findBrokenSafetyEntries();
-    const totalBroken = broken.length + badSuspensions.length + badReports.length;
+    const staleRegistryCodes = await findBrokenRegistryMappings();
+    const totalBroken = broken.length + badSuspensions.length +
+        badReports.length + staleRegistryCodes.length;
     if (!confirm) {
       return res.json({
         dryRun: true,
@@ -5773,6 +5814,7 @@ app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
         broken,
         badSuspensions,
         badReports,
+        staleRegistryCodes,
         note: 'Kein confirm:true -> nichts geloescht. Sende {"confirm":true} zum Loeschen.',
       });
     }
@@ -5795,6 +5837,14 @@ app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
     for (const rid of badReports) {
       await prisma.$executeRawUnsafe(
         `DELETE FROM "SafetyReport" WHERE "id" = $1`, rid
+      );
+      deleted += 1;
+    }
+    // Fehlgemappte Alt-Codes entkoppeln (userId -> NULL), damit eine UID nur
+    // noch zu ihrem aktuellen Code gehoert. Registry-Zeile bleibt erhalten.
+    for (const staleCode of staleRegistryCodes) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "FriendRegistry" SET "userId" = NULL WHERE "code" = $1`, staleCode
       );
       deleted += 1;
     }
