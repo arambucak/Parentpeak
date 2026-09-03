@@ -47,6 +47,8 @@ void main() {
         File('.github/workflows/deploy-web-pages.yml').readAsStringSync();
 
     expect(workflow, contains('ADMIN_USER_IDS: \${{ vars.ADMIN_USER_IDS }}'));
-    expect(workflow, contains('--dart-define=ADMIN_USER_IDS='));
+    expect(workflow, isNot(contains('secrets.ADMIN_USER_IDS')));
+    expect('ADMIN_USER_IDS:'.allMatches(workflow), hasLength(1));
+    expect('--dart-define=ADMIN_USER_IDS='.allMatches(workflow), hasLength(1));
   });
 }
