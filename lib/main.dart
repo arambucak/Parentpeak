@@ -22,6 +22,7 @@ import 'package:parentpeak/ui/kettenbrecher_dashboard.dart';
 import 'package:parentpeak/ui/auth/login_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_screen.dart';
+import 'package:parentpeak/logic/onboarding_sync_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/entitlement_service.dart';
@@ -522,7 +523,15 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _checkOnboarding() async {
-    final completed = await OnboardingScreen.isCompleted();
+    var completed = await OnboardingScreen.isCompleted();
+    // Cross-Device (Option A): Ist der Nutzer eingeloggt, aber lokal noch nicht
+    // als "onboarded" markiert, den account-gebundenen Status vom Server holen.
+    // So muss man auf einem neuen Geraet nicht erneut durchs Onboarding.
+    if (!completed && AuthService.instance.currentUser != null) {
+      try {
+        completed = await OnboardingSyncService.instance.pullCompleted();
+      } catch (_) {}
+    }
     if (mounted) {
       setState(() => _onboardingCompleted = completed);
     }
@@ -560,6 +569,8 @@ class _AuthGateState extends State<AuthGate> {
       setState(() {});
     }
     _syncEntitlements();
+    // Nach Login den (ggf. server-seitigen) Onboarding-Status neu bestimmen.
+    _checkOnboarding();
   }
 
   @override

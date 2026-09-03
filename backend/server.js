@@ -1136,7 +1136,7 @@ app.use(async (req, res, next) => {
 
   // Calendar and todo endpoints: accept userId from request body as lightweight auth.
   // Firebase token verification is still attempted; body userId is the fallback.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
@@ -1936,6 +1936,19 @@ async function ensureSocialSchemaReady() {
       "reason" TEXT NOT NULL DEFAULT '',
       "suspendedBy" TEXT NOT NULL DEFAULT '',
       "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  // Onboarding Minimal-Sync (Option A): nur unkritische Stammdaten, damit der
+  // Nutzer auf einem neuen Geraet nicht erneut durchs Onboarding muss.
+  // KEINE sensiblen Kinderdaten hier.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "OnboardingProfile" (
+      "userId" TEXT PRIMARY KEY,
+      "completed" BOOLEAN NOT NULL DEFAULT FALSE,
+      "familyName" TEXT NOT NULL DEFAULT '',
+      "parentRole" TEXT NOT NULL DEFAULT '',
+      "priorities" TEXT NOT NULL DEFAULT '',
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
   socialSchemaEnsured = true;
@@ -5452,6 +5465,74 @@ app.get('/api/friends/debug/:code', async (req, res) => {
     out.errors.push(e?.message || String(e));
   }
   return res.json(out);
+});
+
+// ─── Onboarding Minimal-Sync (Option A) ────────────────────────────────────
+const onboardingProfiles = new Map(); // in-memory fallback: userId -> {...}
+
+// Onboarding-Status/Stammdaten fuer einen Nutzer abrufen.
+app.get('/api/onboarding/:userId', async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "completed", "familyName", "parentRole", "priorities" FROM "OnboardingProfile" WHERE "userId" = $1`,
+      userId
+    );
+    if (rows.length === 0) {
+      return res.json({ completed: false });
+    }
+    const r = rows[0];
+    return res.json({
+      completed: r.completed === true,
+      familyName: r.familyName || '',
+      parentRole: r.parentRole || '',
+      priorities: r.priorities ? r.priorities.split('|').filter(Boolean) : [],
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/onboarding', error)) return;
+    const mem = onboardingProfiles.get(userId);
+    if (!mem) return res.json({ completed: false });
+    return res.json(mem);
+  }
+});
+
+// Onboarding-Status/Stammdaten speichern (nur unkritische Felder).
+app.post('/api/onboarding', async (req, res) => {
+  const userId = (req.body.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const completed = req.body.completed === true;
+  const familyName = (req.body.familyName || '').toString().trim().slice(0, 100);
+  const parentRole = (req.body.parentRole || '').toString().trim().slice(0, 50);
+  const priorities = Array.isArray(req.body.priorities)
+      ? req.body.priorities.map(p => p.toString().trim()).filter(Boolean).join('|').slice(0, 300)
+      : '';
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "OnboardingProfile" ("userId", "completed", "familyName", "parentRole", "priorities", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       ON CONFLICT ("userId") DO UPDATE SET
+         "completed" = "OnboardingProfile"."completed" OR $2,
+         "familyName" = COALESCE(NULLIF($3, ''), "OnboardingProfile"."familyName"),
+         "parentRole" = COALESCE(NULLIF($4, ''), "OnboardingProfile"."parentRole"),
+         "priorities" = COALESCE(NULLIF($5, ''), "OnboardingProfile"."priorities"),
+         "updatedAt" = NOW()`,
+      userId, completed, familyName, parentRole, priorities
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/onboarding', error)) return;
+    const prev = onboardingProfiles.get(userId) || { completed: false, familyName: '', parentRole: '', priorities: [] };
+    onboardingProfiles.set(userId, {
+      completed: prev.completed || completed,
+      familyName: familyName || prev.familyName,
+      parentRole: parentRole || prev.parentRole,
+      priorities: priorities ? priorities.split('|').filter(Boolean) : prev.priorities,
+    });
+    return res.json({ ok: true });
+  }
 });
 
 // ─── Safety (Prio 4): server-side block + report ───────────────────────────

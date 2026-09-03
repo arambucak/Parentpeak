@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +8,7 @@ import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_pages.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/services/location_service.dart';
+import 'package:parentpeak/logic/onboarding_sync_service.dart';
 
 /// Onboarding-Ergebnis das nach Abschluss zurückgegeben wird.
 class OnboardingResult {
@@ -176,6 +178,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     // Speichere die personalisierte Kachel-Reihenfolge
     final tileOrder = _buildTileOrder();
     await prefs.setStringList('home.tile_order.v1', tileOrder);
+
+    // Minimal-Sync: Abschluss + unkritische Stammdaten account-gebunden
+    // sichern, damit ein neues Geraet das Onboarding ueberspringt (best-effort).
+    unawaited(OnboardingSyncService.instance.pushCompleted());
 
     widget.onComplete();
   }
