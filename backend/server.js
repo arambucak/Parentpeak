@@ -9032,7 +9032,7 @@ app.get('/api/community-events/:id/attendees', async (req, res) => {
 app.post('/api/treasures', async (req, res) => {
   const {
     userId, title, description, location, latitude, longitude,
-    category, condition, isFree, price, visibility, shareRadiusKm, photoUrl
+    category, condition, isFree, price, visibility, shareRadiusKm, photoUrl, photoUrls
   } = req.body;
 
   // Validate required fields
@@ -9073,6 +9073,12 @@ app.post('/api/treasures', async (req, res) => {
         visibility: visibility ? String(visibility).slice(0, 50) : 'nearby',
         shareRadiusKm: shareRadiusKm ? parseFloat(shareRadiusKm) : 10,
         photoUrl: photoUrl ? String(photoUrl).slice(0, 500) : null,
+        photoUrls: Array.isArray(photoUrls)
+          ? photoUrls
+              .map(u => String(u).slice(0, 500))
+              .filter(u => u.startsWith('http'))
+              .slice(0, 8)
+          : (photoUrl ? [String(photoUrl).slice(0, 500)] : []),
         expiresAt: expiresAt,
         status: severeContent ? 'archived' : 'available',
       },
@@ -9155,9 +9161,20 @@ app.get('/api/treasures', async (req, res) => {
       isFree: t.isFree,
       price: t.price,
       photoUrl: t.photoUrl,
+      photoUrls: Array.isArray(t.photoUrls) ? t.photoUrls : [],
+      pickupSlots: Array.isArray(t.pickupSlots) ? t.pickupSlots : [],
       status: t.status,
+      views: t.views,
       rating: t.rating,
       ratingCount: t.ratingCount,
+      // Reservierungs-Zähler (offene Reservierungen)
+      reservedCount: Array.isArray(t.handovers)
+        ? t.handovers.filter(h => h.status === 'pending' || h.status === 'reserved').length
+        : 0,
+      // Echte Distanz in km (falls Betrachter-Koordinaten vorhanden)
+      distanceKm: (latitude !== undefined && longitude !== undefined && t.latitude && t.longitude)
+        ? Math.round(haversineDistance(parseFloat(latitude), parseFloat(longitude), t.latitude, t.longitude) * 10) / 10
+        : null,
       createdAt: t.createdAt,
       expiresAt: t.expiresAt,
     }));
@@ -9497,6 +9514,179 @@ app.post('/api/treasures/:id/report', async (req, res) => {
   } catch (err) {
     console.error('❌ Treasure report create error:', err.message);
     res.status(500).json({ error: `Failed to create treasure report: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/treasures/:id/reserve
+ * Reserviert einen Schatz für einen Nutzer (erzeugt einen TreasureHandover).
+ * Der Verschenker sieht die Reservierung über GET /api/treasures/mine.
+ */
+app.post('/api/treasures/:id/reserve', async (req, res) => {
+  const { id } = req.params;
+  const { requesterUserId, preferredSlot, handoverMode, message } = req.body;
+
+  if (!requesterUserId) {
+    return res.status(400).json({ error: 'requesterUserId erforderlich' });
+  }
+
+  try {
+    const treasure = await prisma.treasureItem.findUnique({
+      where: { id },
+      include: { handovers: true },
+    });
+    if (!treasure) {
+      return res.status(404).json({ error: 'Treasure nicht gefunden' });
+    }
+    if (treasure.status === 'archived') {
+      return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
+    }
+    // Eigenes Angebot kann man nicht reservieren
+    if (treasure.userId === String(requesterUserId)) {
+      return res.status(400).json({ error: 'Du kannst dein eigenes Angebot nicht reservieren' });
+    }
+
+    // Doppelte Reservierung desselben Nutzers vermeiden
+    const existing = await prisma.treasureHandover.findFirst({
+      where: {
+        treasureId: id,
+        requesterId: String(requesterUserId),
+        status: { in: ['pending', 'reserved'] },
+      },
+    });
+    if (existing) {
+      return res.status(200).json({
+        handover: existing,
+        alreadyReserved: true,
+        message: 'Bereits von dir reserviert',
+      });
+    }
+
+    const modeNote = handoverMode === 'swap' ? 'Stiller Tausch' : 'Kurz treffen';
+    const combinedNotes = [modeNote, message]
+      .filter(Boolean)
+      .join(' · ')
+      .slice(0, 500);
+
+    const handover = await prisma.treasureHandover.create({
+      data: {
+        treasureId: id,
+        requesterId: String(requesterUserId).slice(0, 100),
+        status: 'reserved',
+        location: preferredSlot ? String(preferredSlot).slice(0, 200) : null,
+        notes: combinedNotes || null,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Artikel-Status auf 'reserved' setzen (bleibt sichtbar, aber markiert)
+    await prisma.treasureItem.update({
+      where: { id },
+      data: { status: 'reserved', updatedAt: new Date() },
+    });
+
+    res.status(201).json({
+      handover,
+      alreadyReserved: false,
+      giverUserId: treasure.userId,
+      message: 'Reservierung gespeichert. Die schenkende Familie wurde benachrichtigt.',
+    });
+  } catch (err) {
+    console.error('❌ Treasure reserve error:', err.message);
+    res.status(500).json({ error: `Reservierung fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/treasures/:id/cancel-reservation
+ * Hebt die Reservierung des anfragenden Nutzers auf.
+ */
+app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
+  const { id } = req.params;
+  const { requesterUserId } = req.body;
+  if (!requesterUserId) {
+    return res.status(400).json({ error: 'requesterUserId erforderlich' });
+  }
+  try {
+    await prisma.treasureHandover.updateMany({
+      where: {
+        treasureId: id,
+        requesterId: String(requesterUserId),
+        status: { in: ['pending', 'reserved'] },
+      },
+      data: { status: 'cancelled', updatedAt: new Date() },
+    });
+    // Wenn keine offenen Reservierungen mehr: Artikel wieder 'available'
+    const openCount = await prisma.treasureHandover.count({
+      where: { treasureId: id, status: { in: ['pending', 'reserved'] } },
+    });
+    if (openCount === 0) {
+      await prisma.treasureItem.update({
+        where: { id },
+        data: { status: 'available', updatedAt: new Date() },
+      }).catch(() => {});
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Cancel reservation error:', err.message);
+    res.status(500).json({ error: `Stornierung fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
+ * GET /api/treasures/mine?userId=...
+ * Liefert die eigenen Angebote MIT Reservierungen (für den Verschenker)
+ * plus die vom Nutzer reservierten Artikel (für den Abholer).
+ */
+app.get('/api/treasures/mine', async (req, res) => {
+  const userId = String(req.query.userId || '').trim();
+  if (!userId) {
+    return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  try {
+    // Eigene Angebote + wer sie reserviert hat
+    const myOffers = await prisma.treasureItem.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: { handovers: true },
+      take: 100,
+    });
+
+    // Reservierungen die der Nutzer selbst gemacht hat
+    const myReservations = await prisma.treasureHandover.findMany({
+      where: { requesterId: userId, status: { in: ['pending', 'reserved'] } },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    res.json({
+      offers: myOffers.map(t => ({
+        id: t.id,
+        title: t.title,
+        photoUrl: t.photoUrl,
+        status: t.status,
+        reservations: (t.handovers || [])
+          .filter(h => h.status === 'reserved' || h.status === 'pending')
+          .map(h => ({
+            id: h.id,
+            requesterId: h.requesterId,
+            status: h.status,
+            location: h.location,
+            notes: h.notes,
+            createdAt: h.createdAt,
+          })),
+      })),
+      reservedByMe: myReservations.map(h => ({
+        id: h.id,
+        treasureId: h.treasureId,
+        status: h.status,
+        location: h.location,
+        createdAt: h.createdAt,
+      })),
+    });
+  } catch (err) {
+    console.error('❌ Treasures mine error:', err.message);
+    res.status(500).json({ error: `Failed to load: ${err.message}` });
   }
 });
 

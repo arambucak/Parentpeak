@@ -202,11 +202,17 @@ class TreasureBackendService {
       category: _mapCategoryForUi(categoryRaw),
       sizeAge: fallbackListing?.sizeAge ?? 'Flexible Größe',
       conditionKey: _mapConditionForUi(rawCondition),
-      distanceMeters: ((rawRadiusKm ??
-                  (fallbackListing?.distanceMeters.toDouble() ?? 10000) /
-                      1000) *
-              1000)
-          .round(),
+      // Echte Distanz vom Backend (distanceKm) bevorzugen; sonst Fallback.
+      distanceMeters: () {
+        final realKm =
+            double.tryParse(treasure['distanceKm']?.toString() ?? '');
+        if (realKm != null) return (realKm * 1000).round();
+        return ((rawRadiusKm ??
+                    (fallbackListing?.distanceMeters.toDouble() ?? 10000) /
+                        1000) *
+                1000)
+            .round();
+      }(),
       colorLabel: fallbackListing?.colorLabel ?? 'Neutral',
       note: treasure['description']?.toString() ?? fallbackListing?.note ?? '',
       locationLabel:
