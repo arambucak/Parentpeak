@@ -51,4 +51,13 @@ void main() {
     expect('ADMIN_USER_IDS:'.allMatches(workflow), hasLength(1));
     expect('--dart-define=ADMIN_USER_IDS='.allMatches(workflow), hasLength(1));
   });
+
+  test('Android release builds require upload-keystore signing', () {
+    final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+
+    expect(gradle, contains('val isReleaseBuild'));
+    expect(gradle, contains('check(keyPropertiesFile.exists())'));
+    expect(gradle, contains('requiredSigningProperties'));
+    expect(gradle, contains('check(releaseKeystore.isFile)'));
+  });
 }

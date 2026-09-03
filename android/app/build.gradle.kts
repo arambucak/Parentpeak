@@ -14,6 +14,35 @@ if (keyPropertiesFile.exists()) {
     keyProperties.load(FileInputStream(keyPropertiesFile))
 }
 
+val isReleaseBuild = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+val requiredSigningProperties = listOf(
+    "storePassword",
+    "keyPassword",
+    "keyAlias",
+    "storeFile",
+)
+
+if (isReleaseBuild) {
+    check(keyPropertiesFile.exists()) {
+        "Android release signing is not configured. Copy android/key.properties.example to android/key.properties and add the upload-keystore credentials."
+    }
+
+    val missingProperties = requiredSigningProperties.filter { name ->
+        keyProperties.getProperty(name).isNullOrBlank() ||
+            keyProperties.getProperty(name).startsWith("REPLACE_WITH_")
+    }
+    check(missingProperties.isEmpty()) {
+        "Android release signing properties are missing or still placeholders: ${missingProperties.joinToString()}"
+    }
+
+    val releaseKeystore = file(keyProperties.getProperty("storeFile"))
+    check(releaseKeystore.isFile) {
+        "Android upload keystore not found at ${releaseKeystore.absolutePath}"
+    }
+}
+
 android {
     namespace = "com.parentpeak.app"
     compileSdk = flutter.compileSdkVersion
@@ -36,10 +65,10 @@ android {
     signingConfigs {
         create("release") {
             if (keyPropertiesFile.exists()) {
-                keyAlias = keyProperties["keyAlias"] as String?
-                keyPassword = keyProperties["keyPassword"] as String?
-                storeFile = file(keyProperties["storeFile"] as String)
-                storePassword = keyProperties["storePassword"] as String?
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
             }
         }
     }
