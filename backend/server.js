@@ -5014,10 +5014,10 @@ const friendRegistry = new Map();          // in-memory fallback
 const friendPendingConnections = new Map(); // in-memory fallback
 
 app.post('/api/friends/register', async (req, res) => {
-  const code = (req.body.code || '').toString().trim().toLowerCase();
+  const code = canonicalCode(req.body.code);
   const name = (req.body.name || '').toString().trim();
   const userId = (req.body.userId || '').toString().trim();
-  if (!code || !name) return res.status(400).json({ error: 'code und name erforderlich' });
+  if (!code || code === 'pp-' || !name) return res.status(400).json({ error: 'code und name erforderlich' });
   try {
     await ensureSocialSchemaReady();
     await prisma.$executeRawUnsafe(
@@ -5035,7 +5035,7 @@ app.post('/api/friends/register', async (req, res) => {
 });
 
 app.get('/api/friends/lookup/:code', async (req, res) => {
-  const code = (req.params.code || '').toString().trim().toLowerCase();
+  const code = canonicalCode(req.params.code);
   try {
     await ensureSocialSchemaReady();
     const rows = await prisma.$queryRawUnsafe(
@@ -5154,10 +5154,10 @@ function invalidateSuspensionCache(userId) {
 // Save a friend edge for the owner (one direction). The client calls this for
 // both sides so each user can later restore their own list.
 app.post('/api/friends/edge', async (req, res) => {
-  const ownerCode = (req.body.ownerCode || '').toString().trim().toLowerCase();
-  const friendCode = (req.body.friendCode || '').toString().trim().toLowerCase();
+  const ownerCode = canonicalCode(req.body.ownerCode);
+  const friendCode = canonicalCode(req.body.friendCode);
   const friendName = (req.body.friendName || 'Familie').toString().trim().slice(0, 100);
-  if (!ownerCode || !friendCode) {
+  if (!ownerCode || ownerCode === 'pp-' || !friendCode || friendCode === 'pp-') {
     return res.status(400).json({ error: 'ownerCode und friendCode erforderlich' });
   }
   try {
@@ -5239,19 +5239,31 @@ async function resolveFriendRegistry(code) {
   return { name: null, userId: null };
 }
 
+// Bringt einen Freundes-Code in die kanonische Form 'pp-xxxxxx' (klein, genau
+// ein Bindestrich nach 'pp'). Verhindert kaputte Codes ohne Bindestrich.
+function canonicalCode(raw) {
+  let s = (raw || '').toString().trim().toLowerCase().replace(/\s/g, '');
+  s = s.replace(/-/g, '');
+  if (s.startsWith('pp')) {
+    const rest = s.slice(2);
+    return rest ? `pp-${rest}` : 'pp-';
+  }
+  return s ? `pp-${s}` : '';
+}
+
 // Deterministische, geteilte Raum-ID aus zwei Codes (beide Seiten identisch).
 function computeRoomId(codeA, codeB) {
-  return [codeA, codeB].map(x => x.toLowerCase()).sort().join('-');
+  return [canonicalCode(codeA), canonicalCode(codeB)].sort().join('-');
 }
 
 /// Atomare beidseitige Freundschaft: schreibt beide Kanten, loest Namen auf,
 /// liefert die geteilte roomId zurueck. Kern des sauberen Chat-Fundaments.
 app.post('/api/friends/connect-mutual', async (req, res) => {
-  const myCode = (req.body.myCode || '').toString().trim().toLowerCase();
+  const myCode = canonicalCode(req.body.myCode);
   const myName = (req.body.myName || '').toString().trim().slice(0, 100);
   const myUserId = (req.body.myUserId || '').toString().trim();
-  const friendCode = (req.body.friendCode || '').toString().trim().toLowerCase();
-  if (!myCode || !friendCode) {
+  const friendCode = canonicalCode(req.body.friendCode);
+  if (!myCode || myCode === 'pp-' || !friendCode || friendCode === 'pp-') {
     return res.status(400).json({ error: 'myCode und friendCode erforderlich' });
   }
   if (myCode === friendCode) {

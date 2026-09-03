@@ -25,6 +25,22 @@ import 'package:parentpeak/main.dart';
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
+/// Bringt einen Freundes-Code in die kanonische Form `pp-xxxxxx` (klein,
+/// genau ein Bindestrich nach 'pp'). Akzeptiert Eingaben mit/ohne Bindestrich,
+/// mit Leerzeichen oder in Grossbuchstaben. Verhindert kaputte Kanten wie
+/// `pprkfns8` (ohne Bindestrich), die nie zum echten Code `pp-rkfns8` passen.
+String canonicalFriendCode(String raw) {
+  var s = raw.trim().toLowerCase().replaceAll(RegExp(r'[\s]'), '');
+  // Alle Bindestriche entfernen, dann genau einen nach 'pp' setzen.
+  s = s.replaceAll('-', '');
+  if (s.startsWith('pp')) {
+    final rest = s.substring(2);
+    return rest.isEmpty ? 'pp-' : 'pp-$rest';
+  }
+  // Falls jemand den Code ohne 'pp'-Praefix eingibt.
+  return 'pp-$s';
+}
+
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
 
@@ -1549,9 +1565,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   /// Looks up a display name for the given code via getProfiles().
   Future<String?> _lookupNameByCode(String rawCode) async {
-    final code = rawCode.trim().toLowerCase();
-    final normalized = code.startsWith('pp-') ? code : code;
-    if (normalized.isEmpty) return null;
+    final normalized = canonicalFriendCode(rawCode);
+    if (normalized == 'pp-') return null;
     return _backend.lookupFriendName(normalized);
   }
 
@@ -1580,8 +1595,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               });
               return;
             }
-            if (normalized == myCode ||
-                normalized == myCode.replaceFirst('PP-', '')) {
+            if (canonicalFriendCode(val) == canonicalFriendCode(myCode)) {
               setSheet(() {
                 resolvedName = null;
                 errorMsg = 'Das ist dein eigener Code!';
@@ -1721,13 +1735,17 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
+                    // Nur verbinden, wenn der Code auf einen echten Nutzer
+                    // aufgeloest wurde (resolvedName != null). Das verhindert
+                    // kaputte Kanten zu Phantom-/Tippfehler-Codes.
                     onPressed: errorMsg != null ||
                             codeCtrl.text.trim().isEmpty ||
-                            isLooking
+                            isLooking ||
+                            resolvedName == null
                         ? null
                         : () async {
-                            final raw = codeCtrl.text.trim().toLowerCase();
-                            final code = raw.startsWith('pp-') ? raw : raw;
+                            // Kanonischer Code (immer pp-xxxxxx, ein Bindestrich).
+                            final code = canonicalFriendCode(codeCtrl.text);
                             final myName = _profile?.displayName ??
                                 AuthService.instance.currentUser?.displayName ??
                                 'Familien-Kontakt';
