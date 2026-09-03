@@ -2133,6 +2133,17 @@ class _ProfileFormState extends State<_ProfileForm> {
   final _specialsCustomCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Anzeigename aus dem Konto vorbelegen — Eltern tippen ihn nicht erneut.
+    final accountName =
+        AuthService.instance.currentUser?.displayName.trim() ?? '';
+    if (accountName.isNotEmpty) {
+      _nameCtrl.text = accountName;
+    }
+  }
+
+  @override
   void dispose() {
     _pageCtrl.dispose();
     _nameCtrl.dispose();

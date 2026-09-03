@@ -9,6 +9,7 @@ import 'package:parentpeak/ui/onboarding/onboarding_pages.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/onboarding_sync_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
 
 /// Onboarding-Ergebnis das nach Abschluss zurückgegeben wird.
 class OnboardingResult {
@@ -62,6 +63,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
+    // Der Anzeigename kommt aus der Registrierung — Feld vorbelegen, damit der
+    // Nutzer nicht erneut tippen muss (nur bestaetigen).
+    final existingName = FirebaseAuth.instance.currentUser?.displayName?.trim();
+    if (existingName != null && existingName.isNotEmpty) {
+      _familyNameController.text = existingName;
+    }
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -136,18 +143,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_completedKey, true);
 
-    // Save family name
+    // Anzeigename (aus Registrierung vorbelegt, ggf. hier bestaetigt/angepasst)
+    // ist die EINE app-weite Identitaet: Firebase displayName + UserProfile.
     final familyName = _familyNameController.text.trim();
     if (familyName.isNotEmpty) {
       await prefs.setString('onboarding.family_name', familyName);
-      // Also set as Firebase display name so it shows in chat & network
       try {
         final user = FirebaseAuth.instance.currentUser;
-        if (user != null &&
-            (user.displayName == null || user.displayName!.trim().isEmpty)) {
+        if (user != null && user.displayName?.trim() != familyName) {
           await user.updateDisplayName(familyName);
         }
       } catch (_) {}
+      // App-weit serverseitig sichern (uid -> displayName).
+      unawaited(UserProfileService.instance.setDisplayName(familyName));
     }
 
     if (_selectedRoles.isNotEmpty) {

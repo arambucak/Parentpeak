@@ -17,6 +17,8 @@ import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/config/access_config.dart';
 import 'package:parentpeak/ui/admin_moderation_screen.dart';
 import 'package:parentpeak/logic/error_reporting_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
@@ -222,10 +224,21 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Text(
-                      name,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
+                    GestureDetector(
+                      onTap: () => _editDisplayName(name),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            name,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(Icons.edit_rounded,
+                              size: 16, color: theme.colorScheme.outline),
+                        ],
                       ),
                     ),
                     if (email.isNotEmpty) ...[
@@ -1145,6 +1158,48 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         ],
       ),
     );
+  }
+
+  /// Anzeigenamen zentral aendern — gilt app-weit (Firebase + UserProfile).
+  Future<void> _editDisplayName(String current) async {
+    final ctrl = TextEditingController(text: current);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Anzeigename ändern'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Dein Anzeigename',
+            helperText: 'So sehen dich andere Eltern (app-weit).',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Speichern')),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty || newName == current) return;
+    final messenger = ScaffoldMessenger.of(context);
+    // Firebase displayName + serverseitiges UserProfile aktualisieren.
+    try {
+      await FirebaseAuth.instance.currentUser?.updateDisplayName(newName);
+    } catch (_) {}
+    await UserProfileService.instance.setDisplayName(newName);
+    if (!mounted) return;
+    setState(() {});
+    messenger.showSnackBar(SnackBar(
+      content: Text('Anzeigename aktualisiert: $newName'),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: const Color(0xFF16A34A),
+    ));
   }
 
   /// Admin-only: sendet einen Test-Fehlerbericht (non-fatal) an Crashlytics,
