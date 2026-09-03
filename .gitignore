@@ -37,7 +37,9 @@ node_modules/
 
 # Keystore
 *.jks
+*.jks.*
 *.keystore
+*.keystore.*
 # Remove bundled local JDK from repo
 lib/ui/oracleJdk-25/
 
