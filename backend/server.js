@@ -1170,6 +1170,50 @@ const allowedGeminiModels = new Set([
   'gemini-3.5-flash',
 ]);
 
+/**
+ * GET /ai/health
+ * Öffentlicher Selbsttest: prüft ob der Gemini-Key funktioniert
+ * (ohne Secrets preiszugeben). Für Launch-Monitoring.
+ */
+app.get('/ai/health', async (req, res) => {
+  if (!geminiApiKey) {
+    return res.json({ ok: false, reason: 'GEMINI_API_KEY nicht gesetzt' });
+  }
+  const model = 'gemini-3.5-flash';
+  const body = JSON.stringify({
+    contents: [{ role: 'user', parts: [{ text: 'ping' }] }],
+    generationConfig: { maxOutputTokens: 5 },
+  });
+  const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  try {
+    // Erst Header, dann Query-Param (wie im Proxy)
+    let up = await fetch(baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiApiKey },
+      body,
+      signal: AbortSignal.timeout(15000),
+    });
+    let method = 'header';
+    if (up.status === 401 || up.status === 403) {
+      up = await fetch(`${baseUrl}?key=${encodeURIComponent(geminiApiKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: AbortSignal.timeout(15000),
+      });
+      method = 'query';
+    }
+    return res.json({
+      ok: up.ok,
+      status: up.status,
+      authMethod: up.ok ? method : null,
+      reason: up.ok ? 'Gemini erreichbar' : `Gemini antwortet mit ${up.status}`,
+    });
+  } catch (e) {
+    return res.json({ ok: false, reason: `Fehler: ${e.message}` });
+  }
+});
+
 app.post('/ai/generate', async (req, res) => {
   if (!geminiApiKey) {
     return res.status(503).json({ error: 'KI-Dienst nicht konfiguriert' });
