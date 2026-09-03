@@ -5310,6 +5310,30 @@ app.post('/api/friends/connect-mutual', async (req, res) => {
   }
 });
 
+// Diagnose (read-only) fuer Freundschaft/Chat. Gibt KEINE Geheimnisse preis:
+// nur Codes, Namen, ob eine userId hinterlegt ist (bool) und die Kanten.
+app.get('/api/friends/debug/:code', async (req, res) => {
+  const code = (req.params.code || '').toString().trim().toLowerCase();
+  if (!code) return res.status(400).json({ error: 'code erforderlich' });
+  const out = { code, registry: null, edges: [], errors: [] };
+  try {
+    await ensureSocialSchemaReady();
+    const reg = await prisma.$queryRawUnsafe(
+      `SELECT "code", "name", ("userId" IS NOT NULL AND "userId" <> '') AS "hasUserId" FROM "FriendRegistry" WHERE "code" = $1`,
+      code
+    );
+    out.registry = reg[0] || null;
+    const edges = await prisma.$queryRawUnsafe(
+      `SELECT "ownerCode", "friendCode", "friendName" FROM "FriendEdge" WHERE "ownerCode" = $1 OR "friendCode" = $1`,
+      code
+    );
+    out.edges = edges;
+  } catch (e) {
+    out.errors.push(e?.message || String(e));
+  }
+  return res.json(out);
+});
+
 // ─── Safety (Prio 4): server-side block + report ───────────────────────────
 app.post('/api/safety/block', async (req, res) => {
   const blockerUserId = (req.body.blockerUserId || '').toString().trim();
