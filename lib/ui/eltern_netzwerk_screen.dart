@@ -10,6 +10,8 @@ import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/friendship_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
@@ -76,11 +78,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     ParentCoinService.instance.initialize();
     ParentCoinService.instance.addListener(_rebuild);
     ParentFriendsService.instance.addListener(_rebuild);
+    FriendshipService.instance.addListener(_rebuild);
     _init();
-    if (widget.initialFriendCode != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showAddFriendSheet(
-          Theme.of(context),
-          prefillCode: widget.initialFriendCode));
+    final incoming = widget.initialFriendCode;
+    if (incoming != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (incoming.startsWith('invite:')) {
+          // NEU: UID-Einladungslink -> Anfrage-Flow (1 Tap).
+          _handleInviteToken(incoming.substring('invite:'.length));
+        } else {
+          _showAddFriendSheet(Theme.of(context), prefillCode: incoming);
+        }
+      });
     }
   }
 
@@ -89,11 +98,55 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     _tabs.dispose();
     ParentCoinService.instance.removeListener(_rebuild);
     ParentFriendsService.instance.removeListener(_rebuild);
+    FriendshipService.instance.removeListener(_rebuild);
     super.dispose();
   }
 
   void _rebuild() {
     if (mounted) setState(() {});
+  }
+
+  /// Einladungslink (/f/<token>) verarbeiten: Einladenden auflösen und eine
+  /// Freundschaftsanfrage senden — 1 Tap, kein Code-Abtippen.
+  Future<void> _handleInviteToken(String token) async {
+    final resolved = await FriendshipService.instance.resolveInvite(token);
+    if (!mounted) return;
+    if (resolved == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Einladung ungültig oder abgelaufen.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    final name = resolved['name']?.isNotEmpty == true
+        ? resolved['name']!
+        : 'diese Familie';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Verbinden?'),
+        content: Text('Möchtest du dich mit $name verbinden?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Verbinden')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(sent
+          ? 'Anfrage an $name gesendet. 👋'
+          : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: sent ? const Color(0xFF16A34A) : null,
+    ));
   }
 
   Future<void> _init() async {
@@ -112,13 +165,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     // nach dem ersten initialize() erfolgte.
     await ParentCoinService.instance.refreshReferralCodeForCurrentUser();
 
-    // Register own code+name+userId so others can find us by code and so
-    // Push-Nachrichten uns erreichen (code -> userId Mapping).
-    final myCode = ParentFriendsService.instance.myCode;
-    final myName = _profile?.displayName ??
-        AuthService.instance.currentUser?.displayName ??
-        'Familien-Kontakt';
+    // NEUES FUNDAMENT: den app-weiten Anzeigenamen serverseitig sichern
+    // (uid -> displayName). Kommt aus der Registrierung; hier nur gespiegelt.
+    final myName = AuthService.instance.currentUser?.displayName ??
+        _profile?.displayName ??
+        'Familie';
     final myUserId = AuthService.instance.currentUser?.uid ?? '';
+    unawaited(UserProfileService.instance.setDisplayName(myName));
+    // Neue UID-Freundschaften + offene Anfragen laden.
+    unawaited(FriendshipService.instance.load());
+
+    // (Legacy, uebergangsweise) alte Code-Registrierung — schadet nicht.
+    final myCode = ParentFriendsService.instance.myCode;
     unawaited(_backend.registerFriendCode(myCode, myName, userId: myUserId));
 
     // Auto-add anyone who connected with us since last open. Ueber
@@ -1013,7 +1071,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   Widget _freundeTab(ThemeData theme) {
     final myCode = ParentFriendsService.instance.myCode.toUpperCase();
-    final friends = ParentFriendsService.instance.friends;
     final shareMsg = 'Hey! 👋 Ich bin auf ParentPeak – verbinde dich mit mir:\n'
         'parentpeak.de/freund/$myCode';
 
@@ -1086,7 +1143,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   child: _shareActionBtn(Icons.ios_share_rounded, 'Teilen',
                       () async {
                 final box = context.findRenderObject() as RenderBox?;
-                await Share.share(shareMsg,
+                // Frischen Einladungslink erzeugen (1-Tap-Verbinden fuer den
+                // Empfaenger). Fallback: alte Code-Nachricht.
+                final link =
+                    await FriendshipService.instance.createInviteLink();
+                final msg = link != null
+                    ? 'Hey! 👋 Verbinde dich mit mir auf ParentPeak:\n$link'
+                    : shareMsg;
+                await Share.share(msg,
                     sharePositionOrigin: box != null
                         ? box.localToGlobal(Offset.zero) & box.size
                         : null);
@@ -1094,7 +1158,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               const SizedBox(width: 8),
               Expanded(
                   child: _shareActionBtn(Icons.qr_code_2_rounded, 'QR-Code',
-                      () => _showFriendQR(theme, myCode))),
+                      () async {
+                final link =
+                    await FriendshipService.instance.createInviteLink();
+                if (!mounted) return;
+                _showFriendQR(theme, link ?? 'parentpeak.de/freund/$myCode');
+              })),
             ]),
           ]),
         ),
@@ -1119,23 +1188,184 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         _suggestedParentsSection(theme),
         const SizedBox(height: 32),
 
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'my_friends'),
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          if (friends.isNotEmpty)
-            Text('${friends.length} verbunden',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: const Color(0xFF7C3AED))),
-        ]),
-        const SizedBox(height: 12),
+        // NEUES UID-Fundament: offene Anfragen + Freundesliste vom Server.
+        _friendRequestsSection(theme),
+        _uidFriendsSection(theme),
+      ]),
+    );
+  }
 
-        if (friends.isEmpty)
-          _emptyFriendsState(theme)
-        else
-          ...friends.map((f) => _friendCard(theme, f)),
+  // ── Eingehende Freundschaftsanfragen (annehmen/ablehnen) ──────────────────
+  Widget _friendRequestsSection(ThemeData theme) {
+    final incoming = FriendshipService.instance.incoming;
+    if (incoming.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Anfragen (${incoming.length})',
+          style: theme.textTheme.titleSmall
+              ?.copyWith(fontWeight: FontWeight.w800)),
+      const SizedBox(height: 12),
+      ...incoming.map((f) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.15)),
+            ),
+            child: Row(children: [
+              CircleAvatar(
+                  backgroundColor: _avatarColor(f.name),
+                  child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w800))),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text('${f.name} möchte sich verbinden',
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600))),
+              IconButton(
+                icon: const Icon(Icons.check_circle_rounded,
+                    color: Color(0xFF16A34A)),
+                tooltip: 'Annehmen',
+                onPressed: () async {
+                  await FriendshipService.instance.accept(f.uid);
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.cancel_rounded,
+                    color: theme.colorScheme.outline),
+                tooltip: 'Ablehnen',
+                onPressed: () async {
+                  await FriendshipService.instance.remove(f.uid);
+                },
+              ),
+            ]),
+          )),
+      const SizedBox(height: 20),
+    ]);
+  }
+
+  // ── Bestätigte Freunde (UID-basiert) ──────────────────────────────────────
+  Widget _uidFriendsSection(ThemeData theme) {
+    final friends = FriendshipService.instance.friends;
+    final outgoing = FriendshipService.instance.outgoing;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'my_friends'),
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w800)),
+        if (friends.isNotEmpty)
+          Text('${friends.length} verbunden',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: const Color(0xFF7C3AED))),
+      ]),
+      const SizedBox(height: 12),
+      if (friends.isEmpty)
+        _emptyFriendsState(theme)
+      else
+        ...friends.map((f) => _uidFriendCard(theme, f)),
+      if (outgoing.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        Text('Gesendete Anfragen',
+            style: theme.textTheme.labelMedium
+                ?.copyWith(color: theme.colorScheme.outline)),
+        const SizedBox(height: 8),
+        ...outgoing.map((f) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                Icon(Icons.hourglass_top_rounded,
+                    size: 16, color: theme.colorScheme.outline),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text('${f.name} — wartet auf Bestätigung',
+                        style: theme.textTheme.bodySmall)),
+                TextButton(
+                    onPressed: () => FriendshipService.instance.remove(f.uid),
+                    child: const Text('Zurückziehen')),
+              ]),
+            )),
+      ],
+    ]);
+  }
+
+  // Freundes-Karte (UID-basiert) mit Chat, Melden, Entfernen.
+  Widget _uidFriendCard(ThemeData theme, Friend f) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Row(children: [
+        CircleAvatar(
+            radius: 23,
+            backgroundColor: _avatarColor(f.name),
+            child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800))),
+        const SizedBox(width: 12),
+        Expanded(
+            child: Text(f.name,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w700))),
+        OutlinedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MatchConversationScreen(
+                profileId: f.roomId,
+                profileName: f.name,
+                isFriendChat: true,
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+          label: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'chat_btn')),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF8B5CF6),
+            side: const BorderSide(color: Color(0xFF8B5CF6)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            textStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ),
+        PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert_rounded,
+              size: 18, color: theme.colorScheme.outline),
+          onSelected: (v) async {
+            if (v == 'remove') {
+              await FriendshipService.instance.remove(f.uid);
+            } else if (v == 'block') {
+              await BlockReportService.instance.blockUser(f.uid, f.name);
+              await FriendshipService.instance.remove(f.uid);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('${f.name} wurde blockiert.'),
+                  behavior: SnackBarBehavior.floating,
+                ));
+              }
+            } else if (v == 'report') {
+              showReportSheet(context,
+                  userId: f.uid, userName: f.name, contentType: 'profile');
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(value: 'report', child: Text('Melden')),
+            PopupMenuItem(value: 'block', child: Text('Blockieren')),
+            PopupMenuItem(value: 'remove', child: Text('Entfernen')),
+          ],
+        ),
       ]),
     );
   }
@@ -1379,15 +1609,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     return colors[name.codeUnitAt(0) % colors.length];
   }
 
-  String _friendSince(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inDays == 0) return 'heute verbunden';
-    if (diff.inDays == 1) return 'gestern verbunden';
-    if (diff.inDays < 7) return 'vor ${diff.inDays} Tagen';
-    return 'seit ${dt.day}.${dt.month}.${dt.year}';
-  }
-
-  void _showFriendQR(ThemeData theme, String code) {
+  void _showFriendQR(ThemeData theme, String qrData) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1430,35 +1652,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     offset: const Offset(0, 6)),
               ],
             ),
-            child: QrImageView(
-                data: 'parentpeak.de/freund/$code',
-                version: QrVersions.auto,
-                size: 200),
+            child:
+                QrImageView(data: qrData, version: QrVersions.auto, size: 200),
           ),
           const SizedBox(height: 16),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              ...code.split('').map((ch) => Container(
-                    width: 36,
-                    height: 42,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color:
-                              const Color(0xFF7C3AED).withValues(alpha: 0.2)),
-                    ),
-                    child: Center(
-                        child: Text(ch,
-                            style: const TextStyle(
-                                color: Color(0xFF7C3AED),
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900))),
-                  )),
-            ]),
-          ),
+          Text('Scannen & mit einem Tap verbinden',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.outline)),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -1478,93 +1678,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           ),
         ]),
       ),
-    );
-  }
-
-  Widget _friendCard(ThemeData theme, ParentFriend friend) {
-    // Bevorzugt die vom Server gelieferte roomId; sonst deterministisch aus
-    // beiden Codes (beide Seiten berechnen dieselbe).
-    final myCode = ParentFriendsService.instance.myCode;
-    final roomId = (friend.roomId != null && friend.roomId!.isNotEmpty)
-        ? friend.roomId!
-        : ([myCode, friend.code]..sort()).join('-');
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Row(children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: _avatarColor(friend.name),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              friend.name.isNotEmpty ? friend.name[0].toUpperCase() : '?',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(friend.name,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          Text(_friendSince(friend.addedAt),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        ])),
-        const SizedBox(width: 8),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MatchConversationScreen(
-                profileId: roomId,
-                profileName: friend.name,
-                isFriendChat: true,
-              ),
-            ),
-          ),
-          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
-          label: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'chat_btn')),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF8B5CF6),
-            side: const BorderSide(color: Color(0xFF8B5CF6)),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            textStyle:
-                const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-        ),
-        const SizedBox(width: 4),
-        GestureDetector(
-          onTap: () => _confirmRemoveFriend(friend),
-          child: Icon(Icons.close_rounded,
-              size: 18, color: theme.colorScheme.outline),
-        ),
-      ]),
     );
   }
 
@@ -1788,34 +1901,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         });
       },
     );
-  }
-
-  Future<void> _confirmRemoveFriend(ParentFriend friend) async {
-    final theme = Theme.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'remove_friend_title')),
-        content: Text('${friend.name} wird aus deiner Freundesliste entfernt.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'cancel'))),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: FilledButton.styleFrom(
-                  backgroundColor: theme.colorScheme.error),
-              child: Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'remove_btn'))),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      await ParentFriendsService.instance.removeFriend(friend.code);
-    }
   }
 
   Widget _inviteRow(ThemeData theme, IconData icon, Color color, String title,

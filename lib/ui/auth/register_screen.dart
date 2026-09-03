@@ -316,8 +316,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             textCapitalization: TextCapitalization.words,
             onChanged: (_) => _clearError(),
             decoration: _fieldDecoration(
-              labelText: 'Dein Name',
+              labelText: 'Dein Anzeigename (z. B. Anna oder Familie Schmidt)',
               prefixIcon: const Icon(Icons.person_outline_rounded),
+              helperText: 'So sehen dich andere Eltern.',
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) {
@@ -410,9 +411,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required String labelText,
     required Widget prefixIcon,
     Widget? suffixIcon,
+    String? helperText,
   }) {
     return InputDecoration(
       labelText: labelText,
+      helperText: helperText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       filled: true,
@@ -634,9 +637,16 @@ class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
   bool _sending = false;
 
   Future<void> _resend() async {
-    setState(() { _sending = true; _resent = false; });
+    setState(() {
+      _sending = true;
+      _resent = false;
+    });
     await AuthService.instance.resendVerificationEmail(widget.email);
-    if (mounted) setState(() { _sending = false; _resent = true; });
+    if (mounted)
+      setState(() {
+        _sending = false;
+        _resent = true;
+      });
   }
 
   @override
@@ -669,7 +679,10 @@ class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
         TextButton(
           onPressed: _sending ? null : _resend,
           child: _sending
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Link erneut senden'),
         ),
         FilledButton(

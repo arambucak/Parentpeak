@@ -208,6 +208,13 @@ String? _extractStartupFriendCode() {
     final uri = Uri.tryParse(candidate);
     if (uri == null) continue;
     final segs = uri.pathSegments;
+    // NEU: /f/<token> = UID-Einladungslink -> mit 'invite:'-Praefix weiterreichen.
+    if (segs.isNotEmpty &&
+        segs.first == 'f' &&
+        segs.length >= 2 &&
+        segs[1].isNotEmpty) {
+      return 'invite:${segs[1]}';
+    }
     if (segs.isNotEmpty && segs.first == 'freund') {
       if (segs.length >= 2 && segs[1].isNotEmpty) return segs[1].toUpperCase();
       final q = uri.queryParameters['code'] ?? uri.queryParameters['add'];
