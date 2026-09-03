@@ -8,6 +8,9 @@ import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
@@ -37,7 +40,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   final _backend = SpielfreundeBackendService();
-  final _matching = ParentMatchingBackendService();
+  final _matching = ParentMatchingBackendService(
+      apiClient: BackendServiceFactory.createApiClient());
   FamilyMatchProfile? _profile;
   Set<String> _dismissedSuggestions = {};
   List<_SuggestedParent> _suggestedProfiles = [];
@@ -525,7 +529,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         await _backend.saveProfile(p, uid);
         // In den echten Matching-Store schreiben, damit andere Familien uns
         // per Standort + Interessen finden koennen (echtes Matching).
-        await _syncProfileToMatching(p, uid);
+        try {
+          await _syncProfileToMatching(p, uid);
+        } on SuspendedAccountException {
+          if (mounted) await showAccountSuspendedNotice(context);
+          return;
+        }
         await _init();
         await _loadMatches();
       })),

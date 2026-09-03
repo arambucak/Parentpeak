@@ -9,6 +9,7 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
+import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
@@ -284,6 +285,15 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
   }
 
+  bool _isSuspendedResponse(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map && decoded['code'] == 'account_suspended';
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> _sendFriendMessage(String text) async {
     final base = APIConfig.getBackendBaseUrl();
     if (base == null) {
@@ -307,6 +317,10 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       if (resp.statusCode == 201) {
         final body = jsonDecode(resp.body) as Map<String, dynamic>;
         return body['item'] as Map<String, dynamic>?;
+      }
+      if (resp.statusCode == 403 && _isSuspendedResponse(resp.body)) {
+        if (mounted) await showAccountSuspendedNotice(context);
+        return null;
       }
       if (resp.statusCode == 401) {
         // Retry once with forced token refresh

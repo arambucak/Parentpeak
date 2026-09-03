@@ -5102,6 +5102,49 @@ const safetyBlocks = new Map();  // in-memory fallback: blockerUserId -> Set(blo
 const safetyReports = [];        // in-memory fallback
 const safetySuspensions = new Map(); // in-memory fallback: userId -> {reason, suspendedBy, createdAt}
 
+// ─── Echter Bann (Suspension) — zentraler Check ────────────────────────────
+// Kleiner Cache, damit haeufige Schreib-Aktionen die DB nicht ueberlasten.
+const _suspensionCache = new Map(); // userId -> { suspended: bool, ts: number }
+const _suspensionCacheTtlMs = 30 * 1000;
+
+/// Prueft, ob ein Nutzer gesperrt ist. Fehlertolerant: bei DB-Problemen
+/// greift der In-Memory-Fallback. Leere userId -> nie gesperrt.
+async function isUserSuspended(userId) {
+  const id = (userId || '').toString().trim();
+  if (!id) return false;
+  const cached = _suspensionCache.get(id);
+  if (cached && Date.now() - cached.ts < _suspensionCacheTtlMs) {
+    return cached.suspended;
+  }
+  let suspended = false;
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "SafetySuspension" WHERE "userId" = $1 LIMIT 1`, id
+    );
+    suspended = rows.length > 0;
+  } catch (_) {
+    suspended = safetySuspensions.has(id);
+  }
+  _suspensionCache.set(id, { suspended, ts: Date.now() });
+  return suspended;
+}
+
+/// Einheitliche 403-Antwort fuer gesperrte Konten.
+function respondSuspended(res) {
+  return res.status(403).json({
+    error:
+      'Dein Konto wurde vorübergehend eingeschränkt. Bei Fragen wende dich an unseren Support.',
+    code: 'account_suspended',
+  });
+}
+
+// Cache invalidieren, wenn sich der Suspend-Status aendert.
+function invalidateSuspensionCache(userId) {
+  const id = (userId || '').toString().trim();
+  if (id) _suspensionCache.delete(id);
+}
+
 // Save a friend edge for the owner (one direction). The client calls this for
 // both sides so each user can later restore their own list.
 app.post('/api/friends/edge', async (req, res) => {
@@ -5371,10 +5414,12 @@ app.post('/admin/users/:userId/suspend', requireAdmin, async (req, res) => {
        ON CONFLICT ("userId") DO UPDATE SET "reason" = $2, "suspendedBy" = $3`,
       userId, reason, req.firebaseUid || 'admin'
     );
+    invalidateSuspensionCache(userId);
     return res.json({ ok: true, suspended: true });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /admin/users/suspend', error)) return;
     safetySuspensions.set(userId, { reason, suspendedBy: req.firebaseUid || 'admin', createdAt: new Date().toISOString() });
+    invalidateSuspensionCache(userId);
     return res.json({ ok: true, suspended: true });
   }
 });
@@ -5388,10 +5433,12 @@ app.post('/admin/users/:userId/unsuspend', requireAdmin, async (req, res) => {
     await prisma.$executeRawUnsafe(
       `DELETE FROM "SafetySuspension" WHERE "userId" = $1`, userId
     );
+    invalidateSuspensionCache(userId);
     return res.json({ ok: true, suspended: false });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /admin/users/unsuspend', error)) return;
     safetySuspensions.delete(userId);
+    invalidateSuspensionCache(userId);
     return res.json({ ok: true, suspended: false });
   }
 });
@@ -5420,6 +5467,8 @@ app.post('/friend-chat/messages', async (req, res) => {
   if (!roomId || !userId || !content) {
     return res.status(400).json({ error: 'roomId, userId und content erforderlich' });
   }
+  // Echter Bann: gesperrte Nutzer koennen keine Nachrichten mehr senden.
+  if (await isUserSuspended(userId)) return respondSuspended(res);
   const item = { id: generateId('fc'), roomId, authorUserId: userId, authorName: userName, content, createdAt: new Date().toISOString() };
   try {
     await ensureSocialSchemaReady();
@@ -5991,6 +6040,10 @@ app.get('/events/item/:id', async (req, res) => {
 
 app.post('/events', async (req, res) => {
   const body = req.body || {};
+  // Echter Bann: gesperrte Nutzer koennen keine Events mehr erstellen.
+  if (body.hosterId && await isUserSuspended(body.hosterId.toString().trim())) {
+    return respondSuspended(res);
+  }
   const item = {
     id: body.id || generateId('event'),
     hosterId: body.hosterId || 'host_demo_001',
@@ -8007,6 +8060,8 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
   if (!userId || !name || !city) {
     return res.status(400).json({ error: 'userId, name, city erforderlich' });
   }
+  // Echter Bann: gesperrte Nutzer koennen ihr Profil nicht (neu) veroeffentlichen.
+  if (await isUserSuspended(userId)) return respondSuspended(res);
 
   if (age && (age < 18 || age > 120)) {
     return res.status(400).json({ error: 'Alter muss zwischen 18 und 120 liegen' });
@@ -8982,6 +9037,8 @@ app.post('/api/events', async (req, res) => {
       error: 'hosterId, title, location, latitude, longitude erforderlich'
     });
   }
+  // Echter Bann: gesperrte Nutzer koennen keine Events mehr erstellen.
+  if (await isUserSuspended(hosterId.toString().trim())) return respondSuspended(res);
 
   // Validate coordinates
   if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -9506,6 +9563,8 @@ app.post('/api/treasures', async (req, res) => {
       error: 'userId, title, location, latitude, longitude erforderlich'
     });
   }
+  // Echter Bann: gesperrte Nutzer koennen nichts mehr im Verschenkmarkt einstellen.
+  if (await isUserSuspended(userId.toString().trim())) return respondSuspended(res);
 
   // Validate coordinates
   if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {

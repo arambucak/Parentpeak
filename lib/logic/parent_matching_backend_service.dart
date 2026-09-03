@@ -8,7 +8,7 @@ import 'package:parentpeak/logic/backend_api_client.dart';
 class ParentMatchActionResult {
   final bool connected;
   final String matchState;
-  
+
   const ParentMatchActionResult({
     required this.connected,
     required this.matchState,
@@ -67,8 +67,12 @@ class ParentMatchingProfile {
       name: json['name'] ?? '',
       age: json['age'],
       city: json['city'] ?? '',
-      latitude: json['latitude'] != null ? double.parse(json['latitude'].toString()) : null,
-      longitude: json['longitude'] != null ? double.parse(json['longitude'].toString()) : null,
+      latitude: json['latitude'] != null
+          ? double.parse(json['latitude'].toString())
+          : null,
+      longitude: json['longitude'] != null
+          ? double.parse(json['longitude'].toString())
+          : null,
       bio: json['bio'],
       interests: List<String>.from(json['interests'] ?? []),
       languages: List<String>.from(json['languages'] ?? []),
@@ -76,30 +80,32 @@ class ParentMatchingProfile {
       childAges: List<String>.from(json['childAges'] ?? []),
       familyForm: json['familyForm'],
       phoneVerified: _toBool(json['phoneVerified'] ?? json['isPhoneVerified']),
-      identityVerified: _toBool(json['identityVerified'] ?? json['isIdentityVerified']),
-      moderationChecked: _toBool(json['moderationChecked'] ?? json['isModerationChecked']),
+      identityVerified:
+          _toBool(json['identityVerified'] ?? json['isIdentityVerified']),
+      moderationChecked:
+          _toBool(json['moderationChecked'] ?? json['isModerationChecked']),
       verificationLevel: json['verificationLevel']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'userId': userId,
-    'name': name,
-    'age': age,
-    'city': city,
-    'latitude': latitude,
-    'longitude': longitude,
-    'bio': bio,
-    'interests': interests,
-    'languages': languages,
-    'valuesFocus': valuesFocus,
-    'childAges': childAges,
-    'familyForm': familyForm,
-    'phoneVerified': phoneVerified,
-    'identityVerified': identityVerified,
-    'moderationChecked': moderationChecked,
-    'verificationLevel': verificationLevel,
-  };
+        'userId': userId,
+        'name': name,
+        'age': age,
+        'city': city,
+        'latitude': latitude,
+        'longitude': longitude,
+        'bio': bio,
+        'interests': interests,
+        'languages': languages,
+        'valuesFocus': valuesFocus,
+        'childAges': childAges,
+        'familyForm': familyForm,
+        'phoneVerified': phoneVerified,
+        'identityVerified': identityVerified,
+        'moderationChecked': moderationChecked,
+        'verificationLevel': verificationLevel,
+      };
 }
 
 class MatchResult {
@@ -142,7 +148,7 @@ class ParentMatchingBackendService {
   final String? _apiUrl = APIConfig.getBackendBaseUrl();
   final http.Client _httpClient;
   String? lastSyncError;
-  
+
   // Backward compatibility: accept old apiClient parameter
   final dynamic apiClient;
 
@@ -239,7 +245,8 @@ class ParentMatchingBackendService {
       );
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        lastSyncError = 'OTP-Bestaetigung fehlgeschlagen: ${response.statusCode}';
+        lastSyncError =
+            'OTP-Bestaetigung fehlgeschlagen: ${response.statusCode}';
         return false;
       }
 
@@ -301,7 +308,8 @@ class ParentMatchingBackendService {
                 : decoded)
             : <String, dynamic>{};
         if (data.isEmpty) {
-          lastSyncError = 'Profil-Speicherung fehlgeschlagen: leere Server-Antwort';
+          lastSyncError =
+              'Profil-Speicherung fehlgeschlagen: leere Server-Antwort';
           return null;
         }
         return ParentMatchingProfile.fromJson(data);
@@ -319,7 +327,8 @@ class ParentMatchingBackendService {
       );
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        lastSyncError = 'Profil-Speicherung fehlgeschlagen: ${response.statusCode}';
+        lastSyncError =
+            'Profil-Speicherung fehlgeschlagen: ${response.statusCode}';
         return null;
       }
 
@@ -330,10 +339,14 @@ class ParentMatchingBackendService {
               : decoded)
           : <String, dynamic>{};
       if (data.isEmpty) {
-        lastSyncError = 'Profil-Speicherung fehlgeschlagen: leere Server-Antwort';
+        lastSyncError =
+            'Profil-Speicherung fehlgeschlagen: leere Server-Antwort';
         return null;
       }
       return ParentMatchingProfile.fromJson(data);
+    } on SuspendedAccountException {
+      // Gesperrtes Konto: nach oben durchreichen, damit die UI den Hinweis zeigt.
+      rethrow;
     } catch (e) {
       lastSyncError = 'Fehler beim Erstellen des Profils: $e';
       return null;
@@ -378,7 +391,8 @@ class ParentMatchingBackendService {
         return null;
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        lastSyncError = 'Profil konnte nicht geladen werden: ${response.statusCode}';
+        lastSyncError =
+            'Profil konnte nicht geladen werden: ${response.statusCode}';
         return null;
       }
 
@@ -507,7 +521,8 @@ class ParentMatchingBackendService {
       );
       return ParentMatchActionResult(
         connected: result,
-        matchState: result ? 'matched' : (action == 'like' ? 'pending' : 'none'),
+        matchState:
+            result ? 'matched' : (action == 'like' ? 'pending' : 'none'),
       );
     } catch (e) {
       lastSyncError = 'Aktion konnte nicht gespeichert werden: $e';
@@ -580,12 +595,12 @@ class ParentMatchingBackendService {
     double maxDistanceKm = 25,
   }) async {
     lastSyncError = null;
-    
+
     if (_apiUrl == null) {
       lastSyncError = 'Backend-URL nicht konfiguriert';
       return [];
     }
-    
+
     try {
       final response = await _httpClient.get(
         Uri.parse(
@@ -604,7 +619,8 @@ class ParentMatchingBackendService {
 
       final data = jsonDecode(response.body);
       final matches = List<MatchResult>.from(
-        (data['matches'] as List? ?? []).map((m) => MatchResult.fromJson(m as Map<String, dynamic>)),
+        (data['matches'] as List? ?? [])
+            .map((m) => MatchResult.fromJson(m as Map<String, dynamic>)),
       );
 
       return matches;
@@ -623,12 +639,12 @@ class ParentMatchingBackendService {
     String? familyId,
   }) async {
     lastSyncError = null;
-    
+
     if (_apiUrl == null) {
       lastSyncError = 'Backend-URL nicht konfiguriert';
       return false;
     }
-    
+
     try {
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl/api/parent-matching/record-action'),
@@ -642,7 +658,8 @@ class ParentMatchingBackendService {
       );
 
       if (response.statusCode != 201) {
-        lastSyncError = 'Aktion konnte nicht gespeichert werden: ${response.statusCode}';
+        lastSyncError =
+            'Aktion konnte nicht gespeichert werden: ${response.statusCode}';
         return false;
       }
 
