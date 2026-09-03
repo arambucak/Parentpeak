@@ -9,6 +9,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/services/location_service.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
@@ -23,7 +24,11 @@ String _t(String key) =>
 
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
-  const ElternNetzwerkScreen({super.key, this.initialFriendCode});
+
+  /// 0 = Freunde, 1 = Spielfreunde, 2 = Einladen
+  final int initialTab;
+  const ElternNetzwerkScreen(
+      {super.key, this.initialFriendCode, this.initialTab = 0});
   @override
   State<ElternNetzwerkScreen> createState() => _ScreenState();
 }
@@ -46,7 +51,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(
+        length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
     ParentCoinService.instance.initialize();
     ParentCoinService.instance.addListener(_rebuild);
     ParentFriendsService.instance.addListener(_rebuild);
@@ -567,9 +573,16 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         limit: 20,
         childAges: childAges,
       );
+      // Prio 4: blockierte Familien zusätzlich clientseitig ausblenden
+      // (Server filtert bereits, das hier ist Absicherung + sofortige Wirkung).
+      final visible = result.matches.where((m) {
+        final ownerId = m.profile.userId;
+        if (ownerId == null || ownerId.isEmpty) return true;
+        return !BlockReportService.instance.isBlocked(ownerId);
+      }).toList();
       if (mounted) {
         setState(() {
-          _matches = result.matches;
+          _matches = visible;
           _matchScope = result.scope;
           _loadingMatches = false;
         });
@@ -814,6 +827,39 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF16A34A)))),
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert_rounded,
+                  size: 18, color: theme.colorScheme.outline),
+              padding: EdgeInsets.zero,
+              onSelected: (v) {
+                if (v == 'report') {
+                  showReportSheet(
+                    context,
+                    userId: m.profile.userId ?? m.profile.id,
+                    userName: m.profile.name,
+                    contentType: 'profile',
+                  );
+                } else if (v == 'block') {
+                  _blockMatch(m);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                    value: 'report',
+                    child: Row(children: [
+                      Icon(Icons.flag_outlined, size: 18),
+                      SizedBox(width: 10),
+                      Text('Melden'),
+                    ])),
+                PopupMenuItem(
+                    value: 'block',
+                    child: Row(children: [
+                      Icon(Icons.block_rounded, size: 18),
+                      SizedBox(width: 10),
+                      Text('Blockieren'),
+                    ])),
+              ],
+            ),
           ]),
           if (kids.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -890,6 +936,24 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           : 'Konnte gerade nicht senden – bitte später erneut versuchen.'),
       behavior: SnackBarBehavior.floating,
       backgroundColor: ok ? const Color(0xFF16A34A) : errorColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
+  /// Familie blockieren (lokal + serverseitig) und sofort ausblenden.
+  Future<void> _blockMatch(MatchResult m) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ownerId = m.profile.userId ?? m.profile.id;
+    await BlockReportService.instance.blockUser(ownerId, m.profile.name);
+    if (!mounted) return;
+    setState(() {
+      _matches = _matches
+          .where((x) => (x.profile.userId ?? x.profile.id) != ownerId)
+          .toList();
+    });
+    messenger.showSnackBar(SnackBar(
+      content: Text('${m.profile.name} wurde blockiert.'),
+      behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ));
   }

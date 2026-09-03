@@ -17,7 +17,6 @@ import 'package:parentpeak/ui/event_invitations_screen.dart';
 import 'package:parentpeak/ui/organization_screen.dart';
 import 'package:parentpeak/ui/familien_zentrale_screen.dart';
 import 'package:parentpeak/ui/entwicklung_impulse_screen.dart';
-import 'package:parentpeak/ui/parent_matching_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:parentpeak/ui/finance_budget_screen.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
@@ -605,12 +604,13 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       await _storeRecentTileTap('Eltern Match');
       if (!mounted) return;
+      // Prio 3: 'Eltern Match' fuehrt jetzt in das vereinheitlichte
+      // Eltern-Netzwerk (echte Spielfreunde-Discovery), nicht mehr in den
+      // separaten ParentMatchingScreen.
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ParentMatchingScreen(
-            openNewConnectionsOnOpen: openNewConnections,
-          ),
+          builder: (_) => const ElternNetzwerkScreen(initialTab: 1),
         ),
       );
       if (!mounted) return;

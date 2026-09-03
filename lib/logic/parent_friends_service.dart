@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/parent_coin_service.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
 
 class ParentFriend {
   final String code;
@@ -36,6 +39,8 @@ class ParentFriendsService extends ChangeNotifier {
   bool _loaded = false;
   List<ParentFriend> _friends = [];
 
+  final BackendApiClient? _api = BackendServiceFactory.createApiClient();
+
   List<ParentFriend> get friends => List.unmodifiable(_friends);
 
   // My 6-char code derived from Firebase UID via ParentCoinService
@@ -57,6 +62,40 @@ class ParentFriendsService extends ChangeNotifier {
       }
     }
     notifyListeners();
+    // Prio 2: restore the durable friend list from the server so friends
+    // survive a reinstall. Runs in the background; local list shows instantly.
+    unawaited(_syncFromServer());
+  }
+
+  /// Merge the server-persisted friend list into the local list.
+  Future<void> _syncFromServer() async {
+    final api = _api;
+    if (api == null) return;
+    final code = myCode;
+    if (code.isEmpty) return;
+    try {
+      final data = await api.getJson('/api/friends/list/$code');
+      if (data is Map<String, dynamic> && data['friends'] is List) {
+        var changed = false;
+        for (final raw in (data['friends'] as List)) {
+          if (raw is! Map) continue;
+          final fc = (raw['friendCode'] as String? ?? '').toLowerCase();
+          final fn = raw['friendName'] as String? ?? 'Familie';
+          if (fc.isEmpty || fc == code) continue;
+          if (!_friends.any((f) => f.code == fc)) {
+            _friends
+                .add(ParentFriend(code: fc, name: fn, addedAt: DateTime.now()));
+            changed = true;
+          }
+        }
+        if (changed) {
+          await _persist();
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('ParentFriendsService._syncFromServer failed: $e');
+    }
   }
 
   Future<void> addFriend(ParentFriend friend) async {
@@ -64,12 +103,44 @@ class ParentFriendsService extends ChangeNotifier {
     _friends.add(friend);
     await _persist();
     notifyListeners();
+    unawaited(_pushEdge(friend.code, friend.name));
   }
 
   Future<void> removeFriend(String code) async {
     _friends.removeWhere((f) => f.code == code);
     await _persist();
     notifyListeners();
+    unawaited(_removeEdge(code));
+  }
+
+  /// Persist a friend edge on the server (my side of the relationship).
+  Future<void> _pushEdge(String friendCode, String friendName) async {
+    final api = _api;
+    if (api == null) return;
+    final code = myCode;
+    if (code.isEmpty || friendCode.isEmpty) return;
+    try {
+      await api.postJsonAny('/api/friends/edge', {
+        'ownerCode': code,
+        'friendCode': friendCode.toLowerCase(),
+        'friendName': friendName,
+      });
+    } catch (e) {
+      debugPrint('ParentFriendsService._pushEdge failed: $e');
+    }
+  }
+
+  Future<void> _removeEdge(String friendCode) async {
+    final api = _api;
+    if (api == null) return;
+    final code = myCode;
+    if (code.isEmpty || friendCode.isEmpty) return;
+    try {
+      await api.delete(
+          '/api/friends/edge?ownerCode=$code&friendCode=${friendCode.toLowerCase()}');
+    } catch (e) {
+      debugPrint('ParentFriendsService._removeEdge failed: $e');
+    }
   }
 
   // True if userId starts with a known friend's 6-char code

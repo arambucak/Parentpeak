@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
 
 /// Manages blocked users and content reports across the entire app.
 /// Used in: Chat, Verschenkmarkt, Events, Netzwerk.
@@ -16,9 +20,15 @@ class BlockReportService {
   List<BlockedUser> _blockedUsers = [];
   List<ContentReport> _reports = [];
 
+  final BackendApiClient? _api = BackendServiceFactory.createApiClient();
+
   List<BlockedUser> get blockedUsers => List.unmodifiable(_blockedUsers);
 
-  /// Initialize — load from SharedPreferences
+  /// Current signed-in user id, used as the server-side owner of blocks/reports.
+  String get _currentUserId =>
+      FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+
+  /// Initialize — load from SharedPreferences, then merge server-side blocks.
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
     final blockedRaw = prefs.getString(_blockedKey);
@@ -37,6 +47,40 @@ class BlockReportService {
             .toList();
       } catch (_) {}
     }
+    // Prio 4: merge server-side blocks so they apply on every device.
+    unawaited(_syncBlocksFromServer());
+  }
+
+  /// Merge server-persisted blocks into the local list.
+  Future<void> _syncBlocksFromServer() async {
+    final api = _api;
+    if (api == null) return;
+    final uid = _currentUserId;
+    if (uid == 'anonymous') return;
+    try {
+      final data = await api.getJson('/api/safety/blocks/$uid');
+      if (data is Map<String, dynamic> && data['blocks'] is List) {
+        var changed = false;
+        for (final raw in (data['blocks'] as List)) {
+          if (raw is! Map) continue;
+          final id = raw['blockedUserId'] as String? ?? '';
+          if (id.isEmpty) continue;
+          if (!isBlocked(id)) {
+            _blockedUsers.add(BlockedUser(
+              userId: id,
+              displayName: raw['blockedName'] as String? ?? '',
+              blockedAt:
+                  DateTime.tryParse(raw['createdAt']?.toString() ?? '') ??
+                      DateTime.now(),
+            ));
+            changed = true;
+          }
+        }
+        if (changed) await _save();
+      }
+    } catch (e) {
+      debugPrint('BlockReportService._syncBlocksFromServer failed: $e');
+    }
   }
 
   /// Check if a user is blocked
@@ -44,7 +88,7 @@ class BlockReportService {
     return _blockedUsers.any((u) => u.userId == userId);
   }
 
-  /// Block a user
+  /// Block a user (local + server so it applies everywhere).
   Future<void> blockUser(String userId, String displayName) async {
     if (isBlocked(userId)) return;
     _blockedUsers.add(BlockedUser(
@@ -53,12 +97,37 @@ class BlockReportService {
       blockedAt: DateTime.now(),
     ));
     await _save();
+    final api = _api;
+    final uid = _currentUserId;
+    if (api != null && uid != 'anonymous') {
+      try {
+        await api.postJsonAny('/api/safety/block', {
+          'blockerUserId': uid,
+          'blockedUserId': userId,
+          'blockedName': displayName,
+        });
+      } catch (e) {
+        debugPrint('BlockReportService.blockUser server sync failed: $e');
+      }
+    }
   }
 
-  /// Unblock a user
+  /// Unblock a user (local + server).
   Future<void> unblockUser(String userId) async {
     _blockedUsers.removeWhere((u) => u.userId == userId);
     await _save();
+    final api = _api;
+    final uid = _currentUserId;
+    if (api != null && uid != 'anonymous') {
+      try {
+        await api.postJsonAny('/api/safety/unblock', {
+          'blockerUserId': uid,
+          'blockedUserId': userId,
+        });
+      } catch (e) {
+        debugPrint('BlockReportService.unblockUser server sync failed: $e');
+      }
+    }
   }
 
   /// Report content (message, listing, event, profile)
@@ -82,6 +151,22 @@ class BlockReportService {
     );
     _reports.add(report);
     await _save();
+
+    // Prio 4: persist the report on the server for the moderation trail.
+    final api = _api;
+    if (api != null) {
+      try {
+        await api.postJsonAny('/api/safety/report', {
+          'reporterUserId': reporterUserId,
+          'reportedUserId': reportedUserId,
+          'contentType': contentType,
+          'content': content,
+          'reason': reason,
+        });
+      } catch (e) {
+        debugPrint('BlockReportService.reportContent server sync failed: $e');
+      }
+    }
 
     // AI auto-moderation check
     final moderationResult =
@@ -256,7 +341,8 @@ Future<void> showReportSheet(
                   Navigator.pop(ctx);
                   final result =
                       await BlockReportService.instance.reportContent(
-                    reporterUserId: 'current_user',
+                    reporterUserId:
+                        FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
                     reportedUserId: userId,
                     contentType: contentType,
                     content: content.isNotEmpty ? content : userName,

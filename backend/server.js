@@ -1128,7 +1128,7 @@ app.use(async (req, res, next) => {
 
   // Calendar and todo endpoints: accept userId from request body as lightweight auth.
   // Firebase token verification is still attempted; body userId is the fallback.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
@@ -1881,6 +1881,42 @@ async function ensureSocialSchemaReady() {
     );
   `);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_calendar_user" ON "CalendarEvent"("userId");`);
+  // Durable friend list per user (survives reinstall). Symmetric edges are
+  // written on both sides so each user can restore their own list by code.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "FriendEdge" (
+      "ownerCode" TEXT NOT NULL,
+      "friendCode" TEXT NOT NULL,
+      "friendName" TEXT NOT NULL DEFAULT 'Familie',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("ownerCode", "friendCode")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_friendedge_owner" ON "FriendEdge"("ownerCode");`);
+  // Server-side safety: blocked users + reports (moderation trail).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SafetyBlock" (
+      "blockerUserId" TEXT NOT NULL,
+      "blockedUserId" TEXT NOT NULL,
+      "blockedName" TEXT NOT NULL DEFAULT '',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("blockerUserId", "blockedUserId")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_safetyblock_blocker" ON "SafetyBlock"("blockerUserId");`);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SafetyReport" (
+      "id" TEXT PRIMARY KEY,
+      "reporterUserId" TEXT NOT NULL,
+      "reportedUserId" TEXT NOT NULL,
+      "contentType" TEXT NOT NULL DEFAULT 'profile',
+      "content" TEXT NOT NULL DEFAULT '',
+      "reason" TEXT NOT NULL DEFAULT 'other',
+      "status" TEXT NOT NULL DEFAULT 'pending',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_safetyreport_reported" ON "SafetyReport"("reportedUserId");`);
   socialSchemaEnsured = true;
 }
 
@@ -5043,6 +5079,173 @@ app.get('/api/friends/pending/:code', async (req, res) => {
   }
 });
 
+// ─── Durable friend list (Prio 2): survives reinstall ──────────────────────
+const friendEdges = new Map();   // in-memory fallback: ownerCode -> [{friendCode, friendName}]
+const safetyBlocks = new Map();  // in-memory fallback: blockerUserId -> Set(blockedUserId)
+const safetyReports = [];        // in-memory fallback
+
+// Save a friend edge for the owner (one direction). The client calls this for
+// both sides so each user can later restore their own list.
+app.post('/api/friends/edge', async (req, res) => {
+  const ownerCode = (req.body.ownerCode || '').toString().trim().toLowerCase();
+  const friendCode = (req.body.friendCode || '').toString().trim().toLowerCase();
+  const friendName = (req.body.friendName || 'Familie').toString().trim().slice(0, 100);
+  if (!ownerCode || !friendCode) {
+    return res.status(400).json({ error: 'ownerCode und friendCode erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "FriendEdge" ("ownerCode", "friendCode", "friendName", "createdAt")
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT ("ownerCode", "friendCode") DO UPDATE SET "friendName" = $3`,
+      ownerCode, friendCode, friendName
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friends/edge', error)) return;
+    if (!friendEdges.has(ownerCode)) friendEdges.set(ownerCode, []);
+    const list = friendEdges.get(ownerCode);
+    const existing = list.find(e => e.friendCode === friendCode);
+    if (existing) { existing.friendName = friendName; }
+    else { list.push({ friendCode, friendName }); }
+    return res.json({ ok: true });
+  }
+});
+
+// Remove a friend edge.
+app.delete('/api/friends/edge', async (req, res) => {
+  const ownerCode = (req.query.ownerCode || req.body?.ownerCode || '').toString().trim().toLowerCase();
+  const friendCode = (req.query.friendCode || req.body?.friendCode || '').toString().trim().toLowerCase();
+  if (!ownerCode || !friendCode) {
+    return res.status(400).json({ error: 'ownerCode und friendCode erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "FriendEdge" WHERE "ownerCode" = $1 AND "friendCode" = $2`,
+      ownerCode, friendCode
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/friends/edge', error)) return;
+    const list = friendEdges.get(ownerCode) || [];
+    friendEdges.set(ownerCode, list.filter(e => e.friendCode !== friendCode));
+    return res.json({ ok: true });
+  }
+});
+
+// Restore the durable friend list for a user by code.
+app.get('/api/friends/list/:code', async (req, res) => {
+  const code = (req.params.code || '').toString().trim().toLowerCase();
+  if (!code) return res.status(400).json({ error: 'code erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "friendCode", "friendName", "createdAt" FROM "FriendEdge" WHERE "ownerCode" = $1 ORDER BY "createdAt" ASC`,
+      code
+    );
+    return res.json({ friends: rows });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/friends/list', error)) return;
+    const list = friendEdges.get(code) || [];
+    return res.json({ friends: list.map(e => ({ ...e, createdAt: new Date().toISOString() })) });
+  }
+});
+
+// ─── Safety (Prio 4): server-side block + report ───────────────────────────
+app.post('/api/safety/block', async (req, res) => {
+  const blockerUserId = (req.body.blockerUserId || '').toString().trim();
+  const blockedUserId = (req.body.blockedUserId || '').toString().trim();
+  const blockedName = (req.body.blockedName || '').toString().trim().slice(0, 100);
+  if (!blockerUserId || !blockedUserId) {
+    return res.status(400).json({ error: 'blockerUserId und blockedUserId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SafetyBlock" ("blockerUserId", "blockedUserId", "blockedName", "createdAt")
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT ("blockerUserId", "blockedUserId") DO UPDATE SET "blockedName" = $3`,
+      blockerUserId, blockedUserId, blockedName
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/safety/block', error)) return;
+    if (!safetyBlocks.has(blockerUserId)) safetyBlocks.set(blockerUserId, new Set());
+    safetyBlocks.get(blockerUserId).add(blockedUserId);
+    return res.json({ ok: true });
+  }
+});
+
+app.post('/api/safety/unblock', async (req, res) => {
+  const blockerUserId = (req.body.blockerUserId || '').toString().trim();
+  const blockedUserId = (req.body.blockedUserId || '').toString().trim();
+  if (!blockerUserId || !blockedUserId) {
+    return res.status(400).json({ error: 'blockerUserId und blockedUserId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "SafetyBlock" WHERE "blockerUserId" = $1 AND "blockedUserId" = $2`,
+      blockerUserId, blockedUserId
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/safety/unblock', error)) return;
+    safetyBlocks.get(blockerUserId)?.delete(blockedUserId);
+    return res.json({ ok: true });
+  }
+});
+
+app.get('/api/safety/blocks/:userId', async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "blockedUserId", "blockedName", "createdAt" FROM "SafetyBlock" WHERE "blockerUserId" = $1`,
+      userId
+    );
+    return res.json({ blocks: rows });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/safety/blocks', error)) return;
+    const set = safetyBlocks.get(userId) || new Set();
+    return res.json({ blocks: [...set].map(id => ({ blockedUserId: id, blockedName: '', createdAt: new Date().toISOString() })) });
+  }
+});
+
+app.post('/api/safety/report', async (req, res) => {
+  const reporterUserId = (req.body.reporterUserId || '').toString().trim();
+  const reportedUserId = (req.body.reportedUserId || '').toString().trim();
+  const contentType = (req.body.contentType || 'profile').toString().trim().slice(0, 30);
+  const content = (req.body.content || '').toString().trim().slice(0, 1000);
+  const reason = (req.body.reason || 'other').toString().trim().slice(0, 50);
+  if (!reportedUserId) {
+    return res.status(400).json({ error: 'reportedUserId erforderlich' });
+  }
+  const id = generateId('rep');
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SafetyReport" ("id", "reporterUserId", "reportedUserId", "contentType", "content", "reason", "status", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW())`,
+      id, reporterUserId || 'anonymous', reportedUserId, contentType, content, reason
+    );
+    const countRows = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS n FROM "SafetyReport" WHERE "reportedUserId" = $1`,
+      reportedUserId
+    );
+    const reportCount = countRows?.[0]?.n ?? 1;
+    return res.json({ ok: true, id, reportCount });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/safety/report', error)) return;
+    safetyReports.push({ id, reporterUserId, reportedUserId, contentType, content, reason, createdAt: new Date().toISOString() });
+    const reportCount = safetyReports.filter(r => r.reportedUserId === reportedUserId).length;
+    return res.json({ ok: true, id, reportCount });
+  }
+});
+
 app.get('/friend-chat/messages', async (req, res) => {
   const roomId = (req.query.roomId || '').toString().trim();
   if (!roomId) return res.status(400).json({ error: 'roomId fehlt' });
@@ -7719,13 +7922,30 @@ app.get('/api/parent-matching/find', async (req, res) => {
       return res.json({ matches: [], message: 'Benutzerprofil nicht gefunden' });
     }
 
-    const allProfiles = await prisma.parentMatchingProfile.findMany({
+    const allProfilesRaw = await prisma.parentMatchingProfile.findMany({
       where: {
         isActive: true,
         ownerUserId: { not: userId },
       },
       take: 100, // Get top candidates to score
     });
+
+    // Prio 4: hide blocked users from discovery (server-side).
+    let blockedIds = new Set();
+    try {
+      await ensureSocialSchemaReady();
+      const blockRows = await prisma.$queryRawUnsafe(
+        `SELECT "blockedUserId" FROM "SafetyBlock" WHERE "blockerUserId" = $1`,
+        userId
+      );
+      blockedIds = new Set(blockRows.map(r => r.blockedUserId));
+    } catch (_) {
+      const set = safetyBlocks.get(userId);
+      if (set) blockedIds = set;
+    }
+    const allProfiles = allProfilesRaw.filter(
+      p => !blockedIds.has(p.ownerUserId)
+    );
 
     const scored = allProfiles.map(candidate => {
       let score = 0;
