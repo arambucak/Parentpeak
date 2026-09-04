@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/family_recipe_share_service.dart';
 import 'package:parentpeak/logic/fridge_recipe_service.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
+import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
 
 /// Phase 3b: KI-Kühlschrank-Foto.
@@ -25,6 +28,7 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
   static const _accent = Color(0xFFE8543A);
 
   final _service = FridgeRecipeService.instance;
+  final _shareService = FamilyRecipeShareService.instance;
   final _picker = ImagePicker();
   final _addCtrl = TextEditingController();
 
@@ -33,6 +37,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
   List<String> _ingredients = [];
   FamilyRecipe? _recipe;
   List<String> _missing = [];
+  bool _sharing = false;
+  bool _shared = false;
 
   @override
   void dispose() {
@@ -105,7 +111,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
     if (recipe == null) {
       setState(() => _phase = _Phase.ingredients);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Konnte gerade kein Rezept erstellen — bitte erneut versuchen.'),
+        content: Text(
+            'Konnte gerade kein Rezept erstellen — bitte erneut versuchen.'),
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -139,7 +146,115 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
       _ingredients = [];
       _recipe = null;
       _missing = [];
+      _sharing = false;
+      _shared = false;
     });
+  }
+
+  /// Speichert das generierte KI-Rezept in den Familien-Rezepten (Phase 3a).
+  /// Der Nutzer wählt zuerst die Sichtbarkeit (Standard: Nur meine Freunde).
+  Future<void> _saveToFamilyRecipes(FamilyRecipe r) async {
+    final visibility = await _chooseVisibility();
+    if (visibility == null) return; // abgebrochen
+    setState(() => _sharing = true);
+    try {
+      final created = await _shareService.createRecipe(
+        title: r.title,
+        description: r.description,
+        ingredients: r.ingredients,
+        steps: r.steps,
+        prepMinutes: r.prepMinutes,
+        visibility: visibility,
+      );
+      if (!mounted) return;
+      if (created != null) {
+        setState(() {
+          _sharing = false;
+          _shared = true;
+        });
+        final where = visibility == 'private'
+            ? 'in deinen Familien-Rezepten gespeichert'
+            : visibility == 'public'
+                ? 'mit allen Familien geteilt'
+                : 'mit deinen Freunden geteilt';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Rezept $where. 🍳'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF16A34A),
+        ));
+      } else {
+        setState(() => _sharing = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Konnte nicht speichern — bitte später erneut.'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } on SuspendedAccountException {
+      if (mounted) {
+        setState(() => _sharing = false);
+        await showAccountSuspendedNotice(context);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _sharing = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Konnte nicht speichern — bitte später erneut.'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  }
+
+  /// Kleine Auswahl der Sichtbarkeit. Gibt 'friends' | 'public' | 'private'
+  /// zurück, oder null bei Abbruch.
+  Future<String?> _chooseVisibility() {
+    return showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        Widget option(
+            String value, String title, String subtitle, IconData icon) {
+          return ListTile(
+            leading: Icon(icon, color: _accent),
+            title: Text(title,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(subtitle, style: theme.textTheme.labelSmall),
+            onTap: () => Navigator.pop(ctx, value),
+          );
+        }
+
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text('Wer darf dein Rezept sehen?',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800)),
+              ),
+              option(
+                  'friends',
+                  'Nur meine Freunde',
+                  'Empfohlen – nur verbundene Familien sehen es.',
+                  Icons.group_rounded),
+              option(
+                  'public',
+                  'Für alle Familien',
+                  'Alle ParentPeak-Familien können es entdecken.',
+                  Icons.public_rounded),
+              option(
+                  'private',
+                  'Nur für mich',
+                  'Bleibt privat – nur du siehst es.',
+                  Icons.lock_outline_rounded),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -301,8 +416,7 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
                       onDeleted: () => _removeIngredient(ing),
                       deleteIcon: const Icon(Icons.close_rounded, size: 16),
                       backgroundColor: _accent.withValues(alpha: 0.10),
-                      side: BorderSide(
-                          color: _accent.withValues(alpha: 0.4)),
+                      side: BorderSide(color: _accent.withValues(alpha: 0.4)),
                       labelStyle: const TextStyle(
                           fontWeight: FontWeight.w600, fontSize: 13),
                     ))
@@ -346,8 +460,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
             style: FilledButton.styleFrom(
               backgroundColor: _accent,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
             ),
           ),
         ),
@@ -416,7 +530,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
                         fontWeight: FontWeight.w700, color: _accent)),
                 Expanded(
                     child: Text(r.steps[i],
-                        style: theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
+                        style:
+                            theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
               ],
             ),
           );
@@ -495,6 +610,35 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
           ),
         ],
         const SizedBox(height: 18),
+        // Brücke zu Phase 3a: dieses KI-Rezept in den Familien-Rezepten
+        // speichern/teilen (1 Tap, mit Sichtbarkeits-Auswahl).
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed:
+                _sharing || _shared ? null : () => _saveToFamilyRecipes(r),
+            icon: _sharing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : Icon(
+                    _shared ? Icons.check_rounded : Icons.bookmark_add_rounded),
+            label: Text(_shared
+                ? 'In Familien-Rezepten gespeichert'
+                : 'In Familien-Rezepten teilen'),
+            style: FilledButton.styleFrom(
+              backgroundColor: _shared ? const Color(0xFF16A34A) : _accent,
+              disabledBackgroundColor: _shared ? const Color(0xFF16A34A) : null,
+              disabledForegroundColor: _shared ? Colors.white : null,
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -505,8 +649,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
               foregroundColor: _accent,
               side: const BorderSide(color: _accent),
               padding: const EdgeInsets.symmetric(vertical: 13),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
             ),
           ),
         ),
