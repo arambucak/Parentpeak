@@ -13,7 +13,8 @@ void main() {
     });
 
     test('parenting questions pass', () {
-      expect(svc.isSafe('Kennt jemand einen guten Kinderarzt in Berlin?'), isTrue);
+      expect(
+          svc.isSafe('Kennt jemand einen guten Kinderarzt in Berlin?'), isTrue);
       expect(svc.isSafe('Mein Kind schläft schlecht, habt ihr Tipps?'), isTrue);
       expect(svc.isSafe('Suche Spielfreunde für 3-Jährige'), isTrue);
     });
@@ -26,8 +27,10 @@ void main() {
 
     test('emotional support passes', () {
       expect(svc.isSafe('Du machst das toll!'), isTrue);
-      expect(svc.isSafe('Das klingt wirklich anstrengend. Ich fühle mit dir.'), isTrue);
-      expect(svc.isSafe('Es ist okay mal einen schlechten Tag zu haben.'), isTrue);
+      expect(svc.isSafe('Das klingt wirklich anstrengend. Ich fühle mit dir.'),
+          isTrue);
+      expect(
+          svc.isSafe('Es ist okay mal einen schlechten Tag zu haben.'), isTrue);
     });
   });
 
@@ -63,12 +66,18 @@ void main() {
       expect(svc.isSafe('xxxxxxxxxxxxxxxxxx'), isFalse);
     });
 
-    test('Spam - too many caps blocked', () {
-      expect(svc.isSafe('KAUFT JETZT MEIN SUPER TOLLES PRODUKT HIER'), isFalse);
+    test('Grossschreibung ist erlaubt (kein Spam, familienfreundlich)', () {
+      // Eltern schreiben aus legitimen Gruenden gross ("WICHTIG", Feststelltaste).
+      // Solche Nachrichten duerfen NICHT als Spam blockiert werden.
+      expect(
+          svc.isSafe('WICHTIG BITTE UM RUECKMELDUNG BIS HEUTE ABEND'), isTrue);
+      expect(svc.isSafe('DIES IST EIN GANZ NORMALER TEXT'), isTrue);
     });
 
     test('Spam - too many links blocked', () {
-      expect(svc.isSafe('Check https://a.com und https://b.com und https://c.com'), isFalse);
+      expect(
+          svc.isSafe('Check https://a.com und https://b.com und https://c.com'),
+          isFalse);
     });
 
     test('Commercial content blocked', () {
@@ -83,7 +92,8 @@ void main() {
       expect(svc.isSafe('Ruf mich an: +49 171 1234567'), isFalse);
       expect(svc.isSafe('Meine Nummer ist 0171 1234567'), isFalse);
       expect(svc.isSafe('Ich wohne in der Musterstraße 12'), isFalse);
-      expect(svc.checkMessage('+49 171 1234567'), contains('persönlichen Daten'));
+      expect(
+          svc.checkMessage('+49 171 1234567'), contains('persönlichen Daten'));
     });
   });
 

@@ -42,8 +42,8 @@ void main() {
       final svc = ChatModerationService.instance;
       expect(svc.isSafe('Hallo wie gehts'), isTrue); // 12 chars, not enough
       expect(svc.isSafe('aaaaaaaaaaaaaaaa'), isFalse); // 13+ repeated
-      expect(svc.isSafe('DIES IST EIN GANZ NORMALER TEXT'),
-          isFalse); // too many caps
+      // Grossschreibung ist erlaubt (Emphase, kein Spam) - familienfreundlich.
+      expect(svc.isSafe('DIES IST EIN GANZ NORMALER TEXT'), isTrue);
     });
 
     test('ChatModerationService blocks commercial content', () {
