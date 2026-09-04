@@ -9,6 +9,7 @@ import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
@@ -824,56 +825,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
 
   // ─── Sprach-Auswahl ─────────────────────────────────────────────────────────
 
-  static const List<_LanguageOption> _allLanguages = [
-    _LanguageOption('de', 'Deutsch', '\u{1F1E9}\u{1F1EA}'),
-    _LanguageOption('en', 'English', '\u{1F1EC}\u{1F1E7}'),
-    _LanguageOption('tr', 'Türkçe', '\u{1F1F9}\u{1F1F7}'),
-    _LanguageOption(
-        'ar',
-        '\u{0627}\u{0644}\u{0639}\u{0631}\u{0628}\u{064A}\u{0629}',
-        '\u{1F1F8}\u{1F1E6}'),
-    _LanguageOption('fr', 'Français', '\u{1F1EB}\u{1F1F7}'),
-    _LanguageOption('es', 'Español', '\u{1F1EA}\u{1F1F8}'),
-    _LanguageOption('it', 'Italiano', '\u{1F1EE}\u{1F1F9}'),
-    _LanguageOption('pt', 'Português', '\u{1F1F5}\u{1F1F9}'),
-    _LanguageOption('nl', 'Nederlands', '\u{1F1F3}\u{1F1F1}'),
-    _LanguageOption('pl', 'Polski', '\u{1F1F5}\u{1F1F1}'),
-    _LanguageOption(
-        'ru',
-        '\u{0420}\u{0443}\u{0441}\u{0441}\u{043A}\u{0438}\u{0439}',
-        '\u{1F1F7}\u{1F1FA}'),
-    _LanguageOption(
-        'uk',
-        '\u{0423}\u{043A}\u{0440}\u{0430}\u{0457}\u{043D}\u{0441}\u{044C}\u{043A}\u{0430}',
-        '\u{1F1FA}\u{1F1E6}'),
-    _LanguageOption('hr', 'Hrvatski', '\u{1F1ED}\u{1F1F7}'),
-    _LanguageOption('sr', '\u{0421}\u{0440}\u{043F}\u{0441}\u{043A}\u{0438}',
-        '\u{1F1F7}\u{1F1F8}'),
-    _LanguageOption('fi', 'Suomi', '\u{1F1EB}\u{1F1EE}'),
-    _LanguageOption('da', 'Dansk', '\u{1F1E9}\u{1F1F0}'),
-    _LanguageOption(
-        'fa', '\u{0641}\u{0627}\u{0631}\u{0633}\u{06CC}', '\u{1F1EE}\u{1F1F7}'),
-    _LanguageOption('ku', 'Kurdî', 'ala_rengin'),
-    _LanguageOption('ja', '\u{65E5}\u{672C}\u{8A9E}', '\u{1F1EF}\u{1F1F5}'),
-    _LanguageOption('zh', '\u{4E2D}\u{6587}', '\u{1F1E8}\u{1F1F3}'),
-    _LanguageOption('hi', '\u{0939}\u{093F}\u{0928}\u{094D}\u{0926}\u{0940}',
-        '\u{1F1EE}\u{1F1F3}'),
-    _LanguageOption(
-        'el',
-        '\u{0395}\u{03BB}\u{03BB}\u{03B7}\u{03BD}\u{03B9}\u{03BA}\u{03AC}',
-        '\u{1F1EC}\u{1F1F7}'),
-    _LanguageOption('sw', 'Kiswahili', '\u{1F1F0}\u{1F1EA}'),
-    _LanguageOption(
-        'am', '\u{12A0}\u{121B}\u{122D}\u{129B}', '\u{1F1EA}\u{1F1F9}'),
-    _LanguageOption('ha', 'Hausa', '\u{1F1F3}\u{1F1EC}'),
-    _LanguageOption('so', 'Soomaali', '\u{1F1F8}\u{1F1F4}'),
-    _LanguageOption(
-        'ti', '\u{1275}\u{130D}\u{122D}\u{129B}', '\u{1F1EA}\u{1F1F7}'),
-  ];
+  static const _allLanguages = AppLanguages.supported;
 
   String _getLanguageLabel(String code) {
     final match = _allLanguages.where((l) => l.code == code).firstOrNull;
-    return match?.label ?? code;
+    return match?.nativeName ?? code;
   }
 
   void _showLanguagePicker() {
@@ -924,7 +880,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         ? const AlaRenginFlag(width: 30, height: 20)
                         : Text(lang.flag, style: const TextStyle(fontSize: 22)),
                     title: Text(
-                      lang.label,
+                      lang.nativeName,
                       style: TextStyle(
                         fontWeight:
                             isActive ? FontWeight.w800 : FontWeight.w500,
@@ -1431,13 +1387,6 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (uri == null) return;
     launchUrl(uri, mode: LaunchMode.externalApplication);
   }
-}
-
-class _LanguageOption {
-  final String code;
-  final String label;
-  final String flag;
-  const _LanguageOption(this.code, this.label, this.flag);
 }
 
 class _ChildInfo {

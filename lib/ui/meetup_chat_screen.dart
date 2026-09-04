@@ -236,7 +236,9 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Löschen: $e')),
+            SnackBar(
+              content: Text(_t('common_delete_failed')
+                .replaceAll('{error}', '$e'))),
         );
       }
     }

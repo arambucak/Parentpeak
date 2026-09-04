@@ -22,6 +22,7 @@ import 'package:parentpeak/ui/widgets/native_ad_slot.dart';
 import 'package:parentpeak/services/events_limit_service.dart';
 import 'package:parentpeak/ui/widgets/premium_gate.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/main.dart';
 
 class EventsActivitiesScreen extends StatefulWidget {
@@ -122,7 +123,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         !_hasRealLocation) {
       final loc = LocationService.instance;
       final newLocation = PickedLocation(
-        displayName: loc.city ?? 'Mein Standort',
+        displayName: loc.city ?? context.tr('events_my_location'),
         city: loc.city ?? '',
         postcode: '',
         lat: loc.latitude!,
@@ -151,7 +152,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         if (LocationService.instance.hasLocation) {
           final loc = LocationService.instance;
           final newLocation = PickedLocation(
-            displayName: loc.city ?? 'Mein Standort',
+            displayName: loc.city ?? context.tr('events_my_location'),
             city: loc.city ?? '',
             postcode: '',
             lat: loc.latitude!,
@@ -170,10 +171,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           setState(() => _gpsDetecting = false);
           if (!_hasRealLocation) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content:
-                    Text('GPS nicht verfügbar — bitte Standort oben eingeben.'),
-                duration: Duration(seconds: 4),
+                    Text(AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'events_gps_unavailable')),
+                duration: const Duration(seconds: 4),
               ),
             );
           }
@@ -193,7 +196,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       // When Nominatim fails, use coordinates as search city so Gemini can locate events
       final coordCity =
           '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
-      final cityLabel = district ?? 'Aktueller Standort';
+      final cityLabel = district ?? context.tr('events_current_location');
       final city = district != null
           ? (district.contains(',')
               ? district.split(',').last.trim()
@@ -605,20 +608,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   String _ageGroupLabel(AgeGroup ageGroup) {
-    switch (ageGroup) {
-      case AgeGroup.infant:
-        return '0-1 Jahre';
-      case AgeGroup.toddler:
-        return '1-3 Jahre';
-      case AgeGroup.preschool:
-        return '4-6 Jahre';
-      case AgeGroup.elementary:
-        return '6-10 Jahre';
-      case AgeGroup.teenager:
-        return '11-16 Jahre';
-      case AgeGroup.mixed:
-        return 'Gemischt';
-    }
+    return context.tr(_ageGroupKey(ageGroup));
   }
 
   // ─── Feed mit Ads ──────────────────────────────────────────────────────────
@@ -702,11 +692,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   String _invitationStatusLabel(EventInvitationStatus status) {
     switch (status) {
       case EventInvitationStatus.pending:
-        return 'Ausstehend';
+        return context.tr('events_invitation_pending');
       case EventInvitationStatus.accepted:
-        return 'Angenommen';
+        return context.tr('events_invitation_accepted');
       case EventInvitationStatus.declined:
-        return 'Abgelehnt';
+        return context.tr('events_invitation_declined');
     }
   }
 
@@ -723,7 +713,14 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
   String _eventTitleForInvitation(EventInvitation invitation) {
     return _eventTitlesById[invitation.eventId] ??
-        'Event ${invitation.eventId.isEmpty ? 'ohne ID' : invitation.eventId}';
+        context.tr(
+          'events_invitation_fallback_title',
+          values: {
+            'id': invitation.eventId.isEmpty
+                ? context.tr('events_without_id')
+                : invitation.eventId,
+          },
+        );
   }
 
   String _formatShortDate(DateTime value) {
@@ -763,8 +760,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text(accept ? 'Einladung angenommen.' : 'Einladung abgelehnt.'),
+            content: Text(context.tr(accept
+              ? 'events_invitation_accept_success'
+              : 'events_invitation_decline_success')),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -793,7 +791,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     final showInvitationsSection = _invitations.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Events & Aktivitäten')),
+        appBar: AppBar(
+          title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'events_activities_title'))),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -848,7 +848,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Event-Stand: ${_formatLastSyncLabel(_lastFeedSyncAt!)}',
+                              context.tr(
+                                'events_last_sync',
+                                values: {
+                                  'time': _formatLastSyncLabel(_lastFeedSyncAt!),
+                                },
+                              ),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: const Color(0xFF155E75),
                                 fontWeight: FontWeight.w700,
@@ -861,7 +866,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                     const SizedBox(height: 8),
                   ],
                   Text(
-                    'Für dich in der Nähe',
+                    context.tr('events_nearby_for_you'),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -995,14 +1000,14 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Dein Familien-Spot',
+            context.tr('events_family_spot_title'),
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Finden. Teilen. Gemeinsam erleben.',
+            context.tr('events_family_spot_subtitle'),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.35,
@@ -1019,7 +1024,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         Expanded(
           child: _CompactActionButton(
             icon: Icons.campaign_rounded,
-            label: 'Event planen',
+            label: context.tr('events_plan_event'),
             color: const Color(0xFFEA580C),
             compact: compact,
             onTap: () {
@@ -1034,7 +1039,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         Expanded(
           child: _CompactActionButton(
             icon: Icons.mark_email_unread_rounded,
-            label: 'Einladungen',
+            label: context.tr('events_invitations'),
             color: const Color(0xFF4F46E5),
             compact: compact,
             onTap: () {
@@ -1056,7 +1061,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       children: [
         Expanded(
           child: LocationPickerWidget(
-            hint: 'Standort wählen',
+            hint: context.tr('events_choose_location'),
             initialLocation: _activeLocation,
             onLocationPicked: (loc) async {
               final prefs = await SharedPreferences.getInstance();
@@ -1077,8 +1082,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         // GPS-Detect Button
         Tooltip(
           message: _activeLocation != null
-              ? 'GPS aktiv'
-              : 'Standort automatisch erkennen',
+              ? context.tr('events_gps_active')
+              : context.tr('events_detect_location'),
           child: InkWell(
             onTap: _gpsDetecting
                 ? null
@@ -1153,7 +1158,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           },
         ),
         FilterChip(
-          label: Text('Nur nah ($_nearbyQuickCount)'),
+          label: Text(context.tr(
+            'events_nearby_only',
+            values: {'count': '$_nearbyQuickCount'},
+          )),
           selected: _onlyNearbyQuick,
           onSelected: (value) {
             setState(() => _onlyNearbyQuick = value);
@@ -1176,7 +1184,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Feinfilter & Ranking',
+            context.tr('events_filter_title'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800),
           ),
@@ -1262,7 +1270,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Sortierung: näher + zeitnah + passende Altersgruppe zuerst.',
+            context.tr('events_sort_explanation'),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -1287,7 +1295,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           Row(
             children: [
               Text(
-                'Einladungen',
+                context.tr('events_invitations'),
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -1300,7 +1308,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  '$_pendingInvitationsCount offen',
+                  context.tr(
+                    'events_open_count',
+                    values: {'count': '$_pendingInvitationsCount'},
+                  ),
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -1313,7 +1324,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           const SizedBox(height: 6),
           if (_invitations.isEmpty)
             Text(
-              'Keine offenen Einladungen.',
+              context.tr('events_no_open_invitations'),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -1384,7 +1395,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Von ${invitation.hostUserId} · Eingang: ${_formatShortDate(invitation.createdAt)}',
+                        context.tr(
+                          'events_invitation_from',
+                          values: {
+                            'host': invitation.hostUserId,
+                            'date': _formatShortDate(invitation.createdAt),
+                          },
+                        ),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -1416,7 +1433,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                                             invitation,
                                             true,
                                           ),
-                                  child: Text(isBusy ? '...' : 'Zusagen'),
+                                    child: Text(isBusy
+                                      ? '...'
+                                      : context.tr('events_accept_invitation')),
                                 ),
                               ),
                             ],
@@ -1439,11 +1458,14 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('Events & Aktivitäten')),
-            body: const PremiumGate(
-              featureLabel: 'Events',
+            appBar: AppBar(
+              title: Text(AppStringsManager.getString(
+                languageService.currentLanguage,
+                'events_activities_title'))),
+            body: PremiumGate(
+              featureLabel: context.tr('events_activities_title'),
               gateType: PremiumGateType.events,
-              child: SizedBox.shrink(),
+              child: const SizedBox.shrink(),
             ),
           ),
         ),
@@ -1475,7 +1497,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
               title: item.title,
               description: item.description,
               category: DiscoveredEventCategory.sonstiges,
-              ageLabels: item.ageLabel != null ? [item.ageLabel!] : ['Alle'],
+                ageLabels: item.ageLabel != null
+                  ? [item.ageLabel!]
+                  : [context.tr('filter_all')],
               location: item.location,
               cityHint: _searchCity,
               discoveredAt: DateTime.now(),
@@ -1606,17 +1630,15 @@ class _UnifiedFeedItem {
   }
 
   factory _UnifiedFeedItem.fromCommunity(MeetupEvent event) {
-    final age = event.ageGroups.map((e) => e.name).join(', ');
     final isFree = event.price == null || event.price == 0;
-    final priceLabel =
-        isFree ? 'kostenlos' : '${event.price!.toStringAsFixed(0)} €';
+    final priceLabel = isFree ? null : '${event.price!.toStringAsFixed(0)} €';
 
     return _UnifiedFeedItem(
       source: _FeedSource.community,
       title: event.title,
       description: event.description,
       location: event.location,
-      ageLabel: age.isEmpty ? null : age,
+      ageLabel: null,
       communityAgeGroups: event.ageGroups,
       eventDate: event.eventDate,
       latitude: event.latitude,
@@ -1645,10 +1667,10 @@ class _UnifiedEventCard extends StatelessWidget {
     return const Color(0xFFB91C1C);
   }
 
-  String _distanceHint(double km) {
-    if (km <= 5) return 'nah';
-    if (km <= 15) return 'mittel';
-    return 'weit';
+  String _distanceHint(BuildContext context, double km) {
+    if (km <= 5) return context.tr('events_distance_near');
+    if (km <= 15) return context.tr('events_distance_medium');
+    return context.tr('events_distance_far');
   }
 
   String _formatCardDate(_UnifiedFeedItem item) {
@@ -1662,7 +1684,7 @@ class _UnifiedEventCard extends StatelessWidget {
     if (d.hour != 0 || d.minute != 0) {
       final h = d.hour.toString().padLeft(2, '0');
       final min = d.minute.toString().padLeft(2, '0');
-      return '$dateStr  $h:$min Uhr';
+      return '$dateStr  $h:$min';
     }
     return dateStr;
   }
@@ -1697,7 +1719,9 @@ class _UnifiedEventCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      isAi ? 'KI' : 'Community',
+                        isAi
+                          ? context.tr('events_source_ai')
+                          : context.tr('events_source_community'),
                       style: TextStyle(
                         color: color,
                         fontSize: 11,
@@ -1765,7 +1789,7 @@ class _UnifiedEventCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${distanceKm!.toStringAsFixed(1)} km · ${_distanceHint(distanceKm!)}',
+                            '${distanceKm!.toStringAsFixed(1)} km · ${_distanceHint(context, distanceKm!)}',
                             style: Theme.of(context)
                                 .textTheme
                                 .labelSmall
@@ -1780,19 +1804,37 @@ class _UnifiedEventCard extends StatelessWidget {
                   ],
                 ],
               ),
-              if (item.priceLabel != null && item.priceLabel!.isNotEmpty) ...[
+              if (item.isFree ||
+                  (item.priceLabel != null && item.priceLabel!.isNotEmpty)) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Preis: ${item.priceLabel}',
+                  context.tr(
+                    'events_price_label',
+                    values: {
+                      'price': item.isFree
+                          ? context.tr('events_free')
+                          : item.priceLabel!,
+                    },
+                  ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
               ],
-              if (item.ageLabel != null && item.ageLabel!.isNotEmpty) ...[
+              if ((item.ageLabel != null && item.ageLabel!.isNotEmpty) ||
+                  item.communityAgeGroups.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Für: ${item.ageLabel}',
+                  context.tr(
+                    'events_for_age',
+                    values: {
+                      'age': item.communityAgeGroups.isNotEmpty
+                          ? item.communityAgeGroups
+                              .map((group) => context.tr(_ageGroupKey(group)))
+                              .join(', ')
+                          : item.ageLabel!,
+                    },
+                  ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -1803,5 +1845,22 @@ class _UnifiedEventCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+String _ageGroupKey(AgeGroup ageGroup) {
+  switch (ageGroup) {
+    case AgeGroup.infant:
+      return 'events_age_infant';
+    case AgeGroup.toddler:
+      return 'events_age_toddler';
+    case AgeGroup.preschool:
+      return 'events_age_preschool';
+    case AgeGroup.elementary:
+      return 'events_age_elementary';
+    case AgeGroup.teenager:
+      return 'events_age_teenager';
+    case AgeGroup.mixed:
+      return 'events_age_mixed';
   }
 }

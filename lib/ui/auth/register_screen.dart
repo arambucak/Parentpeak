@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (!_agreedToTerms) {
       setState(
-          () => _errorMessage = 'Bitte akzeptiere die Nutzungsbedingungen.');
+          () => _errorMessage = context.tr('register_accept_terms_required'));
       return;
     }
 
@@ -80,8 +81,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       } else {
         setState(
-          () => _errorMessage = result.errorMessage ??
-              'Registrierung fehlgeschlagen. Bitte erneut versuchen.',
+          () => _errorMessage =
+              result.errorMessage ?? context.tr('register_failed'),
         );
       }
     } catch (e) {
@@ -89,8 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            'Technischer Fehler bei der Registrierung. Bitte erneut versuchen.';
+        _errorMessage = context.tr('register_technical_error');
       });
     }
   }
@@ -118,7 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new_rounded),
                     color: const Color(0xFF122220),
-                    tooltip: 'Zurück zum Login',
+                    tooltip: context.tr('register_back_to_login'),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
@@ -183,7 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              'Konto erstellen',
+                              context.tr('register_title'),
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF122220),
@@ -191,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'In 2 Minuten startklar fur deinen Familienalltag.',
+                              context.tr('register_subtitle'),
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: const Color(0xFF5A6B68),
                               ),
@@ -211,7 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Bereits registriert? ',
+                                  context.tr('register_already_registered'),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: const Color(0xFF5A6B68),
                                   ),
@@ -219,7 +219,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 GestureDetector(
                                   onTap: () => Navigator.of(context).pop(),
                                   child: Text(
-                                    'Jetzt einloggen',
+                                    context.tr('register_login_link'),
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: const Color(0xFF166A61),
                                       fontWeight: FontWeight.w700,
@@ -284,7 +284,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Aktuell kostenlos in der Beta',
+                  context.tr('register_beta_title'),
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -292,7 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Nach dem offiziellen Start: 1 Monat kostenlos testen.',
+                  context.tr('register_beta_description'),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
                   ),
@@ -316,13 +316,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             textCapitalization: TextCapitalization.words,
             onChanged: (_) => _clearError(),
             decoration: _fieldDecoration(
-              labelText: 'Dein Anzeigename (z. B. Anna oder Familie Schmidt)',
+              labelText: context.tr('register_display_name_label'),
               prefixIcon: const Icon(Icons.person_outline_rounded),
-              helperText: 'So sehen dich andere Eltern.',
+              helperText: context.tr('register_display_name_helper'),
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) {
-                return 'Name ist erforderlich.';
+                return context.tr('register_display_name_required');
               }
               return null;
             },
@@ -338,15 +338,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
             autofillHints: const [AutofillHints.email],
             onChanged: (_) => _clearError(),
             decoration: _fieldDecoration(
-              labelText: 'E-Mail-Adresse',
+              labelText: context.tr('auth_email_address_label'),
               prefixIcon: const Icon(Icons.email_outlined),
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) {
-                return 'E-Mail ist erforderlich.';
+                return context.tr('auth_email_required');
               }
               if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) {
-                return 'Bitte gib eine gültige E-Mail-Adresse ein.';
+                return context.tr('auth_email_invalid');
               }
               return null;
             },
@@ -358,7 +358,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             textInputAction: TextInputAction.next,
             onChanged: (_) => _clearError(),
             decoration: _fieldDecoration(
-              labelText: 'Passwort',
+              labelText: context.tr('auth_password_label'),
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 icon: Icon(_obscurePass
@@ -368,12 +368,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Passwort ist erforderlich.';
-              if (v.length < 8) return 'Mindestens 8 Zeichen.';
-              if (!v.contains(RegExp(r'[A-Z]'))) {
-                return 'Mindestens ein Großbuchstabe.';
+              if (v == null || v.isEmpty) {
+                return context.tr('auth_password_required');
               }
-              if (!v.contains(RegExp(r'[0-9]'))) return 'Mindestens eine Zahl.';
+              if (v.length < 8) {
+                return context.tr('register_password_min_length');
+              }
+              if (!v.contains(RegExp(r'[A-Z]'))) {
+                return context.tr('register_password_uppercase');
+              }
+              if (!v.contains(RegExp(r'[0-9]'))) {
+                return context.tr('register_password_number');
+              }
               return null;
             },
           ),
@@ -385,7 +391,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onFieldSubmitted: (_) => _submit(),
             onChanged: (_) => _clearError(),
             decoration: _fieldDecoration(
-              labelText: 'Passwort bestätigen',
+              labelText: context.tr('register_password_confirm_label'),
               prefixIcon: const Icon(Icons.lock_rounded),
               suffixIcon: IconButton(
                 icon: Icon(_obscureConfirm
@@ -397,7 +403,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             validator: (v) {
               if (v != _passCtrl.text) {
-                return 'Die Passwörter stimmen nicht überein.';
+                return context.tr('register_password_mismatch');
               }
               return null;
             },
@@ -490,9 +496,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: const Color(0xFF546663),
                   ),
                   children: [
-                    const TextSpan(text: 'Ich akzeptiere die '),
+                    TextSpan(text: context.tr('register_terms_prefix')),
                     TextSpan(
-                      text: 'Nutzungsbedingungen',
+                      text: context.tr('terms'),
                       style: const TextStyle(
                         color: Color(0xFF145D55),
                         fontWeight: FontWeight.w700,
@@ -502,9 +508,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ..onTap =
                             () => _openUrl(APIConfig.getTermsOfServiceUrl()),
                     ),
-                    const TextSpan(text: ' und '),
+                    TextSpan(text: context.tr('register_terms_and')),
                     TextSpan(
-                      text: 'Datenschutzrichtlinie',
+                      text: context.tr('privacy_policy'),
                       style: const TextStyle(
                         color: Color(0xFF145D55),
                         fontWeight: FontWeight.w700,
@@ -514,7 +520,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ..onTap =
                             () => _openUrl(APIConfig.getPrivacyPolicyUrl()),
                     ),
-                    const TextSpan(text: ' von Parentpeak.'),
+                    TextSpan(text: context.tr('register_terms_suffix')),
                   ],
                 ),
               ),
@@ -530,8 +536,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (urlStr.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('URL noch nicht konfiguriert.'),
+          SnackBar(
+            content: Text(context.tr('register_url_not_configured')),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -543,7 +549,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Konnte $urlStr nicht öffnen.'),
+            content: Text(
+                context.tr('auth_url_open_failed', values: {'url': urlStr})),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -573,9 +580,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   color: Colors.white,
                 ),
               )
-            : const Text(
-                'Kostenlos starten',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            : Text(
+                context.tr('register_submit'),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
       ),
     );
@@ -593,16 +601,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Passwort-Anforderungen',
+            context.tr('register_password_requirements'),
             style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
           ...[
-            'Mindestens 8 Zeichen',
-            'Mindestens ein Großbuchstabe (A–Z)',
-            'Mindestens eine Zahl (0–9)',
+            context.tr('register_password_hint_length'),
+            context.tr('register_password_hint_uppercase'),
+            context.tr('register_password_hint_number'),
           ].map(
             (hint) => Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -642,35 +650,34 @@ class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
       _resent = false;
     });
     await AuthService.instance.resendVerificationEmail(widget.email);
-    if (mounted)
+    if (mounted) {
       setState(() {
         _sending = false;
         _resent = true;
       });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text('E-Mail bestätigen 📬'),
+      title: Text(context.tr('auth_email_confirm_title')),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Wir haben eine Bestätigungs-E-Mail an\n${widget.email}\ngesendet.',
-          ),
+          Text(context.tr('auth_email_sent', values: {'email': widget.email})),
           const SizedBox(height: 12),
-          const Text(
-            'Bitte klicke auf den Link in der E-Mail. Danach kannst du dich einloggen.',
-            style: TextStyle(fontSize: 13, color: Colors.black54),
+          Text(
+            context.tr('auth_email_confirm_instructions'),
+            style: const TextStyle(fontSize: 13, color: Colors.black54),
           ),
           if (_resent) ...[
             const SizedBox(height: 10),
-            const Text(
-              '✅ Neuer Link wurde gesendet.',
-              style: TextStyle(color: Color(0xFF059669), fontSize: 13),
+            Text(
+              context.tr('auth_email_resent'),
+              style: const TextStyle(color: Color(0xFF059669), fontSize: 13),
             ),
           ],
         ],
@@ -683,11 +690,11 @@ class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Link erneut senden'),
+              : Text(context.tr('auth_resend_link')),
         ),
         FilledButton(
           onPressed: widget.onDone,
-          child: const Text('Zum Login'),
+          child: Text(context.tr('auth_to_login')),
         ),
       ],
     );

@@ -144,9 +144,11 @@ class BetaFeedbackWidget extends StatelessWidget {
                     Navigator.pop(ctx);
                     await _sendFeedback(type, text);
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content:
-                            Text('\u{2764}\u{FE0F} Danke für dein Feedback!'),
+                            Text(AppStringsManager.getString(
+                              languageService.currentLanguage,
+                              'feedback_thanks')),
                       ));
                     }
                   },

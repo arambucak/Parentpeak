@@ -13,6 +13,35 @@ import 'package:parentpeak/services/holiday_service.dart';
 import 'package:parentpeak/widgets/language_change_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+String _displayCalendarPersonLabel(String label, BuildContext context) {
+  if (label == 'Alle') {
+    return AppStringsManager.getString(
+      languageService.currentLanguage,
+      'filter_all',
+    );
+  }
+  if (label == 'Eltern') {
+    return AppStringsManager.getString(
+      languageService.currentLanguage,
+      'calendar_person_parents',
+    );
+  }
+  if (label == 'Kindergarten') {
+    return AppStringsManager.getString(
+      languageService.currentLanguage,
+      'calendar_person_kindergarten',
+    );
+  }
+  if (label == '\u{1F382} Geburtstag') {
+    final title = AppStringsManager.getString(
+      languageService.currentLanguage,
+      'calendar_person_birthday',
+    );
+    return '\u{1F382} $title';
+  }
+  return label;
+}
+
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
 
@@ -340,7 +369,8 @@ class _CalendarScreenState extends State<CalendarScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(_t('calendar_delete_event')),
-        content: Text('„${event.title}" wird unwiderruflich gelöscht.'),
+        content: Text(_t('calendar_delete_event_confirm')
+            .replaceAll('{title}', event.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -676,7 +706,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                               isExpanded: true,
                               items: [
                                 ..._personColors.keys.map((p) =>
-                                    DropdownMenuItem(value: p, child: Text(p))),
+                                    DropdownMenuItem(value: p, child: Text(_displayCalendarPersonLabel(p, context)))),
                                 DropdownMenuItem(
                                   value: '__add__',
                                   child: Row(
@@ -1733,7 +1763,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(
-            label,
+            _displayCalendarPersonLabel(label, context),
             style: TextStyle(
               fontSize: 11,
               color: selected ? color : const Color(0xFF4A5568),
@@ -2038,7 +2068,7 @@ class _EventCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                event.person,
+                                _displayCalendarPersonLabel(event.person, context),
                                 style: TextStyle(
                                   color: color,
                                   fontWeight: FontWeight.w700,

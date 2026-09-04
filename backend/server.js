@@ -768,7 +768,8 @@ function buildWeeklyImpulseSeedPosts(schema, impulseId) {
   ];
 }
 
-function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
+function buildWeeklyImpulseResponse({ schema, viewerUserId, language = 'de' }) {
+  const lang = supportedAppLanguageNames.has(language) ? language : 'de';
   const today = new Date().toISOString().slice(0, 10);
   const topic = getTodayImpulseTopic();
   const impulseId = `imp_daily_${today}_${topic.key}`;
@@ -789,9 +790,101 @@ function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
       };
     });
 
+  const labels = {
+    de: {
+      hero_headline: 'Dein Tagesimpuls für heute',
+      prefix: 'Drei alltagsnahe Impulse:',
+      greeting: 'Hallo und schön, dass du da bist.',
+      closing: 'Du machst das gut.',
+      quick_title: 'Heute in 2 Minuten',
+      quick_fmt: 'Sofort-Impuls',
+      und_title: 'Kurz verstanden',
+      und_fmt: 'Verstehen',
+      prac_title: 'Praxis für heute',
+      prac_fmt: 'Praxis',
+      refl_title: 'Abend-Reflexion',
+      refl_fmt: 'Reflexion',
+      deep_title: 'Tipp für den Alltag',
+      deep_fmt: 'Artikel',
+      question_title: 'Frage des Tages',
+      min: 'Min',
+    },
+    en: {
+      hero_headline: 'Your Daily Impulse',
+      prefix: 'Three practical tips:',
+      greeting: 'Hello and welcome!',
+      closing: 'You are doing great.',
+      quick_title: 'Today in 2 minutes',
+      quick_fmt: 'Instant Impulse',
+      und_title: 'Quick Summary',
+      und_fmt: 'Understanding',
+      prac_title: 'Practice for Today',
+      prac_fmt: 'Practice',
+      refl_title: 'Evening Reflection',
+      refl_fmt: 'Reflection',
+      deep_title: 'Daily Life Tip',
+      deep_fmt: 'Article',
+      question_title: 'Question of the Day',
+      min: 'min',
+    },
+    tr: {
+      hero_headline: 'Günün İlhamı',
+      prefix: 'Üç pratik ipucu:',
+      greeting: 'Merhaba, hoş geldin.',
+      closing: 'Harika gidiyorsun.',
+      quick_title: 'Bugün 2 Dakikada',
+      quick_fmt: 'Hızlı İlham',
+      und_title: 'Özetle',
+      und_fmt: 'Anlama',
+      prac_title: 'Günün Uygulaması',
+      prac_fmt: 'Uygulama',
+      refl_title: 'Akşam Değerlendirmesi',
+      refl_fmt: 'Düşünce',
+      deep_title: 'Günlük Hayat İpucu',
+      deep_fmt: 'Makale',
+      question_title: 'Günün Sorusu',
+      min: 'dk',
+    },
+    ku: {
+      hero_headline: 'Îlhama Te ya Rojê',
+      prefix: 'Sê şîretên me yên ji bo jiyanê:',
+      greeting: 'Merheba, bi xêr hatî.',
+      closing: 'Tu vê yekê pir baş dikî.',
+      quick_title: 'Îro di 2 Deqîqeyan de',
+      quick_fmt: 'Îlhama Bilez',
+      und_title: 'Kurtenêrîn',
+      und_fmt: 'Têgihîştin',
+      prac_title: 'Prensîba Îro',
+      prac_fmt: 'Pratîk',
+      refl_title: 'Ramana Êvarê',
+      refl_fmt: 'Ramana Kûr',
+      deep_title: 'Şîreta Jiyana Rojane',
+      deep_fmt: 'Gutar',
+      question_title: 'Pirsiyarê Rojê',
+      min: 'deq',
+    },
+  }[lang] || {
+    hero_headline: 'Your Daily Impulse',
+    prefix: 'Three practical tips:',
+    greeting: 'Hello and welcome!',
+    closing: 'You are doing great.',
+    quick_title: 'Today in 2 minutes',
+    quick_fmt: 'Instant Impulse',
+    und_title: 'Quick Summary',
+    und_fmt: 'Understanding',
+    prac_title: 'Practice for Today',
+    prac_fmt: 'Practice',
+    refl_title: 'Evening Reflection',
+    refl_fmt: 'Reflection',
+    deep_title: 'Daily Life Tip',
+    deep_fmt: 'Article',
+    question_title: 'Question of the Day',
+    min: 'min',
+  };
+
   const contentBody =
     `${topic.parent_lens}\n\n` +
-    `Drei alltagsnahe Impulse:\n` +
+    `${labels.prefix}\n` +
     `- ${topic.parent_tips[0]}\n` +
     `- ${topic.parent_tips[1]}\n` +
     `- ${topic.parent_tips[2]}`;
@@ -799,55 +892,55 @@ function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
   return {
     id: impulseId,
     title: topic.title,
-    hero_headline: 'Dein Tagesimpuls für heute',
+    hero_headline: labels.hero_headline,
     hero_description: topic.parent_lens,
     content_body: contentBody,
     practical_tip: topic.practical_tip,
     audio_script:
-      `Hallo und schön, dass du da bist. ${topic.parent_lens} ` +
-      `${topic.practical_tip} Du machst das gut.`,
+      `${labels.greeting} ${topic.parent_lens} ` +
+      `${topic.practical_tip} ${labels.closing}`,
     category: topic.category,
     publish_date: today,
     companion_impulses: [
       {
         id: `${impulseId}_quick`,
-        title: 'Heute in 2 Minuten',
+        title: labels.quick_title,
         summary: topic.companion_quick,
-        duration_label: '2 Min',
-        format_label: 'Sofort-Impuls',
+        duration_label: `2 ${labels.min}`,
+        format_label: labels.quick_fmt,
       },
       {
         id: `${impulseId}_understand`,
-        title: 'Kurz verstanden',
+        title: labels.und_title,
         summary: topic.parent_lens,
-        duration_label: '3 Min',
-        format_label: 'Verstehen',
+        duration_label: `3 ${labels.min}`,
+        format_label: labels.und_fmt,
       },
       {
         id: `${impulseId}_practice`,
-        title: 'Praxis für heute',
+        title: labels.prac_title,
         summary: topic.parent_tips[0],
-        duration_label: '4 Min',
-        format_label: 'Praxis',
+        duration_label: `4 ${labels.min}`,
+        format_label: labels.prac_fmt,
       },
       {
         id: `${impulseId}_reflect`,
-        title: 'Abend-Reflexion',
+        title: labels.refl_title,
         summary: topic.companion_reflect,
-        duration_label: '2 Min',
-        format_label: 'Reflexion',
+        duration_label: `2 ${labels.min}`,
+        format_label: labels.refl_fmt,
       },
       {
         id: `${impulseId}_deepdive`,
-        title: 'Tipp für den Alltag',
+        title: labels.deep_title,
         summary: topic.parent_tips[1],
-        duration_label: '5 Min',
-        format_label: 'Artikel',
+        duration_label: `5 ${labels.min}`,
+        format_label: labels.deep_fmt,
       },
     ],
     discussion_prompt: {
       id: `${impulseId}_discussion`,
-      title: 'Frage des Tages',
+      title: labels.question_title,
       body: topic.discussion_body,
     },
     community_posts: mergedPosts,
@@ -1236,6 +1329,33 @@ const allowedGeminiModels = new Set([
   'gemini-3.5-flash-lite',
   'gemini-3.5-flash',
 ]);
+const supportedAppLanguageNames = new Map([
+  ['de', 'German'],
+  ['en', 'English'],
+  ['tr', 'Turkish'],
+  ['ku', 'Kurmancî Kurdish in Latin Hawar script'],
+  ['ar', 'Arabic'],
+  ['fa', 'Farsi'],
+  ['ckb', 'Sorani Kurdish'],
+  ['fr', 'French'],
+  ['es', 'Spanish'],
+  ['it', 'Italian'],
+  ['pt', 'Portuguese'],
+  ['nl', 'Dutch'],
+  ['pl', 'Polish'],
+  ['ja', 'Japanese'],
+  ['zh', 'Simplified Chinese'],
+  ['hi', 'Hindi'],
+]);
+
+function normalizeAppLanguage(value) {
+  const language = String(value || 'de').trim().toLowerCase();
+  return supportedAppLanguageNames.has(language) ? language : 'de';
+}
+
+function buildLanguageInstruction(language) {
+  return `Respond exclusively in ${supportedAppLanguageNames.get(language)}. Do not mix languages.`;
+}
 
 /**
  * GET /ai/health
@@ -1289,6 +1409,7 @@ app.post('/ai/generate', async (req, res) => {
   const model = String(req.body?.model || 'gemini-3.5-flash-lite').trim();
   const prompt = String(req.body?.prompt || '').trim();
   const systemInstruction = String(req.body?.systemInstruction || '').trim();
+  const appLanguage = normalizeAppLanguage(req.body?.language);
   const useGoogleSearch = req.body?.useGoogleSearch === true;
   const imageBase64 = String(req.body?.imageBase64 || '').trim();
   const imageMimeType = String(req.body?.imageMimeType || '').trim();
@@ -1310,6 +1431,11 @@ app.post('/ai/generate', async (req, res) => {
     }
   }
 
+  const finalSystemInstruction = [
+    systemInstruction,
+    buildLanguageInstruction(appLanguage),
+  ].filter(Boolean).join('\n\n');
+
   const requestBody = {
     contents: [{
       role: 'user',
@@ -1324,9 +1450,7 @@ app.post('/ai/generate', async (req, res) => {
       temperature: useGoogleSearch ? 1.0 : 0.7,
       maxOutputTokens: useGoogleSearch ? 6000 : 8192,
     },
-    ...(systemInstruction
-      ? { systemInstruction: { parts: [{ text: systemInstruction }] } }
-      : {}),
+    systemInstruction: { parts: [{ text: finalSystemInstruction }] },
     ...(useGoogleSearch ? { tools: [{ google_search: {} }] } : {}),
   };
 
@@ -3951,8 +4075,9 @@ app.get('/api/weekly-impulse', (req, res) => {
     typeof req.query.viewerUserId === 'string' && req.query.viewerUserId.trim()
       ? req.query.viewerUserId.trim()
       : '';
+  const language = normalizeAppLanguage(req.query.language);
 
-  res.json(buildWeeklyImpulseResponse({ schema, viewerUserId }));
+  res.json(buildWeeklyImpulseResponse({ schema, viewerUserId, language }));
 });
 
 app.post('/api/weekly-impulse/community/posts', (req, res) => {

@@ -181,7 +181,8 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
         controller: _searchCtrl,
         onChanged: _onSearch,
         decoration: InputDecoration(
-          hintText: 'Was beschäftigt dich? (z.B. "haut", "schläft nicht")',
+            hintText: AppStringsManager.getString(
+              languageService.currentLanguage, 'knowledge_search_hint'),
           hintStyle: TextStyle(fontSize: 13, color: theme.colorScheme.outline),
           prefixIcon: const Icon(Icons.search_rounded, size: 20),
           suffixIcon: _searchCtrl.text.isNotEmpty

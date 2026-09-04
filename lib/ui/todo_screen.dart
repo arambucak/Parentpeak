@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/todo_backend_service.dart';
@@ -125,14 +126,14 @@ class _TodoScreenState extends State<TodoScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('To-Do Liste'),
+        title: Text(context.tr('todo')),
         elevation: 0,
         centerTitle: false,
         actions: [
           IconButton(
             onPressed: _loadTodos,
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Synchronisieren',
+            tooltip: context.tr('tooltip_sync'),
           ),
         ],
       ),
@@ -153,11 +154,11 @@ class _TodoScreenState extends State<TodoScreen> {
                     Icons.cloud_off_rounded,
                     color: theme.colorScheme.primary,
                   ),
-                  title: const Text('Server-Sync fehlgeschlagen'),
+                  title: Text(context.tr('sync_failed')),
                   subtitle: Text(_syncError!),
                   trailing: TextButton(
                     onPressed: _loadTodos,
-                    child: const Text('Erneut versuchen'),
+                    child: Text(context.tr('reload_btn')),
                   ),
                 )
                 ),
@@ -178,7 +179,7 @@ class _TodoScreenState extends State<TodoScreen> {
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        hintText: 'Neue Aufgabe hinzufügen...',
+                        hintText: context.tr('add_todo_hint'),
                         border: InputBorder.none,
                         prefixIcon: Icon(
                           Icons.add_task,

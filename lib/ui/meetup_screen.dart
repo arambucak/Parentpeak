@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
@@ -108,7 +109,7 @@ class _MeetupScreenState extends State<MeetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aktivitäten & Treffen'),
+        title: Text(context.tr('meetup_title')),
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
@@ -141,14 +142,14 @@ class _MeetupScreenState extends State<MeetupScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Aktivitäten in deiner Nähe',
+                        context.tr('meetup_nearby'),
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Klare Filter für Sichtbarkeit, optional nach Alter verfeinern.',
+                        context.tr('meetup_filter_description'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
@@ -160,7 +161,8 @@ class _MeetupScreenState extends State<MeetupScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              '${_filteredEvents.length} Aktivitäten',
+                                context.tr('meetup_activity_count',
+                                  values: {'count': _filteredEvents.length}),
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -174,7 +176,9 @@ class _MeetupScreenState extends State<MeetupScreen> {
                                 ? Icons.tune_rounded
                                 : Icons.tune_outlined),
                             label:
-                                Text(_showAgeFilters ? 'Weniger Filter' : 'Mehr Filter'),
+                                Text(context.tr(_showAgeFilters
+                                  ? 'meetup_less_filters'
+                                  : 'meetup_more_filters')),
                           ),
                         ],
                       ),
@@ -188,14 +192,14 @@ class _MeetupScreenState extends State<MeetupScreen> {
                     child: Row(
                       children: [
                         _buildVisibilityChip(
-                          label: 'Alle',
+                          label: context.tr('filter_all'),
                           selected: _visibilityFilter == FeedVisibilityFilter.all,
                           onTap: () =>
                               setState(() => _visibilityFilter = FeedVisibilityFilter.all),
                         ),
                         const SizedBox(width: 8),
                         _buildVisibilityChip(
-                          label: 'Öffentlich',
+                          label: context.tr('filter_public'),
                           selected:
                               _visibilityFilter == FeedVisibilityFilter.publicOnly,
                           onTap: () => setState(
@@ -204,7 +208,7 @@ class _MeetupScreenState extends State<MeetupScreen> {
                         if (FeatureFlags.enableFamilyCircle) ...[
                           const SizedBox(width: 8),
                           _buildVisibilityChip(
-                            label: 'Familienkreis',
+                            label: context.tr('filter_family_circle'),
                             selected:
                                 _visibilityFilter == FeedVisibilityFilter.familyCircle,
                             onTap: () => setState(() =>
@@ -214,7 +218,7 @@ class _MeetupScreenState extends State<MeetupScreen> {
                         ],
                         const SizedBox(width: 8),
                         _buildVisibilityChip(
-                          label: 'Eingeladen',
+                          label: context.tr('filter_invited'),
                           selected:
                               _visibilityFilter == FeedVisibilityFilter.inviteOnly,
                           onTap: () => setState(

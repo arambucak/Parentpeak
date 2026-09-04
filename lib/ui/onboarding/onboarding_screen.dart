@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_pages.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
@@ -458,20 +459,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildLanguagePage() {
     final theme = Theme.of(context);
-    const languages = [
-      {'code': 'de', 'flag': '\u{1F1E9}\u{1F1EA}', 'name': 'Deutsch'},
-      {'code': 'en', 'flag': '\u{1F1EC}\u{1F1E7}', 'name': 'English'},
-      {'code': 'tr', 'flag': '\u{1F1F9}\u{1F1F7}', 'name': 'Türkçe'},
-      {'code': 'ku', 'flag': '\u{1F3F3}\u{FE0F}', 'name': 'Kurdî'},
-      {'code': 'ar', 'flag': '\u{1F1F8}\u{1F1E6}', 'name': 'العربية'},
-      {'code': 'fr', 'flag': '\u{1F1EB}\u{1F1F7}', 'name': 'Français'},
-      {'code': 'es', 'flag': '\u{1F1EA}\u{1F1F8}', 'name': 'Español'},
-      {'code': 'ru', 'flag': '\u{1F1F7}\u{1F1FA}', 'name': 'Русский'},
-      {'code': 'pl', 'flag': '\u{1F1F5}\u{1F1F1}', 'name': 'Polski'},
-      {'code': 'it', 'flag': '\u{1F1EE}\u{1F1F9}', 'name': 'Italiano'},
-      {'code': 'nl', 'flag': '\u{1F1F3}\u{1F1F1}', 'name': 'Nederlands'},
-      {'code': 'uk', 'flag': '\u{1F1FA}\u{1F1E6}', 'name': 'Українська'},
-    ];
+    const languages = AppLanguages.supported;
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -529,12 +517,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   itemBuilder: (_, i) {
                     final lang = languages[i];
                     final selected =
-                        languageService.currentLanguage == lang['code'];
+                        languageService.currentLanguage == lang.code;
                     return GestureDetector(
                       onTap: () async {
                         HapticFeedback.selectionClick();
-                        await languageService
-                            .setLanguage(lang['code']! as String);
+                        await languageService.setLanguage(lang.code);
                         if (mounted) setState(() {});
                       },
                       child: AnimatedContainer(
@@ -554,14 +541,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (lang['code'] == 'ku')
+                            if (lang.code == 'ku' || lang.code == 'ckb')
                               const AlaRenginFlag(width: 32, height: 20)
                             else
-                              Text(lang['flag']!,
+                              Text(lang.flag,
                                   style: const TextStyle(fontSize: 24)),
                             const SizedBox(height: 4),
                             Text(
-                              lang['name']!,
+                              lang.nativeName,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: selected

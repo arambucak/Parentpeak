@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 
 /// Ruhiger, sachlicher Hinweis fuer gesperrte Konten — im ParentPeak-Ton,
 /// ohne Beschaemung. Wird angezeigt, wenn der Server ein gesperrtes Konto
@@ -16,18 +17,15 @@ Future<void> showAccountSuspendedNotice(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       icon: Icon(Icons.info_outline_rounded,
           size: 36, color: theme.colorScheme.primary),
-      title: const Text('Konto vorübergehend eingeschränkt'),
+      title: Text(context.tr('account_suspended_title')),
       content: Text(
-        message ??
-            'Dein Konto wurde vorübergehend eingeschränkt. '
-                'Bei Fragen wende dich gerne an unseren Support – '
-                'wir helfen dir weiter.',
+        message ?? context.tr('account_suspended_message'),
         style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
       ),
       actions: [
         FilledButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Verstanden'),
+          child: Text(context.tr('common_understood')),
         ),
       ],
     ),

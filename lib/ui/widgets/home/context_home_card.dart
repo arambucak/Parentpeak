@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/main.dart';
@@ -57,8 +56,12 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   int _tipIndex = 0;
   bool _showMaterials = false;
 
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
+
   @override
   void dispose() {
+    languageService.removeListener(_onLanguageChanged);
     _momentCtrl.dispose();
     super.dispose();
   }
@@ -67,7 +70,19 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   void initState() {
     super.initState();
     _determineContext();
+    languageService.addListener(_onLanguageChanged);
     _loadUserData();
+  }
+
+  void _onLanguageChanged() {
+    if (!mounted) return;
+    _determineContext();
+    final data = _getTipData(_childAgeHint, _monthlyBase() + _tipIndex);
+    setState(() {
+      _tip = data['tip']!;
+      _tipMaterials = data['materials']!;
+      _tipDuration = data['duration']!;
+    });
   }
 
   void _determineContext() {
@@ -78,7 +93,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
       _greeting = AppStringsManager.getString(lang, 'greeting_morning');
     } else if (hour >= 11 && hour < 17) {
       _context = _TimeContext.afternoon;
-      _greeting = 'Schön dass ihr da seid';
+      _greeting = _t('home_welcome_back');
     } else if (hour >= 17 && hour < 23) {
       _context = _TimeContext.evening;
       _greeting = AppStringsManager.getString(lang, 'greeting_evening');
@@ -188,291 +203,330 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
 
   Map<String, String> _getTipData(int age, int index) {
     final tips = age < 2
-        ? [
-            // ── Babys & Krabbelalter ──────────────────────────────────────
-            {
-              'tip':
-                  'Versteckspiel mit Tüchern: Du versteckst, Baby sucht. Fördert Objektpermanenz.',
-              'materials': 'Tücher, Decke',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Krabbelwettrennen: Kriecht zusammen durch die Wohnung. Lachen garantiert.',
-              'materials': 'Nichts nötig',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Topf-Orchester: Töpfe und Kochlöffel als Instrumente — Rhythmus fördert Gehirnentwicklung.',
-              'materials': 'Töpfe, Kochlöffel',
-              'duration': '15 Min'
-            },
-            {
-              'tip':
-                  'Seifenblasen jagen: Draussen oder drinnen. Trainiert Hand-Augen-Koordination.',
-              'materials': 'Seifenblasen',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Fingerspiele mit Gesang: "Alle meine Entchen" mit Fingerbewegungen.',
-              'materials': 'Nichts nötig',
-              'duration': '5 Min'
-            },
-            {
-              'tip':
-                  'Turmbauen und umwerfen: Baue einen Turm aus Bechern — Kind darf umhauen!',
-              'materials': 'Plastikbecher oder Bauklötze',
-              'duration': '15 Min'
-            },
-            {
-              'tip':
-                  'Spiegelspiel: Sitz mit Baby vor dem Spiegel und ahmt gemeinsam Mimik nach.',
-              'materials': 'Spiegel',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Wasserspaß: Schüssel mit lauwarmem Wasser, Becher und Löffel eintauchen.',
-              'materials': 'Schüssel, Wasser, Becher, Löffel',
-              'duration': '15 Min'
-            },
-            {
-              'tip':
-                  'Knisterpapier-Erkundung: Verschiedene Papiere und Tücher befühlen und zerknüllen.',
-              'materials': 'Zeitungspapier, Alufolie, weiches Tuch',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Ball rollen: Setzt euch gegenüber auf den Boden und rollt einen Ball hin und her.',
-              'materials': 'Weicher Ball',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Schaukel-Lied: Kind auf den Knien wiegen und dabei ein ruhiges Lied summen.',
-              'materials': 'Nichts nötig',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Körperteil-Spiel: "Wo ist deine Nase?" — Baby zeigt und benennt mit.',
-              'materials': 'Nichts nötig',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Schüttelbüchse basteln: Reiskörner in eine leere Plastikflasche — selbst gemachtes Instrument.',
-              'materials': 'Plastikflasche, Reiskörner oder Linsen',
-              'duration': '10 Min'
-            },
-            {
-              'tip':
-                  'Spaziergang mit Staunen: Langsam gehen und alles benennen, was ihr seht und hört.',
-              'materials': 'Babytrage oder Kinderwagen',
-              'duration': '20 Min'
-            },
-            {
-              'tip':
-                  'Klatsch-Rhythmus: Einfache Klatschspiele wie "Backe backe Kuchen" gemeinsam lernen.',
-              'materials': 'Nichts nötig',
-              'duration': '5 Min'
-            },
-          ]
+        ? _localizedActivities('home_activity_baby', 15)
         : age < 5
-            ? [
-                // ── Kleinkind 2–4 Jahre ────────────────────────────────────
-                {
-                  'tip':
-                      'Schatzsuche im Wohnzimmer: Verstecke 5 Dinge und zeichne eine Schatzkarte.',
-                  'materials': 'Papier, Stifte, 5 kleine Gegenstände',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Verkleiden aus dem Schrank: Alte Klamotten, Hüte, Tücher — Theater spielen!',
-                  'materials': 'Alte Kleidung, Accessoires',
-                  'duration': '30 Min'
-                },
-                {
-                  'tip':
-                      'Barfuß-Parcours: Kissen, Handtücher, Plastikfolie — verschiedene Texturen fühlen.',
-                  'materials': 'Kissen, Handtücher, Folie, Decken',
-                  'duration': '15 Min'
-                },
-                {
-                  'tip':
-                      'Steine bemalen: Draussen sammeln, drinnen mit Wasserfarben verzieren.',
-                  'materials': 'Steine, Wasserfarben, Pinsel',
-                  'duration': '30 Min'
-                },
-                {
-                  'tip':
-                      'Karton-Burg: Große Kartons werden zu Häusern, Autos oder Raketen.',
-                  'materials': 'Grosse Kartons, Klebeband, Stifte',
-                  'duration': '45 Min'
-                },
-                {
-                  'tip':
-                      'Knetmasse selber machen: Mehl + Salz + Wasser + Lebensmittelfarbe — selbst geknetet!',
-                  'materials': 'Mehl, Salz, Wasser, Oel, Lebensmittelfarbe',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Pfützen-Springen: Nach dem Regen raus — Gummistiefel an und los!',
-                  'materials': 'Gummistiefel, Regenjacke',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Kuchenbäckerei: Zusammen einen einfachen Rührkuchen backen.',
-                  'materials': 'Mehl, Eier, Zucker, Butter, Backform',
-                  'duration': '45 Min'
-                },
-                {
-                  'tip':
-                      'Schattentheater: Taschenlampe an die Wand, Hände formen Tiere und Figuren.',
-                  'materials': 'Taschenlampe, dunkler Raum',
-                  'duration': '15 Min'
-                },
-                {
-                  'tip':
-                      'Naturmandala: Blätter, Steine und Zweige draußen kreisförmig legen.',
-                  'materials': 'Naturmaterialien',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Hindernislauf: Stühle, Decken und Kissen als Tunnel und Brücke aufbauen.',
-                  'materials': 'Stühle, Decken, Kissen',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Farb-Experimente: Wasserfarben mischen — welche Farbe entsteht aus Blau und Gelb?',
-                  'materials': 'Wasserfarben, Becher, Wasser, Papier',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Wetter-Malbuch: Jeden Tag das Wetter ins Heft zeichnen — Sonne, Wolken, Regen.',
-                  'materials': 'Kleines Heft, Stifte',
-                  'duration': '10 Min'
-                },
-                {
-                  'tip':
-                      'Matschküche draußen: Mit Wasser, Erde und Blättern "Suppe kochen".',
-                  'materials': 'Schüssel, Wasser, Naturmaterialien',
-                  'duration': '30 Min'
-                },
-                {
-                  'tip':
-                      'Fingertheater: Gesichter auf Finger malen und gemeinsam eine Geschichte erfinden.',
-                  'materials': 'Filzstifte (hautverträglich), Hände',
-                  'duration': '15 Min'
-                },
-              ]
-            : [
-                // ── Schulkinder 5+ Jahre ───────────────────────────────────
-                {
-                  'tip':
-                      'Schnitzeljagd im Park: Hinweise schreiben, Route planen, Schatz verstecken.',
-                  'materials': 'Papier, Stifte, kleiner Schatz',
-                  'duration': '45 Min'
-                },
-                {
-                  'tip':
-                      'Familien-Quiz: Jeder schreibt 5 Fragen über sich — wer kennt wen am besten?',
-                  'materials': 'Papier, Stifte',
-                  'duration': '30 Min'
-                },
-                {
-                  'tip':
-                      'Geocaching: Kostenlose App, draußen Schätze suchen — echtes Abenteuer.',
-                  'materials': 'Smartphone mit Geocaching-App',
-                  'duration': '60 Min'
-                },
-                {
-                  'tip':
-                      'Comic zeichnen: Zusammen eine kurze Geschichte als Comicstrip erzählen.',
-                  'materials': 'Papier, Stifte, Buntstifte',
-                  'duration': '30 Min'
-                },
-                {
-                  'tip':
-                      'Fotosafari: Handy-Kamera und eine Liste: Finde etwas Rotes, Rundes, Weiches...',
-                  'materials': 'Smartphone, ausgedruckte Liste',
-                  'duration': '30 Min'
-                },
-                {
-                  'tip':
-                      'Wissenschafts-Labor: Backpulver-Essig-Vulkan, Geheimschrift mit Zitronensaft.',
-                  'materials':
-                      'Backpulver, Essig, Zitrone, Glas, Wattestäbchen',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Lager im Wohnzimmer: Decken, Kissen, Lichterkette — Zeltübernachtung drinnen.',
-                  'materials': 'Decken, Kissen, Lichterkette, Taschenlampe',
-                  'duration': '60 Min'
-                },
-                {
-                  'tip':
-                      'Brettspiel-Turnier: 3 Runden hintereinander, gemeinsam Punkte zählen.',
-                  'materials': 'Brettspiele, Snacks',
-                  'duration': '60 Min'
-                },
-                {
-                  'tip':
-                      'Kurzfilm drehen: Geschichte erfinden, Rollen verteilen, mit dem Handy aufnehmen.',
-                  'materials': 'Smartphone, optional Verkleidung',
-                  'duration': '60 Min'
-                },
-                {
-                  'tip':
-                      'Pflanzenprojekt: Samen in Erde pflanzen, Wachstum täglichbeobachten und notieren.',
-                  'materials': 'Blumentopf, Erde, Samen, kleines Heft',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Brief an die Zukunft: Schreibe heute einen Brief ans eigene Ich in 5 Jahren.',
-                  'materials': 'Papier, Briefumschlag, Stift',
-                  'duration': '20 Min'
-                },
-                {
-                  'tip':
-                      'Kochduell: Jedes Familienmitglied kocht oder bereitet einen Gang zu.',
-                  'materials': 'Kühlschrankinhalt, Kochgeschirr',
-                  'duration': '45 Min'
-                },
-                {
-                  'tip':
-                      'Naturtagebuch: Vögel, Insekten und Pflanzen draussen zeichnen und benennen.',
-                  'materials': 'Kleines Heft, Stifte, Buntstifte',
-                  'duration': '40 Min'
-                },
-                {
-                  'tip':
-                      'Familien-Escape-Room: Rätsel für die ganze Familie selber erfinden und lösen.',
-                  'materials':
-                      'Papier, Stifte, Alltagsgegenstände als Requisiten',
-                  'duration': '60 Min'
-                },
-                {
-                  'tip':
-                      'Sternenhimmel beobachten: Abends raus oder Fenster auf, Sternbilder mit App suchen.',
-                  'materials': 'Sternenhimmel-App (z.B. Sky Map), Decke',
-                  'duration': '30 Min'
-                },
-              ];
-    final item = tips[index % tips.length];
-    return item;
+            ? _localizedActivities('home_activity_toddler', 15)
+            : _localizedActivities('home_activity_school', 15);
+    return tips[index % tips.length];
   }
+
+  List<Map<String, String>> _localizedActivities(String prefix, int count) {
+    final durations = prefix == 'home_activity_baby'
+        ? const [10, 10, 15, 10, 5, 15, 10, 15, 10, 10, 10, 10, 10, 20, 5]
+        : prefix == 'home_activity_toddler'
+            ? const [20, 30, 15, 30, 45, 20, 20, 45, 15, 20, 20, 20, 10, 30, 15]
+            : const [
+                45,
+                30,
+                60,
+                30,
+                30,
+                20,
+                60,
+                60,
+                60,
+                20,
+                20,
+                45,
+                40,
+                60,
+                30
+              ];
+    return List.generate(count, (index) {
+      final key = '${prefix}_${index + 1}';
+      return {
+        'tip': _t('${key}_tip'),
+        'materials': _t('${key}_materials'),
+        'duration': _t('duration_minutes')
+            .replaceAll('{minutes}', '${durations[index]}'),
+      };
+    });
+  }
+
+  List<Map<String, String>> get legacyActivityReference =>
+      const <Map<String, String>>[
+        // Kept temporarily as a migration reference for localization data.
+        // ── Babys & Krabbelalter ──────────────────────────────────────
+        {
+          'tip':
+              'Versteckspiel mit Tüchern: Du versteckst, Baby sucht. Fördert Objektpermanenz.',
+          'materials': 'Tücher, Decke',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Krabbelwettrennen: Kriecht zusammen durch die Wohnung. Lachen garantiert.',
+          'materials': 'Nichts nötig',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Topf-Orchester: Töpfe und Kochlöffel als Instrumente — Rhythmus fördert Gehirnentwicklung.',
+          'materials': 'Töpfe, Kochlöffel',
+          'duration': '15 Min'
+        },
+        {
+          'tip':
+              'Seifenblasen jagen: Draussen oder drinnen. Trainiert Hand-Augen-Koordination.',
+          'materials': 'Seifenblasen',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Fingerspiele mit Gesang: "Alle meine Entchen" mit Fingerbewegungen.',
+          'materials': 'Nichts nötig',
+          'duration': '5 Min'
+        },
+        {
+          'tip':
+              'Turmbauen und umwerfen: Baue einen Turm aus Bechern — Kind darf umhauen!',
+          'materials': 'Plastikbecher oder Bauklötze',
+          'duration': '15 Min'
+        },
+        {
+          'tip':
+              'Spiegelspiel: Sitz mit Baby vor dem Spiegel und ahmt gemeinsam Mimik nach.',
+          'materials': 'Spiegel',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Wasserspaß: Schüssel mit lauwarmem Wasser, Becher und Löffel eintauchen.',
+          'materials': 'Schüssel, Wasser, Becher, Löffel',
+          'duration': '15 Min'
+        },
+        {
+          'tip':
+              'Knisterpapier-Erkundung: Verschiedene Papiere und Tücher befühlen und zerknüllen.',
+          'materials': 'Zeitungspapier, Alufolie, weiches Tuch',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Ball rollen: Setzt euch gegenüber auf den Boden und rollt einen Ball hin und her.',
+          'materials': 'Weicher Ball',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Schaukel-Lied: Kind auf den Knien wiegen und dabei ein ruhiges Lied summen.',
+          'materials': 'Nichts nötig',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Körperteil-Spiel: "Wo ist deine Nase?" — Baby zeigt und benennt mit.',
+          'materials': 'Nichts nötig',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Schüttelbüchse basteln: Reiskörner in eine leere Plastikflasche — selbst gemachtes Instrument.',
+          'materials': 'Plastikflasche, Reiskörner oder Linsen',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Spaziergang mit Staunen: Langsam gehen und alles benennen, was ihr seht und hört.',
+          'materials': 'Babytrage oder Kinderwagen',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Klatsch-Rhythmus: Einfache Klatschspiele wie "Backe backe Kuchen" gemeinsam lernen.',
+          'materials': 'Nichts nötig',
+          'duration': '5 Min'
+        },
+      ];
+
+  List<Map<String, String>> get legacyToddlerActivityReference =>
+      const <Map<String, String>>[
+        // ── Kleinkind 2–4 Jahre ────────────────────────────────────
+        {
+          'tip':
+              'Schatzsuche im Wohnzimmer: Verstecke 5 Dinge und zeichne eine Schatzkarte.',
+          'materials': 'Papier, Stifte, 5 kleine Gegenstände',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Verkleiden aus dem Schrank: Alte Klamotten, Hüte, Tücher — Theater spielen!',
+          'materials': 'Alte Kleidung, Accessoires',
+          'duration': '30 Min'
+        },
+        {
+          'tip':
+              'Barfuß-Parcours: Kissen, Handtücher, Plastikfolie — verschiedene Texturen fühlen.',
+          'materials': 'Kissen, Handtücher, Folie, Decken',
+          'duration': '15 Min'
+        },
+        {
+          'tip':
+              'Steine bemalen: Draussen sammeln, drinnen mit Wasserfarben verzieren.',
+          'materials': 'Steine, Wasserfarben, Pinsel',
+          'duration': '30 Min'
+        },
+        {
+          'tip':
+              'Karton-Burg: Große Kartons werden zu Häusern, Autos oder Raketen.',
+          'materials': 'Grosse Kartons, Klebeband, Stifte',
+          'duration': '45 Min'
+        },
+        {
+          'tip':
+              'Knetmasse selber machen: Mehl + Salz + Wasser + Lebensmittelfarbe — selbst geknetet!',
+          'materials': 'Mehl, Salz, Wasser, Oel, Lebensmittelfarbe',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Pfützen-Springen: Nach dem Regen raus — Gummistiefel an und los!',
+          'materials': 'Gummistiefel, Regenjacke',
+          'duration': '20 Min'
+        },
+        {
+          'tip': 'Kuchenbäckerei: Zusammen einen einfachen Rührkuchen backen.',
+          'materials': 'Mehl, Eier, Zucker, Butter, Backform',
+          'duration': '45 Min'
+        },
+        {
+          'tip':
+              'Schattentheater: Taschenlampe an die Wand, Hände formen Tiere und Figuren.',
+          'materials': 'Taschenlampe, dunkler Raum',
+          'duration': '15 Min'
+        },
+        {
+          'tip':
+              'Naturmandala: Blätter, Steine und Zweige draußen kreisförmig legen.',
+          'materials': 'Naturmaterialien',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Hindernislauf: Stühle, Decken und Kissen als Tunnel und Brücke aufbauen.',
+          'materials': 'Stühle, Decken, Kissen',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Farb-Experimente: Wasserfarben mischen — welche Farbe entsteht aus Blau und Gelb?',
+          'materials': 'Wasserfarben, Becher, Wasser, Papier',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Wetter-Malbuch: Jeden Tag das Wetter ins Heft zeichnen — Sonne, Wolken, Regen.',
+          'materials': 'Kleines Heft, Stifte',
+          'duration': '10 Min'
+        },
+        {
+          'tip':
+              'Matschküche draußen: Mit Wasser, Erde und Blättern "Suppe kochen".',
+          'materials': 'Schüssel, Wasser, Naturmaterialien',
+          'duration': '30 Min'
+        },
+        {
+          'tip':
+              'Fingertheater: Gesichter auf Finger malen und gemeinsam eine Geschichte erfinden.',
+          'materials': 'Filzstifte (hautverträglich), Hände',
+          'duration': '15 Min'
+        },
+      ];
+
+  List<Map<String, String>> get legacySchoolActivityReference =>
+      const <Map<String, String>>[
+        // ── Schulkinder 5+ Jahre ───────────────────────────────────
+        {
+          'tip':
+              'Schnitzeljagd im Park: Hinweise schreiben, Route planen, Schatz verstecken.',
+          'materials': 'Papier, Stifte, kleiner Schatz',
+          'duration': '45 Min'
+        },
+        {
+          'tip':
+              'Familien-Quiz: Jeder schreibt 5 Fragen über sich — wer kennt wen am besten?',
+          'materials': 'Papier, Stifte',
+          'duration': '30 Min'
+        },
+        {
+          'tip':
+              'Geocaching: Kostenlose App, draußen Schätze suchen — echtes Abenteuer.',
+          'materials': 'Smartphone mit Geocaching-App',
+          'duration': '60 Min'
+        },
+        {
+          'tip':
+              'Comic zeichnen: Zusammen eine kurze Geschichte als Comicstrip erzählen.',
+          'materials': 'Papier, Stifte, Buntstifte',
+          'duration': '30 Min'
+        },
+        {
+          'tip':
+              'Fotosafari: Handy-Kamera und eine Liste: Finde etwas Rotes, Rundes, Weiches...',
+          'materials': 'Smartphone, ausgedruckte Liste',
+          'duration': '30 Min'
+        },
+        {
+          'tip':
+              'Wissenschafts-Labor: Backpulver-Essig-Vulkan, Geheimschrift mit Zitronensaft.',
+          'materials': 'Backpulver, Essig, Zitrone, Glas, Wattestäbchen',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Lager im Wohnzimmer: Decken, Kissen, Lichterkette — Zeltübernachtung drinnen.',
+          'materials': 'Decken, Kissen, Lichterkette, Taschenlampe',
+          'duration': '60 Min'
+        },
+        {
+          'tip':
+              'Brettspiel-Turnier: 3 Runden hintereinander, gemeinsam Punkte zählen.',
+          'materials': 'Brettspiele, Snacks',
+          'duration': '60 Min'
+        },
+        {
+          'tip':
+              'Kurzfilm drehen: Geschichte erfinden, Rollen verteilen, mit dem Handy aufnehmen.',
+          'materials': 'Smartphone, optional Verkleidung',
+          'duration': '60 Min'
+        },
+        {
+          'tip':
+              'Pflanzenprojekt: Samen in Erde pflanzen, Wachstum täglichbeobachten und notieren.',
+          'materials': 'Blumentopf, Erde, Samen, kleines Heft',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Brief an die Zukunft: Schreibe heute einen Brief ans eigene Ich in 5 Jahren.',
+          'materials': 'Papier, Briefumschlag, Stift',
+          'duration': '20 Min'
+        },
+        {
+          'tip':
+              'Kochduell: Jedes Familienmitglied kocht oder bereitet einen Gang zu.',
+          'materials': 'Kühlschrankinhalt, Kochgeschirr',
+          'duration': '45 Min'
+        },
+        {
+          'tip':
+              'Naturtagebuch: Vögel, Insekten und Pflanzen draussen zeichnen und benennen.',
+          'materials': 'Kleines Heft, Stifte, Buntstifte',
+          'duration': '40 Min'
+        },
+        {
+          'tip':
+              'Familien-Escape-Room: Rätsel für die ganze Familie selber erfinden und lösen.',
+          'materials': 'Papier, Stifte, Alltagsgegenstände als Requisiten',
+          'duration': '60 Min'
+        },
+        {
+          'tip':
+              'Sternenhimmel beobachten: Abends raus oder Fenster auf, Sternbilder mit App suchen.',
+          'materials': 'Sternenhimmel-App (z.B. Sky Map), Decke',
+          'duration': '30 Min'
+        },
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -505,9 +559,14 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text('\u{2600}\u{FE0F}', style: const TextStyle(fontSize: 24)),
+          const Text('\u{2600}\u{FE0F}', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 10),
-          Text('$_greeting, $_userName!',
+          Text(
+              _userName.isEmpty
+                  ? _greeting
+                  : _t('home_greeting_name')
+                      .replaceAll('{greeting}', _greeting)
+                      .replaceAll('{name}', _userName),
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w800)),
         ]),
@@ -611,7 +670,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text('\u{1F31E}', style: const TextStyle(fontSize: 24)),
+          const Text('\u{1F31E}', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 10),
           Expanded(
               child: Column(
@@ -619,7 +678,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   children: [
                 Text(
                     _userName.isNotEmpty
-                        ? 'Hallo $_userName!'
+                        ? _t('home_hello_name').replaceAll('{name}', _userName)
                         : AppStringsManager.getString(
                             languageService.currentLanguage, 'hello_family'),
                     style: theme.textTheme.titleMedium
@@ -694,9 +753,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text('\u{1F319}', style: const TextStyle(fontSize: 24)),
+          const Text('\u{1F319}', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 10),
-          Text(_userName.isNotEmpty ? '$_greeting, $_userName' : '$_greeting',
+          Text(_userName.isNotEmpty ? '$_greeting, $_userName' : _greeting,
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w800)),
         ]),
@@ -709,11 +768,16 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                   color: const Color(0xFF6B21A8), fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
           Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            _moodEmoji('\u{1F60A}', 'Super', const Color(0xFF16A34A)),
-            _moodEmoji('\u{1F642}', 'Gut', const Color(0xFF2563EB)),
-            _moodEmoji('\u{1F610}', 'Okay', const Color(0xFFF97316)),
-            _moodEmoji('\u{1F614}', 'Mühsam', const Color(0xFFDC2626)),
-            _moodEmoji('\u{1F970}', 'Dankbar', const Color(0xFFEC4899)),
+            _moodEmoji(
+                '\u{1F60A}', _t('home_mood_great'), const Color(0xFF16A34A)),
+            _moodEmoji(
+                '\u{1F642}', _t('home_mood_good'), const Color(0xFF2563EB)),
+            _moodEmoji(
+                '\u{1F610}', _t('home_mood_okay'), const Color(0xFFF97316)),
+            _moodEmoji(
+                '\u{1F614}', _t('home_mood_tough'), const Color(0xFFDC2626)),
+            _moodEmoji(
+                '\u{1F970}', _t('home_mood_grateful'), const Color(0xFFEC4899)),
           ]),
         ] else if (!_momentDone) ...[
           _momentQuestion(theme),
@@ -729,7 +793,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
               const SizedBox(width: 8),
               Expanded(
                   child: Text(
-                'Du bist da. Morgen ist ein neuer Tag.',
+                _t('home_evening_reassurance'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                     color: const Color(0xFF6B21A8),
                     fontStyle: FontStyle.italic),
@@ -919,7 +983,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           const SizedBox(width: 6),
           Expanded(
             child: Text(
-              'Was war heute dein schönster Moment?',
+              _t('home_best_moment_question'),
               style: theme.textTheme.bodySmall?.copyWith(
                   color: const Color(0xFF6B21A8), fontWeight: FontWeight.w700),
             ),
@@ -932,7 +996,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           textCapitalization: TextCapitalization.sentences,
           style: theme.textTheme.bodySmall?.copyWith(color: Colors.black87),
           decoration: InputDecoration(
-            hintText: 'Ein Moment mit meinem Kind …',
+            hintText: _t('home_best_moment_hint'),
             hintStyle: theme.textTheme.bodySmall
                 ?.copyWith(color: const Color(0xFF9CA3AF)),
             isDense: true,

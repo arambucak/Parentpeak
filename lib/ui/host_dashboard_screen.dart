@@ -48,7 +48,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
         _hostedEvents = [];
         _pendingRequests = [];
         _contactsById = {};
-        _errorMessage = 'Bitte melde dich an, um dein Host-Dashboard zu sehen.';
+        _errorMessage = _t('host_sign_in_required');
         _isLoading = false;
       });
       return;
@@ -83,7 +83,9 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
+            SnackBar(
+              content: Text(
+                _t('common_error_with_detail').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -109,7 +111,9 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
+            SnackBar(
+              content: Text(
+                _t('common_error_with_detail').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -130,7 +134,9 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
+            SnackBar(
+              content: Text(
+                _t('common_error_with_detail').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -186,7 +192,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Statistiken',
+          _t('host_statistics'),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -198,7 +204,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
               child: _buildStatCard(
                 context,
                 icon: Icons.event,
-                label: 'Aktivitäten',
+                label: _t('host_activities'),
                 value: _hostedEvents.length.toString(),
               ),
             ),
@@ -207,7 +213,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
               child: _buildStatCard(
                 context,
                 icon: Icons.people,
-                label: 'Teilnehmer',
+                label: _t('host_participants'),
                 value: totalParticipants.toString(),
               ),
             ),
@@ -216,7 +222,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
               child: _buildStatCard(
                 context,
                 icon: Icons.schedule,
-                label: 'Ausstehend',
+                label: _t('host_pending'),
                 value: _pendingRequests.length.toString(),
               ),
             ),
@@ -269,7 +275,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Ausstehende Anfragen',
+              _t('host_pending_requests'),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -316,14 +322,16 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nutzer: ${_displayNameFor(request.userId)}',
+                        _t('host_user_label').replaceAll(
+                          '{name}', _displayNameFor(request.userId)),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Angefordert: ${request.requestedAt.day}.${request.requestedAt.month}.${request.requestedAt.year}',
+                        _t('host_requested_at').replaceAll('{date}',
+                          '${request.requestedAt.day}.${request.requestedAt.month}.${request.requestedAt.year}'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey[600],
                             ),
@@ -362,7 +370,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Meine Aktivitäten',
+          _t('host_my_activities'),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -377,7 +385,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
             ),
             child: Center(
               child: Text(
-                'Du hast noch keine Aktivitäten erstellt',
+                _t('host_no_activities'),
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ),

@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/logic/family_recipe_share_service.dart';
+import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shared_family_recipe.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
@@ -31,6 +33,8 @@ class FamilyRecipesScreen extends StatefulWidget {
 
 class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
   static const _accent = Color(0xFFE8543A);
+
+  String _t(String key) => AppLocalizations.of(context).t(key);
 
   final _service = FamilyRecipeShareService.instance;
   final _aiService = FamilyRecipeService.instance;
@@ -200,16 +204,17 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Rezept löschen?'),
-        content: Text('Möchtest du „${recipe.title}“ wirklich löschen?'),
+        title: Text(_t('family_recipe_delete_title')),
+        content: Text(_t('family_recipe_delete_confirm')
+            .replaceAll('{title}', recipe.title)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(_t('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(backgroundColor: _accent),
-              child: const Text('Löschen')),
+              child: Text(_t('delete_action'))),
         ],
       ),
     );
@@ -217,8 +222,8 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
     final ok = await _service.deleteRecipe(recipe.id);
     if (ok && mounted) {
       setState(() => _recipes.removeWhere((r) => r.id == recipe.id));
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Rezept gelöscht.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_t('family_recipe_deleted')),
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -583,7 +588,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                         icon: Icon(Icons.more_vert_rounded,
                             color: theme.colorScheme.outline),
                         onPressed: () => _showOwnerMenu(r),
-                        tooltip: 'Optionen',
+                        tooltip: context.tr('tooltip_options'),
                       ),
                   ],
                 ),
@@ -753,7 +758,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.delete_outline_rounded),
-              title: const Text('Rezept löschen'),
+              title: Text(_t('family_recipe_delete_title')),
               onTap: () {
                 Navigator.pop(ctx);
                 _deleteRecipe(r);
@@ -790,6 +795,8 @@ class _CreateRecipeSheet extends StatefulWidget {
 class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
   static const _accent = Color(0xFFE8543A);
 
+  String _t(String key) => AppLocalizations.of(context).t(key);
+
   final _service = FamilyRecipeShareService.instance;
   final _picker = ImagePicker();
 
@@ -823,8 +830,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
       if (img != null && mounted) setState(() => _photo = img);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Foto konnte nicht ausgewählt werden.'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('family_recipe_photo_pick_failed')),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -837,8 +844,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
   Future<void> _save() async {
     final title = _titleCtrl.text.trim();
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Bitte gib deinem Rezept einen Namen.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_t('family_recipe_name_required')),
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -862,15 +869,15 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
       if (!mounted) return;
       if (recipe != null) {
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Rezept geteilt. Danke fürs Teilen! 🍳'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('family_recipe_share_success')),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Color(0xFF16A34A),
         ));
       } else {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Konnte nicht speichern — bitte später erneut.'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('family_recipe_save_failed')),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -882,8 +889,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
     } catch (_) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Konnte nicht speichern — bitte später erneut.'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('family_recipe_save_failed')),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -918,7 +925,7 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                 ),
               ),
               const SizedBox(height: 18),
-              Text('Rezept teilen',
+              Text(_t('family_recipe_share_title'),
                   style: theme.textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
@@ -950,7 +957,7 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                             Icon(Icons.add_a_photo_rounded,
                                 size: 30, color: theme.colorScheme.outline),
                             const SizedBox(height: 8),
-                            Text('Foto hinzufügen (optional)',
+                            Text(_t('family_recipe_photo_optional'),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.outline)),
                           ],
@@ -959,40 +966,41 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
               ),
               const SizedBox(height: 16),
 
-              _field(_titleCtrl, 'Name des Gerichts',
-                  hint: 'z. B. Omas Kartoffelsalat'),
+              _field(_titleCtrl, _t('family_recipe_name_label'),
+                  hint: _t('family_recipe_name_hint')),
               const SizedBox(height: 12),
-              _field(_descCtrl, 'Kurze Beschreibung',
-                  hint: 'Warum mögen es eure Kinder?', maxLines: 2),
+              _field(_descCtrl, _t('family_recipe_description_label'),
+                  hint: _t('family_recipe_description_hint'), maxLines: 2),
               const SizedBox(height: 12),
-              _field(_ingredientsCtrl, 'Zutaten (eine pro Zeile)',
-                  hint: '500 g Kartoffeln\n1 Zwiebel\n…', maxLines: 4),
+              _field(_ingredientsCtrl, _t('family_recipe_ingredients_label'),
+                  hint: _t('family_recipe_ingredients_hint'), maxLines: 4),
               const SizedBox(height: 12),
-              _field(_stepsCtrl, 'Zubereitung (ein Schritt pro Zeile)',
-                  hint: 'Kartoffeln kochen.\nZwiebel würfeln.\n…', maxLines: 4),
+              _field(_stepsCtrl, _t('family_recipe_steps_label'),
+                  hint: _t('family_recipe_steps_hint'), maxLines: 4),
               const SizedBox(height: 12),
-              _field(_minutesCtrl, 'Zubereitungszeit in Minuten',
-                  hint: 'z. B. 25', keyboardType: TextInputType.number),
+              _field(_minutesCtrl, _t('family_recipe_minutes_label'),
+                  hint: _t('family_recipe_minutes_hint'),
+                  keyboardType: TextInputType.number),
               const SizedBox(height: 18),
 
-              Text('Wer darf dein Rezept sehen?',
+              Text(_t('family_recipe_visibility_title'),
                   style: theme.textTheme.labelLarge
                       ?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               _visibilityOption(
                   'friends',
-                  'Nur meine Freunde',
-                  'Empfohlen – nur verbundene Familien sehen es.',
+                  _t('family_recipe_visibility_friends'),
+                  _t('family_recipe_visibility_friends_hint'),
                   Icons.group_rounded),
               _visibilityOption(
                   'public',
-                  'Für alle Familien',
-                  'Alle ParentPeak-Familien können es entdecken.',
+                  _t('family_recipe_visibility_public'),
+                  _t('family_recipe_visibility_public_hint'),
                   Icons.public_rounded),
               _visibilityOption(
                   'private',
-                  'Nur für mich',
-                  'Bleibt privat – nur du siehst es.',
+                  _t('family_recipe_visibility_private'),
+                  _t('family_recipe_visibility_private_hint'),
                   Icons.lock_outline_rounded),
               const SizedBox(height: 20),
 
@@ -1012,8 +1020,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                           height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : const Text('Teilen',
-                          style: TextStyle(
+                      : Text(_t('family_recipe_share_action'),
+                          style: const TextStyle(
                               fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
               ),

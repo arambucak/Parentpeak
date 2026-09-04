@@ -49,7 +49,7 @@ class FamilyRecipeService {
   }
 
   /// Generiert ein neues Rezept via Gemini.
-  Future<FamilyRecipe?> generateRecipe() async {
+  Future<FamilyRecipe?> generateRecipe({String languageCode = 'de'}) async {
     // Rate limit check
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
@@ -68,9 +68,15 @@ class FamilyRecipeService {
             : _childAge < 6
                 ? 'Kita-Kind ($_childAge Jahre, normal)'
                 : 'Schulkind ($_childAge Jahre, alles)';
+    final outputLanguage = switch (languageCode) {
+      'de' => 'Deutsch',
+      'tr' => 'Türkisch',
+      'ku' => 'Kurmandschi (lateinische Schrift)',
+      _ => 'Englisch',
+    };
 
     final prompt = '''
-Generiere EIN kinderfreundliches Familien-Rezept auf Deutsch.
+Generiere EIN kinderfreundliches Familien-Rezept auf $outputLanguage.
 
 Kontext:
 - Jüngstes Kind: $ageText
@@ -88,6 +94,7 @@ Regeln:
 - Beliebt bei Kindern: Nudeln, Reis, Kartoffeln, Chicken Nuggets, Pizza, Pfannkuchen, Fischstäbchen, Bolognese, Schnitzel, Mac&Cheese
 - Gib einen konkreten Eltern-Tipp (picky eater trick, gemeinsam kochen, etc.)
 - allergensFree: nur auflisten wenn das Rezept tatsächlich FREI von Allergenen ist. Wenn Milch drin ist, NICHT "laktose" listen.
+- Alle nutzersichtbaren JSON-Werte müssen auf $outputLanguage sein. Die JSON-Schlüssel bleiben exakt wie vorgegeben.
 
 Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/danach):
 {
@@ -113,7 +120,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       final raw = await GeminiAIService(modelName: modelName).generateText(
         prompt,
         systemInstruction:
-            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
+            'Du bist ein mehrsprachiger Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
             'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
       );
       await AIRateLimiter.recordRequest();

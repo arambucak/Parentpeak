@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/ui/auth/register_screen.dart';
 
-typedef LoginHandler =
-    Future<AuthResult> Function({
-      required String email,
-      required String password,
-    });
+typedef LoginHandler = Future<AuthResult> Function({
+  required String email,
+  required String password,
+});
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
@@ -82,9 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
         widget.onLoginSuccess?.call();
       } else {
         setState(
-          () => _errorMessage =
-              result.errorMessage ??
-              'Login fehlgeschlagen. Bitte erneut versuchen.',
+          () =>
+              _errorMessage = result.errorMessage ?? context.tr('login_failed'),
         );
       }
     } catch (e) {
@@ -92,8 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            'Technischer Fehler beim Login. Bitte erneut versuchen.';
+        _errorMessage = context.tr('login_technical_error');
       });
     }
   }
@@ -167,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              'Willkommen zurück',
+                              context.tr('login_welcome_back'),
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF122220),
@@ -175,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Melde dich an, um deinen Familienbereich zu öffnen.',
+                              context.tr('login_subtitle'),
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: const Color(0xFF5A6B68),
                                 height: 1.35,
@@ -273,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Sicher. Klar. Für Familien gemacht.',
+                  context.tr('login_brand_tagline'),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontWeight: FontWeight.w600,
@@ -303,15 +301,15 @@ class _LoginScreenState extends State<LoginScreen> {
             autofillHints: const [AutofillHints.email],
             onChanged: (_) => _clearError(),
             decoration: _fieldDecoration(
-              labelText: 'E-Mail',
+              labelText: context.tr('auth_email_label'),
               prefixIcon: const Icon(Icons.email_outlined),
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) {
-                return 'E-Mail ist erforderlich.';
+                return context.tr('auth_email_required');
               }
               if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) {
-                return 'Bitte gib eine gültige E-Mail-Adresse ein.';
+                return context.tr('auth_email_invalid');
               }
               return null;
             },
@@ -325,7 +323,7 @@ class _LoginScreenState extends State<LoginScreen> {
             onFieldSubmitted: (_) => _submit(),
             onChanged: (_) => _clearError(),
             decoration: _fieldDecoration(
-              labelText: 'Passwort',
+              labelText: context.tr('auth_password_label'),
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -338,7 +336,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Passwort ist erforderlich.';
+              if (v == null || v.isEmpty) {
+                return context.tr('auth_password_required');
+              }
               return null;
             },
           ),
@@ -426,9 +426,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: Colors.white,
                 ),
               )
-            : const Text(
-                'Anmelden',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            : Text(
+                context.tr('login_submit'),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
       ),
     );
@@ -448,7 +449,7 @@ class _LoginScreenState extends State<LoginScreen> {
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         child: Text(
-          'Passwort vergessen?',
+          context.tr('login_forgot_password'),
           style: theme.textTheme.bodySmall?.copyWith(
             color: const Color(0xFF135D55),
             fontWeight: FontWeight.w600,
@@ -475,9 +476,10 @@ class _LoginScreenState extends State<LoginScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              title: const Text(
-                'Passwort zurücksetzen',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              title: Text(
+                context.tr('password_reset_title'),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
               ),
               content: Form(
                 key: formKey,
@@ -486,11 +488,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Gib deine E-Mail-Adresse ein. Wir senden dir einen Link zum Zurücksetzen.',
+                      context.tr('password_reset_instructions'),
                       style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF5A6B68),
-                        height: 1.4,
-                      ),
+                            color: const Color(0xFF5A6B68),
+                            height: 1.4,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -500,7 +502,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textCapitalization: TextCapitalization.none,
                       enabled: !isSending,
                       decoration: InputDecoration(
-                        labelText: 'E-Mail-Adresse',
+                        labelText: context.tr('auth_email_address_label'),
                         prefixIcon: const Icon(Icons.email_outlined),
                         filled: true,
                         fillColor: const Color(0xFFF7FAF9),
@@ -523,12 +525,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
-                          return 'E-Mail ist erforderlich.';
+                          return context.tr('auth_email_required');
                         }
                         if (!RegExp(
                           r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
                         ).hasMatch(v.trim())) {
-                          return 'Bitte eine gültige E-Mail eingeben.';
+                          return context.tr('auth_email_invalid');
                         }
                         return null;
                       },
@@ -593,7 +595,7 @@ class _LoginScreenState extends State<LoginScreen> {
               actions: [
                 TextButton(
                   onPressed: isSending ? null : () => Navigator.pop(ctx),
-                  child: const Text('Abbrechen'),
+                  child: Text(context.tr('common_cancel')),
                 ),
                 FilledButton(
                   onPressed: isSending || successMsg != null
@@ -609,8 +611,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           setDialogState(() {
                             isSending = false;
                             if (err == null) {
-                              successMsg =
-                                  'E-Mail gesendet! Prüfe deinen Posteingang.';
+                              successMsg = context.tr('password_reset_sent');
                             } else {
                               errorMsg = err;
                             }
@@ -631,7 +632,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Link senden'),
+                      : Text(context.tr('password_reset_send_link')),
                 ),
               ],
             );
@@ -682,7 +683,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showComingSoon(String provider) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$provider-Login kommt in der nächsten Version.'),
+        content: Text(context
+            .tr('login_provider_coming_soon', values: {'provider': provider})),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -703,29 +705,30 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       // User closed the popup intentionally — no error needed.
       if (e.code == 'popup-closed-by-user' ||
-          e.code == 'cancelled-popup-request')
+          e.code == 'cancelled-popup-request') {
         return;
+      }
       final String msg;
       if (e.code == 'popup-blocked') {
-        msg =
-            'Popups sind blockiert. Bitte nutze E-Mail + Passwort oder öffne die Seite in Safari.';
+        msg = context.tr('login_google_popup_blocked');
       } else {
         msg = e.message != null && e.message!.isNotEmpty
             ? e.message!
-            : 'Google-Login fehlgeschlagen. Bitte erneut versuchen.';
+            : context.tr('login_google_failed');
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Google-Login: $msg'),
+          content:
+              Text(context.tr('login_google_error', values: {'message': msg})),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Google-Login: Bitte versuche es erneut oder nutze E-Mail + Passwort.',
+            context.tr('login_google_retry'),
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -745,7 +748,10 @@ class _LoginScreenState extends State<LoginScreen> {
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text('Neu bei Parentpeak? ', style: theme.textTheme.bodyMedium),
+          Text(
+            context.tr('login_new_prompt'),
+            style: theme.textTheme.bodyMedium,
+          ),
           GestureDetector(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
@@ -754,7 +760,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             child: Text(
-              'Jetzt Konto erstellen',
+              context.tr('login_create_account'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: const Color(0xFF135D55),
                 fontWeight: FontWeight.w800,

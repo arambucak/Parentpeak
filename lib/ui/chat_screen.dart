@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
@@ -199,7 +200,7 @@ class _ChatScreenState extends State<ChatScreen> {
           '✅ Gemini AI initialized with ${APIConfig.getGeminiModelName()}');
     } catch (e) {
       setState(() {
-        _initError = 'Fehler: $e';
+        _initError = context.tr('chat_init_error', values: {'error': '$e'});
       });
       debugPrint('Gemini init error: $e');
     }
@@ -226,7 +227,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add({
           'role': 'user',
-          'content': '\u{1F4A1} Tipp: "$tipText"',
+          'content': context.tr('chat_tip_message', values: {'tip': tipText}),
           'timestamp': DateTime.now(),
         });
         _isStreaming = true;
@@ -401,9 +402,7 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (context) => AlertDialog(
         title: Text(AppStringsManager.getString(
             languageService.currentLanguage, 'delete_history_title')),
-        content: const Text(
-          'Möchtest du den aktuellen Chatverlauf wirklich löschen?',
-        ),
+        content: Text(context.tr('chat_delete_history_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -429,7 +428,12 @@ class _ChatScreenState extends State<ChatScreen> {
       _assistantFeedbackByIndex[messageIndex] = value;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Feedback gespeichert: $value')),
+      SnackBar(
+        content: Text(context.tr(
+          'chat_feedback_saved',
+          values: {'feedback': context.tr('chat_feedback_$value')},
+        )),
+      ),
     );
   }
 
@@ -460,8 +464,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final previousQuestion = _findPreviousUserMessage(assistantIndex);
     if (previousQuestion == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Keine vorherige Frage für erneuten Versuch gefunden.'),
+        SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'chat_retry_missing_question')),
         ),
       );
       return;
@@ -484,7 +489,7 @@ class _ChatScreenState extends State<ChatScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'MVP Themenauswertung',
+                context.tr('chat_topic_analysis_title'),
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -492,7 +497,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Datensparsam: Es werden nur Themenzähler gespeichert, keine Rohtexte.',
+                context.tr('chat_topic_analysis_privacy'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -504,7 +509,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   (entry) => ListTile(
                     dense: true,
                     leading: const Icon(Icons.analytics_outlined),
-                    title: Text(entry.key),
+                    title: Text(_topicLabel(entry.key)),
                     trailing: Text('${entry.value}'),
                   ),
                 ),
@@ -529,12 +534,29 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  String _topicLabel(String topicId) {
+    const keys = {
+      'Autonomiephase': 'chat_insight_autonomy',
+      'Schlaf': 'chat_insight_sleep',
+      'Konflikte': 'chat_insight_conflicts',
+      'Schule/Kita': 'chat_insight_school',
+      'Medien': 'chat_insight_media',
+      'Bindung & Gefühle': 'chat_insight_attachment',
+      'Geschwister': 'chat_insight_siblings',
+      'Ernährung': 'chat_insight_nutrition',
+      'Krise': 'chat_insight_crisis',
+      'Sonstiges': 'chat_insight_other',
+    };
+    final key = keys[topicId];
+    return key == null ? topicId : context.tr(key);
+  }
+
   Widget _buildAssistantFeedbackRow(int index) {
     final selected = _assistantFeedbackByIndex[index];
     final content = _messages[index]['content']?.toString() ?? '';
     final showRetry = _isProviderUnavailableMessage(content);
-    Widget chip(String label, IconData icon) {
-      final isSelected = selected == label;
+    Widget chip(String feedbackId, IconData icon) {
+      final isSelected = selected == feedbackId;
       return ChoiceChip(
         selected: isSelected,
         selectedColor: _kBrand.withValues(alpha: 0.14),
@@ -552,7 +574,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Icon(icon, size: 14),
             const SizedBox(width: 4),
             Text(
-              label,
+              context.tr('chat_feedback_$feedbackId'),
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.1,
@@ -560,7 +582,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
-        onSelected: (_) => _setFeedback(index, label),
+        onSelected: (_) => _setFeedback(index, feedbackId),
       );
     }
 
@@ -578,10 +600,10 @@ class _ChatScreenState extends State<ChatScreen> {
               label: Text(AppStringsManager.getString(
                   languageService.currentLanguage, 'try_again')),
             ),
-          chip('hilfreich', Icons.thumb_up_alt_outlined),
-          chip('nicht hilfreich', Icons.thumb_down_alt_outlined),
-          chip('gefaehrlich', Icons.report_gmailerrorred_rounded),
-          chip('unpassend', Icons.rule_rounded),
+          chip('helpful', Icons.thumb_up_alt_outlined),
+          chip('not_helpful', Icons.thumb_down_alt_outlined),
+          chip('dangerous', Icons.report_gmailerrorred_rounded),
+          chip('inappropriate', Icons.rule_rounded),
         ],
       ),
     );
@@ -590,44 +612,44 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildEmptyState() {
     // Zeitbasierte Begrüßung
     final hour = DateTime.now().hour;
-    final greeting = hour < 11
-        ? 'Guten Morgen'
+    final greetingKey = hour < 11
+      ? 'chat_greeting_morning'
         : hour < 17
-            ? 'Hallo'
+        ? 'chat_greeting_day'
             : hour < 22
-                ? 'Guten Abend'
-                : 'Gute Nacht';
+          ? 'chat_greeting_evening'
+          : 'chat_greeting_night';
 
-    const topics = [
+    final topics = [
       {
         'emoji': '😤',
-        'label': 'Mein Kind rastet aus',
-        'q': 'Mein Kind rastet ständig aus und ich weiß nicht mehr weiter.'
+      'label': context.tr('chat_topic_tantrum_label'),
+      'q': context.tr('chat_topic_tantrum_question'),
       },
       {
         'emoji': '😴',
-        'label': 'Schlafen ist ein Kampf',
-        'q': 'Das Zubettgehen ist jeden Abend ein Kampf. Was kann ich tun?'
+        'label': context.tr('chat_topic_sleep_label'),
+        'q': context.tr('chat_topic_sleep_question'),
       },
       {
         'emoji': '📱',
-        'label': 'Zu viel Bildschirmzeit',
-        'q': 'Mein Kind hängt nur am Handy. Wie gehe ich damit um?'
+        'label': context.tr('chat_topic_screen_label'),
+        'q': context.tr('chat_topic_screen_question'),
       },
       {
         'emoji': '👫',
-        'label': 'Geschwister streiten',
-        'q': 'Meine Kinder streiten ständig. Soll ich eingreifen?'
+        'label': context.tr('chat_topic_siblings_label'),
+        'q': context.tr('chat_topic_siblings_question'),
       },
       {
         'emoji': '💔',
-        'label': 'Ich bin am Limit',
-        'q': 'Ich bin total erschöpft und fühle mich überfordert.'
+        'label': context.tr('chat_topic_overwhelmed_label'),
+        'q': context.tr('chat_topic_overwhelmed_question'),
       },
       {
         'emoji': '🎒',
-        'label': 'Schule & Lernen',
-        'q': 'Mein Kind hat Stress mit der Schule. Wie kann ich helfen?'
+        'label': context.tr('chat_topic_school_label'),
+        'q': context.tr('chat_topic_school_question'),
       },
     ];
 
@@ -671,7 +693,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  '$greeting 💜',
+                  '${context.tr(greetingKey)} 💜',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -680,7 +702,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Erzähl mir, was dich gerade beschäftigt. Ich höre zu — ohne zu urteilen.',
+                  context.tr('chat_welcome_message'),
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.5,
@@ -692,7 +714,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Womit kann ich helfen?',
+            context.tr('chat_how_can_help'),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -893,7 +915,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'KI-Elternberatung',
+                context.tr('ki_parenting_title'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -901,7 +923,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Bevor du startest, lies bitte kurz durch:',
+                context.tr('chat_terms_intro'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -926,22 +948,22 @@ class _ChatScreenState extends State<ChatScreen> {
                     _buildTermsItem(
                       theme,
                       '\u{1F6E1}\u{FE0F}',
-                      'Keine Diagnosen',
-                      'Die KI stellt keine medizinischen oder psychologischen Diagnosen. Bei ernsthaften Sorgen wende dich an Fachpersonal.',
+                      context.tr('chat_terms_no_diagnosis_title'),
+                      context.tr('chat_terms_no_diagnosis_text'),
                     ),
                     const SizedBox(height: 16),
                     _buildTermsItem(
                       theme,
                       '\u{1F512}',
-                      'Deine Daten bleiben privat',
-                      'Gespräche werden lokal auf deinem Gerät gespeichert. Wir teilen keine Inhalte mit Dritten.',
+                      context.tr('chat_terms_privacy_title'),
+                      context.tr('chat_terms_privacy_text'),
                     ),
                     const SizedBox(height: 16),
                     _buildTermsItem(
                       theme,
                       '\u{1F49C}',
-                      'Respektvoll & wertschätzend',
-                      'Die KI urteilt nie über dich oder dein Kind. Sie begleitet — ohne Schuldzuweisung, ohne Druck.',
+                      context.tr('chat_terms_respect_title'),
+                      context.tr('chat_terms_respect_text'),
                     ),
                   ],
                 ),
@@ -959,9 +981,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    'Verstanden, los geht\u{0027}s',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  child: Text(
+                    context.tr('chat_terms_accept'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -969,7 +991,7 @@ class _ChatScreenState extends State<ChatScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Zurück',
+                  context.tr('back_btn'),
                   style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
@@ -1028,12 +1050,12 @@ class _ChatScreenState extends State<ChatScreen> {
           elevation: 0,
           actions: [
             IconButton(
-              tooltip: 'Themenauswertung',
+              tooltip: context.tr('tooltip_topic_analysis'),
               onPressed: _showTopicInsights,
               icon: const Icon(Icons.analytics_outlined),
             ),
             IconButton(
-              tooltip: 'Chat loeschen',
+              tooltip: context.tr('tooltip_delete_chat'),
               onPressed: _messages.isEmpty ? null : _confirmClearChat,
               icon: const Icon(Icons.delete_outline_rounded),
             ),
@@ -1060,7 +1082,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Du kannst es später erneut versuchen.',
+                  context.tr('chat_retry_later'),
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -1109,9 +1131,9 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'KI-Elternberatung',
-                  style: TextStyle(
+                Text(
+                  context.tr('ki_parenting_title'),
+                  style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                     color: Color(0xFF1F2937),
@@ -1128,7 +1150,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    'Immer für dich da',
+                    context.tr('chat_always_here'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -1142,12 +1164,12 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Themenauswertung',
+            tooltip: context.tr('tooltip_topic_analysis'),
             onPressed: _showTopicInsights,
             icon: const Icon(Icons.insights_rounded, color: _kBrand),
           ),
           IconButton(
-            tooltip: 'Chat löschen',
+            tooltip: context.tr('tooltip_delete_chat'),
             onPressed: _messages.isEmpty ? null : _confirmClearChat,
             icon: Icon(Icons.delete_outline_rounded,
                 color: _messages.isEmpty ? Colors.grey[400] : _kBrand),
@@ -1208,7 +1230,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Icon(Icons.lock_rounded, size: 11, color: Colors.grey[400]),
                   const SizedBox(width: 5),
                   Text(
-                    'Keine Diagnosen · Deine Fragen bleiben privat',
+                    context.tr('chat_privacy_footer'),
                     style: TextStyle(fontSize: 10.5, color: Colors.grey[500]),
                   ),
                 ],
@@ -1236,7 +1258,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       minLines: 1,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'Erzähle mir, was dich bewegt...',
+                        hintText: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'chat_message_hint'),
                         hintStyle: TextStyle(
                           color: Colors.grey[400],
                           fontSize: 15,

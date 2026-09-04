@@ -1,6 +1,7 @@
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -135,7 +136,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
         title: Text(_t('planner_title')),
         actions: [
           PopupMenuButton<PlannerTone>(
-            tooltip: 'Sprachstil',
+            tooltip: context.tr('tooltip_tone'),
             initialValue: _tone,
             onSelected: (value) {
               setState(() {
@@ -353,7 +354,9 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${extracted.length} Kita-Einträge übernommen.')),
+        SnackBar(
+          content: Text(_t('weekly_kita_imported')
+            .replaceAll('{count}', '${extracted.length}'))),
     );
   }
 

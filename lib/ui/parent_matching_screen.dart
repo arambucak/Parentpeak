@@ -791,7 +791,9 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     if (result.connected || result.matchState == 'matched') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Match bestätigt mit ${profile.name} ($score%)'),
+            content: Text(_t('matching_confirmed')
+              .replaceAll('{name}', profile.name)
+              .replaceAll('{score}', '$score')),
           duration: const Duration(seconds: 2),
         ),
       );

@@ -3,9 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/logic/revocation_service_impl.dart';
 import 'package:parentpeak/logic/secure_storage.dart';
 import 'package:parentpeak/logic/background_sync_manager.dart';
@@ -372,11 +372,12 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
       darkTheme: themeService.getDarkTheme(),
       themeMode: _currentThemeMode,
       localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+        AppLanguages.materialLocalizationsDelegate,
+        AppLanguages.widgetsLocalizationsDelegate,
+        AppLanguages.cupertinoLocalizationsDelegate,
         AppLocalizations.delegate,
       ],
+      locale: AppLanguages.localeFor(languageService.currentLanguage),
       supportedLocales: AppLocalizations.supportedLocales,
       home: AuthGate(
         devices: const [],

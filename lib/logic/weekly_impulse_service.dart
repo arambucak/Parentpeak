@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/models_and_widgets/weekly_impulse_feature.dart';
 
 import 'backend_api_client.dart';
@@ -207,7 +208,7 @@ class WeeklyImpulseService {
     'category',
     'publish_date',
   ];
-  static const String _weeklyImpulseCacheKey = 'pp_weekly_impulse_cache_v1';
+  String _cacheKey(String language) => 'pp_weekly_impulse_cache_${language}_v1';
   static const Duration _weeklyImpulseCacheMaxAge = Duration(days: 2);
 
   Future<WeeklyImpulse> fetchWeeklyImpulse({String? viewerUserId}) async {
@@ -219,7 +220,10 @@ class WeeklyImpulseService {
       throw StateError('Weekly impulse backend unavailable');
     }
 
-    final path = _weeklyImpulsePath(viewerUserId: viewerUserId);
+    final path = _weeklyImpulsePath(
+      viewerUserId: viewerUserId,
+      language: LanguageService.activeCode,
+    );
     try {
       final decoded = await apiClient!.getJson(path);
       final impulse = _parseIfValid(_extractImpulsePayload(decoded));
@@ -275,7 +279,7 @@ class WeeklyImpulseService {
                 'body': impulse.discussionPrompt!.body,
               },
       };
-      await prefs.setString(_weeklyImpulseCacheKey, jsonEncode(payload));
+      await prefs.setString(_cacheKey(LanguageService.activeCode), jsonEncode(payload));
     } catch (e) {
       debugPrint('WeeklyImpulse cache write skipped: $e');
     }
@@ -284,13 +288,14 @@ class WeeklyImpulseService {
   Future<WeeklyImpulse?> _readCachedImpulse() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_weeklyImpulseCacheKey);
+      final key = _cacheKey(LanguageService.activeCode);
+      final raw = prefs.getString(key);
       if (raw == null || raw.trim().isEmpty) {
         return null;
       }
       final decoded = jsonDecode(raw);
       if (!_isCachedPayloadFresh(decoded)) {
-        await prefs.remove(_weeklyImpulseCacheKey);
+        await prefs.remove(key);
         debugPrint('WeeklyImpulse cache expired and was cleared');
         return null;
       }
@@ -645,14 +650,18 @@ class WeeklyImpulseService {
     return decoded;
   }
 
-  String _weeklyImpulsePath({String? viewerUserId}) {
+  String _weeklyImpulsePath({
+    String? viewerUserId,
+    required String language,
+  }) {
     final basePath = APIConfig.getBackendWeeklyImpulsePath();
-    if (viewerUserId == null || viewerUserId.trim().isEmpty) {
-      return basePath;
-    }
-
     final separator = basePath.contains('?') ? '&' : '?';
-    return '$basePath${separator}viewerUserId=${Uri.encodeQueryComponent(viewerUserId.trim())}';
+    final query = <String>[
+      'language=${Uri.encodeQueryComponent(language)}',
+      if (viewerUserId != null && viewerUserId.trim().isNotEmpty)
+        'viewerUserId=${Uri.encodeQueryComponent(viewerUserId.trim())}',
+    ];
+    return '$basePath$separator${query.join('&')}';
   }
 
 }

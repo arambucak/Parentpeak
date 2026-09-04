@@ -89,7 +89,8 @@ class EventDetailPage extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () => _openUrl(event.url!),
                 icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                label: const Text('Event-Website öffnen'),
+                label: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'event_open_website')),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF0EA5A4),
                   padding: const EdgeInsets.symmetric(vertical: 12),

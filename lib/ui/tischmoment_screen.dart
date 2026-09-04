@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -60,8 +61,8 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
 
   Future<void> _save() async {
     if (_selectedFeeling == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Wähle ein Herz-Symbol, um euren Moment festzuhalten.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.tr('table_moment_select_feeling')),
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -86,8 +87,8 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
     });
     await _reloadEntries();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('In eurer Schatzkiste festgehalten. 🕯️'),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(context.tr('table_moment_saved')),
       behavior: SnackBarBehavior.floating,
       backgroundColor: Color(0xFF16A34A),
     ));
@@ -103,14 +104,16 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Unser Tischmoment'),
+        title: Text(context.tr('table_moment_title')),
         elevation: 0,
         actions: [
           IconButton(
             icon: Icon(_showTreasure
                 ? Icons.edit_note_rounded
                 : Icons.auto_awesome_rounded),
-            tooltip: _showTreasure ? 'Neuen Moment festhalten' : 'Schatzkiste',
+            tooltip: context.tr(_showTreasure
+              ? 'table_moment_new'
+              : 'table_moment_treasure'),
             onPressed: () => setState(() => _showTreasure = !_showTreasure),
           ),
         ],
@@ -160,7 +163,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
 
           // Kind-Auswahl (optional)
           if (_childNames.isNotEmpty) ...[
-            Text('Für wen?',
+            Text(context.tr('table_moment_for_whom'),
                 style: theme.textTheme.labelLarge
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
@@ -168,7 +171,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _childChip('Ganze Familie', _selectedChild == null,
+                _childChip(context.tr('table_moment_whole_family'), _selectedChild == null,
                     () => setState(() => _selectedChild = null)),
                 ..._childNames.map((n) => _childChip(
                     n, _selectedChild == n, () => setState(() => _selectedChild = n))),
@@ -177,7 +180,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
             const SizedBox(height: 24),
           ],
 
-          Text('Wie war dieser Moment?',
+          Text(context.tr('table_moment_how_was_it'),
               style: theme.textTheme.labelLarge
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
@@ -189,8 +192,8 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
             maxLines: 2,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
-              labelText: 'Ein Satz dazu (optional)',
-              hintText: 'z. B. „Wir haben zusammen Pfannkuchen gebacken.“',
+              labelText: context.tr('table_moment_note_label'),
+              hintText: context.tr('table_moment_note_hint'),
               alignLabelWithHint: true,
               filled: true,
               fillColor: theme.colorScheme.surfaceContainerLow,
@@ -213,7 +216,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.favorite_rounded),
-              label: const Text('Moment festhalten'),
+              label: Text(context.tr('table_moment_save')),
               style: FilledButton.styleFrom(
                 backgroundColor: _accent,
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -288,7 +291,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
       children: [
         Icon(Icons.lock_rounded, size: 14, color: theme.colorScheme.outline),
         const SizedBox(width: 6),
-        Text('Bleibt nur auf diesem Gerät',
+        Text(context.tr('table_moment_local_only'),
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: theme.colorScheme.outline)),
       ],
@@ -307,12 +310,12 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
             children: [
               const Text('🎁', style: TextStyle(fontSize: 44)),
               const SizedBox(height: 16),
-              Text('Eure Schatzkiste ist noch leer.',
+              Text(context.tr('table_moment_empty'),
                   style: theme.textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),
               Text(
-                'Haltet heute Abend euren ersten gemeinsamen Moment fest.',
+                context.tr('table_moment_empty_hint'),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -329,7 +332,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
           _timeTravelSection(theme, travel),
           const SizedBox(height: 20),
         ],
-        Text('Eure Momente',
+        Text(context.tr('table_moment_yours'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
@@ -435,7 +438,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
           IconButton(
             icon: Icon(Icons.close_rounded,
                 size: 18, color: theme.colorScheme.outline),
-            tooltip: 'Entfernen',
+            tooltip: context.tr('tooltip_remove'),
             onPressed: () => _confirmDelete(e),
           ),
         ],
@@ -448,17 +451,16 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Moment entfernen?'),
-        content: const Text('Dieser Moment wird dauerhaft aus eurer '
-            'Schatzkiste entfernt.'),
+        title: Text(context.tr('table_moment_delete_title')),
+        content: Text(context.tr('table_moment_delete_message')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(context.tr('common_cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(backgroundColor: _accent),
-              child: const Text('Entfernen')),
+              child: Text(context.tr('tooltip_remove'))),
         ],
       ),
     );

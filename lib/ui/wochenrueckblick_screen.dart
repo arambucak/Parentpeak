@@ -288,7 +288,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
       case 4:
         return _buildTextStep(
           emoji: '\u{1F31F}',
-          title: 'Worauf freust du dich nächste Woche?',
+          title: _t('review_next_week'),
           subtitle: 'Ein Ausblick gibt Kraft und Vorfreude.',
           hint: 'z.B. Spielplatz-Besuch, Abend zu zweit...',
           controller: _lookingForwardCtrl,
@@ -817,7 +817,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('${r.weekId} löschen?'),
+        title: Text(_t('review_delete_title').replaceAll('{week}', r.weekId)),
         content: Text(_t('review_delete_confirm')),
         actions: [
           TextButton(

@@ -1,4 +1,6 @@
 import 'package:flutter/widgets.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 
 class AppLocalizations {
   final Locale locale;
@@ -12,27 +14,41 @@ class AppLocalizations {
       _AppLocalizationsDelegate();
 
   static const localizationsDelegates = [delegate];
-  static const supportedLocales = [
-    Locale('en'),
-    Locale('de'),
-    Locale('ar'),
-    Locale('fa'),
-    Locale('ku'),
-    Locale('ckb'),
-    Locale('fr'),
-    Locale('es'),
-    Locale('it'),
-    Locale('pt'),
-    Locale('nl'),
-    Locale('pl'),
-    Locale('tr'),
-    Locale('ja'),
-    Locale('zh'),
-    Locale('hi'),
-  ];
+  static final supportedLocales = AppLanguages.supportedLocales;
 
-  Map<String, String> _stringsForLocale() =>
-      _localizedValues[locale.languageCode] ?? _localizedValues['en']!;
+  late final Map<String, String> _resolvedStrings = _buildResolvedStrings();
+
+  Map<String, String> _stringsForLocale() => _resolvedStrings;
+
+  Map<String, String> _buildResolvedStrings() {
+    final legacyEnglish = _localizedValues['en']!;
+    final legacyLocale = _localizedValues[locale.languageCode] ?? const {};
+    final primaryEnglish = AppStringsManager.allStrings['en'] ?? const {};
+    final primaryLocale =
+        AppStringsManager.allStrings[locale.languageCode] ?? const {};
+
+    return {
+      ...legacyEnglish,
+      ...legacyLocale,
+      ..._withCamelCaseAliases(primaryEnglish),
+      ..._withCamelCaseAliases(primaryLocale),
+    };
+  }
+
+  static Map<String, String> _withCamelCaseAliases(
+      Map<String, String> strings) {
+    return {
+      for (final entry in strings.entries) ...{
+        entry.key: entry.value,
+        _toCamelCase(entry.key): entry.value,
+      },
+    };
+  }
+
+  static String _toCamelCase(String key) => key.replaceAllMapped(
+        RegExp(r'_([a-z])'),
+        (match) => match.group(1)!.toUpperCase(),
+      );
 
   String get appTitle => _stringsForLocale()['appTitle'] ?? 'Parentpeak';
   String get trustedDevicesTitle =>
@@ -112,6 +128,8 @@ class AppLocalizations {
       _stringsForLocale()['contactsLabel'] ?? 'Contacts';
   String get moreLabel => _stringsForLocale()['moreLabel'] ?? 'More';
 
+  // Transitional fallback. New and migrated strings belong in
+  // AppStringsManager; remove locale entries here as their keys are migrated.
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
       'appTitle': 'Parentpeak',
@@ -626,36 +644,8 @@ class _AppLocalizationsDelegate
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => [
-        'en',
-        'de',
-        'ar',
-        'fa',
-        'ku',
-        'ckb',
-        'fr',
-        'es',
-        'it',
-        'pt',
-        'nl',
-        'pl',
-        'tr',
-        'ja',
-        'zh',
-        'hi',
-        'ru',
-        'uk',
-        'hr',
-        'sr',
-        'fi',
-        'da',
-        'el',
-        'sw',
-        'am',
-        'ha',
-        'so',
-        'ti'
-      ].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      AppLanguages.isSupported(locale.languageCode);
 
   @override
   Future<AppLocalizations> load(Locale locale) async =>

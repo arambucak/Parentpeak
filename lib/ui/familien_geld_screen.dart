@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -141,16 +142,21 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   Future<void> _shareOverview() async {
     final total = _monthlyAmounts.values.fold(0.0, (a, b) => a + b);
     final sb = StringBuffer();
-    sb.writeln(
-        '${_country.flag} Familien-Geld Übersicht \u2013 ${_country.name}');
+    sb.writeln(context.tr('finance_share_title', values: {
+      'flag': _country.flag,
+      'country': _countryName,
+    }));
     sb.writeln('');
     if (total > 0) {
-      sb.writeln(
-          '\u{1F4B0} Monatliche Kinderkosten: ~${_country.formatAmount(total)}/Monat');
-      sb.writeln('   ${_country.formatAmount(total * 12)}/Jahr');
+      sb.writeln(context.tr('finance_share_monthly_costs', values: {
+        'amount': _country.formatAmount(total),
+      }));
+      sb.writeln(context.tr('finance_share_yearly_costs', values: {
+        'amount': _country.formatAmount(total * 12),
+      }));
       sb.writeln('');
     }
-    sb.writeln('\u{1F4CB} Moegliche Leistungen:');
+    sb.writeln(context.tr('finance_share_possible_benefits'));
     for (final b in _country.benefits) {
       final symbol = b.status == BenefitStatus.universal
           ? '\u2705'
@@ -158,11 +164,11 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               ? '\u{1F7E0}'
               : '\u{1F535}';
       sb.writeln(
-          '$symbol ${b.name}${b.amount != null ? ' \u00B7 ${b.amount}' : ''}');
+          '$symbol ${_benefitText(b, 'name')}${b.amount != null ? ' \u00B7 ${_benefitText(b, 'amount')}' : ''}');
     }
     if (_children.isNotEmpty) {
       sb.writeln('');
-      sb.writeln('\u{1F3AF} Nächste Meilensteine:');
+      sb.writeln(context.tr('finance_share_next_milestones'));
       for (final child in _children) {
         final ageYears = (child.ageMonths / 12).round();
         final upcoming = _country.milestones
@@ -171,15 +177,49 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         for (final m in upcoming) {
           final years = m.childAgeYears - ageYears;
           sb.writeln(
-              '${m.emoji} ${m.label} \u00B7 ~${_country.formatAmount(m.estimatedCost)} (in $years J.)');
+              '${m.emoji} ${_milestoneLabel(m)} \u00B7 ~${_country.formatAmount(m.estimatedCost)} (${context.tr('finance_in_years_short', values: {'years': years})})');
         }
       }
     }
     sb.writeln('');
-    sb.writeln(
-        '\u{1F4F1} Erstellt mit ParentPeak \u2013 Dein Eltern-Begleiter');
-    await Share.share(sb.toString(), subject: 'Familien-Geld Übersicht');
+    sb.writeln(context.tr('finance_share_footer'));
+    await Share.share(sb.toString(), subject: context.tr('finance_share_subject'));
   }
+
+    String get _countryName => context.tr('finance_country_${_country.code}');
+
+    String _categoryLabel(MonthlyCategory category) =>
+      context.tr('finance_category_${category.id}');
+
+    String _milestoneLabel(MilestoneCost milestone) =>
+      context.tr('finance_milestone_${milestone.id}');
+
+    String? _milestoneNote(MilestoneCost milestone) {
+      if (milestone.note == null) return null;
+      if (_country.code != 'de') return milestone.note;
+      return context.tr('finance_milestone_${milestone.id}_note');
+    }
+
+    String _benefitText(SocialBenefit benefit, String field) {
+      if (_country.code == 'de') {
+        final parts = context.tr('finance_benefit_de_${benefit.id}').split('|');
+        final index = switch (field) {
+          'name' => 0,
+          'description' => 1,
+          'amount' => 2,
+          'eligibility' => 3,
+          _ => -1,
+        };
+        if (index >= 0 && index < parts.length) return parts[index];
+      }
+      return switch (field) {
+        'name' => benefit.name,
+        'description' => benefit.description,
+        'amount' => benefit.amount ?? '',
+        'eligibility' => benefit.eligibility ?? '',
+        _ => '',
+      };
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -243,7 +283,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                         },
                         leading:
                             Text(c.flag, style: const TextStyle(fontSize: 28)),
-                        title: Text(c.name,
+                        title: Text(context.tr('finance_country_${c.code}'),
                             style: theme.textTheme.bodyMedium
                                 ?.copyWith(fontWeight: FontWeight.w700)),
                         subtitle: Text('${c.currency} (${c.currencySymbol})',
@@ -278,21 +318,21 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share_rounded, size: 20),
-            tooltip: 'Übersicht teilen',
+            tooltip: context.tr('tooltip_share_overview'),
             onPressed: _shareOverview,
           ),
           IconButton(
             icon: const Icon(Icons.language_rounded, size: 20),
-            tooltip: 'Land ändern',
+            tooltip: context.tr('tooltip_change_country'),
             onPressed: () => setState(() => _countrySelected = false),
           ),
         ],
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(text: 'Überblick'),
-            Tab(text: 'Leistungen'),
-            Tab(text: 'Meilensteine'),
+          tabs: [
+            Tab(text: context.tr('finance_tab_overview')),
+            Tab(text: context.tr('finance_tab_benefits')),
+            Tab(text: context.tr('finance_tab_milestones')),
           ],
         ),
       ),
@@ -342,8 +382,10 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(height: 4),
             Text(
               total > 0
-                  ? '~${_country.formatAmount(total)}/Monat'
-                  : 'Noch nicht eingetragen',
+                  ? context.tr('finance_amount_per_month', values: {
+                      'amount': _country.formatAmount(total),
+                    })
+                  : context.tr('finance_not_entered'),
               style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w900,
                   color: total > 0
@@ -352,7 +394,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             ),
             if (total > 0) ...[
               const SizedBox(height: 6),
-              Text('${_country.formatAmount(total * 12)}/Jahr',
+              Text(context.tr('finance_amount_per_year', values: {
+                'amount': _country.formatAmount(total * 12),
+              }),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.outline)),
             ],
@@ -365,7 +409,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('Einmal eintragen — keine tägliche Eingabe nötig.',
+        Text(AppStringsManager.getString(
+          languageService.currentLanguage, 'money_once_hint'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 14),
@@ -396,9 +441,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                           color: const Color(0xFFEA580C))),
                   const SizedBox(height: 2),
                   Text(
-                    _country.code == 'de'
-                        ? 'Kita-Gebühren sind steuerlich absetzbar — bis zu 4.000\u{20AC}/Jahr pro Kind als Sonderausgabe.'
-                        : 'Prüfe ob Kinderbetreuungskosten in deinem Land steuerlich absetzbar sind.',
+                    context.tr(_country.code == 'de'
+                      ? 'finance_saving_tip_de'
+                      : 'finance_saving_tip_generic'),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: const Color(0xFF9A3412), height: 1.3),
                   ),
@@ -436,12 +481,14 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                Text(cat.label,
+                Text(_categoryLabel(cat),
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 if (cat.typicalAmount != null)
                   Text(
-                      'Durchschnitt: ~${_country.formatAmount(cat.typicalAmount!)}',
+                      context.tr('finance_average_amount', values: {
+                        'amount': _country.formatAmount(cat.typicalAmount!),
+                      }),
                       style: theme.textTheme.labelSmall
                           ?.copyWith(color: theme.colorScheme.outline)),
               ])),
@@ -504,7 +551,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(
-              'Diese Leistungen könnten für euch in ${_country.name} relevant sein.',
+                context.tr('finance_benefits_country_intro',
+                  values: {'country': _countryName}),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: const Color(0xFF6B21A8)),
               textAlign: TextAlign.center,
@@ -533,7 +581,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(width: 8),
             Expanded(
                 child: Text(
-              'Dies ist keine Rechtsberatung. Bitte prüfe deine Ansprüche beim zuständigen Amt oder einer Beratungsstelle.',
+              context.tr('finance_legal_disclaimer'),
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
             )),
@@ -577,16 +625,16 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Was steht uns zu?',
-                        style: TextStyle(
+                  children: [
+                    Text(context.tr('finance_guide_title'),
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.w800)),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                        'Schildert eure Situation – der Wegweiser hilft euch weiter.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      context.tr('finance_guide_subtitle'),
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
                 ),
               ),
@@ -607,17 +655,17 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     switch (b.status) {
       case BenefitStatus.universal:
         statusColor = const Color(0xFF16A34A);
-        statusLabel = 'Für alle';
+        statusLabel = context.tr('finance_status_universal');
         statusIcon = Icons.check_circle_rounded;
         break;
       case BenefitStatus.incomeDependent:
         statusColor = const Color(0xFFF97316);
-        statusLabel = 'Einkommensabhängig';
+        statusLabel = context.tr('finance_status_income_dependent');
         statusIcon = Icons.info_rounded;
         break;
       case BenefitStatus.checkRequired:
         statusColor = const Color(0xFF2563EB);
-        statusLabel = 'Prüfung nötig';
+        statusLabel = context.tr('finance_status_check_required');
         statusIcon = Icons.help_rounded;
         break;
     }
@@ -640,7 +688,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Expanded(
-              child: Text(b.name,
+              child: Text(_benefitText(b, 'name'),
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(fontWeight: FontWeight.w800))),
           Container(
@@ -661,18 +709,18 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ),
         ]),
         const SizedBox(height: 6),
-        Text(b.description,
+        Text(_benefitText(b, 'description'),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
         if (b.amount != null) ...[
           const SizedBox(height: 6),
-          Text('\u{1F4B0} ${b.amount}',
+          Text('\u{1F4B0} ${_benefitText(b, 'amount')}',
               style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700, color: const Color(0xFF16A34A))),
         ],
         if (b.eligibility != null) ...[
           const SizedBox(height: 4),
-          Text('\u{1F464} ${b.eligibility}',
+          Text('\u{1F464} ${_benefitText(b, 'eligibility')}',
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.outline)),
         ],
@@ -683,7 +731,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               HapticFeedback.lightImpact();
               _openUrl(b.url!);
             },
-            child: Text('\u{1F517} Hier prüfen \u{2192}',
+            child: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'common_check_here'),
                 style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF8B5CF6))),
@@ -706,7 +755,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 );
               },
               icon: const Icon(Icons.assignment_turned_in_rounded, size: 16),
-              label: const Text('Antragshelfer starten'),
+              label: Text(context.tr('finance_start_application_helper')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF16A34A),
                 side: const BorderSide(color: Color(0xFF16A34A)),
@@ -756,8 +805,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(height: 4),
             Text(
               _children.isEmpty
-                  ? 'Erstelle ein Profil im Eltern-Netzwerk um personalisierte Meilensteine zu sehen.'
-                  : 'Basierend auf dem Alter eurer Kinder:',
+                  ? context.tr('finance_create_profile_for_milestones')
+                  : context.tr('finance_based_on_children_age'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: const Color(0xFF9A3412)),
               textAlign: TextAlign.center,
@@ -793,7 +842,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
       Padding(
         padding: const EdgeInsets.only(bottom: 10, top: 6),
         child: Text(
-          '\u{1F476} ${child.name.isNotEmpty ? child.name : "Kind"} (${child.ageDisplay})',
+          '\u{1F476} ${child.name.isNotEmpty ? child.name : context.tr('child_label')} (${child.ageDisplay})',
           style:
               theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
         ),
@@ -831,18 +880,21 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(m.label,
+          Text(_milestoneLabel(m),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w700)),
-          if (m.note != null)
-            Text(m.note!,
+          if (_milestoneNote(m) case final note?)
+            Text(note,
                 style: theme.textTheme.labelSmall
                     ?.copyWith(color: theme.colorScheme.outline)),
           if (year != null)
             Text(
                 yearsUntil == 1
-                    ? 'Nächstes Jahr ($year)'
-                    : 'In $yearsUntil Jahren ($year)',
+                    ? context.tr('finance_next_year', values: {'year': year})
+                    : context.tr('finance_in_years', values: {
+                        'years': yearsUntil,
+                        'year': year,
+                      }),
                 style: theme.textTheme.labelSmall?.copyWith(
                     color: const Color(0xFF8B5CF6),
                     fontWeight: FontWeight.w600)),
@@ -896,8 +948,10 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                   fontWeight: FontWeight.w700, color: const Color(0xFF16A34A))),
           const SizedBox(height: 4),
           Text(
-            'In den nächsten 5 Jahren kommen ca. ${_country.formatAmount(totalUpcoming)} auf euch zu. '
-            'Mit ~${_country.formatAmount(monthlyTarget)}/Monat seid ihr vorbereitet.',
+            context.tr('finance_five_year_recommendation', values: {
+              'total': _country.formatAmount(totalUpcoming),
+              'monthly': _country.formatAmount(monthlyTarget),
+            }),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: const Color(0xFF166534), height: 1.4),
           ),
@@ -926,8 +980,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           Expanded(
             child: Text(
               _country.code == 'de'
-                  ? 'Trag deine Kita-Kosten oben ein \u2013 dann berechne ich deine Steuerersparnis.'
-                  : 'Trag deine Kinderbetreuungskosten ein \u2013 dann zeige ich die Absetzbarkeit.',
+                  ? context.tr('finance_enter_childcare_de')
+                  : context.tr('finance_enter_childcare_generic'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
@@ -962,14 +1016,17 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Steuer-Spar-Potenzial',
+                      context.tr('finance_tax_saving_potential'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF065F46)),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Bis zu ${_country.formatAmount(deductible)} absetzbar \u2192 ca. ${_country.formatAmount(estimatedSavings)} Steuerersparnis/Jahr',
+                      context.tr('finance_tax_saving_summary', values: {
+                        'deductible': _country.formatAmount(deductible),
+                        'savings': _country.formatAmount(estimatedSavings),
+                      }),
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF065F46), height: 1.3),
                     ),
@@ -988,15 +1045,15 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const Divider(color: Color(0xFF10B981), height: 1),
             const SizedBox(height: 10),
             _taxDetailRow(
-                theme, 'Kita-Kosten/Jahr', _country.formatAmount(kitaAnnual)),
+                theme, context.tr('finance_tax_childcare_year'), _country.formatAmount(kitaAnnual)),
             if (_country.code == 'de')
-              _taxDetailRow(theme, 'Davon absetzbar (2/3)',
+              _taxDetailRow(theme, context.tr('finance_tax_deductible_share'),
                   _country.formatAmount(deductiblePart)),
-            _taxDetailRow(theme, 'Max. Sonderausgabe',
+            _taxDetailRow(theme, context.tr('finance_tax_max_expense'),
                 _country.formatAmount(deductibleMax)),
-            _taxDetailRow(theme, 'Tats\u00e4chlich absetzbar',
+            _taxDetailRow(theme, context.tr('finance_tax_actual_deductible'),
                 _country.formatAmount(deductible)),
-            _taxDetailRow(theme, 'Gesch\u00e4tzte Ersparnis (30%)',
+            _taxDetailRow(theme, context.tr('finance_tax_estimated_saving'),
                 _country.formatAmount(estimatedSavings),
                 highlight: true),
             const SizedBox(height: 8),
@@ -1007,7 +1064,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                     : 'https://www.bmf.gv.at/themen/steuern/privatpersonen/kinderbetreuungskosten.html',
               ),
               child: Text(
-                '\u{1F517} Mehr Infos beim Finanzamt \u2192',
+                context.tr('finance_tax_more_info'),
                 style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF059669),
                     fontWeight: FontWeight.w700),
@@ -1070,7 +1127,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Leistungen gefiltert basierend auf eurer Situation.',
+              context.tr('finance_benefits_filtered'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: const Color(0xFF5B21B6)),
             ),
@@ -1118,9 +1175,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
-          _eligChip(theme, 'Ja', _isEmployee,
+          _eligChip(theme, context.tr('yes_answer'), _isEmployee,
               () => setState(() => _isEmployee = true)),
-          _eligChip(theme, 'Nein / Elternzeit', !_isEmployee,
+          _eligChip(theme, context.tr('finance_no_parental_leave'), !_isEmployee,
               () => setState(() => _isEmployee = false)),
         ]),
         const SizedBox(height: 10),
@@ -1132,9 +1189,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
-          _eligChip(theme, 'Ja', _isSingleParent,
+          _eligChip(theme, context.tr('yes_answer'), _isSingleParent,
               () => setState(() => _isSingleParent = true)),
-          _eligChip(theme, 'Nein', !_isSingleParent,
+          _eligChip(theme, context.tr('no_answer'), !_isSingleParent,
               () => setState(() => _isSingleParent = false)),
         ]),
         const SizedBox(height: 10),
@@ -1146,11 +1203,11 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, children: [
-          _eligChip(theme, 'Unter 2.000\u20ac', _incomeLevel == 0,
+          _eligChip(theme, context.tr('finance_income_low'), _incomeLevel == 0,
               () => setState(() => _incomeLevel = 0)),
-          _eligChip(theme, '2.000\u20134.000\u20ac', _incomeLevel == 1,
+          _eligChip(theme, context.tr('finance_income_medium'), _incomeLevel == 1,
               () => setState(() => _incomeLevel = 1)),
-          _eligChip(theme, '\u00dcber 4.000\u20ac', _incomeLevel == 2,
+          _eligChip(theme, context.tr('finance_income_high'), _incomeLevel == 2,
               () => setState(() => _incomeLevel = 2)),
         ]),
         const SizedBox(height: 14),
@@ -1252,12 +1309,17 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Spar-Ziel: ${nextMilestone.label}',
+              Text('${context.tr('saving_goal')} ${_milestoneLabel(nextMilestone)}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFFEA580C))),
               Text(
-                'In $yearsLeft Jahr${yearsLeft == 1 ? '' : 'en'} \u00b7 ~${_country.formatAmount(target)}',
+                context.tr(yearsLeft == 1
+                    ? 'finance_goal_in_one_year'
+                    : 'finance_goal_in_years', values: {
+                  'years': yearsLeft,
+                  'amount': _country.formatAmount(target),
+                }),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: const Color(0xFF9A3412)),
               ),
@@ -1277,10 +1339,10 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         ),
         const SizedBox(height: 6),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Gespart: ${_country.formatAmount(_totalSaved)}',
+          Text('${context.tr('saved_amount')} ${_country.formatAmount(_totalSaved)}',
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: const Color(0xFF9A3412))),
-          Text('Ziel: ${_country.formatAmount(target)}',
+          Text('${context.tr('goal_amount')} ${_country.formatAmount(target)}',
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: const Color(0xFF9A3412))),
         ]),
@@ -1290,7 +1352,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           Expanded(
             child: TextField(
               decoration: InputDecoration(
-                labelText: 'Bisher gespart (\u20ac)',
+                labelText: context.tr('finance_saved_so_far'),
                 isDense: true,
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -1312,7 +1374,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           Expanded(
             child: TextField(
               decoration: InputDecoration(
-                labelText: 'Spar-Rate/Monat (\u20ac)',
+                labelText: context.tr('finance_savings_rate_month'),
                 isDense: true,
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -1333,14 +1395,21 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         if (_monthlySavingsGoal > 0 && monthsLeft > 0) ...[
           const SizedBox(height: 8),
           Text(
-            'Mit ${_country.formatAmount(_monthlySavingsGoal)}/Monat hast du das Ziel ${_monthlySavingsGoal >= autoGoal ? 'rechtzeitig' : 'fast'} in $yearsLeft Jahr${yearsLeft == 1 ? '' : 'en'} erreicht.',
+            context.tr(_monthlySavingsGoal >= autoGoal
+                ? 'finance_goal_projection_on_time'
+                : 'finance_goal_projection_almost', values: {
+              'amount': _country.formatAmount(_monthlySavingsGoal),
+              'years': yearsLeft,
+            }),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF9A3412), fontStyle: FontStyle.italic),
           ),
         ] else if (autoGoal > 0) ...[
           const SizedBox(height: 8),
           Text(
-            'Empfehlung: ${_country.formatAmount(autoGoal)}/Monat zurücklegen.',
+            context.tr('finance_monthly_recommendation', values: {
+              'amount': _country.formatAmount(autoGoal),
+            }),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: const Color(0xFF9A3412)),
           ),
@@ -1356,44 +1425,44 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     final resources = _country.code == 'de'
         ? [
             (
-              'Lebensmittelhilfe \u2013 Tafel Deutschland',
+              'finance_support_de_food',
               'https://www.tafel.de/infos-hilfe/tafel-suche/'
             ),
             (
-              'Bildung & Teilhabe (BuT) beantragen',
+              'finance_support_de_education',
               'https://familienportal.de/familienportal/familienleistungen/bildung-und-teilhabe'
             ),
             (
-              'Kostenlose Schuldnerberatung (VZ)',
+              'finance_support_de_debt',
               'https://www.verbraucherzentrale.de/themen/geld-versicherungen/kredit-und-schulden/schuldnerberatung'
             ),
             (
-              'Kleiderkammer \u2013 Caritasverband',
+              'finance_support_de_clothing',
               'https://www.caritas.de/hilfeundberatung/onlineberatung/sozialedienste'
             ),
           ]
         : _country.code == 'at'
             ? [
                 (
-                  'Lebensmittelhilfe \u2013 Tafel Oesterreich',
+                  'finance_support_at_food',
                   'https://www.tafel.at/'
                 ),
                 (
-                  'Kostenlose Schuldnerberatung',
+                  'finance_support_debt',
                   'https://www.schuldnerberatung.at/'
                 ),
                 (
-                  'Caritas Beratungsstellen',
+                  'finance_support_caritas',
                   'https://www.caritas.at/hilfe-einrichtungen/beratung/'
                 ),
               ]
             : [
                 (
-                  'Lokale Lebensmittelbank finden',
+                  'finance_support_food_bank',
                   'https://www.foodbankingeurope.org/'
                 ),
                 (
-                  'Familienhilfe & Beratung',
+                  'finance_support_family_advice',
                   'https://www.unicef.org/parenting/'
                 ),
               ];
@@ -1451,7 +1520,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
-              'Kostenlose Anlaufstellen in ${_country.name}:',
+                context.tr('finance_free_support_in',
+                  values: {'country': _countryName}),
               style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700, color: const Color(0xFF991B1B)),
             ),
@@ -1465,7 +1535,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                           size: 14, color: Color(0xFFDC2626)),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(r.$1,
+                        child: Text(context.tr(r.$1),
                             style: theme.textTheme.bodySmall?.copyWith(
                                 color: const Color(0xFFDC2626),
                                 fontWeight: FontWeight.w600,

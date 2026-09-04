@@ -195,8 +195,8 @@ class _CreateCommunityEventScreenState
             }
             _scanning = false;
           });
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('✅ Flyer erkannt! Bitte prüfe die Angaben.'),
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(_t('community_flyer_detected')),
             backgroundColor: Color(0xFF16A34A),
           ));
         }
@@ -382,8 +382,8 @@ class _CreateCommunityEventScreenState
     if (mounted) {
       setState(() => _saving = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('\u{2705} Event veröffentlicht!'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('community_event_published')),
         ));
         Navigator.pop(context, true);
       } else {

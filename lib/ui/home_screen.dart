@@ -35,6 +35,7 @@ import 'package:parentpeak/ui/wochenrueckblick_screen.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 
 class _FeatureAction {
+  final String id;
   final String label;
   final String description;
   final IconData icon;
@@ -44,6 +45,7 @@ class _FeatureAction {
   final String? featureId;
 
   const _FeatureAction({
+    required this.id,
     required this.label,
     required this.description,
     required this.icon,
@@ -84,8 +86,8 @@ class _HomeScreenState extends State<HomeScreen>
   bool _initialReferralHandled = false;
   bool _debugFeatureHandled = false;
   StreamSubscription<User?>? _authSub;
-  List<String> _recentTileLabels = const [];
-  List<String> _customTileOrderLabels = const [];
+  List<String> _recentTileIds = const [];
+  List<String> _customTileOrderIds = const [];
   int _newParentMatchesCount = 0;
   DateTime? _lastParentMatchHapticAt;
   bool _isOpeningParentMatchQuickAction = false;
@@ -245,16 +247,16 @@ class _HomeScreenState extends State<HomeScreen>
     final stored = prefs.getStringList(_recentTilesStorageKey) ?? const [];
     if (!mounted) return;
     setState(() {
-      _recentTileLabels = stored;
+      _recentTileIds = stored;
     });
   }
 
-  Future<void> _storeRecentTileTap(String label) async {
-    final normalized = label.trim();
+  Future<void> _storeRecentTileTap(String id) async {
+    final normalized = id.trim();
     if (normalized.isEmpty) return;
 
     final updated = <String>[normalized];
-    for (final item in _recentTileLabels) {
+    for (final item in _recentTileIds) {
       if (item != normalized && updated.length < _recentTilesLimit) {
         updated.add(item);
       }
@@ -262,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (mounted) {
       setState(() {
-        _recentTileLabels = updated;
+        _recentTileIds = updated;
       });
     }
 
@@ -275,16 +277,16 @@ class _HomeScreenState extends State<HomeScreen>
     final stored = prefs.getStringList(_tileOrderStorageKey) ?? const [];
     if (!mounted) return;
     setState(() {
-      _customTileOrderLabels = stored;
+      _customTileOrderIds = stored;
     });
   }
 
-  Future<void> _prioritizeTile(String label) async {
-    final normalized = label.trim();
+  Future<void> _prioritizeTile(_FeatureAction action) async {
+    final normalized = action.id.trim();
     if (normalized.isEmpty) return;
 
     final updated = <String>[normalized];
-    for (final item in _customTileOrderLabels) {
+    for (final item in _customTileOrderIds) {
       if (item != normalized) {
         updated.add(item);
       }
@@ -292,12 +294,12 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (mounted) {
       setState(() {
-        _customTileOrderLabels = updated;
+        _customTileOrderIds = updated;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              '"$normalized" ${AppStringsManager.getString(languageService.currentLanguage, 'tile_moved_up')}'),
+              '"${action.label}" ${AppStringsManager.getString(languageService.currentLanguage, 'tile_moved_up')}'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -308,11 +310,11 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _resetTileOrder() async {
-    if (_customTileOrderLabels.isEmpty) return;
+    if (_customTileOrderIds.isEmpty) return;
 
     if (mounted) {
       setState(() {
-        _customTileOrderLabels = const [];
+        _customTileOrderIds = const [];
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -328,26 +330,26 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   List<_FeatureAction> _applyCustomOrder(List<_FeatureAction> actions) {
-    if (_customTileOrderLabels.isEmpty) {
+    if (_customTileOrderIds.isEmpty) {
       return actions;
     }
 
-    final byLabel = <String, _FeatureAction>{
-      for (final action in actions) action.label: action,
+    final byId = <String, _FeatureAction>{
+      for (final action in actions) action.id: action,
     };
     final ordered = <_FeatureAction>[];
     final used = <String>{};
 
-    for (final label in _customTileOrderLabels) {
-      final action = byLabel[label];
+    for (final id in _customTileOrderIds) {
+      final action = byId[id];
       if (action != null) {
         ordered.add(action);
-        used.add(label);
+        used.add(id);
       }
     }
 
     for (final action in actions) {
-      if (!used.contains(action.label)) {
+      if (!used.contains(action.id)) {
         ordered.add(action);
       }
     }
@@ -382,14 +384,14 @@ class _HomeScreenState extends State<HomeScreen>
       }
     }
 
-    await _storeRecentTileTap(action.label);
+    await _storeRecentTileTap(action.id);
     if (!mounted) return;
     await Navigator.push(
       context,
       MaterialPageRoute(builder: action.builder),
     );
     if (!mounted) return;
-    if (action.label == 'Eltern Match') {
+    if (action.featureId == 'eltern_match') {
       await _restoreParentMatchStatusHint();
     }
   }
@@ -699,6 +701,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     final featureActions = <_FeatureAction>[
       _FeatureAction(
+        id: 'impulse_entwicklung',
         label: AppStringsManager.getString(lang, 'tile_impulse'),
         description: AppStringsManager.getString(lang, 'tile_impulse_desc'),
         icon: Icons.auto_awesome_mosaic_rounded,
@@ -707,6 +710,7 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'impulse_entwicklung',
       ),
       _FeatureAction(
+        id: 'kalender',
         label: AppStringsManager.getString(lang, 'tile_calendar'),
         description: AppStringsManager.getString(lang, 'tile_calendar_desc'),
         icon: Icons.calendar_month_rounded,
@@ -715,6 +719,7 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'kalender',
       ),
       _FeatureAction(
+        id: 'events_aktivitaeten',
         label: AppStringsManager.getString(lang, 'tile_events'),
         description: AppStringsManager.getString(lang, 'tile_events_desc'),
         icon: Icons.celebration_rounded,
@@ -723,6 +728,7 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'events_aktivitaeten',
       ),
       _FeatureAction(
+        id: 'verschenkmarkt',
         label: l10n.t('treasureTileTitle', fallback: 'Verschenkmarkt'),
         description: l10n.t('treasureTileSubtitle',
             fallback: 'Verschenken, austauschen, Eltern verbinden'),
@@ -732,6 +738,7 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'verschenkmarkt',
       ),
       _FeatureAction(
+        id: 'eltern_match',
         label: AppStringsManager.getString(lang, 'tile_network'),
         description: AppStringsManager.getString(lang, 'tile_network_desc'),
         icon: Icons.people_rounded,
@@ -740,11 +747,13 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'eltern_match',
         statusHint: _newParentMatchesCount > 0
             ? (_newParentMatchesCount == 1
-                ? '1 neu bestaetigt'
-                : '$_newParentMatchesCount neu bestaetigt')
+                ? AppStringsManager.getString(lang, 'home_match_new_one')
+                : AppStringsManager.getString(lang, 'home_match_new_many')
+                    .replaceAll('{count}', '$_newParentMatchesCount'))
             : null,
       ),
       _FeatureAction(
+        id: 'ki_elternberatung',
         label: AppStringsManager.getString(lang, 'tile_chat'),
         description: AppStringsManager.getString(lang, 'tile_chat_desc'),
         icon: Icons.tips_and_updates_rounded,
@@ -753,6 +762,7 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'ki_elternberatung',
       ),
       _FeatureAction(
+        id: 'organisation',
         label: AppStringsManager.getString(lang, 'tile_zentrale'),
         description: AppStringsManager.getString(lang, 'tile_zentrale_desc'),
         icon: Icons.home_rounded,
@@ -761,6 +771,7 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'organisation',
       ),
       _FeatureAction(
+        id: 'gemeinsam_satt',
         label: AppStringsManager.getString(lang, 'tile_kueche'),
         description: AppStringsManager.getString(lang, 'tile_kueche_desc'),
         icon: Icons.restaurant_rounded,
@@ -769,6 +780,7 @@ class _HomeScreenState extends State<HomeScreen>
         featureId: 'gemeinsam_satt',
       ),
       _FeatureAction(
+        id: 'finanzen_budget',
         label: AppStringsManager.getString(lang, 'tile_geld'),
         description: AppStringsManager.getString(lang, 'tile_geld_desc'),
         icon: Icons.savings_rounded,
@@ -862,7 +874,8 @@ class _HomeScreenState extends State<HomeScreen>
                       children: [
                         _quickAction(
                           icon: Icons.calendar_month_rounded,
-                          label: 'Kalender',
+                          label: AppStringsManager.getString(
+                              lang, 'home_quick_calendar'),
                           color: const Color(0xFF2563EB),
                           onTap: () {
                             final a = visibleGridActions
@@ -873,7 +886,8 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         _quickAction(
                           icon: Icons.auto_awesome_rounded,
-                          label: 'Frag mich',
+                          label: AppStringsManager.getString(
+                              lang, 'home_quick_ask'),
                           color: const Color(0xFF0EA5E9),
                           onTap: () {
                             final a = visibleGridActions
@@ -885,7 +899,8 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         _quickAction(
                           icon: Icons.restaurant_rounded,
-                          label: 'Rezepte',
+                          label: AppStringsManager.getString(
+                              lang, 'home_quick_recipes'),
                           color: const Color(0xFFEA580C),
                           onTap: () {
                             final a = visibleGridActions
@@ -896,7 +911,8 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         _quickAction(
                           icon: Icons.checklist_rounded,
-                          label: 'Listen',
+                          label: AppStringsManager.getString(
+                              lang, 'home_quick_lists'),
                           color: const Color(0xFF16A34A),
                           onTap: () {
                             final a = visibleGridActions
@@ -925,7 +941,8 @@ class _HomeScreenState extends State<HomeScreen>
                     child: Row(
                       children: [
                         Text(
-                          'Deine Features',
+                          AppStringsManager.getString(
+                              lang, 'home_your_features'),
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -937,7 +954,7 @@ class _HomeScreenState extends State<HomeScreen>
                           GestureDetector(
                             onTap: () => _showAllFeatures(visibleGridActions),
                             child: Text(
-                              'Alle \u{2192}',
+                              '${AppStringsManager.getString(lang, 'all')} \u{2192}',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -958,7 +975,7 @@ class _HomeScreenState extends State<HomeScreen>
                       (context, index) {
                         final action = gridActions[index];
                         final isParentMatchTile =
-                            action.label == 'Eltern Match';
+                            action.featureId == 'eltern_match';
                         final featureState = action.featureId != null
                             ? FeatureFlagService.instance
                                 .getFeatureState(action.featureId!)
@@ -1174,10 +1191,19 @@ class _HomeScreenState extends State<HomeScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                    'Heute ${_todayEvents.length} ${_todayEvents.length == 1 ? "Termin" : "Termine"}',
+                    _todayEvents.length == 1
+                        ? AppStringsManager.getString(
+                            languageService.currentLanguage,
+                            'home_today_event_one')
+                        : AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'home_today_event_many')
+                            .replaceAll('{count}', '${_todayEvents.length}'),
                     style: const TextStyle(
                         fontSize: 13, fontWeight: FontWeight.w700)),
-                Text('Tippe um den Kalender zu öffnen',
+                Text(
+                    AppStringsManager.getString(languageService.currentLanguage,
+                        'home_open_calendar_hint'),
                     style: TextStyle(
                         fontSize: 11,
                         color: theme.colorScheme.onSurfaceVariant)),
@@ -1221,7 +1247,10 @@ class _HomeScreenState extends State<HomeScreen>
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF6B21A8))),
-                  Text('Wie war deine Woche?',
+                  Text(
+                      AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'home_weekly_review_question'),
                       style: TextStyle(
                           fontSize: 11,
                           color:
@@ -1295,8 +1324,11 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Alle Features',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'all_features'),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 16),
             Expanded(
               child: GridView.builder(
@@ -1394,7 +1426,7 @@ class _HomeScreenState extends State<HomeScreen>
       color: isComingSoon ? action.color.withValues(alpha: 0.5) : action.color,
       compact: true,
       onTap: () => _openFeature(action),
-      onLongPress: isComingSoon ? null : () => _prioritizeTile(action.label),
+      onLongPress: isComingSoon ? null : () => _prioritizeTile(action),
     );
 
     // Coming Soon Overlay

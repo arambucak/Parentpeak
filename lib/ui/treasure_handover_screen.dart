@@ -87,17 +87,8 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
             fallback: compactScreen ? 'Tausch' : 'Stillen Tausch sichern',
           );
     final hasAnyListings = _listings.isNotEmpty;
-    final coffeeSlots = [
-      l10n.t('treasureSlotSunday', fallback: 'Sonntag, 10:00 - 11:30 Uhr'),
-      l10n.t('treasureSlotMonday', fallback: 'Montag, 17:30 - 18:15 Uhr'),
-      l10n.t('treasureSlotTuesday', fallback: 'Dienstag, 08:15 - 08:45 Uhr'),
-    ];
-    final dropPoints = [
-      l10n.t('treasureDropRetterBox', fallback: 'Retter-Box vor der Haustür'),
-      l10n.t('treasureDropKitaLocker',
-          fallback: 'Kita-Garderobe (Fach "Moewe")'),
-      l10n.t('treasureDropMailbox', fallback: 'Briefkastenbox am Eingang'),
-    ];
+    const coffeeSlots = ['sunday_morning', 'monday_evening', 'tuesday_morning'];
+    const dropPoints = ['front_door_box', 'daycare_locker', 'entrance_mailbox'];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FE),
@@ -422,8 +413,8 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
         ? l10n.t('treasureHandoverCoffeeMode', fallback: 'Kurz treffen')
         : l10n.t('treasureHandoverFlyingSwap', fallback: 'Still tauschen');
     final detail = _selectedMode == TreasureHandoverMode.coffeeChat
-        ? _selectedSlot
-        : _selectedDropPoint;
+      ? _slotLabel(l10n, _selectedSlot)
+      : _dropPointLabel(l10n, _selectedDropPoint);
 
     return Container(
       width: double.infinity,
@@ -459,19 +450,21 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
   /// Echte Entfernung vom Nutzer zum Artikel (Haversine über LocationService).
   /// Fällt auf die gespeicherte distanceMeters zurück, wenn keine Koordinaten da sind.
-  String _distanceLabel(TreasureListing listing) {
+  String _distanceLabel(AppLocalizations l10n, TreasureListing listing) {
     final loc = LocationService.instance;
     if (loc.hasLocation &&
         listing.latitude != null &&
         listing.longitude != null) {
       final text = loc.distanceText(listing.latitude!, listing.longitude!);
-      if (text != null) return '$text entfernt';
+      if (text != null) {
+        return l10n.tFormat('treasureDistanceAway', {'distance': text});
+      }
     }
     // Fallback: keine echten Koordinaten verfügbar
     final m = listing.distanceMeters;
-    if (m <= 0) return 'In deiner Nähe';
-    if (m < 1000) return '$m m entfernt';
-    return '${(m / 1000).toStringAsFixed(1)} km entfernt';
+    if (m <= 0) return l10n.t('treasureDistanceNearby');
+    final distance = m < 1000 ? '$m m' : '${(m / 1000).toStringAsFixed(1)} km';
+    return l10n.tFormat('treasureDistanceAway', {'distance': distance});
   }
 
   List<TreasureListing> get _filteredListings {
@@ -608,8 +601,9 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
           ),
           child: Text(
             _globalDigitalMode
-                ? 'Ansicht: Globaler Digital-Modus'
-                : 'Aktueller Suchradius: $_discoveryScope',
+              ? l10n.t('treasureGlobalMode')
+              : l10n.tFormat('treasureCurrentRadius',
+                {'radius': _discoveryScope}),
             style: const TextStyle(
               color: Color(0xFF385069),
               fontWeight: FontWeight.w700,
@@ -874,7 +868,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            _distanceLabel(listing),
+                            _distanceLabel(l10n, listing),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -908,7 +902,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                     size: 18),
                 label: Text(
                   _reservedListingIds.contains(listing.id)
-                      ? 'Reserviert ✓'
+                      ? l10n.t('treasureReserved')
                       : l10n.t(
                           'treasureReserveAndPickup',
                           fallback: compactScreen
@@ -927,13 +921,13 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                   if (_reservedListingIds.contains(listing.id))
                     _PreviewBadge(
                       icon: Icons.bookmark_added_rounded,
-                      label: 'Von dir reserviert',
+                      label: l10n.t('treasureReservedByYou'),
                       background: const Color(0xFFDCFCE7),
                       foreground: const Color(0xFF16A34A),
                     ),
                   _PreviewBadge(
                     icon: Icons.category_rounded,
-                    label: listing.category,
+                    label: _categoryLabel(l10n, listing.category),
                     background: const Color(0xFFF1F5FB),
                     foreground: const Color(0xFF29425C),
                   ),
@@ -1188,12 +1182,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
   Future<void> _reportListing(TreasureListing listing) async {
     final l10n = AppLocalizations.of(context);
-    final reasons = <String>[
-      'Unpassender Inhalt',
-      'Falsche Angaben',
-      'Unfreundliches Verhalten',
-      'Sonstiges',
-    ];
+    const reasons = <String>['inappropriate', 'false_info', 'hostile', 'other'];
 
     String selectedReason = reasons.first;
     final noteController = TextEditingController();
@@ -1214,7 +1203,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                     items: reasons
                         .map((reason) => DropdownMenuItem<String>(
                               value: reason,
-                              child: Text(reason),
+                              child: Text(l10n.t('treasureReportReason_$reason')),
                             ))
                         .toList(),
                     onChanged: (value) {
@@ -1585,7 +1574,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      _distanceLabel(listing),
+                                      _distanceLabel(l10n, listing),
                                       style: TextStyle(
                                         color: hasImage
                                             ? Colors.white70
@@ -1680,7 +1669,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                   const SizedBox(height: 10),
                   _DetailLine(
                     icon: Icons.category_rounded,
-                    text: listing.category,
+                    text: _categoryLabel(l10n, listing.category),
                   ),
                   if (listing.locationLabel != null &&
                       listing.locationLabel!.trim().isNotEmpty)
@@ -2041,17 +2030,16 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   ) {
     return _PickerFrame(
       title: l10n.t('treasureTimeWindowLabel', fallback: 'Verfügbare Zeiten'),
-      subtitle:
-          l10n.t('treasureCoffeeSlotHint', fallback: 'Wähle ein Zeitfenster'),
+        subtitle: l10n.t('treasureCoffeeSlotHint'),
       child: Column(
         children: coffeeSlots
             .map(
-              (slot) => _SelectableOptionTile(
-                label: slot,
-                selected: _selectedSlot == slot,
+              (slotId) => _SelectableOptionTile(
+                label: _slotLabel(l10n, slotId)!,
+                selected: _selectedSlot == slotId,
                 onTap: () {
                   setState(() {
-                    _selectedSlot = slot;
+                    _selectedSlot = slotId;
                   });
                 },
                 textStyle: theme.textTheme.bodyMedium?.copyWith(
@@ -2071,19 +2059,17 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     List<String> dropPoints,
   ) {
     return _PickerFrame(
-      title: l10n.t('treasureContactlessPointLabel',
-          fallback: 'Kontaktloser Abholpunkt'),
-      subtitle:
-          l10n.t('treasureDropPointHint', fallback: 'Wähle einen Abholpunkt'),
+        title: l10n.t('treasureContactlessPointLabel'),
+        subtitle: l10n.t('treasureDropPointHint'),
       child: Column(
         children: dropPoints
             .map(
-              (point) => _SelectableOptionTile(
-                label: point,
-                selected: _selectedDropPoint == point,
+              (pointId) => _SelectableOptionTile(
+                label: _dropPointLabel(l10n, pointId)!,
+                selected: _selectedDropPoint == pointId,
                 onTap: () {
                   setState(() {
-                    _selectedDropPoint = point;
+                    _selectedDropPoint = pointId;
                   });
                 },
                 textStyle: theme.textTheme.bodyMedium?.copyWith(
@@ -2192,9 +2178,9 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Rechtlicher Hinweis: Parentpeak ist im Verschenkmarkt nur Vermittler. Für Zustand, Sicherheit und Übergabe der Artikel sind ausschließlich die beteiligten Nutzer verantwortlich.',
-            style: TextStyle(
+          Text(
+            l10n.t('treasureLegalNotice'),
+            style: const TextStyle(
               fontSize: 12,
               height: 1.35,
               color: Color(0xFF5D6F84),
@@ -2211,12 +2197,12 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     final listing = _selectedListing;
     if (listing == null) return;
 
-    final modeLabel = _selectedMode == TreasureHandoverMode.coffeeChat
-        ? l10n.t('treasureHandoverCoffeeMode', fallback: 'Kurz treffen')
-        : l10n.t('treasureHandoverFlyingSwap', fallback: 'Still tauschen');
-    final detail = _selectedMode == TreasureHandoverMode.coffeeChat
-        ? _selectedSlot
-        : _selectedDropPoint;
+    final detailId = _selectedMode == TreasureHandoverMode.coffeeChat
+      ? _selectedSlot
+      : _selectedDropPoint;
+    final detailLabel = _selectedMode == TreasureHandoverMode.coffeeChat
+      ? _slotLabel(l10n, detailId)
+      : _dropPointLabel(l10n, detailId);
 
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
@@ -2224,7 +2210,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     // Echte Reservierung: lokal speichern + Backend (best effort)
     await _listingService.reserveListing(
       listingId: listing.id,
-      preferredSlot: detail,
+      preferredSlot: detailId,
       handoverMode:
           _selectedMode == TreasureHandoverMode.coffeeChat ? 'coffee' : 'swap',
     );
@@ -2237,14 +2223,53 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          '✅ ${listing.title} ist für dich reserviert! '
-          '${_selectedMode == TreasureHandoverMode.coffeeChat ? 'Zeitfenster' : 'Abholpunkt'}: ${detail ?? '—'}. '
-          'Die schenkende Familie wird benachrichtigt.',
+          l10n.tFormat(
+            'treasureReservationSuccessDetail',
+            {
+              'title': listing.title,
+              'detailType': l10n.t(_selectedMode == TreasureHandoverMode.coffeeChat
+                  ? 'treasureTimeWindowLabel'
+                  : 'treasureContactlessPointLabel'),
+              'detail': detailLabel ?? '—',
+            },
+          ),
         ),
         duration: const Duration(seconds: 5),
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  String? _slotLabel(AppLocalizations l10n, String? id) {
+    const keys = {
+      'sunday_morning': 'treasureSlotSunday',
+      'monday_evening': 'treasureSlotMonday',
+      'tuesday_morning': 'treasureSlotTuesday',
+    };
+    final key = keys[id];
+    return key == null ? null : l10n.t(key);
+  }
+
+  String? _dropPointLabel(AppLocalizations l10n, String? id) {
+    const keys = {
+      'front_door_box': 'treasureDropRetterBox',
+      'daycare_locker': 'treasureDropKitaLocker',
+      'entrance_mailbox': 'treasureDropMailbox',
+    };
+    final key = keys[id];
+    return key == null ? null : l10n.t(key);
+  }
+
+  String _categoryLabel(AppLocalizations l10n, String category) {
+    const keys = {
+      'vehicles': 'treasureCategoryVehicles',
+      'clothing': 'treasureCategoryClothing',
+      'toys': 'treasureCategoryToys',
+      'books': 'treasureCategoryBooks',
+      'equipment': 'treasureCategoryEquipment',
+    };
+    final normalized = _normalizeCategoryKey(category);
+    return l10n.t(keys[normalized] ?? 'treasureCategoryToys');
   }
 }
 

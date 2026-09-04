@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -95,8 +96,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final resolved = await FriendshipService.instance.resolveInvite(token);
     if (!mounted) return;
     if (resolved == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Einladung ungültig oder abgelaufen.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_t('network_invalid_invite')),
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -109,7 +110,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Verbinden?'),
-        content: Text('Möchtest du dich mit $name verbinden?'),
+        content: Text(_t('network_connect_confirm').replaceAll('{name}', name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -155,7 +156,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Verbinden?'),
-        content: Text('Möchtest du dich mit $name verbinden?'),
+        content: Text(_t('network_connect_confirm').replaceAll('{name}', name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -431,13 +432,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   Expanded(
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Bald verfügbar',
+                        children: [
+                          Text(_t('network_coming_soon'),
                               style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white)),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                               'Deine Coins sind gesichert. Bald kannst du damit Features freischalten. 🎁',
                               style: TextStyle(
@@ -750,7 +751,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Familien in deiner Nähe',
+              child: Text(_t('network_families_nearby'),
                   style: theme.textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w800)),
             ),
@@ -1179,13 +1180,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                           color: Colors.white, fontWeight: FontWeight.w800))),
               const SizedBox(width: 12),
               Expanded(
-                  child: Text('${f.name} möchte sich verbinden',
+                    child: Text(_t('network_wants_to_connect')
+                      .replaceAll('{name}', f.name),
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w600))),
               IconButton(
                 icon: const Icon(Icons.check_circle_rounded,
                     color: Color(0xFF16A34A)),
-                tooltip: 'Annehmen',
+                tooltip: context.tr('tooltip_accept'),
                 onPressed: () async {
                   await FriendshipService.instance.accept(f.uid);
                 },
@@ -1193,7 +1195,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               IconButton(
                 icon: Icon(Icons.cancel_rounded,
                     color: theme.colorScheme.outline),
-                tooltip: 'Ablehnen',
+                tooltip: context.tr('tooltip_reject'),
                 onPressed: () async {
                   await FriendshipService.instance.remove(f.uid);
                 },
@@ -1238,11 +1240,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     size: 16, color: theme.colorScheme.outline),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: Text('${f.name} — wartet auf Bestätigung',
+                    child: Text(_t('network_waiting_confirmation')
+                      .replaceAll('{name}', f.name),
                         style: theme.textTheme.bodySmall)),
                 TextButton(
                     onPressed: () => FriendshipService.instance.remove(f.uid),
-                    child: const Text('Zurückziehen')),
+                    child: Text(_t('network_withdraw'))),
               ]),
             )),
       ],
@@ -1413,7 +1416,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.outline)),
         ]),
-        Text('${_suggestedProfiles.length} Vorschläge',
+        Text(_t('network_suggestions_count')
+          .replaceAll('{count}', '${_suggestedProfiles.length}'),
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: const Color(0xFF8B5CF6))),
       ]),

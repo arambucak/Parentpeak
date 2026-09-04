@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/kettenbrecher_ai_service.dart';
 import 'package:parentpeak/logic/kettenbrecher_backend_service.dart';
@@ -539,7 +540,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
             onPressed: _clearSyncInfo,
             visualDensity: VisualDensity.compact,
             iconSize: 18,
-            tooltip: 'Hinweis schliessen',
+            tooltip: context.tr('tooltip_close_notice'),
             icon: Icon(Icons.close_rounded, color: colors.$3),
           ),
         ],

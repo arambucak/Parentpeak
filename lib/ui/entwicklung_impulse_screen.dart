@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
@@ -78,6 +77,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     );
     _impulseService = widget.impulseService ??
         BackendServiceFactory.createWeeklyImpulseService();
+    languageService.addListener(_onLanguageChanged);
     _loadImpulse();
     _loadCheckIn();
     _loadStreakAndMood();
@@ -86,8 +86,18 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   @override
   void dispose() {
     _tts.stop();
+    languageService.removeListener(_onLanguageChanged);
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _onLanguageChanged() {
+    if (!mounted) return;
+    setState(() {
+      if (_isUsingFallbackImpulse) {
+        _impulse = _buildLocalFallbackImpulse();
+      }
+    });
   }
 
   Future<void> _loadImpulse() async {
@@ -122,92 +132,95 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   static const List<(String title, String body, String tip, String reflect)>
       _fallbackTopics = [
     (
-      'Grenzen liebevoll setzen',
-      'Liebevolle Grenzen sind kein Widerspruch. Kinder brauchen beides: das Gefühl, geliebt zu sein, UND klare Orientierung. Grenzen mit Verbindung wirken wie Leitplanken, nicht wie Mauern.',
-      'Benenne heute zuerst das Gefühl deines Kindes, dann die Grenze: "Ich sehe, du bist wütend. Und trotzdem: Hauen geht nicht."',
-      'Gab es heute eine Situation, in der eine ruhige Grenze besser funktioniert hat als ein lautes Nein?',
+      'fallback_impulse_1_title',
+      'fallback_impulse_1_body',
+      'fallback_impulse_1_tip',
+      'fallback_impulse_1_reflection',
     ),
     (
-      'Ich-Botschaften im Alltag',
-      'Du-Botschaften lösen Abwehr aus. Ich-Botschaften öffnen Türen. Kinder hören mehr zu, wenn sie sich nicht angegriffen fühlen.',
-      'Wähle heute eine Situation, in der du sonst "Du immer..." sagst – und ersetze sie durch "Ich fühle ... weil ich ... brauche."',
-      'Hat eine Ich-Botschaft heute eine Reaktion ausgelöst, die dich überrascht hat?',
+      'fallback_impulse_2_title',
+      'fallback_impulse_2_body',
+      'fallback_impulse_2_tip',
+      'fallback_impulse_2_reflection',
     ),
     (
-      'Kleine Schritte, große Wirkung',
-      'Wenn heute alles zu viel ist: Wähle nur einen ruhigen Moment mit deinem Kind und benenne ein Gefühl wertfrei. Dieser kurze Check-in stärkt Verbindung und Sicherheit.',
-      '3 Minuten gemeinsam atmen, dann frage: "Was war heute leicht für dich?".',
-      'Welcher kleine Moment heute hat euch beiden gutgetan?',
+      'fallback_impulse_3_title',
+      'fallback_impulse_3_body',
+      'fallback_impulse_3_tip',
+      'fallback_impulse_3_reflection',
     ),
     (
-      'Stärken sehen statt Schwächen bewerten',
-      'Jedes Kind hat eine einzigartige Stärken-Konstellation. Oft sehen wir zuerst die Baustellen – dabei wären wir die ersten, die den Rohdiamanten polieren könnten.',
-      'Sprich heute mit deinem Kind über eine seiner Stärken – nicht als Lob, sondern als Beobachtung: "Ich habe heute gesehen, wie du..."',
-      'Welche Stärke deines Kindes hat dich heute überrascht oder beeindruckt?',
+      'fallback_impulse_4_title',
+      'fallback_impulse_4_body',
+      'fallback_impulse_4_tip',
+      'fallback_impulse_4_reflection',
     ),
     (
-      'Selbständigkeit – loslassen ist auch Liebe',
-      'Kinder werden selbständig, wenn wir ihnen trauen. Die Kunst ist: Schritt für Schritt mehr Verantwortung übergeben, ohne zu früh einzuspringen.',
-      'Übergib deinem Kind heute eine Aufgabe, die du bisher selbst gemacht hast – und lass es komplett selbst.',
-      'Wann habt ihr heute losgelassen – und wie hat sich das angefühlt?',
+      'fallback_impulse_5_title',
+      'fallback_impulse_5_body',
+      'fallback_impulse_5_tip',
+      'fallback_impulse_5_reflection',
     ),
     (
-      'Gefühle benennen und anerkennen',
-      'Kinder, die ihre Gefühle benennen können, können kommunizieren, was sie brauchen. Dieser Schritt – vom Fühlen zum Sprechen – braucht Übung und deine Unterstützung.',
-      'Stell heute Abend die Frage: "Was hat dich froh gemacht? Was hat dich traurig oder wütend gemacht?" – und hör einfach zu.',
-      'Welchen Gefühlsmoment eures Kindes wolltet ihr heute festhalten?',
+      'fallback_impulse_6_title',
+      'fallback_impulse_6_body',
+      'fallback_impulse_6_tip',
+      'fallback_impulse_6_reflection',
     ),
     (
-      'Scheitern als Lernchance sehen',
-      'Das Gehirn lernt am stärksten durch Fehler. Wenn dein Kind scheitert und du dabei ruhig bleibst, gibst du das stärkste Signal: Scheitern ist sicher. Ich halte das aus.',
-      'Erzähle deinem Kind heute von einem eigenen Misserfolg – und was du daraus gelernt hast.',
-      'Gab es heute einen Misserfolg, den dein Kind gut weggesteckt hat? Was hat dabei geholfen?',
+      'fallback_impulse_7_title',
+      'fallback_impulse_7_body',
+      'fallback_impulse_7_tip',
+      'fallback_impulse_7_reflection',
     ),
   ];
 
   WeeklyImpulse _buildLocalFallbackImpulse() {
     final now = DateTime.now();
     final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
-    final t = _fallbackTopics[dayOfYear % _fallbackTopics.length];
+    final keys = _fallbackTopics[dayOfYear % _fallbackTopics.length];
+    final title = _t(keys.$1);
+    final body = _t(keys.$2);
+    final tip = _t(keys.$3);
+    final reflection = _t(keys.$4);
     final dateKey =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     return WeeklyImpulse(
       id: 'local_fallback_$dateKey',
-      title: t.$1,
-      contentBody: t.$2,
-      practicalTip: t.$3,
+      title: title,
+      contentBody: body,
+      practicalTip: tip,
       category: PedagogicalCategory.gfk,
       publishDate: now,
-      heroHeadline: 'Tagesimpuls für deinen Alltag',
-      heroDescription: t.$2,
+      heroHeadline: _t('fallback_impulse_headline'),
+      heroDescription: body,
       companionImpulses: <WeeklyImpulseCompanion>[
         WeeklyImpulseCompanion(
           id: 'fallback_verstehen_$dateKey',
-          title: 'Kurz verstanden',
-          summary:
-              'Kinder kooperieren besser, wenn sie sich zuerst gesehen fühlen. Verbindung kommt vor Korrektur.',
-          durationLabel: '2 min',
-          formatLabel: 'Verstehen',
+          title: _t('fallback_understood_title'),
+          summary: _t('fallback_understood_summary'),
+          durationLabel: _t('duration_2_min'),
+          formatLabel: _t('format_understand'),
         ),
         WeeklyImpulseCompanion(
           id: 'fallback_praxis_$dateKey',
-          title: 'Praxis für heute',
-          summary: t.$3,
-          durationLabel: '3 min',
-          formatLabel: 'Praxis',
+          title: _t('development_practice_today'),
+          summary: tip,
+          durationLabel: _t('duration_3_min'),
+          formatLabel: _t('format_practice'),
         ),
         WeeklyImpulseCompanion(
           id: 'fallback_reflexion_$dateKey',
-          title: 'Abend-Reflexion',
-          summary: t.$4,
-          durationLabel: '1 min',
-          formatLabel: 'Reflexion',
+          title: _t('fallback_evening_reflection'),
+          summary: reflection,
+          durationLabel: _t('duration_1_min'),
+          formatLabel: _t('format_reflection'),
         ),
       ],
       discussionPrompt: WeeklyImpulseDiscussionPrompt(
         id: 'fallback_discussion_$dateKey',
-        title: 'Gesprächsimpuls',
-        body: t.$4,
+        title: _t('development_conversation_prompt'),
+        body: reflection,
       ),
     );
   }
@@ -295,7 +308,14 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       return;
     }
     setState(() => _isPlayingAudio = true);
-    await _tts.setLanguage('de-DE');
+    const ttsLocales = {
+      'de': 'de-DE',
+      'en': 'en-US',
+      'tr': 'tr-TR',
+      'ku': 'ku-TR',
+    };
+    await _tts
+        .setLanguage(ttsLocales[languageService.currentLanguage] ?? 'en-US');
     await _tts.setSpeechRate(0.45);
     await _tts.speak(text);
     _tts.setCompletionHandler(() {
@@ -354,7 +374,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   Tab(
                       text: AppStringsManager.getString(
                           languageService.currentLanguage, 'development')),
-                  const Tab(text: 'Wissen'),
+                  Tab(text: _t('knowledge_tab')),
                 ],
               ),
             ),
@@ -393,7 +413,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               Icon(Icons.cloud_off_rounded,
                   size: 48, color: theme.colorScheme.outline),
               const SizedBox(height: 14),
-              Text(_error ?? 'Nicht verfügbar', textAlign: TextAlign.center),
+              Text(_error ?? _t('not_available'), textAlign: TextAlign.center),
               const SizedBox(height: 14),
               FilledButton.tonalIcon(
                 onPressed: _loadImpulse,
@@ -574,9 +594,10 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               emoji: '\u{26A1}',
               title: companions.isNotEmpty
                   ? companions[0].title
-                  : 'Kurz verstanden',
-              duration:
-                  companions.isNotEmpty ? companions[0].durationLabel : '2 Min',
+                  : _t('fallback_understood_title'),
+              duration: companions.isNotEmpty
+                  ? companions[0].durationLabel
+                  : _t('duration_2_min'),
               content: companions.isNotEmpty
                   ? companions[0].summary
                   : impulse.contentBody.split('\n').first,
@@ -589,9 +610,10 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               emoji: '\u{1F3AF}',
               title: companions.length > 2
                   ? companions[2].title
-                  : 'Praxis für heute',
-              duration:
-                  companions.length > 2 ? companions[2].durationLabel : '5 Min',
+                  : _t('development_practice_today'),
+              duration: companions.length > 2
+                  ? companions[2].durationLabel
+                  : _t('duration_5_min'),
               content: impulse.practicalTip,
               color: const Color(0xFF16A34A),
             ),
@@ -602,12 +624,13 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               emoji: '\u{1F31F}',
               title: companions.length > 3
                   ? companions[3].title
-                  : 'Abend-Reflexion',
-              duration:
-                  companions.length > 3 ? companions[3].durationLabel : '2 Min',
+                  : _t('fallback_evening_reflection'),
+              duration: companions.length > 3
+                  ? companions[3].durationLabel
+                  : _t('duration_2_min'),
               content: companions.length > 3
                   ? companions[3].summary
-                  : 'Was hat heute gut funktioniert? Welchen Moment mit deinem Kind willst du festhalten?',
+                  : _t('fallback_default_reflection'),
               color: const Color(0xFF8B5CF6),
             ),
             const SizedBox(height: 20),
@@ -1011,12 +1034,12 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Dein kostenloser Bericht für dieses Jahr wurde bereits erstellt. '
+            '${_t('development_report_limit_reached')} '
             '${limitService.nextFreeReportInfo}',
           ),
           duration: const Duration(seconds: 5),
           action: SnackBarAction(
-            label: 'Premium',
+            label: _t('premium_feature'),
             onPressed: () {
               // TODO: Open Premium sheet
             },
@@ -1050,7 +1073,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
             'Beschreibe nur den individuellen Fortschritt. Statt "Förderbedarf" sage "wächst in eigenem Tempo". '
             'Sei besonders wertschätzend und stärkend.\n'
         : '';
-    final prompt =
+    final prompt = '${_t('development_report_language_instruction')}\n'
         'Du schreibst eine pädagogische Entwicklungseinschätzung für Eltern. '
         'WICHTIGE REGELN:\n'
         '- Schreibe AUS DER PERSPEKTIVE DER APP (nicht Kita, nicht Erzieher).\n'
@@ -1083,7 +1106,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     } catch (e) {
       if (mounted)
         setState(() {
-          _aiReport = 'Bericht konnte nicht erstellt werden: $e';
+          _aiReport =
+              _t('development_report_error').replaceAll('{error}', '$e');
           _generatingReport = false;
         });
     }
@@ -1280,7 +1304,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                       const SizedBox(width: 10),
                       Expanded(
                           child: Text(
-                        'Noch ${tQ - answered} Fragen offen. Beantworte alle Fragen um deinen persönlichen KI-Bericht zu erhalten.',
+                        _t('development_questions_remaining')
+                            .replaceAll('{count}', '${tQ - answered}'),
                         style: theme.textTheme.bodySmall?.copyWith(
                             color: const Color(0xFF9A3412), height: 1.4),
                       )),
@@ -1388,8 +1413,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               TextField(
                   controller: nameCtrl,
                   decoration: InputDecoration(
-                      labelText: 'Name des Kindes',
-                      hintText: 'z.B. Emma',
+                      labelText: _t('child_name'),
+                      hintText: _t('child_name_example'),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14)))),
               const SizedBox(height: 14),
@@ -1408,7 +1433,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                       icon: const Icon(Icons.cake_rounded, size: 18),
                       label: Text(selectedDate != null
                           ? '${selectedDate!.day}.${selectedDate!.month}.${selectedDate!.year}'
-                          : 'Geburtsdatum wählen'),
+                          : _t('birthday')),
                       style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -1453,13 +1478,12 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   contentPadding: EdgeInsets.zero,
                   dense: true,
                   activeColor: const Color(0xFF8B5CF6),
-                  title: const Text('Mein Kind hat besondere Bedürfnisse',
+                  title: Text(_t('development_special_needs'),
                       style:
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  subtitle: const Text(
-                    'z.B. Entwicklungsverzögerung, Behinderung, chronische Erkrankung. '
-                    'Der Bericht vergleicht dann mit dem eigenen Fortschritt — nicht mit Altersnormen.',
-                    style: TextStyle(fontSize: 11, height: 1.4),
+                  subtitle: Text(
+                    _t('development_special_needs_hint'),
+                    style: const TextStyle(fontSize: 11, height: 1.4),
                   ),
                 ),
               ),
@@ -1506,7 +1530,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                 Text(p.name,
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w800)),
-                Text(p.ageLabel,
+                Text(_localizedAgeLabel(p),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
               ]))
@@ -1569,13 +1593,13 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                                   ?.copyWith(height: 1.4)),
                           const SizedBox(height: 8),
                           Row(children: [
-                            _answerChip(
-                                theme, key, 2, 'Ja', const Color(0xFF16A34A)),
+                            _answerChip(theme, key, 2, _t('yes_answer'),
+                                const Color(0xFF16A34A)),
                             const SizedBox(width: 6),
-                            _answerChip(theme, key, 1, 'Manchmal',
+                            _answerChip(theme, key, 1, _t('sometimes'),
                                 const Color(0xFFF59E0B)),
                             const SizedBox(width: 6),
-                            _answerChip(theme, key, 0, 'Noch nicht',
+                            _answerChip(theme, key, 0, _t('not_yet'),
                                 const Color(0xFFEF4444))
                           ]),
                         ]));
@@ -1645,6 +1669,21 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                                 : theme.colorScheme.onSurfaceVariant))))));
   }
 
+  String _localizedAgeLabel(ChildProfile profile) {
+    final months = profile.ageInMonths;
+    if (months < 12) {
+      return _t('age_months').replaceAll('{count}', '$months');
+    }
+    final years = months ~/ 12;
+    final remainingMonths = months % 12;
+    if (remainingMonths == 0) {
+      return _t('age_years').replaceAll('{count}', '$years');
+    }
+    return _t('age_years_months')
+        .replaceAll('{years}', '$years')
+        .replaceAll('{months}', '$remainingMonths');
+  }
+
   Widget _buildReportCard(ThemeData theme) {
     return Column(children: [
       Container(
@@ -1672,7 +1711,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   !MonetizationConfig.enabled)
                 IconButton(
                   icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),
-                  tooltip: 'Als PDF speichern',
+                  tooltip: context.tr('tooltip_save_pdf'),
                   color: const Color(0xFFDC2626),
                   onPressed: _exportPdf,
                 ),
@@ -1804,7 +1843,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Text('🔥', style: TextStyle(fontSize: 13)),
                   const SizedBox(width: 4),
-                  Text('$_streak Tage',
+                  Text('$_streak ${_t('streak_days')}',
                       style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -1843,9 +1882,9 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                     ?.copyWith(fontWeight: FontWeight.w600)),
           ),
           ...[
-            ('😮‍💨', 'Erschöpft', 1),
-            ('😌', 'Okay', 2),
-            ('🌟', 'Top', 3),
+            ('😮‍💨', _t('mood_exhausted'), 1),
+            ('😌', _t('mood_okay'), 2),
+            ('🌟', _t('mood_great'), 3),
           ].map((item) => GestureDetector(
                 onTap: () => _saveMood(item.$3),
                 child: Padding(

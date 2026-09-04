@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:intl/intl.dart';
 import 'package:parentpeak/models/recipe.dart';
 
@@ -55,7 +56,7 @@ class _SimpleMealPlannerState extends State<SimpleMealPlanner> {
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
             onPressed: () => setState(() => _showShoppingList = !_showShoppingList),
-            tooltip: 'Einkaufsliste',
+            tooltip: context.tr('tooltip_shopping_list'),
           ),
         ],
       ),

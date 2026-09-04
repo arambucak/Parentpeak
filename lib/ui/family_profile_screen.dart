@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/ui/backup_qr_scan_screen.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/logic/account_data_cleanup_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/trusted_device.dart';
@@ -93,7 +94,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     '#Health'
   ];
   late final Set<String> _selectedInterests;
-  late final List<Map<String, String>> _languages;
+  late final List<AppLanguage> _languages;
 
   @override
   void initState() {
@@ -106,69 +107,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     themeService.addListener(_onThemeChanged);
     _loadProfilePreferences();
 
-    _languages = [
-      {
-        'code': 'de',
-        'name': 'Deutsch',
-        'flag': '🇩🇪',
-        'nativeName': 'Deutsch'
-      },
-      {
-        'code': 'en',
-        'name': 'English',
-        'flag': '🇬🇧',
-        'nativeName': 'English'
-      },
-      {
-        'code': 'fr',
-        'name': 'Français',
-        'flag': '🇫🇷',
-        'nativeName': 'Français'
-      },
-      {
-        'code': 'es',
-        'name': 'Español',
-        'flag': '🇪🇸',
-        'nativeName': 'Español'
-      },
-      {
-        'code': 'it',
-        'name': 'Italiano',
-        'flag': '🇮🇹',
-        'nativeName': 'Italiano'
-      },
-      {
-        'code': 'nl',
-        'name': 'Nederlands',
-        'flag': '🇳🇱',
-        'nativeName': 'Nederlands'
-      },
-      {
-        'code': 'pt',
-        'name': 'Português',
-        'flag': '🇵🇹',
-        'nativeName': 'Português'
-      },
-      {
-        'code': 'ar',
-        'name': 'العربية',
-        'flag': '🇸🇦',
-        'nativeName': 'العربية'
-      },
-      {'code': 'fa', 'name': 'فارسی', 'flag': '🇮🇷', 'nativeName': 'فارسی'},
-      {'code': 'ku', 'name': 'Kurdî', 'flag': '🔶', 'nativeName': 'Kurdî'},
-      {'code': 'ckb', 'name': 'کوردی', 'flag': '🔶', 'nativeName': 'کوردی'},
-      {'code': 'zh', 'name': '中文', 'flag': '🇨🇳', 'nativeName': '中文'},
-      {'code': 'ja', 'name': '日本語', 'flag': '🇯🇵', 'nativeName': '日本語'},
-      {'code': 'ko', 'name': '한국어', 'flag': '🇰🇷', 'nativeName': '한국어'},
-      {'code': 'tr', 'name': 'Türkçe', 'flag': '🇹🇷', 'nativeName': 'Türkçe'},
-      {
-        'code': 'ru',
-        'name': 'Русский',
-        'flag': '🇷🇺',
-        'nativeName': 'Русский'
-      },
-    ];
+    _languages = AppLanguages.supported;
   }
 
   @override
@@ -392,7 +331,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'backup_exported')),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'backup_exported')),
         content: const Text(
           'Das Familienprofil-Backup wurde als JSON in die Zwischenablage kopiert.',
         ),
@@ -433,7 +373,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'backup_qr')),
+          title: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'backup_qr')),
           content: SizedBox(
             width: 320,
             child: Column(
@@ -486,7 +427,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 if (chunks.length > 1)
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(AppStringsManager.getString(languageService.currentLanguage, 'auto_next')),
+                    title: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'auto_next')),
                     subtitle: Text(
                       'Wechselt alle $autoPlaySeconds Sek. den QR-Teil',
                     ),
@@ -558,7 +500,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 autoTimer?.cancel();
                 Navigator.pop(context);
               },
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'close')),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'close')),
             ),
           ],
         ),
@@ -580,7 +523,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'backup_import')),
+          title: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'backup_import')),
           content: SizedBox(
             width: 520,
             child: Column(
@@ -633,7 +577,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                           });
                         },
                         icon: const Icon(Icons.content_paste),
-                        label: Text(AppStringsManager.getString(languageService.currentLanguage, 'clipboard')),
+                        label: Text(AppStringsManager.getString(
+                            languageService.currentLanguage, 'clipboard')),
                       ),
                       TextButton.icon(
                         onPressed: () async {
@@ -675,7 +620,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 }
                 Navigator.pop(context, true);
               },
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'import_action')),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'import_action')),
             ),
           ],
         ),
@@ -784,7 +730,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'backup_restored')),
+          title: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'backup_restored')),
           content: Text(
             'Version: v$importedVersion\nMitglieder: ${parsedMembers.length}\nInteressen: ${selectedInterests.length}\nAktive Rolle: ${_activeRole.isEmpty ? '-' : _activeRole}\nSigniert: ${importedSigned ? 'Ja' : 'Nein'}',
           ),
@@ -954,7 +901,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'add_member')),
+          title: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'add_member')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -997,10 +945,17 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 initialValue: selectedRole,
                 items: [
                   DropdownMenuItem(
-                      value: 'Elternteil', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'parent_role'))),
-                  DropdownMenuItem(value: 'Kind', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'child_role'))),
+                      value: 'Elternteil',
+                      child: Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'parent_role'))),
                   DropdownMenuItem(
-                      value: 'Bezugsperson', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'caregiver_role'))),
+                      value: 'Kind',
+                      child: Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'child_role'))),
+                  DropdownMenuItem(
+                      value: 'Bezugsperson',
+                      child: Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'caregiver_role'))),
                 ],
                 onChanged: (value) {
                   if (value == null) {
@@ -1065,7 +1020,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 }
                 Navigator.pop(context, true);
               },
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'add_member')),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'add_member')),
             ),
           ],
         ),
@@ -1112,7 +1068,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Text(AppStringsManager.getString(languageService.currentLanguage, 'edit_member')),
+          title: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'edit_member')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1151,10 +1108,17 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 initialValue: selectedRole,
                 items: [
                   DropdownMenuItem(
-                      value: 'Elternteil', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'parent_role'))),
-                  DropdownMenuItem(value: 'Kind', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'child_role'))),
+                      value: 'Elternteil',
+                      child: Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'parent_role'))),
                   DropdownMenuItem(
-                      value: 'Bezugsperson', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'caregiver_role'))),
+                      value: 'Kind',
+                      child: Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'child_role'))),
+                  DropdownMenuItem(
+                      value: 'Bezugsperson',
+                      child: Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'caregiver_role'))),
                 ],
                 onChanged: canEditRole
                     ? (value) {
@@ -1214,7 +1178,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   _removeFamilyMember(member);
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'remove_action')),
+                child: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'remove_action')),
               ),
             const Spacer(),
             TextButton(
@@ -1304,7 +1269,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     final shouldRemove = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(AppStringsManager.getString(languageService.currentLanguage, 'remove_member')),
+            title: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'remove_member')),
             content:
                 Text('${member.name} wird aus dem Familienprofil entfernt.'),
             actions: [
@@ -1318,7 +1284,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
                 ),
-                child: Text(AppStringsManager.getString(languageService.currentLanguage, 'remove_action')),
+                child: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'remove_action')),
               ),
             ],
           ),
@@ -1463,7 +1430,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 itemCount: _languages.length,
                 itemBuilder: (context, index) {
                   final lang = _languages[index];
-                  final code = lang['code']!;
+                  final code = lang.code;
                   final isSelected = code == _currentLanguage;
 
                   // Special handling for Kurdish languages to show Ala rengin flag
@@ -1471,21 +1438,21 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   if (code == 'ku' || code == 'ckb') {
                     flagWidget = const AlaRenginFlag(width: 32, height: 20);
                   } else {
-                    flagWidget = Text(lang['flag'] ?? '🌐',
-                        style: const TextStyle(fontSize: 28));
+                    flagWidget =
+                        Text(lang.flag, style: const TextStyle(fontSize: 28));
                   }
 
                   return ListTile(
                     leading: flagWidget,
                     title: Text(
-                      lang['nativeName'] ?? '',
+                      lang.nativeName,
                       style: TextStyle(
                         fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
                         fontSize: 16,
                       ),
                     ),
-                    subtitle: Text(lang['name'] ?? ''),
+                    subtitle: Text(lang.name),
                     trailing: isSelected
                         ? Icon(Icons.check_circle,
                             color: Theme.of(context).colorScheme.primary)
@@ -1533,7 +1500,9 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'logout_question'),
+        title: Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'logout_question'),
             style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text(
             'Ihr werdet von diesem Gerät abgemeldet. Eure Familiendaten bleiben gespeichert.'),
@@ -1550,7 +1519,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'logout_action')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'logout_action')),
           ),
         ],
       ),
@@ -1642,7 +1612,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                        content: Text('Fehler beim Löschen des Kontos: $e')),
+                      content: Text(_t('family_delete_account_error')
+                        .replaceAll('{error}', '$e'))),
                   );
                 }
                 return;
@@ -1658,7 +1629,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 (route) => false,
               );
             },
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_final')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'delete_final')),
           ),
         ],
       ),
@@ -2469,22 +2441,22 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
               _buildActionTile(
                 leading: Builder(
                   builder: (context) {
-                    final currentLang = _languages
-                        .firstWhere((l) => l['code'] == _currentLanguage);
-                    final code = currentLang['code']!;
+                    final currentLang = _languages.firstWhere(
+                        (language) => language.code == _currentLanguage);
+                    final code = currentLang.code;
                     if (code == 'ku' || code == 'ckb') {
                       return const AlaRenginFlag(width: 24, height: 15);
                     }
-                    final flagValue = currentLang['flag']!;
+                    final flagValue = currentLang.flag;
                     return Text(flagValue,
                         style: const TextStyle(fontSize: 20));
                   },
                 ),
                 title: _t('language'),
                 subtitle: 'Aktive Sprache im Familienbereich wechseln',
-                status: _languages.firstWhere(
-                        (l) => l['code'] == _currentLanguage)['nativeName'] ??
-                    '',
+                status: _languages
+                    .firstWhere((language) => language.code == _currentLanguage)
+                    .nativeName,
                 onTap: _showLanguageSelector,
               ),
               Divider(height: 1, color: primary.withValues(alpha: 0.1)),
@@ -2521,8 +2493,11 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     top: 6,
                     bottom: 6,
                   ),
-                  title: Text(AppStringsManager.getString(languageService.currentLanguage, 'emergencies')),
-                  subtitle: Text(AppStringsManager.getString(languageService.currentLanguage, 'instant_notifications')),
+                  title: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'emergencies')),
+                  subtitle: Text(AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'instant_notifications')),
                   value: _notifyEmergencies,
                   onChanged: (value) =>
                       _updateGranularNotifications(emergencies: value),
@@ -2535,8 +2510,10 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     top: 6,
                     bottom: 6,
                   ),
-                  title: Text(AppStringsManager.getString(languageService.currentLanguage, 'reminders')),
-                  subtitle: Text(AppStringsManager.getString(languageService.currentLanguage, 'appointments_tasks')),
+                  title: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'reminders')),
+                  subtitle: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'appointments_tasks')),
                   value: _notifyReminders,
                   onChanged: (value) =>
                       _updateGranularNotifications(reminders: value),
@@ -2549,8 +2526,10 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     top: 6,
                     bottom: 6,
                   ),
-                  title: Text(AppStringsManager.getString(languageService.currentLanguage, 'product_updates')),
-                  subtitle: Text(AppStringsManager.getString(languageService.currentLanguage, 'new_features')),
+                  title: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'product_updates')),
+                  subtitle: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'new_features')),
                   value: _notifyUpdates,
                   onChanged: (value) =>
                       _updateGranularNotifications(updates: value),
@@ -2642,7 +2621,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 secondary:
                     const Icon(Icons.verified_user, color: Color(0xFFBDB2FF)),
-                title: Text(AppStringsManager.getString(languageService.currentLanguage, 'signed_backups')),
+                title: Text(AppStringsManager.getString(
+                    languageService.currentLanguage, 'signed_backups')),
                 subtitle: const Text(
                     'Fügt eine HMAC-Signatur zur Integritätsprüfung hinzu'),
                 value: _signedBackupEnabled,

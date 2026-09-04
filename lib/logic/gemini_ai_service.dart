@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/logic/privacy_sanitizer.dart';
 
 class GeminiAIService {
@@ -21,6 +22,7 @@ class GeminiAIService {
     bool useGoogleSearch = false,
     Uint8List? imageBytes,
     String imageMimeType = 'image/jpeg',
+    String? appLanguage,
   }) async {
     final response = await generate(
       prompt,
@@ -28,6 +30,7 @@ class GeminiAIService {
       useGoogleSearch: useGoogleSearch,
       imageBytes: imageBytes,
       imageMimeType: imageMimeType,
+      appLanguage: appLanguage,
     );
     return response.text;
   }
@@ -38,6 +41,7 @@ class GeminiAIService {
     bool useGoogleSearch = false,
     Uint8List? imageBytes,
     String imageMimeType = 'image/jpeg',
+    String? appLanguage,
   }) async {
     final client = _apiClient;
     if (client == null) {
@@ -50,6 +54,7 @@ class GeminiAIService {
       if (systemInstruction != null && systemInstruction.trim().isNotEmpty)
         'systemInstruction': systemInstruction.trim(),
       'useGoogleSearch': useGoogleSearch,
+      'language': appLanguage ?? LanguageService.activeCode,
       if (imageBytes != null) 'imageBase64': base64Encode(imageBytes),
       if (imageBytes != null) 'imageMimeType': imageMimeType,
     });
@@ -108,7 +113,7 @@ class GeminiAIService {
   String _historyPrompt(List<Map<String, String>> messages) {
     final safeMessages = PrivacySanitizer.sanitizeHistoryForAi(messages);
     return safeMessages.map((message) {
-      final role = message['role'] == 'user' ? 'Nutzer' : 'Assistent';
+      final role = message['role'] == 'user' ? 'User' : 'Assistant';
       return '$role: ${message['content'] ?? ''}';
     }).join('\n\n');
   }

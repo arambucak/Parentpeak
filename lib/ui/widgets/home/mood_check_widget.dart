@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Familien-Energie-Check — moderner, spielerischer Tages-Puls.
@@ -32,37 +33,37 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
     _MoodLevel(
       value: 1,
       emoji: '\u{1F62E}\u{200D}\u{1F4A8}',
-      label: 'Anstrengend',
+      labelKey: 'mood_level_1',
       color: Color(0xFFEF4444),
-      tip: 'Schwere Tage gehören dazu. Sei heute extra sanft mit dir.',
+      tipKey: 'mood_tip_1',
     ),
     _MoodLevel(
       value: 2,
       emoji: '\u{1F615}',
-      label: 'Mühsam',
+      labelKey: 'mood_level_2',
       color: Color(0xFFF97316),
-      tip: 'Morgen ist ein neuer Tag. Eine kleine Pause heute Abend tut gut.',
+      tipKey: 'mood_tip_2',
     ),
     _MoodLevel(
       value: 3,
       emoji: '\u{1F60C}',
-      label: 'Okay',
+      labelKey: 'mood_level_3',
       color: Color(0xFFF59E0B),
-      tip: 'Solide! Nicht jeder Tag muss perfekt sein.',
+      tipKey: 'mood_tip_3',
     ),
     _MoodLevel(
       value: 4,
       emoji: '\u{1F60A}',
-      label: 'Gut',
+      labelKey: 'mood_level_4',
       color: Color(0xFF22C55E),
-      tip: 'Schöner Tag! Genieße den Moment.',
+      tipKey: 'mood_tip_4',
     ),
     _MoodLevel(
       value: 5,
       emoji: '\u{1F929}',
-      label: 'Wunderbar',
+      labelKey: 'mood_level_5',
       color: Color(0xFF16A34A),
-      tip: 'Was für ein toller Tag! Halte dieses Gefühl fest.',
+      tipKey: 'mood_tip_5',
     ),
   ];
 
@@ -160,14 +161,14 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
               const Text('\u{1F49C}', style: TextStyle(fontSize: 36)),
               const SizedBox(height: 14),
               Text(
-                'Schwere Tage sind okay',
+                context.tr('mood_support_title'),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Du gibst jeden Tag dein Bestes. Möchtest du einen kurzen Tipp oder mit der KI reden?',
+                context.tr('mood_support_message'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   height: 1.4,
@@ -183,7 +184,7 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
                     widget.onNeedSupport?.call();
                   },
                   icon: const Icon(Icons.chat_rounded, size: 18),
-                  label: const Text('Mit KI-Beratung sprechen'),
+                  label: Text(context.tr('mood_support_action')),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -195,7 +196,7 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Nicht jetzt'),
+                child: Text(context.tr('common_not_now')),
               ),
             ],
           ),
@@ -255,7 +256,7 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Familien-Energie heute',
+                context.tr('mood_today_title'),
                 style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -286,7 +287,7 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      level.label,
+                      context.tr(level.labelKey),
                       style: theme.textTheme.labelSmall?.copyWith(
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
@@ -334,13 +335,13 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
                   Row(
                     children: [
                       Text(
-                        'Heute: ',
+                        context.tr('mood_today_prefix'),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       Text(
-                        level.label,
+                        context.tr(level.labelKey),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: level.color,
@@ -350,7 +351,7 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    level.tip,
+                    context.tr(level.tipKey),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       height: 1.3,
@@ -449,15 +450,15 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
 class _MoodLevel {
   final int value;
   final String emoji;
-  final String label;
+  final String labelKey;
   final Color color;
-  final String tip;
+  final String tipKey;
 
   const _MoodLevel({
     required this.value,
     required this.emoji,
-    required this.label,
+    required this.labelKey,
     required this.color,
-    required this.tip,
+    required this.tipKey,
   });
 }

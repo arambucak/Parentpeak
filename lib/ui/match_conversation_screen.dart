@@ -538,7 +538,8 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             Text(_t('convo_report_user'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text('Warum möchtest du ${widget.profileName} melden?',
+            Text(_t('conversation_report_reason')
+              .replaceAll('{name}', widget.profileName),
                 style: TextStyle(fontSize: 13, color: Colors.grey[600])),
             const SizedBox(height: 16),
             _reportOption(ctx, 'Beleidigung / Hassrede', 'insult'),

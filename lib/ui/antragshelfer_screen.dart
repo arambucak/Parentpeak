@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -337,7 +338,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text('Zuständig: ${_b.responsibleAuthority}',
+                    Text(_t('application_authority').replaceAll(
+                      '{authority}', _b.responsibleAuthority),
                       style: theme.textTheme.bodySmall
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
@@ -506,7 +508,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
             child: FilledButton.icon(
               onPressed: _generateAiText,
               icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-              label: Text('Textvorlage für ${_b.benefitName} erstellen'),
+                label: Text(_t('application_create_template')
+                  .replaceAll('{benefit}', _b.benefitName)),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFEC4899),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -573,7 +576,7 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.copy_rounded, size: 18),
-                  tooltip: 'Kopieren',
+                  tooltip: context.tr('tooltip_copy'),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: _aiText!));
                     ScaffoldMessenger.of(context).showSnackBar(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -126,7 +127,7 @@ class _NextEventWidgetState extends State<NextEventWidget> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Keine Termine diese Woche — Zeit für Spontanes!',
+                  context.tr('no_events_this_week'),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

@@ -423,7 +423,9 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
       _provider.addExpenses(expenses);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${expenses.length} Positionen übernommen.')),
+        SnackBar(
+          content: Text(_t('budget_positions_imported')
+            .replaceAll('{count}', '${expenses.length}'))),
       );
     } on ReceiptOcrUnsupportedException catch (error) {
       if (!mounted) return;

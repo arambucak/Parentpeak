@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/admin_moderation_service.dart';
 
 /// Schlankes Moderations-Dashboard fuer Admins.
@@ -42,8 +43,8 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       setState(() {
         _loading = false;
         _error = e.toString().contains('403')
-            ? 'Kein Admin-Zugriff. Bitte mit einem Admin-Konto anmelden.'
-            : 'Konnte Meldungen nicht laden. Bitte später erneut versuchen.';
+          ? context.tr('admin_no_access')
+          : context.tr('admin_load_failed');
       });
     }
   }
@@ -55,40 +56,38 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Account sperren?'),
-        content: Text(
-            'Der Account wird aus dem Netzwerk und der Discovery ausgeblendet. '
-            'Die Sperre ist umkehrbar – es werden keine Daten gelöscht.\n\n'
-            'User-ID: ${g.reportedUserId}'),
+        title: Text(context.tr('admin_suspend_title')),
+        content: Text(context.tr('admin_suspend_message',
+          values: {'userId': g.reportedUserId})),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(context.tr('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.error),
-              child: const Text('Sperren')),
+              child: Text(context.tr('admin_suspend_action'))),
         ],
       ),
     );
     if (ok != true) return;
     final success = await _service.suspendUser(g.reportedUserId,
         reason: 'Moderation: ${g.lastReason}');
-    _afterAction(
-        success, success ? 'Account gesperrt.' : 'Sperren fehlgeschlagen.');
+    _afterAction(success,
+      context.tr(success ? 'admin_suspended' : 'admin_suspend_failed'));
   }
 
   Future<void> _unsuspend(ReportGroup g) async {
     final success = await _service.unsuspendUser(g.reportedUserId);
-    _afterAction(
-        success, success ? 'Sperre aufgehoben.' : 'Aktion fehlgeschlagen.');
+    _afterAction(success,
+      context.tr(success ? 'admin_unsuspended' : 'admin_action_failed'));
   }
 
   Future<void> _ignore(ReportGroup g) async {
     final success = await _service.resolveReportsForUser(g.reportedUserId);
     _afterAction(success,
-        success ? 'Meldungen als geprüft markiert.' : 'Aktion fehlgeschlagen.');
+      context.tr(success ? 'admin_reports_resolved' : 'admin_action_failed'));
   }
 
   void _afterAction(bool success, String message) {
@@ -112,17 +111,16 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
 
     if (count < 0) {
       setState(() => _cleaning = false);
-      messenger.showSnackBar(const SnackBar(
-        content:
-            Text('Vorschau fehlgeschlagen. Bitte später erneut versuchen.'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(context.tr('admin_cleanup_preview_failed')),
         behavior: SnackBarBehavior.floating,
       ));
       return;
     }
     if (count == 0) {
       setState(() => _cleaning = false);
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Alles sauber – keine kaputten Einträge gefunden. 🎉'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(context.tr('admin_cleanup_empty')),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Color(0xFF16A34A),
       ));
@@ -134,17 +132,17 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         icon: const Icon(Icons.cleaning_services_rounded, size: 32),
-        title: const Text('Datenbank aufräumen?'),
-        content: Text('Es wurden $count kaputte Verbindungs-Einträge gefunden '
-            '(fehlerhafte oder verwaiste Codes). Diese werden entfernt.\n\n'
-            'Echte Nutzer, Namen und Chats bleiben unberührt.'),
+        title: Text(context.tr('admin_cleanup_title')),
+        content: Text(context.tr('admin_cleanup_message',
+          values: {'count': count})),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(context.tr('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('$count entfernen')),
+                child: Text(context.tr('admin_remove_count',
+                  values: {'count': count}))),
         ],
       ),
     );
@@ -157,9 +155,9 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
     if (!mounted) return;
     setState(() => _cleaning = false);
     messenger.showSnackBar(SnackBar(
-      content: Text(deleted >= 0
-          ? '$deleted Einträge bereinigt. Datenbank ist sauber. ✅'
-          : 'Aufräumen fehlgeschlagen. Bitte später erneut versuchen.'),
+        content: Text(deleted >= 0
+          ? context.tr('admin_cleanup_success', values: {'count': deleted})
+          : context.tr('admin_cleanup_failed')),
       behavior: SnackBarBehavior.floating,
       backgroundColor: deleted >= 0 ? const Color(0xFF16A34A) : null,
     ));
@@ -170,10 +168,10 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Moderation'),
+        title: Text(context.tr('admin_title')),
         actions: [
           IconButton(
-            tooltip: 'Datenbank aufräumen',
+            tooltip: context.tr('admin_cleanup_tooltip'),
             icon: const Icon(Icons.cleaning_services_rounded),
             onPressed: _cleaning ? null : _startCleanup,
           ),
@@ -183,10 +181,15 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
               setState(() => _status = v);
               _load();
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'pending', child: Text('Offen')),
-              PopupMenuItem(value: 'resolved', child: Text('Erledigt')),
-              PopupMenuItem(value: 'all', child: Text('Alle')),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'pending',
+                child: Text(context.tr('admin_filter_open'))),
+              PopupMenuItem(
+                value: 'resolved',
+                child: Text(context.tr('admin_filter_done'))),
+              PopupMenuItem(
+                value: 'all', child: Text(context.tr('admin_filter_all'))),
             ],
             icon: const Icon(Icons.filter_list_rounded),
           ),
@@ -225,13 +228,13 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
           const Center(child: Text('🎉', style: TextStyle(fontSize: 44))),
           const SizedBox(height: 16),
           Center(
-            child: Text('Keine offenen Meldungen',
+            child: Text(context.tr('admin_no_reports'),
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w700)),
           ),
           const SizedBox(height: 6),
           Center(
-            child: Text('Alles ruhig. Deine Community ist sicher.',
+            child: Text(context.tr('admin_community_safe'),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.outline)),
           ),
@@ -263,7 +266,8 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
             decoration: BoxDecoration(
                 color: theme.colorScheme.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8)),
-            child: Text('${g.reportCount}× gemeldet',
+            child: Text(context.tr('admin_reported_count',
+              values: {'count': g.reportCount}),
                 style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -276,7 +280,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
               decoration: BoxDecoration(
                   color: theme.colorScheme.outline.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8)),
-              child: const Text('gesperrt',
+              child: Text(context.tr('admin_locked'),
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
             ),
           const Spacer(),
@@ -286,11 +290,12 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                     ?.copyWith(color: theme.colorScheme.outline)),
         ]),
         const SizedBox(height: 10),
-        Text('User: ${g.reportedUserId}',
+        Text(context.tr('admin_user_id', values: {'userId': g.reportedUserId}),
             style: theme.textTheme.bodySmall
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
-        Text('Letzter Grund: ${_reasonLabel(g.lastReason)}',
+        Text(context.tr('admin_last_reason',
+          values: {'reason': _reasonLabel(g.lastReason)}),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         if (details.isNotEmpty) ...[
@@ -312,7 +317,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
             child: OutlinedButton.icon(
               onPressed: () => _ignore(g),
               icon: const Icon(Icons.check_rounded, size: 16),
-              label: const Text('Ignorieren'),
+              label: Text(context.tr('admin_ignore')),
             ),
           ),
           const SizedBox(width: 10),
@@ -321,12 +326,12 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                 ? OutlinedButton.icon(
                     onPressed: () => _unsuspend(g),
                     icon: const Icon(Icons.lock_open_rounded, size: 16),
-                    label: const Text('Entsperren'),
+                    label: Text(context.tr('admin_unlock')),
                   )
                 : FilledButton.icon(
                     onPressed: () => _confirmSuspend(g),
                     icon: const Icon(Icons.block_rounded, size: 16),
-                    label: const Text('Sperren'),
+                    label: Text(context.tr('admin_suspend_action')),
                     style: FilledButton.styleFrom(
                         backgroundColor: theme.colorScheme.error),
                   ),
@@ -339,15 +344,15 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
   String _reasonLabel(String key) {
     switch (key) {
       case 'insult':
-        return 'Beleidigung / Hassrede';
+        return context.tr('admin_reason_insult');
       case 'spam':
-        return 'Spam / Werbung';
+        return context.tr('admin_reason_spam');
       case 'inappropriate':
-        return 'Unangemessene Inhalte';
+        return context.tr('admin_reason_inappropriate');
       case 'fraud':
-        return 'Betrug / Fake';
+        return context.tr('admin_reason_fraud');
       default:
-        return key.isEmpty ? 'Sonstiges' : key;
+        return key.isEmpty ? context.tr('admin_reason_other') : key;
     }
   }
 

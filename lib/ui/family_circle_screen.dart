@@ -1,6 +1,7 @@
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
 import 'package:parentpeak/models/family_contact.dart';
@@ -523,7 +524,7 @@ class _ContactRow extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Kontakt entfernen',
+            tooltip: context.tr('tooltip_remove_contact'),
             onPressed: onDelete,
             icon: const Icon(Icons.person_remove_rounded),
           ),

@@ -409,7 +409,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
                 const SizedBox(height: 8),
                 _VisibilityOptionTile(
-                  title: 'Öffentlich (in deiner Nähe sichtbar)',
+                  title: _t('event_visibility_public'),
                   subtitle:
                       'Andere Eltern sehen dein Event im Standort-Radius.',
                   selected: _visibility == EventVisibility.publicNearby,
@@ -419,7 +419,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
                 if (FeatureFlags.enableFamilyCircle)
                   _VisibilityOptionTile(
-                    title: 'Familienkreis (für deine Kontakte sichtbar)',
+                    title: _t('event_visibility_circle'),
                     subtitle:
                         'Nur verbundene Eltern aus deinem Familienkreis sehen das Event.',
                     selected: _visibility == EventVisibility.familyCircle,

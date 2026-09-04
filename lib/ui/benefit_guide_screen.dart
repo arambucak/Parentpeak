@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:parentpeak/config/benefit_application_de.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/benefit_guide_agent.dart';
 import 'package:parentpeak/models/benefit_guide_result.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
@@ -81,9 +82,8 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
     final chips = _selectedChips.join(', ');
     final situation = [base, chips].where((s) => s.isNotEmpty).join('. ');
     if (situation.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content:
-            Text('Beschreibe kurz eure Situation oder wähle einen Impuls.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.tr('benefit_input_required')),
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -114,10 +114,8 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-            'Ich konnte gerade nicht antworten. Bitte versuche es gleich noch '
-            'einmal.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.tr('benefit_request_failed')),
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -158,7 +156,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(widget.country.flag, style: const TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
-          const Flexible(child: Text('Leistungs-Wegweiser')),
+          Flexible(child: Text(context.tr('benefit_guide_title'))),
         ]),
         elevation: 0,
       ),
@@ -175,7 +173,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
               const Center(child: CircularProgressIndicator(color: _accent)),
               const SizedBox(height: 12),
               Center(
-                child: Text('Ich schaue, was für euch in Frage kommt …',
+                child: Text(context.tr('benefit_loading'),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.outline)),
               ),
@@ -202,8 +200,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            'Dies ist Orientierung, keine Rechtsberatung. Verbindlich ist immer '
-            'die zuständige Stelle. Beträge werden dort individuell berechnet.',
+            context.tr('benefit_disclaimer'),
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: const Color(0xFF92400E), height: 1.4),
           ),
@@ -216,13 +213,12 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Schildert kurz eure Situation',
+        Text(context.tr('benefit_situation_title'),
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
         Text(
-          'In euren eigenen Worten – z. B. „Zweites Kind kommt im Juni, '
-          'Partner arbeitet Teilzeit“.',
+          context.tr('benefit_situation_description'),
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -232,7 +228,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
           maxLines: 3,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
-            hintText: 'Eure Situation …',
+            hintText: context.tr('benefit_situation_hint'),
             filled: true,
             fillColor: theme.colorScheme.surfaceContainerLow,
             border: OutlineInputBorder(
@@ -276,7 +272,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
           child: FilledButton.icon(
             onPressed: _loading ? null : _ask,
             icon: const Icon(Icons.auto_awesome_rounded),
-            label: const Text('Wegweiser fragen'),
+            label: Text(context.tr('benefit_ask_action')),
             style: FilledButton.styleFrom(
               backgroundColor: _accent,
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -294,7 +290,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (r.matched.isNotEmpty) ...[
-          Text('Das könnte für euch in Frage kommen',
+          Text(context.tr('benefit_matches_title'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
@@ -303,14 +299,14 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
         ],
         if (r.checklist.isNotEmpty) ...[
           Row(children: [
-            Text('Eure Checkliste',
+            Text(context.tr('benefit_checklist_title'),
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(width: 8),
             Icon(Icons.lock_rounded,
                 size: 13, color: theme.colorScheme.outline),
             const SizedBox(width: 3),
-            Text('bleibt auf diesem Gerät',
+            Text(context.tr('benefit_local_only'),
                 style: theme.textTheme.labelSmall
                     ?.copyWith(color: theme.colorScheme.outline)),
           ]),
@@ -319,7 +315,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
           const SizedBox(height: 20),
         ],
         if (r.nextSteps.isNotEmpty) ...[
-          Text('Nächste Schritte',
+          Text(context.tr('benefit_next_steps'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
@@ -341,7 +337,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
           const SizedBox(height: 20),
         ],
         if (r.sources.isNotEmpty) ...[
-          Text('Quellen',
+          Text(context.tr('benefit_sources'),
               style: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
@@ -404,7 +400,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
               HapticFeedback.lightImpact();
               _openUrl(b.url);
             },
-            child: Text('🔗 Hier prüfen →',
+            child: Text(context.tr('benefit_check_link'),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(fontWeight: FontWeight.w700, color: _accent)),
           ),
@@ -416,7 +412,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
             child: OutlinedButton.icon(
               onPressed: () => _openAntragshelfer(b.benefitId),
               icon: const Icon(Icons.assignment_turned_in_rounded, size: 16),
-              label: const Text('Antragshelfer starten'),
+              label: Text(context.tr('benefit_start_application')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF16A34A),
                 side: const BorderSide(color: Color(0xFF16A34A)),

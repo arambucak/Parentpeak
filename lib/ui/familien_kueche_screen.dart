@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/ui/family_recipes_screen.dart';
@@ -61,7 +62,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       _loading = true;
       _dayRecipeExpanded = false;
     });
-    final recipe = await _service.generateRecipe();
+    final recipe = await _service.generateRecipe(
+      languageCode: languageService.currentLanguage,
+    );
     if (mounted)
       setState(() {
         _currentRecipe = recipe;
@@ -88,9 +91,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     if (mounted) {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(liked
-            ? '\u{2B50} Auf die Kinder-Hits Liste gesetzt.'
-            : '\u{1F44D} Merken wir uns.'),
+        content: Text(context.tr(
+            liked ? 'kitchen_rating_liked' : 'kitchen_rating_not_liked')),
       ));
     }
   }
@@ -106,7 +108,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.groups_rounded),
-            tooltip: 'Familien-Rezepte (teilen & entdecken)',
+            tooltip: context.tr('kitchen_family_recipes_tooltip'),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const FamilyRecipesScreen()),
@@ -115,7 +117,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           if (_service.savedRecipes.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.bookmark_rounded),
-              tooltip: 'Gespeicherte Rezepte',
+              tooltip: context.tr('tooltip_saved_recipes'),
               onPressed: () => _showSavedRecipes(theme),
             ),
         ],
@@ -152,14 +154,13 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       textInputAction: TextInputAction.search,
       onSubmitted: _searchRecipes,
       decoration: InputDecoration(
-        hintText:
-            'Suchst du ein bestimmtes Rezept? (z. B. Pfannkuchen, Nudeln)',
+        hintText: context.tr('kitchen_search_hint'),
         hintStyle: TextStyle(color: theme.colorScheme.outline, fontSize: 13),
         prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF8B5CF6)),
         suffixIcon: IconButton(
           icon:
               const Icon(Icons.arrow_forward_rounded, color: Color(0xFF8B5CF6)),
-          tooltip: 'Suchen',
+          tooltip: context.tr('tooltip_search'),
           onPressed: () => _searchRecipes(_searchCtrl.text),
         ),
         filled: true,
@@ -205,16 +206,16 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Aus dem, was da ist',
-                        style: TextStyle(
+                  children: [
+                    Text(context.tr('kitchen_fridge_title'),
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.w800)),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                        'Foto vom Kühlschrank machen – ich schlage ein Rezept vor.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      context.tr('kitchen_fridge_subtitle'),
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
                 ),
               ),
@@ -231,11 +232,12 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   /// warm hervorgehoben; tagsüber bleibt sie dezent.
   Widget _tischmomentCard(ThemeData theme) {
     final isEvening = DateTime.now().hour >= 17;
-    final title =
-        isEvening ? 'Zeit für euren Tischmoment 🕯️' : 'Unser Tischmoment';
+    final title = context.tr(isEvening
+      ? 'kitchen_table_moment_evening_title'
+      : 'kitchen_table_moment_title');
     final subtitle = isEvening
-        ? 'Haltet gemeinsam fest, was heute schön war.'
-        : 'Ein sanftes Abend-Ritual am Familientisch.';
+      ? context.tr('kitchen_table_moment_evening_subtitle')
+      : context.tr('kitchen_table_moment_subtitle');
 
     final borderRadius = BorderRadius.circular(18);
     return Material(
@@ -365,14 +367,14 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             const SizedBox(height: 12),
             // Meta-Chips
             Wrap(spacing: 8, runSpacing: 6, children: [
-              _metaChip('\u{23F1}\u{FE0F} ${recipe.timeLabel}',
+              _metaChip('\u{23F1}\u{FE0F} ${context.tr('kitchen_minutes', values: {'minutes': recipe.prepMinutes})}',
                   const Color(0xFF2563EB)),
               _metaChip(
-                  '\u{1F4B0} ${recipe.costLabel}', const Color(0xFF16A34A)),
+                  '\u{1F4B0} ${context.tr('kitchen_cost_per_portion', values: {'cost': recipe.costPerPortion.toStringAsFixed(2)})}', const Color(0xFF16A34A)),
               _metaChip(
-                  '\u{1F476} ${recipe.ageLabel}', const Color(0xFF8B5CF6)),
+                  '\u{1F476} ${context.tr(recipe.minChildAge == 0 ? 'kitchen_age_months' : 'kitchen_age_years', values: {'age': recipe.minChildAge})}', const Color(0xFF8B5CF6)),
               if (recipe.allergensFree.isNotEmpty)
-                _metaChip('\u{1F6AB} Ohne: ${recipe.allergensFree.join(", ")}',
+                _metaChip('${context.tr('kitchen_without')} ${recipe.allergensFree.join(", ")}',
                     const Color(0xFFDC2626)),
             ]),
           ]),
@@ -387,8 +389,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             child: Row(children: [
               Text(
                   _dayRecipeExpanded
-                      ? '\u{1F373} Zutaten & Zubereitung'
-                      : '\u{1F373} Zutaten & Zubereitung ansehen',
+                      ? context.tr('kitchen_ingredients_preparation')
+                      : context.tr('kitchen_view_ingredients_preparation'),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(fontWeight: FontWeight.w700)),
               const Spacer(),
@@ -670,121 +672,83 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     final allTips = <Map<String, String>>[
       {
         'emoji': '\u{1F966}',
-        'title': 'Picky Eater?',
-        'text':
-            'Kinder brauchen bis zu 15 Versuche bevor sie etwas Neues mögen. Nicht aufgeben — immer wieder anbieten, nie zwingen.'
+        'id': 'picky_eater',
       },
       {
         'emoji': '\u{1F44C}',
-        'title': 'Heute Tiefkühlpizza?',
-        'text':
-            'Völlig okay. Nicht jeder Tag muss Perfektion sein. Morgen wird frisch gekocht.'
+        'id': 'frozen_pizza',
       },
       {
         'emoji': '\u{1F9D1}\u{200D}\u{1F373}',
-        'title': 'Gemeinsam kochen',
-        'text':
-            'Kinder die mithelfen essen eher was auf dem Teller liegt. Ab 2 Jahren: Rühren, Waschen. Ab 4: Schneiden mit Kindermesser.'
+        'id': 'cook_together',
       },
       if (season == 'sommer')
         {
           'emoji': '\u{1F353}',
-          'title': 'Saison-Tipp',
-          'text':
-              'Erdbeeren, Kirschen, Tomaten — gerade frisch und günstig. Perfekt als Snack ohne Kochen.'
+            'id': 'season_summer',
         },
       if (season == 'herbst')
         {
           'emoji': '\u{1F383}',
-          'title': 'Saison-Tipp',
-          'text':
-              'Kürbis, Äpfel, Birnen: süß, günstig und vielseitig. Kürbissuppe geht in 20 Minuten.'
+            'id': 'season_autumn',
         },
       if (season == 'winter')
         {
           'emoji': '\u{2744}\u{FE0F}',
-          'title': 'Saison-Tipp',
-          'text':
-              'Kohlrabi, Karotten, Kartoffeln: Eintopf wärmt, ist günstig und lässt sich gut vorkochen.'
+            'id': 'season_winter',
         },
       if (season == 'frühling')
         {
           'emoji': '\u{1F331}',
-          'title': 'Saison-Tipp',
-          'text':
-              'Spargel, Radieschen, Spinat: frisch vom Markt. Kinder lieben Radieschen wenn sie selbst ernten dürfen.'
+            'id': 'season_spring',
         },
       {
         'emoji': '\u{1F4B0}',
-        'title': 'Budget-Tipp',
-        'text':
-            'Hülsenfrüchte (Linsen, Kichererbsen) sind günstig, gesund und machen satt. Perfekt für Familien.'
+        'id': 'budget',
       },
       {
         'emoji': '\u{1F9CA}',
-        'title': 'Meal-Prep Hack',
-        'text':
-            'Sonntags doppelt kochen und einfrieren. Unter der Woche hast du in 10 Min ein gesundes Essen auf dem Tisch.'
+        'id': 'meal_prep',
       },
       {
         'emoji': '\u{1F34E}',
-        'title': 'Snack-Idee',
-        'text':
-            'Apfelscheiben mit Erdnussbutter oder Gurken-Sticks mit Frischkäse. Schnell, gesund, null Aufwand.'
+        'id': 'snack',
       },
       {
         'emoji': '\u{1F4A7}',
-        'title': 'Trinken nicht vergessen',
-        'text':
-            'Kinder vergessen oft zu trinken. Eine bunte Trinkflasche und feste Trink-Zeiten helfen enorm.'
+        'id': 'drinking',
       },
       {
         'emoji': '\u{1F955}',
-        'title': 'Gemüse verstecken',
-        'text':
-            'Zucchini in Bolognese reiben, Karotten in Pfannkuchen. Kinder merken es nicht — du schon.'
+        'id': 'hidden_vegetables',
       },
       {
         'emoji': '\u{1F91D}',
-        'title': 'Familien-Ritual',
-        'text':
-            'Einmal pro Woche gemeinsam kochen — Kinder dürfen das Gericht wählen. Stärkt Zusammenhalt und Appetit.'
+        'id': 'family_ritual',
       },
       {
         'emoji': '\u{23F0}',
-        'title': 'Morgen-Hack',
-        'text':
-            'Frühstück am Abend vorbereiten: Overnight Oats, Brote schneiden, Obst waschen. Morgens = Stress-frei.'
+        'id': 'morning',
       },
       {
         'emoji': '\u{1F9D1}\u{200D}\u{1F33E}',
-        'title': 'Kinder & Natur',
-        'text':
-            'Kräuter auf der Fensterbank ziehen lassen. Wer selbst erntet, probiert eher — auch Petersilie.'
+        'id': 'nature',
       },
       {
         'emoji': '\u{1F36A}',
-        'title': 'Gesund naschen',
-        'text':
-            'Gefrorene Trauben, Bananen-Eis (nur pürierte Banane), Energiebällchen. Süß ohne Zucker-Crash.'
+        'id': 'healthy_sweets',
       },
       {
         'emoji': '\u{1F37D}\u{FE0F}',
-        'title': 'Kein Kampf am Tisch',
-        'text':
-            'Essen anbieten, nicht erzwingen. Kinder regulieren ihre Menge selbst. Vertrauen statt Druck.'
+        'id': 'no_food_battle',
       },
       {
         'emoji': '\u{1F9C0}',
-        'title': 'Reste-Kreativ',
-        'text':
-            'Aus Resten werden Wraps, Aufläufe oder Fried Rice. Weniger Wegwerfen, mehr Überraschung.'
+        'id': 'leftovers',
       },
       {
         'emoji': '\u{2744}\u{FE0F}',
-        'title': 'TK-Gemüse ist okay',
-        'text':
-            'Tiefkühl-Erbsen und Brokkoli haben genauso viele Vitamine wie frisch. Und sind in 5 Min fertig.'
+        'id': 'frozen_vegetables',
       },
     ];
 
@@ -793,7 +757,14 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     final start = day % allTips.length;
     final result = <Map<String, String>>[];
     for (int i = 0; i < 3 && i < allTips.length; i++) {
-      result.add(allTips[(start + i) % allTips.length]);
+      final tip = allTips[(start + i) % allTips.length];
+      final id = tip['id']!;
+      final localized = context.tr('kitchen_tip_$id').split('|');
+      result.add({
+        'emoji': tip['emoji']!,
+        'title': localized.first,
+        'text': localized.length > 1 ? localized[1] : '',
+      });
     }
     return result;
   }
@@ -828,7 +799,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(children: [
                 Text(
-                    '\u{2764}\u{FE0F} Gespeicherte Rezepte (${_service.savedRecipes.length})',
+                    context.tr('kitchen_saved_recipes_count', values: {
+                      'count': _service.savedRecipes.length,
+                    }),
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 const Spacer(),
@@ -859,7 +832,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                               style: theme.textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w700)),
                           subtitle: Text(
-                              '${r.timeLabel} \u{2022} ${r.costLabel} \u{2022} ${r.ageLabel}',
+                              '${context.tr('kitchen_minutes', values: {'minutes': r.prepMinutes})} \u{2022} '
+                              '${context.tr('kitchen_cost_per_portion', values: {'cost': r.costPerPortion.toStringAsFixed(2)})} \u{2022} '
+                              '${context.tr(r.minChildAge == 0 ? 'kitchen_age_months' : 'kitchen_age_years', values: {'age': r.minChildAge})}',
                               style: theme.textTheme.labelSmall
                                   ?.copyWith(color: theme.colorScheme.outline)),
                           trailing: IconButton(
@@ -927,13 +902,15 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(
-                    '\u{2705} ${selected.length} Zutaten auf die Einkaufsliste gesetzt'),
+                    context.tr('kitchen_ingredients_added', values: {
+                      'count': selected.length,
+                    })),
               ));
             }
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('Fehler: $e'),
+                content: Text(context.tr('kitchen_error', values: {'error': e})),
               ));
             }
           }
@@ -1004,7 +981,8 @@ class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('Wähle nur was du wirklich kaufen musst.',
+        Text(AppStringsManager.getString(
+          languageService.currentLanguage, 'kitchen_buy_only_needed'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 14),
@@ -1023,11 +1001,11 @@ class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
                     style: theme.textTheme.bodySmall
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 subtitle: sel.alreadyOnList
-                    ? Text('\u{2714} Schon auf deiner Liste',
+                    ? Text(context.tr('already_on_list'),
                         style: TextStyle(
                             fontSize: 10, color: const Color(0xFF16A34A)))
                     : sel.isBasic
-                        ? Text('\u{1F3E0} Hast du wahrscheinlich zuhause',
+                        ? Text(context.tr('probably_at_home'),
                             style: TextStyle(
                                 fontSize: 10, color: theme.colorScheme.outline))
                         : null,
@@ -1053,7 +1031,8 @@ class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
                       widget.onConfirm(selected);
                     },
               icon: const Icon(Icons.check_rounded, size: 18),
-              label: Text('$selectedCount Zutaten hinzufuegen'),
+                label: Text(context.tr('kitchen_add_ingredients_count',
+                  values: {'count': selectedCount})),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF16A34A),
                 padding: const EdgeInsets.symmetric(vertical: 13),

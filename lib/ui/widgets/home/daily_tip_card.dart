@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Tages-Tipp-Karte — ein kurzer, umsetzbarer Eltern-Tipp pro Tag.
@@ -279,7 +280,7 @@ class _DailyTipCardState extends State<DailyTipCard> {
                         size: 14, color: Color(0xFF0F766E)),
                     const SizedBox(width: 4),
                     Text(
-                      'Tipp des Tages',
+                      context.tr('daily_tip_title'),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: const Color(0xFF0F766E),
                         fontWeight: FontWeight.w700,
@@ -331,7 +332,7 @@ class _DailyTipCardState extends State<DailyTipCard> {
                         size: 15, color: theme.colorScheme.primary),
                     const SizedBox(width: 6),
                     Text(
-                      'Erkläre mir das genauer',
+                      context.tr('daily_tip_explain'),
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w700,
