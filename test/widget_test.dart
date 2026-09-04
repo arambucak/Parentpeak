@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
@@ -23,11 +22,11 @@ void main() {
       await AIRateLimiter.initialize();
       expect(AIRateLimiter.canMakeRequest(), isTrue);
       expect(AIRateLimiter.remainingRequests(), greaterThan(0));
-      expect(AIRateLimiter.dailyLimit, equals(25));
+      expect(AIRateLimiter.dailyLimit, equals(50));
     });
 
     test('AIRateLimiter statusText is formatted', () {
-      expect(AIRateLimiter.statusText, contains('/25'));
+      expect(AIRateLimiter.statusText, contains('/50'));
     });
 
     test('ChatModerationService blocks profanity', () {
