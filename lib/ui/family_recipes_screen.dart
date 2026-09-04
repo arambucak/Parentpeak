@@ -9,6 +9,7 @@ import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/logic/family_recipe_share_service.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shared_family_recipe.dart';
+import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
 

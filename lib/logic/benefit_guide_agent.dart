@@ -28,7 +28,7 @@ class BenefitGuideAgent {
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('BenefitGuideAgent: Rate limit erreicht');
-      return _fallback(country);
+      throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
     }
 
     final prompt = _buildPrompt(

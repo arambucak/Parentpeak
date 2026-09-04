@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/benefit_application_de.dart';
 import 'package:parentpeak/logic/benefit_guide_agent.dart';
 import 'package:parentpeak/models/benefit_guide_result.dart';
+import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/antragshelfer_screen.dart';
@@ -70,7 +71,8 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
           .toList();
       if (mounted) setState(() => _childAges = ages);
     } catch (_) {}
-    final checked = await BenefitChecklistStore.loadChecked(widget.country.code);
+    final checked =
+        await BenefitChecklistStore.loadChecked(widget.country.code);
     if (mounted) setState(() => _checked = checked);
   }
 
@@ -80,25 +82,45 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
     final situation = [base, chips].where((s) => s.isNotEmpty).join('. ');
     if (situation.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Beschreibe kurz eure Situation oder wähle einen Impuls.'),
+        content:
+            Text('Beschreibe kurz eure Situation oder wähle einen Impuls.'),
         behavior: SnackBarBehavior.floating,
       ));
       return;
     }
     FocusScope.of(context).unfocus();
     setState(() => _loading = true);
-    final result = await _agent.guide(
-      country: widget.country,
-      situation: situation,
-      childAgesYears: _childAges,
-      isSingleParent:
-          widget.isSingleParent || _selectedChips.contains('Alleinerziehend'),
-    );
-    if (!mounted) return;
-    setState(() {
-      _result = result;
-      _loading = false;
-    });
+    try {
+      final result = await _agent.guide(
+        country: widget.country,
+        situation: situation,
+        childAgesYears: _childAges,
+        isSingleParent:
+            widget.isSingleParent || _selectedChips.contains('Alleinerziehend'),
+      );
+      if (!mounted) return;
+      setState(() {
+        _result = result;
+        _loading = false;
+      });
+    } on AiRateLimitException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 5),
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'Ich konnte gerade nicht antworten. Bitte versuche es gleich noch '
+            'einmal.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   Future<void> _toggleChecklistItem(String item) async {
@@ -285,7 +307,8 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(width: 8),
-            Icon(Icons.lock_rounded, size: 13, color: theme.colorScheme.outline),
+            Icon(Icons.lock_rounded,
+                size: 13, color: theme.colorScheme.outline),
             const SizedBox(width: 3),
             Text('bleibt auf diesem Gerät',
                 style: theme.textTheme.labelSmall
@@ -303,13 +326,15 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
           ...List.generate(r.nextSteps.length, (i) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              child:
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('${i + 1}. ',
                     style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700, color: _accent)),
                 Expanded(
                     child: Text(r.nextSteps[i],
-                        style: theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
+                        style:
+                            theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
               ]),
             );
           }),
@@ -327,8 +352,8 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
                   child: Text('🔗 $s',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: _accent)),
+                      style:
+                          theme.textTheme.labelSmall?.copyWith(color: _accent)),
                 ),
               )),
           const SizedBox(height: 20),
@@ -357,8 +382,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
                 ?.copyWith(fontWeight: FontWeight.w800)),
         if (b.why.isNotEmpty) ...[
           const SizedBox(height: 4),
-          Text(b.why,
-              style: theme.textTheme.bodySmall?.copyWith(height: 1.4)),
+          Text(b.why, style: theme.textTheme.bodySmall?.copyWith(height: 1.4)),
         ],
         if (b.authority.isNotEmpty) ...[
           const SizedBox(height: 6),
@@ -381,8 +405,8 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
               _openUrl(b.url);
             },
             child: Text('🔗 Hier prüfen →',
-                style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700, color: _accent)),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w700, color: _accent)),
           ),
         ],
         if (hasAntragshelfer) ...[
@@ -419,7 +443,8 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
             checked
                 ? Icons.check_circle_rounded
                 : Icons.radio_button_unchecked_rounded,
-            color: checked ? const Color(0xFF16A34A) : theme.colorScheme.outline,
+            color:
+                checked ? const Color(0xFF16A34A) : theme.colorScheme.outline,
             size: 22,
           ),
           const SizedBox(width: 12),
@@ -427,8 +452,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
             child: Text(item,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   height: 1.3,
-                  decoration:
-                      checked ? TextDecoration.lineThrough : null,
+                  decoration: checked ? TextDecoration.lineThrough : null,
                   color: checked ? theme.colorScheme.outline : null,
                 )),
           ),

@@ -7,15 +7,6 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 
-/// Wird geworfen, wenn das tägliche KI-Limit erreicht ist. Erlaubt der UI,
-/// eine freundliche, spezifische Meldung statt einer generischen zu zeigen.
-class AiRateLimitException implements Exception {
-  final String message;
-  const AiRateLimitException(this.message);
-  @override
-  String toString() => message;
-}
-
 /// KI-Rezept-Service — generiert kinderfreundliche Rezepte via Gemini.
 ///
 /// Funktionsweise:

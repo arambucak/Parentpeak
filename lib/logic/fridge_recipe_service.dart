@@ -44,8 +44,10 @@ class FridgeRecipeService {
   }
 
   String _ageText() {
-    if (_childAgeYears < 1) return 'Baby (6-12 Monate, Brei/Fingerfood, BLW-geeignet)';
-    if (_childAgeYears < 3) return 'Kleinkind ($_childAgeYears Jahre, weich, kleine Stücke)';
+    if (_childAgeYears < 1)
+      return 'Baby (6-12 Monate, Brei/Fingerfood, BLW-geeignet)';
+    if (_childAgeYears < 3)
+      return 'Kleinkind ($_childAgeYears Jahre, weich, kleine Stücke)';
     if (_childAgeYears < 6) return 'Kita-Kind ($_childAgeYears Jahre, normal)';
     return 'Schulkind ($_childAgeYears Jahre, alles)';
   }
@@ -62,7 +64,7 @@ class FridgeRecipeService {
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('FridgeRecipeService: Rate limit erreicht');
-      return [];
+      throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
     }
 
     const prompt = '''
@@ -99,18 +101,17 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
 
   /// Generiert ein kindgerechtes Rezept aus den (vom Nutzer bestätigten)
   /// Zutaten. Gibt null zurück, wenn nichts erzeugt werden konnte.
-  Future<FamilyRecipe?> generateFromIngredients(List<String> ingredients) async {
+  Future<FamilyRecipe?> generateFromIngredients(
+      List<String> ingredients) async {
     await _ensureContext();
-    final clean = ingredients
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
+    final clean =
+        ingredients.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
     if (clean.isEmpty) return null;
 
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('FridgeRecipeService: Rate limit erreicht (generate)');
-      return null;
+      throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
     }
 
     final prompt = '''
@@ -163,8 +164,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
   /// Ermittelt die fehlenden Zutaten für die Einkaufsliste: alles, was im
   /// Rezept steht, aber (nach einfachem Namensvergleich) nicht in [available].
-  List<String> missingIngredients(
-      FamilyRecipe recipe, List<String> available) {
+  List<String> missingIngredients(FamilyRecipe recipe, List<String> available) {
     final have = available
         .map((e) => e.toLowerCase().trim())
         .where((e) => e.isNotEmpty)
@@ -181,7 +181,8 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
   // Grobes Kernwort einer Zutatenzeile (letztes Wort, oft der Zutatenname).
   String _coreWord(String s) {
-    final parts = s.replaceAll(RegExp(r'[0-9]'), '').trim().split(RegExp(r'\s+'));
+    final parts =
+        s.replaceAll(RegExp(r'[0-9]'), '').trim().split(RegExp(r'\s+'));
     return parts.isEmpty ? s : parts.last;
   }
 
@@ -217,8 +218,8 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       final start = text.indexOf('{');
       final end = text.lastIndexOf('}');
       if (start == -1 || end == -1) return null;
-      final map = jsonDecode(text.substring(start, end + 1))
-          as Map<String, dynamic>;
+      final map =
+          jsonDecode(text.substring(start, end + 1)) as Map<String, dynamic>;
       // "missingIngredients" gehört nicht ins FamilyRecipe-Modell — wir hängen
       // sie den Zutaten NICHT an, sondern der Screen ermittelt Fehlendes selbst
       // über missingIngredients(). Falls das Modell sie liefert, ignorieren wir

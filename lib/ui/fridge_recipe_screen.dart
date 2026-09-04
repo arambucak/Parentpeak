@@ -7,6 +7,7 @@ import 'package:parentpeak/logic/family_recipe_share_service.dart';
 import 'package:parentpeak/logic/fridge_recipe_service.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
+import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
 
@@ -73,6 +74,15 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
           behavior: SnackBarBehavior.floating,
         ));
       }
+    } on AiRateLimitException catch (e) {
+      if (mounted) {
+        setState(() => _phase = _Phase.start);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ));
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _phase = _Phase.start);
@@ -106,19 +116,32 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
       return;
     }
     setState(() => _phase = _Phase.generating);
-    final recipe = await _service.generateFromIngredients(_ingredients);
+    FamilyRecipe? recipe;
+    try {
+      recipe = await _service.generateFromIngredients(_ingredients);
+    } on AiRateLimitException catch (e) {
+      if (!mounted) return;
+      setState(() => _phase = _Phase.ingredients);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 5),
+      ));
+      return;
+    }
     if (!mounted) return;
     if (recipe == null) {
       setState(() => _phase = _Phase.ingredients);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text(
-            'Konnte gerade kein Rezept erstellen — bitte erneut versuchen.'),
+            'Ich konnte gerade kein Rezept erstellen. Bitte versuche es gleich '
+            'noch einmal.'),
         behavior: SnackBarBehavior.floating,
       ));
       return;
     }
     setState(() {
-      _recipe = recipe;
+      _recipe = recipe!;
       _missing = _service.missingIngredients(recipe, _ingredients);
       _phase = _Phase.recipe;
     });
