@@ -39,9 +39,60 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   final ParentMatchingBackendService _service =
       BackendServiceFactory.createParentMatchingService();
   final List<_Msg> _messages = [];
+  final ScrollController _scrollController = ScrollController();
   StreamSubscription<Map<String, dynamic>>? _streamSub;
   bool _streamActive = false;
   bool _isLoading = true;
+
+  /// Parst den Zeitstempel einer Nachricht aus der Server-Antwort.
+  static DateTime? _parseCreatedAt(dynamic raw) {
+    if (raw == null) return null;
+    return DateTime.tryParse(raw.toString())?.toLocal();
+  }
+
+  /// Uhrzeit im Format HH:mm (lokal).
+  String _formatTime(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  /// Datums-Trenner-Text: Heute / Gestern / TT.MM.JJJJ.
+  String _formatDaySeparator(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Heute';
+    if (diff == 1) return 'Gestern';
+    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+  }
+
+  /// Ob vor der Nachricht an [index] ein Datums-Trenner stehen soll.
+  bool _needsDaySeparator(int index) {
+    final cur = _messages[index].createdAt;
+    if (cur == null) return false;
+    if (index == 0) return true;
+    final prev = _messages[index - 1].createdAt;
+    if (prev == null) return true;
+    return cur.year != prev.year ||
+        cur.month != prev.month ||
+        cur.day != prev.day;
+  }
+
+  /// Nach dem Rendern ans Ende der Liste scrollen (neueste Nachricht sichtbar).
+  void _scrollToBottom({bool animate = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (animate) {
+        _scrollController.animateTo(target,
+            duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+      } else {
+        _scrollController.jumpTo(target);
+      }
+    });
+  }
 
   String get _currentUserId {
     // Prefer FirebaseAuth (always in sync) over AuthService wrapper
@@ -136,8 +187,10 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           id: id,
           text: content,
           isMe: authorUserId == _currentUserId,
+          createdAt: _parseCreatedAt(item['createdAt']),
         ));
       });
+      _scrollToBottom();
     }, onError: (_) {
       if (mounted) {
         setState(() => _streamActive = false);
@@ -166,10 +219,16 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           final text = (item['content'] ?? '').toString();
           final id = (item['id'] ?? '').toString();
           final authorUserId = (item['authorUserId'] ?? '').toString();
-          return _Msg(id: id, text: text, isMe: authorUserId == _currentUserId);
+          return _Msg(
+            id: id,
+            text: text,
+            isMe: authorUserId == _currentUserId,
+            createdAt: _parseCreatedAt(item['createdAt']),
+          );
         }));
       _isLoading = false;
     });
+    _scrollToBottom(animate: false);
   }
 
   Future<void> _loadFriendMessages() async {
@@ -203,9 +262,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                     id: (m['id'] ?? '').toString(),
                     text: (m['content'] ?? '').toString(),
                     isMe: m['authorUserId'] == _currentUserId,
+                    createdAt: _parseCreatedAt(m['createdAt']),
                   )));
             _isLoading = false;
           });
+          _scrollToBottom(animate: false);
           return;
         }
         _showError(
@@ -223,9 +284,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                   id: (m['id'] ?? '').toString(),
                   text: (m['content'] ?? '').toString(),
                   isMe: m['authorUserId'] == _currentUserId,
+                  createdAt: _parseCreatedAt(m['createdAt']),
                 )));
           _isLoading = false;
         });
+        _scrollToBottom(animate: false);
       } else {
         setState(() => _isLoading = false);
       }
@@ -239,6 +302,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     _pollTimer?.cancel();
     _streamSub?.cancel();
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -256,12 +320,15 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     final optimistic = _Msg(
         id: 'optimistic-${DateTime.now().microsecondsSinceEpoch}',
         text: text,
-        isMe: true);
+        isMe: true,
+        createdAt: DateTime.now(),
+        sending: true);
 
     setState(() {
       _messages.add(optimistic);
       _controller.clear();
     });
+    _scrollToBottom();
 
     final Map<String, dynamic>? sent;
     if (widget.isFriendChat) {
@@ -656,6 +723,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                 : _messages.isEmpty
                     ? _buildEmptyState(theme)
                     : ListView.builder(
+                        controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
@@ -664,70 +732,144 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                           final showAvatar = !isMe &&
                               (index == 0 ||
                                   _messages[index - 1].isMe != msg.isMe);
+                          final separator = _needsDaySeparator(index)
+                              ? _formatDaySeparator(msg.createdAt!)
+                              : null;
 
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom: 6,
-                              left: isMe ? 48 : 0,
-                              right: isMe ? 0 : 48,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: isMe
-                                  ? MainAxisAlignment.end
-                                  : MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                if (!isMe && showAvatar)
-                                  CircleAvatar(
-                                    radius: 14,
-                                    backgroundColor:
-                                        theme.colorScheme.primaryContainer,
-                                    child: Text(
-                                      widget.profileName.isNotEmpty
-                                          ? widget.profileName[0].toUpperCase()
-                                          : '?',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: theme.colorScheme.primary,
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Datums-Trenner (Heute / Gestern / Datum)
+                              if (separator != null)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: theme
+                                            .colorScheme.surfaceContainerHighest
+                                            .withValues(alpha: 0.7),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                    ),
-                                  )
-                                else if (!isMe)
-                                  const SizedBox(width: 28),
-                                if (!isMe) const SizedBox(width: 8),
-                                Flexible(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: isMe
-                                          ? theme.colorScheme.primary
-                                          : theme.colorScheme
-                                              .surfaceContainerHighest,
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: const Radius.circular(16),
-                                        topRight: const Radius.circular(16),
-                                        bottomLeft:
-                                            Radius.circular(isMe ? 16 : 4),
-                                        bottomRight:
-                                            Radius.circular(isMe ? 4 : 16),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      msg.text,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isMe
-                                            ? Colors.white
-                                            : theme.colorScheme.onSurface,
-                                        height: 1.4,
-                                      ),
+                                      child: Text(separator,
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.colorScheme
+                                                  .onSurfaceVariant)),
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: 6,
+                                  left: isMe ? 48 : 0,
+                                  right: isMe ? 0 : 48,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: isMe
+                                      ? MainAxisAlignment.end
+                                      : MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (!isMe && showAvatar)
+                                      CircleAvatar(
+                                        radius: 14,
+                                        backgroundColor:
+                                            theme.colorScheme.primaryContainer,
+                                        child: Text(
+                                          widget.profileName.isNotEmpty
+                                              ? widget.profileName[0]
+                                                  .toUpperCase()
+                                              : '?',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      )
+                                    else if (!isMe)
+                                      const SizedBox(width: 28),
+                                    if (!isMe) const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Column(
+                                        crossAxisAlignment: isMe
+                                            ? CrossAxisAlignment.end
+                                            : CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              color: isMe
+                                                  ? theme.colorScheme.primary
+                                                  : theme.colorScheme
+                                                      .surfaceContainerHighest,
+                                              borderRadius: BorderRadius.only(
+                                                topLeft:
+                                                    const Radius.circular(16),
+                                                topRight:
+                                                    const Radius.circular(16),
+                                                bottomLeft: Radius.circular(
+                                                    isMe ? 16 : 4),
+                                                bottomRight: Radius.circular(
+                                                    isMe ? 4 : 16),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              msg.text,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: isMe
+                                                    ? Colors.white
+                                                    : theme
+                                                        .colorScheme.onSurface,
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ),
+                                          // Uhrzeit + 'gesendet'-Haekchen
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 3, left: 4, right: 4),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (msg.createdAt != null)
+                                                  Text(
+                                                    _formatTime(msg.createdAt!),
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: theme.colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                if (isMe) ...[
+                                                  const SizedBox(width: 3),
+                                                  Icon(
+                                                    msg.sending
+                                                        ? Icons
+                                                            .access_time_rounded
+                                                        : Icons.check_rounded,
+                                                    size: 12,
+                                                    color: theme.colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           );
                         },
                       ),
@@ -809,9 +951,22 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
 }
 
 class _Msg {
-  const _Msg({required this.id, required this.text, required this.isMe});
+  const _Msg({
+    required this.id,
+    required this.text,
+    required this.isMe,
+    this.createdAt,
+    this.sending = false,
+  });
 
   final String id;
   final String text;
   final bool isMe;
+
+  /// Sendezeitpunkt (fuer Uhrzeit-Anzeige + Datums-Trenner). Null bei aelteren
+  /// Nachrichten ohne Zeitstempel.
+  final DateTime? createdAt;
+
+  /// true = optimistisch angezeigt, Server-Bestaetigung steht noch aus.
+  final bool sending;
 }
