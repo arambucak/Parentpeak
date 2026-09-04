@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
+import 'package:parentpeak/ui/family_recipes_screen.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -81,6 +82,14 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             languageService.currentLanguage, 'familien_kueche_title')),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.groups_rounded),
+            tooltip: 'Familien-Rezepte (teilen & entdecken)',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FamilyRecipesScreen()),
+            ),
+          ),
           if (_service.savedRecipes.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.bookmark_rounded),

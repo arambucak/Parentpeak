@@ -972,7 +972,7 @@ const firebaseRequireAuth = (process.env.FIREBASE_REQUIRE_AUTH || '0') === '1';
 const socialNoTokenWritePaths = [
   '/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat',
   '/api/friends', '/api/safety', '/api/onboarding', '/api/account',
-  '/api/profile', '/api/friendships',
+  '/api/profile', '/api/friendships', '/api/recipes',
 ];
 
 function isNoTokenWritePath(reqPath) {
@@ -1158,7 +1158,7 @@ app.use(async (req, res, next) => {
 
   // Calendar and todo endpoints: accept userId from request body as lightweight auth.
   // Firebase token verification is still attempted; body userId is the fallback.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships', '/api/recipes'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
@@ -2010,6 +2010,39 @@ async function ensureSocialSchemaReady() {
       "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  // ── Phase 3a: Familien-Rezepte teilen ──────────────────────────────────────
+  // Sichtbarkeit: 'public' (Fuer alle Familien) | 'friends' (Nur meine Freunde,
+  // Default) | 'private' (Nur fuer mich). Zutaten/Schritte als JSON-Text.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Recipe" (
+      "id" TEXT PRIMARY KEY,
+      "authorUserId" TEXT NOT NULL,
+      "authorName" TEXT NOT NULL DEFAULT 'Familie',
+      "title" TEXT NOT NULL,
+      "description" TEXT NOT NULL DEFAULT '',
+      "photoUrl" TEXT NOT NULL DEFAULT '',
+      "ingredients" TEXT NOT NULL DEFAULT '[]',
+      "steps" TEXT NOT NULL DEFAULT '[]',
+      "prepMinutes" INT NOT NULL DEFAULT 0,
+      "visibility" TEXT NOT NULL DEFAULT 'friends',
+      "tags" TEXT NOT NULL DEFAULT '[]',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_recipe_author" ON "Recipe"("authorUserId");`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_recipe_visibility" ON "Recipe"("visibility");`);
+  // Reaktionen: 'cook' ("Das kochen wir nach!") | 'tasty' ("Hat geschmeckt!").
+  // Genau eine Zeile pro (Rezept, Nutzer, Typ) -> togglebar.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "RecipeReaction" (
+      "recipeId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "type" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("recipeId", "userId", "type")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_recipereaction_recipe" ON "RecipeReaction"("recipeId");`);
   socialSchemaEnsured = true;
 }
 
@@ -5644,6 +5677,263 @@ app.get('/api/friendships/resolve-invite/:token', async (req, res) => {
   }
 });
 
+// ─── Phase 3a: Familien-Rezepte teilen ─────────────────────────────────────
+const recipes = new Map();          // in-memory fallback: id -> recipe row
+const recipeReactions = new Map();  // in-memory fallback: recipeId -> [{userId,type}]
+
+// Erlaubte Sichtbarkeiten.
+const RECIPE_VISIBILITIES = new Set(['public', 'friends', 'private']);
+
+// Sicheres JSON-Parsen einer Text-Spalte (Zutaten/Schritte/Tags).
+function parseJsonArray(raw) {
+  try {
+    const v = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(v) ? v.map(x => x.toString()) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+// Baut die Client-Antwort fuer ein Rezept inkl. Reaktions-Zaehler und ob der
+// anfragende Nutzer selbst reagiert hat.
+async function buildRecipeForClient(row, requesterUid) {
+  const id = row.id;
+  let cook = 0;
+  let tasty = 0;
+  let myCook = false;
+  let myTasty = false;
+  try {
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "userId", "type" FROM "RecipeReaction" WHERE "recipeId" = $1`, id
+    );
+    for (const r of rows) {
+      if (r.type === 'cook') { cook++; if (r.userId === requesterUid) myCook = true; }
+      else if (r.type === 'tasty') { tasty++; if (r.userId === requesterUid) myTasty = true; }
+    }
+  } catch (_) {
+    const list = recipeReactions.get(id) || [];
+    for (const r of list) {
+      if (r.type === 'cook') { cook++; if (r.userId === requesterUid) myCook = true; }
+      else if (r.type === 'tasty') { tasty++; if (r.userId === requesterUid) myTasty = true; }
+    }
+  }
+  return {
+    id,
+    authorUserId: row.authorUserId,
+    authorName: row.authorName || 'Familie',
+    title: row.title || '',
+    description: row.description || '',
+    photoUrl: row.photoUrl || '',
+    ingredients: parseJsonArray(row.ingredients),
+    steps: parseJsonArray(row.steps),
+    prepMinutes: Number(row.prepMinutes) || 0,
+    visibility: row.visibility || 'friends',
+    tags: parseJsonArray(row.tags),
+    createdAt: row.createdAt,
+    cookCount: cook,
+    tastyCount: tasty,
+    myCook,
+    myTasty,
+    isMine: row.authorUserId === requesterUid,
+  };
+}
+
+// Rezept erstellen. Foto-URL kommt vom bereits vorhandenen /uploads/image.
+app.post('/api/recipes', async (req, res) => {
+  const authorUserId = (req.body.authorUserId || '').toString().trim();
+  const title = (req.body.title || '').toString().trim().slice(0, 120);
+  if (!authorUserId) return res.status(400).json({ error: 'authorUserId erforderlich' });
+  if (!title) return res.status(400).json({ error: 'Titel erforderlich' });
+  // Echter Bann: gesperrte Nutzer koennen keine Rezepte mehr teilen.
+  if (await isUserSuspended(authorUserId)) return respondSuspended(res);
+
+  const authorName = (req.body.authorName || 'Familie').toString().trim().slice(0, 100) || 'Familie';
+  const description = (req.body.description || '').toString().trim().slice(0, 2000);
+  const photoUrl = (req.body.photoUrl || '').toString().trim().slice(0, 500);
+  const ingredients = Array.isArray(req.body.ingredients)
+      ? req.body.ingredients.map(x => x.toString().trim()).filter(Boolean).slice(0, 60)
+      : [];
+  const steps = Array.isArray(req.body.steps)
+      ? req.body.steps.map(x => x.toString().trim()).filter(Boolean).slice(0, 40)
+      : [];
+  const prepMinutes = Math.max(0, Math.min(600, parseInt(req.body.prepMinutes, 10) || 0));
+  let visibility = (req.body.visibility || 'friends').toString().trim();
+  if (!RECIPE_VISIBILITIES.has(visibility)) visibility = 'friends';
+  const tags = Array.isArray(req.body.tags)
+      ? req.body.tags.map(x => x.toString().trim()).filter(Boolean).slice(0, 12)
+      : [];
+  const id = generateId('rcp');
+  const row = {
+    id, authorUserId, authorName, title, description, photoUrl,
+    ingredients: JSON.stringify(ingredients), steps: JSON.stringify(steps),
+    prepMinutes, visibility, tags: JSON.stringify(tags),
+    createdAt: new Date().toISOString(),
+  };
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Recipe" ("id","authorUserId","authorName","title","description","photoUrl","ingredients","steps","prepMinutes","visibility","tags","createdAt")
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW())`,
+      id, authorUserId, authorName, title, description, photoUrl,
+      row.ingredients, row.steps, prepMinutes, visibility, row.tags
+    );
+    const out = await buildRecipeForClient(row, authorUserId);
+    return res.status(201).json({ ok: true, recipe: out });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/recipes', error)) return;
+    recipes.set(id, row);
+    const out = await buildRecipeForClient(row, authorUserId);
+    return res.status(201).json({ ok: true, recipe: out });
+  }
+});
+
+// Rezept-Liste fuer einen Nutzer: eigene + oeffentliche + von bestaetigten
+// Freunden. Sichtbarkeit wird SERVERSEITIG durchgesetzt. Optional: Suche (q)
+// ueber Titel/Beschreibung/Zutaten und Filter-Tags.
+app.get('/api/recipes', async (req, res) => {
+  const uid = (req.query.userId || '').toString().trim();
+  const q = (req.query.q || '').toString().trim().toLowerCase();
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Recipe" ORDER BY "createdAt" DESC LIMIT 500`
+    );
+    // Bestaetigte Freunde des Anfragenden ermitteln (fuer 'friends'-Sicht).
+    let friendUids = new Set();
+    if (uid) {
+      try {
+        const fr = await prisma.$queryRawUnsafe(
+          `SELECT "userLow", "userHigh" FROM "Friendship"
+           WHERE ("userLow" = $1 OR "userHigh" = $1) AND "status" = 'accepted'`,
+          uid
+        );
+        for (const f of fr) {
+          friendUids.add(f.userLow === uid ? f.userHigh : f.userLow);
+        }
+      } catch (_) {}
+    }
+    const visible = rows.filter(r => {
+      if (r.authorUserId === uid) return true;              // eigene immer
+      if (r.visibility === 'public') return true;           // fuer alle
+      if (r.visibility === 'friends') return friendUids.has(r.authorUserId);
+      return false;                                          // 'private': nie fremd
+    });
+    const matched = q
+      ? visible.filter(r => {
+          const hay = [
+            r.title || '', r.description || '',
+            parseJsonArray(r.ingredients).join(' '),
+            parseJsonArray(r.tags).join(' '),
+          ].join(' ').toLowerCase();
+          return hay.includes(q);
+        })
+      : visible;
+    const out = [];
+    for (const r of matched) out.push(await buildRecipeForClient(r, uid));
+    return res.json({ recipes: out });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/recipes', error)) return;
+    return res.json({ recipes: [] });
+  }
+});
+
+// Einzelnes Rezept (mit Sichtbarkeitspruefung).
+app.get('/api/recipes/:id', async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = (req.query.userId || '').toString().trim();
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Recipe" WHERE "id" = $1`, id
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Rezept nicht gefunden' });
+    const r = rows[0];
+    let allowed = r.authorUserId === uid || r.visibility === 'public';
+    if (!allowed && r.visibility === 'friends' && uid) {
+      allowed = await areFriends(uid, r.authorUserId);
+    }
+    if (!allowed) return res.status(403).json({ error: 'Kein Zugriff', code: 'not_visible' });
+    return res.json({ recipe: await buildRecipeForClient(r, uid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/recipes/:id', error)) return;
+    return res.status(404).json({ error: 'Rezept nicht gefunden' });
+  }
+});
+
+// Rezept loeschen (nur der Autor).
+app.delete('/api/recipes/:id', async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = (req.query.userId || req.body?.userId || '').toString().trim();
+  if (!id || !uid) return res.status(400).json({ error: 'id und userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "authorUserId" FROM "Recipe" WHERE "id" = $1`, id
+    );
+    if (rows.length === 0) return res.json({ ok: true }); // schon weg
+    if (rows[0].authorUserId !== uid) {
+      return res.status(403).json({ error: 'Nur der Autor darf loeschen' });
+    }
+    await prisma.$executeRawUnsafe(`DELETE FROM "RecipeReaction" WHERE "recipeId" = $1`, id);
+    await prisma.$executeRawUnsafe(`DELETE FROM "Recipe" WHERE "id" = $1`, id);
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/recipes/:id', error)) return;
+    recipes.delete(id);
+    recipeReactions.delete(id);
+    return res.json({ ok: true });
+  }
+});
+
+// Reaktion toggeln: 'cook' ("Das kochen wir nach!") oder 'tasty'
+// ("Hat geschmeckt!"). Nur erlaubt, wenn das Rezept fuer den Nutzer sichtbar
+// ist. Gesperrte Nutzer koennen nicht reagieren.
+app.post('/api/recipes/:id/react', async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = (req.body.userId || '').toString().trim();
+  const type = (req.body.type || '').toString().trim();
+  if (!id || !uid) return res.status(400).json({ error: 'id und userId erforderlich' });
+  if (type !== 'cook' && type !== 'tasty') {
+    return res.status(400).json({ error: 'type muss cook oder tasty sein' });
+  }
+  if (await isUserSuspended(uid)) return respondSuspended(res);
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Recipe" WHERE "id" = $1`, id
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Rezept nicht gefunden' });
+    const r = rows[0];
+    let allowed = r.authorUserId === uid || r.visibility === 'public';
+    if (!allowed && r.visibility === 'friends' && uid) {
+      allowed = await areFriends(uid, r.authorUserId);
+    }
+    if (!allowed) return res.status(403).json({ error: 'Kein Zugriff', code: 'not_visible' });
+    // Toggle: existiert die Reaktion, entfernen; sonst anlegen.
+    const existing = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "RecipeReaction" WHERE "recipeId" = $1 AND "userId" = $2 AND "type" = $3 LIMIT 1`,
+      id, uid, type
+    );
+    if (existing.length > 0) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "RecipeReaction" WHERE "recipeId" = $1 AND "userId" = $2 AND "type" = $3`,
+        id, uid, type
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "RecipeReaction" ("recipeId","userId","type","createdAt") VALUES ($1,$2,$3,NOW())
+         ON CONFLICT ("recipeId","userId","type") DO NOTHING`,
+        id, uid, type
+      );
+    }
+    return res.json({ ok: true, recipe: await buildRecipeForClient(r, uid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/recipes/:id/react', error)) return;
+    return res.json({ ok: true });
+  }
+});
+
 // ─── DSGVO: Konto-Loeschung (Recht auf Loeschung, Art. 17) ─────────────────
 // Entfernt ALLE personenbezogenen Zeilen zu einem Nutzer (per userId UND per
 // zugehoerigem Freundes-Code). Token-exempt (/api/onboarding-Muster: userId
@@ -5679,6 +5969,10 @@ app.delete('/api/account/:userId', async (req, res) => {
     // UID-Freundschaften + Einladungen
     await run('friendships', `DELETE FROM "Friendship" WHERE "userLow" = $1 OR "userHigh" = $1`, userId);
     await run('friendInvites', `DELETE FROM "FriendInvite" WHERE "userId" = $1`, userId);
+    // Familien-Rezepte + Reaktionen dieses Nutzers
+    await run('recipeReactionsByUser', `DELETE FROM "RecipeReaction" WHERE "userId" = $1`, userId);
+    await run('recipeReactionsOnOwn', `DELETE FROM "RecipeReaction" WHERE "recipeId" IN (SELECT "id" FROM "Recipe" WHERE "authorUserId" = $1)`, userId);
+    await run('recipes', `DELETE FROM "Recipe" WHERE "authorUserId" = $1`, userId);
     // UID-basierte Chat-Raeume (roomId enthaelt die UID)
     await run('chatRoomsUid', `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${userId}%`);
     // Freundschafts-Registry + Kanten (per userId-Code)
