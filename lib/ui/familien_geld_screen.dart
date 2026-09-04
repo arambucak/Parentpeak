@@ -10,6 +10,7 @@ import 'package:parentpeak/models/country_finance_config.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/ui/antragshelfer_screen.dart';
+import 'package:parentpeak/ui/benefit_guide_screen.dart';
 import 'package:parentpeak/main.dart';
 
 /// Familien-Geld — Ruhiger Finanz-Helfer für Eltern.
@@ -511,6 +512,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ]),
         ),
         const SizedBox(height: 16),
+        // KI-Wegweiser: personalisierte Orientierung zur eigenen Situation
+        _benefitGuideCard(theme),
+        const SizedBox(height: 16),
         // Feature 2: Eligibility Quick-Check
         _buildEligibilityCheck(theme),
         const SizedBox(height: 16),
@@ -536,6 +540,62 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           ]),
         ),
       ]),
+    );
+  }
+
+  /// Einstieg in den KI-Leistungs-Wegweiser (personalisierte Orientierung).
+  Widget _benefitGuideCard(ThemeData theme) {
+    final borderRadius = BorderRadius.circular(18);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: borderRadius,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BenefitGuideScreen(
+              country: _country,
+              isSingleParent: _isSingleParent,
+            ),
+          ),
+        ),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              const Text('\u{2728}', style: TextStyle(fontSize: 26)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Was steht uns zu?',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800)),
+                    SizedBox(height: 2),
+                    Text(
+                        'Schildert eure Situation – der Wegweiser hilft euch weiter.',
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded,
+                  color: Colors.white, size: 16),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 
