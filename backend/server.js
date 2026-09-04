@@ -15,6 +15,7 @@ const multer = require('multer');
 // Firebase Admin — initialised lazily so the server starts without credentials
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
 let firebaseAdmin = null;
+let firebaseStorageBucket = (process.env.FIREBASE_STORAGE_BUCKET || '').trim();
 try {
   const {
     applicationDefault,
@@ -24,19 +25,31 @@ try {
   } = require('firebase-admin/app');
   const { getAuth } = require('firebase-admin/auth');
   const { getMessaging } = require('firebase-admin/messaging');
+  const { getStorage } = require('firebase-admin/storage');
   const serviceAccountJson = (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
   if (serviceAccountJson) {
     const serviceAccount = JSON.parse(serviceAccountJson);
+    firebaseStorageBucket =
+      firebaseStorageBucket ||
+      (serviceAccount.project_id
+        ? `${serviceAccount.project_id}.firebasestorage.app`
+        : '');
     if (getApps().length === 0) {
-      initializeApp({ credential: cert(serviceAccount) });
+      initializeApp({
+        credential: cert(serviceAccount),
+        ...(firebaseStorageBucket ? { storageBucket: firebaseStorageBucket } : {}),
+      });
     }
-    firebaseAdmin = { auth: getAuth, messaging: getMessaging };
+    firebaseAdmin = { auth: getAuth, messaging: getMessaging, storage: getStorage };
     console.log('🔑 Firebase Admin SDK initialisiert');
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     if (getApps().length === 0) {
-      initializeApp({ credential: applicationDefault() });
+      initializeApp({
+        credential: applicationDefault(),
+        ...(firebaseStorageBucket ? { storageBucket: firebaseStorageBucket } : {}),
+      });
     }
-    firebaseAdmin = { auth: getAuth, messaging: getMessaging };
+    firebaseAdmin = { auth: getAuth, messaging: getMessaging, storage: getStorage };
     console.log('🔑 Firebase Admin SDK initialisiert (Application Default Credentials)');
   }
 } catch (err) {
@@ -959,6 +972,30 @@ async function verifyFirebaseIdToken(req) {
   } catch (_) {
     return { uid: null, verified: false };
   }
+}
+
+async function authorizeAccountOwner(req, res, userId) {
+  const authHeader = req.headers.authorization || '';
+  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
+    return true;
+  }
+
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (verified) {
+    if (uid !== userId) {
+      res.status(403).json({ error: 'Konto-Loeschung nur fuer das eigene Konto erlaubt' });
+      return false;
+    }
+    req.firebaseUid = uid;
+    return true;
+  }
+
+  if (!isProduction && !requireAuthForWrites && !firebaseRequireAuth) {
+    return true;
+  }
+
+  res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
+  return false;
 }
 
 // Middleware: if FIREBASE_REQUIRE_AUTH=1 AND Firebase Admin is configured,
@@ -3379,11 +3416,157 @@ function deleteAccountDataByUserIdInMemory(userId) {
   return removed;
 }
 
+function localUploadFilenameFromUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const pathname = decodeURIComponent(new URL(value, 'http://localhost').pathname);
+    const match = pathname.match(/^\/uploads\/([^/]+)$/);
+    if (!match || !/^[a-zA-Z0-9._-]+$/.test(match[1])) return null;
+    return match[1];
+  } catch (_) {
+    return null;
+  }
+}
+
+function firebaseStorageObjectFromUrl(value) {
+  if (!firebaseStorageBucket || typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value);
+    let bucket = '';
+    let objectPath = '';
+
+    if (url.hostname === 'firebasestorage.googleapis.com') {
+      const match = url.pathname.match(/^\/v0\/b\/([^/]+)\/o\/(.+)$/);
+      if (!match) return null;
+      bucket = decodeURIComponent(match[1]);
+      objectPath = decodeURIComponent(match[2]);
+    } else if (url.hostname === 'storage.googleapis.com') {
+      const parts = url.pathname.split('/').filter(Boolean);
+      bucket = decodeURIComponent(parts.shift() || '');
+      objectPath = decodeURIComponent(parts.join('/'));
+    } else if (url.hostname === `${firebaseStorageBucket}.storage.googleapis.com`) {
+      bucket = firebaseStorageBucket;
+      objectPath = decodeURIComponent(url.pathname.replace(/^\//, ''));
+    } else {
+      return null;
+    }
+
+    if (bucket !== firebaseStorageBucket || objectPath.includes('..')) return null;
+    if (!/^(treasures|events)\/[^/]+$/.test(objectPath)) return null;
+    return objectPath;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function getRemainingMediaReferences() {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT "imageUrl" AS url FROM "Event" WHERE "imageUrl" IS NOT NULL
+     UNION ALL SELECT "photoUrl" FROM "TreasureItem" WHERE "photoUrl" IS NOT NULL
+     UNION ALL SELECT unnest("photoUrls") FROM "TreasureItem"
+     UNION ALL SELECT "imageUrl" FROM "SharedRecipe" WHERE "imageUrl" IS NOT NULL
+     UNION ALL SELECT "imageUrl" FROM "CommunityEvent" WHERE "imageUrl" IS NOT NULL
+     UNION ALL SELECT "avatar" FROM "User" WHERE "avatar" IS NOT NULL`,
+  );
+  return rows.map(row => row.url).filter(Boolean);
+}
+
+async function deleteUnreferencedAccountMedia(mediaUrls) {
+  const remainingUrls = await getRemainingMediaReferences();
+  const referencedLocalFiles = new Set(
+    remainingUrls.map(localUploadFilenameFromUrl).filter(Boolean),
+  );
+  const referencedFirebaseObjects = new Set(
+    remainingUrls.map(firebaseStorageObjectFromUrl).filter(Boolean),
+  );
+  const filenames = [...new Set(mediaUrls.map(localUploadFilenameFromUrl).filter(Boolean))];
+  const firebaseObjects = [
+    ...new Set(mediaUrls.map(firebaseStorageObjectFromUrl).filter(Boolean)),
+  ];
+  let removedLocalFiles = 0;
+  let removedFirebaseObjects = 0;
+
+  for (const filename of filenames) {
+    if (referencedLocalFiles.has(filename)) continue;
+
+    const filePath = path.join(uploadsDir, filename);
+    if (path.dirname(filePath) !== uploadsDir) continue;
+    try {
+      await fs.promises.unlink(filePath);
+      removedLocalFiles += 1;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
+        console.warn(`Upload-Cleanup fehlgeschlagen (${filename}):`, error?.message || error);
+      }
+    }
+  }
+
+  if (firebaseAdmin && firebaseStorageBucket) {
+    const bucket = firebaseAdmin.storage().bucket(firebaseStorageBucket);
+    for (const objectPath of firebaseObjects) {
+      if (referencedFirebaseObjects.has(objectPath)) continue;
+      try {
+        await bucket.file(objectPath).delete({ ignoreNotFound: true });
+        removedFirebaseObjects += 1;
+      } catch (error) {
+        console.warn(
+          `Firebase-Storage-Cleanup fehlgeschlagen (${objectPath}):`,
+          error?.message || error,
+        );
+      }
+    }
+  }
+
+  return { removedLocalFiles, removedFirebaseObjects };
+}
+
 async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
-  const hostedEvents = await prisma.event.findMany({
-    where: { hosterId: userId },
-    select: { id: true },
-  });
+  const [userMedia, hostedEvents, ownedTreasures, ownedRecipes, ownedCommunityEvents] =
+    await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatar: true },
+      }),
+      prisma.event.findMany({
+        where: { hosterId: userId },
+        select: { id: true, imageUrl: true },
+      }),
+      prisma.treasureItem.findMany({
+        where: { userId },
+        select: { photoUrl: true, photoUrls: true },
+      }),
+      prisma.sharedRecipe.findMany({
+        where: { creatorUserId: userId },
+        select: { imageUrl: true },
+      }),
+      prisma.communityEvent.findMany({
+        where: { creatorId: userId },
+        select: { imageUrl: true },
+      }),
+    ]);
+
+  const mediaUrls = [
+    userMedia?.avatar,
+    ...hostedEvents.map(item => item.imageUrl),
+    ...ownedTreasures.flatMap(item => [item.photoUrl, ...item.photoUrls]),
+    ...ownedRecipes.map(item => item.imageUrl),
+    ...ownedCommunityEvents.map(item => item.imageUrl),
+  ].filter(Boolean);
+
+  const directlyOwnedCounts = await Promise.all([
+    prisma.treasureReport.count({ where: { reporterUserId: userId } }),
+    prisma.treasureItem.count({ where: { userId } }),
+    prisma.parentMatchingProfile.count({ where: { ownerUserId: userId } }),
+    prisma.sharedRecipe.count({ where: { creatorUserId: userId } }),
+    prisma.foodOfferComment.count({ where: { userId } }),
+    prisma.foodOfferReservation.count({ where: { userId } }),
+    prisma.recipeRating.count({ where: { userId } }),
+    prisma.recipeFavorite.count({ where: { userId } }),
+    prisma.recipeReport.count({ where: { reportedById: userId } }),
+    prisma.communityEvent.count({ where: { creatorId: userId } }),
+    prisma.communityEventFlag.count({ where: { userId } }),
+    prisma.communityEventInterest.count({ where: { userId } }),
+  ]);
 
   const familyRequestCount = await prisma.familyRequest.count({
     where: {
@@ -3410,9 +3593,16 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
 
   if (options.dryRun === true) {
     return {
-      removed: familyRequestCount + hostAuditPaymentCount + userCount + parentMatchingActionCount,
+      removed:
+        hostedEvents.length +
+        directlyOwnedCounts.reduce((sum, count) => sum + count, 0) +
+        familyRequestCount +
+        hostAuditPaymentCount +
+        userCount +
+        parentMatchingActionCount,
       parentMatchingActionCount,
       hostedEventIds: hostedEvents.map(item => item.id),
+      mediaUrls,
       dryRun: true,
     };
   }
@@ -3433,6 +3623,38 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
     },
   })).count;
 
+  removed += (await prisma.event.deleteMany({
+    where: { hosterId: userId },
+  })).count;
+
+  removed += (await prisma.treasureReport.deleteMany({
+    where: { reporterUserId: userId },
+  })).count;
+  removed += (await prisma.treasureItem.deleteMany({
+    where: { userId },
+  })).count;
+
+  removed += (await prisma.foodOfferComment.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.foodOfferReservation.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.recipeRating.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.recipeFavorite.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.recipeReport.deleteMany({
+    where: { reportedById: userId },
+  })).count;
+  removed += (await prisma.sharedRecipe.deleteMany({
+    where: { creatorUserId: userId },
+  })).count;
+
+  removed += (await prisma.communityEventFlag.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.communityEventInterest.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.communityEvent.deleteMany({
+    where: { creatorId: userId },
+  })).count;
+
+  removed += (await prisma.parentMatchingProfile.deleteMany({
+    where: { ownerUserId: userId },
+  })).count;
+
   if (typeof prisma.parentMatchingAction?.deleteMany === 'function') {
     removed += (await prisma.parentMatchingAction.deleteMany({
       where: { actorUserId: userId },
@@ -3444,6 +3666,96 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
   return {
     removed,
     hostedEventIds: hostedEvents.map(item => item.id),
+    mediaUrls,
+  };
+}
+
+async function exportAccountDataByUserIdPrisma(userId) {
+  const [
+    user,
+    createdFamilies,
+    hostedEvents,
+    eventParticipations,
+    messages,
+    chatReports,
+    treasureItems,
+    treasureRatings,
+    treasureHandovers,
+    treasureReports,
+    paymentTransactions,
+    parentMatchingProfiles,
+    parentMatchingActions,
+    sharedRecipes,
+    foodOfferComments,
+    foodOfferReservations,
+    recipeRatings,
+    recipeFavorites,
+    recipeReports,
+    communityEvents,
+    communityEventFlags,
+    communityEventInterests,
+  ] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        bio: true,
+        createdAt: true,
+        trialExpiresAt: true,
+        isPremium: true,
+        premiumExpiresAt: true,
+      },
+    }),
+    prisma.family.findMany({ where: { createdById: userId } }),
+    prisma.event.findMany({ where: { hosterId: userId } }),
+    prisma.eventParticipation.findMany({ where: { userId } }),
+    prisma.message.findMany({ where: { authorId: userId } }),
+    prisma.chatReport.findMany({ where: { reportedById: userId } }),
+    prisma.treasureItem.findMany({ where: { userId } }),
+    prisma.treasureRating.findMany({ where: { fromUserId: userId } }),
+    prisma.treasureHandover.findMany({ where: { requesterId: userId } }),
+    prisma.treasureReport.findMany({ where: { reporterUserId: userId } }),
+    prisma.paymentTransaction.findMany({ where: { userId } }),
+    prisma.parentMatchingProfile.findMany({ where: { ownerUserId: userId } }),
+    prisma.parentMatchingAction.findMany({ where: { actorUserId: userId } }),
+    prisma.sharedRecipe.findMany({ where: { creatorUserId: userId } }),
+    prisma.foodOfferComment.findMany({ where: { userId } }),
+    prisma.foodOfferReservation.findMany({ where: { userId } }),
+    prisma.recipeRating.findMany({ where: { userId } }),
+    prisma.recipeFavorite.findMany({ where: { userId } }),
+    prisma.recipeReport.findMany({ where: { reportedById: userId } }),
+    prisma.communityEvent.findMany({ where: { creatorId: userId } }),
+    prisma.communityEventFlag.findMany({ where: { userId } }),
+    prisma.communityEventInterest.findMany({ where: { userId } }),
+  ]);
+
+  return {
+    user,
+    createdFamilies,
+    hostedEvents,
+    eventParticipations,
+    messages,
+    chatReports,
+    treasureItems,
+    treasureRatings,
+    treasureHandovers,
+    treasureReports,
+    paymentTransactions,
+    parentMatchingProfiles,
+    parentMatchingActions,
+    sharedRecipes,
+    foodOfferComments,
+    foodOfferReservations,
+    recipeRatings,
+    recipeFavorites,
+    recipeReports,
+    communityEvents,
+    communityEventFlags,
+    communityEventInterests,
   };
 }
 
@@ -3531,6 +3843,7 @@ app.post('/account/delete-data', async (req, res) => {
   if (!userId) {
     return res.status(400).json({ error: 'userId ist erforderlich' });
   }
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
 
   try {
     const prismaResult = await deleteAccountDataByUserIdPrisma(userId, { dryRun });
@@ -3546,6 +3859,10 @@ app.post('/account/delete-data', async (req, res) => {
       }
     }
 
+    const mediaCleanup = dryRun
+      ? { removedLocalFiles: 0, removedFirebaseObjects: 0 }
+      : await deleteUnreferencedAccountMedia(prismaResult.mediaUrls);
+
     const removedEntries = prismaResult.removed + removedMemoryEntries;
     return res.json({
       ok: true,
@@ -3554,6 +3871,7 @@ app.post('/account/delete-data', async (req, res) => {
       removedEntries,
       removedDbEntries: prismaResult.removed,
       removedMemoryEntries,
+      ...mediaCleanup,
       mode: 'prisma',
     });
   } catch (error) {
@@ -3564,6 +3882,28 @@ app.post('/account/delete-data', async (req, res) => {
       ? countAccountDataByUserIdInMemory(userId)
       : deleteAccountDataByUserIdInMemory(userId);
     return res.json({ ok: true, userId, dryRun, removedEntries, mode: 'in-memory' });
+  }
+});
+
+app.get('/account/export-data', async (req, res) => {
+  const userId = (req.query.userId || '').toString().trim();
+  if (!userId) {
+    return res.status(400).json({ error: 'userId ist erforderlich' });
+  }
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+
+  try {
+    const data = await exportAccountDataByUserIdPrisma(userId);
+    return res.json({
+      exportDate: new Date().toISOString(),
+      userId,
+      data,
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /account/export-data', error)) {
+      return;
+    }
+    return res.status(503).json({ error: 'Datenexport derzeit nicht verfuegbar' });
   }
 });
 
@@ -5941,6 +6281,7 @@ app.post('/api/recipes/:id/react', async (req, res) => {
 app.delete('/api/account/:userId', async (req, res) => {
   const userId = (req.params.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
   const deleted = {};
   try {
     await ensureSocialSchemaReady();

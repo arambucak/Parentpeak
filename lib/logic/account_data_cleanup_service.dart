@@ -13,16 +13,18 @@ class AccountDataCleanupService {
   bool get isEnabled => _apiClient != null;
 
   Future<bool> deleteAccountData({required String userId}) async {
-    if (_apiClient == null) {
+    final apiClient = _apiClient;
+    if (apiClient == null) {
       // No backend configured: keep existing local/Firebase deletion path.
       return true;
     }
 
     try {
-      await _apiClient!.postJsonAny(
+      await apiClient.postJsonAny(
         APIConfig.getBackendAccountDeleteDataPath(),
         <String, dynamic>{'userId': userId},
       );
+      await apiClient.delete('/api/account/$userId');
       return true;
     } catch (e) {
       lastError = 'Backend-Daten konnten nicht geloescht werden: $e';
