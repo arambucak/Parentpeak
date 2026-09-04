@@ -965,8 +965,30 @@ async function verifyFirebaseIdToken(req) {
 // reject write requests whose token does not match the acting userId.
 const firebaseRequireAuth = (process.env.FIREBASE_REQUIRE_AUTH || '0') === '1';
 
+// Pfade, die den Nutzer ueber die userId im Body/Path identifizieren (nicht
+// ueber den Token). Diese Schreib-Endpoints muessen auch ohne verifizierten
+// Firebase-Token funktionieren, sonst schlagen sie auf Web (Session-Restore-
+// Timing) still fehl. Muss mit der zweiten Middleware konsistent sein.
+const socialNoTokenWritePaths = [
+  '/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat',
+  '/api/friends', '/api/safety', '/api/onboarding', '/api/account',
+  '/api/profile', '/api/friendships',
+];
+
+function isNoTokenWritePath(reqPath) {
+  return socialNoTokenWritePaths.some(
+    p => reqPath === p || reqPath.startsWith(p + '/'));
+}
+
 async function firebaseAuthMiddleware(req, res, next) {
   if (!firebaseRequireAuth || !firebaseAdmin || !WRITE_METHODS.has(req.method)) {
+    return next();
+  }
+  // userId-basierte Social-Endpoints: Token optional (best-effort verifizieren),
+  // aber nie hart ablehnen — sonst gehen Profil/Freundschaft auf Web verloren.
+  if (isNoTokenWritePath(req.path)) {
+    const { uid, verified } = await verifyFirebaseIdToken(req);
+    if (verified) req.firebaseUid = uid;
     return next();
   }
   const authHeader = req.headers.authorization || '';
