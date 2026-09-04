@@ -18,6 +18,7 @@ import 'package:parentpeak/config/access_config.dart';
 import 'package:parentpeak/ui/admin_moderation_screen.dart';
 import 'package:parentpeak/logic/error_reporting_service.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 String _t(String key) =>
@@ -1245,17 +1246,41 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   Future<void> _exportUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final keys = prefs.getKeys();
-    final data = <String, dynamic>{};
+    final localData = <String, dynamic>{};
     for (final key in keys) {
       final val = prefs.get(key);
-      data[key] = val;
+      localData[key] = val;
     }
+
+    Map<String, dynamic>? serverExport;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final apiClient = BackendServiceFactory.createApiClient();
+    if (userId != null && userId.isNotEmpty) {
+      if (apiClient == null) {
+        _showExportError('Server-Datenexport ist derzeit nicht konfiguriert.');
+        return;
+      }
+      try {
+        final response = await apiClient.getJson(
+          '/account/export-data?userId=${Uri.encodeQueryComponent(userId)}',
+        );
+        if (response is! Map<String, dynamic>) {
+          throw const FormatException('Unerwartetes Exportformat');
+        }
+        serverExport = response;
+      } catch (error) {
+        _showExportError(
+            'Server-Daten konnten nicht exportiert werden: $error');
+        return;
+      }
+    }
+
     final jsonStr = const JsonEncoder.withIndent('  ').convert({
       'exportDate': DateTime.now().toIso8601String(),
       'app': 'Parentpeak',
       'version': _appVersion,
-      'dataKeys': data.length,
-      'data': data,
+      'serverData': serverExport,
+      'localDeviceData': localData,
     });
 
     await Clipboard.setData(ClipboardData(text: jsonStr));
@@ -1267,7 +1292,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Daten exportiert (${data.length} Einträge in Zwischenablage kopiert)',
+              'Datenexport in die Zwischenablage kopiert',
               style: const TextStyle(fontSize: 13),
             ),
           ),
@@ -1275,6 +1300,17 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xFF16A34A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showExportError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.error,
       ),
     );
   }

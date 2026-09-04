@@ -185,6 +185,17 @@ test('invite code persists in DB across restart and delete-data dryRun is non-de
     assert.equal(dryRunDelete.response.status, 200);
     assert.equal(dryRunDelete.payload?.dryRun, true);
 
+    const exportBeforeDelete = await getJson(
+      serverA.baseUrl,
+      `/account/export-data?userId=${encodeURIComponent(dryRunUser)}`,
+    );
+    assert.equal(exportBeforeDelete.response.status, 200);
+    assert.ok(
+      exportBeforeDelete.payload?.data?.hostedEvents?.some(
+        item => item.id === dryRunEventId,
+      ),
+    );
+
     const listAfterDryRun = await getJson(serverA.baseUrl, `/events?hostUserId=${dryRunUser}`);
     assert.equal(listAfterDryRun.response.status, 200);
     assert.ok(Array.isArray(listAfterDryRun.payload?.items));
@@ -209,6 +220,10 @@ test('invite code persists in DB across restart and delete-data dryRun is non-de
     assert.equal(realDelete.response.status, 200);
     assert.equal(realDelete.payload?.dryRun, false);
 
+    await stopServer(serverB.child);
+    serverB = startServer(3026);
+    await waitForHealth(serverB.baseUrl);
+
     const listAfterRealDelete = await getJson(serverB.baseUrl, `/events?hostUserId=${dryRunUser}`);
     assert.equal(listAfterRealDelete.response.status, 200);
     assert.ok(Array.isArray(listAfterRealDelete.payload?.items));
@@ -229,6 +244,43 @@ test('invite code persists in DB across restart and delete-data dryRun is non-de
   } finally {
     await stopServer(serverA?.child);
     await stopServer(serverB?.child);
+  }
+});
+
+test('account export and deletion require authentication in production', async () => {
+  const userId = `it_account_auth_${Date.now()}`;
+  let server;
+
+  try {
+    server = startServer(3040, {
+      NODE_ENV: 'production',
+      BACKEND_API_TOKEN: '',
+      FIREBASE_SERVICE_ACCOUNT_JSON: '',
+      GOOGLE_APPLICATION_CREDENTIALS: '',
+    });
+    await waitForHealth(server.baseUrl);
+
+    const exportResponse = await getJson(
+      server.baseUrl,
+      `/account/export-data?userId=${encodeURIComponent(userId)}`,
+    );
+    assert.equal(exportResponse.response.status, 401);
+
+    const deleteResponse = await postJson(server.baseUrl, '/account/delete-data', {
+      userId,
+    });
+    assert.equal(deleteResponse.response.status, 401);
+
+    const socialDeleteResponse = await deletePath(
+      server.baseUrl,
+      `/api/account/${encodeURIComponent(userId)}`,
+    );
+    assert.equal(socialDeleteResponse.response.status, 401);
+  } catch (error) {
+    const extraLogs = server ? `server logs:\n${server.getLogs()}` : '';
+    throw new Error(`${error.message}\n\n${extraLogs}`);
+  } finally {
+    await stopServer(server?.child);
   }
 });
 
@@ -896,6 +948,9 @@ test('FCM device token register and unregister', async () => {
 });
 
 test('image upload endpoint accepts valid image and rejects non-image', async () => {
+  const ownerUserId = `it_upload_owner_${Date.now()}`;
+  const secondOwnerUserId = `it_upload_second_owner_${Date.now()}`;
+  let uploadedFilePath;
   let server;
 
   try {
@@ -921,6 +976,37 @@ test('image upload endpoint accepts valid image and rejects non-image', async ()
     const okPayload = await okRes.json();
     assert.ok(typeof okPayload.url === 'string');
     assert.ok(okPayload.url.includes('uploads'));
+    assert.ok(typeof okPayload.filename === 'string');
+    uploadedFilePath = path.join(BACKEND_DIR, 'uploads', okPayload.filename);
+    assert.equal(fs.existsSync(uploadedFilePath), true);
+
+    const eventResponse = await postJson(server.baseUrl, '/events', {
+      hosterId: ownerUserId,
+      title: 'Upload cleanup event',
+      eventDate: '2026-09-04T10:00:00.000Z',
+      photoUrl: okPayload.url,
+    });
+    assert.equal(eventResponse.response.status, 201);
+
+    const secondEventResponse = await postJson(server.baseUrl, '/events', {
+      hosterId: secondOwnerUserId,
+      title: 'Shared upload cleanup event',
+      eventDate: '2026-09-05T10:00:00.000Z',
+      photoUrl: okPayload.url,
+    });
+    assert.equal(secondEventResponse.response.status, 201);
+
+    const deleteResponse = await postJson(server.baseUrl, '/account/delete-data', {
+      userId: ownerUserId,
+    });
+    assert.equal(deleteResponse.response.status, 200);
+    assert.equal(fs.existsSync(uploadedFilePath), true);
+
+    const secondDeleteResponse = await postJson(server.baseUrl, '/account/delete-data', {
+      userId: secondOwnerUserId,
+    });
+    assert.equal(secondDeleteResponse.response.status, 200);
+    assert.equal(fs.existsSync(uploadedFilePath), false);
 
     const badFd = new FormData();
     badFd.append('image', new Blob(['not-an-image'], { type: 'text/plain' }), 'bad.txt');
@@ -936,6 +1022,9 @@ test('image upload endpoint accepts valid image and rejects non-image', async ()
     throw new Error(`${error.message}\n\n${extraLogs}`);
   } finally {
     await stopServer(server?.child);
+    if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
+      fs.unlinkSync(uploadedFilePath);
+    }
   }
 });
 

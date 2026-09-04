@@ -720,17 +720,20 @@ class AuthService with ChangeNotifier {
     }
 
     // DSGVO Art. 17: serverseitige personenbezogene Daten loeschen — VOR dem
-    // Firebase-Delete, solange der Auth-Token noch gueltig ist (best-effort).
+    // Firebase-Delete, solange der Auth-Token noch gueltig ist.
     if (currentUserId != null) {
       try {
         final apiClient = backendApiClientFactory();
         if (apiClient != null) {
+          await apiClient.postJsonAny(
+            APIConfig.getBackendAccountDeleteDataPath(),
+            <String, dynamic>{'userId': currentUserId},
+          );
           await apiClient.delete('/api/account/$currentUserId');
         }
       } catch (e) {
         debugPrint('deleteAccount: Backend-Loeschung fehlgeschlagen: $e');
-        // Nicht abbrechen: Firebase-Konto + lokale Daten werden trotzdem
-        // geloescht; verwaiste Server-Daten faengt der Cleanup/TTL ab.
+        return 'Server-Daten konnten nicht gelöscht werden. Bitte versuche es erneut.';
       }
     }
 

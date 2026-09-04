@@ -1,11 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/models/shared_family_recipe.dart';
@@ -17,8 +13,7 @@ import 'package:parentpeak/models/shared_family_recipe.dart';
 /// Die Sichtbarkeit wird serverseitig durchgesetzt — der Client zeigt nur an,
 /// was der Server ausliefert.
 class FamilyRecipeShareService {
-  static final FamilyRecipeShareService instance =
-      FamilyRecipeShareService._();
+  static final FamilyRecipeShareService instance = FamilyRecipeShareService._();
   FamilyRecipeShareService._();
 
   final BackendApiClient? _api = BackendServiceFactory.createApiClient();
@@ -56,30 +51,17 @@ class FamilyRecipeShareService {
   /// Laedt ein optionales Foto hoch und liefert die oeffentliche URL zurueck.
   /// Web-sicher: nutzt Bytes statt Datei-Pfad. Gibt null zurueck bei Fehler.
   Future<String?> uploadPhoto(XFile image) async {
-    final base = APIConfig.getBackendBaseUrl();
-    if (base == null || base.isEmpty) return null;
+    final api = _api;
+    if (api == null) return null;
     try {
       final bytes = await image.readAsBytes();
-      final uri = Uri.parse('$base/uploads/image');
-      final request = http.MultipartRequest('POST', uri)
-        ..files.add(http.MultipartFile.fromBytes(
-          'image',
-          bytes,
-          filename: image.name.isNotEmpty ? image.name : 'rezept.jpg',
-        ));
-      final token = APIConfig.getBackendApiToken();
-      if (token != null && token.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-      final streamed =
-          await request.send().timeout(const Duration(seconds: 30));
-      final resp = await http.Response.fromStream(streamed);
-      if (resp.statusCode == 201) {
-        final body = jsonDecode(resp.body) as Map<String, dynamic>;
-        final url = body['url'] as String?;
-        return (url != null && url.isNotEmpty) ? url : null;
-      }
-      debugPrint('uploadPhoto: HTTP ${resp.statusCode}');
+      final response = await api.uploadImageBytes(
+        '/uploads/image',
+        bytes,
+        filename: image.name.isNotEmpty ? image.name : 'rezept.jpg',
+      );
+      final url = response['url'] as String?;
+      return (url != null && url.isNotEmpty) ? url : null;
     } catch (e) {
       debugPrint('FamilyRecipeShareService.uploadPhoto failed: $e');
     }
@@ -154,8 +136,8 @@ class FamilyRecipeShareService {
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty) return false;
     try {
-      await api.delete(
-          '/api/recipes/$recipeId?userId=${Uri.encodeComponent(uid)}');
+      await api
+          .delete('/api/recipes/$recipeId?userId=${Uri.encodeComponent(uid)}');
       return true;
     } catch (e) {
       debugPrint('FamilyRecipeShareService.deleteRecipe failed: $e');
