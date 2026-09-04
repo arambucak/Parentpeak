@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/ui/family_recipes_screen.dart';
+import 'package:parentpeak/ui/fridge_recipe_screen.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -101,6 +102,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // KI-Kühlschrank-Foto: aus vorhandenen Zutaten ein Rezept
+          _fridgeCard(theme),
+          const SizedBox(height: 16),
           // Rezept-Card
           if (_loading)
             _loadingState(theme)
@@ -110,6 +114,48 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           // Tipps-Bereich
           _tippsSection(theme),
         ]),
+      ),
+    );
+  }
+
+  /// Einstieg in das KI-Kühlschrank-Foto (Phase 3b).
+  Widget _fridgeCard(ThemeData theme) {
+    return Material(
+      color: const Color(0xFFE8543A),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const FridgeRecipeScreen()),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const Text('📸🥕', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Aus dem, was da ist',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800)),
+                    SizedBox(height: 2),
+                    Text(
+                        'Foto vom Kühlschrank machen – ich schlage ein Rezept vor.',
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded,
+                  color: Colors.white, size: 16),
+            ],
+          ),
+        ),
       ),
     );
   }
