@@ -5660,8 +5660,11 @@ app.post('/api/profile', async (req, res) => {
     await ensureSocialSchemaReady();
     // Upsert; leere Felder ueberschreiben bestehende Werte nicht.
     await prisma.$executeRawUnsafe(
+      // WICHTIG: username als NULLIF(...,'') einfuegen, damit leere Usernames
+      // NULL sind und NICHT vom partiellen Unique-Index erfasst werden
+      // (sonst kollidieren mehrere Profile mit username='' -> Fehler).
       `INSERT INTO "UserProfile" ("userId", "displayName", "username", "searchable", "isPrivate", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, NOW())
+       VALUES ($1, $2, NULLIF($3, ''), $4, $5, NOW())
        ON CONFLICT ("userId") DO UPDATE SET
          "displayName" = COALESCE(NULLIF($2, ''), "UserProfile"."displayName"),
          "username" = ${hasUsername ? 'NULLIF($3, \'\')' : '"UserProfile"."username"'},
