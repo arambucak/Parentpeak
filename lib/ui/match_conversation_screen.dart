@@ -44,6 +44,33 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   bool _streamActive = false;
   bool _isLoading = true;
 
+  /// Wenn gesetzt: Der Chat ist Nur-Lese. Der Text wird als ruhiger Hinweis
+  /// statt des Eingabefelds angezeigt (Freundschaft entfernt oder blockiert).
+  String? _chatDisabledReason;
+
+  /// Liest den Fehler-`code` aus einer JSON-Antwort (z. B. 'not_friends').
+  String? _responseCode(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map && decoded['code'] is String) {
+        return decoded['code'] as String;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Schaltet den Chat auf Nur-Lese und setzt einen ruhigen, wertschaetzenden
+  /// Hinweis (GfK-Ton, keine Schuldzuweisung). 'blocked' -> Zugriff endet,
+  /// 'not_friends' -> Verlauf bleibt lesbar.
+  void _applyChatDisabled(String? code) {
+    final reason = code == 'blocked'
+        ? 'Diese Unterhaltung ist nicht mehr verfügbar.'
+        : 'Ihr seid aktuell nicht mehr verbunden. Frühere Nachrichten kannst '
+            'du weiter nachlesen.';
+    if (!mounted) return;
+    setState(() => _chatDisabledReason = reason);
+  }
+
   /// Parst den Zeitstempel einer Nachricht aus der Server-Antwort.
   static DateTime? _parseCreatedAt(dynamic raw) {
     if (raw == null) return null;
@@ -239,13 +266,20 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
     try {
       final uri = Uri.parse(
-        '$base/friend-chat/messages?roomId=${Uri.encodeComponent(widget.profileId)}',
+        '$base/friend-chat/messages?roomId=${Uri.encodeComponent(widget.profileId)}'
+        '&userId=${Uri.encodeComponent(_currentUserId)}',
       );
       final headers = await _authHeaders();
       final resp = await http
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 10));
       if (!mounted) return;
+      if (resp.statusCode == 403) {
+        // Blockiert: Zugriff auf den Chat komplett gesperrt.
+        _applyChatDisabled(_responseCode(resp.body) ?? 'blocked');
+        setState(() => _isLoading = false);
+        return;
+      }
       if (resp.statusCode == 401) {
         // Retry without auth — GET may not need it
         final retryResp = await http.get(uri, headers: {
@@ -421,6 +455,12 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         if (mounted) await showAccountSuspendedNotice(context);
         return null;
       }
+      if (resp.statusCode == 403) {
+        // Freundschaft entfernt (not_friends) oder blockiert (blocked):
+        // Chat auf Nur-Lese umstellen + freundlichen Hinweis anzeigen.
+        _applyChatDisabled(_responseCode(resp.body));
+        return null;
+      }
       if (resp.statusCode == 401) {
         // Retry once with forced token refresh
         final freshHeaders = await _authHeaders(forceRefresh: true);
@@ -558,6 +598,34 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           ));
         }
       },
+    );
+  }
+
+  /// Ruhiger Nur-Lese-Hinweis anstelle des Eingabefelds (GfK-Ton).
+  Widget _readOnlyNotice(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock_outline_rounded,
+              size: 18, color: theme.colorScheme.outline),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _chatDisabledReason ?? '',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -889,7 +957,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                 ),
               ),
             ),
-          // Input
+          // Input — oder Nur-Lese-Hinweis, wenn die Verbindung beendet wurde.
           SafeArea(
             top: false,
             child: Container(
@@ -904,44 +972,46 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText: 'Nachricht schreiben...',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerLow,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
+              child: _chatDisabledReason != null
+                  ? _readOnlyNotice(theme)
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              hintText: 'Nachricht schreiben...',
+                              hintStyle: TextStyle(color: Colors.grey[400]),
+                              filled: true,
+                              fillColor: theme.colorScheme.surfaceContainerLow,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 12),
+                              isDense: true,
+                            ),
+                            onSubmitted: (_) => _send(),
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 12),
-                        isDense: true,
-                      ),
-                      onSubmitted: (_) => _send(),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: theme.colorScheme.primary,
+                          ),
+                          child: IconButton(
+                            onPressed: _send,
+                            icon: const Icon(Icons.send_rounded,
+                                size: 18, color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: theme.colorScheme.primary,
-                    ),
-                    child: IconButton(
-                      onPressed: _send,
-                      icon: const Icon(Icons.send_rounded,
-                          size: 18, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],

@@ -5719,6 +5719,56 @@ function friendRoomId(uidA, uidB) {
   return pairKey(uidA, uidB).join('__');
 }
 
+// Aus einer roomId die Gegenseite (die UID, die NICHT selfUid ist) im NEUEN
+// Format uidA__uidB herausloesen. Altes pp-Format -> null (hier nicht relevant).
+function otherUidFromRoomId(roomId, selfUid) {
+  const rid = (roomId || '').toString().trim();
+  const me = (selfUid || '').toString().trim();
+  if (!rid.includes('__')) return null;
+  const parts = rid.split('__').filter(Boolean);
+  return parts.find(p => p !== me) || null;
+}
+
+// Hat einer der beiden den anderen blockiert (Richtung egal)? Fehlertolerant.
+async function isBlockedBetween(uidA, uidB) {
+  const a = (uidA || '').toString().trim();
+  const b = (uidB || '').toString().trim();
+  if (!a || !b) return false;
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "SafetyBlock"
+       WHERE ("blockerUserId" = $1 AND "blockedUserId" = $2)
+          OR ("blockerUserId" = $2 AND "blockedUserId" = $1) LIMIT 1`,
+      a, b
+    );
+    return rows.length > 0;
+  } catch (_) {
+    const setA = safetyBlocks.get(a);
+    const setB = safetyBlocks.get(b);
+    return (!!setA && setA.has(b)) || (!!setB && setB.has(a));
+  }
+}
+
+// Hat der ANDERE mich blockiert? (Einseitig: otherUid -> me.) Fuer den
+// Lese-Zugriff: Wer blockiert wurde, verliert den Zugriff auf den Chat.
+async function hasBlockedMe(otherUid, selfUid) {
+  const other = (otherUid || '').toString().trim();
+  const me = (selfUid || '').toString().trim();
+  if (!other || !me) return false;
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "SafetyBlock" WHERE "blockerUserId" = $1 AND "blockedUserId" = $2 LIMIT 1`,
+      other, me
+    );
+    return rows.length > 0;
+  } catch (_) {
+    const set = safetyBlocks.get(other);
+    return !!set && set.has(me);
+  }
+}
+
 // Freundschaftsanfrage senden (oder direkt bestaetigen, wenn Ziel nicht privat).
 app.post('/api/friendships/request', async (req, res) => {
   const fromUid = (req.body.fromUid || '').toString().trim();
@@ -6349,6 +6399,19 @@ app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
 app.get('/friend-chat/messages', async (req, res) => {
   const roomId = (req.query.roomId || '').toString().trim();
   if (!roomId) return res.status(400).json({ error: 'roomId fehlt' });
+  // Block-Schutz beim LESEN: Wer vom anderen blockiert wurde, verliert den
+  // Zugriff auf den Chat komplett. 'Entfernen' (unfriend) sperrt NICHT das
+  // Lesen -> Verlauf bleibt Nur-Lese-Archiv. Nur ein echter Block sperrt.
+  const requesterUid = (req.query.userId || '').toString().trim();
+  if (requesterUid) {
+    const otherUid = otherUidFromRoomId(roomId, requesterUid);
+    if (otherUid && (await hasBlockedMe(otherUid, requesterUid))) {
+      return res.status(403).json({
+        error: 'Diese Unterhaltung ist nicht mehr verfügbar.',
+        code: 'blocked',
+      });
+    }
+  }
   try {
     await ensureSocialSchemaReady();
     const messages = await prisma.$queryRawUnsafe(
@@ -6372,6 +6435,28 @@ app.post('/friend-chat/messages', async (req, res) => {
   }
   // Echter Bann: gesperrte Nutzer koennen keine Nachrichten mehr senden.
   if (await isUserSuspended(userId)) return respondSuspended(res);
+
+  // Chat-Schutz (NEUES UID-Format uidA__uidB): Nur bestaetigte Freunde duerfen
+  // NEUE Nachrichten senden. Nach 'Entfernen' -> keine Freundschaft mehr ->
+  // gesperrt. Nach 'Blockieren' -> ebenfalls gesperrt. Der Verlauf bleibt via
+  // GET lesbar (Nur-Lese-Archiv). Alte pp-Raeume: keine Pruefung (Auslauf).
+  const otherUid = otherUidFromRoomId(roomId, userId);
+  if (otherUid) {
+    if (await isBlockedBetween(userId, otherUid)) {
+      return res.status(403).json({
+        error: 'Diese Unterhaltung ist nicht mehr verfügbar.',
+        code: 'blocked',
+      });
+    }
+    if (!(await areFriends(userId, otherUid))) {
+      return res.status(403).json({
+        error: 'Ihr seid aktuell nicht mehr verbunden. Frühere Nachrichten '
+          + 'kannst du weiter nachlesen.',
+        code: 'not_friends',
+      });
+    }
+  }
+
   const item = { id: generateId('fc'), roomId, authorUserId: userId, authorName: userName, content, createdAt: new Date().toISOString() };
 
   // Push an den ECHTEN Empfaenger: roomId = codeA-codeB. Wir bestimmen den
