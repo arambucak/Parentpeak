@@ -21,9 +21,10 @@ class FamilienKuecheScreen extends StatefulWidget {
 
 class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   final _service = FamilyRecipeService.instance;
+  final _searchCtrl = TextEditingController();
   FamilyRecipe? _currentRecipe;
   bool _loading = true;
-  bool _showSteps = false;
+  bool _dayRecipeExpanded = false;
 
   @override
   void initState() {
@@ -31,15 +32,34 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     _init();
   }
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _init() async {
     await _service.initialize();
     await _generateNew();
   }
 
+  /// Öffnet die Familien-Rezepte mit vorausgefülltem Suchbegriff.
+  void _searchRecipes(String query) {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    FocusScope.of(context).unfocus();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FamilyRecipesScreen(initialQuery: q),
+      ),
+    );
+  }
+
   Future<void> _generateNew() async {
     setState(() {
       _loading = true;
-      _showSteps = false;
+      _dayRecipeExpanded = false;
     });
     final recipe = await _service.generateRecipe();
     if (mounted)
@@ -103,6 +123,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Prominente Rezept-Suche ganz oben
+          _searchBar(theme),
+          const SizedBox(height: 16),
           // KI-Kühlschrank-Foto: aus vorhandenen Zutaten ein Rezept
           _fridgeCard(theme),
           const SizedBox(height: 16),
@@ -118,6 +141,46 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           // Tipps-Bereich
           _tippsSection(theme),
         ]),
+      ),
+    );
+  }
+
+  /// Prominente Suchleiste: springt mit dem Begriff in die Familien-Rezepte.
+  Widget _searchBar(ThemeData theme) {
+    return TextField(
+      controller: _searchCtrl,
+      textInputAction: TextInputAction.search,
+      onSubmitted: _searchRecipes,
+      decoration: InputDecoration(
+        hintText:
+            'Suchst du ein bestimmtes Rezept? (z. B. Pfannkuchen, Nudeln)',
+        hintStyle: TextStyle(color: theme.colorScheme.outline, fontSize: 13),
+        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF8B5CF6)),
+        suffixIcon: IconButton(
+          icon:
+              const Icon(Icons.arrow_forward_rounded, color: Color(0xFF8B5CF6)),
+          tooltip: 'Suchen',
+          onPressed: () => _searchRecipes(_searchCtrl.text),
+        ),
+        filled: true,
+        fillColor: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide:
+              BorderSide(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide:
+              BorderSide(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        isDense: true,
       ),
     );
   }
@@ -244,7 +307,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(children: [
         const Text('\u{1F373}', style: TextStyle(fontSize: 36)),
@@ -265,7 +328,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
         boxShadow: [
@@ -286,7 +349,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
               end: Alignment.bottomRight,
               colors: [Color(0xFFFFF7ED), Color(0xFFFEF3C7)],
             ),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
           ),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -295,6 +358,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
             Text(recipe.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: const Color(0xFF9A3412), height: 1.3)),
             const SizedBox(height: 12),
@@ -312,44 +377,23 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             ]),
           ]),
         ),
-        // Zutaten
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-                '${AppStringsManager.getString(languageService.currentLanguage, "ingredients_portions")} (${recipe.portions} ${AppStringsManager.getString(languageService.currentLanguage, "portions_label")})',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            ...recipe.ingredients.map((i) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(children: [
-                    Container(
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(
-                            color: const Color(0xFFF97316),
-                            shape: BoxShape.circle)),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(i, style: theme.textTheme.bodySmall)),
-                  ]),
-                )),
-          ]),
-        ),
-        // Zubereitung (ausklappbar)
+        // Zutaten & Zubereitung (kompakt: einklappbar unter einem Tipp)
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => setState(() => _showSteps = !_showSteps),
+            onTap: () =>
+                setState(() => _dayRecipeExpanded = !_dayRecipeExpanded),
             child: Row(children: [
-              Text('\u{1F373} Zubereitung',
+              Text(
+                  _dayRecipeExpanded
+                      ? '\u{1F373} Zutaten & Zubereitung'
+                      : '\u{1F373} Zutaten & Zubereitung ansehen',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(fontWeight: FontWeight.w700)),
               const Spacer(),
               Icon(
-                  _showSteps
+                  _dayRecipeExpanded
                       ? Icons.expand_less_rounded
                       : Icons.expand_more_rounded,
                   size: 18,
@@ -357,9 +401,37 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             ]),
           ),
         ),
-        if (_showSteps)
+        // Zutaten (nur wenn ausgeklappt)
+        if (_dayRecipeExpanded)
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                  '${AppStringsManager.getString(languageService.currentLanguage, "ingredients_portions")} (${recipe.portions} ${AppStringsManager.getString(languageService.currentLanguage, "portions_label")})',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              ...recipe.ingredients.map((i) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(children: [
+                      Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFF97316),
+                              shape: BoxShape.circle)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: Text(i, style: theme.textTheme.bodySmall)),
+                    ]),
+                  )),
+            ]),
+          ),
+        // Zubereitung (nur wenn ausgeklappt)
+        if (_dayRecipeExpanded)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               ...recipe.steps.asMap().entries.map((e) => Padding(
@@ -803,7 +875,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                             Navigator.pop(ctx);
                             setState(() {
                               _currentRecipe = r;
-                              _showSteps = false;
+                              _dayRecipeExpanded = false;
                             });
                           },
                           shape: RoundedRectangleBorder(

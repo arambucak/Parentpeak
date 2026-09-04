@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/logic/family_recipe_share_service.dart';
+import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shared_family_recipe.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
@@ -17,7 +19,10 @@ import 'package:parentpeak/ui/widgets/safe_image.dart';
 /// schnelle Filter und herzliche Reaktionen ("Das kochen wir nach!" /
 /// "Hat geschmeckt!").
 class FamilyRecipesScreen extends StatefulWidget {
-  const FamilyRecipesScreen({super.key});
+  /// Optionaler vorausgefüllter Suchbegriff (z. B. vom Küchen-Hauptscreen).
+  final String? initialQuery;
+
+  const FamilyRecipesScreen({super.key, this.initialQuery});
 
   @override
   State<FamilyRecipesScreen> createState() => _FamilyRecipesScreenState();
@@ -27,6 +32,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
   static const _accent = Color(0xFFE8543A);
 
   final _service = FamilyRecipeShareService.instance;
+  final _aiService = FamilyRecipeService.instance;
   final _searchCtrl = TextEditingController();
   Timer? _searchDebounce;
 
@@ -34,6 +40,11 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
   bool _loading = true;
   String _query = '';
   String? _activeFilter; // null = alle
+
+  // KI-Fallback (Blitz-Rezept), wenn die Community nichts hat.
+  bool _generatingAi = false;
+  FamilyRecipe? _aiRecipe;
+  bool _aiShared = false;
 
   // Schnell-Filter: Label -> Suchbegriff, der an die Server-Suche geht.
   static const _filters = <String, String>{
@@ -45,6 +56,11 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
   @override
   void initState() {
     super.initState();
+    final q = widget.initialQuery?.trim() ?? '';
+    if (q.isNotEmpty) {
+      _searchCtrl.text = q;
+      _query = q;
+    }
     _load();
   }
 
@@ -67,7 +83,67 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
     setState(() {
       _recipes = list;
       _loading = false;
+      // Bei neuer Suche das alte KI-Blitz-Rezept zurücksetzen.
+      _aiRecipe = null;
+      _aiShared = false;
     });
+  }
+
+  /// KI-Fallback: erzeugt auf Knopfdruck ein kinderfreundliches Blitz-Rezept
+  /// zum gesuchten Gericht (kein automatischer Aufruf -> spart KI-Kosten).
+  Future<void> _generateAiFallback() async {
+    final dish = _query.trim();
+    if (dish.isEmpty) return;
+    setState(() => _generatingAi = true);
+    await _aiService.initialize();
+    final recipe = await _aiService.generateRecipeFor(dish);
+    if (!mounted) return;
+    setState(() {
+      _aiRecipe = recipe;
+      _generatingAi = false;
+    });
+    if (recipe == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content:
+            Text('Konnte gerade kein Rezept zaubern — bitte erneut versuchen.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
+  /// Teilt das KI-Blitz-Rezept in den Familien-Rezepten (Standard: Nur Freunde).
+  Future<void> _shareAiRecipe(FamilyRecipe r) async {
+    setState(() => _generatingAi = true);
+    try {
+      final created = await _service.createRecipe(
+        title: r.title,
+        description: r.description,
+        ingredients: r.ingredients,
+        steps: r.steps,
+        prepMinutes: r.prepMinutes,
+        visibility: 'friends',
+      );
+      if (!mounted) return;
+      setState(() {
+        _generatingAi = false;
+        _aiShared = created != null;
+      });
+      if (created != null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Rezept mit deinen Freunden geteilt. 🍳'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFF16A34A),
+        ));
+        _load();
+      }
+    } on SuspendedAccountException {
+      if (mounted) {
+        setState(() => _generatingAi = false);
+        await showAccountSuspendedNotice(context);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _generatingAi = false);
+    }
   }
 
   void _onSearchChanged(String value) {
@@ -245,31 +321,201 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
   }
 
   Widget _emptyState(ThemeData theme) {
+    final hasQuery = _query.isNotEmpty;
     return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
       children: [
-        const SizedBox(height: 80),
+        const SizedBox(height: 24),
         Icon(Icons.restaurant_menu_rounded,
-            size: 56, color: theme.colorScheme.outline),
+            size: 52, color: theme.colorScheme.outline),
         const SizedBox(height: 16),
         Text(
-          _query.isNotEmpty || _activeFilter != null
-              ? 'Noch kein passendes Rezept gefunden.'
-              : 'Noch keine Rezepte.',
+          hasQuery
+              ? 'Noch kein Community-Rezept für „$_query“.'
+              : (_activeFilter != null
+                  ? 'Noch kein passendes Rezept gefunden.'
+                  : 'Noch keine Rezepte.'),
           textAlign: TextAlign.center,
           style:
               theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 6),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Text(
-            'Teile dein erstes Familien-Rezept – ein Tap unten rechts genügt.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(height: 16),
+        // KI-Fallback: Blitz-Rezept auf Knopfdruck (nur bei aktiver Suche).
+        if (hasQuery && _aiRecipe == null) _aiFallbackCard(theme),
+        if (_aiRecipe != null) _aiRecipeCard(theme, _aiRecipe!),
+        if (!hasQuery) ...[
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'Teile dein erstes Familien-Rezept – ein Tap unten rechts genügt.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
           ),
-        ),
+        ],
       ],
+    );
+  }
+
+  /// Karte, die anbietet, per KI ein Blitz-Rezept zum Suchbegriff zu zaubern.
+  Widget _aiFallbackCard(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF7ED), Color(0xFFFEF3C7)],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _accent.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        children: [
+          const Text('✨🍳', style: TextStyle(fontSize: 30)),
+          const SizedBox(height: 10),
+          Text(
+            'Möchtest du, dass die KI dir ein kinderfreundliches '
+            'Blitz-Rezept für „$_query“ zaubert?',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _generatingAi ? null : _generateAiFallback,
+              icon: _generatingAi
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.auto_awesome_rounded),
+              label: Text(_generatingAi ? 'Zaubere …' : 'Blitz-Rezept zaubern'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _accent,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Zeigt das generierte KI-Blitz-Rezept inline (mit Teilen-Option).
+  Widget _aiRecipeCard(ThemeData theme, FamilyRecipe r) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _accent.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Text('✨', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 6),
+            Text('KI-Blitz-Rezept',
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w700, color: _accent)),
+          ]),
+          const SizedBox(height: 8),
+          Text(r.title,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800)),
+          if (r.description.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(r.description,
+                style: theme.textTheme.bodySmall?.copyWith(height: 1.4)),
+          ],
+          Row(children: [
+            Icon(Icons.schedule_rounded,
+                size: 13, color: theme.colorScheme.outline),
+            const SizedBox(width: 4),
+            Text(r.timeLabel,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+            const SizedBox(width: 12),
+            Icon(Icons.child_care_rounded,
+                size: 13, color: theme.colorScheme.outline),
+            const SizedBox(width: 4),
+            Text(r.ageLabel,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+          ]),
+          if (r.ingredients.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Zutaten',
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            ...r.ingredients.map((ing) => Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('• '),
+                        Expanded(
+                            child: Text(ing, style: theme.textTheme.bodySmall)),
+                      ]),
+                )),
+          ],
+          if (r.steps.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Zubereitung',
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            ...List.generate(
+                r.steps.length,
+                (i) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${i + 1}. ',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: _accent)),
+                            Expanded(
+                                child: Text(r.steps[i],
+                                    style: theme.textTheme.bodySmall
+                                        ?.copyWith(height: 1.4))),
+                          ]),
+                    )),
+          ],
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed:
+                  _generatingAi || _aiShared ? null : () => _shareAiRecipe(r),
+              icon: Icon(
+                  _aiShared ? Icons.check_rounded : Icons.bookmark_add_rounded),
+              label: Text(_aiShared
+                  ? 'In Familien-Rezepten gespeichert'
+                  : 'In Familien-Rezepten teilen'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _aiShared ? const Color(0xFF16A34A) : _accent,
+                disabledBackgroundColor:
+                    _aiShared ? const Color(0xFF16A34A) : null,
+                disabledForegroundColor: _aiShared ? Colors.white : null,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -110,12 +110,12 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       debugPrint(
           'FamilyRecipeService: Verwende Backend-KI mit Modell=$modelName');
 
-        final raw = await GeminiAIService(modelName: modelName).generateText(
+      final raw = await GeminiAIService(modelName: modelName).generateText(
         prompt,
         systemInstruction:
-          'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
-          'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
-        );
+            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
+            'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+      );
       await AIRateLimiter.recordRequest();
       debugPrint('FamilyRecipeService: Gemini Antwort (${raw.length} Zeichen)');
 
@@ -134,6 +134,79 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       debugPrint(
           'FamilyRecipeService: Stack: ${stack.toString().split('\n').take(3).join('\n')}');
       return _fallbackRecipe();
+    }
+  }
+
+  /// Generiert ein kinderfreundliches Rezept zu einem GESUCHTEN Gericht
+  /// (z. B. "Kartoffelsalat"). Wird als KI-Fallback genutzt, wenn die Community
+  /// kein passendes Rezept hat.
+  Future<FamilyRecipe?> generateRecipeFor(String dish) async {
+    final wanted = dish.trim();
+    if (wanted.isEmpty) return generateRecipe();
+    await AIRateLimiter.initialize();
+    if (!AIRateLimiter.canMakeRequest()) {
+      debugPrint('FamilyRecipeService: Rate limit reached (generateFor)');
+      return null;
+    }
+    final season = _currentSeason();
+    final allergyText = _allergies.isEmpty
+        ? 'Keine bekannten Allergien'
+        : 'WICHTIG - Frei von: ${_allergies.join(", ")}';
+    final ageText = _childAge < 1
+        ? 'Baby (6-12 Monate, Brei/Fingerfood)'
+        : _childAge < 3
+            ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
+            : _childAge < 6
+                ? 'Kita-Kind ($_childAge Jahre, normal)'
+                : 'Schulkind ($_childAge Jahre, alles)';
+
+    final prompt = '''
+Erstelle EIN kinderfreundliches Familien-Rezept auf Deutsch für: "$wanted".
+
+Kontext:
+- Jüngstes Kind: $ageText
+- Saison: $season
+- $allergyText
+- Zeit: möglichst unter 35 Minuten
+- Portionen: 4
+
+Regeln:
+- Halte dich an das gewünschte Gericht "$wanted" (kindgerechte Variante, falls nötig milder/weicher).
+- Das Rezept MUSS für das angegebene Kindesalter sicher und geeignet sein.
+- Einfache Zutaten aus dem Supermarkt. Kein zu scharfer/bitterer Geschmack.
+- Gib einen konkreten, warmen Eltern-Tipp.
+- allergensFree: nur auflisten, wenn das Rezept tatsächlich frei davon ist.
+
+Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/danach):
+{
+  "title": "Name des Gerichts",
+  "description": "1 Satz warum Kinder das mögen",
+  "prepMinutes": 25,
+  "costPerPortion": 1.80,
+  "portions": 4,
+  "minChildAge": 2,
+  "ingredients": ["Zutat 1", "Zutat 2"],
+  "steps": ["Schritt 1.", "Schritt 2."],
+  "allergensFree": [],
+  "season": "$season",
+  "tip": "Ein kurzer Eltern-Tipp."
+}
+''';
+
+    try {
+      final modelName = APIConfig.getGeminiModelName();
+      final raw = await GeminiAIService(modelName: modelName).generateText(
+        prompt,
+        systemInstruction:
+            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
+            'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+      );
+      await AIRateLimiter.recordRequest();
+      if (raw.isEmpty) return null;
+      return _parseRecipe(raw);
+    } catch (e) {
+      debugPrint('FamilyRecipeService.generateRecipeFor: $e');
+      return null;
     }
   }
 
