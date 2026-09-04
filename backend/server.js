@@ -5644,6 +5644,37 @@ app.get('/api/profile/:userId', async (req, res) => {
   }
 });
 
+// TEMP-DIAGNOSE: liefert die echte Postgres-Fehlermeldung des Profil-Inserts.
+// Nach der Fehlersuche wieder entfernen.
+app.get('/api/profile-diag/:userId', async (req, res) => {
+  const userId = (req.params.userId || 'diag-uid').toString().trim();
+  try {
+    await ensureSocialSchemaReady();
+    const cols = await prisma.$queryRawUnsafe(
+      `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'UserProfile' ORDER BY ordinal_position`
+    );
+    const idx = await prisma.$queryRawUnsafe(
+      `SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'UserProfile'`
+    );
+    let insertError = null;
+    try {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "UserProfile" ("userId", "displayName", "username", "searchable", "isPrivate", "updatedAt")
+         VALUES ($1, $2, NULLIF($3, ''), $4, $5, NOW())
+         ON CONFLICT ("userId") DO UPDATE SET
+           "displayName" = COALESCE(NULLIF($2, ''), "UserProfile"."displayName"),
+           "updatedAt" = NOW()`,
+        userId, 'Diag', '', false, true
+      );
+    } catch (e) {
+      insertError = { message: e?.message || String(e), code: e?.code, meta: e?.meta };
+    }
+    return res.json({ columns: cols, indexes: idx, insertError });
+  } catch (error) {
+    return res.status(500).json({ diagError: error?.message || String(error), code: error?.code, meta: error?.meta });
+  }
+});
+
 app.post('/api/profile', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
