@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/ui/family_recipes_screen.dart';
 import 'package:parentpeak/ui/fridge_recipe_screen.dart';
+import 'package:parentpeak/ui/tischmoment_screen.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -105,6 +106,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           // KI-Kühlschrank-Foto: aus vorhandenen Zutaten ein Rezept
           _fridgeCard(theme),
           const SizedBox(height: 16),
+          // Herzens-Feature: sanfter Abend-Impuls (abends hervorgehoben)
+          _tischmomentCard(theme),
+          const SizedBox(height: 16),
           // Rezept-Card
           if (_loading)
             _loadingState(theme)
@@ -154,6 +158,80 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
               const Icon(Icons.arrow_forward_ios_rounded,
                   color: Colors.white, size: 16),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sanfter Abend-Impuls für das Tischmoment-Ritual. Ab 17 Uhr wird die Karte
+  /// warm hervorgehoben; tagsüber bleibt sie dezent.
+  Widget _tischmomentCard(ThemeData theme) {
+    final isEvening = DateTime.now().hour >= 17;
+    final title =
+        isEvening ? 'Zeit für euren Tischmoment 🕯️' : 'Unser Tischmoment';
+    final subtitle = isEvening
+        ? 'Haltet gemeinsam fest, was heute schön war.'
+        : 'Ein sanftes Abend-Ritual am Familientisch.';
+
+    final borderRadius = BorderRadius.circular(18);
+    return Material(
+      color: isEvening ? null : theme.colorScheme.surface,
+      borderRadius: borderRadius,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TischmomentScreen()),
+        ),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            gradient: isEvening
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF5B21B6), Color(0xFF7C3AED)],
+                  )
+                : null,
+            border: isEvening
+                ? null
+                : Border.all(
+                    color: theme.colorScheme.outlineVariant
+                        .withValues(alpha: 0.6)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Text('🕯️', style: TextStyle(fontSize: 26)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: TextStyle(
+                              color: isEvening
+                                  ? Colors.white
+                                  : theme.colorScheme.onSurface,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 2),
+                      Text(subtitle,
+                          style: TextStyle(
+                              color: isEvening
+                                  ? Colors.white70
+                                  : theme.colorScheme.onSurfaceVariant,
+                              fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    color: isEvening ? Colors.white : theme.colorScheme.outline,
+                    size: 16),
+              ],
+            ),
           ),
         ),
       ),
