@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AIRateLimiter {
   static const String _countKey = 'ai_rate.daily_count';
   static const String _dateKey = 'ai_rate.date';
-  static const int defaultDailyLimit = 25;
+  static const int defaultDailyLimit = 50;
 
   static int _dailyLimit = defaultDailyLimit;
   static int _todayCount = 0;

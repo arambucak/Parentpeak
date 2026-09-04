@@ -7,6 +7,15 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 
+/// Wird geworfen, wenn das tägliche KI-Limit erreicht ist. Erlaubt der UI,
+/// eine freundliche, spezifische Meldung statt einer generischen zu zeigen.
+class AiRateLimitException implements Exception {
+  final String message;
+  const AiRateLimitException(this.message);
+  @override
+  String toString() => message;
+}
+
 /// KI-Rezept-Service — generiert kinderfreundliche Rezepte via Gemini.
 ///
 /// Funktionsweise:
@@ -146,7 +155,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('FamilyRecipeService: Rate limit reached (generateFor)');
-      return null;
+      throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
     }
     final season = _currentSeason();
     final allergyText = _allergies.isEmpty
@@ -203,9 +212,31 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       );
       await AIRateLimiter.recordRequest();
       if (raw.isEmpty) return null;
-      return _parseRecipe(raw);
+      return _parseRecipeStrict(raw);
     } catch (e) {
       debugPrint('FamilyRecipeService.generateRecipeFor: $e');
+      return null;
+    }
+  }
+
+  /// Wie _parseRecipe, aber OHNE Zufalls-Fallback: gibt null zurück, wenn die
+  /// Antwort kein gültiges JSON ist. So bekommt der Nutzer bei einer Gericht-
+  /// Suche nie ein unpassendes Zufallsrezept untergeschoben.
+  FamilyRecipe? _parseRecipeStrict(String raw) {
+    try {
+      var text = raw.trim();
+      text = text.replaceAll(RegExp(r'^```(?:json)?\s*'), '');
+      text = text.replaceAll(RegExp(r'\s*```$'), '');
+      final start = text.indexOf('{');
+      final end = text.lastIndexOf('}');
+      if (start == -1 || end == -1 || end <= start) return null;
+      final map =
+          jsonDecode(text.substring(start, end + 1)) as Map<String, dynamic>;
+      map['id'] = 'recipe_${DateTime.now().millisecondsSinceEpoch}';
+      final recipe = FamilyRecipe.fromJson(map);
+      return recipe.title.trim().isEmpty ? null : recipe;
+    } catch (e) {
+      debugPrint('FamilyRecipeService._parseRecipeStrict: $e');
       return null;
     }
   }

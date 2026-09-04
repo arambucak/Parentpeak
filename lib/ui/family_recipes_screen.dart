@@ -95,17 +95,37 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
     final dish = _query.trim();
     if (dish.isEmpty) return;
     setState(() => _generatingAi = true);
-    await _aiService.initialize();
-    final recipe = await _aiService.generateRecipeFor(dish);
-    if (!mounted) return;
-    setState(() {
-      _aiRecipe = recipe;
-      _generatingAi = false;
-    });
-    if (recipe == null) {
+    try {
+      await _aiService.initialize();
+      final recipe = await _aiService.generateRecipeFor(dish);
+      if (!mounted) return;
+      setState(() {
+        _aiRecipe = recipe;
+        _generatingAi = false;
+      });
+      if (recipe == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Ich konnte gerade kein Rezept erstellen. Bitte versuche es '
+                  'gleich noch einmal.'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } on AiRateLimitException catch (e) {
+      if (!mounted) return;
+      setState(() => _generatingAi = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 5),
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _generatingAi = false);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content:
-            Text('Konnte gerade kein Rezept zaubern — bitte erneut versuchen.'),
+        content: Text(
+            'Ich konnte gerade kein Rezept erstellen. Bitte versuche es gleich '
+            'noch einmal.'),
         behavior: SnackBarBehavior.floating,
       ));
     }
