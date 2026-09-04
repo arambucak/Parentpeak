@@ -41,8 +41,9 @@ Ohne signierten Keystore kann Google Play kein AAB annehmen.
 # Keystore-Ordner anlegen (liegt außerhalb von android/app, nicht im Git)
 mkdir -p android/keystores
 
-# Upload-Keystore erzeugen (gültig 27 Jahre)
-keytool -genkey -v \
+# Upload-Keystore interaktiv erzeugen (gültig rund 27 Jahre).
+# Passwörter nicht als Kommandozeilenargumente angeben: keytool fragt sie ab.
+keytool -genkeypair -v \
   -keystore android/keystores/upload-keystore.jks \
   -keyalg RSA -keysize 2048 -validity 10000 \
   -alias upload
@@ -52,7 +53,11 @@ Du wirst nach einem Passwort und ein paar Angaben (Name, Organisation) gefragt.
 **Bewahre Keystore-Datei und Passwörter sicher auf** — ohne sie kannst du keine
 App-Updates mehr veröffentlichen.
 
-Dann `android/key.properties` anlegen (aus dem Template):
+Dann `android/key.properties` aus dem committeten Template anlegen:
+
+```bash
+cp android/key.properties.example android/key.properties
+```
 
 ```properties
 storePassword=DEIN_STORE_PASSWORT
@@ -63,6 +68,14 @@ storeFile=../keystores/upload-keystore.jks
 
 > `key.properties`, `*.jks` und `keystores/` sind bereits in `.gitignore` —
 > sie landen also nie im Repo.
+
+Alias und Zertifikat vor dem ersten Release prüfen:
+
+```bash
+keytool -list -v \
+  -keystore android/keystores/upload-keystore.jks \
+  -alias upload
+```
 
 ---
 

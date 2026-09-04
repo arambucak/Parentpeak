@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "Parentpeak needs camera access so you can photograph treasure items directly.";
+"NSPhotoLibraryUsageDescription" = "Parentpeak needs access to your photo library so you can select existing treasure photos.";
+"NSPhotoLibraryAddUsageDescription" = "Parentpeak may save images to your photo library when you share treasure photos.";
+"NSLocationWhenInUseUsageDescription" = "Parentpeak uses your location to find events and families near you.";

@@ -70,7 +70,11 @@ if should_inject_dart_defines "${flutter_args[0]:-}" && [[ -f "$DOTENV_FILE" ]];
     dotenv_defines+=("$dotenv_define")
   done < <(add_dart_defines_from_env_file "$DOTENV_FILE")
   if [[ "${#dotenv_defines[@]}" -gt 0 ]]; then
-    flutter_args=("${flutter_args[0]}" "${dotenv_defines[@]}" "${flutter_args[@]:1}")
+    if [[ "${flutter_args[0]}" == "build" && "${#flutter_args[@]}" -gt 1 ]]; then
+      flutter_args=("${flutter_args[0]}" "${flutter_args[1]}" "${dotenv_defines[@]}" "${flutter_args[@]:2}")
+    else
+      flutter_args=("${flutter_args[0]}" "${dotenv_defines[@]}" "${flutter_args[@]:1}")
+    fi
   fi
 fi
 
