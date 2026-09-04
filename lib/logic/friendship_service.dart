@@ -136,6 +136,17 @@ class FriendshipService extends ChangeNotifier {
     if (api == null || uid == null || uid.isEmpty || toUid.isEmpty)
       return false;
     if (uid == toUid) return false;
+    // Sicherheitsnetz: eigenen Anzeigenamen serverseitig sichern, BEVOR die
+    // Anfrage rausgeht — so sieht der Empfaenger nie 'Familie'.
+    final myName = FirebaseAuth.instance.currentUser?.displayName?.trim();
+    if (myName != null && myName.isNotEmpty) {
+      try {
+        await api.postJsonAny('/api/profile', {
+          'userId': uid,
+          'displayName': myName,
+        });
+      } catch (_) {}
+    }
     try {
       await api.postJsonAny('/api/friendships/request', {
         'fromUid': uid,

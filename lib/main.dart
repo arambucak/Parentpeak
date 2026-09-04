@@ -23,6 +23,7 @@ import 'package:parentpeak/ui/auth/login_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_screen.dart';
 import 'package:parentpeak/logic/onboarding_sync_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/entitlement_service.dart';
@@ -521,6 +522,23 @@ class _AuthGateState extends State<AuthGate> {
     AuthService.instance.addListener(_refresh);
     _syncEntitlements();
     _checkOnboarding();
+    _ensureUserProfile();
+  }
+
+  /// Stellt sicher, dass der Anzeigename des eingeloggten Nutzers serverseitig
+  /// im UserProfile steht — direkt nach dem Login, unabhaengig davon, ob die
+  /// Netzwerk-Kachel geoeffnet wird. Verhindert 'Familie'-Platzhalter bei
+  /// Freundschaftsanfragen/Chat.
+  Future<void> _ensureUserProfile() async {
+    final user = AuthService.instance.currentUser;
+    if (user == null) return;
+    final name = user.displayName.trim().isNotEmpty
+        ? user.displayName.trim()
+        : user.friendlyName;
+    if (name.isEmpty) return;
+    try {
+      await UserProfileService.instance.setDisplayName(name);
+    } catch (_) {}
   }
 
   @override
@@ -578,6 +596,8 @@ class _AuthGateState extends State<AuthGate> {
     _syncEntitlements();
     // Nach Login den (ggf. server-seitigen) Onboarding-Status neu bestimmen.
     _checkOnboarding();
+    // Nach Login den Anzeigenamen serverseitig sichern (UserProfile).
+    _ensureUserProfile();
   }
 
   @override
