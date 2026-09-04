@@ -19,29 +19,12 @@ import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
-import 'package:parentpeak/logic/parent_friends_service.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
-
-/// Bringt einen Freundes-Code in die kanonische Form `pp-xxxxxx` (klein,
-/// genau ein Bindestrich nach 'pp'). Akzeptiert Eingaben mit/ohne Bindestrich,
-/// mit Leerzeichen oder in Grossbuchstaben. Verhindert kaputte Kanten wie
-/// `pprkfns8` (ohne Bindestrich), die nie zum echten Code `pp-rkfns8` passen.
-String canonicalFriendCode(String raw) {
-  var s = raw.trim().toLowerCase().replaceAll(RegExp(r'[\s]'), '');
-  // Alle Bindestriche entfernen, dann genau einen nach 'pp' setzen.
-  s = s.replaceAll('-', '');
-  if (s.startsWith('pp')) {
-    final rest = s.substring(2);
-    return rest.isEmpty ? 'pp-' : 'pp-$rest';
-  }
-  // Falls jemand den Code ohne 'pp'-Praefix eingibt.
-  return 'pp-$s';
-}
 
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
@@ -77,17 +60,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
     ParentCoinService.instance.initialize();
     ParentCoinService.instance.addListener(_rebuild);
-    ParentFriendsService.instance.addListener(_rebuild);
     FriendshipService.instance.addListener(_rebuild);
     _init();
     final incoming = widget.initialFriendCode;
     if (incoming != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (incoming.startsWith('invite:')) {
-          // NEU: UID-Einladungslink -> Anfrage-Flow (1 Tap).
+          // Einladungslink -> Anfrage-Flow (1 Tap).
           _handleInviteToken(incoming.substring('invite:'.length));
         } else {
-          _showAddFriendSheet(Theme.of(context), prefillCode: incoming);
+          // Alter Freund-Link (parentpeak.de/freund/<CODE>): Code -> UID
+          // aufloesen und eine UID-Freundschaftsanfrage senden.
+          _handleLegacyCodeLink(incoming);
         }
       });
     }
@@ -97,7 +81,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   void dispose() {
     _tabs.dispose();
     ParentCoinService.instance.removeListener(_rebuild);
-    ParentFriendsService.instance.removeListener(_rebuild);
     FriendshipService.instance.removeListener(_rebuild);
     super.dispose();
   }
@@ -149,8 +132,53 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     ));
   }
 
+  /// Alter Freund-Link (parentpeak.de/freund/<CODE>): den Code ueber die noch
+  /// vorhandene lookup-Bruecke in eine UID aufloesen und eine Anfrage senden.
+  /// So funktionieren bereits geteilte alte Links weiter — ohne Code-Eingabe.
+  Future<void> _handleLegacyCodeLink(String code) async {
+    final resolved = await FriendshipService.instance.resolveCode(code);
+    if (!mounted) return;
+    if (resolved == null || (resolved['uid'] ?? '').isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'Dieser Link ist nicht mehr aktiv. Bitte nutze den Einladungslink '
+            'der anderen Familie.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    final name = resolved['name']?.isNotEmpty == true
+        ? resolved['name']!
+        : 'diese Familie';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Verbinden?'),
+        content: Text('Möchtest du dich mit $name verbinden?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Verbinden')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(sent
+          ? 'Anfrage an $name gesendet. 👋'
+          : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: sent ? const Color(0xFF16A34A) : null,
+    ));
+  }
+
   Future<void> _init() async {
-    await ParentFriendsService.instance.load();
     final prefs = await SharedPreferences.getInstance();
     final dismissed = prefs.getStringList('friends.dismissed') ?? [];
     if (mounted) setState(() => _dismissedSuggestions = dismissed.toSet());
@@ -159,11 +187,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     if (p != null) {
       unawaited(_loadMatches());
     }
-
-    // Sicherstellen, dass der Freundes-Code zur aktuellen Firebase-UID passt
-    // (account-stabil, gleich auf App + Web). Wichtig, falls der Login erst
-    // nach dem ersten initialize() erfolgte.
-    await ParentCoinService.instance.refreshReferralCodeForCurrentUser();
 
     // NEUES FUNDAMENT: den app-weiten Anzeigenamen serverseitig sichern
     // (uid -> displayName). Kommt aus der Registrierung; hier nur gespiegelt.
@@ -175,57 +198,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     // Neue UID-Freundschaften + offene Anfragen laden.
     unawaited(FriendshipService.instance.load());
 
-    // (Legacy, uebergangsweise) alte Code-Registrierung — schadet nicht.
-    final myCode = ParentFriendsService.instance.myCode;
-    unawaited(_backend.registerFriendCode(myCode, myName, userId: myUserId));
-
-    // Auto-add anyone who connected with us since last open. Ueber
-    // connectMutual, damit beide Kanten + geteilte roomId sauber gesetzt sind.
-    final pending = await _backend.claimPendingFriendConnections(myCode);
-    for (final conn in pending) {
-      final code = (conn['fromCode'] as String? ?? '').toLowerCase();
-      if (code.isNotEmpty) {
-        await ParentFriendsService.instance.connectMutual(
-          friendCode: code,
-          myName: myName,
-          myUserId: myUserId,
-        );
-      }
-    }
-    // Show notification if new friends were auto-added
-    if (pending.isNotEmpty && mounted) {
-      final names =
-          pending.map((c) => c['fromName']?.toString() ?? 'Jemand').join(', ');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.people_rounded, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              pending.length == 1
-                  ? '$names hat sich mit dir verbunden! 🎉'
-                  : '${pending.length} neue Verbindungen: $names 🎉',
-              style: const TextStyle(fontSize: 13),
-            ),
-          ),
-        ]),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF16A34A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 5),
-      ));
-    }
     try {
       final sug = await _backend.getProfiles();
       if (mounted) {
-        final myCode = ParentFriendsService.instance.myCode;
-        final friendCodes =
-            ParentFriendsService.instance.friends.map((f) => f.code).toSet();
+        // Vorschlaege filtern: nicht ich selbst, nicht bereits befreundet
+        // (UID-basiert), nicht bereits weggewischt.
+        final friendUids =
+            FriendshipService.instance.friends.map((f) => f.uid).toSet();
         final suggestions = sug
             .where((mp) =>
                 mp['userId'] != null &&
-                !(mp['userId'] as String).startsWith(myCode) &&
-                !friendCodes.contains(mp['userId'] as String) &&
+                (mp['userId'] as String) != myUserId &&
+                !friendUids.contains(mp['userId'] as String) &&
                 !_dismissedSuggestions.contains(mp['userId'] as String? ?? ''))
             .take(6)
             .map((mp) {
@@ -1070,14 +1054,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _freundeTab(ThemeData theme) {
-    final myCode = ParentFriendsService.instance.myCode.toUpperCase();
-    final shareMsg = 'Hey! 👋 Ich bin auf ParentPeak – verbinde dich mit mir:\n'
-        'parentpeak.de/freund/$myCode';
-
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ── Code card mit OTP-Style Zeichen ────────────────────────────────
+        // ── Einladungs-Karte: verbinden per Link/QR (1 Tap) ────────────────
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
@@ -1097,60 +1077,46 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             ],
           ),
           child: Column(children: [
+            const Icon(Icons.group_add_rounded, color: Colors.white, size: 34),
+            const SizedBox(height: 12),
+            const Text(
+              'Freunde einladen',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
             Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'your_friend_code'),
-                style: TextStyle(
-                    color: Colors.white60,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2.5)),
-            const SizedBox(height: 14),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                ...myCode.split('').map((ch) => Container(
-                      width: 38,
-                      height: 46,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.35),
-                            width: 1.5),
-                      ),
-                      child: Center(
-                          child: Text(ch,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w900))),
-                    )),
-              ]),
+              'Teile deinen persönlichen Link oder QR-Code – ein Tap und '
+              'ihr seid verbunden.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 12,
+                  height: 1.4),
             ),
             const SizedBox(height: 18),
             Row(children: [
               Expanded(
-                  child:
-                      _shareActionBtn(Icons.copy_all_rounded, 'Kopieren', () {
-                Clipboard.setData(ClipboardData(text: myCode));
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(_t('network_code_copied'))));
-              })),
-              const SizedBox(width: 8),
-              Expanded(
                   child: _shareActionBtn(Icons.ios_share_rounded, 'Teilen',
                       () async {
                 final box = context.findRenderObject() as RenderBox?;
-                // Frischen Einladungslink erzeugen (1-Tap-Verbinden fuer den
-                // Empfaenger). Fallback: alte Code-Nachricht.
+                // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
                 final link =
                     await FriendshipService.instance.createInviteLink();
-                final msg = link != null
-                    ? 'Hey! 👋 Verbinde dich mit mir auf ParentPeak:\n$link'
-                    : shareMsg;
-                await Share.share(msg,
+                if (link == null) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text(
+                          'Link konnte nicht erstellt werden — bitte später erneut.'),
+                      behavior: SnackBarBehavior.floating,
+                    ));
+                  }
+                  return;
+                }
+                await Share.share(
+                    'Hey! 👋 Verbinde dich mit mir auf ParentPeak:\n$link',
                     sharePositionOrigin: box != null
                         ? box.localToGlobal(Offset.zero) & box.size
                         : null);
@@ -1162,26 +1128,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 final link =
                     await FriendshipService.instance.createInviteLink();
                 if (!mounted) return;
-                _showFriendQR(theme, link ?? 'parentpeak.de/freund/$myCode');
+                if (link == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text(
+                        'QR-Code konnte nicht erstellt werden — bitte später erneut.'),
+                    behavior: SnackBarBehavior.floating,
+                  ));
+                  return;
+                }
+                _showFriendQR(theme, link);
               })),
             ]),
           ]),
-        ),
-        const SizedBox(height: 12),
-
-        OutlinedButton.icon(
-          onPressed: () => _showAddFriendSheet(theme),
-          icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-          label: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'add_friend_code')),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF7C3AED),
-            side: BorderSide(
-                color: const Color(0xFF7C3AED).withValues(alpha: 0.5)),
-            minimumSize: const Size(double.infinity, 48),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
         ),
         const SizedBox(height: 32),
 
@@ -1540,18 +1498,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           Expanded(
             child: FilledButton(
               onPressed: () async {
-                final code = s.id.length >= 6
-                    ? s.id.substring(0, 6).toLowerCase()
-                    : s.id.toLowerCase();
-                await ParentFriendsService.instance.addFriend(ParentFriend(
-                    code: code, name: s.name, addedAt: DateTime.now()));
+                // Echte UID-Freundschaftsanfrage (neues System). s.id ist die
+                // vollstaendige UID des Vorschlags.
+                final ok = await FriendshipService.instance.sendRequest(s.id);
                 if (mounted) {
                   setState(() {
                     _dismissedSuggestions.add(s.id);
                     _suggestedProfiles.removeWhere((x) => x.id == s.id);
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${s.name} verbunden! 🎉')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(ok
+                        ? 'Anfrage an ${s.name} gesendet. 👋'
+                        : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: ok ? const Color(0xFF16A34A) : null,
+                  ));
                 }
               },
               style: FilledButton.styleFrom(
@@ -1678,238 +1639,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           ),
         ]),
       ),
-    );
-  }
-
-  /// Looks up a display name for the given code via getProfiles().
-  Future<String?> _lookupNameByCode(String rawCode) async {
-    final normalized = canonicalFriendCode(rawCode);
-    if (normalized == 'pp-') return null;
-    return _backend.lookupFriendName(normalized);
-  }
-
-  void _showAddFriendSheet(ThemeData theme, {String? prefillCode}) {
-    final codeCtrl = TextEditingController(text: prefillCode ?? '');
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        String? resolvedName;
-        String? errorMsg;
-        bool isLooking = false;
-
-        return StatefulBuilder(builder: (ctx, setSheet) {
-          final myCode = ParentFriendsService.instance.myCode.toUpperCase();
-
-          Future<void> onCodeChanged(String val) async {
-            final normalized = val.trim().toUpperCase();
-            // Trigger lookup once input looks complete (PP-XXXXXX = 9 chars)
-            if (normalized.length < 6) {
-              setSheet(() {
-                resolvedName = null;
-                errorMsg = null;
-              });
-              return;
-            }
-            if (canonicalFriendCode(val) == canonicalFriendCode(myCode)) {
-              setSheet(() {
-                resolvedName = null;
-                errorMsg = 'Das ist dein eigener Code!';
-              });
-              return;
-            }
-            setSheet(() {
-              isLooking = true;
-              resolvedName = null;
-              errorMsg = null;
-            });
-            final name = await _lookupNameByCode(normalized);
-            setSheet(() {
-              isLooking = false;
-              resolvedName = name;
-              errorMsg = null;
-            });
-          }
-
-          return Padding(
-            padding:
-                EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                      color: theme.colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2)),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                    AppStringsManager.getString(
-                        languageService.currentLanguage, 'connect_by_code'),
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 4),
-                Text(
-                    AppStringsManager.getString(
-                        languageService.currentLanguage, 'enter_friend_code'),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: codeCtrl,
-                  textCapitalization: TextCapitalization.characters,
-                  onChanged: onCodeChanged,
-                  decoration: InputDecoration(
-                    labelText: 'Freundschafts-Code',
-                    hintText: 'PP-XXXXXX',
-                    suffixIcon: isLooking
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Color(0xFF8B5CF6))))
-                        : resolvedName != null
-                            ? const Icon(Icons.check_circle_rounded,
-                                color: Color(0xFF059669))
-                            : null,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                            color: Color(0xFF8B5CF6), width: 1.5)),
-                    errorText: errorMsg,
-                  ),
-                ),
-                // Name preview after lookup
-                if (resolvedName != null) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF059669).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: _avatarColor(resolvedName!),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            resolvedName![0].toUpperCase(),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(resolvedName!,
-                                  style: theme.textTheme.bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700)),
-                              Text(_t('network_found'),
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: Color(0xFF059669),
-                                      fontWeight: FontWeight.w600)),
-                            ]),
-                      ),
-                    ]),
-                  ),
-                ] else if (!isLooking &&
-                    codeCtrl.text.trim().length >= 6 &&
-                    errorMsg == null) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    'Kein Profil gefunden \u2013 du kannst trotzdem verbinden.',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: theme.colorScheme.outline),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    // Nur verbinden, wenn der Code auf einen echten Nutzer
-                    // aufgeloest wurde (resolvedName != null). Das verhindert
-                    // kaputte Kanten zu Phantom-/Tippfehler-Codes.
-                    onPressed: errorMsg != null ||
-                            codeCtrl.text.trim().isEmpty ||
-                            isLooking ||
-                            resolvedName == null
-                        ? null
-                        : () async {
-                            final code = canonicalFriendCode(codeCtrl.text);
-                            final messenger = ScaffoldMessenger.of(context);
-                            // Bruecke ins neue UID-System: Code -> UID auflösen
-                            // und eine echte Freundschaftsanfrage senden.
-                            final resolved = await FriendshipService.instance
-                                .resolveCode(code);
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            if (resolved != null && resolved['uid'] != null) {
-                              final ok = await FriendshipService.instance
-                                  .sendRequest(resolved['uid']!);
-                              if (!mounted) return;
-                              final n = (resolved['name']?.isNotEmpty == true)
-                                  ? resolved['name']!
-                                  : 'diese Familie';
-                              messenger.showSnackBar(SnackBar(
-                                content: Text(ok
-                                    ? 'Anfrage an $n gesendet. 👋'
-                                    : 'Konnte nicht verbinden.'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor:
-                                    ok ? const Color(0xFF16A34A) : null,
-                              ));
-                            } else if (mounted) {
-                              messenger.showSnackBar(const SnackBar(
-                                content: Text(
-                                    'Dieser Code ist noch nicht aktiv. Bitte '
-                                    'nutze den Einladungslink der anderen Familie.'),
-                                behavior: SnackBarBehavior.floating,
-                              ));
-                            }
-                          },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: Text(resolvedName != null
-                        ? 'Mit $resolvedName verbinden'
-                        : 'Verbinden'),
-                  ),
-                ),
-              ]),
-            ),
-          );
-        });
-      },
     );
   }
 

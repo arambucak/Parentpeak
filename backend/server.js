@@ -5085,42 +5085,8 @@ app.post('/parent-matching/messages', async (req, res) => {
 const friendRegistry = new Map();          // in-memory fallback
 const friendPendingConnections = new Map(); // in-memory fallback
 
-app.post('/api/friends/register', async (req, res) => {
-  const code = canonicalCode(req.body.code);
-  const name = (req.body.name || '').toString().trim();
-  const userId = (req.body.userId || '').toString().trim();
-  if (!code || code === 'pp-' || !name) return res.status(400).json({ error: 'code und name erforderlich' });
-  try {
-    await ensureSocialSchemaReady();
-    // Selbstheilung: Wenn diese UID bereits an ANDERE (alte) Codes haengt,
-    // deren Zuordnung loesen — so gehoert eine UID zu genau einem aktiven Code.
-    if (userId) {
-      await prisma.$executeRawUnsafe(
-        `UPDATE "FriendRegistry" SET "userId" = NULL WHERE "userId" = $1 AND "code" <> $2`,
-        userId, code
-      );
-    }
-    // Name kommt vom Besitzer (der sich selbst registriert). userId verbindlich
-    // setzen, wenn mitgeschickt.
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "FriendRegistry" ("code", "name", "userId", "updatedAt") VALUES ($1, $2, NULLIF($3, ''), NOW())
-       ON CONFLICT ("code") DO UPDATE SET "name" = $2,
-         "userId" = COALESCE(NULLIF($3, ''), "FriendRegistry"."userId"), "updatedAt" = NOW()`,
-      code, name, userId
-    );
-    return res.json({ ok: true });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/friends/register', error)) return;
-    if (userId) {
-      for (const [c, v] of friendRegistry.entries()) {
-        if (c !== code && v && v.userId === userId) v.userId = null;
-      }
-    }
-    friendRegistry.set(code, { name, userId: userId || null, updatedAt: new Date().toISOString() });
-    return res.json({ ok: true });
-  }
-});
-
+// Aufloesen von Name + UID zu einem (alten) Freundes-Code. BEHALTEN als
+// Bruecke: alte Einladungslinks + resolveCode im Client + DSGVO/Push-Altlasten.
 app.get('/api/friends/lookup/:code', async (req, res) => {
   const code = canonicalCode(req.params.code);
   try {
@@ -5141,55 +5107,6 @@ app.get('/api/friends/lookup/:code', async (req, res) => {
     const entry = friendRegistry.get(code);
     if (!entry) return res.status(404).json({ error: 'Nicht gefunden' });
     return res.json({ name: entry.name, uid: entry.userId || null });
-  }
-});
-
-app.post('/api/friends/connect', async (req, res) => {
-  const fromCode = (req.body.fromCode || '').toString().trim().toLowerCase();
-  const fromName = (req.body.fromName || '').toString().trim();
-  const toCode   = (req.body.toCode   || '').toString().trim().toLowerCase();
-  if (!fromCode || !toCode) return res.status(400).json({ error: 'fromCode und toCode erforderlich' });
-  try {
-    await ensureSocialSchemaReady();
-    const existing = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "FriendPendingConnection" WHERE "toCode" = $1 AND "fromCode" = $2`,
-      toCode, fromCode
-    );
-    if (existing.length === 0) {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "FriendPendingConnection" ("id", "toCode", "fromCode", "fromName", "connectedAt") VALUES ($1, $2, $3, $4, NOW())`,
-        generateId('fpc'), toCode, fromCode, fromName
-      );
-    }
-    return res.json({ ok: true });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/friends/connect', error)) return;
-    if (!friendPendingConnections.has(toCode)) friendPendingConnections.set(toCode, []);
-    const list = friendPendingConnections.get(toCode);
-    if (!list.some(e => e.fromCode === fromCode)) {
-      list.push({ fromCode, fromName, connectedAt: new Date().toISOString() });
-    }
-    return res.json({ ok: true });
-  }
-});
-
-app.get('/api/friends/pending/:code', async (req, res) => {
-  const code = (req.params.code || '').toString().trim().toLowerCase();
-  try {
-    await ensureSocialSchemaReady();
-    const connections = await prisma.$queryRawUnsafe(
-      `SELECT "fromCode", "fromName", "connectedAt" FROM "FriendPendingConnection" WHERE "toCode" = $1`,
-      code
-    );
-    await prisma.$executeRawUnsafe(
-      `DELETE FROM "FriendPendingConnection" WHERE "toCode" = $1`, code
-    );
-    return res.json({ connections });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /api/friends/pending', error)) return;
-    const connections = friendPendingConnections.get(code) || [];
-    friendPendingConnections.delete(code);
-    return res.json({ connections });
   }
 });
 
@@ -5303,76 +5220,8 @@ async function expandIdentities(rawId) {
   return [...out];
 }
 
-// Save a friend edge for the owner (one direction). The client calls this for
-// both sides so each user can later restore their own list.
-app.post('/api/friends/edge', async (req, res) => {
-  const ownerCode = canonicalCode(req.body.ownerCode);
-  const friendCode = canonicalCode(req.body.friendCode);
-  const friendName = (req.body.friendName || 'Familie').toString().trim().slice(0, 100);
-  if (!ownerCode || ownerCode === 'pp-' || !friendCode || friendCode === 'pp-') {
-    return res.status(400).json({ error: 'ownerCode und friendCode erforderlich' });
-  }
-  try {
-    await ensureSocialSchemaReady();
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "FriendEdge" ("ownerCode", "friendCode", "friendName", "createdAt")
-       VALUES ($1, $2, $3, NOW())
-       ON CONFLICT ("ownerCode", "friendCode") DO UPDATE SET "friendName" = $3`,
-      ownerCode, friendCode, friendName
-    );
-    return res.json({ ok: true });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/friends/edge', error)) return;
-    if (!friendEdges.has(ownerCode)) friendEdges.set(ownerCode, []);
-    const list = friendEdges.get(ownerCode);
-    const existing = list.find(e => e.friendCode === friendCode);
-    if (existing) { existing.friendName = friendName; }
-    else { list.push({ friendCode, friendName }); }
-    return res.json({ ok: true });
-  }
-});
-
-// Remove a friend edge.
-app.delete('/api/friends/edge', async (req, res) => {
-  const ownerCode = (req.query.ownerCode || req.body?.ownerCode || '').toString().trim().toLowerCase();
-  const friendCode = (req.query.friendCode || req.body?.friendCode || '').toString().trim().toLowerCase();
-  if (!ownerCode || !friendCode) {
-    return res.status(400).json({ error: 'ownerCode und friendCode erforderlich' });
-  }
-  try {
-    await ensureSocialSchemaReady();
-    await prisma.$executeRawUnsafe(
-      `DELETE FROM "FriendEdge" WHERE "ownerCode" = $1 AND "friendCode" = $2`,
-      ownerCode, friendCode
-    );
-    return res.json({ ok: true });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'DELETE /api/friends/edge', error)) return;
-    const list = friendEdges.get(ownerCode) || [];
-    friendEdges.set(ownerCode, list.filter(e => e.friendCode !== friendCode));
-    return res.json({ ok: true });
-  }
-});
-
-// Restore the durable friend list for a user by code.
-app.get('/api/friends/list/:code', async (req, res) => {
-  const code = (req.params.code || '').toString().trim().toLowerCase();
-  if (!code) return res.status(400).json({ error: 'code erforderlich' });
-  try {
-    await ensureSocialSchemaReady();
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT "friendCode", "friendName", "createdAt" FROM "FriendEdge" WHERE "ownerCode" = $1 ORDER BY "createdAt" ASC`,
-      code
-    );
-    return res.json({ friends: rows });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /api/friends/list', error)) return;
-    const list = friendEdges.get(code) || [];
-    return res.json({ friends: list.map(e => ({ ...e, createdAt: new Date().toISOString() })) });
-  }
-});
-
 // Loest Name + userId zu einem Freundes-Code auf (DB + In-Memory-Fallback).
+// BEHALTEN: von isUserSuspended + Chat-Push (Alt-Raeume) + DSGVO genutzt.
 async function resolveFriendRegistry(code) {
   const c = (code || '').toString().trim().toLowerCase();
   if (!c) return { name: null, userId: null };
@@ -5403,133 +5252,7 @@ function canonicalCode(raw) {
   return s ? `pp-${s}` : '';
 }
 
-// Deterministische, geteilte Raum-ID aus zwei Codes (beide Seiten identisch).
-function computeRoomId(codeA, codeB) {
-  return [canonicalCode(codeA), canonicalCode(codeB)].sort().join('-');
-}
-
-/// Atomare beidseitige Freundschaft: schreibt beide Kanten, loest Namen auf,
-/// liefert die geteilte roomId zurueck. Kern des sauberen Chat-Fundaments.
-app.post('/api/friends/connect-mutual', async (req, res) => {
-  const myCode = canonicalCode(req.body.myCode);
-  const myName = (req.body.myName || '').toString().trim().slice(0, 100);
-  const myUserId = (req.body.myUserId || '').toString().trim();
-  const friendCode = canonicalCode(req.body.friendCode);
-  if (!myCode || myCode === 'pp-' || !friendCode || friendCode === 'pp-') {
-    return res.status(400).json({ error: 'myCode und friendCode erforderlich' });
-  }
-  if (myCode === friendCode) {
-    return res.status(400).json({ error: 'Eigener Code nicht erlaubt' });
-  }
-
-  // Namen aufloesen: bevorzugt Registry, sonst uebergebener eigener Name.
-  const friendReg = await resolveFriendRegistry(friendCode);
-  const friendName = friendReg.name || 'Familie';
-  const resolvedMyName = myName || (await resolveFriendRegistry(myCode)).name || 'Familie';
-  const roomId = computeRoomId(myCode, friendCode);
-
-  // Eigenen Code (mit Name + userId) registrieren, damit die Gegenseite uns
-  // spaeter ebenfalls aufloesen kann (Name + Push-Ziel).
-  try {
-    await ensureSocialSchemaReady();
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "FriendRegistry" ("code", "name", "userId", "updatedAt") VALUES ($1, $2, $3, NOW())
-       ON CONFLICT ("code") DO UPDATE SET "name" = $2,
-         "userId" = COALESCE(NULLIF($3, ''), "FriendRegistry"."userId"), "updatedAt" = NOW()`,
-      myCode, resolvedMyName, myUserId
-    );
-    // Beide Kanten atomar schreiben.
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "FriendEdge" ("ownerCode", "friendCode", "friendName", "createdAt")
-       VALUES ($1, $2, $3, NOW())
-       ON CONFLICT ("ownerCode", "friendCode") DO UPDATE SET "friendName" = $3`,
-      myCode, friendCode, friendName
-    );
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "FriendEdge" ("ownerCode", "friendCode", "friendName", "createdAt")
-       VALUES ($1, $2, $3, NOW())
-       ON CONFLICT ("ownerCode", "friendCode") DO UPDATE SET "friendName" = $3`,
-      friendCode, myCode, resolvedMyName
-    );
-    return res.json({
-      ok: true,
-      roomId,
-      friendCode,
-      friendName,
-      myName: resolvedMyName,
-    });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/friends/connect-mutual', error)) return;
-    // In-Memory-Fallback: beide Kanten + Registry.
-    friendRegistry.set(myCode, { name: resolvedMyName, userId: myUserId, updatedAt: new Date().toISOString() });
-    if (!friendEdges.has(myCode)) friendEdges.set(myCode, []);
-    if (!friendEdges.get(myCode).some(e => e.friendCode === friendCode)) {
-      friendEdges.get(myCode).push({ friendCode, friendName });
-    }
-    if (!friendEdges.has(friendCode)) friendEdges.set(friendCode, []);
-    if (!friendEdges.get(friendCode).some(e => e.friendCode === myCode)) {
-      friendEdges.get(friendCode).push({ friendCode: myCode, friendName: resolvedMyName });
-    }
-    return res.json({ ok: true, roomId, friendCode, friendName, myName: resolvedMyName });
-  }
-});
-
 // Diagnose (read-only) fuer Freundschaft/Chat. Gibt KEINE Geheimnisse preis:
-// nur Codes, Namen, ob eine userId hinterlegt ist (bool) und die Kanten.
-app.get('/api/friends/debug/:code', async (req, res) => {
-  const code = (req.params.code || '').toString().trim().toLowerCase();
-  if (!code) return res.status(400).json({ error: 'code erforderlich' });
-  const out = {
-    code,
-    registry: null,
-    uidPrefix: null,
-    identities: [],
-    suspendedCheck: null,
-    suspensionRows: [],
-    reportRows: [],
-    edges: [],
-    errors: [],
-  };
-  try {
-    await ensureSocialSchemaReady();
-    const reg = await prisma.$queryRawUnsafe(
-      `SELECT "code", "name", "userId" FROM "FriendRegistry" WHERE "code" = $1`,
-      code
-    );
-    if (reg[0]) {
-      const uid = reg[0].userId || '';
-      out.registry = {
-        code: reg[0].code,
-        name: reg[0].name,
-        hasUserId: uid !== '',
-      };
-      // Nur ein kurzer Praefix der UID (kein Geheimnis), um Matching zu pruefen.
-      out.uidPrefix = uid ? uid.substring(0, 8) : null;
-    }
-    // Welche Identitaeten leitet der Server aus diesem Code ab?
-    out.identities = await expandIdentities(code);
-    // Greift der Suspension-Check fuer diesen Code?
-    out.suspendedCheck = await isUserSuspended(code);
-    // Welche Suspension-Zeilen betreffen diese Identitaeten?
-    out.suspensionRows = await prisma.$queryRawUnsafe(
-      `SELECT "userId", "reason" FROM "SafetySuspension" WHERE "userId" = ANY($1::text[])`,
-      out.identities
-    );
-    out.reportRows = await prisma.$queryRawUnsafe(
-      `SELECT "id", "reportedUserId", "status" FROM "SafetyReport" WHERE "reportedUserId" = ANY($1::text[]) OR "reportedUserId" = $2`,
-      out.identities, code
-    );
-    const edges = await prisma.$queryRawUnsafe(
-      `SELECT "ownerCode", "friendCode", "friendName" FROM "FriendEdge" WHERE "ownerCode" = $1 OR "friendCode" = $1`,
-      code
-    );
-    out.edges = edges;
-  } catch (e) {
-    out.errors.push(e?.message || String(e));
-  }
-  return res.json(out);
-});
-
 // ─── Onboarding Minimal-Sync (Option A) ────────────────────────────────────
 const onboardingProfiles = new Map(); // in-memory fallback: userId -> {...}
 

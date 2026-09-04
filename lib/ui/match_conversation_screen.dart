@@ -9,7 +9,6 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
-import 'package:parentpeak/logic/parent_friends_service.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
@@ -139,32 +138,18 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   }
 
   /// Stabile Identitaet des Gegenuebers fuer Melden/Blockieren/Sperren.
-  /// Im Freund-Chat ist widget.profileId die roomId. NEUES Format: 'uidA__uidB'
-  /// -> wir nehmen die Haelfte, die NICHT meine eigene UID ist. ALTES Format
-  /// 'pp-a-pp-b' als Fallback. Im Match-Chat ist profileId bereits die
-  /// echte Profil-/User-ID.
+  /// Im Freund-Chat ist widget.profileId die roomId im Format 'uidA__uidB'
+  /// -> die Gegenseite ist die Haelfte, die NICHT meine eigene UID ist. Im
+  /// Match-Chat ist profileId bereits die echte Profil-/User-ID.
   String get _otherPartyId {
     if (!widget.isFriendChat) return widget.profileId;
     final roomId = widget.profileId;
-
-    // NEUES UID-Format: uidA__uidB
     if (roomId.contains('__')) {
       final myUid = _currentUserId;
       final parts = roomId.split('__');
       for (final p in parts) {
         if (p.isNotEmpty && p != myUid) return p;
       }
-      return roomId;
-    }
-
-    // ALTES Code-Format: pp-a-pp-b (Fallback fuer alte Chats)
-    final myCode = ParentFriendsService.instance.myCode.toLowerCase();
-    final codes = RegExp(r'pp-[a-z0-9]+', caseSensitive: false)
-        .allMatches(roomId.toLowerCase())
-        .map((m) => m.group(0)!)
-        .toList();
-    for (final c in codes) {
-      if (c != myCode) return c;
     }
     return roomId;
   }
