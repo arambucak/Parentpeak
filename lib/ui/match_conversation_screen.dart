@@ -60,23 +60,35 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     return 'Ich';
   }
 
-  /// Stabile Identitaet des Gegenuebers fuer Melden/Blockieren.
-  /// Im Freund-Chat ist widget.profileId die roomId 'pp-a-pp-b' -> wir leiten
-  /// den Freundes-Code des Gegenuebers ab (die Haelfte, die NICHT mein Code
-  /// ist). Der Server uebersetzt Code<->UID. Im Match-Chat ist profileId
-  /// bereits die echte Profil-/User-ID.
+  /// Stabile Identitaet des Gegenuebers fuer Melden/Blockieren/Sperren.
+  /// Im Freund-Chat ist widget.profileId die roomId. NEUES Format: 'uidA__uidB'
+  /// -> wir nehmen die Haelfte, die NICHT meine eigene UID ist. ALTES Format
+  /// 'pp-a-pp-b' als Fallback. Im Match-Chat ist profileId bereits die
+  /// echte Profil-/User-ID.
   String get _otherPartyId {
     if (!widget.isFriendChat) return widget.profileId;
+    final roomId = widget.profileId;
+
+    // NEUES UID-Format: uidA__uidB
+    if (roomId.contains('__')) {
+      final myUid = _currentUserId;
+      final parts = roomId.split('__');
+      for (final p in parts) {
+        if (p.isNotEmpty && p != myUid) return p;
+      }
+      return roomId;
+    }
+
+    // ALTES Code-Format: pp-a-pp-b (Fallback fuer alte Chats)
     final myCode = ParentFriendsService.instance.myCode.toLowerCase();
     final codes = RegExp(r'pp-[a-z0-9]+', caseSensitive: false)
-        .allMatches(widget.profileId.toLowerCase())
+        .allMatches(roomId.toLowerCase())
         .map((m) => m.group(0)!)
         .toList();
     for (final c in codes) {
       if (c != myCode) return c;
     }
-    // Fallback: falls nichts Passendes gefunden wurde, roomId beibehalten.
-    return widget.profileId;
+    return roomId;
   }
 
   @override

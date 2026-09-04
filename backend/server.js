@@ -6191,10 +6191,13 @@ async function findBrokenFriendEdges() {
   return { totalEdges: edges.length, broken };
 }
 
-// Ein Identifikator ist eine roomId (nie eine gueltige Nutzer-Identitaet),
-// wenn er mehr als ein 'pp-' enthaelt (z.B. 'pp-13za66-pp-rkfns8').
+// Ein Identifikator ist eine roomId (nie eine gueltige Nutzer-Identitaet):
+// - NEUES Format: enthaelt '__' (uidA__uidB)
+// - ALTES Format: mehr als ein 'pp-' (pp-13za66-pp-rkfns8)
 function looksLikeRoomId(id) {
-  const matches = (id || '').toString().toLowerCase().match(/pp-/g);
+  const s = (id || '').toString();
+  if (s.includes('__')) return true;
+  const matches = s.toLowerCase().match(/pp-/g);
   return matches != null && matches.length >= 2;
 }
 
