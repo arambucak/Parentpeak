@@ -9597,113 +9597,141 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
   }
 });
 
-/**
- * GET /api/parent-matching/find
- * Find matching parent profiles with smart algorithm
- */
-app.get('/api/parent-matching/find', async (req, res) => {
-  const { userId, limit = '10', maxDistanceKm = '25' } = req.query;
+function normalizeParentMatchingCity(value) {
+  return String(value || '')
+    .trim()
+    .toLocaleLowerCase('de-DE')
+    .split(',')[0]
+    .replace(/[^a-z0-9äöüß]/g, '');
+}
 
-  if (!userId) {
-    return res.status(400).json({ error: 'userId erforderlich' });
-  }
+function scoreParentMatchingCandidates({ userProfile, candidates, blockedIds, suspendedIds, limit, maxDistanceKm }) {
+  const maxDistance = Number.parseFloat(maxDistanceKm) || 25;
+  const ownCity = normalizeParentMatchingCity(userProfile.city);
+  const hasCoordinates = profile =>
+    Number.isFinite(profile.latitude) && Number.isFinite(profile.longitude);
+  const hasOwnCoordinates = hasCoordinates(userProfile);
 
-  try {
-    const userProfile = await prisma.parentMatchingProfile.findUnique({
-      where: { ownerUserId: userId },
-    });
-
-    if (!userProfile) {
-      return res.json({ matches: [], message: 'Benutzerprofil nicht gefunden' });
-    }
-
-    const allProfilesRaw = await prisma.parentMatchingProfile.findMany({
-      where: {
-        isActive: true,
-        ownerUserId: { not: userId },
-      },
-      take: 100, // Get top candidates to score
-    });
-
-    // Prio 4: hide blocked users from discovery (server-side).
-    let blockedIds = new Set();
-    let suspendedIds = new Set();
-    try {
-      await ensureSocialSchemaReady();
-      const blockRows = await prisma.$queryRawUnsafe(
-        `SELECT "blockedUserId" FROM "SafetyBlock" WHERE "blockerUserId" = $1`,
-        userId
-      );
-      blockedIds = new Set(blockRows.map(r => r.blockedUserId));
-      // Moderation: gesperrte (suspended) Accounts nie in Discovery zeigen.
-      const suspRows = await prisma.$queryRawUnsafe(
-        `SELECT "userId" FROM "SafetySuspension"`
-      );
-      suspendedIds = new Set(suspRows.map(r => r.userId));
-    } catch (_) {
-      const set = safetyBlocks.get(userId);
-      if (set) blockedIds = set;
-      suspendedIds = new Set([...safetySuspensions.keys()]);
-    }
-    const allProfiles = allProfilesRaw.filter(
-      p => !blockedIds.has(p.ownerUserId) && !suspendedIds.has(p.ownerUserId)
-    );
-
-    const scored = allProfiles.map(candidate => {
+  const matches = candidates
+    .filter(profile => !blockedIds.has(profile.ownerUserId) && !suspendedIds.has(profile.ownerUserId))
+    .map(candidate => {
+      const reasons = [];
+      const breakdown = {};
       let score = 0;
-      let breakdown = {};
+      const sameCity = ownCity && ownCity === normalizeParentMatchingCity(candidate.city);
+      const candidateHasCoordinates = hasCoordinates(candidate);
 
-      // Geographic proximity (0-40 points)
-      if (userProfile.latitude && userProfile.longitude && candidate.latitude && candidate.longitude) {
+      if (hasOwnCoordinates && candidateHasCoordinates) {
         const distance = haversineDistance(
-          userProfile.latitude,
-          userProfile.longitude,
-          candidate.latitude,
-          candidate.longitude,
-        );
-
+          userProfile.latitude, userProfile.longitude, candidate.latitude, candidate.longitude);
+        if (distance > maxDistance) return null;
         breakdown.distanceKm = Math.round(distance);
-        if (distance <= parseFloat(maxDistanceKm)) {
-          breakdown.proximityScore = Math.max(0, 40 - distance);
-          score += breakdown.proximityScore;
-        }
+        breakdown.proximityScore = Math.max(0, Math.round(30 - distance));
+        score += breakdown.proximityScore;
+        if (distance <= 10) reasons.push('nearby');
+      } else if (sameCity) {
+        breakdown.locationLabel = 'same_city';
+        breakdown.cityScore = 18;
+        score += breakdown.cityScore;
+        reasons.push('same_city');
       }
 
-      // Interest overlap (0-30 points)
-      const interestSimilarity = jaccardSimilarity(userProfile.interests, candidate.interests);
-      breakdown.interestSimilarity = Math.round(interestSimilarity * 100) / 100;
-      breakdown.interestScore = Math.round(interestSimilarity * 30);
-      score += breakdown.interestScore;
-
-      // Child age compatibility (0-20 points)
-      const childAgeSimilarity = jaccardSimilarity(userProfile.childAges, candidate.childAges);
-      breakdown.childAgeScore = Math.round(childAgeSimilarity * 20);
-      score += breakdown.childAgeScore;
-
-      // Family form alignment (0-10 points)
+      const categories = [
+        ['interests', userProfile.interests, candidate.interests, 20, 'shared_interests'],
+        ['childAge', userProfile.childAges, candidate.childAges, 15, 'similar_child_age'],
+        ['languages', userProfile.languages, candidate.languages, 15, 'shared_languages'],
+        ['values', userProfile.valuesFocus, candidate.valuesFocus, 15, 'shared_values'],
+      ];
+      for (const [key, ownValues, candidateValues, weight, reason] of categories) {
+        const similarity = jaccardSimilarity(ownValues, candidateValues);
+        const categoryScore = Math.round(similarity * weight);
+        breakdown[`${key}Score`] = categoryScore;
+        score += categoryScore;
+        if (similarity > 0) reasons.push(reason);
+      }
       if (userProfile.familyForm && candidate.familyForm && userProfile.familyForm === candidate.familyForm) {
-        breakdown.familyFormScore = 10;
-        score += 10;
+        breakdown.familyFormScore = 5;
+        score += breakdown.familyFormScore;
+        reasons.push('shared_family_form');
       }
 
       return {
-        profile: candidate,
-        score: Math.round(score),
-        breakdown,
+        profile: mapParentMatchingProfileForClient(candidate),
+        score: Math.min(100, Math.round(score)),
+        breakdown: { ...breakdown, reasons: reasons.slice(0, 3) },
       };
-    });
+    })
+    .filter(Boolean)
+    .filter(match => match.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.min(Math.max(Number.parseInt(limit, 10) || 10, 1), 100));
 
-    const topMatches = scored
-      .sort((a, b) => b.score - a.score)
-      .slice(0, parseInt(limit, 10))
-      .filter(m => m.score > 0);
+  return { matches };
+}
 
-    res.json({ matches: topMatches });
-  } catch (err) {
-    console.error('❌ Fehler beim Matching-Algorithmus:', err);
-    res.status(500).json({ error: 'Matching konnte nicht durchgeführt werden' });
+async function discoverParentMatchingProfiles({ userId, limit, maxDistanceKm }) {
+  const userProfile = await getMyParentMatchingProfile(userId);
+  if (!userProfile) return { matches: [], message: 'Benutzerprofil nicht gefunden' };
+  const candidates = await prisma.parentMatchingProfile.findMany({
+    where: { isActive: true, ownerUserId: { not: userId } },
+    take: 100,
+  });
+  let blockedIds = new Set();
+  let suspendedIds = new Set();
+  try {
+    await ensureSocialSchemaReady();
+    const blockRows = await prisma.$queryRawUnsafe(
+      `SELECT "blockedUserId" FROM "SafetyBlock" WHERE "blockerUserId" = $1`, userId);
+    blockedIds = new Set(blockRows.map(row => row.blockedUserId));
+    const suspensionRows = await prisma.$queryRawUnsafe(`SELECT "userId" FROM "SafetySuspension"`);
+    suspendedIds = new Set(suspensionRows.map(row => row.userId));
+  } catch (_) {
+    blockedIds = safetyBlocks.get(userId) || new Set();
+    suspendedIds = new Set([...safetySuspensions.keys()]);
   }
-});
+  return scoreParentMatchingCandidates({
+    userProfile, candidates, blockedIds, suspendedIds, limit, maxDistanceKm,
+  });
+}
+
+function discoverParentMatchingProfilesInMemory({ userId, limit, maxDistanceKm }) {
+  const userProfile = getMyParentMatchingProfileInMemory(userId);
+  if (!userProfile) return { matches: [], message: 'Benutzerprofil nicht gefunden' };
+  return scoreParentMatchingCandidates({
+    userProfile,
+    candidates: parentProfiles.filter(profile => profile.isActive !== false && profile.ownerUserId !== userId),
+    blockedIds: safetyBlocks.get(userId) || new Set(),
+    suspendedIds: new Set([...safetySuspensions.keys()]),
+    limit,
+    maxDistanceKm,
+  });
+}
+
+async function respondWithParentMatchingDiscovery(req, res) {
+  const userId = (req.query.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    return res.json(await discoverParentMatchingProfiles({
+      userId,
+      limit: req.query.limit || '10',
+      maxDistanceKm: req.query.maxDistanceKm || '25',
+    }));
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/discover', error)) {
+      return;
+    }
+    console.error('Parent matching discovery failed:', error);
+    return res.json(discoverParentMatchingProfilesInMemory({
+      userId,
+      limit: req.query.limit || '10',
+      maxDistanceKm: req.query.maxDistanceKm || '25',
+    }));
+  }
+}
+
+app.get('/parent-matching/discover', respondWithParentMatchingDiscovery);
+// Legacy adapter: keep old clients functional without maintaining a second algorithm.
+app.get('/api/parent-matching/find', respondWithParentMatchingDiscovery);
 
 /**
  * POST /api/parent-matching/record-action

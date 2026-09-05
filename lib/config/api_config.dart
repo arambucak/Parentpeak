@@ -263,6 +263,13 @@ class APIConfig {
     );
   }
 
+  static String getBackendParentMatchingDiscoveryPath() {
+    return _getEnvOrDefault(
+      'BACKEND_PARENT_MATCHING_DISCOVERY_PATH',
+      '/parent-matching/discover',
+    );
+  }
+
   static String getBackendParentMatchingActionsPath() {
     return _getEnvOrDefault(
       'BACKEND_PARENT_MATCHING_ACTIONS_PATH',

@@ -602,9 +602,10 @@ class ParentMatchingBackendService {
     }
 
     try {
+      final discoveryPath = APIConfig.getBackendParentMatchingDiscoveryPath();
       final response = await _httpClient.get(
         Uri.parse(
-          '$_apiUrl/api/parent-matching/find?userId=$userId&limit=$limit&maxDistanceKm=$maxDistanceKm',
+          '$_apiUrl$discoveryPath?userId=$userId&limit=$limit&maxDistanceKm=$maxDistanceKm',
         ),
       );
 
