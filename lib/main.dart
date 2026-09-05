@@ -36,6 +36,7 @@ import 'package:parentpeak/services/development_report_limit_service.dart';
 import 'package:parentpeak/logic/theme_service.dart';
 import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 // Global service instances
 final themeService = ThemeService();
@@ -472,16 +473,18 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
           onDestinationSelected: (index) => setState(() => _index = index),
           height: 76,
           backgroundColor: theme.colorScheme.surface,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Home',
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: AppStringsManager.getString(
+                  languageService.currentLanguage, 'nav_home'),
             ),
             NavigationDestination(
-              icon: Icon(Icons.family_restroom_outlined),
-              selectedIcon: Icon(Icons.family_restroom_rounded),
-              label: 'Profil',
+              icon: const Icon(Icons.family_restroom_outlined),
+              selectedIcon: const Icon(Icons.family_restroom_rounded),
+              label: AppStringsManager.getString(
+                  languageService.currentLanguage, 'nav_profile'),
             ),
           ],
         ),
