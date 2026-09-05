@@ -6438,6 +6438,17 @@ app.delete('/api/account/:userId', async (req, res) => {
     // Familien-Rezepte + Reaktionen dieses Nutzers
     await run('recipeReactionsByUser', `DELETE FROM "RecipeReaction" WHERE "userId" = $1`, userId);
     await run('recipeReactionsOnOwn', `DELETE FROM "RecipeReaction" WHERE "recipeId" IN (SELECT "id" FROM "Recipe" WHERE "authorUserId" = $1)`, userId);
+    // DSGVO: Foto-URLs der eigenen Rezepte VOR dem Loeschen einsammeln, damit
+    // wir die Bilddateien anschliessend physisch entfernen koennen. Die
+    // Tabelle "Recipe" (Phase 3a) wird vom Prisma-Loeschpfad nicht erfasst.
+    let recipePhotoUrls = [];
+    try {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT "photoUrl" FROM "Recipe" WHERE "authorUserId" = $1 AND "photoUrl" <> ''`,
+        userId
+      );
+      recipePhotoUrls = rows.map(r => r.photoUrl).filter(Boolean);
+    } catch (_) {}
     await run('recipes', `DELETE FROM "Recipe" WHERE "authorUserId" = $1`, userId);
     // UID-basierte Chat-Raeume (roomId enthaelt die UID)
     await run('chatRoomsUid', `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${userId}%`);
@@ -6468,6 +6479,19 @@ app.delete('/api/account/:userId', async (req, res) => {
       safetySuspensions.delete(id);
       invalidateSuspensionCache(id);
     }
+
+    // DSGVO: Rezept-Bilddateien physisch entfernen (referenz-sicher — loescht
+    // nur, wenn kein anderer Datensatz das Bild noch nutzt). Fehler hier sind
+    // unkritisch fuer die Konto-Loeschung (best effort), werden aber gemeldet.
+    if (recipePhotoUrls.length > 0) {
+      try {
+        const media = await deleteUnreferencedAccountMedia(recipePhotoUrls);
+        deleted.recipeMedia = media;
+      } catch (e) {
+        deleted.recipeMedia = `error: ${e?.message || e}`;
+      }
+    }
+
     return res.json({ ok: true, userId, codes, deleted });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'DELETE /api/account', error)) return;
