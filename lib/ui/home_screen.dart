@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/main.dart';
@@ -41,7 +40,6 @@ class _FeatureAction {
   final IconData icon;
   final Color color;
   final WidgetBuilder builder;
-  final String? statusHint;
   final String? featureId;
 
   const _FeatureAction({
@@ -51,7 +49,6 @@ class _FeatureAction {
     required this.icon,
     required this.color,
     required this.builder,
-    this.statusHint,
     this.featureId,
   });
 }
@@ -78,7 +75,6 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   static const String _recentTilesStorageKey = 'home.recent_tiles.v1';
   static const String _tileOrderStorageKey = 'home.tile_order.v1';
-  static const String _parentMatchStorageKey = 'parent_matching.v1';
   static const int _recentTilesLimit = 3;
 
   bool _initialInviteHandled = false;
@@ -88,29 +84,15 @@ class _HomeScreenState extends State<HomeScreen>
   StreamSubscription<User?>? _authSub;
   List<String> _recentTileIds = const [];
   List<String> _customTileOrderIds = const [];
-  int _newParentMatchesCount = 0;
-  DateTime? _lastParentMatchHapticAt;
-  bool _isOpeningParentMatchQuickAction = false;
-  late final AnimationController _attentionController;
-  late final Animation<double> _attentionAnimation;
   List<Map<String, dynamic>> _todayEvents = [];
 
   @override
   void initState() {
     super.initState();
-    _attentionController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
-    _attentionAnimation = CurvedAnimation(
-      parent: _attentionController,
-      curve: Curves.easeInOut,
-    );
     if (kIsWeb) _loadTodayEvents();
     languageService.addListener(_onLanguageChanged);
     _restoreRecentTiles();
     _restoreTileOrder();
-    _restoreParentMatchStatusHint();
     // Retry pending referral + coin claim whenever auth state changes
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null && mounted) {
@@ -131,7 +113,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void dispose() {
     _authSub?.cancel();
-    _attentionController.dispose();
     languageService.removeListener(_onLanguageChanged);
     super.dispose();
   }
@@ -390,10 +371,6 @@ class _HomeScreenState extends State<HomeScreen>
       context,
       MaterialPageRoute(builder: action.builder),
     );
-    if (!mounted) return;
-    if (action.featureId == 'eltern_match') {
-      await _restoreParentMatchStatusHint();
-    }
   }
 
   void _showComingSoonDialog(_FeatureAction action) {
@@ -590,72 +567,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Future<void> _openParentMatchQuickAction({
-    required bool openNewConnections,
-  }) async {
-    if (_isOpeningParentMatchQuickAction) return;
-    _isOpeningParentMatchQuickAction = true;
-
-    final now = DateTime.now();
-    final shouldHaptic = _lastParentMatchHapticAt == null ||
-        now.difference(_lastParentMatchHapticAt!) >= const Duration(seconds: 1);
-    if (shouldHaptic) {
-      await HapticFeedback.lightImpact();
-      _lastParentMatchHapticAt = now;
-    }
-    try {
-      await _storeRecentTileTap('Eltern Match');
-      if (!mounted) return;
-      // Prio 3: 'Eltern Match' fuehrt jetzt in das vereinheitlichte
-      // Eltern-Netzwerk (echte Spielfreunde-Discovery), nicht mehr in den
-      // separaten ParentMatchingScreen.
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const ElternNetzwerkScreen(initialTab: 1),
-        ),
-      );
-      if (!mounted) return;
-      await _restoreParentMatchStatusHint();
-    } finally {
-      _isOpeningParentMatchQuickAction = false;
-    }
-  }
-
-  Future<void> _restoreParentMatchStatusHint() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_parentMatchStorageKey);
-    if (raw == null || raw.isEmpty) {
-      if (!mounted) return;
-      setState(() => _newParentMatchesCount = 0);
-      return;
-    }
-
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! Map<String, dynamic>) {
-        if (!mounted) return;
-        setState(() => _newParentMatchesCount = 0);
-        return;
-      }
-
-      final matchedIds =
-          (decoded['matchedIds'] as List?)?.map((e) => e.toString()).toSet() ??
-              <String>{};
-      final seenIds = (decoded['seenMatchedProfileIds'] as List?)
-              ?.map((e) => e.toString())
-              .toSet() ??
-          matchedIds;
-      final unseenCount = matchedIds.difference(seenIds).length;
-
-      if (!mounted) return;
-      setState(() => _newParentMatchesCount = unseenCount);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _newParentMatchesCount = 0);
-    }
-  }
-
   void _onLanguageChanged() {
     if (mounted) {
       setState(() {
@@ -745,12 +656,6 @@ class _HomeScreenState extends State<HomeScreen>
         color: const Color(0xFF0EA5A4),
         builder: (_) => const ElternNetzwerkScreen(),
         featureId: 'eltern_match',
-        statusHint: _newParentMatchesCount > 0
-            ? (_newParentMatchesCount == 1
-                ? AppStringsManager.getString(lang, 'home_match_new_one')
-                : AppStringsManager.getString(lang, 'home_match_new_many')
-                    .replaceAll('{count}', '$_newParentMatchesCount'))
-            : null,
       ),
       _FeatureAction(
         id: 'ki_elternberatung',
@@ -974,8 +879,6 @@ class _HomeScreenState extends State<HomeScreen>
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final action = gridActions[index];
-                        final isParentMatchTile =
-                            action.featureId == 'eltern_match';
                         final featureState = action.featureId != null
                             ? FeatureFlagService.instance
                                 .getFeatureState(action.featureId!)
@@ -992,7 +895,6 @@ class _HomeScreenState extends State<HomeScreen>
                           action: action,
                           isComingSoon: isLocked,
                           isPremiumLocked: isPremiumLocked,
-                          isParentMatchTile: isParentMatchTile,
                         );
                       },
                       childCount: visibleGridActions.length > 4
@@ -1385,7 +1287,6 @@ class _HomeScreenState extends State<HomeScreen>
     required _FeatureAction action,
     required bool isComingSoon,
     required bool isPremiumLocked,
-    required bool isParentMatchTile,
   }) {
     final theme = Theme.of(context);
 
@@ -1396,32 +1297,6 @@ class _HomeScreenState extends State<HomeScreen>
           ? AppStringsManager.getString(
               languageService.currentLanguage, 'soon_available')
           : action.description,
-      statusHint: isComingSoon ? null : action.statusHint,
-      quickActionLabel: (!isComingSoon && !isPremiumLocked && isParentMatchTile)
-          ? (_newParentMatchesCount > 0
-              ? AppStringsManager.getString(
-                  languageService.currentLanguage, 'open_new_connections')
-              : AppStringsManager.getString(
-                  languageService.currentLanguage, 'open_parent_match'))
-          : null,
-      quickActionHelperText: (!isComingSoon &&
-              !isPremiumLocked &&
-              isParentMatchTile &&
-              _newParentMatchesCount == 0)
-          ? AppStringsManager.getString(
-              languageService.currentLanguage, 'no_new_connections')
-          : null,
-      onQuickAction: (!isComingSoon && !isPremiumLocked && isParentMatchTile)
-          ? () => _openParentMatchQuickAction(
-                openNewConnections: _newParentMatchesCount > 0,
-              )
-          : null,
-      attentionAnimation: (!isComingSoon &&
-              !isPremiumLocked &&
-              isParentMatchTile &&
-              _newParentMatchesCount > 0)
-          ? _attentionAnimation
-          : null,
       icon: action.icon,
       color: isComingSoon ? action.color.withValues(alpha: 0.5) : action.color,
       compact: true,
@@ -1517,16 +1392,11 @@ class _HomeScreenState extends State<HomeScreen>
     BuildContext context, {
     required String title,
     required String subtitle,
-    String? statusHint,
-    String? quickActionLabel,
-    String? quickActionHelperText,
     required Color color,
     required IconData icon,
     bool compact = false,
     VoidCallback? onTap,
     VoidCallback? onLongPress,
-    VoidCallback? onQuickAction,
-    Animation<double>? attentionAnimation,
   }) {
     final theme = Theme.of(context);
     final tileCard = Card(
@@ -1596,87 +1466,6 @@ class _HomeScreenState extends State<HomeScreen>
                       maxLines: compactTile ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (statusHint != null && statusHint.trim().isNotEmpty) ...[
-                      SizedBox(height: compactTile ? 4 : 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: const Color(0xFF86EFAC),
-                          ),
-                        ),
-                        child: Text(
-                          statusHint,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: const Color(0xFF166534),
-                            fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                    if (quickActionLabel != null &&
-                        quickActionLabel.trim().isNotEmpty &&
-                        onQuickAction != null) ...[
-                      SizedBox(height: compactTile ? 4 : 6),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: InkWell(
-                          onTap: onQuickAction,
-                          borderRadius: BorderRadius.circular(999),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: color.withValues(alpha: 0.45),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.open_in_new_rounded,
-                                  size: 12,
-                                  color: color,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  quickActionLabel,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: color,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (quickActionHelperText != null &&
-                          quickActionHelperText.trim().isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          quickActionHelperText,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
                     if (!compactTile) ...[
                       const Spacer(),
                       Align(
@@ -1695,33 +1484,6 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
 
-    if (attentionAnimation == null) {
-      return tileCard;
-    }
-
-    return AnimatedBuilder(
-      animation: attentionAnimation,
-      child: tileCard,
-      builder: (context, child) {
-        final t = attentionAnimation.value;
-        final scale = 1 + (0.012 * t);
-        return Transform.scale(
-          scale: scale,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.08 + (0.10 * t)),
-                  blurRadius: 8 + (10 * t),
-                  spreadRadius: 0.2 + (0.6 * t),
-                ),
-              ],
-            ),
-            child: child,
-          ),
-        );
-      },
-    );
+    return tileCard;
   }
 }
