@@ -37,6 +37,32 @@ String _networkCopy(String key, String fallback) {
         'invite_hero_description':
           'Share your personal link or QR code - one tap and you are connected.',
         'share': 'Share',
+          'setup_hint': 'In 5 short steps, you will find families who are a good fit for you.',
+          'empty_title': 'Be the first family in your area',
+          'empty_description': 'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
+          'invite_playmates': 'Invite playmates',
+          'values_tip': 'Tip: Families with similar values understand each other best. Choose what matters to you.',
+          'bio_hint': 'Tell us about yourselves: What makes your family special? What are you looking for?',
+          'step_1': 'Step 1: Your family',
+          'step_2': 'Step 2: Your children',
+          'step_3': 'Step 3: Values and style',
+          'step_4': 'Step 4: What are you looking for?',
+          'step_5': 'Step 5: Languages and more',
+          'bio_title': 'Short bio',
+          'login_required': 'Please sign in to publish your playmate profile.',
+          'same_city': 'In your city',
+          'reason_nearby': 'Nearby',
+          'reason_shared_interests': 'Shared interests',
+          'reason_similar_child_age': 'Children of a similar age',
+          'reason_shared_languages': 'Shared languages',
+          'reason_shared_values': 'Similar parenting values',
+          'reason_shared_family_form': 'Similar family setup',
+          'request_sent': 'Your request was sent to {name}.',
+          'request_failed': 'Your request could not be sent. Please try again later.',
+          'no_gender': 'Prefer not to say',
+          'gender_maennlich': 'Boy',
+          'gender_weiblich': 'Girl',
+          'gender_divers': 'Diverse',
       'coins_until': 'Until free Premium',
       'invites_successful': 'successful invitations',
       'coin_value': '1 Coin = €1',
@@ -71,6 +97,32 @@ String _networkCopy(String key, String fallback) {
         'invite_hero_description':
           'Girêdana xwe ya kesane an koda QR parve bike - bi yek pêlê hûn tên girêdan.',
         'share': 'Parve bike',
+          'setup_hint': 'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
+          'empty_title': 'Di herêma xwe de malbata yekem bibe',
+          'empty_description': 'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
+          'invite_playmates': 'Hevalên lîstikê vexwîne',
+          'values_tip': 'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
+          'bio_hint': 'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
+          'step_1': 'Gav 1: Malbata we',
+          'step_2': 'Gav 2: Zarokên we',
+          'step_3': 'Gav 3: Nirx û şêwaz',
+          'step_4': 'Gav 4: Hûn li çi digerin?',
+          'step_5': 'Gav 5: Ziman û zêdetir',
+          'bio_title': 'Bioya kurt',
+          'login_required': 'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
+          'same_city': 'Di bajarê te de',
+          'reason_nearby': 'Li nêzîkê',
+          'reason_shared_interests': 'Berjewendiyên hevpar',
+          'reason_similar_child_age': 'Zarokên bi temenê nêzîk',
+          'reason_shared_languages': 'Zimanên hevpar',
+          'reason_shared_values': 'Nirxên perwerdehiyê yên wekhev',
+          'reason_shared_family_form': 'Şêwaza malbatê ya wekhev',
+          'request_sent': 'Daxwaza te ji {name} re hat şandin.',
+          'request_failed': 'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
+          'no_gender': 'Naxwazim bibêjim',
+          'gender_maennlich': 'Kur',
+          'gender_weiblich': 'Keç',
+          'gender_divers': 'Cûda',
       'coins_until': 'Ji bo Premiuma belaş',
       'invites_successful': 'vexwendinên serkeftî',
       'coin_value': '1 Coin = €1',
@@ -105,6 +157,32 @@ String _networkCopy(String key, String fallback) {
         'invite_hero_description':
           'Kişisel bağlantını veya QR kodunu paylaş - tek dokunuşla bağlantı kurun.',
         'share': 'Paylaş',
+          'setup_hint': '5 kısa adımda size uygun aileleri bulun.',
+          'empty_title': 'Bölgenizdeki ilk aile siz olun',
+          'empty_description': 'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
+          'invite_playmates': 'Oyun arkadaşlarını davet et',
+          'values_tip': 'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
+          'bio_hint': 'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
+          'step_1': '1. Adım: Aileniz',
+          'step_2': '2. Adım: Çocuklarınız',
+          'step_3': '3. Adım: Değerler ve yaklaşım',
+          'step_4': '4. Adım: Ne arıyorsunuz?',
+          'step_5': '5. Adım: Diller ve daha fazlası',
+          'bio_title': 'Kısa biyografi',
+          'login_required': 'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
+          'same_city': 'Şehrinizde',
+          'reason_nearby': 'Yakınınızda',
+          'reason_shared_interests': 'Ortak ilgi alanları',
+          'reason_similar_child_age': 'Benzer yaşta çocuklar',
+          'reason_shared_languages': 'Ortak diller',
+          'reason_shared_values': 'Benzer ebeveynlik değerleri',
+          'reason_shared_family_form': 'Benzer aile yapısı',
+          'request_sent': '{name} için isteğiniz gönderildi.',
+          'request_failed': 'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
+          'no_gender': 'Belirtmek istemiyorum',
+          'gender_maennlich': 'Erkek',
+          'gender_weiblich': 'Kız',
+          'gender_divers': 'Diğer',
       'coins_until': 'Ücretsiz Premium için',
       'invites_successful': 'davet başarılı',
       'coin_value': '1 Coin = €1',
@@ -133,11 +211,6 @@ String _networkCopy(String key, String fallback) {
     },
   };
   return copies[languageService.currentLanguage]?[key] ?? fallback;
-}
-
-String _networkStepLabel(int index, String fallback) {
-  if (index == 0) return _networkCopy('step_family', fallback);
-  return fallback;
 }
 
 class ElternNetzwerkScreen extends StatefulWidget {
@@ -709,15 +782,28 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Text(
-            'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.',
+            _networkCopy(
+                'setup_hint',
+                'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.'),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant, height: 1.3),
             textAlign: TextAlign.center),
       ),
       const SizedBox(height: 16),
       Expanded(child: _ProfileForm(onSave: (p) async {
+        final uid = AuthService.instance.currentUser?.uid;
+        if (uid == null || uid.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(_networkCopy(
+                'login_required',
+                'Bitte melde dich an, um dein Spielfreunde-Profil zu veröffentlichen.',
+              )),
+            ));
+          }
+          return;
+        }
         await p.save();
-        final uid = AuthService.instance.currentUser?.uid ?? 'guest';
         await _backend.saveProfile(p, uid);
         // In den echten Matching-Store schreiben, damit andere Familien uns
         // per Standort + Interessen finden koennen (echtes Matching).
@@ -936,15 +1022,17 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         child: Column(children: [
           const Text('\u{1F331}', style: TextStyle(fontSize: 40)),
           const SizedBox(height: 14),
-          Text('Sei die erste Familie in deiner Gegend',
+            Text(_networkCopy(
+              'empty_title', 'Sei die erste Familie in deiner Gegend'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800),
               textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          Text(
+            Text(_networkCopy(
+              'empty_description',
               'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
-              'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
-              'Lade Nachbarn & Freunde ein – so wächst euer Netzwerk am schnellsten.',
+                'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
+                'Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.'),
               style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant, height: 1.4),
               textAlign: TextAlign.center),
@@ -954,7 +1042,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             child: FilledButton.icon(
               onPressed: () => _tabs.animateTo(2),
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-              label: const Text('Spielkameraden einladen'),
+                label: Text(_networkCopy(
+                  'invite_playmates', 'Spielkameraden einladen')),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -986,8 +1075,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ? ''
         : '\u{1F9D2} ${p.childAges.join(' \u{2022} ')}';
     final distanceKm = m.breakdown['distanceKm'];
+    final reasonCodes = (m.breakdown['reasons'] as List? ?? const [])
+        .map((reason) => reason.toString())
+        .take(3);
     final meta = <String>[
       if (distanceKm != null) '\u{1F4CD} $distanceKm km',
+      if (distanceKm == null && m.breakdown['locationLabel'] == 'same_city')
+        _networkCopy('same_city', 'In deiner Stadt'),
       if (p.languages.isNotEmpty) p.languages.take(3).join(', '),
     ].join('  \u{2022}  ');
     final tags = <String>[
@@ -1111,6 +1205,22 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                                 color: Color(0xFF7C3AED)))))
                     .toList()),
           ],
+          if (reasonCodes.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: reasonCodes
+                  .map((code) => Text(
+                        _networkCopy('reason_$code', code),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: const Color(0xFF0E7F77),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
           if (meta.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(meta,
@@ -1137,19 +1247,19 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   /// Verbindungswunsch senden (echte Aktion im Matching-Backend).
   Future<void> _connectWithMatch(MatchResult m) async {
-    final uid = AuthService.instance.currentUser?.uid ?? 'guest';
     final messenger = ScaffoldMessenger.of(context);
     final errorColor = Theme.of(context).colorScheme.error;
-    final ok = await _matching.recordAction(
-      userId: uid,
-      matchedProfileId: m.profile.id,
-      action: 'like',
-    );
+    final targetUserId = m.profile.userId;
+    final ok = targetUserId != null && targetUserId.isNotEmpty
+        ? await FriendshipService.instance.sendRequest(targetUserId)
+        : false;
     if (!mounted) return;
     messenger.showSnackBar(SnackBar(
       content: Text(ok
-          ? 'Dein Hallo ist unterwegs zu ${m.profile.name} 👋'
-          : 'Konnte gerade nicht senden – bitte später erneut versuchen.'),
+          ? _networkCopy('request_sent', 'Deine Anfrage wurde an {name} gesendet.')
+              .replaceAll('{name}', m.profile.name)
+          : _networkCopy('request_failed',
+              'Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.')),
       behavior: SnackBarBehavior.floating,
       backgroundColor: ok ? const Color(0xFF16A34A) : errorColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -2155,10 +2265,8 @@ class _ProfileFormState extends State<_ProfileForm> {
             })),
       ),
       // Step label
-      Text(
-          _step == 0
-              ? _networkStepLabel(0, _stepLabels[_step])
-              : _stepLabels[_step],
+        Text(
+          _stepLabel(_step),
           style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6))),
       const SizedBox(height: 16),
@@ -2227,6 +2335,9 @@ class _ProfileFormState extends State<_ProfileForm> {
     'Schritt 4: Was sucht ihr?',
     'Schritt 5: Sprachen & Mehr',
   ];
+
+  String _stepLabel(int step) =>
+      _networkCopy('step_${step + 1}', _stepLabels[step]);
 
   // ─── SCHRITT 1: Grundinfos ─────────────────────────────────────────────────
   Widget _step1(ThemeData theme) {
@@ -2387,8 +2498,11 @@ class _ProfileFormState extends State<_ProfileForm> {
                 .map((g) => ChoiceChip(
                       label: Text(
                           g == null
-                              ? 'Keine Angabe'
-                              : MatchOptions.genderLabels[g]!,
+                              ? _networkCopy('no_gender', 'Keine Angabe')
+                              : _networkCopy(
+                                  'gender_$g',
+                                  MatchOptions.genderLabels[g]!,
+                                ),
                           style: const TextStyle(fontSize: 11)),
                       selected: child.gender == g,
                       onSelected: (_) => setState(() => child.gender = g),
@@ -2463,7 +2577,9 @@ class _ProfileFormState extends State<_ProfileForm> {
               const SizedBox(width: 10),
               Expanded(
                   child: Text(
-                      'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.',
+                    _networkCopy(
+                      'values_tip',
+                      'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF16A34A),
                           fontWeight: FontWeight.w500,
@@ -2659,15 +2775,17 @@ class _ProfileFormState extends State<_ProfileForm> {
                       ))
                   .toList()),
           const SizedBox(height: 22),
-          _sectionTitle(theme, '\u{1F4AC} Kurze Bio'),
+            _sectionTitle(theme,
+              '\u{1F4AC} ${_networkCopy('bio_title', 'Kurze Bio')}'),
           const SizedBox(height: 6),
           TextField(
               controller: _bioCtrl,
               maxLength: 200,
               maxLines: 3,
               decoration: InputDecoration(
-                  hintText:
-                      'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?',
+                  hintText: _networkCopy(
+                    'bio_hint',
+                    'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?'),
                   hintStyle:
                       TextStyle(fontSize: 13, color: theme.colorScheme.outline),
                   border: OutlineInputBorder(
