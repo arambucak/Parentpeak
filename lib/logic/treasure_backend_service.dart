@@ -5,6 +5,92 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
 
+class TreasureHandoverSummary {
+  const TreasureHandoverSummary({
+    required this.id,
+    required this.treasureId,
+    required this.status,
+    required this.location,
+    this.treasureTitle,
+    this.notes,
+  });
+
+  final String id;
+  final String treasureId;
+  final String status;
+  final String location;
+  final String? treasureTitle;
+  final String? notes;
+
+  factory TreasureHandoverSummary.fromJson(Map<String, dynamic> json) {
+    return TreasureHandoverSummary(
+      id: json['id']?.toString() ?? '',
+      treasureId: json['treasureId']?.toString() ?? '',
+      status: json['status']?.toString() ?? '',
+      location: json['location']?.toString() ?? '',
+      treasureTitle: json['treasureTitle']?.toString(),
+      notes: json['notes']?.toString(),
+    );
+  }
+}
+
+class TreasureOfferSummary {
+  const TreasureOfferSummary({
+    required this.id,
+    required this.title,
+    required this.status,
+    required this.reservations,
+  });
+
+  final String id;
+  final String title;
+  final String status;
+  final List<TreasureHandoverSummary> reservations;
+
+  factory TreasureOfferSummary.fromJson(Map<String, dynamic> json) {
+    final rawReservations = json['reservations'];
+    return TreasureOfferSummary(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      status: json['status']?.toString() ?? '',
+      reservations: rawReservations is List
+          ? rawReservations
+              .whereType<Map>()
+              .map((item) => TreasureHandoverSummary.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ))
+              .toList()
+          : const [],
+    );
+  }
+}
+
+class TreasureMineOverview {
+  const TreasureMineOverview({
+    required this.offers,
+    required this.reservedByMe,
+  });
+
+  final List<TreasureOfferSummary> offers;
+  final List<TreasureHandoverSummary> reservedByMe;
+
+  factory TreasureMineOverview.fromJson(Map<String, dynamic> json) {
+    List<T> parseList<T>(dynamic raw, T Function(Map<String, dynamic>) parse) {
+      if (raw is! List) return const [];
+      return raw
+          .whereType<Map>()
+          .map((item) => parse(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+
+    return TreasureMineOverview(
+      offers: parseList(json['offers'], TreasureOfferSummary.fromJson),
+      reservedByMe:
+          parseList(json['reservedByMe'], TreasureHandoverSummary.fromJson),
+    );
+  }
+}
+
 class TreasureBackendService {
   TreasureBackendService({BackendApiClient? apiClient})
       : _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
@@ -178,6 +264,76 @@ class TreasureBackendService {
     }
   }
 
+  Future<bool> deleteTreasure({
+    required String treasureId,
+    required String userId,
+  }) async {
+    if (_apiClient == null) return false;
+
+    try {
+      await _apiClient!.delete(
+        '$_treasuresPath/$treasureId?userId=${Uri.encodeQueryComponent(userId)}',
+      );
+      return true;
+    } catch (e) {
+      lastSyncError = 'Anzeige konnte nicht gelöscht werden: $e';
+      return false;
+    }
+  }
+
+  Future<TreasureMineOverview?> fetchMine({required String userId}) async {
+    if (_apiClient == null) return null;
+
+    try {
+      final payload = await _apiClient!.getJson(
+        '$_treasuresPath/mine?userId=${Uri.encodeQueryComponent(userId)}',
+      );
+      if (payload is! Map) return null;
+      return TreasureMineOverview.fromJson(Map<String, dynamic>.from(payload));
+    } catch (e) {
+      lastSyncError = 'Eigene Anzeigen konnten nicht geladen werden: $e';
+      return null;
+    }
+  }
+
+  Future<bool> updateHandoverStatus({
+    required String treasureId,
+    required String handoverId,
+    required String userId,
+    required String action,
+  }) async {
+    if (_apiClient == null) return false;
+
+    try {
+      await _apiClient!.postJsonAny(
+        '$_treasuresPath/$treasureId/handovers/$handoverId/$action',
+        {'userId': userId},
+      );
+      return true;
+    } catch (e) {
+      lastSyncError = 'Übergabe konnte nicht aktualisiert werden: $e';
+      return false;
+    }
+  }
+
+  Future<bool> cancelReservation({
+    required String treasureId,
+    required String requesterUserId,
+  }) async {
+    if (_apiClient == null) return false;
+
+    try {
+      await _apiClient!.postJsonAny(
+        '$_treasuresPath/$treasureId/cancel-reservation',
+        {'requesterUserId': requesterUserId},
+      );
+      return true;
+    } catch (e) {
+      lastSyncError = 'Reservierung konnte nicht storniert werden: $e';
+      return false;
+    }
+  }
+
   TreasureListing _mapTreasureToListing(
     Map<String, dynamic> treasure, {
     TreasureListing? fallbackListing,
@@ -231,6 +387,8 @@ class TreasureBackendService {
               .where((e) => e.isNotEmpty),
         ...?fallbackListing?.imagePaths,
       ],
+      ownerUserId:
+          treasure['userId']?.toString() ?? fallbackListing?.ownerUserId,
       createdAt: createdAt ?? fallbackListing?.createdAt ?? DateTime.now(),
     );
   }
