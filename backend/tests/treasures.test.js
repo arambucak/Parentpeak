@@ -111,6 +111,13 @@ const testTreasure3 = {
 
 // Test runner
 async function runTests() {
+  if (API_BASE.startsWith('https://parentpeak.onrender.com') && !BEARER_TOKEN) {
+    console.error(
+      'BEARER_TOKEN fehlt. Der Produktions-Smoke wird ohne gültiges Test-Token nicht gestartet.',
+    );
+    process.exit(2);
+  }
+
   console.log('🧪 Treasure Items Integration Tests');
   console.log(`📍 API Base: ${API_BASE}\n`);
 
@@ -217,7 +224,72 @@ async function runTests() {
 
   // Test 5: Update treasure (owner success)
   try {
-    console.log('\n✏️  Test 5: Update treasure (owner verification)');
+    console.log('\n🤝 Test 5: Reserve, confirm, and complete handover');
+    const reserveRes = await makeRequest(
+      'POST',
+      `/api/treasures/${treasureId1}/reserve`,
+      {
+        requesterUserId: 'user-munich-1',
+        preferredSlot: 'sunday_morning',
+        handoverMode: 'coffee',
+      },
+      BEARER_TOKEN,
+    );
+    const handoverId = reserveRes.body.handover?.id;
+    if (reserveRes.status !== 201 || !handoverId) {
+      throw new Error(`Expected reservation 201 with handover.id, got ${reserveRes.status}: ${JSON.stringify(reserveRes.body)}`);
+    }
+
+    const ownerOverview = await makeRequest(
+      'GET',
+      '/api/treasures/mine?userId=user-berlin-1',
+      null,
+      BEARER_TOKEN,
+    );
+    if (ownerOverview.status !== 200 || !ownerOverview.body.offers?.some((offer) =>
+      offer.id === treasureId1 && offer.reservations?.some((item) => item.id === handoverId),
+    )) {
+      throw new Error('Expected owner overview to contain the new reservation');
+    }
+
+    const confirmRes = await makeRequest(
+      'POST',
+      `/api/treasures/${treasureId1}/handovers/${handoverId}/confirm`,
+      { userId: 'user-berlin-1' },
+      BEARER_TOKEN,
+    );
+    if (confirmRes.status !== 200 || confirmRes.body.handover?.status !== 'confirmed') {
+      throw new Error(`Expected confirmed handover, got ${confirmRes.status}: ${JSON.stringify(confirmRes.body)}`);
+    }
+
+    const completeRes = await makeRequest(
+      'POST',
+      `/api/treasures/${treasureId1}/handovers/${handoverId}/complete`,
+      { userId: 'user-berlin-1' },
+      BEARER_TOKEN,
+    );
+    if (completeRes.status !== 200 || completeRes.body.handover?.status !== 'completed') {
+      throw new Error(`Expected completed handover, got ${completeRes.status}: ${JSON.stringify(completeRes.body)}`);
+    }
+    const duplicateReservation = await makeRequest(
+      'POST',
+      `/api/treasures/${treasureId1}/reserve`,
+      { requesterUserId: 'user-munich-1', handoverMode: 'coffee' },
+      BEARER_TOKEN,
+    );
+    if (duplicateReservation.status !== 410) {
+      throw new Error(`Expected completed listing to reject new reservations, got ${duplicateReservation.status}`);
+    }
+    console.log('  ✓ Reservation lifecycle completed and is visible to the owner');
+    passed++;
+  } catch (e) {
+    console.error(`  ✗ Failed: ${e.message}`);
+    failed++;
+  }
+
+  // Test 6: Update treasure (owner success)
+  try {
+    console.log('\n✏️  Test 6: Update treasure (owner verification)');
     const updateData = {
       userId: 'user-berlin-1',
       title: 'Updated: Spielzeugauto Collection',
@@ -238,9 +310,9 @@ async function runTests() {
     failed++;
   }
 
-  // Test 6: Ownership verification (wrong owner should fail)
+  // Test 7: Ownership verification (wrong owner should fail)
   try {
-    console.log('\n🔒 Test 6: Ownership verification (wrong owner should fail)');
+    console.log('\n🔒 Test 7: Ownership verification (wrong owner should fail)');
     const updateData = {
       userId: 'user-different',
       title: 'Hacked!',

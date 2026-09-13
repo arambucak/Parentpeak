@@ -43,6 +43,22 @@ final themeService = ThemeService();
 final languageService = LanguageService();
 // Global key for DemoApp state access
 final GlobalKey<DemoAppState> demoAppKey = GlobalKey<DemoAppState>();
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
+void _handleNotificationTap(Map<String, dynamic> data) {
+  const treasureNotificationTypes = {
+    'treasure_reservation',
+    'treasure_handover_update',
+  };
+  if (!treasureNotificationTypes.contains(data['type'])) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    appNavigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (_) => const TreasureHandoverScreen(openMyListings: true),
+      ),
+    );
+  });
+}
 
 // Development shortcut: skips auth gate and opens the app shell directly.
 const bool _debugBypassAuthGate =
@@ -154,6 +170,7 @@ Future<void> _startApp() async {
       NotificationService.instance.initFcm(
         apiClient: apiClient,
         userId: currentUser.uid,
+        onNotificationTap: _handleNotificationTap,
       ),
     );
   }
@@ -368,6 +385,7 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
         RevocationServiceImpl(baseUrl: backendBaseUrl, secureStorage: storage);
 
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'Parentpeak',
       theme: themeService.getLightTheme(),
       darkTheme: themeService.getDarkTheme(),

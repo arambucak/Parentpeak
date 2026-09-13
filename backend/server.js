@@ -768,10 +768,74 @@ function buildWeeklyImpulseSeedPosts(schema, impulseId) {
   ];
 }
 
+const WEEKLY_IMPULSE_TRANSLATIONS = {
+  leadership_hausaufgaben: {
+    en: {
+      title: 'Homework without stress: a routine that works',
+      parent_lens:
+        'Homework stress is often not a learning problem: it is a routine problem. With the right structure and timing, the subject can become calmer on its own.',
+      parent_tips: [
+        'Find the right time: straight after school or after a short break, but before the evening.',
+        'I am here, but I do not help right away: let your child try first. If there is no progress after 10 minutes, ask: "Where are you getting stuck?"',
+        'Prepare the workspace: a regular spot, a tidy desk, and no phone in sight reduce distractions.',
+      ],
+      practical_tip:
+        'Agree with your child today on one homework time for the week and write it down.',
+      discussion_body:
+        'What has made homework less stressful for your family? Which routines work?',
+      companion_quick:
+        'Structure while learning is not a restriction: it helps concentration get going.',
+      companion_reflect:
+        'How did learning go today? What could you try differently tomorrow?',
+    },
+    tr: {
+      title: 'Stres olmadan ödev: işe yarayan bir düzen',
+      parent_lens:
+        'Ödev stresi çoğu zaman bir öğrenme sorunu değil, bir rutin sorunudur. Doğru düzen ve doğru zamanla konu kendiliğinden daha sakin hale gelir.',
+      parent_tips: [
+        'Doğru zamanı bulun: okuldan hemen sonra veya kısa bir dinlenmenin ardından, ama akşam olmadan önce.',
+        'Yanındayım ama hemen yardım etmiyorum: önce kendisi denesin. 10 dakika ilerleme olmazsa sorun: "Nerede takıldın?"',
+        'Çalışma alanını hazırlayın: sabit bir yer, düzenli bir masa ve görünürde telefon olmaması dikkati azaltır.',
+      ],
+      practical_tip:
+        'Bugün çocuğunuzla birlikte hafta için tek bir ödev zamanı belirleyin ve yazın.',
+      discussion_body:
+        'Sizde ödevleri daha stressiz hale getiren ne oldu? Hangi rutinler işe yarıyor?',
+      companion_quick:
+        'Öğrenmede düzen bir kısıtlama değildir: odaklanmayı harekete geçirir.',
+      companion_reflect:
+        'Bugün çalışma nasıl geçti? Yarın neyi farklı deneyebilirsiniz?',
+    },
+    ku: {
+      title: 'Erkên malê bê stres: rêzek ku dixebite',
+      parent_lens:
+        'Stresa erkên malê gelek caran ne pirsgirêkeke fêrbûnê ye, belkî pirsgirêka rîtualê ye. Bi rêzek rast û dema rast, mijar bi xwe aramtir dibe.',
+      parent_tips: [
+        'Dema rast bibînin: rasterast piştî dibistanê an piştî demeke kurt a bêhnvedanê, lê beriya êvarê.',
+        'Ez li vir im, lê yekser alîkarî nakim: bila zarok pêşî bi xwe biceribîne. Heke piştî 10 deqîqeyan pêşdeçûn tunebe, bipirsin: "Tu li ku derê dimînî?"',
+        'Cihê xebatê amade bikin: cihek sabît, maseyek rêk û telefonek ne li ber çavan, bala winda kêm dike.',
+      ],
+      practical_tip:
+        'Îro bi zarokê xwe re ji bo hefteyê demek yekane ya erkên malê diyar bikin û binivîsin.',
+      discussion_body:
+        'Çi tiştê li mala we erkên malê bê stres kir? Kîjan rîtual dixebitin?',
+      companion_quick:
+        'Rêz di fêrbûnê de sînordarkirin nîne: ew alîkariya konsantrasyonê dike.',
+      companion_reflect:
+        'Îro fêrbûn çawa çû? Hûn sibê dikarin çi cuda biceribînin?',
+    },
+  },
+};
+
+function localizeWeeklyImpulseTopic(topic, language) {
+  const translation = WEEKLY_IMPULSE_TRANSLATIONS[topic.key]?.[language];
+  return translation ? { ...topic, ...translation } : topic;
+}
+
 function buildWeeklyImpulseResponse({ schema, viewerUserId, language = 'de' }) {
   const lang = supportedAppLanguageNames.has(language) ? language : 'de';
   const today = new Date().toISOString().slice(0, 10);
-  const topic = getTodayImpulseTopic();
+  const topic = localizeWeeklyImpulseTopic(getTodayImpulseTopic(), lang);
   const impulseId = `imp_daily_${today}_${topic.key}`;
   const state = getWeeklyImpulseCommunityEntry(impulseId);
   const seedPosts = buildWeeklyImpulseSeedPosts(schema, impulseId);
@@ -11071,15 +11135,19 @@ app.get('/api/community-events/:id/attendees', async (req, res) => {
  */
 app.post('/api/treasures', async (req, res) => {
   const {
-    userId, title, description, location, latitude, longitude,
+    userId: requestedUserId, title, description, location, latitude, longitude,
     category, condition, isFree, price, visibility, shareRadiusKm, photoUrl, photoUrls
   } = req.body;
+  const userId = req.firebaseUid || requestedUserId;
 
   // Validate required fields
   if (!userId || !title || !location || latitude === undefined || longitude === undefined) {
     return res.status(400).json({
       error: 'userId, title, location, latitude, longitude erforderlich'
     });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Anzeige kann nur fuer das eigene Konto erstellt werden' });
   }
   // Echter Bann: gesperrte Nutzer koennen nichts mehr im Verschenkmarkt einstellen.
   if (await isUserSuspended(userId.toString().trim())) return respondSuspended(res);
@@ -11113,7 +11181,10 @@ app.post('/api/treasures', async (req, res) => {
         isFree: isFree !== false,
         price: isFree === false && price ? parseFloat(price) : null,
         visibility: visibility ? String(visibility).slice(0, 50) : 'nearby',
-        shareRadiusKm: shareRadiusKm ? parseFloat(shareRadiusKm) : 10,
+        shareRadiusKm: Math.min(
+          Math.max(shareRadiusKm ? parseFloat(shareRadiusKm) : 10, 1),
+          25,
+        ),
         photoUrl: photoUrl ? String(photoUrl).slice(0, 500) : null,
         photoUrls: Array.isArray(photoUrls)
           ? photoUrls
@@ -11175,12 +11246,19 @@ app.get('/api/treasures', async (req, res) => {
     if (latitude !== undefined && longitude !== undefined) {
       const viewerLat = parseFloat(latitude);
       const viewerLon = parseFloat(longitude);
-      const maxDistance = parseFloat(radiusKm) || 10;
+      const requestedRadius = parseFloat(radiusKm) || 10;
+      // The giveaway market is intentionally local. Never expand a client
+      // request beyond 25 km, even if an outdated app sends a larger radius.
+      const maxDistance = Math.min(Math.max(requestedRadius, 1), 25);
 
       treasures = treasures.filter(treasure => {
         if (!treasure.latitude || !treasure.longitude) return false;
         const distance = haversineDistance(viewerLat, viewerLon, treasure.latitude, treasure.longitude);
-        return distance <= maxDistance;
+        const listingRadius = Math.min(
+          Math.max(Number(treasure.shareRadiusKm) || 10, 1),
+          25,
+        );
+        return distance <= Math.min(maxDistance, listingRadius);
       }).sort((a, b) => {
         const distA = haversineDistance(viewerLat, viewerLon, a.latitude, a.longitude);
         const distB = haversineDistance(viewerLat, viewerLon, b.latitude, b.longitude);
@@ -11566,10 +11644,14 @@ app.post('/api/treasures/:id/report', async (req, res) => {
  */
 app.post('/api/treasures/:id/reserve', async (req, res) => {
   const { id } = req.params;
-  const { requesterUserId, preferredSlot, handoverMode, message } = req.body;
+  const { requesterUserId: requestedRequesterUserId, preferredSlot, handoverMode, message } = req.body;
+  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
 
   if (!requesterUserId) {
     return res.status(400).json({ error: 'requesterUserId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Reservierung nur fuer das eigene Konto erlaubt' });
   }
 
   try {
@@ -11580,7 +11662,7 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
     if (!treasure) {
       return res.status(404).json({ error: 'Treasure nicht gefunden' });
     }
-    if (treasure.status === 'archived') {
+    if (treasure.status !== 'available') {
       return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
     }
     // Eigenes Angebot kann man nicht reservieren
@@ -11610,21 +11692,31 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
       .join(' · ')
       .slice(0, 500);
 
-    const handover = await prisma.treasureHandover.create({
-      data: {
-        treasureId: id,
-        requesterId: String(requesterUserId).slice(0, 100),
-        status: 'reserved',
-        location: preferredSlot ? String(preferredSlot).slice(0, 200) : null,
-        notes: combinedNotes || null,
-        updatedAt: new Date(),
-      },
+    const handover = await prisma.$transaction(async tx => {
+      const claimed = await tx.treasureItem.updateMany({
+        where: { id, status: 'available' },
+        data: { status: 'reserved', updatedAt: new Date() },
+      });
+      if (claimed.count !== 1) {
+        const error = new Error('Treasure ist nicht mehr verfuegbar');
+        error.code = 'TREASURE_UNAVAILABLE';
+        throw error;
+      }
+      return tx.treasureHandover.create({
+        data: {
+          treasureId: id,
+          requesterId: String(requesterUserId).slice(0, 100),
+          status: 'reserved',
+          location: preferredSlot ? String(preferredSlot).slice(0, 200) : null,
+          notes: combinedNotes || null,
+          updatedAt: new Date(),
+        },
+      });
     });
-
-    // Artikel-Status auf 'reserved' setzen (bleibt sichtbar, aber markiert)
-    await prisma.treasureItem.update({
-      where: { id },
-      data: { status: 'reserved', updatedAt: new Date() },
+    await sendPushToUser(treasure.userId, {
+      title: 'Neue Reservierung',
+      body: `Jemand moechte "${treasure.title}" abholen.`,
+      data: { type: 'treasure_reservation', treasureId: id, handoverId: handover.id },
     });
 
     res.status(201).json({
@@ -11635,6 +11727,9 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
     });
   } catch (err) {
     console.error('❌ Treasure reserve error:', err.message);
+    if (err.code === 'TREASURE_UNAVAILABLE') {
+      return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
+    }
     res.status(500).json({ error: `Reservierung fehlgeschlagen: ${err.message}` });
   }
 });
@@ -11645,9 +11740,13 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
  */
 app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
   const { id } = req.params;
-  const { requesterUserId } = req.body;
+  const { requesterUserId: requestedRequesterUserId } = req.body;
+  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
   if (!requesterUserId) {
     return res.status(400).json({ error: 'requesterUserId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Stornierung nur fuer das eigene Konto erlaubt' });
   }
   try {
     await prisma.treasureHandover.updateMany({
@@ -11676,6 +11775,118 @@ app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
 });
 
 /**
+ * POST /api/treasures/:id/handovers/:handoverId/confirm
+ * The owner confirms a reservation for handover.
+ */
+app.post('/api/treasures/:id/handovers/:handoverId/confirm', async (req, res) => {
+  const { id, handoverId } = req.params;
+  const requestedUserId = req.body.userId;
+  const userId = req.firebaseUid || requestedUserId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Bestaetigung nur fuer das eigene Konto erlaubt' });
+  }
+
+  try {
+    const treasure = await prisma.treasureItem.findUnique({ where: { id } });
+    if (!treasure) {
+      return res.status(404).json({ error: 'Treasure nicht gefunden' });
+    }
+    if (treasure.userId !== String(userId)) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann eine Reservierung bestaetigen' });
+    }
+    const handover = await prisma.treasureHandover.findFirst({
+      where: { id: handoverId, treasureId: id, status: { in: ['pending', 'reserved'] } },
+    });
+    if (!handover) {
+      return res.status(404).json({ error: 'Aktive Reservierung nicht gefunden' });
+    }
+
+    const now = new Date();
+    const updated = await prisma.$transaction(async tx => {
+      const confirmed = await tx.treasureHandover.update({
+        where: { id: handoverId },
+        data: { status: 'confirmed', updatedAt: now },
+      });
+      await tx.treasureHandover.updateMany({
+        where: { treasureId: id, id: { not: handoverId }, status: { in: ['pending', 'reserved'] } },
+        data: { status: 'cancelled', updatedAt: now },
+      });
+      await tx.treasureItem.update({
+        where: { id },
+        data: { status: 'claimed', updatedAt: now },
+      });
+      return confirmed;
+    });
+    await sendPushToUser(updated.requesterId, {
+      title: 'Uebergabe bestaetigt',
+      body: `Die Uebergabe von "${treasure.title}" wurde bestaetigt.`,
+      data: { type: 'treasure_handover_update', treasureId: id, handoverId },
+    });
+    res.json({ handover: updated, message: 'Uebergabe bestaetigt' });
+  } catch (err) {
+    console.error('❌ Treasure handover confirmation error:', err.message);
+    res.status(500).json({ error: `Bestaetigung fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/treasures/:id/handovers/:handoverId/complete
+ * The owner marks a confirmed handover as completed.
+ */
+app.post('/api/treasures/:id/handovers/:handoverId/complete', async (req, res) => {
+  const { id, handoverId } = req.params;
+  const requestedUserId = req.body.userId;
+  const userId = req.firebaseUid || requestedUserId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Abschluss nur fuer das eigene Konto erlaubt' });
+  }
+
+  try {
+    const treasure = await prisma.treasureItem.findUnique({ where: { id } });
+    if (!treasure) {
+      return res.status(404).json({ error: 'Treasure nicht gefunden' });
+    }
+    if (treasure.userId !== String(userId)) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann die Uebergabe abschliessen' });
+    }
+    const handover = await prisma.treasureHandover.findFirst({
+      where: { id: handoverId, treasureId: id, status: 'confirmed' },
+    });
+    if (!handover) {
+      return res.status(404).json({ error: 'Bestaetigte Uebergabe nicht gefunden' });
+    }
+
+    const now = new Date();
+    const updated = await prisma.$transaction(async tx => {
+      const completed = await tx.treasureHandover.update({
+        where: { id: handoverId },
+        data: { status: 'completed', updatedAt: now },
+      });
+      await tx.treasureItem.update({
+        where: { id },
+        data: { status: 'archived', updatedAt: now },
+      });
+      return completed;
+    });
+    await sendPushToUser(updated.requesterId, {
+      title: 'Uebergabe abgeschlossen',
+      body: `"${treasure.title}" wurde als uebergeben markiert.`,
+      data: { type: 'treasure_handover_update', treasureId: id, handoverId },
+    });
+    res.json({ handover: updated, message: 'Uebergabe abgeschlossen' });
+  } catch (err) {
+    console.error('❌ Treasure handover completion error:', err.message);
+    res.status(500).json({ error: `Abschluss fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
  * GET /api/treasures/mine?userId=...
  * Liefert die eigenen Angebote MIT Reservierungen (für den Verschenker)
  * plus die vom Nutzer reservierten Artikel (für den Abholer).
@@ -11685,6 +11896,8 @@ app.get('/api/treasures/mine', async (req, res) => {
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+
   try {
     // Eigene Angebote + wer sie reserviert hat
     const myOffers = await prisma.treasureItem.findMany({
@@ -11696,9 +11909,13 @@ app.get('/api/treasures/mine', async (req, res) => {
 
     // Reservierungen die der Nutzer selbst gemacht hat
     const myReservations = await prisma.treasureHandover.findMany({
-      where: { requesterId: userId, status: { in: ['pending', 'reserved'] } },
+      where: {
+        requesterId: userId,
+        status: { in: ['pending', 'reserved', 'confirmed'] },
+      },
       orderBy: { createdAt: 'desc' },
       take: 100,
+      include: { treasure: { select: { title: true } } },
     });
 
     res.json({
@@ -11708,7 +11925,11 @@ app.get('/api/treasures/mine', async (req, res) => {
         photoUrl: t.photoUrl,
         status: t.status,
         reservations: (t.handovers || [])
-          .filter(h => h.status === 'reserved' || h.status === 'pending')
+          .filter(h =>
+            h.status === 'reserved' ||
+            h.status === 'pending' ||
+            h.status === 'confirmed'
+          )
           .map(h => ({
             id: h.id,
             requesterId: h.requesterId,
@@ -11721,6 +11942,7 @@ app.get('/api/treasures/mine', async (req, res) => {
       reservedByMe: myReservations.map(h => ({
         id: h.id,
         treasureId: h.treasureId,
+        treasureTitle: h.treasure.title,
         status: h.status,
         location: h.location,
         createdAt: h.createdAt,
@@ -11871,10 +12093,14 @@ app.get('/api/treasures/:id', async (req, res) => {
  */
 app.put('/api/treasures/:id', async (req, res) => {
   const { id } = req.params;
-  const { userId, title, description, location, latitude, longitude, condition, status } = req.body;
+  const { userId: requestedUserId, title, description, location, latitude, longitude, condition, status } = req.body;
+  const userId = req.firebaseUid || requestedUserId;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Bearbeitung nur fuer das eigene Konto erlaubt' });
   }
 
   try {
@@ -11924,10 +12150,16 @@ app.put('/api/treasures/:id', async (req, res) => {
  */
 app.delete('/api/treasures/:id', async (req, res) => {
   const { id } = req.params;
-  const { userId } = req.query;
+  const requestedUserId = typeof req.query.userId === 'string'
+    ? req.query.userId
+    : '';
+  const userId = req.firebaseUid || requestedUserId;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && requestedUserId !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Loeschung nur fuer das eigene Konto erlaubt' });
   }
 
   try {

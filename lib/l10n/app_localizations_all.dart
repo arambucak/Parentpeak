@@ -1615,6 +1615,28 @@ class AppStringsManager {
       'treasureCurrentRadius': 'Aktueller Suchradius: {radius}',
       'treasureReserved': 'Reserviert ✓',
       'treasureReservedByYou': 'Von dir reserviert',
+      'treasureDeleteAction': 'Anzeige löschen',
+      'treasureDeleteTitle': 'Anzeige löschen?',
+      'treasureDeleteText':
+          'Die Anzeige wird dauerhaft entfernt. Bestehende Reservierungen werden aufgehoben.',
+      'treasureDeleteSuccess': 'Deine Anzeige wurde gelöscht.',
+      'treasureDeleteFailed': 'Die Anzeige konnte nicht gelöscht werden.',
+      'treasureMyListings': 'Meine Anzeigen',
+      'treasureMyListingsEmpty':
+          'Du hast noch keine Anzeigen oder Reservierungen.',
+      'treasureReservations': 'Reservierungen',
+      'treasureReservationOpen': 'Reservierung offen',
+      'treasureReservationConfirmed': 'Übergabe bestätigt',
+      'treasureConfirmHandover': 'Übergabe bestätigen',
+      'treasureCompleteHandover': 'Als übergeben markieren',
+      'treasureCancelReservation': 'Reservierung stornieren',
+      'treasureHandoverUpdated': 'Übergabe wurde aktualisiert.',
+      'treasureHandoverUpdateFailed':
+          'Übergabe konnte nicht aktualisiert werden.',
+      'treasureCoffeeSlotHint':
+          'Wählt eine Zeit, die für beide Familien gut passt.',
+      'treasureDropPointHint':
+          'Choose a contact-free pickup spot that feels safe for you.',
       'treasureLegalNotice':
           'Rechtlicher Hinweis: Parentpeak ist im Verschenkmarkt nur Vermittler. Für Zustand, Sicherheit und Übergabe der Artikel sind ausschließlich die beteiligten Nutzer verantwortlich.',
       'treasureReservationSuccessDetail':
@@ -3037,6 +3059,27 @@ class AppStringsManager {
       'treasureCurrentRadius': 'Current search radius: {radius}',
       'treasureReserved': 'Reserved ✓',
       'treasureReservedByYou': 'Reserved by you',
+      'treasureDeleteAction': 'Delete listing',
+      'treasureDeleteTitle': 'Delete this listing?',
+      'treasureDeleteText':
+          'The listing will be removed permanently. Existing reservations will be cancelled.',
+      'treasureDeleteSuccess': 'Your listing was deleted.',
+      'treasureDeleteFailed': 'The listing could not be deleted.',
+      'treasureMyListings': 'My listings',
+      'treasureMyListingsEmpty':
+          'You do not have any listings or reservations yet.',
+      'treasureReservations': 'Reservations',
+      'treasureReservationOpen': 'Reservation open',
+      'treasureReservationConfirmed': 'Handover confirmed',
+      'treasureConfirmHandover': 'Confirm handover',
+      'treasureCompleteHandover': 'Mark as handed over',
+      'treasureCancelReservation': 'Cancel reservation',
+      'treasureHandoverUpdated': 'Handover updated.',
+      'treasureHandoverUpdateFailed': 'Handover could not be updated.',
+      'treasureCoffeeSlotHint':
+          'Choose a time that works well for both families.',
+      'treasureDropPointHint':
+          'Choose a contact-free pickup spot that feels safe for you.',
       'treasureLegalNotice':
           'Legal notice: Parentpeak only connects users in the giveaway market. The participating users are solely responsible for item condition, safety, and handover.',
       'treasureReservationSuccessDetail':
@@ -8021,6 +8064,26 @@ class AppStringsManager {
       'treasureCurrentRadius': 'Radyoya lêgerînê ya niha: {radius}',
       'treasureReserved': 'Hatiye veqetandin ✓',
       'treasureReservedByYou': 'Ji aliyê te ve hatiye veqetandin',
+      'treasureDeleteAction': 'Belavkirinê jê bibe',
+      'treasureDeleteTitle': 'Belavkirinê jê bibin?',
+      'treasureDeleteText':
+          'Belavkirin dê bi temamî were rakirin. Veqetandinên heyî dê bêne betal kirin.',
+      'treasureDeleteSuccess': 'Belavkirina te hate jêbirin.',
+      'treasureDeleteFailed': 'Belavkirin nehat jêbirin.',
+      'treasureMyListings': 'Belavkirinên min',
+      'treasureMyListingsEmpty': 'Hê belavkirin an veqetandina te tune ye.',
+      'treasureReservations': 'Veqetandin',
+      'treasureReservationOpen': 'Veqetandin vekirî ye',
+      'treasureReservationConfirmed': 'Radestkirin hate pejirandin',
+      'treasureConfirmHandover': 'Radestkirinê pejirîne',
+      'treasureCompleteHandover': 'Wek radestkirî nîşan bide',
+      'treasureCancelReservation': 'Veqetandinê betal bike',
+      'treasureHandoverUpdated': 'Radestkirin hate rojanekirin.',
+      'treasureHandoverUpdateFailed': 'Radestkirin nehat rojanekirin.',
+      'treasureCoffeeSlotHint':
+          'Demek hilbijêrin ku ji bo her du malbatan guncaw be.',
+      'treasureDropPointHint':
+          'Cihê radestkirinê yê bê têkilî hilbijêrin ku ji bo we ewle be.',
       'treasureLegalNotice':
           'Agahdariya hiqûqî: Parentpeak di bazara diyariyan de tenê bikarhêneran digihîne hev. Bikarhênerên beşdar ji rewş, ewlehî û radestkirina tiştan berpirsiyar in.',
       'treasureReservationSuccessDetail':
@@ -8200,8 +8263,7 @@ class AppStringsManager {
           'Di dema qeydkirinê de çewtiyeke teknîkî çêbû. Ji kerema xwe dîsa biceribîne.',
       'register_back_to_login': 'Vegere têketinê',
       'register_title': 'Hesabek çêbike',
-      'register_subtitle':
-          'Di 2 deqeyan de ji bo jiyana malbatê amade bibî.',
+      'register_subtitle': 'Di 2 deqeyan de ji bo jiyana malbatê amade bibî.',
       'register_already_registered': 'Tu berê qeydkirî yî? ',
       'register_login_link': 'Niha têkeve',
       'register_beta_title': 'Niha di beta de belaş e',
@@ -8209,12 +8271,10 @@ class AppStringsManager {
           'Piştî destpêka fermî 1 meh belaş biceribîne.',
       'register_display_name_label':
           'Navê te yê xuyabûnê (mînak: Anna an Malbata Demir)',
-      'register_display_name_helper':
-          'Dêûbavên din te bi vî navî dibînin.',
+      'register_display_name_helper': 'Dêûbavên din te bi vî navî dibînin.',
       'register_display_name_required': 'Nav pêwîst e.',
       'register_password_min_length': 'Herî kêm 8 tîpan bi kar bîne.',
-      'register_password_uppercase':
-          'Herî kêm tîpeke mezin lê zêde bike.',
+      'register_password_uppercase': 'Herî kêm tîpeke mezin lê zêde bike.',
       'register_password_number': 'Herî kêm hejmarek lê zêde bike.',
       'register_password_confirm_label': 'Şîfreyê piştrast bike',
       'register_password_mismatch': 'Şîfre li hev nayên.',
@@ -8225,8 +8285,7 @@ class AppStringsManager {
       'register_submit': 'Belaş dest pê bike',
       'register_password_requirements': 'Pêdiviyên şîfreyê',
       'register_password_hint_length': 'Herî kêm 8 tîp',
-      'register_password_hint_uppercase':
-          'Herî kêm tîpeke mezin (A–Z)',
+      'register_password_hint_uppercase': 'Herî kêm tîpeke mezin (A–Z)',
       'register_password_hint_number': 'Herî kêm hejmarek (0–9)',
       'mood_level_1': 'Westîner',
       'mood_level_2': 'Zehmet',
@@ -11441,6 +11500,26 @@ class AppStringsManager {
       'treasureCurrentRadius': 'Mevcut arama yarıçapı: {radius}',
       'treasureReserved': 'Rezerve edildi ✓',
       'treasureReservedByYou': 'Senin tarafından rezerve edildi',
+      'treasureDeleteAction': 'İlanı sil',
+      'treasureDeleteTitle': 'İlan silinsin mi?',
+      'treasureDeleteText':
+          'İlan kalıcı olarak kaldırılacak. Mevcut rezervasyonlar iptal edilecek.',
+      'treasureDeleteSuccess': 'İlanınız silindi.',
+      'treasureDeleteFailed': 'İlan silinemedi.',
+      'treasureMyListings': 'İlanlarım',
+      'treasureMyListingsEmpty': 'Henüz ilanınız veya rezervasyonunuz yok.',
+      'treasureReservations': 'Rezervasyonlar',
+      'treasureReservationOpen': 'Rezervasyon bekliyor',
+      'treasureReservationConfirmed': 'Teslim onaylandı',
+      'treasureConfirmHandover': 'Teslimi onayla',
+      'treasureCompleteHandover': 'Teslim edildi olarak işaretle',
+      'treasureCancelReservation': 'Rezervasyonu iptal et',
+      'treasureHandoverUpdated': 'Teslim güncellendi.',
+      'treasureHandoverUpdateFailed': 'Teslim güncellenemedi.',
+      'treasureCoffeeSlotHint':
+          'Her iki aile için de uygun olan bir zamanı seçin.',
+      'treasureDropPointHint':
+          'Sizin için güvenli olan temassız bir teslim alma noktası seçin.',
       'treasureLegalNotice':
           'Yasal uyarı: Parentpeak hediye pazarında yalnızca kullanıcıları buluşturur. Eşyanın durumu, güvenliği ve tesliminden yalnızca ilgili kullanıcılar sorumludur.',
       'treasureReservationSuccessDetail':
@@ -11532,8 +11611,7 @@ class AppStringsManager {
       'event_places': 'Yerler',
       'event_detail_sign_in_required':
           'Etkinliklere katılmak için lütfen giriş yap.',
-      'event_detail_join_sign_in_required':
-          'Katılmak için lütfen giriş yap.',
+      'event_detail_join_sign_in_required': 'Katılmak için lütfen giriş yap.',
       'event_detail_request_sent': 'Katılım isteği gönderildi!',
       'event_detail_error': 'Hata: {error}',
       'event_detail_participants': '{current}/{maximum} katılımcı',
@@ -11611,8 +11689,7 @@ class AppStringsManager {
           'Google ile giriş başarısız oldu. Tekrar dene veya e-posta ve şifreni kullan.',
       'login_new_prompt': 'Parentpeak’te yeni misin? ',
       'login_create_account': 'Hesap oluştur',
-      'register_accept_terms_required':
-          'Lütfen kullanım koşullarını kabul et.',
+      'register_accept_terms_required': 'Lütfen kullanım koşullarını kabul et.',
       'register_failed': 'Kayıt başarısız oldu. Lütfen tekrar dene.',
       'register_technical_error':
           'Kayıt sırasında teknik bir hata oluştu. Lütfen tekrar dene.',
@@ -11622,12 +11699,10 @@ class AppStringsManager {
       'register_already_registered': 'Zaten kayıtlı mısın? ',
       'register_login_link': 'Şimdi giriş yap',
       'register_beta_title': 'Beta süresince ücretsiz',
-      'register_beta_description':
-          'Resmî lansmandan sonra 1 ay ücretsiz dene.',
+      'register_beta_description': 'Resmî lansmandan sonra 1 ay ücretsiz dene.',
       'register_display_name_label':
           'Görünen adın (ör. Anna veya Yılmaz ailesi)',
-      'register_display_name_helper':
-          'Diğer ebeveynler seni bu adla görecek.',
+      'register_display_name_helper': 'Diğer ebeveynler seni bu adla görecek.',
       'register_display_name_required': 'Ad gerekli.',
       'register_password_min_length': 'En az 8 karakter kullan.',
       'register_password_uppercase': 'En az bir büyük harf ekle.',

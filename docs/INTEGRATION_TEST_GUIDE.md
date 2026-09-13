@@ -150,6 +150,27 @@ Tests failed: 0
 ==================================================
 ```
 
+### 3. Verschenkmarkt Tests (`backend/tests/treasures.test.js`)
+
+Deckt lokale Sichtbarkeit, Moderation und den vollständigen Übergabeablauf ab:
+
+- Anzeige veröffentlichen und lokal abrufen
+- Reservierung durch eine interessierte Familie
+- Reservierung in `Meine Anzeigen` sehen
+- Übergabe bestätigen und als übergeben abschließen
+- Erneute Reservierung eines abgeschlossenen Artikels ablehnen
+
+#### Running Against Render Production
+
+```bash
+BEARER_TOKEN='your-backend-api-token' \
+API_BASE='https://parentpeak.onrender.com' \
+node backend/tests/treasures.test.js
+```
+
+Der Test startet gegen `parentpeak.onrender.com` absichtlich nicht ohne
+`BEARER_TOKEN`, damit keine unautorisierten Produktionsanfragen erfolgen.
+
 ## Environment Variables
 
 | Variable | Required | Description | Example |
