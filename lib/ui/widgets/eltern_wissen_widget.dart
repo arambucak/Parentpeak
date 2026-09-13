@@ -29,22 +29,40 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
   @override
   void initState() {
     super.initState();
+    languageService.addListener(_onLanguageChanged);
     _init();
   }
 
   @override
   void dispose() {
+    languageService.removeListener(_onLanguageChanged);
     _searchCtrl.dispose();
     super.dispose();
   }
 
+  void _onLanguageChanged() {
+    if (!mounted) return;
+    setState(() {
+      _impuls = _localizedEntry(_service.getDailyImpuls());
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant ElternWissenWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_initialized) {
+      setState(() => _impuls = _localizedEntry(_service.getDailyImpuls()));
+    }
+  }
+
   Future<void> _init() async {
     await _service.initialize();
-    if (mounted)
+    if (mounted) {
       setState(() {
-        _impuls = _service.getDailyImpuls();
+        _impuls = _localizedEntry(_service.getDailyImpuls());
         _initialized = true;
       });
+    }
     // Soforthilfe-Thema vorauffüllen wenn übergeben
     if (widget.initialTopic != null && widget.initialTopic!.isNotEmpty) {
       _searchCtrl.text = widget.initialTopic!;
@@ -106,10 +124,94 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
     },
   ];
 
+  List<Map<String, String>> _localizedTopicCards() {
+    final language = languageService.currentLanguage;
+    if (language == 'tr') {
+      return [
+        {
+          'emoji': '💢',
+          'label': _t('topic_defiance_anger'),
+          'hint': 'Öfke nöbetleri, vurma',
+          'search': 'wut',
+          'color': '0xFFDC2626',
+        },
+        {
+          'emoji': '😴',
+          'label': _t('topic_sleep_issues'),
+          'hint': 'Uykuya dalma, gece',
+          'search': 'schlafen',
+          'color': '0xFF8B5CF6',
+        },
+        {
+          'emoji': '🚫',
+          'label': 'Sınırlar',
+          'hint': 'Hayır demek, kurallar',
+          'search': 'grenzen',
+          'color': '0xFF2563EB',
+        },
+        {
+          'emoji': '🍝',
+          'label': 'Yemek',
+          'hint': 'Seçici yeme',
+          'search': 'essen',
+          'color': '0xFFF97316',
+        },
+        {
+          'emoji': '💑',
+          'label': 'Kardeşler',
+          'hint': 'Kavga, kıskançlık',
+          'search': 'geschwister',
+          'color': '0xFF0EA5A4',
+        },
+        {
+          'emoji': '📱',
+          'label': 'Medya',
+          'hint': 'Ekran süresi',
+          'search': 'bildschirm',
+          'color': '0xFF6B21A8',
+        },
+      ];
+    }
+    return _topicCards.map((card) => Map<String, String>.from(card)).toList();
+  }
+
+  String _t(String key) => AppStringsManager.getString(
+        languageService.currentLanguage,
+        key,
+      );
+
+  ElternWissenEntry? _localizedEntry(ElternWissenEntry? entry) {
+    if (entry == null || languageService.currentLanguage != 'tr') return entry;
+    if (entry.id != 'klein_04') return entry;
+
+    return ElternWissenEntry(
+      id: entry.id,
+      question: 'Çocuğum her şeye hayır diyor',
+      akut:
+          'Bu sağlıklı bir durum! Çocuğunuz kendi iradesi olan bağımsız bir birey olduğunu keşfediyor.',
+      beduerfnis:
+          'Özerklik temel bir ihtiyaçtır. “Hayır” demek, kendini belirlemenin ilk biçimidir.',
+      gfkSatz:
+          'Hayır dediğini duyuyorum. Bazı şeyleri yine de yapmamız gerekiyor; birlikte bir yol bulalım.',
+      aktion: const [
+        'Emir vermek yerine seçenekler sunun (“Kırmızı mı mavi mi ceket?”)',
+        'Gereksiz güç mücadelelerinden kaçının',
+        'Mümkün olduğunda hayır demesine saygı gösterin; bu özgüvenini güçlendirir',
+      ],
+      ermutigung:
+          'Evde hayır demesine izin verilen bir çocuk, yabancılara da hayır demeyi öğrenir.',
+      minAge: entry.minAge,
+      maxAge: entry.maxAge,
+      tags: entry.tags,
+      category: entry.category,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_initialized) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final topicCards = _localizedTopicCards();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       // Impuls des Tages (personalisiert)
@@ -127,10 +229,10 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
           height: 100,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: _topicCards.length,
+            itemCount: topicCards.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (_, i) {
-              final topic = _topicCards[i];
+              final topic = topicCards[i];
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
@@ -181,7 +283,7 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
         controller: _searchCtrl,
         onChanged: _onSearch,
         decoration: InputDecoration(
-            hintText: AppStringsManager.getString(
+          hintText: AppStringsManager.getString(
               languageService.currentLanguage, 'knowledge_search_hint'),
           hintStyle: TextStyle(fontSize: 13, color: theme.colorScheme.outline),
           prefixIcon: const Icon(Icons.search_rounded, size: 20),

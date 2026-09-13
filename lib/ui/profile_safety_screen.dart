@@ -25,6 +25,33 @@ import 'package:firebase_auth/firebase_auth.dart';
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
+String _profileCopy(String key, String fallback) {
+  const copies = {
+    'en': {
+      'active': 'Active',
+      'gdpr_compliant': 'GDPR compliant',
+      'terms_subtitle': 'Terms & use',
+      'licenses_subtitle': 'Packages used',
+      'blocked_count': '{count} blocked',
+    },
+    'ku': {
+      'active': 'Çalak',
+      'gdpr_compliant': 'Li gorî GDPR',
+      'terms_subtitle': 'Merc û bikaranîn',
+      'licenses_subtitle': 'Pakêtên hatine bikaranîn',
+      'blocked_count': '{count} hatine blokekirin',
+    },
+    'tr': {
+      'active': 'Aktif',
+      'gdpr_compliant': 'KVKK/GDPR uyumlu',
+      'terms_subtitle': 'Koşullar ve kullanım',
+      'licenses_subtitle': 'Kullanılan paketler',
+      'blocked_count': '{count} engellendi',
+    },
+  };
+  return copies[languageService.currentLanguage]?[key] ?? fallback;
+}
+
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
 class ProfileSafetyScreen extends StatefulWidget {
   const ProfileSafetyScreen({
@@ -492,7 +519,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               _buildTile(theme,
                   icon: Icons.notifications_rounded,
                   title: _t('notifications'),
-                  value: 'Aktiv',
+                  value: _profileCopy('active', 'Aktiv'),
                   onTap: () {}),
               const SizedBox(height: 28),
 
@@ -509,37 +536,38 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _buildCompactTile(theme,
                       icon: Icons.shield_rounded,
                       title: _t('privacy'),
-                      subtitle: 'DSGVO-konform',
+                      subtitle: _profileCopy('gdpr_compliant', 'DSGVO-konform'),
                       onTap: () => _openUrl(APIConfig.getPrivacyPolicyUrl())),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.gavel_rounded,
                       title: _t('terms'),
-                      subtitle: 'AGB & Nutzung',
+                      subtitle: _profileCopy('terms_subtitle', 'AGB & Nutzung'),
                       onTap: () => _openUrl(APIConfig.getTermsOfServiceUrl())),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.business_rounded,
-                      title: 'Impressum',
+                      title: _t('impressum'),
                       subtitle: '§5 TMG',
                       onTap: _showImpressum),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.auto_awesome_rounded,
-                      title: 'KI-Nutzungshinweis',
+                      title: _t('ai_disclosure'),
                       subtitle: 'EU AI Act',
                       onTap: _showAIDisclosure),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.download_rounded,
-                      title: 'Meine Daten exportieren',
+                      title: _t('export_data'),
                       subtitle: 'DSGVO Art. 20',
                       onTap: _exportUserData),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.code_rounded,
-                      title: 'Open-Source-Lizenzen',
-                      subtitle: 'Verwendete Packages',
+                      title: _t('open_source_licenses'),
+                      subtitle: _profileCopy(
+                          'licenses_subtitle', 'Verwendete Packages'),
                       onTap: () => showLicensePage(
                             context: context,
                             applicationName: 'Parentpeak',
@@ -550,9 +578,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.block_rounded,
-                      title: 'Blockierte Kontakte',
+                      title: _t('profile_blocked_contacts'),
                       subtitle:
-                          '${BlockReportService.instance.blockedUsers.length} blockiert',
+                          _profileCopy('blocked_count', '{count} blockiert')
+                              .replaceAll(
+                        '{count}',
+                        '${BlockReportService.instance.blockedUsers.length}',
+                      ),
                       onTap: _showBlockedContacts),
                   // Moderations-Dashboard — nur fuer Admin-UIDs sichtbar.
                   // Server prueft die Berechtigung zusaetzlich (ADMIN_USER_IDS).
@@ -579,7 +611,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.mail_rounded,
-                      title: 'Kontakt & Support',
+                      title: _t('contact_support'),
                       subtitle: APIConfig.getContactEmail() ?? 'E-Mail',
                       onTap: () => _openUrl(APIConfig.getContactSupportUrl())),
                 ]),
@@ -875,29 +907,33 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 itemBuilder: (_, i) {
                   final lang = _allLanguages[i];
                   final isActive = lang.code == current;
-                  return ListTile(
-                    leading: (lang.code == 'ku' || lang.code == 'ckb')
-                        ? const AlaRenginFlag(width: 30, height: 20)
-                        : Text(lang.flag, style: const TextStyle(fontSize: 22)),
-                    title: Text(
-                      lang.nativeName,
-                      style: TextStyle(
-                        fontWeight:
-                            isActive ? FontWeight.w800 : FontWeight.w500,
-                        color: isActive ? theme.colorScheme.primary : null,
+                  return Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
+                      leading: (lang.code == 'ku' || lang.code == 'ckb')
+                          ? const AlaRenginFlag(width: 30, height: 20)
+                          : Text(lang.flag,
+                              style: const TextStyle(fontSize: 22)),
+                      title: Text(
+                        lang.nativeName,
+                        style: TextStyle(
+                          fontWeight:
+                              isActive ? FontWeight.w800 : FontWeight.w500,
+                          color: isActive ? theme.colorScheme.primary : null,
+                        ),
                       ),
+                      trailing: isActive
+                          ? Icon(Icons.check_circle_rounded,
+                              color: theme.colorScheme.primary, size: 22)
+                          : null,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      onTap: () async {
+                        await languageService.setLanguage(lang.code);
+                        if (mounted) setState(() {});
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      },
                     ),
-                    trailing: isActive
-                        ? Icon(Icons.check_circle_rounded,
-                            color: theme.colorScheme.primary, size: 22)
-                        : null,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    onTap: () async {
-                      await languageService.setLanguage(lang.code);
-                      if (mounted) setState(() {});
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    },
                   );
                 },
               ),
