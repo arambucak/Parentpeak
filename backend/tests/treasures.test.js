@@ -11,6 +11,7 @@ const https = require('https');
 // Environment
 const BEARER_TOKEN = process.env.BEARER_TOKEN || '';
 const API_BASE = process.env.API_BASE || 'https://parentpeak.onrender.com';
+const OWNER_USER_ID = process.env.OWNER_USER_ID || 'host_demo_001';
 const REQUESTER_USER_ID = process.env.REQUESTER_USER_ID || 'host_demo_001';
 
 let passed = 0;
@@ -112,9 +113,12 @@ const testTreasure3 = {
 
 // Test runner
 async function runTests() {
-  if (API_BASE.startsWith('https://parentpeak.onrender.com') && !BEARER_TOKEN) {
+  if (
+    API_BASE.startsWith('https://parentpeak.onrender.com') &&
+    (!BEARER_TOKEN || !OWNER_USER_ID || !REQUESTER_USER_ID)
+  ) {
     console.error(
-      'BEARER_TOKEN fehlt. Der Produktions-Smoke wird ohne gültiges Test-Token nicht gestartet.',
+      'BEARER_TOKEN, OWNER_USER_ID und REQUESTER_USER_ID sind fuer den Produktions-Smoke erforderlich.',
     );
     process.exit(2);
   }
@@ -123,6 +127,9 @@ async function runTests() {
   console.log(`📍 API Base: ${API_BASE}\n`);
 
   let treasureId1, treasureId2, treasureId3;
+  testTreasure1.userId = OWNER_USER_ID;
+  testTreasure2.userId = OWNER_USER_ID;
+  testTreasure3.userId = OWNER_USER_ID;
 
   // Test 1: Create treasures
   try {
@@ -243,7 +250,7 @@ async function runTests() {
 
     const ownerOverview = await makeRequest(
       'GET',
-      '/api/treasures/mine?userId=user-berlin-1',
+      `/api/treasures/mine?userId=${encodeURIComponent(OWNER_USER_ID)}`,
       null,
       BEARER_TOKEN,
     );
@@ -256,7 +263,7 @@ async function runTests() {
     const confirmRes = await makeRequest(
       'POST',
       `/api/treasures/${treasureId1}/handovers/${handoverId}/confirm`,
-      { userId: 'user-berlin-1' },
+      { userId: OWNER_USER_ID },
       BEARER_TOKEN,
     );
     if (confirmRes.status !== 200 || confirmRes.body.handover?.status !== 'confirmed') {
@@ -266,7 +273,7 @@ async function runTests() {
     const completeRes = await makeRequest(
       'POST',
       `/api/treasures/${treasureId1}/handovers/${handoverId}/complete`,
-      { userId: 'user-berlin-1' },
+      { userId: OWNER_USER_ID },
       BEARER_TOKEN,
     );
     if (completeRes.status !== 200 || completeRes.body.handover?.status !== 'completed') {
@@ -292,7 +299,7 @@ async function runTests() {
   try {
     console.log('\n✏️  Test 6: Update treasure (owner verification)');
     const updateData = {
-      userId: 'user-berlin-1',
+      userId: OWNER_USER_ID,
       title: 'Updated: Spielzeugauto Collection',
       condition: 'fair',
     };
@@ -463,7 +470,12 @@ async function runTests() {
   // Test 9: Delete treasure (owner verification)
   try {
     console.log('\n🗑️  Test 9: Delete treasure (owner verification)');
-    const res = await makeRequest('DELETE', `/api/treasures/${treasureId1}?userId=user-berlin-1`, null, BEARER_TOKEN);
+    const res = await makeRequest(
+      'DELETE',
+      `/api/treasures/${treasureId1}?userId=${encodeURIComponent(OWNER_USER_ID)}`,
+      null,
+      BEARER_TOKEN,
+    );
 
     if (res.status === 200 || res.status === 204) {
       console.log(`  ✓ Treasure deleted successfully`);
