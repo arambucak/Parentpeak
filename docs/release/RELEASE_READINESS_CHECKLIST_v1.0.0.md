@@ -23,6 +23,9 @@
 ### 2. Code Quality Assurance
 - [ ] Run `flutter analyze` - NO ISSUES
 - [ ] Run full test suite: `flutter test`
+- [ ] Run locale/RTL regression tests: `flutter test test/supported_languages_test.dart`
+- [ ] Verify runtime locale switching for `ar`, `fa`, and `ckb` remains RTL; `ku` remains LTR
+- [ ] Native-speaker sign-off for Turkish (`tr`) and Kurmanji (`ku`, Hawar standard): sample Onboarding, Recipes, and Settings for grammar, terminology, and warm parent-facing tone
 - [ ] Verify all overflow fixes in place (responsive breakpoints <360px)
 - [ ] Verify all entrance animations working smoothly (no jank)
 - [ ] Check console logs for any warnings/errors in release build
@@ -31,6 +34,9 @@
 - [ ] Test on physical device if available
 
 ### 3. iOS Release Build
+- [ ] Validate privacy manifest: `plutil -lint ios/Runner/PrivacyInfo.xcprivacy`
+- [ ] Verify `PrivacyInfo.xcprivacy` is included in the Runner target's Copy Bundle Resources phase
+- [ ] Keep App Store Connect privacy answers aligned with the manifest and production backend behavior
 - [ ] Clean build: `flutter clean && flutter pub get`
 - [ ] Build for iOS: `flutter build ios --release`
 - [ ] Verify build artifact location: `build/ios/iphoneos/Runner.app`
@@ -46,7 +52,24 @@
 - [ ] Test on TestFlight beta before App Store submission
 
 ### 4. Android Release Build
-- [ ] Verify `android/key.properties` contains signing credentials
+- [ ] Create the upload keystore once:
+  ```bash
+  mkdir -p android/keystores
+  keytool -genkeypair -v \
+    -keystore android/keystores/upload-keystore.jks \
+    -keyalg RSA -keysize 2048 -validity 10000 \
+    -alias upload
+  ```
+- [ ] Create the ignored signing configuration: `cp android/key.properties.example android/key.properties`
+- [ ] Replace every `REPLACE_WITH_...` value in `android/key.properties`:
+  ```properties
+  storePassword=DEIN_STORE_PASSWORT
+  keyPassword=DEIN_KEY_PASSWORT
+  keyAlias=upload
+  storeFile=../keystores/upload-keystore.jks
+  ```
+- [ ] Verify alias and certificate: `keytool -list -v -keystore android/keystores/upload-keystore.jks -alias upload`
+- [ ] Back up the JKS file and both passwords outside the repository
 - [ ] Build AAB for Play Store: `flutter build appbundle --release`
 - [ ] Verify AAB artifact: `build/app/outputs/bundle/release/app-release.aab`
 - [ ] Optional: Build APK for direct testing: `flutter build apk --release`

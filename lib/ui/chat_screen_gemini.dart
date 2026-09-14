@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 
 class ChatScreenGemini extends StatefulWidget {
@@ -24,15 +23,7 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
 
   void _initializeGemini() {
     try {
-      final apiKey = APIConfig.getGeminiApiKey();
-      if (apiKey == null || apiKey.isEmpty) {
-        _showError(
-          'Gemini API-Key nicht konfiguriert',
-          'Bitte stelle sicher, dass GEMINI_API_KEY in der Config gesetzt ist.',
-        );
-        return;
-      }
-      _geminiService = GeminiAIService(apiKey: apiKey);
+      _geminiService = GeminiAIService();
     } catch (e) {
       _showError('Fehler bei Initialisierung', e.toString());
     }

@@ -1,12 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_pages.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/services/location_service.dart';
+import 'package:parentpeak/logic/onboarding_sync_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
 
 /// Onboarding-Ergebnis das nach Abschluss zurückgegeben wird.
 class OnboardingResult {
@@ -52,6 +56,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   String _selectedRegion = 'NRW';
   final TextEditingController _familyNameController = TextEditingController();
 
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
+
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
   late final AnimationController _slideController;
@@ -60,6 +67,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
+    // Der Anzeigename kommt aus der Registrierung — Feld vorbelegen, damit der
+    // Nutzer nicht erneut tippen muss (nur bestaetigen).
+    final existingName = FirebaseAuth.instance.currentUser?.displayName?.trim();
+    if (existingName != null && existingName.isNotEmpty) {
+      _familyNameController.text = existingName;
+    }
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -134,18 +147,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_completedKey, true);
 
-    // Save family name
+    // Anzeigename (aus Registrierung vorbelegt, ggf. hier bestaetigt/angepasst)
+    // ist die EINE app-weite Identitaet: Firebase displayName + UserProfile.
     final familyName = _familyNameController.text.trim();
     if (familyName.isNotEmpty) {
       await prefs.setString('onboarding.family_name', familyName);
-      // Also set as Firebase display name so it shows in chat & network
       try {
         final user = FirebaseAuth.instance.currentUser;
-        if (user != null &&
-            (user.displayName == null || user.displayName!.trim().isEmpty)) {
+        if (user != null && user.displayName?.trim() != familyName) {
           await user.updateDisplayName(familyName);
         }
       } catch (_) {}
+      // App-weit serverseitig sichern (uid -> displayName).
+      unawaited(UserProfileService.instance.setDisplayName(familyName));
     }
 
     if (_selectedRoles.isNotEmpty) {
@@ -176,6 +190,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     // Speichere die personalisierte Kachel-Reihenfolge
     final tileOrder = _buildTileOrder();
     await prefs.setStringList('home.tile_order.v1', tileOrder);
+
+    // Minimal-Sync: Abschluss + unkritische Stammdaten account-gebunden
+    // sichern, damit ein neues Geraet das Onboarding ueberspringt (best-effort).
+    unawaited(OnboardingSyncService.instance.pushCompleted());
 
     widget.onComplete();
   }
@@ -345,8 +363,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 color: Color(0xFF4CAF50), size: 22),
           ),
           const SizedBox(width: 12),
-          const Expanded(
-            child: Text('Standort',
+          Expanded(
+            child: Text(_t('location'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           ),
         ]),
@@ -354,8 +372,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Damit wir dir Events, Spielfreunde und Verschenk-Angebote in deiner Umgebung zeigen.',
+            Text(
+              _t('location_onboarding_explanation'),
               style: TextStyle(
                   fontSize: 13, height: 1.5, color: Color(0xFF6B7280)),
             ),
@@ -366,12 +384,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 color: const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Row(children: [
-                Icon(Icons.lock_rounded, size: 14, color: Color(0xFF16A34A)),
-                SizedBox(width: 8),
+              child: Row(children: [
+                const Icon(Icons.lock_rounded,
+                    size: 14, color: Color(0xFF16A34A)),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Dein genauer Standort bleibt privat. Andere sehen nur deine Stadt.',
+                    _t('location_onboarding_privacy'),
                     style: TextStyle(fontSize: 11, color: Color(0xFF166534)),
                   ),
                 ),
@@ -382,13 +401,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'skip'),
-            child: const Text('Lieber nicht',
+            child: Text(_t('location_onboarding_skip'),
                 style: TextStyle(color: Color(0xFF9CA3AF))),
           ),
           FilledButton.icon(
             onPressed: () => Navigator.pop(ctx, 'gps'),
             icon: const Icon(Icons.my_location_rounded, size: 16),
-            label: const Text('Standort erkennen'),
+            label: Text(_t('location_onboarding_detect')),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF4CAF50),
               shape: RoundedRectangleBorder(
@@ -409,13 +428,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           builder: (ctx) => AlertDialog(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('PLZ oder Stadt eingeben'),
+            title: Text(_t('location_onboarding_manual_title')),
             content: TextField(
               controller: plzController,
               autofocus: true,
               keyboardType: TextInputType.text,
               decoration: InputDecoration(
-                hintText: 'z.B. 10969 oder Berlin',
+                hintText: _t('location_onboarding_manual_hint'),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -423,7 +442,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Abbrechen')),
+                  child: Text(_t('cancel'))),
               FilledButton(
                 onPressed: () {
                   if (plzController.text.trim().isNotEmpty) {
@@ -432,7 +451,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   }
                   Navigator.pop(ctx);
                 },
-                child: const Text('Fertig'),
+                child: Text(_t('done')),
               ),
             ],
           ),
@@ -444,130 +463,172 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildLanguagePage() {
     final theme = Theme.of(context);
-    const languages = [
-      {'code': 'de', 'flag': '\u{1F1E9}\u{1F1EA}', 'name': 'Deutsch'},
-      {'code': 'en', 'flag': '\u{1F1EC}\u{1F1E7}', 'name': 'English'},
-      {'code': 'tr', 'flag': '\u{1F1F9}\u{1F1F7}', 'name': 'Türkçe'},
-      {'code': 'ku', 'flag': '\u{1F3F3}\u{FE0F}', 'name': 'Kurdî'},
-      {'code': 'ar', 'flag': '\u{1F1F8}\u{1F1E6}', 'name': 'العربية'},
-      {'code': 'fr', 'flag': '\u{1F1EB}\u{1F1F7}', 'name': 'Français'},
-      {'code': 'es', 'flag': '\u{1F1EA}\u{1F1F8}', 'name': 'Español'},
-      {'code': 'ru', 'flag': '\u{1F1F7}\u{1F1FA}', 'name': 'Русский'},
-      {'code': 'pl', 'flag': '\u{1F1F5}\u{1F1F1}', 'name': 'Polski'},
-      {'code': 'it', 'flag': '\u{1F1EE}\u{1F1F9}', 'name': 'Italiano'},
-      {'code': 'nl', 'flag': '\u{1F1F3}\u{1F1F1}', 'name': 'Nederlands'},
-      {'code': 'uk', 'flag': '\u{1F1FA}\u{1F1E6}', 'name': 'Українська'},
-    ];
+    const languages = AppLanguages.supported;
+
+    Widget buildLanguageGrid() {
+      return GridView.builder(
+        itemCount: languages.length,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          childAspectRatio: 1.3,
+        ),
+        itemBuilder: (_, i) {
+          final lang = languages[i];
+          final selected = languageService.currentLanguage == lang.code;
+          return GestureDetector(
+            onTap: () async {
+              HapticFeedback.selectionClick();
+              await languageService.setLanguage(lang.code);
+              if (mounted) setState(() {});
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                color: selected
+                    ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                    : theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color:
+                      selected ? theme.colorScheme.primary : Colors.transparent,
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (lang.code == 'ku' || lang.code == 'ckb')
+                    const AlaRenginFlag(width: 32, height: 20)
+                  else
+                    Text(lang.flag, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(height: 4),
+                  Text(
+                    lang.nativeName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
 
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 40),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary.withValues(alpha: 0.1),
-                      const Color(0xFF7C3AED).withValues(alpha: 0.08),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Center(
-                  child: Text('\u{1F30D}', style: TextStyle(fontSize: 36)),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Choose your language',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Wähle deine Sprache • Select your language',
-                style: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: GridView.builder(
-                  itemCount: languages.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1.3,
-                  ),
-                  itemBuilder: (_, i) {
-                    final lang = languages[i];
-                    final selected =
-                        languageService.currentLanguage == lang['code'];
-                    return GestureDetector(
-                      onTap: () async {
-                        HapticFeedback.selectionClick();
-                        await languageService
-                            .setLanguage(lang['code']! as String);
-                        if (mounted) setState(() {});
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                              : theme.colorScheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: selected
-                                ? theme.colorScheme.primary
-                                : Colors.transparent,
-                            width: selected ? 2 : 1,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (lang['code'] == 'ku')
-                              const AlaRenginFlag(width: 32, height: 20)
-                            else
-                              Text(lang['flag']!,
-                                  style: const TextStyle(fontSize: 24)),
-                            const SizedBox(height: 4),
-                            Text(
-                              lang['name']!,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: selected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                color: selected
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurface,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxHeight < 520;
+
+            if (isCompact) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 20),
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            theme.colorScheme.primary.withValues(alpha: 0.1),
+                            const Color(0xFF7C3AED).withValues(alpha: 0.08),
                           ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                    );
-                  },
+                      child: const Center(
+                        child:
+                            Text('\u{1F30D}', style: TextStyle(fontSize: 36)),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Choose your language',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Wähle deine Sprache • Select your language',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 18),
+                    buildLanguageGrid(),
+                    const SizedBox(height: 12),
+                  ],
                 ),
+              );
+            }
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.primary.withValues(alpha: 0.1),
+                          const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(
+                      child: Text('\u{1F30D}', style: TextStyle(fontSize: 36)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Choose your language',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Wähle deine Sprache • Select your language',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  Expanded(
+                    child: buildLanguageGrid(),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -598,7 +659,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Dein Vorname oder Familienname — damit wir dich persönlich begrüßen können.',
+                _t('family_name_desc'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -676,7 +737,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           TextButton(
             onPressed: () => _goToPage(_currentPage - 1),
             child: Text(
-              'Zurück',
+              _t('back'),
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           )
@@ -684,7 +745,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           TextButton(
             onPressed: _completeOnboarding,
             child: Text(
-              'Überspringen',
+              _t('location_onboarding_skip'),
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),

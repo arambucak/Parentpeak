@@ -22,7 +22,6 @@ dependencies:
     sdk: flutter
   flutter_local_notifications: ^22.0.0
   timezone: ^0.11.0
-  google_generative_ai: ^0.4.4
   flutter_svg: ^2.2.3
   flutter_tts: ^4.2.5
   image_picker: ^1.1.2
@@ -54,6 +53,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - .env
+    # Placeholder env only. Real secrets are injected via --dart-define at build time.
+    # The real local .env is NEVER bundled (would leak keys in APK/Web build).
+    - assets/env.template
     - assets/images/
     - assets/icons/
