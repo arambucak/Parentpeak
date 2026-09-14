@@ -36,7 +36,8 @@ class AppLocalizations {
   }
 
   static Map<String, String> _withCamelCaseAliases(
-      Map<String, String> strings) {
+    Map<String, String> strings,
+  ) {
     return {
       for (final entry in strings.entries) ...{
         entry.key: entry.value,
@@ -46,9 +47,9 @@ class AppLocalizations {
   }
 
   static String _toCamelCase(String key) => key.replaceAllMapped(
-        RegExp(r'_([a-z])'),
-        (match) => match.group(1)!.toUpperCase(),
-      );
+    RegExp(r'_([a-z])'),
+    (match) => match.group(1)!.toUpperCase(),
+  );
 
   String get appTitle => _stringsForLocale()['appTitle'] ?? 'Parentpeak';
   String get trustedDevicesTitle =>
@@ -75,8 +76,10 @@ class AppLocalizations {
       _stringsForLocale()['cannotRemovePriority'] ??
       'This device cannot be removed.';
   String removedAt(String date) =>
-      (_stringsForLocale()['removedAt'] ?? 'Removed at: {date}')
-          .replaceAll('{date}', date);
+      (_stringsForLocale()['removedAt'] ?? 'Removed at: {date}').replaceAll(
+        '{date}',
+        date,
+      );
 
   String t(String key, {String? fallback}) =>
       _stringsForLocale()[key] ?? fallback ?? key;
@@ -168,7 +171,7 @@ class AppLocalizations {
       'moreLabel': 'More',
       'treasureTileTitle': 'Giveaway Market',
       'treasureTileSubtitle': 'Give away, exchange, meet parents',
-    'treasureFeedTitle': 'Treasures near you',
+      'treasureFeedTitle': 'Treasures near you',
       'treasureFeedSubtitle': 'Local, honest, easy to understand',
       'treasureFeedFilterStreet': 'On your street',
       'treasureFeedFilterWalk5': '5 minutes away',
@@ -336,7 +339,7 @@ class AppLocalizations {
       'moreLabel': 'Mehr',
       'treasureTileTitle': 'Verschenkmarkt',
       'treasureTileSubtitle': 'Verschenken, austauschen, Eltern verbinden',
-    'treasureFeedTitle': 'Schätze in deiner Nähe',
+      'treasureFeedTitle': 'Schätze in deiner Nähe',
       'treasureFeedSubtitle': 'Lokal, ehrlich, sofort verständlich',
       'treasureFeedFilterStreet': 'In deiner Straße',
       'treasureFeedFilterWalk5': '5 Gehminuten',
@@ -507,7 +510,7 @@ class AppLocalizations {
       'moreLabel': 'Daha Fazla',
       'treasureTileTitle': 'Hediye Pazarı',
       'treasureTileSubtitle': 'Hediye et, paylaş, ebeveynleri buluştur',
-    'treasureFeedTitle': 'Yakınındaki hazineler',
+      'treasureFeedTitle': 'Yakınındaki hediyeler',
       'treasureFeedSubtitle': 'Yerel, dürüst, anlaşılması kolay',
       'treasureFeedFilterStreet': 'Sokağında',
       'treasureFeedFilterWalk5': '5 dakika yürüme mesafesi',
@@ -638,7 +641,7 @@ class AppLocalizations {
       'treasureDropRetterBox': 'Kapının önündeki kurtarma kutusu',
       'treasureDropKitaLocker': 'Kreş dolabı ("Martı" bölmesi)',
       'treasureDropMailbox': 'Girişteki posta kutusu',
-    }
+    },
   };
 }
 
