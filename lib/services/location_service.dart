@@ -69,11 +69,9 @@ class LocationService {
 
       // Get position — web uses WiFi/IP geolocation which is slower
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: LocationSettings(
+        locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.low, // City-level, not exact (privacy)
-          timeLimit: kIsWeb
-              ? const Duration(seconds: 20)
-              : const Duration(seconds: 10),
+          timeLimit: kIsWeb ? Duration(seconds: 20) : Duration(seconds: 10),
         ),
       );
 
@@ -98,15 +96,14 @@ class LocationService {
     _city = input.trim();
     _method = 'manual';
 
-    // Simple PLZ → coordinates mapping for major areas
-    final coords = _geocodePLZ(input.trim());
+    final coords =
+        _geocodePLZ(input.trim()) ?? await _forwardGeocode(input.trim());
     if (coords != null) {
       _latitude = coords.$1;
       _longitude = coords.$2;
     } else {
-      // Fallback: center of Germany if we can't geocode
-      _latitude = 51.1657;
-      _longitude = 10.4515;
+      _latitude = null;
+      _longitude = null;
     }
     await _save();
   }
@@ -179,6 +176,37 @@ class LocationService {
     } catch (e) {
       debugPrint('LocationService._reverseGeocodeAndSetCity failed: $e');
       // Non-fatal: location still works without city name
+    }
+  }
+
+  Future<(double, double)?> _forwardGeocode(String query) async {
+    if (query.isEmpty) return null;
+    try {
+      final uri = Uri.https(
+        'nominatim.openstreetmap.org',
+        '/search',
+        {'q': query, 'format': 'json', 'limit': '1'},
+      );
+      final headers = kIsWeb
+          ? <String, String>{}
+          : {'User-Agent': 'ParentPeak/1.0 (family app)'};
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 8));
+      if (response.statusCode != 200) return null;
+      final results = jsonDecode(response.body);
+      if (results is! List || results.isEmpty || results.first is! Map) {
+        return null;
+      }
+      final result = Map<String, dynamic>.from(results.first as Map);
+      final latitude = double.tryParse(result['lat']?.toString() ?? '');
+      final longitude = double.tryParse(result['lon']?.toString() ?? '');
+      return latitude != null && longitude != null
+          ? (latitude, longitude)
+          : null;
+    } catch (e) {
+      debugPrint('LocationService._forwardGeocode failed: $e');
+      return null;
     }
   }
 

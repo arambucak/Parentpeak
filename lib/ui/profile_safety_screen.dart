@@ -9,12 +9,48 @@ import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
 import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/config/access_config.dart';
+import 'package:parentpeak/ui/admin_moderation_screen.dart';
+import 'package:parentpeak/logic/error_reporting_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
+String _profileCopy(String key, String fallback) {
+  const copies = {
+    'en': {
+      'active': 'Active',
+      'gdpr_compliant': 'GDPR compliant',
+      'terms_subtitle': 'Terms & use',
+      'licenses_subtitle': 'Packages used',
+      'blocked_count': '{count} blocked',
+    },
+    'ku': {
+      'active': 'Çalak',
+      'gdpr_compliant': 'Li gorî GDPR',
+      'terms_subtitle': 'Merc û bikaranîn',
+      'licenses_subtitle': 'Pakêtên hatine bikaranîn',
+      'blocked_count': '{count} hatine blokekirin',
+    },
+    'tr': {
+      'active': 'Aktif',
+      'gdpr_compliant': 'KVKK/GDPR uyumlu',
+      'terms_subtitle': 'Koşullar ve kullanım',
+      'licenses_subtitle': 'Kullanılan paketler',
+      'blocked_count': '{count} engellendi',
+    },
+  };
+  return copies[languageService.currentLanguage]?[key] ?? fallback;
+}
 
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
 class ProfileSafetyScreen extends StatefulWidget {
@@ -36,9 +72,6 @@ class ProfileSafetyScreen extends StatefulWidget {
 class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   List<_ChildInfo> _children = [];
   String _appVersion = '';
-
-  String _t(String key) =>
-      AppStringsManager.getString(languageService.currentLanguage, key);
 
   @override
   void initState() {
@@ -220,10 +253,21 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Text(
-                      name,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
+                    GestureDetector(
+                      onTap: () => _editDisplayName(name),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            name,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(Icons.edit_rounded,
+                              size: 16, color: theme.colorScheme.outline),
+                        ],
                       ),
                     ),
                     if (email.isNotEmpty) ...[
@@ -475,7 +519,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               _buildTile(theme,
                   icon: Icons.notifications_rounded,
                   title: _t('notifications'),
-                  value: 'Aktiv',
+                  value: _profileCopy('active', 'Aktiv'),
                   onTap: () {}),
               const SizedBox(height: 28),
 
@@ -492,37 +536,38 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _buildCompactTile(theme,
                       icon: Icons.shield_rounded,
                       title: _t('privacy'),
-                      subtitle: 'DSGVO-konform',
+                      subtitle: _profileCopy('gdpr_compliant', 'DSGVO-konform'),
                       onTap: () => _openUrl(APIConfig.getPrivacyPolicyUrl())),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.gavel_rounded,
                       title: _t('terms'),
-                      subtitle: 'AGB & Nutzung',
+                      subtitle: _profileCopy('terms_subtitle', 'AGB & Nutzung'),
                       onTap: () => _openUrl(APIConfig.getTermsOfServiceUrl())),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.business_rounded,
-                      title: 'Impressum',
+                      title: _t('impressum'),
                       subtitle: '§5 TMG',
                       onTap: _showImpressum),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.auto_awesome_rounded,
-                      title: 'KI-Nutzungshinweis',
+                      title: _t('ai_disclosure'),
                       subtitle: 'EU AI Act',
                       onTap: _showAIDisclosure),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.download_rounded,
-                      title: 'Meine Daten exportieren',
+                      title: _t('export_data'),
                       subtitle: 'DSGVO Art. 20',
                       onTap: _exportUserData),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.code_rounded,
-                      title: 'Open-Source-Lizenzen',
-                      subtitle: 'Verwendete Packages',
+                      title: _t('open_source_licenses'),
+                      subtitle: _profileCopy(
+                          'licenses_subtitle', 'Verwendete Packages'),
                       onTap: () => showLicensePage(
                             context: context,
                             applicationName: 'Parentpeak',
@@ -533,14 +578,40 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.block_rounded,
-                      title: 'Blockierte Kontakte',
+                      title: _t('profile_blocked_contacts'),
                       subtitle:
-                          '${BlockReportService.instance.blockedUsers.length} blockiert',
+                          _profileCopy('blocked_count', '{count} blockiert')
+                              .replaceAll(
+                        '{count}',
+                        '${BlockReportService.instance.blockedUsers.length}',
+                      ),
                       onTap: _showBlockedContacts),
+                  // Moderations-Dashboard — nur fuer Admin-UIDs sichtbar.
+                  // Server prueft die Berechtigung zusaetzlich (ADMIN_USER_IDS).
+                  if (APIConfig.isAdminUser(
+                      AuthService.instance.currentUser?.uid)) ...[
+                    _thinDivider(theme),
+                    _buildCompactTile(theme,
+                        icon: Icons.shield_rounded,
+                        title: 'Moderation',
+                        subtitle: 'Meldungen prüfen & Accounts sperren',
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const AdminModerationScreen()))),
+                    _thinDivider(theme),
+                    // Nur fuer Admin: Crashlytics-Nachweis im Release-Build.
+                    _buildCompactTile(theme,
+                        icon: Icons.bug_report_rounded,
+                        title: 'Crashlytics-Test',
+                        subtitle: 'Test-Fehlerbericht an Firebase senden',
+                        onTap: _sendCrashlyticsTest),
+                  ],
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.mail_rounded,
-                      title: 'Kontakt & Support',
+                      title: _t('contact_support'),
                       subtitle: APIConfig.getContactEmail() ?? 'E-Mail',
                       onTap: () => _openUrl(APIConfig.getContactSupportUrl())),
                 ]),
@@ -682,7 +753,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   size: 28, color: theme.colorScheme.onPrimaryContainer),
             ),
             const SizedBox(height: 16),
-            Text('Abmelden?',
+            Text(_t('profile_logout_title'),
                 style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
@@ -702,7 +773,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Abbrechen'),
+                  child: Text(_t('cancel')),
                 ),
               ),
               const SizedBox(width: 12),
@@ -714,7 +785,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Abmelden'),
+                  child: Text(_t('logout')),
                 ),
               ),
             ]),
@@ -786,56 +857,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
 
   // ─── Sprach-Auswahl ─────────────────────────────────────────────────────────
 
-  static const List<_LanguageOption> _allLanguages = [
-    _LanguageOption('de', 'Deutsch', '\u{1F1E9}\u{1F1EA}'),
-    _LanguageOption('en', 'English', '\u{1F1EC}\u{1F1E7}'),
-    _LanguageOption('tr', 'Türkçe', '\u{1F1F9}\u{1F1F7}'),
-    _LanguageOption(
-        'ar',
-        '\u{0627}\u{0644}\u{0639}\u{0631}\u{0628}\u{064A}\u{0629}',
-        '\u{1F1F8}\u{1F1E6}'),
-    _LanguageOption('fr', 'Français', '\u{1F1EB}\u{1F1F7}'),
-    _LanguageOption('es', 'Español', '\u{1F1EA}\u{1F1F8}'),
-    _LanguageOption('it', 'Italiano', '\u{1F1EE}\u{1F1F9}'),
-    _LanguageOption('pt', 'Português', '\u{1F1F5}\u{1F1F9}'),
-    _LanguageOption('nl', 'Nederlands', '\u{1F1F3}\u{1F1F1}'),
-    _LanguageOption('pl', 'Polski', '\u{1F1F5}\u{1F1F1}'),
-    _LanguageOption(
-        'ru',
-        '\u{0420}\u{0443}\u{0441}\u{0441}\u{043A}\u{0438}\u{0439}',
-        '\u{1F1F7}\u{1F1FA}'),
-    _LanguageOption(
-        'uk',
-        '\u{0423}\u{043A}\u{0440}\u{0430}\u{0457}\u{043D}\u{0441}\u{044C}\u{043A}\u{0430}',
-        '\u{1F1FA}\u{1F1E6}'),
-    _LanguageOption('hr', 'Hrvatski', '\u{1F1ED}\u{1F1F7}'),
-    _LanguageOption('sr', '\u{0421}\u{0440}\u{043F}\u{0441}\u{043A}\u{0438}',
-        '\u{1F1F7}\u{1F1F8}'),
-    _LanguageOption('fi', 'Suomi', '\u{1F1EB}\u{1F1EE}'),
-    _LanguageOption('da', 'Dansk', '\u{1F1E9}\u{1F1F0}'),
-    _LanguageOption(
-        'fa', '\u{0641}\u{0627}\u{0631}\u{0633}\u{06CC}', '\u{1F1EE}\u{1F1F7}'),
-    _LanguageOption('ku', 'Kurdî', 'ala_rengin'),
-    _LanguageOption('ja', '\u{65E5}\u{672C}\u{8A9E}', '\u{1F1EF}\u{1F1F5}'),
-    _LanguageOption('zh', '\u{4E2D}\u{6587}', '\u{1F1E8}\u{1F1F3}'),
-    _LanguageOption('hi', '\u{0939}\u{093F}\u{0928}\u{094D}\u{0926}\u{0940}',
-        '\u{1F1EE}\u{1F1F3}'),
-    _LanguageOption(
-        'el',
-        '\u{0395}\u{03BB}\u{03BB}\u{03B7}\u{03BD}\u{03B9}\u{03BA}\u{03AC}',
-        '\u{1F1EC}\u{1F1F7}'),
-    _LanguageOption('sw', 'Kiswahili', '\u{1F1F0}\u{1F1EA}'),
-    _LanguageOption(
-        'am', '\u{12A0}\u{121B}\u{122D}\u{129B}', '\u{1F1EA}\u{1F1F9}'),
-    _LanguageOption('ha', 'Hausa', '\u{1F1F3}\u{1F1EC}'),
-    _LanguageOption('so', 'Soomaali', '\u{1F1F8}\u{1F1F4}'),
-    _LanguageOption(
-        'ti', '\u{1275}\u{130D}\u{122D}\u{129B}', '\u{1F1EA}\u{1F1F7}'),
-  ];
+  static const _allLanguages = AppLanguages.supported;
 
   String _getLanguageLabel(String code) {
     final match = _allLanguages.where((l) => l.code == code).firstOrNull;
-    return match?.label ?? code;
+    return match?.nativeName ?? code;
   }
 
   void _showLanguagePicker() {
@@ -861,7 +887,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 children: [
                   const Text('\u{1F310}', style: TextStyle(fontSize: 22)),
                   const SizedBox(width: 10),
-                  Text('Sprache wählen',
+                  Text(_t('profile_choose_language'),
                       style: theme.textTheme.titleMedium
                           ?.copyWith(fontWeight: FontWeight.w800)),
                   const Spacer(),
@@ -881,29 +907,33 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 itemBuilder: (_, i) {
                   final lang = _allLanguages[i];
                   final isActive = lang.code == current;
-                  return ListTile(
-                    leading: (lang.code == 'ku' || lang.code == 'ckb')
-                        ? const AlaRenginFlag(width: 30, height: 20)
-                        : Text(lang.flag, style: const TextStyle(fontSize: 22)),
-                    title: Text(
-                      lang.label,
-                      style: TextStyle(
-                        fontWeight:
-                            isActive ? FontWeight.w800 : FontWeight.w500,
-                        color: isActive ? theme.colorScheme.primary : null,
+                  return Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
+                      leading: (lang.code == 'ku' || lang.code == 'ckb')
+                          ? const AlaRenginFlag(width: 30, height: 20)
+                          : Text(lang.flag,
+                              style: const TextStyle(fontSize: 22)),
+                      title: Text(
+                        lang.nativeName,
+                        style: TextStyle(
+                          fontWeight:
+                              isActive ? FontWeight.w800 : FontWeight.w500,
+                          color: isActive ? theme.colorScheme.primary : null,
+                        ),
                       ),
+                      trailing: isActive
+                          ? Icon(Icons.check_circle_rounded,
+                              color: theme.colorScheme.primary, size: 22)
+                          : null,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      onTap: () async {
+                        await languageService.setLanguage(lang.code);
+                        if (mounted) setState(() {});
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      },
                     ),
-                    trailing: isActive
-                        ? Icon(Icons.check_circle_rounded,
-                            color: theme.colorScheme.primary, size: 22)
-                        : null,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    onTap: () async {
-                      await languageService.setLanguage(lang.code);
-                      if (mounted) setState(() {});
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    },
                   );
                 },
               ),
@@ -939,15 +969,15 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Row(children: [
+              Row(children: [
                 Icon(Icons.business_rounded, size: 22),
                 SizedBox(width: 10),
-                Text('Impressum',
+                Text(_t('profile_imprint'),
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
-              const Text('Angaben gemäß § 5 TMG / § 25 MStV',
+              Text(_t('profile_legal_info'),
                   style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -1027,10 +1057,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Row(children: [
+              Row(children: [
                 Text('\u{1F916}', style: TextStyle(fontSize: 22)),
                 SizedBox(width: 10),
-                Text('KI-Nutzungshinweis',
+                Text(_t('profile_ai_notice'),
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
@@ -1074,10 +1104,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFFED7AA)),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Wichtig zu wissen:',
+                    Text(_t('profile_important_info'),
                         style: TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13)),
                     SizedBox(height: 6),
@@ -1123,20 +1153,126 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     );
   }
 
+  /// Anzeigenamen zentral aendern — gilt app-weit (Firebase + UserProfile).
+  Future<void> _editDisplayName(String current) async {
+    final ctrl = TextEditingController(text: current);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Anzeigename ändern'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Dein Anzeigename',
+            helperText: 'So sehen dich andere Eltern (app-weit).',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Speichern')),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty || newName == current) return;
+    final messenger = ScaffoldMessenger.of(context);
+    // Firebase displayName + serverseitiges UserProfile aktualisieren.
+    try {
+      await FirebaseAuth.instance.currentUser?.updateDisplayName(newName);
+    } catch (_) {}
+    await UserProfileService.instance.setDisplayName(newName);
+    if (!mounted) return;
+    setState(() {});
+    messenger.showSnackBar(SnackBar(
+      content: Text('Anzeigename aktualisiert: $newName'),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: const Color(0xFF16A34A),
+    ));
+  }
+
+  /// Admin-only: sendet einen Test-Fehlerbericht (non-fatal) an Crashlytics,
+  /// damit man im Release-Build nachweisen kann, dass Berichte in Firebase
+  /// ankommen. Loest KEINEN echten Crash aus (App laeuft normal weiter).
+  Future<void> _sendCrashlyticsTest() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ready = ErrorReportingService.instance.isCrashlyticsReady;
+    if (!ready) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text(
+            'Crashlytics ist in diesem Build nicht aktiv (z.B. Debug/Web). '
+            'Bitte im Release-Build auf Android/iOS testen.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    try {
+      await ErrorReportingService.instance.recordError(
+        Exception('ParentPeak Crashlytics Test (non-fatal) — ausgelöst über '
+            'Admin-Diagnose'),
+        StackTrace.current,
+        context: 'admin_crashlytics_test',
+        fatal: false,
+      );
+      if (!mounted) return;
+      messenger.showSnackBar(const SnackBar(
+        content:
+            Text('Test-Bericht gesendet. Erscheint in ~1–2 Min in Firebase '
+                'Crashlytics (Non-fatals).'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Color(0xFF16A34A),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: Text('Konnte Test-Bericht nicht senden: $e'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
   Future<void> _exportUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final keys = prefs.getKeys();
-    final data = <String, dynamic>{};
+    final localData = <String, dynamic>{};
     for (final key in keys) {
       final val = prefs.get(key);
-      data[key] = val;
+      localData[key] = val;
     }
+
+    Map<String, dynamic>? serverExport;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final apiClient = BackendServiceFactory.createApiClient();
+    if (userId != null && userId.isNotEmpty) {
+      if (apiClient == null) {
+        _showExportError('Server-Datenexport ist derzeit nicht konfiguriert.');
+        return;
+      }
+      try {
+        final response = await apiClient.getJson(
+          '/account/export-data?userId=${Uri.encodeQueryComponent(userId)}',
+        );
+        if (response is! Map<String, dynamic>) {
+          throw const FormatException('Unerwartetes Exportformat');
+        }
+        serverExport = response;
+      } catch (error) {
+        _showExportError(
+            'Server-Daten konnten nicht exportiert werden: $error');
+        return;
+      }
+    }
+
     final jsonStr = const JsonEncoder.withIndent('  ').convert({
       'exportDate': DateTime.now().toIso8601String(),
       'app': 'Parentpeak',
       'version': _appVersion,
-      'dataKeys': data.length,
-      'data': data,
+      'serverData': serverExport,
+      'localDeviceData': localData,
     });
 
     await Clipboard.setData(ClipboardData(text: jsonStr));
@@ -1148,7 +1284,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Daten exportiert (${data.length} Einträge in Zwischenablage kopiert)',
+              'Datenexport in die Zwischenablage kopiert',
               style: const TextStyle(fontSize: 13),
             ),
           ),
@@ -1156,6 +1292,17 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xFF16A34A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showExportError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.error,
       ),
     );
   }
@@ -1224,7 +1371,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 16),
-            const Text('Blockierte Kontakte',
+            Text(_t('profile_blocked_contacts'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
             if (blocked.isEmpty)
@@ -1234,7 +1381,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   Icon(Icons.check_circle_outlined,
                       size: 40, color: Colors.grey[400]),
                   const SizedBox(height: 12),
-                  Text('Keine blockierten Kontakte',
+                  Text(_t('profile_no_blocked'),
                       style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                 ]),
               ),
@@ -1260,7 +1407,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (mounted) setState(() {});
                       },
-                      child: const Text('Aufheben',
+                      child: Text(_t('profile_unblock'),
                           style: TextStyle(fontSize: 12)),
                     ),
                   )),
@@ -1276,13 +1423,6 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (uri == null) return;
     launchUrl(uri, mode: LaunchMode.externalApplication);
   }
-}
-
-class _LanguageOption {
-  final String code;
-  final String label;
-  final String flag;
-  const _LanguageOption(this.code, this.label, this.flag);
 }
 
 class _ChildInfo {
@@ -1348,7 +1488,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
           ),
           const SizedBox(height: 16),
           Center(
-            child: Text('Konto löschen',
+            child: Text(_t('delete_account'),
                 style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w800)),
           ),
@@ -1362,7 +1502,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Zur Bestätigung "LÖSCHEN" eingeben:',
+          Text(_t('profile_confirm_delete'),
               style: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
@@ -1393,7 +1533,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Abbrechen'),
+                child: Text(_t('cancel')),
               ),
             ),
             const SizedBox(width: 12),
@@ -1409,7 +1549,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Endgültig löschen',
+                child: Text(_t('profile_delete_final'),
                     style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -1444,7 +1584,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
     return AlertDialog(
-      title: const Text('Anmeldung bestätigen'),
+      title: Text(_t('profile_confirm_login')),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1472,7 +1612,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: const Text('Abbrechen'),
+          child: Text(_t('cancel')),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -1482,8 +1622,8 @@ class _ReauthDialogState extends State<_ReauthDialog> {
             final pw = _ctrl.text;
             if (pw.isNotEmpty) Navigator.pop(context, pw);
           },
-          child:
-              const Text('Bestätigen', style: TextStyle(color: Colors.white)),
+          child: Text(_t('profile_confirm'),
+              style: const TextStyle(color: Colors.white)),
         ),
       ],
     );

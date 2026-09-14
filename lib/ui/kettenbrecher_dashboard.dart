@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/kettenbrecher_ai_service.dart';
 import 'package:parentpeak/logic/kettenbrecher_backend_service.dart';
@@ -17,6 +18,8 @@ import 'package:parentpeak/ui/next_gen_food_feed.dart';
 import 'package:parentpeak/ui/weekly_planner_screen.dart';
 import 'package:parentpeak/ui/widgets/clean_weekly_planner_view.dart';
 import 'package:parentpeak/ui/widgets/meal_planner_card.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class KettenbrecherDashboard extends StatefulWidget {
   const KettenbrecherDashboard({super.key});
@@ -40,6 +43,9 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
   String? _syncInfo;
   Timer? _syncInfoClearTimer;
 
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
+
   final KettenbrecherService _service = const KettenbrecherService();
   final KettenbrecherAiService _aiService = KettenbrecherAiService();
   late final KettenbrecherBackendService _backend;
@@ -49,8 +55,8 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
   );
 
   late final Recipe _baseRecipe = _buildBaseRecipe();
-    late GuerillaRecipe _recipe = _buildInitialRecipe();
-    late CookingHub _hub = _buildInitialHub();
+  late GuerillaRecipe _recipe = _buildInitialRecipe();
+  late CookingHub _hub = _buildInitialHub();
   List<DayPlan> _weekPlans = const [];
   List<LocalHelpProfile> _helpProfiles = [];
   final Map<String, KitchenSosResponse> _responderStates = {};
@@ -97,10 +103,10 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: contentMaxWidth),
           child: ListView(
-            padding: EdgeInsets.fromLTRB(horizontalPadding, 4, horizontalPadding, 32),
+            padding: EdgeInsets.fromLTRB(
+                horizontalPadding, 4, horizontalPadding, 32),
             children: [
-              if (_loading)
-                const LinearProgressIndicator(),
+              if (_loading) const LinearProgressIndicator(),
               if (_syncInfo != null && _syncInfo!.trim().isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -165,7 +171,8 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
     setState(() {
       _hub = loadedHub;
       _helpProfiles = loadedProfiles;
-      _weekPlans = loadedWeekPlans.isNotEmpty ? loadedWeekPlans : fallbackWeekPlans;
+      _weekPlans =
+          loadedWeekPlans.isNotEmpty ? loadedWeekPlans : fallbackWeekPlans;
       _syncInfo = syncMessage;
       _loading = false;
     });
@@ -295,7 +302,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
               MaterialPageRoute(builder: (_) => const NextGenFoodFeedScreen()),
             ),
             icon: const Icon(Icons.ondemand_video_rounded, size: 18),
-            label: const Text('Community Feed'),
+            label: Text(_t('ketten_community_feed')),
           ),
         ),
         const SizedBox(width: 10),
@@ -311,7 +318,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
               MaterialPageRoute(builder: (_) => const WeeklyPlannerScreen()),
             ),
             icon: const Icon(Icons.calendar_month_rounded, size: 18),
-            label: const Text('Wochenplan'),
+            label: Text(_t('ketten_weekly_plan')),
           ),
         ),
       ],
@@ -329,7 +336,10 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
         children: [
           Text(
             'Wie stark soll das Gemuese „unsichtbar“ sein?',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 4),
           Row(
@@ -355,7 +365,8 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
               ),
               const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFE4DA),
                   borderRadius: BorderRadius.circular(12),
@@ -393,7 +404,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
               ),
               onPressed: _regenerateFromPrompt,
               icon: const Icon(Icons.auto_awesome_rounded),
-              label: const Text('Vorschlag neu erstellen'),
+              label: Text(_t('ketten_regenerate')),
             ),
           ),
           const SizedBox(height: 6),
@@ -422,7 +433,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
           ),
           const SizedBox(height: 8),
           if (steps.isEmpty)
-            const Text('Aktuell bleibt das Rezept fast unveraendert.')
+            Text(_t('ketten_recipe_unchanged'))
           else
             ...steps.map(
               (step) => Padding(
@@ -482,17 +493,20 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
           if (_lastSosPushPayload != null) ...[
             const SizedBox(height: 4),
             Text('Push-Prioritaet: ${_lastSosPushPayload!['priority']}'),
-            Text('Dispatch: ${_lastSosPushPayload!['dispatchStatus'] ?? 'sent'}'),
-            if ((_lastSosPushPayload!['dispatchStatus']?.toString() ?? '') == 'local_only')
+            Text(
+                'Dispatch: ${_lastSosPushPayload!['dispatchStatus'] ?? 'sent'}'),
+            if ((_lastSosPushPayload!['dispatchStatus']?.toString() ?? '') ==
+                'local_only')
               const Text(
                 'Hinweis: Backend derzeit nicht erreichbar, SOS wurde lokal vorgemerkt.',
-                style: TextStyle(color: Color(0xFF8A4B00), fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: Color(0xFF8A4B00), fontWeight: FontWeight.w600),
               ),
           ],
           const SizedBox(height: 8),
           ...responders.take(3).map(
-            (id) => _buildResponderStatusRow(sos, id),
-          ),
+                (id) => _buildResponderStatusRow(sos, id),
+              ),
         ],
       ),
     );
@@ -526,7 +540,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
             onPressed: _clearSyncInfo,
             visualDensity: VisualDensity.compact,
             iconSize: 18,
-            tooltip: 'Hinweis schliessen',
+            tooltip: context.tr('tooltip_close_notice'),
             icon: Icon(Icons.close_rounded, color: colors.$3),
           ),
         ],
@@ -537,7 +551,8 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
   Widget _buildResponderStatusRow(KitchenSos sos, String responderId) {
     final state = _responderStates[responderId];
     final statusLabel = state == null ? 'pending' : state.status.name;
-    final etaText = state?.etaMinutes == null ? '' : ' · ETA ${state!.etaMinutes}m';
+    final etaText =
+        state?.etaMinutes == null ? '' : ' · ETA ${state!.etaMinutes}m';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -550,7 +565,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
             spacing: 6,
             children: [
               ActionChip(
-                label: const Text('Annehmen'),
+                label: Text(_t('ketten_accept')),
                 onPressed: () => _updateResponderAction(
                   sos: sos,
                   responderUserId: responderId,
@@ -559,7 +574,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
                 ),
               ),
               ActionChip(
-                label: const Text('Unterwegs'),
+                label: Text(_t('ketten_on_way')),
                 onPressed: () => _updateResponderAction(
                   sos: sos,
                   responderUserId: responderId,
@@ -568,7 +583,7 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
                 ),
               ),
               ActionChip(
-                label: const Text('Erledigt'),
+                label: Text(_t('ketten_done')),
                 onPressed: () => _updateResponderAction(
                   sos: sos,
                   responderUserId: responderId,
@@ -647,13 +662,15 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
 
     setState(() {
       _activeSos = sos;
-      _syncInfo = _backend.lastSyncError ?? _dispatchFeedback(_extractDispatchStatus(dispatchResult));
+      _syncInfo = _backend.lastSyncError ??
+          _dispatchFeedback(_extractDispatchStatus(dispatchResult));
       _lastSosPushPayload = _service.prepareSosPushPayload(
         sos: sos,
         recipientUserIds: responders,
         radiusMeters: 500,
       );
-      _lastSosPushPayload!['dispatchStatus'] = _extractDispatchStatus(dispatchResult);
+      _lastSosPushPayload!['dispatchStatus'] =
+          _extractDispatchStatus(dispatchResult);
       _responderStates.clear();
       for (final responder in responders) {
         _responderStates[responder] = KitchenSosResponse(
@@ -682,7 +699,12 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
     final promptRecipe = _service.generateGuerillaRecipeFromPrompt(
       baseRecipe: _baseRecipe,
       parentPrompt: prompt,
-      candidateHealthyIngredients: const ['zucchini', 'linsen', 'spinat', 'karotte'],
+      candidateHealthyIngredients: const [
+        'zucchini',
+        'linsen',
+        'spinat',
+        'karotte'
+      ],
     );
 
     setState(() {
@@ -691,7 +713,8 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Neuer Vorschlag ist bereit (${promptRecipe.aiTarnMapping.length} Schritte).'),
+        content: Text(
+            'Neuer Vorschlag ist bereit (${promptRecipe.aiTarnMapping.length} Schritte).'),
       ),
     );
   }
@@ -714,7 +737,8 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
         _aiGenerating = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Die KI konnte gerade keinen Vorschlag liefern.')),
+        SnackBar(
+            content: Text(_t('ketten_ai_failed'))),
       );
       return;
     }
@@ -767,7 +791,8 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
     if (syncInfo != null && syncInfo.contains('409')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Konflikt beim Status-Update. Bitte kurz aktualisieren und erneut tippen.'),
+          content: Text(
+              'Konflikt beim Status-Update. Bitte kurz aktualisieren und erneut tippen.'),
         ),
       );
     }
@@ -935,7 +960,6 @@ class _KettenbrecherDashboardState extends State<KettenbrecherDashboard> {
       dislikedHealthyIngredients: const [],
     );
   }
-
 }
 
 enum _SyncBannerSeverity {

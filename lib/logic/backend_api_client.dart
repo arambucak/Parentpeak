@@ -4,6 +4,17 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+/// Wird geworfen, wenn der Server ein gesperrtes Konto meldet (403 mit
+/// code 'account_suspended'). Erlaubt der UI, einen ruhigen Hinweis zu zeigen.
+class SuspendedAccountException implements Exception {
+  final String message;
+  const SuspendedAccountException(
+      [this.message =
+          'Dein Konto wurde vorübergehend eingeschränkt. Bei Fragen wende dich an unseren Support.']);
+  @override
+  String toString() => message;
+}
+
 class BackendApiClient {
   BackendApiClient({
     required this.baseUrl,
@@ -60,10 +71,29 @@ class BackendApiClient {
     return Uri.parse('$baseUrl$normalizedPath');
   }
 
+  /// Wirft [SuspendedAccountException], falls die Antwort ein gesperrtes Konto
+  /// signalisiert (403 + code 'account_suspended').
+  void _throwIfSuspended(http.Response response) {
+    if (response.statusCode != 403) return;
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && decoded['code'] == 'account_suspended') {
+        final msg = decoded['error'];
+        throw SuspendedAccountException(msg is String && msg.isNotEmpty
+            ? msg
+            : const SuspendedAccountException().message);
+      }
+    } on SuspendedAccountException {
+      rethrow;
+    } catch (_) {
+      // Kein JSON / kein Suspend-Code: normal weiterbehandeln.
+    }
+  }
+
   Future<dynamic> getJson(String path) async {
     final headers = await _headers();
     final response = await _httpClient
-      .get(_uri(path), headers: headers)
+        .get(_uri(path), headers: headers)
         .timeout(const Duration(seconds: 20));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -106,6 +136,7 @@ class BackendApiClient {
         .timeout(const Duration(seconds: 30));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwIfSuspended(response);
       throw Exception('POST $path failed: ${response.statusCode}');
     }
 
@@ -123,6 +154,7 @@ class BackendApiClient {
         .timeout(const Duration(seconds: 8));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwIfSuspended(response);
       throw Exception('PUT $path failed: ${response.statusCode}');
     }
 
@@ -171,7 +203,35 @@ class BackendApiClient {
     final uploadHeaders = await _headers(includeContentType: false);
     request.headers.addAll(uploadHeaders);
     request.files.add(await http.MultipartFile.fromPath('image', file.path));
-    final streamed = await request.send().timeout(const Duration(seconds: 30));
+    final streamed =
+        await _httpClient.send(request).timeout(const Duration(seconds: 30));
+    final body = await streamed.stream.bytesToString();
+    if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
+      throw Exception('POST $path (multipart) failed: ${streamed.statusCode}');
+    }
+    final decoded = jsonDecode(body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    return <String, dynamic>{'raw': body};
+  }
+
+  /// Uploads image bytes via multipart POST. Used by Flutter web, where a
+  /// stable local file path is unavailable.
+  Future<Map<String, dynamic>> uploadImageBytes(
+    String path,
+    List<int> bytes, {
+    required String filename,
+  }) async {
+    final uri = _uri(path);
+    final request = http.MultipartRequest('POST', uri);
+    final uploadHeaders = await _headers(includeContentType: false);
+    request.headers.addAll(uploadHeaders);
+    request.files.add(http.MultipartFile.fromBytes(
+      'image',
+      bytes,
+      filename: filename,
+    ));
+    final streamed =
+        await _httpClient.send(request).timeout(const Duration(seconds: 30));
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
       throw Exception('POST $path (multipart) failed: ${streamed.statusCode}');
@@ -207,7 +267,8 @@ class BackendApiClient {
         )
         .timeout(const Duration(seconds: 8));
     if (response.statusCode >= 400) {
-      throw Exception('DELETE /devices/register-token failed: ${response.statusCode}');
+      throw Exception(
+          'DELETE /devices/register-token failed: ${response.statusCode}');
     }
   }
 
@@ -218,7 +279,8 @@ class BackendApiClient {
     try {
       return jsonDecode(rawBody);
     } catch (e) {
-      debugPrint('BackendApiClient._decodeResponse(): non-JSON response fallback: $e');
+      debugPrint(
+          'BackendApiClient._decodeResponse(): non-JSON response fallback: $e');
       return <String, dynamic>{'raw': rawBody};
     }
   }
