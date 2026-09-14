@@ -11,6 +11,7 @@ const https = require('https');
 // Environment
 const BEARER_TOKEN = process.env.BEARER_TOKEN || '';
 const API_BASE = process.env.API_BASE || 'https://parentpeak.onrender.com';
+const REQUESTER_USER_ID = process.env.REQUESTER_USER_ID || 'host_demo_001';
 
 let passed = 0;
 let failed = 0;
@@ -229,7 +230,7 @@ async function runTests() {
       'POST',
       `/api/treasures/${treasureId1}/reserve`,
       {
-        requesterUserId: 'user-munich-1',
+        requesterUserId: REQUESTER_USER_ID,
         preferredSlot: 'sunday_morning',
         handoverMode: 'coffee',
       },
@@ -274,7 +275,7 @@ async function runTests() {
     const duplicateReservation = await makeRequest(
       'POST',
       `/api/treasures/${treasureId1}/reserve`,
-      { requesterUserId: 'user-munich-1', handoverMode: 'coffee' },
+      { requesterUserId: REQUESTER_USER_ID, handoverMode: 'coffee' },
       BEARER_TOKEN,
     );
     if (duplicateReservation.status !== 410) {

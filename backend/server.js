@@ -12836,6 +12836,14 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
       return res.status(400).json({ error: 'Du kannst dein eigenes Angebot nicht reservieren' });
     }
 
+    const requester = await prisma.user.findUnique({
+      where: { id: String(requesterUserId) },
+      select: { id: true },
+    });
+    if (!requester) {
+      return res.status(404).json({ error: 'Interessent nicht als Benutzer registriert' });
+    }
+
     // Doppelte Reservierung desselben Nutzers vermeiden
     const existing = await prisma.treasureHandover.findFirst({
       where: {
