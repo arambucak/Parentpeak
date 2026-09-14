@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/participation_service.dart';
 import 'package:parentpeak/models/meetup_event.dart';
@@ -19,7 +20,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   bool _isApproved = false;
   bool _isDeclined = false;
   bool _isLoading = false;
-  String? _errorMessage;
+  bool _requiresSignIn = false;
 
   String? get _currentUserId => AuthService.instance.currentUser?.uid;
 
@@ -34,12 +35,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Bitte melde dich an, um an Events teilzunehmen.';
+        _requiresSignIn = true;
       });
       return;
     }
 
-    final participation = await _participationService.getParticipationByUserAndEvent(
+    final participation =
+        await _participationService.getParticipationByUserAndEvent(
       userId: currentUserId,
       eventId: widget.event.id,
     );
@@ -50,7 +52,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       _isDeclined = participation?.status == ParticipationStatus.declined;
       _hasRequested = participation?.status == ParticipationStatus.pending ||
           participation?.status == ParticipationStatus.approved;
-      _errorMessage = null;
+      _requiresSignIn = false;
     });
   }
 
@@ -58,7 +60,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     final currentUserId = _currentUserId;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte melde dich an, um teilzunehmen.')),
+        SnackBar(
+          content: Text(context.tr('event_detail_join_sign_in_required')),
+        ),
       );
       return;
     }
@@ -78,13 +82,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Teilnahmeanfrage gesendet!')),
+        SnackBar(content: Text(context.tr('event_detail_request_sent'))),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler: $e')),
+        SnackBar(
+          content: Text(
+            context.tr('event_detail_error', values: {'error': e}),
+          ),
+        ),
       );
     }
   }
@@ -95,18 +103,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event-Details'),
+        title: Text(context.tr('event_details_title')),
         elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_errorMessage != null)
+            if (_requiresSignIn)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Text(
-                  _errorMessage!,
+                  context.tr('event_detail_sign_in_required'),
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
               ),
@@ -142,7 +150,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     top: 16,
                     right: 16,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.95),
                         borderRadius: BorderRadius.circular(20),
@@ -171,7 +180,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       color: Colors.white.withValues(alpha: 0.92),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+                        color: theme.colorScheme.outlineVariant
+                            .withValues(alpha: 0.45),
                       ),
                     ),
                     child: Column(
@@ -189,7 +199,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             Expanded(
                               child: _MetaPill(
                                 icon: Icons.people_outline_rounded,
-                                label: 'Plätze',
+                                label: context.tr('event_places'),
                                 value:
                                     '${widget.event.currentParticipants}/${widget.event.maxParticipants}',
                                 color: const Color(0xFF2563EB),
@@ -199,8 +209,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             Expanded(
                               child: _MetaPill(
                                 icon: Icons.schedule_rounded,
-                                label: 'Status',
-                                value: widget.event.isFull ? 'Voll' : 'Offen',
+                                label: context.tr('common_status'),
+                                value: context.tr(widget.event.isFull
+                                    ? 'status_full'
+                                    : 'status_open'),
                                 color: widget.event.isFull
                                     ? const Color(0xFFDC2626)
                                     : const Color(0xFF16A34A),
@@ -229,11 +241,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   const SizedBox(height: 8),
                   _buildInfoTile(
                     icon: Icons.people,
-                    title:
-                        '${widget.event.currentParticipants}/${widget.event.maxParticipants} Teilnehmer',
+                    title: context.tr(
+                      'event_detail_participants',
+                      values: {
+                        'current': widget.event.currentParticipants,
+                        'maximum': widget.event.maxParticipants,
+                      },
+                    ),
                     subtitle: widget.event.spotsAvailable > 0
-                        ? '${widget.event.spotsAvailable} Plätze verfügbar'
-                        : 'Vollständig ausgebucht',
+                        ? context.tr(
+                            'event_detail_spots_available',
+                            values: {'count': widget.event.spotsAvailable},
+                          )
+                        : context.tr('event_detail_fully_booked'),
                   ),
                   const SizedBox(height: 12),
                   _buildAgeGroupChips(),
@@ -245,14 +265,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                        color: theme.colorScheme.outlineVariant
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Beschreibung',
+                          context.tr('event_detail_description'),
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -272,7 +293,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       children: [
                         _buildStatusBanner(
                           icon: Icons.check_circle,
-                          text: 'Du bist angemeldet!',
+                          text: context.tr('event_detail_registered'),
                           bgColor: const Color(0xFFDCFCE7),
                           textColor: const Color(0xFF166534),
                         ),
@@ -291,7 +312,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               );
                             },
                             icon: const Icon(Icons.chat),
-                            label: const Text('Zum Chat'),
+                            label: Text(context.tr('event_detail_open_chat')),
                           ),
                         ),
                       ],
@@ -299,14 +320,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   else if (_hasRequested)
                     _buildStatusBanner(
                       icon: Icons.schedule,
-                      text: 'Anfrage ausstehend',
+                      text: context.tr('event_detail_request_pending'),
                       bgColor: const Color(0xFFFEF3C7),
                       textColor: const Color(0xFF92400E),
                     )
                   else if (_isDeclined)
                     _buildStatusBanner(
                       icon: Icons.info_outline_rounded,
-                      text: 'Anfrage wurde abgelehnt',
+                      text: context.tr('event_detail_request_declined'),
                       bgColor: const Color(0xFFFEE2E2),
                       textColor: const Color(0xFF991B1B),
                     )
@@ -314,15 +335,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: widget.event.isFull ? null : _requestParticipation,
+                        onPressed:
+                            widget.event.isFull ? null : _requestParticipation,
                         icon: _isLoading
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.person_add),
-                        label: const Text('Teilnahme anfragen'),
+                        label: Text(
+                          context.tr('event_detail_request_participation'),
+                        ),
                       ),
                     ),
                 ],
@@ -414,7 +439,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Altersgruppen',
+          context.tr('event_detail_age_groups'),
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -427,7 +452,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               .map(
                 (ageGroup) => Chip(
                   label: Text(_getAgeGroupLabel(ageGroup)),
-                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.1),
                 ),
               )
               .toList(),
@@ -437,27 +463,28 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   String _getCategoryLabel(EventCategory category) {
-    const labels = {
-      EventCategory.sports: 'Sport',
-      EventCategory.outdoor: 'Outdoor',
-      EventCategory.education: 'Bildung',
-      EventCategory.arts: 'Kunst',
-      EventCategory.socialGathering: 'Treffen',
-      EventCategory.other: 'Sonstiges',
+    final keys = {
+      EventCategory.sports: 'event_category_sports',
+      EventCategory.outdoor: 'event_category_outdoor',
+      EventCategory.education: 'event_category_education',
+      EventCategory.arts: 'event_category_arts',
+      EventCategory.socialGathering: 'event_category_social',
+      EventCategory.other: 'event_category_other',
     };
-    return labels[category] ?? 'Sonstiges';
+    return context.tr(keys[category] ?? 'event_category_other');
   }
 
   String _getAgeGroupLabel(AgeGroup ageGroup) {
-    const labels = {
-      AgeGroup.infant: 'Baby (0-1)',
-      AgeGroup.toddler: 'Kleinkind (1-3)',
-      AgeGroup.preschool: 'Vorschule (3-5)',
-      AgeGroup.elementary: 'Grundschule (6-12)',
-      AgeGroup.teenager: 'Teenager (13+)',
-      AgeGroup.mixed: 'Altersgemischt',
+    final keys = {
+      AgeGroup.infant: 'event_age_infant',
+      AgeGroup.toddler: 'event_age_toddler',
+      AgeGroup.preschool: 'event_age_preschool',
+      AgeGroup.elementary: 'event_age_elementary',
+      AgeGroup.teenager: 'event_age_teenager',
+      AgeGroup.mixed: 'event_age_mixed',
     };
-    return labels[ageGroup] ?? '';
+    final key = keys[ageGroup];
+    return key == null ? '' : context.tr(key);
   }
 }
 

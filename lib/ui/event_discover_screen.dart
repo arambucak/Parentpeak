@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
 import 'package:parentpeak/models/discovered_event.dart';
@@ -80,7 +81,7 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Aktivitäten entdecken'),
+        title: Text(context.tr('event_discover_title')),
         backgroundColor: const Color(0xFF0C2B2E),
         foregroundColor: Colors.white,
         elevation: 0,
