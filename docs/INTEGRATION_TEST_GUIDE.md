@@ -165,14 +165,15 @@ Deckt lokale Sichtbarkeit, Moderation und den vollständigen Übergabeablauf ab:
 ```bash
 BEARER_TOKEN='your-backend-api-token' \
 API_BASE='https://parentpeak.onrender.com' \
+OWNER_USER_ID='registered-owner-id' \
 REQUESTER_USER_ID='registered-user-id' \
 node backend/tests/treasures.test.js
 ```
 
 Der Test startet gegen `parentpeak.onrender.com` absichtlich nicht ohne
 `BEARER_TOKEN`, damit keine unautorisierten Produktionsanfragen erfolgen. Wenn
-der Standardnutzer `host_demo_001` nicht vorhanden ist, muss
-`REQUESTER_USER_ID` auf die ID eines registrierten Testkontos gesetzt werden.
+der Standardnutzer `host_demo_001` nicht vorhanden ist, müssen `OWNER_USER_ID`
+und `REQUESTER_USER_ID` auf zwei registrierte Testkonten gesetzt werden.
 
 ## Environment Variables
 
