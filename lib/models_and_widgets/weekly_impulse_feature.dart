@@ -3,6 +3,78 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+String _communityText(BuildContext context, String key) {
+  const values = {
+    'de': {
+      'share_title': 'Praxisimpuls teilen',
+      'share_hint':
+          'Teile eine ruhige, konkrete Idee aus deinem Familien- oder Berufsalltag.',
+      'share_parent': 'Ich teile als Elternteil',
+      'share_educator': 'Ich teile als Pädagog:in',
+      'headline': 'Überschrift',
+      'headline_hint': 'Zum Beispiel: Was uns in Wutmomenten hilft',
+      'impulse': 'Dein Impuls',
+      'impulse_hint':
+          'Beschreibe kurz, was du ausprobiert hast und warum es hilfreich war.',
+      'share_action': 'Impuls teilen',
+      'comments': 'Kommentare und Rückmeldungen',
+      'comment': 'Dein Kommentar',
+      'comment_hint': 'Teile kurz, was bei euch geholfen hat.',
+      'comment_action': 'Kommentar senden',
+    },
+    'en': {
+      'share_title': 'Share a practical insight',
+      'share_hint':
+          'Share one calm, practical idea from family or professional life.',
+      'share_parent': 'I am sharing as a parent',
+      'share_educator': 'I am sharing as an educator',
+      'headline': 'Headline',
+      'headline_hint': 'For example: What helps us in angry moments',
+      'impulse': 'Your insight',
+      'impulse_hint': 'Briefly describe what you tried and why it was helpful.',
+      'share_action': 'Share insight',
+      'comments': 'Comments and feedback',
+      'comment': 'Your comment',
+      'comment_hint': 'Briefly share what helped your family.',
+      'comment_action': 'Send comment',
+    },
+    'tr': {
+      'share_title': 'Pratik bir fikir paylaş',
+      'share_hint':
+          'Aile veya iş hayatından sakin ve somut bir fikrini paylaş.',
+      'share_parent': 'Ebeveyn olarak paylaşıyorum',
+      'share_educator': 'Eğitimci olarak paylaşıyorum',
+      'headline': 'Başlık',
+      'headline_hint': 'Örneğin: Öfke anlarında bize ne yardımcı oluyor',
+      'impulse': 'Fikrin',
+      'impulse_hint': 'Ne denediğini ve neden yardımcı olduğunu kısaca anlat.',
+      'share_action': 'Fikri paylaş',
+      'comments': 'Yorumlar ve geri bildirimler',
+      'comment': 'Yorumun',
+      'comment_hint': 'Ailene neyin yardımcı olduğunu kısaca paylaş.',
+      'comment_action': 'Yorum gönder',
+    },
+    'ku': {
+      'share_title': 'Ramaneke pratîk parve bike',
+      'share_hint':
+          'Ramana xwe ya aram û rast ji jiyana malbatê an karê xwe parve bike.',
+      'share_parent': 'Ez wek dêûbav parve dikim',
+      'share_educator': 'Ez wek perwerdekar parve dikim',
+      'headline': 'Sernav',
+      'headline_hint': 'Mînak: Di dema hêrsa de çi ji me re alîkar e',
+      'impulse': 'Ramana te',
+      'impulse_hint': 'Bi kurtî bêje tu çi ceriband û çima alîkar bû.',
+      'share_action': 'Ramanê parve bike',
+      'comments': 'Şîrove û veger',
+      'comment': 'Şîroveya te',
+      'comment_hint': 'Bi kurtî bêje çi ji malbata te re alîkar bû.',
+      'comment_action': 'Şîroveyê bişîne',
+    },
+  };
+  final language = Localizations.localeOf(context).languageCode;
+  return values[language]?[key] ?? values['en']![key]!;
+}
+
 enum PedagogicalCategory {
   gfk,
   inclusion,
@@ -633,12 +705,12 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Praxisimpuls teilen',
+                    _communityText(context, 'share_title'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Teile eine ruhige, konkrete Idee aus deinem Familien- oder Berufsalltag.',
+                    _communityText(context, 'share_hint'),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
@@ -646,14 +718,14 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     spacing: 10,
                     children: [
                       ChoiceChip(
-                        label: const Text('Ich teile als Elternteil'),
+                        label: Text(_communityText(context, 'share_parent')),
                         selected: selectedRole == _roleParent,
                         onSelected: (_) {
                           setModalState(() => selectedRole = _roleParent);
                         },
                       ),
                       ChoiceChip(
-                        label: const Text('Ich teile als Paedagog:in'),
+                        label: Text(_communityText(context, 'share_educator')),
                         selected: selectedRole == _roleEducator,
                         onSelected: (_) {
                           setModalState(() => selectedRole = _roleEducator);
@@ -680,9 +752,9 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   if (selectedRole == _roleEducator) const SizedBox(height: 16),
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Ueberschrift',
-                      hintText: 'Zum Beispiel: Was uns in Wutmomenten hilft',
+                    decoration: InputDecoration(
+                      labelText: _communityText(context, 'headline'),
+                      hintText: _communityText(context, 'headline_hint'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -690,10 +762,9 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     controller: bodyController,
                     minLines: 4,
                     maxLines: 6,
-                    decoration: const InputDecoration(
-                      labelText: 'Dein Impuls',
-                      hintText:
-                          'Beschreibe kurz, was du ausprobiert hast und warum es hilfreich war.',
+                    decoration: InputDecoration(
+                      labelText: _communityText(context, 'impulse'),
+                      hintText: _communityText(context, 'impulse_hint'),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -717,7 +788,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         );
                       },
                       icon: const Icon(Icons.send_rounded),
-                      label: const Text('Impuls teilen'),
+                      label: Text(_communityText(context, 'share_action')),
                     ),
                   ),
                 ],
@@ -761,7 +832,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
               Text(post.title, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 6),
               Text(
-                'Kommentare und Rückmeldungen',
+                _communityText(context, 'comments'),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -804,9 +875,9 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 controller: commentController,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Dein Kommentar',
-                  hintText: 'Teile kurz, was bei euch geholfen hat.',
+                decoration: InputDecoration(
+                  labelText: _communityText(context, 'comment'),
+                  hintText: _communityText(context, 'comment_hint'),
                 ),
               ),
               const SizedBox(height: 14),
@@ -822,7 +893,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     Navigator.of(context).pop();
                   },
                   icon: const Icon(Icons.mode_comment_outlined),
-                  label: const Text('Kommentar senden'),
+                  label: Text(_communityText(context, 'comment_action')),
                 ),
               ),
             ],

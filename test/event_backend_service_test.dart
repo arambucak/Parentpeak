@@ -23,6 +23,36 @@ BackendApiClient _client(http.Client httpClient) {
 }
 
 void main() {
+  group('BackendApiClient uploads', () {
+    test('byte upload uses dynamic auth token and multipart payload', () async {
+      const imageBytes = <int>[1, 2, 3, 4];
+      final mockHttp = MockClient((request) async {
+        expect(request.headers['authorization'], 'Bearer firebase-id-token');
+        expect(request.body, contains('filename="web-photo.png"'));
+        expect(request.bodyBytes, containsAllInOrder(imageBytes));
+        return http.Response(
+          jsonEncode({'url': '/uploads/web-photo.png'}),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      final client = BackendApiClient(
+        baseUrl: 'http://localhost:3000',
+        authToken: 'static-fallback-token',
+        authTokenProvider: () async => 'firebase-id-token',
+        httpClient: mockHttp,
+      );
+
+      final response = await client.uploadImageBytes(
+        '/uploads/image',
+        imageBytes,
+        filename: 'web-photo.png',
+      );
+
+      expect(response['url'], '/uploads/web-photo.png');
+    });
+  });
+
   group('EventBackendService.fetchEvents', () {
     test('returns parsed events on 200', () async {
       final mockHttp = _mockClient(200, {
@@ -34,7 +64,8 @@ void main() {
             'description': '',
             'status': 'active',
             'eventType': 'other',
-            'startDate': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+            'startDate':
+                DateTime.now().add(const Duration(days: 1)).toIso8601String(),
             'location': 'Berlin',
             'latitude': 52.52,
             'longitude': 13.4,
@@ -62,8 +93,7 @@ void main() {
 
     test('returns empty list on network error', () async {
       final errorClient = MockClient((_) async => throw Exception('timeout'));
-      final svc =
-          EventBackendService(apiClient: _client(errorClient));
+      final svc = EventBackendService(apiClient: _client(errorClient));
       final events = await svc.fetchEvents();
       expect(events, isEmpty);
       expect(svc.lastSyncError, isNotNull);
@@ -74,7 +104,8 @@ void main() {
       final mockHttp = MockClient((request) async {
         captured = request;
         return http.Response(
-            jsonEncode({'items': [], 'limit': 10, 'offset': 20, 'hasMore': false}),
+            jsonEncode(
+                {'items': [], 'limit': 10, 'offset': 20, 'hasMore': false}),
             200,
             headers: {'content-type': 'application/json'});
       });
@@ -93,7 +124,8 @@ void main() {
       final mockHttp = MockClient((request) async {
         captured = request;
         return http.Response(
-            jsonEncode({'items': [], 'limit': 25, 'offset': 0, 'hasMore': false}),
+            jsonEncode(
+                {'items': [], 'limit': 25, 'offset': 0, 'hasMore': false}),
             200,
             headers: {'content-type': 'application/json'});
       });
@@ -125,7 +157,8 @@ void main() {
               'description': '',
               'status': 'active',
               'eventType': 'other',
-              'startDate': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+              'startDate':
+                  DateTime.now().add(const Duration(days: 1)).toIso8601String(),
               'location': 'Hamburg',
               'latitude': 53.57,
               'longitude': 10.02,
@@ -182,9 +215,9 @@ void main() {
     });
 
     test('returns false on 403', () async {
-      final mockHttp = MockClient((_) async =>
-          http.Response('{"error":"forbidden"}', 403,
-              headers: {'content-type': 'application/json'}));
+      final mockHttp = MockClient((_) async => http.Response(
+          '{"error":"forbidden"}', 403,
+          headers: {'content-type': 'application/json'}));
       final svc = EventBackendService(apiClient: _client(mockHttp));
       final ok = await svc.deleteEvent('ev1', hosterId: 'host1');
       expect(ok, isFalse);

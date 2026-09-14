@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,7 +112,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
         .map((i) => '• ${i.emoji} ${i.name}'
             '${i.quantity != null ? ' (${i.quantity})' : ''}')
         .join('\n');
-    Share.share('🛒 Einkaufsliste\n\n$lines', subject: 'Einkaufsliste');
+    final title = context.tr('family_hub_shopping_list');
+    Share.share('🛒 $title\n\n$lines', subject: title);
   }
 
   @override
@@ -135,18 +137,19 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
           if (_activeTabIndex == 0 && _shopping.activeItems.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.ios_share_rounded),
-              tooltip: 'Liste teilen',
+              tooltip: context.tr('tooltip_share_list'),
               onPressed: _shareShoppingList,
             ),
         ],
         bottom: TabBar(
           controller: _tabs,
           tabs: [
-            const Tab(
+            Tab(
                 icon: Icon(Icons.shopping_cart_rounded, size: 20),
-                text: 'Einkauf'),
-            const Tab(
-                icon: Icon(Icons.task_alt_rounded, size: 20), text: 'To-do'),
+              text: context.tr('family_hub_tab_shopping')),
+            Tab(
+              icon: const Icon(Icons.task_alt_rounded, size: 20),
+              text: context.tr('family_hub_tab_todo')),
             Tab(
               child: SizedBox(
                 height: 46,
@@ -173,7 +176,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text('Kinder', style: TextStyle(fontSize: 12)),
+                    Text(context.tr('family_hub_tab_children'),
+                      style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -210,7 +214,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               child: TextField(
             controller: _inputCtrl,
             decoration: InputDecoration(
-              hintText: 'z.B. "3x Milch" oder "Nudeln 500g"',
+              hintText: context.tr('family_hub_shopping_hint'),
               hintStyle:
                   TextStyle(fontSize: 13, color: theme.colorScheme.outline),
               prefixIcon: const Icon(Icons.add_shopping_cart_rounded, size: 20),
@@ -438,7 +442,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               child: TextField(
             controller: _todoCtrl,
             decoration: InputDecoration(
-              hintText: 'Neue Aufgabe...',
+              hintText: context.tr('family_hub_todo_hint'),
               prefixIcon: const Icon(Icons.add_task_rounded, size: 20),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -569,7 +573,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Text(
-              'Erstelle ein Profil im Eltern-Netzwerk um das Kind-Dossier zu nutzen.',
+              context.tr('family_hub_children_empty_hint'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline),
               textAlign: TextAlign.center),
@@ -631,7 +635,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                 Text(dossier.childName,
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w800)),
-                Text('$ageYears Jahre',
+                Text(context.tr('family_hub_age_years',
+                  values: {'count': '$ageYears'}),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.outline)),
               ])),
@@ -644,11 +649,11 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
         // Quick-Infos
         Wrap(spacing: 8, runSpacing: 6, children: [
           if (dossier.clothingSize != null)
-            _infoChip('\u{1F455} Gr. ${dossier.clothingSize}',
+            _infoChip('${context.tr('family_hub_clothing_size_short')} ${dossier.clothingSize}',
                 const Color(0xFF2563EB)),
           if (dossier.shoeSize != null)
             _infoChip(
-                '\u{1F45F} Schuh ${dossier.shoeSize}', const Color(0xFF8B5CF6)),
+                '${context.tr('family_hub_shoe_size_short')} ${dossier.shoeSize}', const Color(0xFF8B5CF6)),
           if (dossier.allergies.isNotEmpty)
             _infoChip('\u{26A0}\u{FE0F} ${dossier.allergies.join(", ")}',
                 const Color(0xFFDC2626)),
@@ -670,7 +675,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               const SizedBox(width: 8),
               Expanded(
                   child: Text(
-                'Faellig: ${nextExam.first.label}',
+                context.tr('family_hub_exam_due',
+                  values: {'exam': nextExam.first.label}),
                 style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF92400E)),
@@ -731,18 +737,18 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 16),
+            _notfallRow(context.tr('family_hub_blood_type'),
+              d.bloodType ?? context.tr('family_hub_not_entered')),
           _notfallRow(
-              '\u{1F9EC} Blutgruppe', d.bloodType ?? 'Nicht eingetragen'),
-          _notfallRow(
-              '\u{26A0}\u{FE0F} Allergien',
+              context.tr('family_hub_allergies'),
               d.allergies.isNotEmpty
                   ? d.allergies.join(', ')
-                  : 'Keine bekannt'),
-          _notfallRow(
-              '\u{1F3E5} Kinderarzt', d.doctorName ?? 'Nicht eingetragen'),
-          _notfallRow('\u{1F4DE} Arzt-Tel.', d.doctorPhone ?? '—'),
-          _notfallRow('\u{1F4F1} Notfall-Kontakt', d.emergencyContact ?? '—'),
-          _notfallRow('\u{1F4DE} Notfall-Tel.', d.emergencyPhone ?? '—'),
+                    : context.tr('family_hub_none_known')),
+                _notfallRow(context.tr('family_hub_pediatrician'),
+                  d.doctorName ?? context.tr('family_hub_not_entered')),
+                _notfallRow(context.tr('family_hub_doctor_phone'), d.doctorPhone ?? '—'),
+                _notfallRow(context.tr('family_hub_emergency_contact'), d.emergencyContact ?? '—'),
+                _notfallRow(context.tr('family_hub_emergency_phone'), d.emergencyPhone ?? '—'),
           const SizedBox(height: 16),
           SizedBox(
               width: double.infinity,
@@ -813,22 +819,22 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                           color: Theme.of(ctx).colorScheme.outlineVariant,
                           borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 16),
-              Text('${dossier.childName} bearbeiten',
+                    Text(context.tr('family_hub_edit_child',
+                      values: {'name': dossier.childName}),
                   style: Theme.of(ctx)
                       .textTheme
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
-              _editField(clothingCtrl, 'Kleidergröße', 'z.B. 110'),
-              _editField(shoeCtrl, 'Schuhgröße', 'z.B. 28'),
-              _editField(allergiesCtrl, 'Allergien (kommagetrennt)',
-                  'z.B. Nuesse, Laktose'),
-              _editField(doctorCtrl, 'Kinderarzt Name', 'z.B. Dr. Mueller'),
-              _editField(doctorPhoneCtrl, 'Kinderarzt Telefon', '030 123456'),
-              _editField(bloodCtrl, 'Blutgruppe', 'z.B. A+'),
-              _editField(emergCtrl, 'Notfall-Kontakt (Name)', 'z.B. Oma Helga'),
-              _editField(emergPhoneCtrl, 'Notfall-Telefon', '0170 ...'),
-              _editField(kitaCtrl, 'Kita / Schule', 'z.B. Kita Sonnenschein'),
+                _editField(clothingCtrl, context.tr('family_hub_clothing_size'), context.tr('family_hub_clothing_hint')),
+                _editField(shoeCtrl, context.tr('family_hub_shoe_size'), context.tr('family_hub_shoe_hint')),
+                _editField(allergiesCtrl, context.tr('family_hub_allergies_csv'), context.tr('family_hub_allergies_hint')),
+                _editField(doctorCtrl, context.tr('family_hub_pediatrician_name'), context.tr('family_hub_pediatrician_hint')),
+                _editField(doctorPhoneCtrl, context.tr('family_hub_pediatrician_phone'), context.tr('family_hub_phone_hint')),
+                _editField(bloodCtrl, context.tr('family_hub_blood_type_plain'), context.tr('family_hub_blood_type_hint')),
+                _editField(emergCtrl, context.tr('family_hub_emergency_contact_name'), context.tr('family_hub_emergency_contact_hint')),
+                _editField(emergPhoneCtrl, context.tr('family_hub_emergency_phone_plain'), context.tr('family_hub_emergency_phone_hint')),
+                _editField(kitaCtrl, context.tr('family_hub_daycare_school'), context.tr('family_hub_daycare_hint')),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () async {

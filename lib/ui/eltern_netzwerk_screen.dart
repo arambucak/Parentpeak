@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -7,18 +8,218 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
+import 'package:parentpeak/logic/parent_matching_backend_service.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/friendship_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
+import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
+import 'package:parentpeak/services/location_service.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
-import 'package:parentpeak/logic/parent_friends_service.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
+String _networkCopy(String key, String fallback) {
+  const copies = {
+    'en': {
+      'friends': 'Friends',
+      'playmates': 'Playmates',
+      'invite': 'Invite',
+        'invite_hero_title': 'Invite friends',
+        'invite_hero_description':
+          'Share your personal link or QR code - one tap and you are connected.',
+        'share': 'Share',
+          'setup_hint': 'In 5 short steps, you will find families who are a good fit for you.',
+          'empty_title': 'Be the first family in your area',
+          'empty_description': 'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
+          'invite_playmates': 'Invite playmates',
+          'values_tip': 'Tip: Families with similar values understand each other best. Choose what matters to you.',
+          'bio_hint': 'Tell us about yourselves: What makes your family special? What are you looking for?',
+          'step_1': 'Step 1: Your family',
+          'step_2': 'Step 2: Your children',
+          'step_3': 'Step 3: Values and style',
+          'step_4': 'Step 4: What are you looking for?',
+          'step_5': 'Step 5: Languages and more',
+          'bio_title': 'Short bio',
+          'login_required': 'Please sign in to publish your playmate profile.',
+          'same_city': 'In your city',
+          'reason_nearby': 'Nearby',
+          'reason_shared_interests': 'Shared interests',
+          'reason_similar_child_age': 'Children of a similar age',
+          'reason_shared_languages': 'Shared languages',
+          'reason_shared_values': 'Similar parenting values',
+          'reason_shared_family_form': 'Similar family setup',
+          'request_sent': 'Your request was sent to {name}.',
+          'request_failed': 'Your request could not be sent. Please try again later.',
+          'no_gender': 'Prefer not to say',
+          'gender_maennlich': 'Boy',
+          'gender_weiblich': 'Girl',
+          'gender_divers': 'Diverse',
+      'coins_until': 'Until free Premium',
+      'invites_successful': 'successful invitations',
+      'coin_value': '1 Coin = €1',
+      'invite_share': 'Share invitation',
+      'invite_share_hint': 'WhatsApp, SMS, email',
+      'qr_show': 'Show QR code',
+      'qr_hint': 'Scan at the playground',
+      'link_copy': 'Copy link',
+      'check_coins': 'Check coins now',
+      'check_coins_hint': 'Credit new invitations',
+      'coins_secured':
+          'Your coins are safe. Soon you can use them to unlock features. 🎁',
+      'connect': 'Connect?',
+      'cancel': 'Cancel',
+      'connect_button': 'Connect',
+      'save': 'Save...',
+      'create_profile': 'Create profile',
+      'step_family': 'Step 1: Your family',
+      'name_hint': 'Your first name / nickname',
+      'name_example': 'e.g. Sarah, The Muellers',
+      'location_hint': 'Choose your district / ZIP code',
+      'family_form': 'Family type',
+      'custom': 'Custom',
+      'custom_family': 'Your family type',
+      'custom_example': 'e.g. chosen family, multigenerational...',
+    },
+    'ku': {
+      'friends': 'Heval',
+      'playmates': 'Hevalên lîstikê',
+      'invite': 'Vexwendin',
+        'invite_hero_title': 'Hevalan vexwîne',
+        'invite_hero_description':
+          'Girêdana xwe ya kesane an koda QR parve bike - bi yek pêlê hûn tên girêdan.',
+        'share': 'Parve bike',
+          'setup_hint': 'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
+          'empty_title': 'Di herêma xwe de malbata yekem bibe',
+          'empty_description': 'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
+          'invite_playmates': 'Hevalên lîstikê vexwîne',
+          'values_tip': 'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
+          'bio_hint': 'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
+          'step_1': 'Gav 1: Malbata we',
+          'step_2': 'Gav 2: Zarokên we',
+          'step_3': 'Gav 3: Nirx û şêwaz',
+          'step_4': 'Gav 4: Hûn li çi digerin?',
+          'step_5': 'Gav 5: Ziman û zêdetir',
+          'bio_title': 'Bioya kurt',
+          'login_required': 'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
+          'same_city': 'Di bajarê te de',
+          'reason_nearby': 'Li nêzîkê',
+          'reason_shared_interests': 'Berjewendiyên hevpar',
+          'reason_similar_child_age': 'Zarokên bi temenê nêzîk',
+          'reason_shared_languages': 'Zimanên hevpar',
+          'reason_shared_values': 'Nirxên perwerdehiyê yên wekhev',
+          'reason_shared_family_form': 'Şêwaza malbatê ya wekhev',
+          'request_sent': 'Daxwaza te ji {name} re hat şandin.',
+          'request_failed': 'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
+          'no_gender': 'Naxwazim bibêjim',
+          'gender_maennlich': 'Kur',
+          'gender_weiblich': 'Keç',
+          'gender_divers': 'Cûda',
+      'coins_until': 'Ji bo Premiuma belaş',
+      'invites_successful': 'vexwendinên serkeftî',
+      'coin_value': '1 Coin = €1',
+      'invite_share': 'Vexwendinê parve bike',
+      'invite_share_hint': 'WhatsApp, SMS, e-name',
+      'qr_show': 'Koda QR nîşan bide',
+      'qr_hint': 'Li parka lîstikê bixwîne',
+      'link_copy': 'Girêdanê kopî bike',
+      'check_coins': 'Coinan niha kontrol bike',
+      'check_coins_hint': 'Vexwendinên nû tomar bike',
+      'coins_secured':
+          'Coinên te ewle ne. Nêzîk de dikarî wan ji bo taybetmendiyan bikar bînî. 🎁',
+      'connect': 'Girêdan?',
+      'cancel': 'Betal bike',
+      'connect_button': 'Girêde',
+      'save': 'Tê tomarkirin...',
+      'create_profile': 'Profîlê çêbike',
+      'step_family': 'Gav 1: Malbata we',
+      'name_hint': 'Navê te / navê kurt',
+      'name_example': 'mînak: Sarah, Müller',
+      'location_hint': 'Navçeya / koda postê hilbijêre',
+      'family_form': 'Şêwaza malbatê',
+      'custom': 'Taybet',
+      'custom_family': 'Şêwaza malbata we',
+      'custom_example': 'mînak: malbata hilbijartî, çend-neslî...',
+    },
+    'tr': {
+      'friends': 'Arkadaşlar',
+      'playmates': 'Oyun arkadaşları',
+      'invite': 'Davet et',
+        'invite_hero_title': 'Arkadaşlarını davet et',
+        'invite_hero_description':
+          'Kişisel bağlantını veya QR kodunu paylaş - tek dokunuşla bağlantı kurun.',
+        'share': 'Paylaş',
+          'setup_hint': '5 kısa adımda size uygun aileleri bulun.',
+          'empty_title': 'Bölgenizdeki ilk aile siz olun',
+          'empty_description': 'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
+          'invite_playmates': 'Oyun arkadaşlarını davet et',
+          'values_tip': 'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
+          'bio_hint': 'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
+          'step_1': '1. Adım: Aileniz',
+          'step_2': '2. Adım: Çocuklarınız',
+          'step_3': '3. Adım: Değerler ve yaklaşım',
+          'step_4': '4. Adım: Ne arıyorsunuz?',
+          'step_5': '5. Adım: Diller ve daha fazlası',
+          'bio_title': 'Kısa biyografi',
+          'login_required': 'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
+          'same_city': 'Şehrinizde',
+          'reason_nearby': 'Yakınınızda',
+          'reason_shared_interests': 'Ortak ilgi alanları',
+          'reason_similar_child_age': 'Benzer yaşta çocuklar',
+          'reason_shared_languages': 'Ortak diller',
+          'reason_shared_values': 'Benzer ebeveynlik değerleri',
+          'reason_shared_family_form': 'Benzer aile yapısı',
+          'request_sent': '{name} için isteğiniz gönderildi.',
+          'request_failed': 'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
+          'no_gender': 'Belirtmek istemiyorum',
+          'gender_maennlich': 'Erkek',
+          'gender_weiblich': 'Kız',
+          'gender_divers': 'Diğer',
+      'coins_until': 'Ücretsiz Premium için',
+      'invites_successful': 'davet başarılı',
+      'coin_value': '1 Coin = €1',
+      'invite_share': 'Daveti paylaş',
+      'invite_share_hint': 'WhatsApp, SMS, e-posta',
+      'qr_show': 'QR kodunu göster',
+      'qr_hint': 'Parkta okut',
+      'link_copy': 'Bağlantıyı kopyala',
+      'check_coins': 'Coinleri şimdi kontrol et',
+      'check_coins_hint': 'Yeni davetleri ekle',
+      'coins_secured':
+          'Coinlerin güvende. Yakında özelliklerin kilidini açabilirsin. 🎁',
+      'connect': 'Bağlan?',
+      'cancel': 'İptal',
+      'connect_button': 'Bağlan',
+      'save': 'Kaydediliyor...',
+      'create_profile': 'Profil oluştur',
+      'step_family': '1. Adım: Aileniz',
+      'name_hint': 'Adınız / takma adınız',
+      'name_example': 'örn. Sarah, Müller ailesi',
+      'location_hint': 'Mahallenizi / posta kodunuzu seçin',
+      'family_form': 'Aile biçimi',
+      'custom': 'Özel',
+      'custom_family': 'Aile biçiminiz',
+      'custom_example': 'örn. seçilmiş aile, çok kuşaklı aile...',
+    },
+  };
+  return copies[languageService.currentLanguage]?[key] ?? fallback;
+}
+
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
-  const ElternNetzwerkScreen({super.key, this.initialFriendCode});
+
+  /// 0 = Freunde, 1 = Spielfreunde, 2 = Einladen
+  final int initialTab;
+  const ElternNetzwerkScreen(
+      {super.key, this.initialFriendCode, this.initialTab = 0});
   @override
   State<ElternNetzwerkScreen> createState() => _ScreenState();
 }
@@ -27,25 +228,39 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   final _backend = SpielfreundeBackendService();
+  final _matching = ParentMatchingBackendService(
+      apiClient: BackendServiceFactory.createApiClient());
   FamilyMatchProfile? _profile;
-  WaitlistStatus _waitlist =
-      const WaitlistStatus(total: 0, threshold: 20, remaining: 20, progress: 0);
   Set<String> _dismissedSuggestions = {};
   List<_SuggestedParent> _suggestedProfiles = [];
   bool _loadingSuggestions = true;
 
+  // Echte Spielfreunde-Discovery (nutzt /api/parent-matching/find)
+  List<MatchResult> _matches = [];
+  bool _loadingMatches = false;
+  String _matchScope = '10km';
+
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(
+        length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
     ParentCoinService.instance.initialize();
     ParentCoinService.instance.addListener(_rebuild);
-    ParentFriendsService.instance.addListener(_rebuild);
+    FriendshipService.instance.addListener(_rebuild);
     _init();
-    if (widget.initialFriendCode != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showAddFriendSheet(
-          Theme.of(context),
-          prefillCode: widget.initialFriendCode));
+    final incoming = widget.initialFriendCode;
+    if (incoming != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (incoming.startsWith('invite:')) {
+          // Einladungslink -> Anfrage-Flow (1 Tap).
+          _handleInviteToken(incoming.substring('invite:'.length));
+        } else {
+          // Alter Freund-Link (parentpeak.de/freund/<CODE>): Code -> UID
+          // aufloesen und eine UID-Freundschaftsanfrage senden.
+          _handleLegacyCodeLink(incoming);
+        }
+      });
     }
   }
 
@@ -53,7 +268,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   void dispose() {
     _tabs.dispose();
     ParentCoinService.instance.removeListener(_rebuild);
-    ParentFriendsService.instance.removeListener(_rebuild);
+    FriendshipService.instance.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -61,70 +276,127 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     if (mounted) setState(() {});
   }
 
+  /// Einladungslink (/f/<token>) verarbeiten: Einladenden auflösen und eine
+  /// Freundschaftsanfrage senden — 1 Tap, kein Code-Abtippen.
+  Future<void> _handleInviteToken(String token) async {
+    final resolved = await FriendshipService.instance.resolveInvite(token);
+    if (!mounted) return;
+    if (resolved == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_t('network_invalid_invite')),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    final name = resolved['name']?.isNotEmpty == true
+        ? resolved['name']!
+        : 'diese Familie';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(_networkCopy('connect', 'Verbinden?')),
+        content: Text(_t('network_connect_confirm').replaceAll('{name}', name)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(_networkCopy('cancel', 'Abbrechen'))),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(_networkCopy('connect_button', 'Verbinden'))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(sent
+          ? 'Anfrage an $name gesendet. 👋'
+          : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: sent ? const Color(0xFF16A34A) : null,
+    ));
+  }
+
+  /// Alter Freund-Link (parentpeak.de/freund/<CODE>): den Code ueber die noch
+  /// vorhandene lookup-Bruecke in eine UID aufloesen und eine Anfrage senden.
+  /// So funktionieren bereits geteilte alte Links weiter — ohne Code-Eingabe.
+  Future<void> _handleLegacyCodeLink(String code) async {
+    final resolved = await FriendshipService.instance.resolveCode(code);
+    if (!mounted) return;
+    if (resolved == null || (resolved['uid'] ?? '').isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'Dieser Link ist nicht mehr aktiv. Bitte nutze den Einladungslink '
+            'der anderen Familie.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    final name = resolved['name']?.isNotEmpty == true
+        ? resolved['name']!
+        : 'diese Familie';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(_networkCopy('connect', 'Verbinden?')),
+        content: Text(_t('network_connect_confirm').replaceAll('{name}', name)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(_networkCopy('cancel', 'Abbrechen'))),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(_networkCopy('connect_button', 'Verbinden'))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(sent
+          ? 'Anfrage an $name gesendet. 👋'
+          : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: sent ? const Color(0xFF16A34A) : null,
+    ));
+  }
+
   Future<void> _init() async {
-    await ParentFriendsService.instance.load();
     final prefs = await SharedPreferences.getInstance();
     final dismissed = prefs.getStringList('friends.dismissed') ?? [];
     if (mounted) setState(() => _dismissedSuggestions = dismissed.toSet());
     final p = await FamilyMatchProfile.load();
     if (mounted) setState(() => _profile = p);
     if (p != null) {
-      final w = await _backend.getWaitlistCount(p.district);
-      if (mounted) setState(() => _waitlist = w);
+      unawaited(_loadMatches());
     }
 
-    // Register own code+name so others can find us by code
-    final myCode = ParentFriendsService.instance.myCode;
-    final myName = _profile?.displayName ??
-        AuthService.instance.currentUser?.displayName ??
-        'Familien-Kontakt';
-    unawaited(_backend.registerFriendCode(myCode, myName));
+    // NEUES FUNDAMENT: den app-weiten Anzeigenamen serverseitig sichern
+    // (uid -> displayName). Kommt aus der Registrierung; hier nur gespiegelt.
+    final myName = AuthService.instance.currentUser?.displayName ??
+        _profile?.displayName ??
+        'Familie';
+    final myUserId = AuthService.instance.currentUser?.uid ?? '';
+    unawaited(UserProfileService.instance.setDisplayName(myName));
+    // Neue UID-Freundschaften + offene Anfragen laden.
+    unawaited(FriendshipService.instance.load());
 
-    // Auto-add anyone who scanned our QR since last open
-    final pending = await _backend.claimPendingFriendConnections(myCode);
-    for (final conn in pending) {
-      final code = (conn['fromCode'] as String? ?? '').toLowerCase();
-      final name = (conn['fromName'] as String? ?? 'Familien-Kontakt');
-      if (code.isNotEmpty) {
-        await ParentFriendsService.instance.addFriend(
-          ParentFriend(code: code, name: name, addedAt: DateTime.now()),
-        );
-      }
-    }
-    // Show notification if new friends were auto-added
-    if (pending.isNotEmpty && mounted) {
-      final names =
-          pending.map((c) => c['fromName']?.toString() ?? 'Jemand').join(', ');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.people_rounded, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              pending.length == 1
-                  ? '$names hat sich mit dir verbunden! 🎉'
-                  : '${pending.length} neue Verbindungen: $names 🎉',
-              style: const TextStyle(fontSize: 13),
-            ),
-          ),
-        ]),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF16A34A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 5),
-      ));
-    }
     try {
       final sug = await _backend.getProfiles();
       if (mounted) {
-        final myCode = ParentFriendsService.instance.myCode;
-        final friendCodes =
-            ParentFriendsService.instance.friends.map((f) => f.code).toSet();
+        // Vorschlaege filtern: nicht ich selbst, nicht bereits befreundet
+        // (UID-basiert), nicht bereits weggewischt.
+        final friendUids =
+            FriendshipService.instance.friends.map((f) => f.uid).toSet();
         final suggestions = sug
             .where((mp) =>
                 mp['userId'] != null &&
-                !(mp['userId'] as String).startsWith(myCode) &&
-                !friendCodes.contains(mp['userId'] as String) &&
+                (mp['userId'] as String) != myUserId &&
+                !friendUids.contains(mp['userId'] as String) &&
                 !_dismissedSuggestions.contains(mp['userId'] as String? ?? ''))
             .take(6)
             .map((mp) {
@@ -168,10 +440,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         elevation: 0,
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(text: 'Freunde'),
-            Tab(text: 'Spielfreunde'),
-            Tab(text: 'Einladen'),
+          tabs: [
+            Tab(text: _networkCopy('friends', 'Freunde')),
+            Tab(text: _networkCopy('playmates', 'Spielfreunde')),
+            Tab(text: _networkCopy('invite', 'Einladen')),
           ],
         ),
       ),
@@ -262,7 +534,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     ]),
                     const SizedBox(height: 2),
                     Text(
-                        'Noch ${coins.coinsUntilFreePremium} bis Gratis-Premium \u{1F381}',
+                        '${coins.coinsUntilFreePremium} ${_networkCopy('coins_until', 'bis Gratis-Premium')} \u{1F381}',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -312,13 +584,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             })),
             const SizedBox(height: 10),
             Row(children: [
-              Text('${coins.successfulInvites} Einladungen erfolgreich',
+              Text(
+                  '${coins.successfulInvites} ${_networkCopy('invites_successful', 'Einladungen erfolgreich')}',
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF9A3412).withValues(alpha: 0.6))),
               const Spacer(),
-              Text('1 Coin = 1\u{20AC}',
+              Text(_networkCopy('coin_value', '1 Coin = 1\u{20AC}'),
                   style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -326,28 +599,44 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             ]),
             if (coins.balance >= ParentCoinService.coinsForFreePremium) ...[
               const SizedBox(height: 14),
-              SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                      onPressed: () async {
-                        await coins.redeemForPremium();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text('\u{1F389} Premium freigeschaltet!')),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-                      label: Text(AppStringsManager.getString(
-                          languageService.currentLanguage, 'redeem_premium')),
-                      style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFF97316),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)))))
+              // Prio 5: Einloesen ist noch nicht scharf geschaltet. Statt einer
+              // Schein-Einloesung zeigen wir ehrlich 'Bald verfuegbar' — die
+              // gesammelten Coins bleiben natuerlich erhalten.
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(14),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.hourglass_top_rounded,
+                      size: 18, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_t('network_coming_soon'),
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white)),
+                          const SizedBox(height: 2),
+                          Text(
+                              _networkCopy('coins_secured',
+                                  'Deine Coins sind gesichert. Bald kannst du damit Features freischalten. 🎁'),
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                  height: 1.3)),
+                        ]),
+                  ),
+                ]),
+              ),
             ],
           ]),
         ),
@@ -358,12 +647,17 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('Für jede Registrierung: 1 ParentCoin.',
+        Text(_t('network_coin_per_registration'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 14),
-        _inviteRow(theme, Icons.share_rounded, const Color(0xFF0EA5A4),
-            'Einladung teilen', 'WhatsApp, SMS, E-Mail', () async {
+        _inviteRow(
+            theme,
+            Icons.share_rounded,
+            const Color(0xFF0EA5A4),
+            _networkCopy('invite_share', 'Einladung teilen'),
+            _networkCopy('invite_share_hint', 'WhatsApp, SMS, E-Mail'),
+            () async {
           try {
             final box = context.findRenderObject() as RenderBox?;
             await Share.share(
@@ -385,12 +679,16 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             theme,
             Icons.qr_code_rounded,
             const Color(0xFF8B5CF6),
-            'QR-Code zeigen',
-            'Am Spielplatz scannen',
+            _networkCopy('qr_show', 'QR-Code zeigen'),
+            _networkCopy('qr_hint', 'Am Spielplatz scannen'),
             () => _showQR(theme, coins)),
         const SizedBox(height: 10),
-        _inviteRow(theme, Icons.link_rounded, const Color(0xFF2563EB),
-            'Link kopieren', coins.getInviteLink(), () {
+        _inviteRow(
+            theme,
+            Icons.link_rounded,
+            const Color(0xFF2563EB),
+            _networkCopy('link_copy', 'Link kopieren'),
+            coins.getInviteLink(), () {
           Clipboard.setData(ClipboardData(text: coins.getInviteLink()));
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(AppStringsManager.getString(
@@ -401,8 +699,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             theme,
             Icons.refresh_rounded,
             const Color(0xFF16A34A),
-            'Coins jetzt prüfen',
-            'Neue Einladungen gutschreiben',
+            _networkCopy('check_coins', 'Coins jetzt prüfen'),
+            _networkCopy('check_coins_hint', 'Neue Einladungen gutschreiben'),
             () => ParentCoinService.instance.claimPendingReferrals(context)),
         if (coins.history.isNotEmpty) ...[
           const SizedBox(height: 24),
@@ -458,7 +756,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   Widget _spielfreundeTab(ThemeData theme) {
     if (_profile == null) return _profileSetup(theme);
-    return _waitlistView(theme);
+    return _discoveryView(theme);
   }
 
   Widget _profileSetup(ThemeData theme) {
@@ -484,25 +782,126 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Text(
-            'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.',
+            _networkCopy(
+                'setup_hint',
+                'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.'),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant, height: 1.3),
             textAlign: TextAlign.center),
       ),
       const SizedBox(height: 16),
       Expanded(child: _ProfileForm(onSave: (p) async {
+        final uid = AuthService.instance.currentUser?.uid;
+        if (uid == null || uid.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(_networkCopy(
+                'login_required',
+                'Bitte melde dich an, um dein Spielfreunde-Profil zu veröffentlichen.',
+              )),
+            ));
+          }
+          return;
+        }
         await p.save();
-        final uid = AuthService.instance.currentUser?.uid ?? 'guest';
         await _backend.saveProfile(p, uid);
+        // In den echten Matching-Store schreiben, damit andere Familien uns
+        // per Standort + Interessen finden koennen (echtes Matching).
+        try {
+          await _syncProfileToMatching(p, uid);
+        } on SuspendedAccountException {
+          if (mounted) await showAccountSuspendedNotice(context);
+          return;
+        }
         await _init();
+        await _loadMatches();
       })),
     ]);
   }
 
-  Widget _waitlistView(ThemeData theme) {
-    return SingleChildScrollView(
+  /// Mappt das Spielfreunde-Wizard-Profil auf den echten Matching-Store
+  /// (/api/parent-matching/find nutzt genau diese Felder inkl. GPS + Interessen).
+  Future<void> _syncProfileToMatching(FamilyMatchProfile p, String uid) async {
+    // Standort: bevorzugt echte GPS-Koordinaten aus dem LocationService.
+    final loc = LocationService.instance;
+    if (!loc.hasLocation) {
+      // Versuch, GPS zu holen (Web/Native). Schlaegt es fehl, bleibt es ohne
+      // Koordinaten – dann matcht der Server ueber Interessen/Alter/Werte.
+      await loc.requestGPSLocation();
+    }
+
+    // Kinder-Alter als lesbare Tags ("3J", "8M") fuer das Matching.
+    final childAges = p.children.map((c) {
+      final years = c.ageMonths ~/ 12;
+      final months = c.ageMonths % 12;
+      return years >= 1 ? '${years}J' : '${months}M';
+    }).toList();
+
+    // Interessen = wonach die Familie sucht + besondere Merkmale.
+    final interests = <String>{
+      ...p.lookingFor,
+      ...p.specials,
+    }.where((e) => e.trim().isNotEmpty).toList();
+
+    await _matching.createProfile(
+      userId: uid,
+      name: p.displayName.isNotEmpty ? 'Familie ${p.displayName}' : 'Familie',
+      city: (loc.city != null && loc.city!.isNotEmpty)
+          ? loc.city!
+          : (p.district.isNotEmpty ? p.district : 'Deutschland'),
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      interests: interests,
+      languages: p.languages,
+      valuesFocus: p.values,
+      childAges: childAges,
+      familyForm: p.familyForm,
+      bio: p.bio,
+    );
+  }
+
+  /// Laedt echte Familien in der Naehe ueber das bestehende Matching-Backend.
+  Future<void> _loadMatches() async {
+    if (_profile == null) return;
+    if (mounted) setState(() => _loadingMatches = true);
+    final uid = AuthService.instance.currentUser?.uid ?? 'guest';
+    final childAges = _profile!.children.map((c) {
+      final years = c.ageMonths ~/ 12;
+      return years >= 1 ? '${years}J' : '${c.ageMonths % 12}M';
+    }).toList();
+    try {
+      final result = await _matching.findMatchesWithFallback(
+        userId: uid,
+        limit: 20,
+        childAges: childAges,
+      );
+      // Prio 4: blockierte Familien zusätzlich clientseitig ausblenden
+      // (Server filtert bereits, das hier ist Absicherung + sofortige Wirkung).
+      final visible = result.matches.where((m) {
+        final ownerId = m.profile.userId;
+        if (ownerId == null || ownerId.isEmpty) return true;
+        return !BlockReportService.instance.isBlocked(ownerId);
+      }).toList();
+      if (mounted) {
+        setState(() {
+          _matches = visible;
+          _matchScope = result.scope;
+          _loadingMatches = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMatches = false);
+    }
+  }
+
+  Widget _discoveryView(ThemeData theme) {
+    return RefreshIndicator(
+      onRefresh: _loadMatches,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ── Eigenes Profil (Header) ──────────────────────────────────────
           Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -548,7 +947,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _confirmDeleteProfile(theme),
-                      child: Text('Löschen',
+                      child: Text(_t('delete'),
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -556,123 +955,140 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 ])
               ])),
           const SizedBox(height: 20),
-          Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.5))),
-              child: Column(children: [
-                const Text('\u{1F389}', style: TextStyle(fontSize: 36)),
-                const SizedBox(height: 14),
-                Text(
-                    AppStringsManager.getString(
-                        languageService.currentLanguage, 'profile_ready'),
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text(
-                    'Wir öffnen die Spielfreunde-Suche sobald genug Familien in deiner Nähe sind.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant, height: 1.4),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.people_rounded,
-                          size: 18, color: Color(0xFF8B5CF6)),
-                      const SizedBox(width: 8),
-                      Text('${_waitlist.total} Familien warten auch',
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8B5CF6)))
-                    ])),
-                const SizedBox(height: 12),
-                ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                        value: _waitlist.progress,
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFFE2E8F0),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color(0xFF8B5CF6)))),
-                const SizedBox(height: 6),
-                Text('Noch ${_waitlist.remaining} Familien bis Freischaltung',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: theme.colorScheme.outline)),
-              ])),
-          const SizedBox(height: 20),
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'how_it_will_look'),
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
+
+          // ── Titelzeile Discovery ─────────────────────────────────────────
+          Row(children: [
+            const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(_t('network_families_nearby'),
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+            ),
+            if (_loadingMatches)
+              const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+            else
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _loadMatches,
+                child: Icon(Icons.refresh_rounded,
+                    size: 20, color: theme.colorScheme.primary),
+              ),
+          ]),
+          if (!_loadingMatches && _matches.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+                _matchScope == '10km'
+                    ? 'Im Umkreis von ~10 km'
+                    : _matchScope == '50km'
+                        ? 'Im Umkreis von ~50 km'
+                        : _matchScope == '100km'
+                            ? 'Im Umkreis von ~100 km'
+                            : 'Deutschlandweit',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+          ],
           const SizedBox(height: 12),
-          _familyCard(
-              theme,
-              'Familie M.',
-              'Kreuzberg',
-              '\u{1F467} Lina (3) \u{2022} \u{1F466} Ben (5)',
-              'Wir suchen Familien für Spielplatz-Treffen und gemeinsames Kochen.',
-              ['Bedürfnisorientiert', 'Natur'],
-              'Nachmittags \u{2022} DE, TR'),
-          const SizedBox(height: 10),
-          _familyCard(
-              theme,
-              'Familie S.',
-              'Mitte',
-              '\u{1F476} Noah (2)',
-              'Alleinerziehend, suche Austausch und spontane Treffen.',
-              ['Offen', 'Spontan'],
-              'Vormittags \u{2022} DE, AR'),
-          const SizedBox(height: 20),
-          GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _tabs.animateTo(0),
-              child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                      color: const Color(0xFF0EA5A4).withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                          color:
-                              const Color(0xFF0EA5A4).withValues(alpha: 0.12))),
-                  child: Row(children: [
-                    const Text('\u{1F4A1}', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Text(
-                            'Lade Freunde ein — schneller freischalten!',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w600))),
-                    Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                            color: const Color(0xFF0EA5A4),
-                            borderRadius: BorderRadius.circular(8)),
-                        child: Text(
-                            AppStringsManager.getString(
-                                languageService.currentLanguage, 'invite_btn'),
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700)))
-                  ]))),
+
+          // ── Ergebnis: Liste, Loading oder ehrlicher Empty-State ──────────
+          if (_loadingMatches)
+            _matchesLoadingSkeleton(theme)
+          else if (_matches.isEmpty)
+            _emptyDiscoveryState(theme)
+          else
+            ..._matches.map((m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _matchCard(theme, m),
+                )),
+        ]),
+      ),
+    );
+  }
+
+  /// Ehrlicher Empty-State: keine Fake-Familien, echter Aufruf zum Mitmachen.
+  Widget _emptyDiscoveryState(ThemeData theme) {
+    return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color:
+                    theme.colorScheme.outlineVariant.withValues(alpha: 0.5))),
+        child: Column(children: [
+          const Text('\u{1F331}', style: TextStyle(fontSize: 40)),
+          const SizedBox(height: 14),
+            Text(_networkCopy(
+              'empty_title', 'Sei die erste Familie in deiner Gegend'),
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w800),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+            Text(_networkCopy(
+              'empty_description',
+              'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
+                'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
+                'Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant, height: 1.4),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _tabs.animateTo(2),
+              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                label: Text(_networkCopy(
+                  'invite_playmates', 'Spielkameraden einladen')),
+              style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+            ),
+          ),
         ]));
   }
 
-  Widget _familyCard(ThemeData theme, String name, String district, String kids,
-      String bio, List<String> tags, String meta) {
+  Widget _matchesLoadingSkeleton(ThemeData theme) {
+    return Column(
+      children: List.generate(
+          2,
+          (_) => Container(
+                height: 120,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(18)),
+              )),
+    );
+  }
+
+  /// Karte einer echten gematchten Familie mit Verbinden-Aktion.
+  Widget _matchCard(ThemeData theme, MatchResult m) {
+    final p = m.profile;
+    final kids = p.childAges.isEmpty
+        ? ''
+        : '\u{1F9D2} ${p.childAges.join(' \u{2022} ')}';
+    final distanceKm = m.breakdown['distanceKm'];
+    final reasonCodes = (m.breakdown['reasons'] as List? ?? const [])
+        .map((reason) => reason.toString())
+        .take(3);
+    final meta = <String>[
+      if (distanceKm != null) '\u{1F4CD} $distanceKm km',
+      if (distanceKm == null && m.breakdown['locationLabel'] == 'same_city')
+        _networkCopy('same_city', 'In deiner Stadt'),
+      if (p.languages.isNotEmpty) p.languages.take(3).join(', '),
+    ].join('  \u{2022}  ');
+    final tags = <String>[
+      ...p.valuesFocus.take(2),
+      ...p.interests.take(2),
+    ];
+
     return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -701,57 +1117,171 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text(name,
+                  Text(p.name,
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
-                  Text(district,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+                  if (p.city.isNotEmpty)
+                    Text(p.city,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant))
                 ])),
-            Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                    color:
-                        theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(6)),
-                child: Text(
-                    AppStringsManager.getString(
-                        languageService.currentLanguage, 'soon'),
-                    style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.outline)))
+            if (m.score > 0)
+              Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Text('${m.score}% Match',
+                      style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF16A34A)))),
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert_rounded,
+                  size: 18, color: theme.colorScheme.outline),
+              padding: EdgeInsets.zero,
+              onSelected: (v) {
+                if (v == 'report') {
+                  showReportSheet(
+                    context,
+                    userId: m.profile.userId ?? m.profile.id,
+                    userName: m.profile.name,
+                    contentType: 'profile',
+                  );
+                } else if (v == 'block') {
+                  _blockMatch(m);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                    value: 'report',
+                    child: Row(children: [
+                      Icon(Icons.flag_outlined, size: 18),
+                      SizedBox(width: 10),
+                      Text('Melden'),
+                    ])),
+                PopupMenuItem(
+                    value: 'block',
+                    child: Row(children: [
+                      Icon(Icons.block_rounded, size: 18),
+                      SizedBox(width: 10),
+                      Text('Blockieren'),
+                    ])),
+              ],
+            ),
           ]),
-          const SizedBox(height: 10),
-          Text(kids,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          Text(bio,
-              style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
-          const SizedBox(height: 10),
-          Wrap(
+          if (kids.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(kids,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+          ],
+          if (p.bio != null && p.bio!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(p.bio!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
+          ],
+          if (tags.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: tags
+                    .map((t) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6)),
+                        child: Text(t,
+                            style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF7C3AED)))))
+                    .toList()),
+          ],
+          if (reasonCodes.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
               spacing: 6,
-              children: tags
-                  .map((t) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                          color:
-                              const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(6)),
-                      child: Text(t,
-                          style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF7C3AED)))))
-                  .toList()),
-          const SizedBox(height: 8),
-          Text(meta,
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.outline)),
+              runSpacing: 6,
+              children: reasonCodes
+                  .map((code) => Text(
+                        _networkCopy('reason_$code', code),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: const Color(0xFF0E7F77),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(meta,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _connectWithMatch(m),
+              icon: const Icon(Icons.waving_hand_rounded, size: 16),
+              label: const Text('Hallo sagen'),
+              style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF7C3AED),
+                  side: const BorderSide(color: Color(0xFF8B5CF6)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+            ),
+          ),
         ]));
+  }
+
+  /// Verbindungswunsch senden (echte Aktion im Matching-Backend).
+  Future<void> _connectWithMatch(MatchResult m) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final errorColor = Theme.of(context).colorScheme.error;
+    final targetUserId = m.profile.userId;
+    final ok = targetUserId != null && targetUserId.isNotEmpty
+        ? await FriendshipService.instance.sendRequest(targetUserId)
+        : false;
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(
+      content: Text(ok
+          ? _networkCopy('request_sent', 'Deine Anfrage wurde an {name} gesendet.')
+              .replaceAll('{name}', m.profile.name)
+          : _networkCopy('request_failed',
+              'Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.')),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: ok ? const Color(0xFF16A34A) : errorColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
+  /// Familie blockieren (lokal + serverseitig) und sofort ausblenden.
+  Future<void> _blockMatch(MatchResult m) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ownerId = m.profile.userId ?? m.profile.id;
+    await BlockReportService.instance.blockUser(ownerId, m.profile.name);
+    if (!mounted) return;
+    setState(() {
+      _matches = _matches
+          .where((x) => (x.profile.userId ?? x.profile.id) != ownerId)
+          .toList();
+    });
+    messenger.showSnackBar(SnackBar(
+      content: Text('${m.profile.name} wurde blockiert.'),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -759,15 +1289,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _freundeTab(ThemeData theme) {
-    final myCode = ParentFriendsService.instance.myCode.toUpperCase();
-    final friends = ParentFriendsService.instance.friends;
-    final shareMsg = 'Hey! 👋 Ich bin auf ParentPeak – verbinde dich mit mir:\n'
-        'parentpeak.de/freund/$myCode';
-
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ── Code card mit OTP-Style Zeichen ────────────────────────────────
+        // ── Einladungs-Karte: verbinden per Link/QR (1 Tap) ────────────────
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
@@ -787,53 +1312,50 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             ],
           ),
           child: Column(children: [
+            const Icon(Icons.group_add_rounded, color: Colors.white, size: 34),
+            const SizedBox(height: 12),
             Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'your_friend_code'),
-                style: TextStyle(
-                    color: Colors.white60,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2.5)),
-            const SizedBox(height: 14),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                ...myCode.split('').map((ch) => Container(
-                      width: 38,
-                      height: 46,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.35),
-                            width: 1.5),
-                      ),
-                      child: Center(
-                          child: Text(ch,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w900))),
-                    )),
-              ]),
+              _networkCopy('invite_hero_title', 'Freunde einladen'),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _networkCopy(
+                'invite_hero_description',
+                'Teile deinen persönlichen Link oder QR-Code - ein Tap und '
+                    'ihr seid verbunden.',
+              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 12,
+                  height: 1.4),
             ),
             const SizedBox(height: 18),
             Row(children: [
               Expanded(
-                  child:
-                      _shareActionBtn(Icons.copy_all_rounded, 'Kopieren', () {
-                Clipboard.setData(ClipboardData(text: myCode));
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Code kopiert ✓!')));
-              })),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: _shareActionBtn(Icons.ios_share_rounded, 'Teilen',
-                      () async {
+                  child: _shareActionBtn(
+                    Icons.ios_share_rounded,
+                    _networkCopy('share', 'Teilen'), () async {
                 final box = context.findRenderObject() as RenderBox?;
-                await Share.share(shareMsg,
+                // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
+                final link =
+                    await FriendshipService.instance.createInviteLink();
+                if (link == null) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text(
+                          'Link konnte nicht erstellt werden — bitte später erneut.'),
+                      behavior: SnackBarBehavior.floating,
+                    ));
+                  }
+                  return;
+                }
+                await Share.share(
+                    'Hey! 👋 Verbinde dich mit mir auf ParentPeak:\n$link',
                     sharePositionOrigin: box != null
                         ? box.localToGlobal(Offset.zero) & box.size
                         : null);
@@ -841,48 +1363,210 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               const SizedBox(width: 8),
               Expanded(
                   child: _shareActionBtn(Icons.qr_code_2_rounded, 'QR-Code',
-                      () => _showFriendQR(theme, myCode))),
+                      () async {
+                final link =
+                    await FriendshipService.instance.createInviteLink();
+                if (!mounted) return;
+                if (link == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text(
+                        'QR-Code konnte nicht erstellt werden — bitte später erneut.'),
+                    behavior: SnackBarBehavior.floating,
+                  ));
+                  return;
+                }
+                _showFriendQR(theme, link);
+              })),
             ]),
           ]),
-        ),
-        const SizedBox(height: 12),
-
-        OutlinedButton.icon(
-          onPressed: () => _showAddFriendSheet(theme),
-          icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-          label: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'add_friend_code')),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF7C3AED),
-            side: BorderSide(
-                color: const Color(0xFF7C3AED).withValues(alpha: 0.5)),
-            minimumSize: const Size(double.infinity, 48),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
         ),
         const SizedBox(height: 32),
 
         _suggestedParentsSection(theme),
         const SizedBox(height: 32),
 
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'my_friends'),
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          if (friends.isNotEmpty)
-            Text('${friends.length} verbunden',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: const Color(0xFF7C3AED))),
-        ]),
-        const SizedBox(height: 12),
+        // NEUES UID-Fundament: offene Anfragen + Freundesliste vom Server.
+        _friendRequestsSection(theme),
+        _uidFriendsSection(theme),
+      ]),
+    );
+  }
 
-        if (friends.isEmpty)
-          _emptyFriendsState(theme)
-        else
-          ...friends.map((f) => _friendCard(theme, f)),
+  // ── Eingehende Freundschaftsanfragen (annehmen/ablehnen) ──────────────────
+  Widget _friendRequestsSection(ThemeData theme) {
+    final incoming = FriendshipService.instance.incoming;
+    if (incoming.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Anfragen (${incoming.length})',
+          style: theme.textTheme.titleSmall
+              ?.copyWith(fontWeight: FontWeight.w800)),
+      const SizedBox(height: 12),
+      ...incoming.map((f) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.15)),
+            ),
+            child: Row(children: [
+              CircleAvatar(
+                  backgroundColor: _avatarColor(f.name),
+                  child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w800))),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(
+                      _t('network_wants_to_connect')
+                          .replaceAll('{name}', f.name),
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600))),
+              IconButton(
+                icon: const Icon(Icons.check_circle_rounded,
+                    color: Color(0xFF16A34A)),
+                tooltip: context.tr('tooltip_accept'),
+                onPressed: () async {
+                  await FriendshipService.instance.accept(f.uid);
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.cancel_rounded,
+                    color: theme.colorScheme.outline),
+                tooltip: context.tr('tooltip_reject'),
+                onPressed: () async {
+                  await FriendshipService.instance.remove(f.uid);
+                },
+              ),
+            ]),
+          )),
+      const SizedBox(height: 20),
+    ]);
+  }
+
+  // ── Bestätigte Freunde (UID-basiert) ──────────────────────────────────────
+  Widget _uidFriendsSection(ThemeData theme) {
+    final friends = FriendshipService.instance.friends;
+    final outgoing = FriendshipService.instance.outgoing;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'my_friends'),
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w800)),
+        if (friends.isNotEmpty)
+          Text('${friends.length} verbunden',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: const Color(0xFF7C3AED))),
+      ]),
+      const SizedBox(height: 12),
+      if (friends.isEmpty)
+        _emptyFriendsState(theme)
+      else
+        ...friends.map((f) => _uidFriendCard(theme, f)),
+      if (outgoing.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        Text('Gesendete Anfragen',
+            style: theme.textTheme.labelMedium
+                ?.copyWith(color: theme.colorScheme.outline)),
+        const SizedBox(height: 8),
+        ...outgoing.map((f) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                Icon(Icons.hourglass_top_rounded,
+                    size: 16, color: theme.colorScheme.outline),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(
+                        _t('network_waiting_confirmation')
+                            .replaceAll('{name}', f.name),
+                        style: theme.textTheme.bodySmall)),
+                TextButton(
+                    onPressed: () => FriendshipService.instance.remove(f.uid),
+                    child: Text(_t('network_withdraw'))),
+              ]),
+            )),
+      ],
+    ]);
+  }
+
+  // Freundes-Karte (UID-basiert) mit Chat, Melden, Entfernen.
+  Widget _uidFriendCard(ThemeData theme, Friend f) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Row(children: [
+        CircleAvatar(
+            radius: 23,
+            backgroundColor: _avatarColor(f.name),
+            child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800))),
+        const SizedBox(width: 12),
+        Expanded(
+            child: Text(f.name,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w700))),
+        OutlinedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MatchConversationScreen(
+                profileId: f.roomId,
+                profileName: f.name,
+                isFriendChat: true,
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+          label: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'chat_btn')),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF8B5CF6),
+            side: const BorderSide(color: Color(0xFF8B5CF6)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            textStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ),
+        PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert_rounded,
+              size: 18, color: theme.colorScheme.outline),
+          onSelected: (v) async {
+            if (v == 'remove') {
+              await FriendshipService.instance.remove(f.uid);
+            } else if (v == 'block') {
+              await BlockReportService.instance.blockUser(f.uid, f.name);
+              await FriendshipService.instance.remove(f.uid);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('${f.name} wurde blockiert.'),
+                  behavior: SnackBarBehavior.floating,
+                ));
+              }
+            } else if (v == 'report') {
+              showReportSheet(context,
+                  userId: f.uid, userName: f.name, contentType: 'profile');
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(value: 'report', child: Text('Melden')),
+            PopupMenuItem(value: 'block', child: Text('Blockieren')),
+            PopupMenuItem(value: 'remove', child: Text('Entfernen')),
+          ],
+        ),
       ]),
     );
   }
@@ -916,7 +1600,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             style: theme.textTheme.bodyMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
-        Text('Teile deinen Code – ein Tap und ihr seid verbunden!',
+        Text(_t('network_share_code_hint'),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant, height: 1.5),
             textAlign: TextAlign.center),
@@ -972,7 +1656,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.outline)),
         ]),
-        Text('${_suggestedProfiles.length} Vorschläge',
+        Text(
+            _t('network_suggestions_count')
+                .replaceAll('{count}', '${_suggestedProfiles.length}'),
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: const Color(0xFF8B5CF6))),
       ]),
@@ -1057,18 +1743,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           Expanded(
             child: FilledButton(
               onPressed: () async {
-                final code = s.id.length >= 6
-                    ? s.id.substring(0, 6).toLowerCase()
-                    : s.id.toLowerCase();
-                await ParentFriendsService.instance.addFriend(ParentFriend(
-                    code: code, name: s.name, addedAt: DateTime.now()));
+                // Echte UID-Freundschaftsanfrage (neues System). s.id ist die
+                // vollstaendige UID des Vorschlags.
+                final ok = await FriendshipService.instance.sendRequest(s.id);
                 if (mounted) {
                   setState(() {
                     _dismissedSuggestions.add(s.id);
                     _suggestedProfiles.removeWhere((x) => x.id == s.id);
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${s.name} verbunden! 🎉')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(ok
+                        ? 'Anfrage an ${s.name} gesendet. 👋'
+                        : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: ok ? const Color(0xFF16A34A) : null,
+                  ));
                 }
               },
               style: FilledButton.styleFrom(
@@ -1126,15 +1815,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     return colors[name.codeUnitAt(0) % colors.length];
   }
 
-  String _friendSince(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inDays == 0) return 'heute verbunden';
-    if (diff.inDays == 1) return 'gestern verbunden';
-    if (diff.inDays < 7) return 'vor ${diff.inDays} Tagen';
-    return 'seit ${dt.day}.${dt.month}.${dt.year}';
-  }
-
-  void _showFriendQR(ThemeData theme, String code) {
+  void _showFriendQR(ThemeData theme, String qrData) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1160,7 +1841,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               style: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          Text('Beim Treffen einfach scannen – sofort verbunden!',
+          Text(_t('network_scan_to_connect'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline, height: 1.4),
               textAlign: TextAlign.center),
@@ -1177,35 +1858,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     offset: const Offset(0, 6)),
               ],
             ),
-            child: QrImageView(
-                data: 'parentpeak.de/freund/$code',
-                version: QrVersions.auto,
-                size: 200),
+            child:
+                QrImageView(data: qrData, version: QrVersions.auto, size: 200),
           ),
           const SizedBox(height: 16),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              ...code.split('').map((ch) => Container(
-                    width: 36,
-                    height: 42,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color:
-                              const Color(0xFF7C3AED).withValues(alpha: 0.2)),
-                    ),
-                    child: Center(
-                        child: Text(ch,
-                            style: const TextStyle(
-                                color: Color(0xFF7C3AED),
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900))),
-                  )),
-            ]),
-          ),
+          Text('Scannen & mit einem Tap verbinden',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.outline)),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -1226,336 +1885,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ]),
       ),
     );
-  }
-
-  Widget _friendCard(ThemeData theme, ParentFriend friend) {
-    // Deterministic room ID: sorted codes ensure both sides open the same chat
-    final myCode = ParentFriendsService.instance.myCode;
-    final sorted = [myCode, friend.code]..sort();
-    final roomId = sorted.join('-');
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Row(children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: _avatarColor(friend.name),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              friend.name.isNotEmpty ? friend.name[0].toUpperCase() : '?',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(friend.name,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          Text(_friendSince(friend.addedAt),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        ])),
-        const SizedBox(width: 8),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MatchConversationScreen(
-                profileId: roomId,
-                profileName: friend.name,
-                isFriendChat: true,
-              ),
-            ),
-          ),
-          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
-          label: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'chat_btn')),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF8B5CF6),
-            side: const BorderSide(color: Color(0xFF8B5CF6)),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            textStyle:
-                const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-        ),
-        const SizedBox(width: 4),
-        GestureDetector(
-          onTap: () => _confirmRemoveFriend(friend),
-          child: Icon(Icons.close_rounded,
-              size: 18, color: theme.colorScheme.outline),
-        ),
-      ]),
-    );
-  }
-
-  /// Looks up a display name for the given code via getProfiles().
-  Future<String?> _lookupNameByCode(String rawCode) async {
-    final code = rawCode.trim().toLowerCase();
-    final normalized = code.startsWith('pp-') ? code : code;
-    if (normalized.isEmpty) return null;
-    return _backend.lookupFriendName(normalized);
-  }
-
-  void _showAddFriendSheet(ThemeData theme, {String? prefillCode}) {
-    final codeCtrl = TextEditingController(text: prefillCode ?? '');
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        String? resolvedName;
-        String? errorMsg;
-        bool isLooking = false;
-
-        return StatefulBuilder(builder: (ctx, setSheet) {
-          final myCode = ParentFriendsService.instance.myCode.toUpperCase();
-
-          Future<void> onCodeChanged(String val) async {
-            final normalized = val.trim().toUpperCase();
-            // Trigger lookup once input looks complete (PP-XXXXXX = 9 chars)
-            if (normalized.length < 6) {
-              setSheet(() {
-                resolvedName = null;
-                errorMsg = null;
-              });
-              return;
-            }
-            if (normalized == myCode ||
-                normalized == myCode.replaceFirst('PP-', '')) {
-              setSheet(() {
-                resolvedName = null;
-                errorMsg = 'Das ist dein eigener Code!';
-              });
-              return;
-            }
-            setSheet(() {
-              isLooking = true;
-              resolvedName = null;
-              errorMsg = null;
-            });
-            final name = await _lookupNameByCode(normalized);
-            setSheet(() {
-              isLooking = false;
-              resolvedName = name;
-              errorMsg = null;
-            });
-          }
-
-          return Padding(
-            padding:
-                EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                      color: theme.colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2)),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                    AppStringsManager.getString(
-                        languageService.currentLanguage, 'connect_by_code'),
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 4),
-                Text(
-                    AppStringsManager.getString(
-                        languageService.currentLanguage, 'enter_friend_code'),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: codeCtrl,
-                  textCapitalization: TextCapitalization.characters,
-                  onChanged: onCodeChanged,
-                  decoration: InputDecoration(
-                    labelText: 'Freundschafts-Code',
-                    hintText: 'PP-XXXXXX',
-                    suffixIcon: isLooking
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Color(0xFF8B5CF6))))
-                        : resolvedName != null
-                            ? const Icon(Icons.check_circle_rounded,
-                                color: Color(0xFF059669))
-                            : null,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                            color: Color(0xFF8B5CF6), width: 1.5)),
-                    errorText: errorMsg,
-                  ),
-                ),
-                // Name preview after lookup
-                if (resolvedName != null) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF059669).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: _avatarColor(resolvedName!),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            resolvedName![0].toUpperCase(),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(resolvedName!,
-                                  style: theme.textTheme.bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700)),
-                              const Text('Gefunden \u2713',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: Color(0xFF059669),
-                                      fontWeight: FontWeight.w600)),
-                            ]),
-                      ),
-                    ]),
-                  ),
-                ] else if (!isLooking &&
-                    codeCtrl.text.trim().length >= 6 &&
-                    errorMsg == null) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    'Kein Profil gefunden \u2013 du kannst trotzdem verbinden.',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: theme.colorScheme.outline),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: errorMsg != null ||
-                            codeCtrl.text.trim().isEmpty ||
-                            isLooking
-                        ? null
-                        : () async {
-                            final raw = codeCtrl.text.trim().toLowerCase();
-                            final code = raw.startsWith('pp-') ? raw : raw;
-                            final name = resolvedName ?? 'Familien-Kontakt';
-                            await ParentFriendsService.instance.addFriend(
-                              ParentFriend(
-                                  code: code,
-                                  name: name,
-                                  addedAt: DateTime.now()),
-                            );
-                            // Tell the other side that we connected
-                            final myCode = ParentFriendsService.instance.myCode;
-                            final myName = _profile?.displayName ??
-                                AuthService.instance.currentUser?.displayName ??
-                                'Familien-Kontakt';
-                            unawaited(_backend.notifyFriendConnect(
-                                myCode, myName, code));
-                            if (ctx.mounted) Navigator.pop(ctx);
-                          },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: Text(resolvedName != null
-                        ? 'Mit $resolvedName verbinden'
-                        : 'Verbinden'),
-                  ),
-                ),
-              ]),
-            ),
-          );
-        });
-      },
-    );
-  }
-
-  Future<void> _confirmRemoveFriend(ParentFriend friend) async {
-    final theme = Theme.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'remove_friend_title')),
-        content: Text('${friend.name} wird aus deiner Freundesliste entfernt.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'cancel'))),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: FilledButton.styleFrom(
-                  backgroundColor: theme.colorScheme.error),
-              child: Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'remove_btn'))),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      await ParentFriendsService.instance.removeFriend(friend.code);
-    }
   }
 
   Widget _inviteRow(ThemeData theme, IconData icon, Color color, String title,
@@ -1604,17 +1933,16 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(AppStringsManager.getString(
             languageService.currentLanguage, 'delete_profile')),
-        content: const Text('Dein Spielfreunde-Profil wird dauerhaft gelöscht. '
-            'Du kannst jederzeit ein neues erstellen.'),
+        content: Text(_t('network_delete_profile_confirm')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(_t('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(
                   backgroundColor: theme.colorScheme.error),
-              child: const Text('Löschen')),
+              child: Text(_t('delete'))),
         ],
       ),
     );
@@ -1720,7 +2048,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text('Fertig',
+              child: Text(_t('done'),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
@@ -1787,6 +2115,17 @@ class _ProfileFormState extends State<_ProfileForm> {
   final _bioCtrl = TextEditingController();
   final Set<String> _specials = {};
   final _specialsCustomCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Anzeigename aus dem Konto vorbelegen — Eltern tippen ihn nicht erneut.
+    final accountName =
+        AuthService.instance.currentUser?.displayName.trim() ?? '';
+    if (accountName.isNotEmpty) {
+      _nameCtrl.text = accountName;
+    }
+  }
 
   @override
   void dispose() {
@@ -1926,7 +2265,8 @@ class _ProfileFormState extends State<_ProfileForm> {
             })),
       ),
       // Step label
-      Text(_stepLabels[_step],
+        Text(
+          _stepLabel(_step),
           style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6))),
       const SizedBox(height: 16),
@@ -1952,7 +2292,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             TextButton.icon(
                 onPressed: _prev,
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: const Text('Zurück'))
+                label: Text(_t('network_back')))
           else
             const Spacer(),
           const Spacer(),
@@ -1975,7 +2315,9 @@ class _ProfileFormState extends State<_ProfileForm> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.check_rounded, size: 18),
-              label: Text(_saving ? 'Speichern...' : 'Profil erstellen'),
+              label: Text(_saving
+                  ? _networkCopy('save', 'Speichern...')
+                  : _networkCopy('create_profile', 'Profil erstellen')),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),
                   shape: RoundedRectangleBorder(
@@ -1994,25 +2336,32 @@ class _ProfileFormState extends State<_ProfileForm> {
     'Schritt 5: Sprachen & Mehr',
   ];
 
+  String _stepLabel(int step) =>
+      _networkCopy('step_${step + 1}', _stepLabels[step]);
+
   // ─── SCHRITT 1: Grundinfos ─────────────────────────────────────────────────
   Widget _step1(ThemeData theme) {
     return SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SizedBox(height: 8),
-          _inputField(_nameCtrl, 'Euer Vorname / Spitzname',
-              'z.B. Sarah, Die Muellers', Icons.person_rounded),
+          _inputField(
+              _nameCtrl,
+              _networkCopy('name_hint', 'Euer Vorname / Spitzname'),
+              _networkCopy('name_example', 'z.B. Sarah, Die Muellers'),
+              Icons.person_rounded),
           const SizedBox(height: 14),
           LocationPickerWidget(
-            hint: 'Euer Stadtteil / PLZ wählen',
+            hint: _networkCopy('location_hint', 'Euer Stadtteil / PLZ wählen'),
             onLocationPicked: (loc) {
               _districtCtrl.text = loc.displayName;
             },
           ),
           const SizedBox(height: 20),
-          _sectionTitle(theme, '\u{1F46A} Familienform'),
+          _sectionTitle(theme,
+              '\u{1F46A} ${_networkCopy('family_form', 'Familienform')}'),
           const SizedBox(height: 8),
-          Text('Wähle was am besten passt — oder schreib deine eigene:',
+          Text(_t('network_wizard_choose'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -2027,8 +2376,8 @@ class _ProfileFormState extends State<_ProfileForm> {
                       borderRadius: BorderRadius.circular(20)),
                 )),
             ActionChip(
-              label:
-                  const Text('\u{2795} Eigene', style: TextStyle(fontSize: 12)),
+              label: Text('\u{2795} ${_networkCopy('custom', 'Eigene')}',
+                  style: const TextStyle(fontSize: 12)),
               onPressed: () => setState(() => _familyForm = 'custom'),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
@@ -2037,8 +2386,12 @@ class _ProfileFormState extends State<_ProfileForm> {
           ]),
           if (_familyForm == 'custom') ...[
             const SizedBox(height: 10),
-            _inputField(_familyFormCustomCtrl, 'Eure Familienform',
-                'z.B. Wahlfamilie, Mehrgenerationen...', Icons.edit_rounded),
+            _inputField(
+                _familyFormCustomCtrl,
+                _networkCopy('custom_family', 'Eure Familienform'),
+                _networkCopy(
+                    'custom_example', 'z.B. Wahlfamilie, Mehrgenerationen...'),
+                Icons.edit_rounded),
           ],
         ]));
   }
@@ -2049,7 +2402,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SizedBox(height: 8),
-          Text('Für wen sucht ihr Spielfreunde?',
+          Text(_t('network_wizard_for_whom'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 14),
@@ -2145,8 +2498,11 @@ class _ProfileFormState extends State<_ProfileForm> {
                 .map((g) => ChoiceChip(
                       label: Text(
                           g == null
-                              ? 'Keine Angabe'
-                              : MatchOptions.genderLabels[g]!,
+                              ? _networkCopy('no_gender', 'Keine Angabe')
+                              : _networkCopy(
+                                  'gender_$g',
+                                  MatchOptions.genderLabels[g]!,
+                                ),
                           style: const TextStyle(fontSize: 11)),
                       selected: child.gender == g,
                       onSelected: (_) => setState(() => child.gender = g),
@@ -2221,7 +2577,9 @@ class _ProfileFormState extends State<_ProfileForm> {
               const SizedBox(width: 10),
               Expanded(
                   child: Text(
-                      'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.',
+                    _networkCopy(
+                      'values_tip',
+                      'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF16A34A),
                           fontWeight: FontWeight.w500,
@@ -2280,7 +2638,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 8),
           _sectionTitle(theme, '\u{1F3AF} Was sucht ihr?'),
           const SizedBox(height: 6),
-          Text('Wähle Aktivitäten die euch Spaß machen:',
+          Text(_t('network_wizard_activities'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -2395,7 +2753,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 8),
           _sectionTitle(theme, '\u{1F30D} Welche Sprachen sprecht ihr?'),
           const SizedBox(height: 6),
-          Text('Alle Sprachen eurer Familie — auch die der Kinder:',
+          Text(_t('network_wizard_languages'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -2417,15 +2775,17 @@ class _ProfileFormState extends State<_ProfileForm> {
                       ))
                   .toList()),
           const SizedBox(height: 22),
-          _sectionTitle(theme, '\u{1F4AC} Kurze Bio'),
+            _sectionTitle(theme,
+              '\u{1F4AC} ${_networkCopy('bio_title', 'Kurze Bio')}'),
           const SizedBox(height: 6),
           TextField(
               controller: _bioCtrl,
               maxLength: 200,
               maxLines: 3,
               decoration: InputDecoration(
-                  hintText:
-                      'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?',
+                  hintText: _networkCopy(
+                    'bio_hint',
+                    'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?'),
                   hintStyle:
                       TextStyle(fontSize: 13, color: theme.colorScheme.outline),
                   border: OutlineInputBorder(
@@ -2437,7 +2797,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 22),
           _sectionTitle(theme, '\u{1F49C} Besonderheiten (optional)'),
           const SizedBox(height: 6),
-          Text('Damit wir passende Familien vorschlagen können:',
+          Text(_t('network_wizard_location'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -2539,7 +2899,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                           Navigator.pop(ctx);
                           setState(() {});
                         },
-                        child: const Text('Fertig'))),
+                        child: Text(_t('done')))),
               ]),
             ),
           );

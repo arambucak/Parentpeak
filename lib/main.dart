@@ -3,9 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/logic/revocation_service_impl.dart';
 import 'package:parentpeak/logic/secure_storage.dart';
 import 'package:parentpeak/logic/background_sync_manager.dart';
@@ -22,6 +22,8 @@ import 'package:parentpeak/ui/kettenbrecher_dashboard.dart';
 import 'package:parentpeak/ui/auth/login_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_screen.dart';
+import 'package:parentpeak/logic/onboarding_sync_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/entitlement_service.dart';
@@ -34,12 +36,29 @@ import 'package:parentpeak/services/development_report_limit_service.dart';
 import 'package:parentpeak/logic/theme_service.dart';
 import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 // Global service instances
 final themeService = ThemeService();
 final languageService = LanguageService();
 // Global key for DemoApp state access
 final GlobalKey<DemoAppState> demoAppKey = GlobalKey<DemoAppState>();
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
+void _handleNotificationTap(Map<String, dynamic> data) {
+  const treasureNotificationTypes = {
+    'treasure_reservation',
+    'treasure_handover_update',
+  };
+  if (!treasureNotificationTypes.contains(data['type'])) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    appNavigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (_) => const TreasureHandoverScreen(openMyListings: true),
+      ),
+    );
+  });
+}
 
 // Development shortcut: skips auth gate and opens the app shell directly.
 const bool _debugBypassAuthGate =
@@ -96,33 +115,18 @@ Future<void> _startApp() async {
   final hasDotEnv = await _loadOptionalDotEnv();
   await APIConfig.ensureRuntimeEnvLoaded();
   debugPrint('Gemini runtime model: ${APIConfig.getGeminiModelName()}');
-  debugPrint('Gemini API configured: ${APIConfig.isGeminiApiKeyConfigured()}');
 
-  final missingSecrets = APIConfig.getMissingRequiredSecrets();
   final releaseConfigIssues = APIConfig.getReleaseConfigIssues();
   const isBlockingReleaseConfig = kReleaseMode && !kIsWeb;
 
-  if (isBlockingReleaseConfig && missingSecrets.isNotEmpty) {
-    throw StateError(
-        'Fehlende Pflicht-Secrets für Release: ${missingSecrets.join(', ')}');
-  }
   if (isBlockingReleaseConfig && releaseConfigIssues.isNotEmpty) {
     throw StateError(
         'Unsichere Release-Konfiguration: ${releaseConfigIssues.join('; ')}');
-  }
-  if (kReleaseMode && kIsWeb && missingSecrets.isNotEmpty) {
-    debugPrint(
-      'Web Release Hinweis: Secrets fehlen (${missingSecrets.join(', ')}). Features werden ggf. deaktiviert.',
-    );
   }
   if (kReleaseMode && kIsWeb && releaseConfigIssues.isNotEmpty) {
     debugPrint(
       'Web Release Hinweis: ${releaseConfigIssues.join('; ')}. App startet im degradieren Modus.',
     );
-  }
-  if (!kReleaseMode && hasDotEnv && missingSecrets.isNotEmpty) {
-    debugPrint(
-        'Konfigurationshinweis: Fehlende Secrets (${missingSecrets.join(', ')}).');
   }
   if (!kReleaseMode && hasDotEnv && releaseConfigIssues.isNotEmpty) {
     debugPrint('Konfigurationshinweis: ${releaseConfigIssues.join('; ')}');
@@ -166,6 +170,7 @@ Future<void> _startApp() async {
       NotificationService.instance.initFcm(
         apiClient: apiClient,
         userId: currentUser.uid,
+        onNotificationTap: _handleNotificationTap,
       ),
     );
   }
@@ -186,15 +191,13 @@ Future<bool> _loadOptionalDotEnv() async {
   }
 
   try {
-    await dotenv.load(fileName: '.env', isOptional: true);
-    final hasGemini = (dotenv.env['GEMINI_API_KEY'] ?? '').trim().isNotEmpty;
+    // Loads public client configuration from the bundled placeholder.
+    await dotenv.load(fileName: 'assets/env.template', isOptional: true);
     final hasAny = dotenv.env.isNotEmpty;
-    debugPrint(
-      'dotenv: loaded=$hasAny, geminiKeyPresent=$hasGemini, keyCount=${dotenv.env.length}',
-    );
+    debugPrint('dotenv: loaded=$hasAny, keyCount=${dotenv.env.length}');
     return hasAny;
   } catch (e) {
-    debugPrint('Warnung: .env konnte nicht geladen werden: $e');
+    debugPrint('Warnung: env.template konnte nicht geladen werden: $e');
     return false;
   }
 }
@@ -224,6 +227,13 @@ String? _extractStartupFriendCode() {
     final uri = Uri.tryParse(candidate);
     if (uri == null) continue;
     final segs = uri.pathSegments;
+    // NEU: /f/<token> = UID-Einladungslink -> mit 'invite:'-Praefix weiterreichen.
+    if (segs.isNotEmpty &&
+        segs.first == 'f' &&
+        segs.length >= 2 &&
+        segs[1].isNotEmpty) {
+      return 'invite:${segs[1]}';
+    }
     if (segs.isNotEmpty && segs.first == 'freund') {
       if (segs.length >= 2 && segs[1].isNotEmpty) return segs[1].toUpperCase();
       final q = uri.queryParameters['code'] ?? uri.queryParameters['add'];
@@ -375,16 +385,18 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
         RevocationServiceImpl(baseUrl: backendBaseUrl, secureStorage: storage);
 
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'Parentpeak',
       theme: themeService.getLightTheme(),
       darkTheme: themeService.getDarkTheme(),
       themeMode: _currentThemeMode,
       localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+        AppLanguages.materialLocalizationsDelegate,
+        AppLanguages.widgetsLocalizationsDelegate,
+        AppLanguages.cupertinoLocalizationsDelegate,
         AppLocalizations.delegate,
       ],
+      locale: AppLanguages.localeFor(languageService.currentLanguage),
       supportedLocales: AppLocalizations.supportedLocales,
       home: AuthGate(
         devices: const [],
@@ -479,16 +491,18 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
           onDestinationSelected: (index) => setState(() => _index = index),
           height: 76,
           backgroundColor: theme.colorScheme.surface,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Home',
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: AppStringsManager.getString(
+                  languageService.currentLanguage, 'nav_home'),
             ),
             NavigationDestination(
-              icon: Icon(Icons.family_restroom_outlined),
-              selectedIcon: Icon(Icons.family_restroom_rounded),
-              label: 'Profil',
+              icon: const Icon(Icons.family_restroom_outlined),
+              selectedIcon: const Icon(Icons.family_restroom_rounded),
+              label: AppStringsManager.getString(
+                  languageService.currentLanguage, 'nav_profile'),
             ),
           ],
         ),
@@ -530,6 +544,23 @@ class _AuthGateState extends State<AuthGate> {
     AuthService.instance.addListener(_refresh);
     _syncEntitlements();
     _checkOnboarding();
+    _ensureUserProfile();
+  }
+
+  /// Stellt sicher, dass der Anzeigename des eingeloggten Nutzers serverseitig
+  /// im UserProfile steht — direkt nach dem Login, unabhaengig davon, ob die
+  /// Netzwerk-Kachel geoeffnet wird. Verhindert 'Familie'-Platzhalter bei
+  /// Freundschaftsanfragen/Chat.
+  Future<void> _ensureUserProfile() async {
+    final user = AuthService.instance.currentUser;
+    if (user == null) return;
+    final name = user.displayName.trim().isNotEmpty
+        ? user.displayName.trim()
+        : user.friendlyName;
+    if (name.isEmpty) return;
+    try {
+      await UserProfileService.instance.setDisplayName(name);
+    } catch (_) {}
   }
 
   @override
@@ -539,7 +570,15 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _checkOnboarding() async {
-    final completed = await OnboardingScreen.isCompleted();
+    var completed = await OnboardingScreen.isCompleted();
+    // Cross-Device (Option A): Ist der Nutzer eingeloggt, aber lokal noch nicht
+    // als "onboarded" markiert, den account-gebundenen Status vom Server holen.
+    // So muss man auf einem neuen Geraet nicht erneut durchs Onboarding.
+    if (!completed && AuthService.instance.currentUser != null) {
+      try {
+        completed = await OnboardingSyncService.instance.pullCompleted();
+      } catch (_) {}
+    }
     if (mounted) {
       setState(() => _onboardingCompleted = completed);
     }
@@ -577,6 +616,10 @@ class _AuthGateState extends State<AuthGate> {
       setState(() {});
     }
     _syncEntitlements();
+    // Nach Login den (ggf. server-seitigen) Onboarding-Status neu bestimmen.
+    _checkOnboarding();
+    // Nach Login den Anzeigenamen serverseitig sichern (UserProfile).
+    _ensureUserProfile();
   }
 
   @override

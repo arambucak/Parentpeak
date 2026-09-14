@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
@@ -18,6 +19,14 @@ class ChatScreen extends StatefulWidget {
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
+
+// ─── Markenfarben ─────────────────────────────────────────────────────────
+const Color _kBrand = Color(0xFF8B5CF6); // Lila (Marke)
+const Color _kBrand2 = Color(0xFF7C3AED); // Dunkleres Lila
+const Color _kGreen = Color(0xFF16A34A); // Grün (Marke)
+const Color _kBg = Color(0xFFF7F5FF); // Sanfter lila-weißer Hintergrund
+const Color _kAiBubble = Colors.white;
+const Color _kInk = Color(0xFF1F2937);
 
 class _ChatScreenState extends State<ChatScreen> {
   static const String _insightsStorageKey = 'ki_chat.topic_counts.v1';
@@ -182,16 +191,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _initializeGemini() {
     try {
-      final apiKey = APIConfig.getGeminiApiKey();
-      if (apiKey == null || apiKey.isEmpty) {
-        _chatBackend = null;
-        setState(() {
-          _initError =
-              'KI-Beratung ist aktuell nicht verfügbar (API-Konfiguration fehlt).';
-        });
-        return;
-      }
-      _geminiService = GeminiAIService(apiKey: apiKey);
+      _geminiService = GeminiAIService();
       _chatBackend = PedagogicalChatBackend(geminiService: _geminiService);
       setState(() {
         _initError = null;
@@ -200,7 +200,7 @@ class _ChatScreenState extends State<ChatScreen> {
           '✅ Gemini AI initialized with ${APIConfig.getGeminiModelName()}');
     } catch (e) {
       setState(() {
-        _initError = 'Fehler: $e';
+        _initError = context.tr('chat_init_error', values: {'error': '$e'});
       });
       debugPrint('Gemini init error: $e');
     }
@@ -227,7 +227,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add({
           'role': 'user',
-          'content': '\u{1F4A1} Tipp: "$tipText"',
+          'content': context.tr('chat_tip_message', values: {'tip': tipText}),
           'timestamp': DateTime.now(),
         });
         _isStreaming = true;
@@ -402,9 +402,7 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (context) => AlertDialog(
         title: Text(AppStringsManager.getString(
             languageService.currentLanguage, 'delete_history_title')),
-        content: const Text(
-          'Möchtest du den aktuellen Chatverlauf wirklich löschen?',
-        ),
+        content: Text(context.tr('chat_delete_history_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -430,7 +428,12 @@ class _ChatScreenState extends State<ChatScreen> {
       _assistantFeedbackByIndex[messageIndex] = value;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Feedback gespeichert: $value')),
+      SnackBar(
+        content: Text(context.tr(
+          'chat_feedback_saved',
+          values: {'feedback': context.tr('chat_feedback_$value')},
+        )),
+      ),
     );
   }
 
@@ -461,8 +464,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final previousQuestion = _findPreviousUserMessage(assistantIndex);
     if (previousQuestion == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Keine vorherige Frage für erneuten Versuch gefunden.'),
+        SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'chat_retry_missing_question')),
         ),
       );
       return;
@@ -485,7 +489,7 @@ class _ChatScreenState extends State<ChatScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'MVP Themenauswertung',
+                context.tr('chat_topic_analysis_title'),
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -493,7 +497,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Datensparsam: Es werden nur Themenzähler gespeichert, keine Rohtexte.',
+                context.tr('chat_topic_analysis_privacy'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -505,7 +509,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   (entry) => ListTile(
                     dense: true,
                     leading: const Icon(Icons.analytics_outlined),
-                    title: Text(entry.key),
+                    title: Text(_topicLabel(entry.key)),
                     trailing: Text('${entry.value}'),
                   ),
                 ),
@@ -530,62 +534,32 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildSafetyBanner() {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1EE),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE8543A).withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.verified_user_rounded,
-                  size: 18, color: Color(0xFFE8543A)),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Sicher & transparent',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: Color(0xFF1A2A3A),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 6),
-          Text(
-            'Keine Diagnosen, keine Therapie. Deine Fragen bleiben privat.',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF516072),
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
+  String _topicLabel(String topicId) {
+    const keys = {
+      'Autonomiephase': 'chat_insight_autonomy',
+      'Schlaf': 'chat_insight_sleep',
+      'Konflikte': 'chat_insight_conflicts',
+      'Schule/Kita': 'chat_insight_school',
+      'Medien': 'chat_insight_media',
+      'Bindung & Gefühle': 'chat_insight_attachment',
+      'Geschwister': 'chat_insight_siblings',
+      'Ernährung': 'chat_insight_nutrition',
+      'Krise': 'chat_insight_crisis',
+      'Sonstiges': 'chat_insight_other',
+    };
+    final key = keys[topicId];
+    return key == null ? topicId : context.tr(key);
   }
 
   Widget _buildAssistantFeedbackRow(int index) {
     final selected = _assistantFeedbackByIndex[index];
     final content = _messages[index]['content']?.toString() ?? '';
     final showRetry = _isProviderUnavailableMessage(content);
-    Widget chip(String label, IconData icon) {
-      final isSelected = selected == label;
+    Widget chip(String feedbackId, IconData icon) {
+      final isSelected = selected == feedbackId;
       return ChoiceChip(
         selected: isSelected,
-        selectedColor: const Color(0xFF0284C7).withValues(alpha: 0.16),
+        selectedColor: _kBrand.withValues(alpha: 0.14),
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -600,7 +574,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Icon(icon, size: 14),
             const SizedBox(width: 4),
             Text(
-              label,
+              context.tr('chat_feedback_$feedbackId'),
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.1,
@@ -608,7 +582,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
-        onSelected: (_) => _setFeedback(index, label),
+        onSelected: (_) => _setFeedback(index, feedbackId),
       );
     }
 
@@ -626,100 +600,172 @@ class _ChatScreenState extends State<ChatScreen> {
               label: Text(AppStringsManager.getString(
                   languageService.currentLanguage, 'try_again')),
             ),
-          chip('hilfreich', Icons.thumb_up_alt_outlined),
-          chip('nicht hilfreich', Icons.thumb_down_alt_outlined),
-          chip('gefaehrlich', Icons.report_gmailerrorred_rounded),
-          chip('unpassend', Icons.rule_rounded),
+          chip('helpful', Icons.thumb_up_alt_outlined),
+          chip('not_helpful', Icons.thumb_down_alt_outlined),
+          chip('dangerous', Icons.report_gmailerrorred_rounded),
+          chip('inappropriate', Icons.rule_rounded),
         ],
       ),
     );
   }
 
   Widget _buildEmptyState() {
+    // Zeitbasierte Begrüßung
+    final hour = DateTime.now().hour;
+    final greetingKey = hour < 11
+      ? 'chat_greeting_morning'
+        : hour < 17
+        ? 'chat_greeting_day'
+            : hour < 22
+          ? 'chat_greeting_evening'
+          : 'chat_greeting_night';
+
+    final topics = [
+      {
+        'emoji': '😤',
+      'label': context.tr('chat_topic_tantrum_label'),
+      'q': context.tr('chat_topic_tantrum_question'),
+      },
+      {
+        'emoji': '😴',
+        'label': context.tr('chat_topic_sleep_label'),
+        'q': context.tr('chat_topic_sleep_question'),
+      },
+      {
+        'emoji': '📱',
+        'label': context.tr('chat_topic_screen_label'),
+        'q': context.tr('chat_topic_screen_question'),
+      },
+      {
+        'emoji': '👫',
+        'label': context.tr('chat_topic_siblings_label'),
+        'q': context.tr('chat_topic_siblings_question'),
+      },
+      {
+        'emoji': '💔',
+        'label': context.tr('chat_topic_overwhelmed_label'),
+        'q': context.tr('chat_topic_overwhelmed_question'),
+      },
+      {
+        'emoji': '🎒',
+        'label': context.tr('chat_topic_school_label'),
+        'q': context.tr('chat_topic_school_question'),
+      },
+    ];
+
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 48),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0284C7).withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          // Begrüßungs-Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _kBrand.withValues(alpha: 0.10),
+                  _kGreen.withValues(alpha: 0.06),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: const Icon(
-                Icons.psychology_alt_rounded,
-                size: 40,
-                color: Color(0xFF0284C7),
-              ),
+              borderRadius: BorderRadius.circular(22),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Wie kann ich dir helfen?',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A2A3A),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSuggestionChip('Kind hängt nur am Handy'),
-                _buildSuggestionChip('Mein Kind ist außer sich'),
-                _buildSuggestionChip('Mein Kind hört nicht'),
-                _buildSuggestionChip('Ich bin total erschöpft'),
-                _buildSuggestionChip('Kind braucht mehr Freiheit'),
-                _buildSuggestionChip('Strafe oder Konsequenz?'),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_kBrand, _kBrand2],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded,
+                      color: Colors.white, size: 24),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  '${context.tr(greetingKey)} 💜',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: _kInk,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  context.tr('chat_welcome_message'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: Colors.grey[700],
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 40),
-            const Text(
-              'Keine Diagnosen · Keine Therapie · Privat',
-              style: TextStyle(
-                fontSize: 11,
-                color: Color(0xFFADB8C4),
-                letterSpacing: 0.3,
-              ),
-              textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            context.tr('chat_how_can_help'),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[600],
+              letterSpacing: 0.2,
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          // Themen-Karten
+          ...topics.map((t) => _buildTopicCard(
+                t['emoji']!,
+                t['label']!,
+                t['q']!,
+              )),
+        ],
       ),
     );
   }
 
-  Widget _buildSuggestionChip(String label) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _handleSuggestion(label),
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F7FD),
-            border: Border.all(
-              color: const Color(0xFFB8CDE0),
-              width: 1.2,
+  Widget _buildTopicCard(String emoji, String label, String question) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () => _handleSuggestion(question),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _kBrand.withValues(alpha: 0.12)),
             ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              letterSpacing: 0.1,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1F4E79),
+            child: Row(
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 22)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: _kInk,
+                    ),
+                  ),
+                ),
+                Icon(Icons.arrow_forward_rounded,
+                    size: 18, color: _kBrand.withValues(alpha: 0.5)),
+              ],
             ),
           ),
         ),
@@ -730,52 +776,54 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageBubble(Map<String, dynamic> message) {
     final isUser = message['role'] == 'user';
 
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         mainAxisAlignment:
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser) ...[
-            const CircleAvatar(
-              radius: 18,
-              backgroundColor: Color(0xFF0284C7),
-              child: Icon(
-                Icons.psychology_alt_rounded,
-                size: 20,
-                color: Colors.white,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [_kBrand, _kBrand2],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: const Icon(Icons.auto_awesome_rounded,
+                  size: 17, color: Colors.white),
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color:
-                    isUser ? const Color(0xFF0284C7) : const Color(0xFFF0F7FF),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(22),
-                  topRight: const Radius.circular(22),
-                  bottomLeft: Radius.circular(isUser ? 22 : 8),
-                  bottomRight: Radius.circular(isUser ? 8 : 22),
-                ),
-                border: !isUser
-                    ? Border.all(
-                        color: const Color(0xFF0284C7).withValues(alpha: 0.2),
-                        width: 1,
+                gradient: isUser
+                    ? const LinearGradient(
+                        colors: [_kBrand, _kBrand2],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       )
                     : null,
+                color: isUser ? null : _kAiBubble,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(20),
+                  topRight: const Radius.circular(20),
+                  bottomLeft: Radius.circular(isUser ? 20 : 6),
+                  bottomRight: Radius.circular(isUser ? 6 : 20),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: (isUser
-                            ? const Color(0xFF0284C7)
-                            : const Color(0xFF1A2A3A))
-                        .withValues(alpha: 0.08),
+                    color: (isUser ? _kBrand : Colors.black)
+                        .withValues(alpha: isUser ? 0.20 : 0.05),
                     blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -783,28 +831,15 @@ class _ChatScreenState extends State<ChatScreen> {
                   ? Text(
                       message['content'] as String,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         height: 1.45,
-                        letterSpacing: 0.15,
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                     )
                   : _buildFormattedText(message['content'] as String),
             ),
           ),
-          if (isUser) ...[
-            const SizedBox(width: 8),
-            const CircleAvatar(
-              radius: 18,
-              backgroundColor: Color(0xFFE8543A),
-              child: Icon(
-                Icons.person_rounded,
-                size: 20,
-                color: Colors.white,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -826,8 +861,8 @@ class _ChatScreenState extends State<ChatScreen> {
           style: const TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 15,
-            height: 1.5,
-            color: Color(0xFF0F172A),
+            height: 1.55,
+            color: _kBrand2,
           ),
         ));
       } else {
@@ -836,8 +871,8 @@ class _ChatScreenState extends State<ChatScreen> {
           style: const TextStyle(
             fontWeight: FontWeight.w500,
             fontSize: 15,
-            height: 1.5,
-            color: Color(0xFF1A2A3A),
+            height: 1.55,
+            color: _kInk,
           ),
         ));
       }
@@ -864,12 +899,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 height: 72,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF0284C7), Color(0xFF0EA5E9)],
+                    colors: [_kBrand, _kBrand2],
                   ),
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                      color: _kBrand.withValues(alpha: 0.25),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -880,7 +915,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'KI-Elternberatung',
+                context.tr('ki_parenting_title'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -888,7 +923,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Bevor du startest, lies bitte kurz durch:',
+                context.tr('chat_terms_intro'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -913,22 +948,22 @@ class _ChatScreenState extends State<ChatScreen> {
                     _buildTermsItem(
                       theme,
                       '\u{1F6E1}\u{FE0F}',
-                      'Keine Diagnosen',
-                      'Die KI stellt keine medizinischen oder psychologischen Diagnosen. Bei ernsthaften Sorgen wende dich an Fachpersonal.',
+                      context.tr('chat_terms_no_diagnosis_title'),
+                      context.tr('chat_terms_no_diagnosis_text'),
                     ),
                     const SizedBox(height: 16),
                     _buildTermsItem(
                       theme,
                       '\u{1F512}',
-                      'Deine Daten bleiben privat',
-                      'Gespräche werden lokal auf deinem Gerät gespeichert. Wir teilen keine Inhalte mit Dritten.',
+                      context.tr('chat_terms_privacy_title'),
+                      context.tr('chat_terms_privacy_text'),
                     ),
                     const SizedBox(height: 16),
                     _buildTermsItem(
                       theme,
                       '\u{1F49C}',
-                      'Respektvoll & wertschätzend',
-                      'Die KI urteilt nie über dich oder dein Kind. Sie begleitet — ohne Schuldzuweisung, ohne Druck.',
+                      context.tr('chat_terms_respect_title'),
+                      context.tr('chat_terms_respect_text'),
                     ),
                   ],
                 ),
@@ -940,15 +975,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: FilledButton(
                   onPressed: _acceptTerms,
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
+                    backgroundColor: _kBrand,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    'Verstanden, los geht\u{0027}s',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  child: Text(
+                    context.tr('chat_terms_accept'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -956,7 +991,7 @@ class _ChatScreenState extends State<ChatScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Zurück',
+                  context.tr('back_btn'),
                   style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
@@ -1015,12 +1050,12 @@ class _ChatScreenState extends State<ChatScreen> {
           elevation: 0,
           actions: [
             IconButton(
-              tooltip: 'Themenauswertung',
+              tooltip: context.tr('tooltip_topic_analysis'),
               onPressed: _showTopicInsights,
               icon: const Icon(Icons.analytics_outlined),
             ),
             IconButton(
-              tooltip: 'Chat loeschen',
+              tooltip: context.tr('tooltip_delete_chat'),
               onPressed: _messages.isEmpty ? null : _confirmClearChat,
               icon: const Icon(Icons.delete_outline_rounded),
             ),
@@ -1047,7 +1082,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Du kannst es später erneut versuchen.',
+                  context.tr('chat_retry_later'),
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -1066,51 +1101,78 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return Scaffold(
+      backgroundColor: _kBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0284C7),
-        foregroundColor: Colors.white,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        backgroundColor: Colors.white,
+        foregroundColor: _kBrand,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
+        titleSpacing: 0,
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [_kBrand, _kBrand2],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.auto_awesome_rounded,
+                  size: 20, color: Colors.white),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.psychology_alt_rounded, size: 20),
-                SizedBox(width: 8),
                 Text(
-                  'KI Elternberatung',
-                  style: TextStyle(
+                  context.tr('ki_parenting_title'),
+                  style: const TextStyle(
                     fontWeight: FontWeight.w800,
-                    fontSize: 18,
+                    fontSize: 16,
+                    color: Color(0xFF1F2937),
                   ),
                 ),
+                Row(children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF22C55E),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    context.tr('chat_always_here'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ]),
               ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Immer für dich da • GfK-orientiert',
-              style: TextStyle(
-                fontSize: 11,
-                letterSpacing: 0.2,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
             ),
           ],
         ),
-        centerTitle: true,
-        elevation: 0,
         actions: [
           IconButton(
-            tooltip: 'Themenauswertung',
+            tooltip: context.tr('tooltip_topic_analysis'),
             onPressed: _showTopicInsights,
-            icon: const Icon(Icons.analytics_outlined),
+            icon: const Icon(Icons.insights_rounded, color: _kBrand),
           ),
           IconButton(
-            tooltip: 'Chat löschen',
+            tooltip: context.tr('tooltip_delete_chat'),
             onPressed: _messages.isEmpty ? null : _confirmClearChat,
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: Icon(Icons.delete_outline_rounded,
+                color: _messages.isEmpty ? Colors.grey[400] : _kBrand),
           ),
         ],
       ),
@@ -1119,15 +1181,11 @@ class _ChatScreenState extends State<ChatScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF6FBFF),
-              Color(0xFFF8FAFD),
-            ],
+            colors: [_kBg, Color(0xFFFCFBFF)],
           ),
         ),
         child: Column(
           children: [
-            _buildSafetyBanner(),
             Expanded(
               child: _messages.isEmpty && !_isStreaming
                   ? _buildEmptyState()
@@ -1148,67 +1206,48 @@ class _ChatScreenState extends State<ChatScreen> {
                             ],
                           );
                         } else {
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: Theme.of(context)
-                                          .primaryColor
-                                          .withValues(alpha: 0.2),
-                                      child: Icon(
-                                        Icons.psychology,
-                                        size: 18,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Schreibt...',
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: LinearProgressIndicator(
-                                    minHeight: 4,
-                                    backgroundColor: Theme.of(context)
-                                        .primaryColor
-                                        .withValues(alpha: 0.1),
-                                    valueColor: AlwaysStoppedAnimation(
-                                      Theme.of(context).primaryColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          // Streaming: zeige die Live-Antwort oder Typing-Dots
+                          if (_currentResponse.isNotEmpty) {
+                            return _buildMessageBubble({
+                              'role': 'assistant',
+                              'content': _currentResponse,
+                            });
+                          }
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 5),
+                            child: _TypingIndicator(),
                           );
                         }
                       },
                     ),
             ),
+            // Dezenter Sicherheitshinweis
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock_rounded, size: 11, color: Colors.grey[400]),
+                  const SizedBox(width: 5),
+                  Text(
+                    context.tr('chat_privacy_footer'),
+                    style: TextStyle(fontSize: 10.5, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
             Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(
-                  top: BorderSide(
-                    color: Color(0xFFE0E6ED),
-                    width: 1,
-                  ),
+                  top: BorderSide(color: Color(0xFFEDE9FE), width: 1),
                 ),
               ),
               padding: EdgeInsets.only(
-                left: 12,
-                right: 12,
+                left: 14,
+                right: 14,
                 top: 10,
-                bottom: 10 + MediaQuery.of(context).viewInsets.bottom,
+                bottom: 12 + MediaQuery.of(context).viewInsets.bottom,
               ),
               child: Row(
                 children: [
@@ -1216,90 +1255,96 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: TextField(
                       controller: _controller,
                       enabled: !_isStreaming && _chatBackend != null,
+                      minLines: 1,
+                      maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'Erzähle mir, was dich bewegt...',
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF8A9AB0),
+                        hintText: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'chat_message_hint'),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
                           fontSize: 15,
-                          letterSpacing: 0.2,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.only(left: 12),
-                          child: Icon(
-                            Icons.edit_rounded,
-                            color: Color(0xFF0284C7),
-                            size: 20,
-                          ),
-                        ),
-                        prefixIconConstraints: const BoxConstraints(
-                          minWidth: 0,
-                          minHeight: 0,
+                          fontWeight: FontWeight.w400,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE0E6ED),
-                            width: 1.5,
-                          ),
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide: BorderSide.none,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE0E6ED),
-                            width: 1.5,
-                          ),
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide: BorderSide.none,
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF0284C7),
-                            width: 2,
-                          ),
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide:
+                              const BorderSide(color: _kBrand, width: 1.5),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 13,
+                          horizontal: 18,
+                          vertical: 14,
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF8FAFD),
+                        fillColor: _kBg,
                       ),
                       style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.35,
-                        letterSpacing: 0.15,
-                        color: Color(0xFF1A2A3A),
+                        fontSize: 15,
+                        height: 1.4,
+                        color: _kInk,
                         fontWeight: FontWeight.w500,
                       ),
-                      onSubmitted: (value) {
-                        _sendMessage(value);
-                      },
+                      onSubmitted: (value) => _sendMessage(value),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  FloatingActionButton.small(
-                    backgroundColor: _isStreaming || _controller.text.isEmpty
-                        ? const Color(0xFFE0E6ED)
-                        : const Color(0xFF0284C7),
-                    foregroundColor: _isStreaming || _controller.text.isEmpty
-                        ? const Color(0xFF8A9AB0)
-                        : Colors.white,
-                    onPressed: _isStreaming || _controller.text.isEmpty
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: _isStreaming || _controller.text.trim().isEmpty
                         ? null
                         : () => _sendMessage(_controller.text),
-                    child: _isStreaming
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF0284C7),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient:
+                            _isStreaming || _controller.text.trim().isEmpty
+                                ? null
+                                : const LinearGradient(
+                                    colors: [_kBrand, _kBrand2],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                        color: _isStreaming || _controller.text.trim().isEmpty
+                            ? const Color(0xFFEDE9FE)
+                            : null,
+                        shape: BoxShape.circle,
+                        boxShadow:
+                            _isStreaming || _controller.text.trim().isEmpty
+                                ? null
+                                : [
+                                    BoxShadow(
+                                      color: _kBrand.withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                      ),
+                      child: _isStreaming
+                          ? const Padding(
+                              padding: EdgeInsets.all(14),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(_kBrand),
                               ),
+                            )
+                          : Icon(
+                              Icons.arrow_upward_rounded,
+                              size: 22,
+                              color: _controller.text.trim().isEmpty
+                                  ? Colors.grey[400]
+                                  : Colors.white,
                             ),
-                          )
-                        : const Icon(Icons.send_rounded, size: 18),
+                    ),
                   ),
                 ],
               ),
@@ -1307,6 +1352,104 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Moderner Typing-Indikator (animierte Punkte) ──────────────────────────
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator();
+
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [_kBrand, _kBrand2],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.auto_awesome_rounded,
+              size: 17, color: Colors.white),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: _kAiBubble,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(6),
+              bottomRight: Radius.circular(20),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(3, (i) {
+                  final t = (_controller.value - i * 0.2) % 1.0;
+                  final scale = t < 0.5 ? 0.6 + t * 0.8 : 1.4 - t * 0.8;
+                  return Padding(
+                    padding: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                    child: Transform.scale(
+                      scale: scale.clamp(0.6, 1.0),
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color:
+                              _kBrand.withValues(alpha: scale.clamp(0.4, 1.0)),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

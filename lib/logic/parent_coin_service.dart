@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,8 @@ class ParentCoinService extends ChangeNotifier {
   int get successfulInvites => _successfulInvites;
   String get referralCode => _referralCode ?? _generateReferralCode();
   bool get hasCommunityBadge => _successfulInvites >= 3;
-  int get coinsUntilFreePremium => (coinsForFreePremium - _balance).clamp(0, coinsForFreePremium);
+  int get coinsUntilFreePremium =>
+      (coinsForFreePremium - _balance).clamp(0, coinsForFreePremium);
   double get progressToFreePremium => _balance / coinsForFreePremium;
   List<CoinTransaction> get history => List.unmodifiable(_history);
 
@@ -55,18 +57,67 @@ class ParentCoinService extends ChangeNotifier {
         _history = list.map((e) => CoinTransaction.fromJson(e)).toList();
       } catch (_) {}
     }
-    if (_referralCode == null) {
+
+    // Account-stabiler Code: an die aktuelle Firebase-UID koppeln. Der Code
+    // wird deterministisch aus der UID abgeleitet und neu berechnet, wenn
+    // - noch keiner existiert,
+    // - der gecachte Code zu einer anderen UID gehoert (Login-Wechsel), oder
+    // - noch das alte, geraetelokale Format ohne UID-Bindung vorliegt.
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid != null && uid.isNotEmpty) {
+      final cachedUid = prefs.getString('coins.referral_code_uid');
+      final expected = referralCodeForUid(uid);
+      if (_referralCode == null ||
+          cachedUid != uid ||
+          _referralCode != expected) {
+        _referralCode = expected;
+        await prefs.setString('coins.referral_code', expected);
+        await prefs.setString('coins.referral_code_uid', uid);
+      }
+    } else if (_referralCode == null) {
+      // Kein Login (Gast): Fallback, wird bei spaeterem Login ersetzt.
       _referralCode = _generateReferralCode();
       await prefs.setString('coins.referral_code', _referralCode!);
     }
+
     _initialized = true;
     notifyListeners();
   }
 
+  /// Stellt sicher, dass der Code zur aktuellen Firebase-UID passt. Kann nach
+  /// einem Login-Wechsel erneut aufgerufen werden (z.B. aus dem AuthService),
+  /// um den Code sofort account-korrekt zu machen.
+  Future<void> refreshReferralCodeForCurrentUser() async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return;
+    final expected = referralCodeForUid(uid);
+    if (_referralCode == expected) return;
+    _referralCode = expected;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('coins.referral_code', expected);
+    await prefs.setString('coins.referral_code_uid', uid);
+    notifyListeners();
+  }
+
+  /// Deterministischer, kollisionsarmer Freundes-Code aus der Firebase-UID.
+  /// Gleiche UID -> exakt gleicher Code auf Handy, Tablet und Web.
+  /// Nutzt SHA-256 der vollen UID und ein verwechslungsarmes Base32-Alphabet
+  /// (ohne 0/O/1/I), 7 Zeichen -> ~34 Bit, praktisch kollisionsfrei fuer Beta.
   String _generateReferralCode() {
     final uid = AuthService.instance.currentUser?.uid ?? 'guest';
-    final short = uid.length > 6 ? uid.substring(0, 6) : uid;
-    return 'PP-${short.toUpperCase()}';
+    return referralCodeForUid(uid);
+  }
+
+  /// Rein deterministische Ableitung (testbar, ohne Auth-Zugriff).
+  static String referralCodeForUid(String uid) {
+    const alphabet =
+        'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne 0O1I
+    final digest = sha256.convert(utf8.encode('parentpeak:friend:$uid')).bytes;
+    final buffer = StringBuffer();
+    for (var i = 0; i < 7; i++) {
+      buffer.write(alphabet[digest[i] % alphabet.length]);
+    }
+    return 'PP-${buffer.toString()}';
   }
 
   /// Wird aufgerufen wenn eine eingeladene Person sich registriert.
@@ -74,12 +125,14 @@ class ParentCoinService extends ChangeNotifier {
     _balance += 1;
     _totalEarned += 1;
     _successfulInvites += 1;
-    _history.insert(0, CoinTransaction(
-      type: CoinTransactionType.earned,
-      amount: 1,
-      reason: 'Einladung: $invitedUserName hat sich registriert',
-      date: DateTime.now(),
-    ));
+    _history.insert(
+        0,
+        CoinTransaction(
+          type: CoinTransactionType.earned,
+          amount: 1,
+          reason: 'Einladung: $invitedUserName hat sich registriert',
+          date: DateTime.now(),
+        ));
     await _persist();
     notifyListeners();
   }
@@ -89,12 +142,14 @@ class ParentCoinService extends ChangeNotifier {
     if (_balance < coinsForFreePremium) return false;
     _balance -= coinsForFreePremium;
     _totalSpent += coinsForFreePremium;
-    _history.insert(0, CoinTransaction(
-      type: CoinTransactionType.spent,
-      amount: coinsForFreePremium,
-      reason: '1 Monat Premium freigeschaltet',
-      date: DateTime.now(),
-    ));
+    _history.insert(
+        0,
+        CoinTransaction(
+          type: CoinTransactionType.spent,
+          amount: coinsForFreePremium,
+          reason: '1 Monat Premium freigeschaltet',
+          date: DateTime.now(),
+        ));
     await _persist();
     notifyListeners();
     return true;
@@ -104,12 +159,14 @@ class ParentCoinService extends ChangeNotifier {
   Future<void> earnBonus(int amount, String reason) async {
     _balance += amount;
     _totalEarned += amount;
-    _history.insert(0, CoinTransaction(
-      type: CoinTransactionType.bonus,
-      amount: amount,
-      reason: reason,
-      date: DateTime.now(),
-    ));
+    _history.insert(
+        0,
+        CoinTransaction(
+          type: CoinTransactionType.bonus,
+          amount: amount,
+          reason: reason,
+          date: DateTime.now(),
+        ));
     await _persist();
     notifyListeners();
   }
@@ -120,7 +177,8 @@ class ParentCoinService extends ChangeNotifier {
     await prefs.setInt('coins.earned', _totalEarned);
     await prefs.setInt('coins.spent', _totalSpent);
     await prefs.setInt('coins.invites', _successfulInvites);
-    final historyJson = jsonEncode(_history.take(50).map((e) => e.toJson()).toList());
+    final historyJson =
+        jsonEncode(_history.take(50).map((e) => e.toJson()).toList());
     await prefs.setString('coins.history', historyJson);
   }
 
@@ -131,7 +189,8 @@ class ParentCoinService extends ChangeNotifier {
 
   /// Generiert den Einladungstext für Share.
   String getInviteMessage() {
-    final name = AuthService.instance.currentUser?.displayName ?? 'Ein Elternteil';
+    final name =
+        AuthService.instance.currentUser?.displayName ?? 'Ein Elternteil';
     return '$name nutzt ParentPeak für den Familienalltag und lädt dich ein! '
         'Kostenlos ausprobieren: ${getInviteLink()}';
   }
@@ -156,15 +215,22 @@ class ParentCoinService extends ChangeNotifier {
 
   /// Invitee: Meldet dem Backend, dass jemand über diesen Code beigetreten ist.
   /// Gibt true zurück wenn erfolgreich gespeichert.
-  Future<bool> recordReferral(String code, String inviteeId, String inviteeName) async {
+  Future<bool> recordReferral(
+      String code, String inviteeId, String inviteeName) async {
     final base = APIConfig.getBackendBaseUrl();
     if (base == null || base.isEmpty) return false;
     try {
-      final resp = await http.post(
-        Uri.parse('$base/referrals/record'),
-        headers: await _authHeaders(),
-        body: jsonEncode({'referralCode': code, 'inviteeId': inviteeId, 'inviteeName': inviteeName}),
-      ).timeout(const Duration(seconds: 10));
+      final resp = await http
+          .post(
+            Uri.parse('$base/referrals/record'),
+            headers: await _authHeaders(),
+            body: jsonEncode({
+              'referralCode': code,
+              'inviteeId': inviteeId,
+              'inviteeName': inviteeName
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
       if (resp.statusCode >= 200 && resp.statusCode < 300) return true;
       debugPrint('recordReferral HTTP ${resp.statusCode}: ${resp.body}');
       return false;
@@ -180,9 +246,11 @@ class ParentCoinService extends ChangeNotifier {
     if (base == null || base.isEmpty) return;
     final myCode = referralCode;
     try {
-      final resp = await http.get(
-        Uri.parse('$base/referrals/pending/${Uri.encodeComponent(myCode)}'),
-      ).timeout(const Duration(seconds: 10));
+      final resp = await http
+          .get(
+            Uri.parse('$base/referrals/pending/${Uri.encodeComponent(myCode)}'),
+          )
+          .timeout(const Duration(seconds: 10));
       if (resp.statusCode != 200) return;
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
       final referrals = data['referrals'] as List<dynamic>? ?? [];
@@ -194,15 +262,18 @@ class ParentCoinService extends ChangeNotifier {
       }
 
       // Mark as claimed
-      await http.delete(
-        Uri.parse('$base/referrals/claim/${Uri.encodeComponent(myCode)}'),
-        headers: await _authHeaders(),
-      ).timeout(const Duration(seconds: 10));
+      await http
+          .delete(
+            Uri.parse('$base/referrals/claim/${Uri.encodeComponent(myCode)}'),
+            headers: await _authHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${referrals.length} Einladung${referrals.length > 1 ? 'en' : ''} erfolgreich – du hast ${referrals.length} Coin${referrals.length > 1 ? 's' : ''} erhalten! 🎉'),
+            content: Text(
+                '${referrals.length} Einladung${referrals.length > 1 ? 'en' : ''} erfolgreich – du hast ${referrals.length} Coin${referrals.length > 1 ? 's' : ''} erhalten! 🎉'),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -229,17 +300,19 @@ class CoinTransaction {
   });
 
   Map<String, dynamic> toJson() => {
-    'type': type.name,
-    'amount': amount,
-    'reason': reason,
-    'date': date.toIso8601String(),
-  };
+        'type': type.name,
+        'amount': amount,
+        'reason': reason,
+        'date': date.toIso8601String(),
+      };
 
-  factory CoinTransaction.fromJson(Map<String, dynamic> json) => CoinTransaction(
-    type: CoinTransactionType.values.firstWhere(
-      (t) => t.name == json['type'], orElse: () => CoinTransactionType.earned),
-    amount: json['amount'] as int? ?? 0,
-    reason: json['reason'] as String? ?? '',
-    date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
-  );
+  factory CoinTransaction.fromJson(Map<String, dynamic> json) =>
+      CoinTransaction(
+        type: CoinTransactionType.values.firstWhere(
+            (t) => t.name == json['type'],
+            orElse: () => CoinTransactionType.earned),
+        amount: json['amount'] as int? ?? 0,
+        reason: json['reason'] as String? ?? '',
+        date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+      );
 }

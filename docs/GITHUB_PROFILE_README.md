@@ -16,7 +16,7 @@ One calm place for family planning, trusted connections and practical support.
 - Node.js backend integrations with security-focused release checks
 - Features for calendars, family circles, community, parent matching and AI guidance
 
-[View the project](https://github.com/fatihbucak56-beep/Parentpeak)
+[View the project](https://github.com/arambucak/Parentpeak)
 
 ## What I Work With
 
