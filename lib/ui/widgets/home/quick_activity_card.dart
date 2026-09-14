@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// "Was machen wir heute?" — Spielerischer Aktivitäts-Generator.
@@ -162,13 +163,13 @@ class _QuickActivityCardState extends State<QuickActivityCard>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Was machen wir heute?',
+                      context.tr('quick_activity_title'),
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text(
-                      'Eine Idee für euch',
+                      context.tr('quick_activity_idea'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         fontSize: 11,

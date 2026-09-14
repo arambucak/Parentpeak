@@ -6,6 +6,8 @@ import 'package:parentpeak/logic/participation_service.dart';
 import 'package:parentpeak/models/family_contact.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/models/event_participation.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class HostDashboardScreen extends StatefulWidget {
   const HostDashboardScreen({super.key});
@@ -17,15 +19,18 @@ class HostDashboardScreen extends StatefulWidget {
 class _HostDashboardScreenState extends State<HostDashboardScreen> {
   final _eventService = EventService();
   final _familyCircleService = FamilyCircleService.instance;
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   final _participationService = ParticipationService();
 
   List<MeetupEvent> _hostedEvents = [];
   List<EventParticipation> _pendingRequests = [];
   Map<String, FamilyContact> _contactsById = {};
   bool _isLoading = true;
-    String? _errorMessage;
+  String? _errorMessage;
 
-    String? get _currentUserId => AuthService.instance.currentUser?.uid;
+  String? get _currentUserId => AuthService.instance.currentUser?.uid;
   String get _currentUserName =>
       AuthService.instance.currentUser?.displayName ?? 'Du';
 
@@ -43,7 +48,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
         _hostedEvents = [];
         _pendingRequests = [];
         _contactsById = {};
-        _errorMessage = 'Bitte melde dich an, um dein Host-Dashboard zu sehen.';
+        _errorMessage = _t('host_sign_in_required');
         _isLoading = false;
       });
       return;
@@ -57,15 +62,20 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
         viewerLatitude: 52.5200,
         viewerLongitude: 13.4050,
       );
-      final hostedEvents = myEvents.where((e) => e.hosterId == currentHostId).toList();
+      final hostedEvents =
+          myEvents.where((e) => e.hosterId == currentHostId).toList();
 
-      final requests = await _eventService.getPendingRequestsForHost(currentHostId);
-      final contacts = await _familyCircleService.getConnectedContacts(userId: currentHostId);
+      final requests =
+          await _eventService.getPendingRequestsForHost(currentHostId);
+      final contacts = await _familyCircleService.getConnectedContacts(
+          userId: currentHostId);
 
       setState(() {
         _hostedEvents = hostedEvents;
         _pendingRequests = requests;
-        _contactsById = {for (final contact in contacts) contact.userId: contact};
+        _contactsById = {
+          for (final contact in contacts) contact.userId: contact
+        };
         _errorMessage = null;
         _isLoading = false;
       });
@@ -73,7 +83,9 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
+            SnackBar(
+              content: Text(
+                _t('common_error_with_detail').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -93,13 +105,15 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Anfrage genehmigt!')),
+          SnackBar(content: Text(_t('host_request_approved'))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
+            SnackBar(
+              content: Text(
+                _t('common_error_with_detail').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -114,13 +128,15 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Anfrage abgelehnt')),
+          SnackBar(content: Text(_t('host_request_declined'))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
+            SnackBar(
+              content: Text(
+                _t('common_error_with_detail').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -130,7 +146,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mein Host-Dashboard'),
+        title: Text(_t('host_dashboard_title')),
         elevation: 0,
       ),
       body: _isLoading
@@ -145,24 +161,24 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
                     ),
                   ),
                 )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Statistiken
-                  _buildStatsSection(context),
-                  const SizedBox(height: 24),
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiken
+                      _buildStatsSection(context),
+                      const SizedBox(height: 24),
 
-                  // Ausstehende Anfragen
-                  _buildPendingRequestsSection(context),
-                  const SizedBox(height: 24),
+                      // Ausstehende Anfragen
+                      _buildPendingRequestsSection(context),
+                      const SizedBox(height: 24),
 
-                  // Meine Aktivitäten
-                  _buildMyEventsSection(context),
-                ],
-              ),
-            ),
+                      // Meine Aktivitäten
+                      _buildMyEventsSection(context),
+                    ],
+                  ),
+                ),
     );
   }
 
@@ -176,7 +192,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Statistiken',
+          _t('host_statistics'),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -188,7 +204,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
               child: _buildStatCard(
                 context,
                 icon: Icons.event,
-                label: 'Aktivitäten',
+                label: _t('host_activities'),
                 value: _hostedEvents.length.toString(),
               ),
             ),
@@ -197,7 +213,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
               child: _buildStatCard(
                 context,
                 icon: Icons.people,
-                label: 'Teilnehmer',
+                label: _t('host_participants'),
                 value: totalParticipants.toString(),
               ),
             ),
@@ -206,7 +222,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
               child: _buildStatCard(
                 context,
                 icon: Icons.schedule,
-                label: 'Ausstehend',
+                label: _t('host_pending'),
                 value: _pendingRequests.length.toString(),
               ),
             ),
@@ -259,7 +275,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Ausstehende Anfragen',
+              _t('host_pending_requests'),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -290,8 +306,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
     );
   }
 
-  Widget _buildRequestCard(
-      BuildContext context, EventParticipation request) {
+  Widget _buildRequestCard(BuildContext context, EventParticipation request) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -307,14 +322,16 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nutzer: ${_displayNameFor(request.userId)}',
+                        _t('host_user_label').replaceAll(
+                          '{name}', _displayNameFor(request.userId)),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Angefordert: ${request.requestedAt.day}.${request.requestedAt.month}.${request.requestedAt.year}',
+                        _t('host_requested_at').replaceAll('{date}',
+                          '${request.requestedAt.day}.${request.requestedAt.month}.${request.requestedAt.year}'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey[600],
                             ),
@@ -330,14 +347,14 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => _declineRequest(request.id),
-                    child: const Text('Ablehnen'),
+                    child: Text(_t('host_decline')),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => _approveRequest(request.id),
-                    child: const Text('Genehmigen'),
+                    child: Text(_t('host_approve')),
                   ),
                 ),
               ],
@@ -353,7 +370,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Meine Aktivitäten',
+          _t('host_my_activities'),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -368,7 +385,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
             ),
             child: Center(
               child: Text(
-                'Du hast noch keine Aktivitäten erstellt',
+                _t('host_no_activities'),
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -239,7 +240,7 @@ class _BackendStatusScreenState extends State<BackendStatusScreen> {
                       IconButton(
                         onPressed: () => loadReports(setModalState),
                         icon: const Icon(Icons.refresh_rounded),
-                        tooltip: 'Neu laden',
+                        tooltip: context.tr('tooltip_reload'),
                       ),
                     ],
                   ),
@@ -397,7 +398,7 @@ class _BackendStatusScreenState extends State<BackendStatusScreen> {
           IconButton(
             onPressed: _runChecks,
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Neu pruefen',
+            tooltip: context.tr('tooltip_recheck'),
           ),
         ],
       ),

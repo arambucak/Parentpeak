@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "Parentpeak benötigt Kamerazugriff, damit du Schatzkisten-Artikel direkt fotografieren kannst.";
+"NSPhotoLibraryUsageDescription" = "Parentpeak benötigt Zugriff auf deine Mediathek, damit du vorhandene Schatzkisten-Fotos auswählen kannst.";
+"NSPhotoLibraryAddUsageDescription" = "Parentpeak darf Bilder in deiner Mediathek speichern, wenn du Schatzkisten-Fotos teilst.";
+"NSLocationWhenInUseUsageDescription" = "Parentpeak nutzt deinen Standort, um Events und Familien in deiner Nähe zu finden.";

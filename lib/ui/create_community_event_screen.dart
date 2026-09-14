@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
@@ -29,6 +28,9 @@ class CreateCommunityEventScreen extends StatefulWidget {
 class _CreateCommunityEventScreenState
     extends State<CreateCommunityEventScreen> {
   final _pageCtrl = PageController();
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   int _step = 0;
   bool _saving = false;
   bool _scanning = false;
@@ -114,22 +116,22 @@ class _CreateCommunityEventScreenState
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
-          const Text('Flyer / Poster scannen',
+          Text(_t('community_event_scan_flyer'),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text('Die KI erkennt automatisch: Titel, Datum, Ort, Beschreibung',
+          Text(_t('community_event_ai_recognizes'),
               style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           const SizedBox(height: 16),
           ListTile(
             leading:
                 const Icon(Icons.camera_alt_rounded, color: Color(0xFF8B5CF6)),
-            title: const Text('Foto aufnehmen'),
+            title: Text(_t('community_event_take_photo')),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
             leading: const Icon(Icons.photo_library_rounded,
                 color: Color(0xFF8B5CF6)),
-            title: const Text('Aus Galerie wählen'),
+            title: Text(_t('community_event_from_gallery')),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
           const SizedBox(height: 16),
@@ -150,31 +152,17 @@ class _CreateCommunityEventScreenState
     setState(() => _scanning = true);
 
     try {
-      final apiKey = APIConfig.getGeminiApiKey();
-      if (apiKey == null || apiKey.isEmpty) throw Exception('Kein API-Key');
-
       final bytes = await picked.readAsBytes();
-      final model = GenerativeModel(
-        model: APIConfig.getGeminiModelName(),
-        apiKey: apiKey,
-      );
-
-      final response = await model.generateContent([
-        Content.multi([
-          DataPart('image/jpeg', bytes),
-          TextPart(
-            'Analysiere diesen Flyer/Poster für ein Familien-Event. '
-            'Extrahiere folgende Informationen als JSON:\n'
-            '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
-            '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
-            '"location":"Adresse/Ort oder null","price":"kostenlos oder Betrag oder null",'
-            '"organizer":"Veranstalter oder null"}\n'
-            'Antworte NUR mit dem JSON, kein Markdown.',
-          ),
-        ]),
-      ]).timeout(const Duration(seconds: 20));
-
-      final text = response.text?.trim() ?? '';
+      final text = await GeminiAIService().generateText(
+        'Analysiere diesen Flyer/Poster für ein Familien-Event. '
+        'Extrahiere folgende Informationen als JSON:\n'
+        '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
+        '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
+        '"location":"Adresse/Ort oder null","price":"kostenlos oder Betrag oder null",'
+        '"organizer":"Veranstalter oder null"}\n'
+        'Antworte NUR mit dem JSON, kein Markdown.',
+        imageBytes: bytes,
+      ).timeout(const Duration(seconds: 20));
       final jsonStr = text.replaceAll(RegExp(r'^```json\s*|\s*```$'), '');
 
       if (jsonStr.startsWith('{')) {
@@ -207,8 +195,8 @@ class _CreateCommunityEventScreenState
             }
             _scanning = false;
           });
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('✅ Flyer erkannt! Bitte prüfe die Angaben.'),
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(_t('community_flyer_detected')),
             backgroundColor: Color(0xFF16A34A),
           ));
         }
@@ -308,10 +296,10 @@ class _CreateCommunityEventScreenState
         builder: (ctx) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(children: [
-            Text('⚠️', style: TextStyle(fontSize: 20)),
-            SizedBox(width: 8),
-            Text('Ähnliches Event gefunden'),
+          title: Row(children: [
+            const Text('⚠️', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text(_t('community_event_similar_found')),
           ]),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             Text(
@@ -329,11 +317,11 @@ class _CreateCommunityEventScreenState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen'),
+              child: Text(_t('cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Trotzdem erstellen'),
+              child: Text(_t('community_event_create_anyway')),
             ),
           ],
         ),
@@ -394,8 +382,8 @@ class _CreateCommunityEventScreenState
     if (mounted) {
       setState(() => _saving = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('\u{2705} Event veröffentlicht!'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('community_event_published')),
         ));
         Navigator.pop(context, true);
       } else {
@@ -504,7 +492,7 @@ class _CreateCommunityEventScreenState
               TextButton.icon(
                 onPressed: _prev,
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: const Text('Zurück'),
+                label: Text(_t('network_back')),
               )
             else
               const Spacer(),
@@ -668,7 +656,7 @@ class _CreateCommunityEventScreenState
         ),
         const SizedBox(height: 6),
         Center(
-          child: Text('Foto machen → KI füllt alles automatisch aus',
+          child: Text(_t('community_event_photo_hint'),
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.outline)),
         ),

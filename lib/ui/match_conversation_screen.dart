@@ -9,6 +9,9 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
+import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class MatchConversationScreen extends StatefulWidget {
   const MatchConversationScreen({
@@ -29,12 +32,93 @@ class MatchConversationScreen extends StatefulWidget {
 
 class _MatchConversationScreenState extends State<MatchConversationScreen> {
   final TextEditingController _controller = TextEditingController();
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   final ParentMatchingBackendService _service =
       BackendServiceFactory.createParentMatchingService();
   final List<_Msg> _messages = [];
+  final ScrollController _scrollController = ScrollController();
   StreamSubscription<Map<String, dynamic>>? _streamSub;
   bool _streamActive = false;
   bool _isLoading = true;
+
+  /// Wenn gesetzt: Der Chat ist Nur-Lese. Der Text wird als ruhiger Hinweis
+  /// statt des Eingabefelds angezeigt (Freundschaft entfernt oder blockiert).
+  String? _chatDisabledReason;
+
+  /// Liest den Fehler-`code` aus einer JSON-Antwort (z. B. 'not_friends').
+  String? _responseCode(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map && decoded['code'] is String) {
+        return decoded['code'] as String;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Schaltet den Chat auf Nur-Lese und setzt einen ruhigen, wertschaetzenden
+  /// Hinweis (GfK-Ton, keine Schuldzuweisung). 'blocked' -> Zugriff endet,
+  /// 'not_friends' -> Verlauf bleibt lesbar.
+  void _applyChatDisabled(String? code) {
+    final reason = code == 'blocked'
+        ? 'Diese Unterhaltung ist nicht mehr verfügbar.'
+        : 'Ihr seid aktuell nicht mehr verbunden. Frühere Nachrichten kannst '
+            'du weiter nachlesen.';
+    if (!mounted) return;
+    setState(() => _chatDisabledReason = reason);
+  }
+
+  /// Parst den Zeitstempel einer Nachricht aus der Server-Antwort.
+  static DateTime? _parseCreatedAt(dynamic raw) {
+    if (raw == null) return null;
+    return DateTime.tryParse(raw.toString())?.toLocal();
+  }
+
+  /// Uhrzeit im Format HH:mm (lokal).
+  String _formatTime(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  /// Datums-Trenner-Text: Heute / Gestern / TT.MM.JJJJ.
+  String _formatDaySeparator(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Heute';
+    if (diff == 1) return 'Gestern';
+    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+  }
+
+  /// Ob vor der Nachricht an [index] ein Datums-Trenner stehen soll.
+  bool _needsDaySeparator(int index) {
+    final cur = _messages[index].createdAt;
+    if (cur == null) return false;
+    if (index == 0) return true;
+    final prev = _messages[index - 1].createdAt;
+    if (prev == null) return true;
+    return cur.year != prev.year ||
+        cur.month != prev.month ||
+        cur.day != prev.day;
+  }
+
+  /// Nach dem Rendern ans Ende der Liste scrollen (neueste Nachricht sichtbar).
+  void _scrollToBottom({bool animate = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (animate) {
+        _scrollController.animateTo(target,
+            duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+      } else {
+        _scrollController.jumpTo(target);
+      }
+    });
+  }
 
   String get _currentUserId {
     // Prefer FirebaseAuth (always in sync) over AuthService wrapper
@@ -51,6 +135,23 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       return value;
     }
     return 'Ich';
+  }
+
+  /// Stabile Identitaet des Gegenuebers fuer Melden/Blockieren/Sperren.
+  /// Im Freund-Chat ist widget.profileId die roomId im Format 'uidA__uidB'
+  /// -> die Gegenseite ist die Haelfte, die NICHT meine eigene UID ist. Im
+  /// Match-Chat ist profileId bereits die echte Profil-/User-ID.
+  String get _otherPartyId {
+    if (!widget.isFriendChat) return widget.profileId;
+    final roomId = widget.profileId;
+    if (roomId.contains('__')) {
+      final myUid = _currentUserId;
+      final parts = roomId.split('__');
+      for (final p in parts) {
+        if (p.isNotEmpty && p != myUid) return p;
+      }
+    }
+    return roomId;
   }
 
   @override
@@ -98,8 +199,10 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           id: id,
           text: content,
           isMe: authorUserId == _currentUserId,
+          createdAt: _parseCreatedAt(item['createdAt']),
         ));
       });
+      _scrollToBottom();
     }, onError: (_) {
       if (mounted) {
         setState(() => _streamActive = false);
@@ -128,10 +231,16 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           final text = (item['content'] ?? '').toString();
           final id = (item['id'] ?? '').toString();
           final authorUserId = (item['authorUserId'] ?? '').toString();
-          return _Msg(id: id, text: text, isMe: authorUserId == _currentUserId);
+          return _Msg(
+            id: id,
+            text: text,
+            isMe: authorUserId == _currentUserId,
+            createdAt: _parseCreatedAt(item['createdAt']),
+          );
         }));
       _isLoading = false;
     });
+    _scrollToBottom(animate: false);
   }
 
   Future<void> _loadFriendMessages() async {
@@ -142,13 +251,20 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
     try {
       final uri = Uri.parse(
-        '$base/friend-chat/messages?roomId=${Uri.encodeComponent(widget.profileId)}',
+        '$base/friend-chat/messages?roomId=${Uri.encodeComponent(widget.profileId)}'
+        '&userId=${Uri.encodeComponent(_currentUserId)}',
       );
       final headers = await _authHeaders();
       final resp = await http
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 10));
       if (!mounted) return;
+      if (resp.statusCode == 403) {
+        // Blockiert: Zugriff auf den Chat komplett gesperrt.
+        _applyChatDisabled(_responseCode(resp.body) ?? 'blocked');
+        setState(() => _isLoading = false);
+        return;
+      }
       if (resp.statusCode == 401) {
         // Retry without auth — GET may not need it
         final retryResp = await http.get(uri, headers: {
@@ -165,9 +281,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                     id: (m['id'] ?? '').toString(),
                     text: (m['content'] ?? '').toString(),
                     isMe: m['authorUserId'] == _currentUserId,
+                    createdAt: _parseCreatedAt(m['createdAt']),
                   )));
             _isLoading = false;
           });
+          _scrollToBottom(animate: false);
           return;
         }
         _showError(
@@ -185,9 +303,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                   id: (m['id'] ?? '').toString(),
                   text: (m['content'] ?? '').toString(),
                   isMe: m['authorUserId'] == _currentUserId,
+                  createdAt: _parseCreatedAt(m['createdAt']),
                 )));
           _isLoading = false;
         });
+        _scrollToBottom(animate: false);
       } else {
         setState(() => _isLoading = false);
       }
@@ -201,6 +321,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     _pollTimer?.cancel();
     _streamSub?.cancel();
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -218,12 +339,15 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     final optimistic = _Msg(
         id: 'optimistic-${DateTime.now().microsecondsSinceEpoch}',
         text: text,
-        isMe: true);
+        isMe: true,
+        createdAt: DateTime.now(),
+        sending: true);
 
     setState(() {
       _messages.add(optimistic);
       _controller.clear();
     });
+    _scrollToBottom();
 
     final Map<String, dynamic>? sent;
     if (widget.isFriendChat) {
@@ -279,6 +403,15 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
   }
 
+  bool _isSuspendedResponse(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map && decoded['code'] == 'account_suspended';
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> _sendFriendMessage(String text) async {
     final base = APIConfig.getBackendBaseUrl();
     if (base == null) {
@@ -302,6 +435,16 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       if (resp.statusCode == 201) {
         final body = jsonDecode(resp.body) as Map<String, dynamic>;
         return body['item'] as Map<String, dynamic>?;
+      }
+      if (resp.statusCode == 403 && _isSuspendedResponse(resp.body)) {
+        if (mounted) await showAccountSuspendedNotice(context);
+        return null;
+      }
+      if (resp.statusCode == 403) {
+        // Freundschaft entfernt (not_friends) oder blockiert (blocked):
+        // Chat auf Nur-Lese umstellen + freundlichen Hinweis anzeigen.
+        _applyChatDisabled(_responseCode(resp.body));
+        return null;
       }
       if (resp.statusCode == 401) {
         // Retry once with forced token refresh
@@ -349,12 +492,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             'Blockierte Personen können dir keine Nachrichten mehr senden und sehen dein Profil nicht. Du kannst die Blockierung jederzeit aufheben.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen')),
+              onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
           FilledButton(
             onPressed: () async {
               await BlockReportService.instance
-                  .blockUser(widget.profileId, widget.profileName);
+                  .blockUser(_otherPartyId, widget.profileName);
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
                 Navigator.pop(context); // Close chat
@@ -368,7 +510,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             },
             style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Blockieren'),
+            child: Text(_t('convo_block')),
           ),
         ],
       ),
@@ -393,10 +535,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                   borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 16),
-            const Text('Nutzer melden',
+            Text(_t('convo_report_user'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text('Warum möchtest du ${widget.profileName} melden?',
+            Text(_t('conversation_report_reason')
+              .replaceAll('{name}', widget.profileName),
                 style: TextStyle(fontSize: 13, color: Colors.grey[600])),
             const SizedBox(height: 16),
             _reportOption(ctx, 'Beleidigung / Hassrede', 'insult'),
@@ -419,7 +562,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         Navigator.pop(ctx);
         final result = await BlockReportService.instance.reportContent(
           reporterUserId: _currentUserId,
-          reportedUserId: widget.profileId,
+          reportedUserId: _otherPartyId,
           contentType: 'profile',
           content: widget.profileName,
           reason: reason,
@@ -441,6 +584,34 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           ));
         }
       },
+    );
+  }
+
+  /// Ruhiger Nur-Lese-Hinweis anstelle des Eingabefelds (GfK-Ton).
+  Widget _readOnlyNotice(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock_outline_rounded,
+              size: 18, color: theme.colorScheme.outline),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _chatDisabledReason ?? '',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -551,7 +722,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                   Text(widget.profileName,
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700)),
-                  Text('Eltern-Netzwerk',
+                  Text(_t('convo_parent_network'),
                       style: TextStyle(
                           fontSize: 11,
                           color: theme.colorScheme.onSurfaceVariant)),
@@ -571,28 +742,28 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
               if (value == 'refresh') _loadMessages();
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                   value: 'refresh',
                   child: Row(children: [
                     Icon(Icons.refresh_rounded, size: 18),
                     SizedBox(width: 8),
-                    Text('Aktualisieren'),
+                    Text(_t('convo_refresh')),
                   ])),
-              const PopupMenuItem(
+              PopupMenuItem(
                   value: 'report',
                   child: Row(children: [
                     Icon(Icons.flag_rounded,
                         size: 18, color: Color(0xFFEA580C)),
                     SizedBox(width: 8),
-                    Text('Melden'),
+                    Text(_t('chat_report')),
                   ])),
-              const PopupMenuItem(
+              PopupMenuItem(
                   value: 'block',
                   child: Row(children: [
                     Icon(Icons.block_rounded,
                         size: 18, color: Color(0xFFDC2626)),
                     SizedBox(width: 8),
-                    Text('Blockieren'),
+                    Text(_t('convo_block')),
                   ])),
             ],
           ),
@@ -606,6 +777,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                 : _messages.isEmpty
                     ? _buildEmptyState(theme)
                     : ListView.builder(
+                        controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
@@ -614,70 +786,144 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                           final showAvatar = !isMe &&
                               (index == 0 ||
                                   _messages[index - 1].isMe != msg.isMe);
+                          final separator = _needsDaySeparator(index)
+                              ? _formatDaySeparator(msg.createdAt!)
+                              : null;
 
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom: 6,
-                              left: isMe ? 48 : 0,
-                              right: isMe ? 0 : 48,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: isMe
-                                  ? MainAxisAlignment.end
-                                  : MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                if (!isMe && showAvatar)
-                                  CircleAvatar(
-                                    radius: 14,
-                                    backgroundColor:
-                                        theme.colorScheme.primaryContainer,
-                                    child: Text(
-                                      widget.profileName.isNotEmpty
-                                          ? widget.profileName[0].toUpperCase()
-                                          : '?',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: theme.colorScheme.primary,
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Datums-Trenner (Heute / Gestern / Datum)
+                              if (separator != null)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: theme
+                                            .colorScheme.surfaceContainerHighest
+                                            .withValues(alpha: 0.7),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                    ),
-                                  )
-                                else if (!isMe)
-                                  const SizedBox(width: 28),
-                                if (!isMe) const SizedBox(width: 8),
-                                Flexible(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: isMe
-                                          ? theme.colorScheme.primary
-                                          : theme.colorScheme
-                                              .surfaceContainerHighest,
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: const Radius.circular(16),
-                                        topRight: const Radius.circular(16),
-                                        bottomLeft:
-                                            Radius.circular(isMe ? 16 : 4),
-                                        bottomRight:
-                                            Radius.circular(isMe ? 4 : 16),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      msg.text,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isMe
-                                            ? Colors.white
-                                            : theme.colorScheme.onSurface,
-                                        height: 1.4,
-                                      ),
+                                      child: Text(separator,
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.colorScheme
+                                                  .onSurfaceVariant)),
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: 6,
+                                  left: isMe ? 48 : 0,
+                                  right: isMe ? 0 : 48,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: isMe
+                                      ? MainAxisAlignment.end
+                                      : MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (!isMe && showAvatar)
+                                      CircleAvatar(
+                                        radius: 14,
+                                        backgroundColor:
+                                            theme.colorScheme.primaryContainer,
+                                        child: Text(
+                                          widget.profileName.isNotEmpty
+                                              ? widget.profileName[0]
+                                                  .toUpperCase()
+                                              : '?',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      )
+                                    else if (!isMe)
+                                      const SizedBox(width: 28),
+                                    if (!isMe) const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Column(
+                                        crossAxisAlignment: isMe
+                                            ? CrossAxisAlignment.end
+                                            : CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              color: isMe
+                                                  ? theme.colorScheme.primary
+                                                  : theme.colorScheme
+                                                      .surfaceContainerHighest,
+                                              borderRadius: BorderRadius.only(
+                                                topLeft:
+                                                    const Radius.circular(16),
+                                                topRight:
+                                                    const Radius.circular(16),
+                                                bottomLeft: Radius.circular(
+                                                    isMe ? 16 : 4),
+                                                bottomRight: Radius.circular(
+                                                    isMe ? 4 : 16),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              msg.text,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: isMe
+                                                    ? Colors.white
+                                                    : theme
+                                                        .colorScheme.onSurface,
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ),
+                                          // Uhrzeit + 'gesendet'-Haekchen
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 3, left: 4, right: 4),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (msg.createdAt != null)
+                                                  Text(
+                                                    _formatTime(msg.createdAt!),
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: theme.colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                if (isMe) ...[
+                                                  const SizedBox(width: 3),
+                                                  Icon(
+                                                    msg.sending
+                                                        ? Icons
+                                                            .access_time_rounded
+                                                        : Icons.check_rounded,
+                                                    size: 12,
+                                                    color: theme.colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           );
                         },
                       ),
@@ -697,7 +943,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                 ),
               ),
             ),
-          // Input
+          // Input — oder Nur-Lese-Hinweis, wenn die Verbindung beendet wurde.
           SafeArea(
             top: false,
             child: Container(
@@ -712,44 +958,46 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText: 'Nachricht schreiben...',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerLow,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
+              child: _chatDisabledReason != null
+                  ? _readOnlyNotice(theme)
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              hintText: 'Nachricht schreiben...',
+                              hintStyle: TextStyle(color: Colors.grey[400]),
+                              filled: true,
+                              fillColor: theme.colorScheme.surfaceContainerLow,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 12),
+                              isDense: true,
+                            ),
+                            onSubmitted: (_) => _send(),
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 12),
-                        isDense: true,
-                      ),
-                      onSubmitted: (_) => _send(),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: theme.colorScheme.primary,
+                          ),
+                          child: IconButton(
+                            onPressed: _send,
+                            icon: const Icon(Icons.send_rounded,
+                                size: 18, color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: theme.colorScheme.primary,
-                    ),
-                    child: IconButton(
-                      onPressed: _send,
-                      icon: const Icon(Icons.send_rounded,
-                          size: 18, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
@@ -759,9 +1007,22 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
 }
 
 class _Msg {
-  const _Msg({required this.id, required this.text, required this.isMe});
+  const _Msg({
+    required this.id,
+    required this.text,
+    required this.isMe,
+    this.createdAt,
+    this.sending = false,
+  });
 
   final String id;
   final String text;
   final bool isMe;
+
+  /// Sendezeitpunkt (fuer Uhrzeit-Anzeige + Datums-Trenner). Null bei aelteren
+  /// Nachrichten ohne Zeitstempel.
+  final DateTime? createdAt;
+
+  /// true = optimistisch angezeigt, Server-Bestaetigung steht noch aus.
+  final bool sending;
 }
