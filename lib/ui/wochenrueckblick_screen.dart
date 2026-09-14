@@ -20,6 +20,110 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
 
   String _t(String key) =>
       AppStringsManager.getString(languageService.currentLanguage, key);
+
+  String _reviewCopy(String key, String fallback) {
+    final language = languageService.currentLanguage;
+    if (language == 'tr' || language == 'en' || language == 'ku') {
+      const localized = {
+        'en': {
+          'well_subtitle': 'Celebrate your successes, even the small ones.',
+          'well_hint': 'e.g. A lovely family evening, my child laughed...',
+          'challenge_subtitle': 'Difficult moments deserve acknowledgment.',
+          'challenge_hint':
+              'e.g. Lack of sleep, an argument, feeling overwhelmed...',
+          'learned_subtitle':
+              'Every week brings new insights. What did you learn?',
+          'learned_hint':
+              'e.g. More patience with myself, setting boundaries...',
+          'looking_subtitle':
+              'Looking ahead gives you strength and anticipation.',
+          'looking_hint':
+              'e.g. A trip to the playground, an evening for two...',
+          'optional': 'Optional - take your time.',
+          'mood_subtitle':
+              'Your overall impression - there is no right or wrong.',
+          'summary_week': 'Your week: ',
+          'well_label': 'What went well',
+          'challenge_label': 'Challenge',
+          'learned_label': 'Insight',
+          'forward_label': 'Looking forward to',
+          'ai_feedback': 'Your AI feedback',
+          'ai_loading': 'The AI is reflecting on your week...',
+        },
+        'ku': {
+          'well_subtitle':
+              'Serkeftinên xwe pîroz bike, her çiqas biçûk bin jî.',
+          'well_hint': 'Mînak: Êvareke xweş a malbatê, zarokê min kenî...',
+          'challenge_subtitle': 'Demên dijwar jî hewceyê nasînê ne.',
+          'challenge_hint': 'Mînak: Bêxewî, nakokî, hestkirina westiyayî...',
+          'learned_subtitle': 'Her hefte têgihiştinên nû tîne. Tu çi hîn bûyî?',
+          'learned_hint': 'Mînak: Sebirê zêdetir ji xwe re, danîna sînor...',
+          'looking_subtitle': 'Nêrîna li pêş hêz û hêvî dide.',
+          'looking_hint':
+              'Mînak: Serdaneke parka lîstikê, êvarek ji bo du kesan...',
+          'optional': 'Vebijarkî - bi aramî dema xwe bistîne.',
+          'mood_subtitle': 'Hesta te ya giştî - rast an şaş tune ye.',
+          'summary_week': 'Heftaya te: ',
+          'well_label': 'Çi baş çû',
+          'challenge_label': 'Dijwarî',
+          'learned_label': 'Têgihiştin',
+          'forward_label': 'Li benda çi yî',
+          'ai_feedback': 'Ramanên AI yên te',
+          'ai_loading': 'AI li ser heftaya te difikire...',
+        },
+        'tr': {
+          'well_subtitle': 'Başarılarını kutla — küçük olanları bile.',
+          'well_hint': 'Örn. Güzel bir aile akşamı, çocuğum güldü...',
+          'challenge_subtitle': 'Zor anların da takdir edilmeye ihtiyacı var.',
+          'challenge_hint': 'Örn. uykusuzluk, tartışma, bunalmışlık...',
+          'learned_subtitle':
+              'Her hafta yeni şeyler öğretir — sen ne öğrendin?',
+          'learned_hint': 'Örn. kendime daha sabırlı olmak, sınır koymak...',
+          'looking_subtitle': 'Geleceğe bakmak güç ve mutluluk verir.',
+          'looking_hint': 'Örn. parka gitmek, baş başa bir akşam...',
+          'optional': 'İsteğe bağlı — acele etme.',
+          'mood_subtitle': 'Genel değerlendirmen — doğru ya da yanlış yok.',
+          'summary_week': 'Haftan: ',
+          'well_label': 'İyi gidenler',
+          'challenge_label': 'Zorluk',
+          'learned_label': 'Çıkarım',
+          'forward_label': 'Gelecekten beklenti',
+          'ai_feedback': 'Yapay zekâ geri bildirimin',
+          'ai_loading': 'Yapay zekâ haftanı değerlendiriyor...',
+        },
+      };
+      return localized[language]?[key] ?? fallback;
+    }
+    return fallback;
+  }
+
+  String _moodLabel(String key, String fallback) {
+    const labels = {
+      'en': {
+        'Super': 'Great',
+        'Gut': 'Good',
+        'Gemischt': 'Mixed',
+        'Anstrengend': 'Challenging',
+        'Dankbar': 'Grateful',
+      },
+      'ku': {
+        'Super': 'Pir baş',
+        'Gut': 'Baş',
+        'Gemischt': 'Tevlihev',
+        'Anstrengend': 'Dijwar',
+        'Dankbar': 'Spasdar',
+      },
+      'tr': {
+        'Super': 'Harika',
+        'Gut': 'İyi',
+        'Gemischt': 'Karışık',
+        'Anstrengend': 'Zorlayıcı',
+        'Dankbar': 'Minnettar',
+      },
+    };
+    return labels[languageService.currentLanguage]?[key] ?? fallback;
+  }
+
   bool _loading = true;
   bool _aiLoading = false;
   String? _aiFeedback;
@@ -145,23 +249,30 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
     setState(() => _aiLoading = true);
     try {
       final ai = GeminiAIService(modelName: APIConfig.getGeminiModelName());
-        final prompt = _buildAIPrompt(reflection);
-        final response = await ai.chat(prompt);
-        final updated = reflection.copyWith(aiFeedback: response);
-        await WeeklyReflectionService.save(updated);
-        if (mounted) {
-          setState(() {
-            _aiFeedback = response;
-            _aiLoading = false;
-            _currentWeekReflection = updated;
-          });
-        }
+      final prompt = _buildAIPrompt(reflection);
+      final response = await ai.chat(prompt);
+      final updated = reflection.copyWith(aiFeedback: response);
+      await WeeklyReflectionService.save(updated);
+      if (mounted) {
+        setState(() {
+          _aiFeedback = response;
+          _aiLoading = false;
+          _currentWeekReflection = updated;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _aiLoading = false);
     }
   }
 
   String _buildAIPrompt(WeeklyReflection r) {
+    final responseLanguage = languageService.currentLanguage == 'tr'
+        ? 'Türkçe'
+        : languageService.currentLanguage == 'ku'
+            ? 'Kurmancî'
+            : languageService.currentLanguage == 'en'
+                ? 'English'
+                : 'Deutsch';
     return '''Du bist ein empathischer Eltern-Coach. Ein Elternteil hat gerade seinen Wochenrückblick geschrieben.
 
 Gesamtstimmung: ${r.overallMood}
@@ -173,7 +284,7 @@ Worauf sich gefreut wird: ${r.lookingForwardTo.isNotEmpty ? r.lookingForwardTo :
 Schreibe eine kurze, warme, empathische Rückmeldung (max 3-4 Sätze). 
 Feiere Erfolge, validiere Herausforderungen, gib einen kleinen Impuls für nächste Woche.
 Nutze GfK-Prinzipien (Gewaltfreie Kommunikation). Kein Belehren, kein Bewerten.
-Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
+Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 passende Emojis.''';
   }
 
   @override
@@ -197,7 +308,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
               icon: Icon(
                   _showArchive ? Icons.edit_rounded : Icons.history_rounded,
                   size: 18),
-              label: Text(_showArchive ? 'Neu' : 'Archiv'),
+              label: Text(_showArchive ? _t('new_entry') : _t('archive')),
             ),
         ],
       ),
@@ -264,33 +375,41 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
       case 1:
         return _buildTextStep(
           emoji: '\u{2728}',
-          title: 'Was lief richtig gut?',
-          subtitle: 'Feiere deine Erfolge — auch die kleinen.',
-          hint: 'z.B. Schöner Familienabend, Kind hat gelacht...',
+          title: _t('what_went_well'),
+          subtitle: _reviewCopy(
+              'well_subtitle', 'Feiere deine Erfolge — auch die kleinen.'),
+          hint: _reviewCopy(
+              'well_hint', 'z.B. Schöner Familienabend, Kind hat gelacht...'),
           controller: _wellCtrl,
         );
       case 2:
         return _buildTextStep(
           emoji: '\u{1F4AA}',
-          title: 'Was war herausfordernd?',
-          subtitle: 'Schwierige Momente verdienen Anerkennung.',
-          hint: 'z.B. Schlafmangel, Streit, Überforderung...',
+          title: _t('what_was_challenging'),
+          subtitle: _reviewCopy('challenge_subtitle',
+              'Schwierige Momente verdienen Anerkennung.'),
+          hint: _reviewCopy(
+              'challenge_hint', 'z.B. Schlafmangel, Streit, Überforderung...'),
           controller: _challengeCtrl,
         );
       case 3:
         return _buildTextStep(
           emoji: '\u{1F4A1}',
-          title: 'Was hast du dabei gelernt?',
-          subtitle: 'Jede Woche bringt Erkenntnisse — welche sind deine?',
-          hint: 'z.B. Mehr Geduld mit mir selbst, Grenzen setzen...',
+          title: _t('what_did_you_learn'),
+          subtitle: _reviewCopy('learned_subtitle',
+              'Jede Woche bringt Erkenntnisse — welche sind deine?'),
+          hint: _reviewCopy('learned_hint',
+              'z.B. Mehr Geduld mit mir selbst, Grenzen setzen...'),
           controller: _learnedCtrl,
         );
       case 4:
         return _buildTextStep(
           emoji: '\u{1F31F}',
           title: _t('review_next_week'),
-          subtitle: 'Ein Ausblick gibt Kraft und Vorfreude.',
-          hint: 'z.B. Spielplatz-Besuch, Abend zu zweit...',
+          subtitle: _reviewCopy(
+              'looking_subtitle', 'Ein Ausblick gibt Kraft und Vorfreude.'),
+          hint: _reviewCopy(
+              'looking_hint', 'z.B. Spielplatz-Besuch, Abend zu zweit...'),
           controller: _lookingForwardCtrl,
         );
       default:
@@ -309,7 +428,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
         const SizedBox(height: 20),
         Center(
           child: Text(
-            'Wie war deine Woche?',
+            _t('how_was_week'),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -321,7 +440,8 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
         const SizedBox(height: 8),
         Center(
           child: Text(
-            'Dein Gesamteindruck — es gibt kein Richtig oder Falsch.',
+            _reviewCopy('mood_subtitle',
+                'Dein Gesamteindruck — es gibt kein Richtig oder Falsch.'),
             style: TextStyle(
               fontSize: 14,
               color: const Color(0xFF6B7280),
@@ -447,7 +567,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
         ),
         const SizedBox(height: 12),
         Text(
-          'Optional — lass dir ruhig Zeit.',
+          _reviewCopy('optional', 'Optional — lass dir ruhig Zeit.'),
           style: TextStyle(fontSize: 12, color: Colors.grey[500]),
         ),
       ],
@@ -491,7 +611,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Text(
-                _step == 4 ? 'Abschließen' : 'Weiter',
+                _step == 4 ? _t('finish') : _t('next'),
                 style:
                     const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
@@ -539,7 +659,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
                   style: const TextStyle(fontSize: 44)),
               const SizedBox(height: 10),
               Text(
-                'Deine Woche: ${moodData['label']}',
+                '${_reviewCopy('summary_week', 'Deine Woche: ')}${_moodLabel(moodData['key'] as String, moodData['label'] as String)}',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -558,15 +678,19 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
 
         // Answers
         if (_wellCtrl.text.trim().isNotEmpty)
-          _summaryItem('\u{2728}', 'Was gut lief', _wellCtrl.text.trim()),
+          _summaryItem('\u{2728}', _reviewCopy('well_label', 'Was gut lief'),
+              _wellCtrl.text.trim()),
         if (_challengeCtrl.text.trim().isNotEmpty)
           _summaryItem(
-              '\u{1F4AA}', 'Herausforderung', _challengeCtrl.text.trim()),
+              '\u{1F4AA}',
+              _reviewCopy('challenge_label', 'Herausforderung'),
+              _challengeCtrl.text.trim()),
         if (_learnedCtrl.text.trim().isNotEmpty)
-          _summaryItem('\u{1F4A1}', 'Erkenntnis', _learnedCtrl.text.trim()),
+          _summaryItem('\u{1F4A1}', _reviewCopy('learned_label', 'Erkenntnis'),
+              _learnedCtrl.text.trim()),
         if (_lookingForwardCtrl.text.trim().isNotEmpty)
-          _summaryItem(
-              '\u{1F31F}', 'Vorfreude', _lookingForwardCtrl.text.trim()),
+          _summaryItem('\u{1F31F}', _reviewCopy('forward_label', 'Vorfreude'),
+              _lookingForwardCtrl.text.trim()),
 
         const SizedBox(height: 24),
 
@@ -592,9 +716,10 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
                   ),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'KI denkt über deine Woche nach...',
+                    _reviewCopy(
+                        'ai_loading', 'KI denkt über deine Woche nach...'),
                     style: TextStyle(
                         color: Color(0xFF6B21A8),
                         fontWeight: FontWeight.w500,
@@ -626,7 +751,7 @@ Schreibe auf Deutsch, duze den Elternteil. Nutze 1-2 passende Emojis.''';
                     const Text('\u{1F916}', style: TextStyle(fontSize: 18)),
                     const SizedBox(width: 8),
                     Text(
-                      'Dein KI-Feedback',
+                      _reviewCopy('ai_feedback', 'Dein KI-Feedback'),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
