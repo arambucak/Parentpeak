@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
@@ -23,11 +22,11 @@ void main() {
       await AIRateLimiter.initialize();
       expect(AIRateLimiter.canMakeRequest(), isTrue);
       expect(AIRateLimiter.remainingRequests(), greaterThan(0));
-      expect(AIRateLimiter.dailyLimit, equals(25));
+      expect(AIRateLimiter.dailyLimit, equals(50));
     });
 
     test('AIRateLimiter statusText is formatted', () {
-      expect(AIRateLimiter.statusText, contains('/25'));
+      expect(AIRateLimiter.statusText, contains('/50'));
     });
 
     test('ChatModerationService blocks profanity', () {
@@ -42,8 +41,8 @@ void main() {
       final svc = ChatModerationService.instance;
       expect(svc.isSafe('Hallo wie gehts'), isTrue); // 12 chars, not enough
       expect(svc.isSafe('aaaaaaaaaaaaaaaa'), isFalse); // 13+ repeated
-      expect(svc.isSafe('DIES IST EIN GANZ NORMALER TEXT'),
-          isFalse); // too many caps
+      // Grossschreibung ist erlaubt (Emphase, kein Spam) - familienfreundlich.
+      expect(svc.isSafe('DIES IST EIN GANZ NORMALER TEXT'), isTrue);
     });
 
     test('ChatModerationService blocks commercial content', () {

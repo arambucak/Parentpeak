@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/shopping_backend_service.dart';
@@ -163,7 +164,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
           IconButton(
             onPressed: _loadItems,
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Synchronisieren',
+            tooltip: context.tr('tooltip_sync'),
           ),
         ],
       ),
@@ -184,11 +185,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                     Icons.cloud_off_rounded,
                     color: theme.colorScheme.primary,
                   ),
-                  title: const Text('Server-Sync fehlgeschlagen'),
+                  title: Text(context.tr('sync_failed')),
                   subtitle: Text(_syncError!),
                   trailing: TextButton(
                     onPressed: _loadItems,
-                    child: const Text('Erneut versuchen'),
+                    child: Text(context.tr('reload_btn')),
                   ),
                 )
                 ),

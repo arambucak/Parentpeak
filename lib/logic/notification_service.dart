@@ -5,6 +5,8 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:parentpeak/logic/backend_api_client.dart';
 
+typedef NotificationTapHandler = void Function(Map<String, dynamic> data);
+
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -16,6 +18,8 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  bool _fcmListenersRegistered = false;
+  NotificationTapHandler? _onNotificationTap;
 
   bool get _isRunningOnIOSSimulator {
     if (kIsWeb) return false;
@@ -70,7 +74,12 @@ class NotificationService {
 
   /// Wire up FCM: request permission, get token, register with backend,
   /// and handle foreground messages as local notifications.
-  Future<void> initFcm({BackendApiClient? apiClient, String? userId}) async {
+  Future<void> initFcm({
+    BackendApiClient? apiClient,
+    String? userId,
+    NotificationTapHandler? onNotificationTap,
+  }) async {
+    _onNotificationTap = onNotificationTap ?? _onNotificationTap;
     if (kDebugMode && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return; // Skip on iOS Simulator in debug
     }
@@ -105,33 +114,43 @@ class NotificationService {
         }
       }
 
-      // Re-register whenever the token is refreshed.
-      messaging.onTokenRefresh.listen((newToken) async {
-        if (apiClient != null && userId != null) {
-          try {
-            await apiClient.registerFcmToken(
-              userId: userId,
-              token: newToken,
-            );
-          } catch (e) {
-            _logIgnoredError(
-              'NotificationService.initFcm(): token refresh registration skipped',
-              e,
+      if (!_fcmListenersRegistered) {
+        _fcmListenersRegistered = true;
+        // Re-register whenever the token is refreshed.
+        messaging.onTokenRefresh.listen((newToken) async {
+          if (apiClient != null && userId != null) {
+            try {
+              await apiClient.registerFcmToken(
+                userId: userId,
+                token: newToken,
+              );
+            } catch (e) {
+              _logIgnoredError(
+                'NotificationService.initFcm(): token refresh registration skipped',
+                e,
+              );
+            }
+          }
+        });
+
+        // Show foreground FCM messages as local notifications.
+        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          final notification = message.notification;
+          if (notification != null) {
+            showLocalNotification(
+              title: notification.title ?? 'Parentpeak',
+              body: notification.body ?? '',
             );
           }
-        }
-      });
-
-      // Show foreground FCM messages as local notifications.
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        final notification = message.notification;
-        if (notification != null) {
-          showLocalNotification(
-            title: notification.title ?? 'Parentpeak',
-            body: notification.body ?? '',
-          );
-        }
-      });
+        });
+        FirebaseMessaging.onMessageOpenedApp.listen((message) {
+          _onNotificationTap?.call(message.data);
+        });
+      }
+      final initialMessage = await messaging.getInitialMessage();
+      if (initialMessage != null) {
+        _onNotificationTap?.call(initialMessage.data);
+      }
     }
   }
 

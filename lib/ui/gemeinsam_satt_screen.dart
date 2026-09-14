@@ -10,7 +10,11 @@ import 'package:parentpeak/models/shared_recipe.dart';
 import 'package:parentpeak/models/meal_plan.dart';
 import 'package:parentpeak/models_and_widgets/animation_helpers.dart';
 import 'package:parentpeak/services/meal_planner_service.dart';
-import 'package:parentpeak/logic/gemeinsam_satt_backend_service.dart' as backend_service;
+import 'package:parentpeak/logic/gemeinsam_satt_backend_service.dart'
+    as backend_service;
+
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
 
 // ============================================================
 // GEMEINSAM SATT — Eltern-Essenssolidarität
@@ -171,6 +175,7 @@ enum _RecipeFeedMode { forYou, newest, bestRated, quickMeals }
 class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+
   final TextEditingController _commentController = TextEditingController();
   final backend_service.GemeinsamSattBackendService _service =
       backend_service.GemeinsamSattBackendService();
@@ -246,10 +251,10 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
       final mappedOffers = backendRecipes
           .where((item) {
-          final lowerTags = item.tags.map((e) => e.toLowerCase()).toList();
-          return item.category.toLowerCase() == 'snack' ||
-            lowerTags.contains('angebot') ||
-            lowerTags.contains('teilen');
+            final lowerTags = item.tags.map((e) => e.toLowerCase()).toList();
+            return item.category.toLowerCase() == 'snack' ||
+                lowerTags.contains('angebot') ||
+                lowerTags.contains('teilen');
           })
           .map(_mapBackendRecipeToOfferPost)
           .where((post) => post.title.trim().isNotEmpty)
@@ -262,13 +267,18 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         );
 
         if (summary == null) continue;
-        final reservedPortions = (summary['reservedPortions'] as num?)?.toInt() ?? 0;
-        final myPortions = ((summary['myReservation'] as Map?)?['portions'] as num?)?.toInt() ?? 0;
+        final reservedPortions =
+            (summary['reservedPortions'] as num?)?.toInt() ?? 0;
+        final myPortions =
+            ((summary['myReservation'] as Map?)?['portions'] as num?)
+                    ?.toInt() ??
+                0;
 
         final idx = mappedOffers.indexWhere((item) => item.id == post.id);
         if (idx == -1) continue;
 
-        final remaining = (mappedOffers[idx].totalPortions - reservedPortions).clamp(0, mappedOffers[idx].totalPortions);
+        final remaining = (mappedOffers[idx].totalPortions - reservedPortions)
+            .clamp(0, mappedOffers[idx].totalPortions);
         mappedOffers[idx] = mappedOffers[idx].copyWith(
           remainingPortions: remaining,
           isReservedByMe: myPortions > 0,
@@ -278,7 +288,9 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       if (!mounted) return;
       final syncError = _service.lastSyncError;
       final scoped = _resolveNearbyScope(
-        mappedOffers.where((post) => !_hiddenOfferIds.contains(post.id)).toList(),
+        mappedOffers
+            .where((post) => !_hiddenOfferIds.contains(post.id))
+            .toList(),
       );
       setState(() {
         _nearbyLoadError = syncError;
@@ -292,7 +304,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       debugPrint('GemeinsamSattScreen._loadNearbyFeed(): failed: $e');
       if (!mounted) return;
       setState(() {
-        _nearbyLoadError = _service.lastSyncError ?? 'Angebote konnten nicht geladen werden.';
+        _nearbyLoadError =
+            _service.lastSyncError ?? 'Angebote konnten nicht geladen werden.';
         _posts = [];
         _nearbyDiscoveryScope = 'global';
         _nearbyGlobalDigitalMode = true;
@@ -302,8 +315,12 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     }
   }
 
-  ({List<FoodSharePost> posts, String scope, bool globalDigitalMode, bool showInviteBanner})
-      _resolveNearbyScope(List<FoodSharePost> source) {
+  ({
+    List<FoodSharePost> posts,
+    String scope,
+    bool globalDigitalMode,
+    bool showInviteBanner
+  }) _resolveNearbyScope(List<FoodSharePost> source) {
     final within10 = source.where((p) => p.distanceKm <= 10).toList();
     if (within10.isNotEmpty) {
       return (
@@ -361,7 +378,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         authorInitials: 'GC',
         authorColor: const Color(0xFF1E5CD7),
         title: 'Globaler Food-Raum: Familienfreundliche Snacks',
-        description: 'Digitale Vorschlaege und Austausch für schnelle kindgerechte Snacks.',
+        description:
+            'Digitale Vorschlaege und Austausch für schnelle kindgerechte Snacks.',
         totalPortions: 1,
         remainingPortions: 1,
         pickupWindow: 'Online jetzt',
@@ -379,7 +397,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         authorInitials: 'GC',
         authorColor: const Color(0xFF1E5CD7),
         title: 'Globaler Food-Raum: Meal Prep für Familien',
-        description: 'Rezepte, Portionsideen und Austausch für stressfreie Wochenplanung.',
+        description:
+            'Rezepte, Portionsideen und Austausch für stressfreie Wochenplanung.',
         totalPortions: 1,
         remainingPortions: 1,
         pickupWindow: 'Online jetzt',
@@ -393,7 +412,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     ];
   }
 
-  FoodSharePost _mapBackendRecipeToOfferPost(backend_service.SharedRecipe item) {
+  FoodSharePost _mapBackendRecipeToOfferPost(
+      backend_service.SharedRecipe item) {
     final authorId = (item.creatorUserId ?? '').trim();
     final createdAt = item.createdAt;
     final portions = item.servings <= 0 ? 1 : item.servings;
@@ -406,7 +426,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       id: item.id,
       authorId: authorId.isEmpty ? 'community_parent' : authorId,
       authorName: _getUserDisplayName(authorId),
-      authorInitials: _getInitials(authorId.isEmpty ? 'community_parent' : authorId),
+      authorInitials:
+          _getInitials(authorId.isEmpty ? 'community_parent' : authorId),
       authorColor: _getColorForAuthor(authorId.isEmpty ? item.id : authorId),
       title: item.title,
       description: (item.description ?? '').trim().isEmpty
@@ -426,7 +447,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       authorCompletedShares: item.authorTrust?.completedShares ?? 0,
       authorCompletionRate: item.authorTrust?.completionRate ?? 0,
       authorReliabilityLevel: item.authorTrust?.reliabilityLevel ?? 'new',
-      authorReliabilityLabel: item.authorTrust?.reliabilityLabel ?? 'Noch wenig Nachweise',
+      authorReliabilityLabel:
+          item.authorTrust?.reliabilityLabel ?? 'Noch wenig Nachweise',
       authorLastSharedAt: item.authorTrust?.lastSharedAt,
     );
   }
@@ -446,7 +468,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           _mealPlanLoadError = null;
         } else {
           _weekPlan = _buildEmptyWeekPlan();
-          _mealPlanLoadError = 'Wochenplan konnte nicht vom Backend geladen werden.';
+          _mealPlanLoadError =
+              'Wochenplan konnte nicht vom Backend geladen werden.';
         }
       });
     } catch (e) {
@@ -465,8 +488,9 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       final result = await _service.fetchRecipes(
         skip: 0,
         take: 40,
-        sortBy:
-            _recipeFeedMode == _RecipeFeedMode.bestRated ? 'rating' : 'createdAt',
+        sortBy: _recipeFeedMode == _RecipeFeedMode.bestRated
+            ? 'rating'
+            : 'createdAt',
       );
 
       final backendRecipes = (result['recipes'] as List?)
@@ -477,8 +501,9 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       final recipes = backendRecipes
           .map(_convertBackendRecipeToUI)
           .map((recipe) =>
-            recipe.copyWith(isSavedByMe: _savedRecipeIds.contains(recipe.id)))
-          .map((recipe) => recipe.copyWith(relevanceScore: _scoreForCurrentParent(recipe)))
+              recipe.copyWith(isSavedByMe: _savedRecipeIds.contains(recipe.id)))
+          .map((recipe) =>
+              recipe.copyWith(relevanceScore: _scoreForCurrentParent(recipe)))
           .toList();
 
       if (!mounted) return;
@@ -492,7 +517,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       debugPrint('GemeinsamSattScreen._loadRecipes(): failed: $e');
       if (!mounted) return;
       setState(() {
-        _recipeLoadError = _service.lastSyncError ?? 'Rezepte konnten nicht geladen werden.';
+        _recipeLoadError =
+            _service.lastSyncError ?? 'Rezepte konnten nicht geladen werden.';
         _recipes = [];
         _isLoadingRecipes = false;
       });
@@ -505,7 +531,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     final category = data.category;
     final ingredients = data.ingredients
         .map((e) =>
-            '${e['quantity'] ?? ''} ${e['unit'] ?? ''} ${e['name'] ?? ''}'.trim())
+            '${e['quantity'] ?? ''} ${e['unit'] ?? ''} ${e['name'] ?? ''}'
+                .trim())
         .where((e) => e.isNotEmpty)
         .toList();
 
@@ -531,7 +558,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       authorCompletedShares: data.authorTrust?.completedShares ?? 0,
       authorCompletionRate: data.authorTrust?.completionRate ?? 0,
       authorReliabilityLevel: data.authorTrust?.reliabilityLevel ?? 'new',
-      authorReliabilityLabel: data.authorTrust?.reliabilityLabel ?? 'Noch wenig Nachweise',
+      authorReliabilityLabel:
+          data.authorTrust?.reliabilityLabel ?? 'Noch wenig Nachweise',
       authorLastSharedAt: data.authorTrust?.lastSharedAt,
       averageRating: data.rating,
       ratingCount: data.ratingCount,
@@ -565,7 +593,11 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
   double _scoreForCurrentParent(SharedRecipe recipe) {
     final lowerTags = recipe.tags.map((e) => e.toLowerCase()).toList();
-    final timeFit = recipe.durationMinutes <= 25 ? 1.0 : recipe.durationMinutes <= 40 ? 0.7 : 0.4;
+    final timeFit = recipe.durationMinutes <= 25
+        ? 1.0
+        : recipe.durationMinutes <= 40
+            ? 0.7
+            : 0.4;
     final childFit = lowerTags.any((tag) =>
             tag.contains('kinder') ||
             tag.contains('baby') ||
@@ -581,9 +613,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         : freshnessDays <= 7
             ? 0.75
             : 0.45;
-    final interest = recipe.viewCount > 0
-        ? (recipe.viewCount / 100).clamp(0.0, 1.0)
-        : 0.35;
+    final interest =
+        recipe.viewCount > 0 ? (recipe.viewCount / 100).clamp(0.0, 1.0) : 0.35;
 
     return (0.30 * timeFit) +
         (0.25 * childFit) +
@@ -594,7 +625,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
   Future<void> _loadSavedRecipes() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getStringList(_savedRecipeStorageKey) ?? const <String>[];
+    final saved =
+        prefs.getStringList(_savedRecipeStorageKey) ?? const <String>[];
     if (!mounted) return;
     setState(() {
       _savedRecipeIds = saved.toSet();
@@ -612,27 +644,29 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
   Future<void> _loadOfferSafetyState() async {
     final prefs = await SharedPreferences.getInstance();
-    final hidden = prefs.getStringList(_hiddenOfferStorageKey) ?? const <String>[];
-    final reported = prefs.getStringList(_reportedOfferStorageKey) ?? const <String>[];
+    final hidden =
+        prefs.getStringList(_hiddenOfferStorageKey) ?? const <String>[];
+    final reported =
+        prefs.getStringList(_reportedOfferStorageKey) ?? const <String>[];
     if (!mounted) return;
     setState(() {
       _hiddenOfferIds = hidden.toSet();
       _reportedOfferIds = reported.toSet();
-      _posts = _posts.where((post) => !_hiddenOfferIds.contains(post.id)).toList();
+      _posts =
+          _posts.where((post) => !_hiddenOfferIds.contains(post.id)).toList();
     });
   }
 
   Future<void> _persistOfferSafetyState() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_hiddenOfferStorageKey, _hiddenOfferIds.toList());
-    await prefs.setStringList(_reportedOfferStorageKey, _reportedOfferIds.toList());
+    await prefs.setStringList(
+        _reportedOfferStorageKey, _reportedOfferIds.toList());
   }
 
-  String get _savedRecipeStorageKey =>
-      '$_savedRecipeStoragePrefix.$_myUserId';
+  String get _savedRecipeStorageKey => '$_savedRecipeStoragePrefix.$_myUserId';
 
-  String get _hiddenOfferStorageKey =>
-      '$_hiddenOfferStoragePrefix.$_myUserId';
+  String get _hiddenOfferStorageKey => '$_hiddenOfferStoragePrefix.$_myUserId';
 
   String get _reportedOfferStorageKey =>
       '$_reportedOfferStoragePrefix.$_myUserId';
@@ -743,7 +777,6 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 ),
                 Text(
                   'Essen teilen · Zusammen satt werden',
-
                   style: TextStyle(
                     fontSize: 11,
                     color: Color(0xFF8A9AB0),
@@ -759,7 +792,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           indicatorColor: _brand,
           labelColor: _brand,
           unselectedLabelColor: const Color(0xFF8A9AB0),
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+          labelStyle:
+              const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
           indicatorSize: TabBarIndicatorSize.tab,
           isScrollable: false,
           tabs: const [
@@ -867,7 +901,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.campaign_outlined, color: Color(0xFF9A5A11), size: 18),
+                const Icon(Icons.campaign_outlined,
+                    color: Color(0xFF9A5A11), size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -939,7 +974,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                           selectedColor: const Color(0xFFFED7CC),
                           labelStyle: TextStyle(
                             fontSize: 12,
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                            fontWeight:
+                                selected ? FontWeight.w700 : FontWeight.w600,
                             color: selected ? _brand : const Color(0xFF516072),
                           ),
                         ),
@@ -983,7 +1019,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                         side: BorderSide(
                           color: selected ? _brand : const Color(0xFFE5E7EB),
                         ),
-                        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        labelStyle: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     );
                   }).toList(),
@@ -1003,7 +1040,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 // Animate only first 8 items on initial load
                 final shouldAnimate = i < 8;
                 final delay = shouldAnimate ? i * 50 : 0;
-                
+
                 final card = _PostCard(
                   post: available[i],
                   myUserId: _myUserId,
@@ -1013,7 +1050,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                   onReport: () => _reportPost(available[i]),
                   onHide: () => _hidePost(available[i]),
                 );
-                
+
                 return shouldAnimate
                     ? EntranceAnimation(
                         delayMs: delay,
@@ -1042,7 +1079,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             return _activeNearbyFilters.every(tags.contains);
           }).toList();
 
-    filtered.sort((a, b) => _nearbyOfferScore(b).compareTo(_nearbyOfferScore(a)));
+    filtered
+        .sort((a, b) => _nearbyOfferScore(b).compareTo(_nearbyOfferScore(a)));
     return filtered;
   }
 
@@ -1063,7 +1101,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             : 0.4;
     final hintScore = _activeNearbyFilters.isEmpty
         ? 0.5
-        : _activeNearbyFilters.where(post.tags.contains).length / _activeNearbyFilters.length;
+        : _activeNearbyFilters.where(post.tags.contains).length /
+            _activeNearbyFilters.length;
 
     return (0.35 * distanceScore) +
         (0.25 * freshnessScore) +
@@ -1131,7 +1170,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                   ),
                   TextButton(
                     onPressed: _loadWeekMealPlan,
-                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reload')),
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'reload')),
                   ),
                 ],
               ),
@@ -1142,8 +1182,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
             itemCount: 7,
             itemBuilder: (context, i) {
-              final dayPlan =
-                  _weekPlan.getDay(i) ?? DayPlan(date: _weekPlan.weekStart.add(Duration(days: i)));
+              final dayPlan = _weekPlan.getDay(i) ??
+                  DayPlan(date: _weekPlan.weekStart.add(Duration(days: i)));
               final card = _DayPlanCard(
                 dayPlan: dayPlan,
                 onAddMeal: () => _openAddMealForDay(context, dayPlan.date),
@@ -1155,7 +1195,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 },
                 onTapMeal: (meal) => _showMealDetail(meal),
               );
-              
+
               return EntranceAnimation(
                 delayMs: i * 60,
                 duration: const Duration(milliseconds: 400),
@@ -1203,8 +1243,18 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
   String _monthName(int month) {
     const months = [
-      'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-      'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+      'Januar',
+      'Februar',
+      'März',
+      'April',
+      'Mai',
+      'Juni',
+      'Juli',
+      'August',
+      'September',
+      'Oktober',
+      'November',
+      'Dezember'
     ];
     return months[month - 1];
   }
@@ -1355,14 +1405,16 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     );
 
     if (result == null) {
-      _showSnack(_service.lastSyncError ?? 'Empfehlung konnte nicht gespeichert werden.');
+      _showSnack(_service.lastSyncError ??
+          'Empfehlung konnte nicht gespeichert werden.');
       return;
     }
 
     setState(() {
       final idx = _recipes.indexWhere((r) => r.id == recipe.id);
       if (idx == -1) return;
-      final updated = List<String>.from(_recipes[idx].likedByUserIds)..add(_myUserId);
+      final updated = List<String>.from(_recipes[idx].likedByUserIds)
+        ..add(_myUserId);
       _recipes[idx] = _recipes[idx].copyWith(
         likedByUserIds: updated,
         ratingCount: _recipes[idx].ratingCount + 1,
@@ -1441,7 +1493,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
           if (!mounted) return false;
           if (created == null) {
-            _showSnack(_service.lastSyncError ?? 'Rezept konnte nicht geteilt werden.');
+            _showSnack(_service.lastSyncError ??
+                'Rezept konnte nicht geteilt werden.');
             return false;
           }
 
@@ -1562,7 +1615,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             ElevatedButton.icon(
               onPressed: () => onRetry(),
               icon: const Icon(Icons.refresh_rounded),
-              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'reload')),
+              label: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'reload')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _brand,
                 foregroundColor: Colors.white,
@@ -1614,7 +1668,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     );
   }
 
-  Future<void> _showReservationActionSheet(FoodSharePost post, int index) async {
+  Future<void> _showReservationActionSheet(
+      FoodSharePost post, int index) async {
     final action = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1648,18 +1703,21 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             const SizedBox(height: 18),
             FilledButton(
               onPressed: () => Navigator.of(context).pop('complete'),
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF16A34A)),
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'confirm_pickup')),
+              style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF16A34A)),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'confirm_pickup')),
             ),
             const SizedBox(height: 10),
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop('cancel'),
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel_reservation')),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'cancel_reservation')),
             ),
             const SizedBox(height: 6),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Schliessen'),
+              child: Text(_t('finance_close')),
             ),
           ],
         ),
@@ -1686,7 +1744,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     }
 
     final reservedPortions = (result['reservedPortions'] as num?)?.toInt() ?? 0;
-    final remaining = (post.totalPortions - reservedPortions).clamp(0, post.totalPortions);
+    final remaining =
+        (post.totalPortions - reservedPortions).clamp(0, post.totalPortions);
     if (!mounted) return;
     setState(() {
       _posts[index] = post.copyWith(
@@ -1704,7 +1763,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     );
 
     if (!ok) {
-      _showSnack(_service.lastSyncError ?? 'Reservierung konnte nicht aufgehoben werden');
+      _showSnack(_service.lastSyncError ??
+          'Reservierung konnte nicht aufgehoben werden');
       return;
     }
 
@@ -1712,8 +1772,10 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       recipeId: post.id,
       userId: _myUserId,
     );
-    final reservedPortions = (summary?['reservedPortions'] as num?)?.toInt() ?? 0;
-    final remaining = (post.totalPortions - reservedPortions).clamp(0, post.totalPortions);
+    final reservedPortions =
+        (summary?['reservedPortions'] as num?)?.toInt() ?? 0;
+    final remaining =
+        (post.totalPortions - reservedPortions).clamp(0, post.totalPortions);
     if (!mounted) return;
     setState(() {
       _posts[index] = post.copyWith(
@@ -1731,7 +1793,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     );
 
     if (!ok) {
-      _showSnack(_service.lastSyncError ?? 'Abholung konnte nicht bestaetigt werden');
+      _showSnack(
+          _service.lastSyncError ?? 'Abholung konnte nicht bestaetigt werden');
       return;
     }
 
@@ -1746,7 +1809,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
   }
 
   Future<void> _showComments(FoodSharePost post) async {
-    final backendComments = await _service.fetchOfferComments(recipeId: post.id);
+    final backendComments =
+        await _service.fetchOfferComments(recipeId: post.id);
     final hydratedComments = backendComments.map((item) {
       final authorId = (item['userId'] ?? '').toString();
       return FoodShareComment(
@@ -1786,7 +1850,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           );
 
           if (created == null) {
-            _showSnack(_service.lastSyncError ?? 'Kommentar konnte nicht gespeichert werden');
+            _showSnack(_service.lastSyncError ??
+                'Kommentar konnte nicht gespeichert werden');
             return false;
           }
 
@@ -1794,14 +1859,16 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           if (idx == -1) return false;
           final authorId = (created['userId'] ?? _myUserId).toString();
           final newComment = FoodShareComment(
-            id: (created['id'] ?? 'c-${DateTime.now().millisecondsSinceEpoch}').toString(),
+            id: (created['id'] ?? 'c-${DateTime.now().millisecondsSinceEpoch}')
+                .toString(),
             authorId: authorId,
             authorName: _getUserDisplayName(authorId),
             authorInitials: _getInitials(authorId),
             authorColor: _getColorForAuthor(authorId),
             text: text,
             createdAt: created['createdAt'] is String
-                ? DateTime.tryParse(created['createdAt'] as String) ?? DateTime.now()
+                ? DateTime.tryParse(created['createdAt'] as String) ??
+                    DateTime.now()
                 : DateTime.now(),
           );
           if (!mounted) return false;
@@ -1837,7 +1904,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              title: const Text('Angebot melden'),
+              title: Text(_t('satt_report_offer')),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1876,11 +1943,11 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Abbrechen'),
+                  child: Text(_t('cancel')),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Melden'),
+                  child: Text(_t('satt_report')),
                 ),
               ],
             );
@@ -1915,7 +1982,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     _showSnack(
       ok
           ? 'Danke, wir pruefen diese Meldung.'
-          : (_service.lastSyncError ?? 'Meldung konnte nicht gespeichert werden.'),
+          : (_service.lastSyncError ??
+              'Meldung konnte nicht gespeichert werden.'),
     );
   }
 
@@ -1925,18 +1993,18 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Angebot ausblenden?'),
+        title: Text(_t('satt_hide_offer')),
         content: const Text(
           'Dieses Angebot wird nur für dich ausgeblendet und später nicht mehr im Feed angezeigt.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(_t('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Ausblenden'),
+            child: Text(_t('satt_hide')),
           ),
         ],
       ),
@@ -2242,9 +2310,11 @@ class _PostCardState extends State<_PostCard>
                           ),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: _trustColorForLevel(post.authorTrustLevel).withValues(alpha: 0.12),
+                              color: _trustColorForLevel(post.authorTrustLevel)
+                                  .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
@@ -2252,7 +2322,8 @@ class _PostCardState extends State<_PostCard>
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: _trustColorForLevel(post.authorTrustLevel),
+                                color:
+                                    _trustColorForLevel(post.authorTrustLevel),
                               ),
                             ),
                           ),
@@ -2362,7 +2433,8 @@ class _PostCardState extends State<_PostCard>
 
                 // Pickup time
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF3E8),
                     borderRadius: BorderRadius.circular(10),
@@ -2412,9 +2484,8 @@ class _PostCardState extends State<_PostCard>
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isLiked
-                                    ? _brand
-                                    : const Color(0xFF8A9AB0),
+                                color:
+                                    isLiked ? _brand : const Color(0xFF8A9AB0),
                               ),
                             ),
                           ],
@@ -2468,10 +2539,9 @@ class _PostCardState extends State<_PostCard>
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed:
-                              post.isAvailable || post.isReservedByMe
-                                  ? widget.onAbholen
-                                  : null,
+                          onPressed: post.isAvailable || post.isReservedByMe
+                              ? widget.onAbholen
+                              : null,
                           child: Text(
                             post.isReservedByMe
                                 ? '✓ Reserviert'
@@ -2503,31 +2573,31 @@ class _PostCardState extends State<_PostCard>
                           ),
                         ),
                       ),
-                      if (!widget.isOwner && widget.onReport != null)
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'report') {
-                              widget.onReport?.call();
-                            } else if (value == 'hide') {
-                              widget.onHide?.call();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            if (widget.onHide != null)
-                              const PopupMenuItem<String>(
-                                value: 'hide',
-                                child: Text('Aus Feed ausblenden'),
-                              ),
-                            const PopupMenuItem<String>(
-                              value: 'report',
-                              child: Text('Angebot melden'),
+                    if (!widget.isOwner && widget.onReport != null)
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'report') {
+                            widget.onReport?.call();
+                          } else if (value == 'hide') {
+                            widget.onHide?.call();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          if (widget.onHide != null)
+                            PopupMenuItem<String>(
+                              value: 'hide',
+                              child: Text(_t('satt_hide_from_feed')),
                             ),
-                          ],
-                          icon: const Icon(
-                            Icons.more_horiz_rounded,
-                            color: Color(0xFF8A9AB0),
+                          PopupMenuItem<String>(
+                            value: 'report',
+                            child: Text(_t('satt_report_offer')),
                           ),
+                        ],
+                        icon: const Icon(
+                          Icons.more_horiz_rounded,
+                          color: Color(0xFF8A9AB0),
                         ),
+                      ),
                   ],
                 ),
               ],
@@ -2892,12 +2962,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 // ============================================================
 
 class _CreatePostSheet extends StatefulWidget {
-  final Future<bool> Function(
-  String title,
-  String description,
-  int portions,
-  String pickupWindow,
-  List<String> infoTags) onSubmit;
+  final Future<bool> Function(String title, String description, int portions,
+      String pickupWindow, List<String> infoTags) onSubmit;
 
   const _CreatePostSheet({required this.onSubmit});
 
@@ -2969,7 +3035,6 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               ),
             ),
             const SizedBox(height: 20),
-
             _label('Gericht'),
             const SizedBox(height: 6),
             TextField(
@@ -2977,17 +3042,15 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               decoration: _inputDeco('z. B. Selbstgemachte Lasagne 🍝'),
             ),
             const SizedBox(height: 14),
-
             _label('Beschreibung'),
             const SizedBox(height: 6),
             TextField(
               controller: _descCtrl,
               maxLines: 3,
               decoration: _inputDeco(
-                'Zutaten, besondere Hinweise (vegan, glutenfrei, scharf...)'),
+                  'Zutaten, besondere Hinweise (vegan, glutenfrei, scharf...)'),
             ),
             const SizedBox(height: 14),
-
             _label('Wie viele Portionen?'),
             const SizedBox(height: 8),
             Row(
@@ -3016,7 +3079,6 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               ],
             ),
             const SizedBox(height: 14),
-
             _label('Hinweise für Eltern'),
             const SizedBox(height: 8),
             Wrap(
@@ -3040,12 +3102,12 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                   side: BorderSide(
                     color: selected ? _brand : const Color(0xFFE5E7EB),
                   ),
-                  labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  labelStyle: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
                 );
               }).toList(),
             ),
             const SizedBox(height: 14),
-
             _label('Abholzeit'),
             const SizedBox(height: 8),
             Wrap(
@@ -3056,8 +3118,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                 return GestureDetector(
                   onTap: () => setState(() => _pickupWindow = p),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: selected ? _brandLight : const Color(0xFFF0F4F8),
                       border: Border.all(
@@ -3079,7 +3141,6 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               }).toList(),
             ),
             const SizedBox(height: 24),
-
             SizedBox(
               width: double.infinity,
               child: FilledButton(
@@ -3183,8 +3244,8 @@ class _RecipeCardState extends State<_RecipeCard>
     super.initState();
     _likeCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 200));
-    _likeScale = Tween<double>(begin: 1, end: 1.4).animate(
-        CurvedAnimation(parent: _likeCtrl, curve: Curves.elasticOut));
+    _likeScale = Tween<double>(begin: 1, end: 1.4)
+        .animate(CurvedAnimation(parent: _likeCtrl, curve: Curves.elasticOut));
   }
 
   @override
@@ -3208,7 +3269,8 @@ class _RecipeCardState extends State<_RecipeCard>
           color: _cardBg,
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
-            BoxShadow(color: Color(0x0A000000), blurRadius: 12, offset: Offset(0, 4)),
+            BoxShadow(
+                color: Color(0x0A000000), blurRadius: 12, offset: Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -3218,7 +3280,8 @@ class _RecipeCardState extends State<_RecipeCard>
             Container(
               height: 130,
               decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
                 gradient: LinearGradient(
                   colors: [
                     recipe.authorColor.withValues(alpha: 0.12),
@@ -3229,28 +3292,36 @@ class _RecipeCardState extends State<_RecipeCard>
               child: Stack(
                 children: [
                   Center(
-                    child: Text(recipe.imageEmoji, style: const TextStyle(fontSize: 60)),
+                    child: Text(recipe.imageEmoji,
+                        style: const TextStyle(fontSize: 60)),
                   ),
                   // Difficulty badge
                   Positioned(
-                    top: 12, left: 12,
+                    top: 12,
+                    left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: recipe.difficultyColor.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         recipe.difficultyLabel,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white),
                       ),
                     ),
                   ),
                   // Time badge
                   Positioned(
-                    top: 12, right: 12,
+                    top: 12,
+                    right: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
@@ -3258,11 +3329,15 @@ class _RecipeCardState extends State<_RecipeCard>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.schedule_rounded, size: 12, color: Color(0xFF516072)),
+                          const Icon(Icons.schedule_rounded,
+                              size: 12, color: Color(0xFF516072)),
                           const SizedBox(width: 3),
                           Text(
                             '${recipe.durationMinutes} min',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF516072)),
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF516072)),
                           ),
                         ],
                       ),
@@ -3282,18 +3357,27 @@ class _RecipeCardState extends State<_RecipeCard>
                     children: [
                       CircleAvatar(
                         radius: 14,
-                        backgroundColor: recipe.authorColor.withValues(alpha: 0.15),
+                        backgroundColor:
+                            recipe.authorColor.withValues(alpha: 0.15),
                         child: Text(recipe.authorInitials,
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: recipe.authorColor)),
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: recipe.authorColor)),
                       ),
                       const SizedBox(width: 8),
                       Text(recipe.authorName,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF516072))),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF516072))),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _trustColorForLevel(recipe.authorTrustLevel).withValues(alpha: 0.12),
+                          color: _trustColorForLevel(recipe.authorTrustLevel)
+                              .withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -3308,7 +3392,8 @@ class _RecipeCardState extends State<_RecipeCard>
                       const Spacer(),
                       if (recipe.ratingCount > 0)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFF7ED),
                             borderRadius: BorderRadius.circular(999),
@@ -3328,12 +3413,16 @@ class _RecipeCardState extends State<_RecipeCard>
 
                   // Title
                   Text(recipe.title,
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF1A2A3A))),
+                      style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1A2A3A))),
                   const SizedBox(height: 4),
                   Text(recipe.description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF516072), height: 1.4)),
+                      style: const TextStyle(
+                          fontSize: 13, color: Color(0xFF516072), height: 1.4)),
 
                   if (familySummary != null) ...[
                     const SizedBox(height: 8),
@@ -3352,7 +3441,9 @@ class _RecipeCardState extends State<_RecipeCard>
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
-                      children: visibleInfoTags.map((tag) => _buildFoodInfoChip(tag)).toList(),
+                      children: visibleInfoTags
+                          .map((tag) => _buildFoodInfoChip(tag))
+                          .toList(),
                     ),
                   ],
 
@@ -3383,8 +3474,11 @@ class _RecipeCardState extends State<_RecipeCard>
                           child: Row(
                             children: [
                               Icon(
-                                isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                color: isLiked ? _brand : const Color(0xFF8A9AB0),
+                                isLiked
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                color:
+                                    isLiked ? _brand : const Color(0xFF8A9AB0),
                                 size: 20,
                               ),
                               const SizedBox(width: 4),
@@ -3392,7 +3486,9 @@ class _RecipeCardState extends State<_RecipeCard>
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: isLiked ? _brand : const Color(0xFF8A9AB0))),
+                                      color: isLiked
+                                          ? _brand
+                                          : const Color(0xFF8A9AB0))),
                             ],
                           ),
                         ),
@@ -3402,22 +3498,30 @@ class _RecipeCardState extends State<_RecipeCard>
                       GestureDetector(
                         onTap: widget.onSave,
                         child: Icon(
-                          recipe.isSavedByMe ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                          color: recipe.isSavedByMe ? _brand : const Color(0xFF8A9AB0),
+                          recipe.isSavedByMe
+                              ? Icons.bookmark_rounded
+                              : Icons.bookmark_border_rounded,
+                          color: recipe.isSavedByMe
+                              ? _brand
+                              : const Color(0xFF8A9AB0),
                           size: 22,
                         ),
                       ),
                       const SizedBox(width: 12),
                       // View Recipe button
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           color: _brandLight,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Text(
                           'Rezept ansehen →',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _brand),
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: _brand),
                         ),
                       ),
                     ],
@@ -3457,7 +3561,8 @@ class _RecipeDetailSheet extends StatelessWidget {
           Container(
             height: 120,
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
               gradient: LinearGradient(
                 colors: [
                   recipe.authorColor.withValues(alpha: 0.15),
@@ -3467,9 +3572,12 @@ class _RecipeDetailSheet extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                Center(child: Text(recipe.imageEmoji, style: const TextStyle(fontSize: 56))),
+                Center(
+                    child: Text(recipe.imageEmoji,
+                        style: const TextStyle(fontSize: 56))),
                 Positioned(
-                  top: 12, right: 12,
+                  top: 12,
+                  right: 12,
                   child: IconButton(
                     icon: const Icon(Icons.close_rounded),
                     onPressed: () => Navigator.pop(context),
@@ -3485,16 +3593,21 @@ class _RecipeDetailSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(recipe.title,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1A2A3A))),
+                      style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1A2A3A))),
                   const SizedBox(height: 4),
                   Text('von ${recipe.authorName}',
-                      style: const TextStyle(color: Color(0xFF8A9AB0), fontSize: 13)),
+                      style: const TextStyle(
+                          color: Color(0xFF8A9AB0), fontSize: 13)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _statChip(Icons.verified_user_rounded, recipe.authorTrustLabel),
+                      _statChip(
+                          Icons.verified_user_rounded, recipe.authorTrustLabel),
                       if (recipe.authorPublishedRecipesCount > 0)
                         _statChip(Icons.menu_book_rounded,
                             '${recipe.authorPublishedRecipesCount} Rezepte'),
@@ -3521,7 +3634,9 @@ class _RecipeDetailSheet extends StatelessWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: visibleInfoTags.map((tag) => _buildFoodInfoChip(tag)).toList(),
+                      children: visibleInfoTags
+                          .map((tag) => _buildFoodInfoChip(tag))
+                          .toList(),
                     ),
                     const SizedBox(height: 14),
                   ],
@@ -3529,20 +3644,24 @@ class _RecipeDetailSheet extends StatelessWidget {
                   // Stats row
                   Row(
                     children: [
-                      _statChip(Icons.schedule_rounded, '${recipe.durationMinutes} min'),
+                      _statChip(Icons.schedule_rounded,
+                          '${recipe.durationMinutes} min'),
                       const SizedBox(width: 8),
-                      _statChip(Icons.bar_chart_rounded, recipe.difficultyLabel),
+                      _statChip(
+                          Icons.bar_chart_rounded, recipe.difficultyLabel),
                       const SizedBox(width: 8),
                       _statChip(Icons.star_rounded,
                           '${recipe.averageRating.toStringAsFixed(1)} (${recipe.ratingCount})'),
                       const SizedBox(width: 8),
-                      _statChip(Icons.visibility_rounded, '${recipe.viewCount}'),
+                      _statChip(
+                          Icons.visibility_rounded, '${recipe.viewCount}'),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   Text(recipe.description,
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF516072), height: 1.5)),
+                      style: const TextStyle(
+                          fontSize: 14, color: Color(0xFF516072), height: 1.5)),
                   if (familySummary != null) ...[
                     const SizedBox(height: 12),
                     Container(
@@ -3567,66 +3686,93 @@ class _RecipeDetailSheet extends StatelessWidget {
 
                   // Ingredients
                   const Text('🛒 Zutaten',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1A2A3A))),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1A2A3A))),
                   const SizedBox(height: 10),
-                  ...recipe.ingredients.asMap().entries.map((e) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 24, height: 24,
-                          decoration: BoxDecoration(
-                            color: _brandLight,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Center(
-                            child: Text('${e.key + 1}',
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _brand)),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(e.value,
-                              style: const TextStyle(fontSize: 14, color: Color(0xFF1A2A3A))),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
+                  ...recipe.ingredients
+                      .asMap()
+                      .entries
+                      .map((e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: _brandLight,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Center(
+                                    child: Text('${e.key + 1}',
+                                        style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: _brand)),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(e.value,
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF1A2A3A))),
+                                ),
+                              ],
+                            ),
+                          ))
+                      .toList(),
 
                   const SizedBox(height: 20),
 
                   // Steps
                   const Text('👨‍🍳 Zubereitung',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1A2A3A))),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1A2A3A))),
                   const SizedBox(height: 10),
-                  ...recipe.steps.asMap().entries.map((e) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 28, height: 28,
-                          decoration: BoxDecoration(
-                            color: _brand,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text('${e.key + 1}',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(e.value,
-                                style: const TextStyle(fontSize: 14, color: Color(0xFF516072), height: 1.5)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
+                  ...recipe.steps
+                      .asMap()
+                      .entries
+                      .map((e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: _brand,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Center(
+                                    child: Text('${e.key + 1}',
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white)),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(e.value,
+                                        style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF516072),
+                                            height: 1.5)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ))
+                      .toList(),
 
                   const SizedBox(height: 16),
                 ],
@@ -3650,7 +3796,9 @@ class _RecipeDetailSheet extends StatelessWidget {
         children: [
           Icon(icon, size: 13, color: _brand),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _brand)),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w600, color: _brand)),
         ],
       ),
     );
@@ -3706,7 +3854,18 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
   String _emoji = '🍲';
   final Set<String> _selectedInfoTags = {'kinderfreundlich'};
 
-  final List<String> _emojis = ['🍲', '🍝', '🥗', '🍱', '🥘', '🍜', '🥙', '🫕', '🍛', '🥞'];
+  final List<String> _emojis = [
+    '🍲',
+    '🍝',
+    '🥗',
+    '🍱',
+    '🥘',
+    '🍜',
+    '🥙',
+    '🫕',
+    '🍛',
+    '🥞'
+  ];
 
   @override
   void dispose() {
@@ -3721,64 +3880,115 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 60, 16, 16),
-      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(context).viewInsets.bottom),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      padding: EdgeInsets.fromLTRB(
+          24, 24, 24, 24 + MediaQuery.of(context).viewInsets.bottom),
+      decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(24)),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             Center(
-              child: Container(width: 40, height: 4,
-                  decoration: BoxDecoration(color: const Color(0xFFE0E3E8), borderRadius: BorderRadius.circular(4))),
+              child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFE0E3E8),
+                      borderRadius: BorderRadius.circular(4))),
             ),
             const SizedBox(height: 16),
-            const Center(child: Text('📖 Rezept teilen',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1A2A3A)))),
+            const Center(
+                child: Text('📖 Rezept teilen',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1A2A3A)))),
             const SizedBox(height: 4),
-            const Center(child: Text('Teile dein Lieblingsrezept mit anderen Eltern',
-                style: TextStyle(color: Color(0xFF8A9AB0), fontSize: 13))),
+            Center(
+                child: Text(_t('satt_share_hint'),
+                    style: TextStyle(color: Color(0xFF8A9AB0), fontSize: 13))),
             const SizedBox(height: 20),
 
             // Emoji picker
-            const Text('Emoji wählen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+            Text(_t('satt_choose_emoji'),
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2A3A))),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: _emojis.map((e) => GestureDetector(
-                onTap: () => setState(() => _emoji = e),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: _emoji == e ? _brandLight : const Color(0xFFF0F4F8),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _emoji == e ? _brand : Colors.transparent, width: 1.5),
-                  ),
-                  child: Text(e, style: const TextStyle(fontSize: 22)),
-                ),
-              )).toList(),
+              children: _emojis
+                  .map((e) => GestureDetector(
+                        onTap: () => setState(() => _emoji = e),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: _emoji == e
+                                ? _brandLight
+                                : const Color(0xFFF0F4F8),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color:
+                                    _emoji == e ? _brand : Colors.transparent,
+                                width: 1.5),
+                          ),
+                          child: Text(e, style: const TextStyle(fontSize: 22)),
+                        ),
+                      ))
+                  .toList(),
             ),
             const SizedBox(height: 14),
 
-            const Text('Rezeptname', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+            const Text('Rezeptname',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2A3A))),
             const SizedBox(height: 6),
-            TextField(controller: _titleCtrl, decoration: _inputDeco('z. B. Mamas Linsensuppe 🍲')),
+            TextField(
+                controller: _titleCtrl,
+                decoration: _inputDeco('z. B. Mamas Linsensuppe 🍲')),
             const SizedBox(height: 12),
 
-            const Text('Kurze Beschreibung', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+            const Text('Kurze Beschreibung',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2A3A))),
             const SizedBox(height: 6),
-            TextField(controller: _descCtrl, maxLines: 2, decoration: _inputDeco('Was macht dieses Rezept besonders?')),
+            TextField(
+                controller: _descCtrl,
+                maxLines: 2,
+                decoration: _inputDeco('Was macht dieses Rezept besonders?')),
             const SizedBox(height: 12),
 
-            const Text('Kategorie', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+            const Text('Kategorie',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2A3A))),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
               initialValue: _category,
               items: [
-                DropdownMenuItem(value: 'breakfast', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'breakfast'))),
-                DropdownMenuItem(value: 'lunch', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'lunch'))),
-                DropdownMenuItem(value: 'dinner', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'dinner'))),
-                DropdownMenuItem(value: 'snack', child: Text(AppStringsManager.getString(languageService.currentLanguage, 'snack'))),
+                DropdownMenuItem(
+                    value: 'breakfast',
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'breakfast'))),
+                DropdownMenuItem(
+                    value: 'lunch',
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'lunch'))),
+                DropdownMenuItem(
+                    value: 'dinner',
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'dinner'))),
+                DropdownMenuItem(
+                    value: 'snack',
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'snack'))),
               ],
               onChanged: (value) {
                 if (value == null) return;
@@ -3788,7 +3998,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             ),
             const SizedBox(height: 12),
 
-            const Text('Hinweise für Eltern', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+            const Text('Hinweise für Eltern',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2A3A))),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -3811,22 +4025,37 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                   side: BorderSide(
                     color: selected ? _brand : const Color(0xFFE5E7EB),
                   ),
-                  labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  labelStyle: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
                 );
               }).toList(),
             ),
             const SizedBox(height: 12),
 
-            const Text('Zutaten (eine pro Zeile)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+            const Text('Zutaten (eine pro Zeile)',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2A3A))),
             const SizedBox(height: 6),
-            TextField(controller: _ingredientsCtrl, maxLines: 4,
-                decoration: _inputDeco('z. B.\n200g rote Linsen\n1 Zwiebel\n2 Karotten')),
+            TextField(
+                controller: _ingredientsCtrl,
+                maxLines: 4,
+                decoration: _inputDeco(
+                    'z. B.\n200g rote Linsen\n1 Zwiebel\n2 Karotten')),
             const SizedBox(height: 12),
 
-            const Text('Zubereitung (Schritt für Schritt, eine Zeile pro Schritt)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+            Text(_t('satt_preparation_steps'),
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2A3A))),
             const SizedBox(height: 6),
-            TextField(controller: _stepsCtrl, maxLines: 5,
-                decoration: _inputDeco('z. B.\nZwiebeln anbraten\nLinsen hinzufügen...')),
+            TextField(
+                controller: _stepsCtrl,
+                maxLines: 5,
+                decoration: _inputDeco(
+                    'z. B.\nZwiebeln anbraten\nLinsen hinzufügen...')),
             const SizedBox(height: 12),
 
             // Duration + Difficulty
@@ -3836,23 +4065,34 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Zeit (min)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+                      const Text('Zeit (min)',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A2A3A))),
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           IconButton.outlined(
-                            onPressed: () { if (_duration > 5) setState(() => _duration -= 5); },
+                            onPressed: () {
+                              if (_duration > 5) setState(() => _duration -= 5);
+                            },
                             icon: const Icon(Icons.remove_rounded, size: 18),
                             padding: const EdgeInsets.all(4),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Text('$_duration', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                            child: Text('$_duration',
+                                style: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w800)),
                           ),
                           IconButton.filled(
-                            style: IconButton.styleFrom(backgroundColor: _brand, padding: const EdgeInsets.all(4)),
+                            style: IconButton.styleFrom(
+                                backgroundColor: _brand,
+                                padding: const EdgeInsets.all(4)),
                             onPressed: () => setState(() => _duration += 5),
-                            icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                            icon: const Icon(Icons.add_rounded,
+                                size: 18, color: Colors.white),
                           ),
                         ],
                       ),
@@ -3863,7 +4103,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Portionen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+                      const Text('Portionen',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A2A3A))),
                       const SizedBox(height: 6),
                       Row(
                         children: [
@@ -3878,13 +4122,17 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Text(
                               '$_servings',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w800),
                             ),
                           ),
                           IconButton.filled(
-                            style: IconButton.styleFrom(backgroundColor: _brand, padding: const EdgeInsets.all(4)),
+                            style: IconButton.styleFrom(
+                                backgroundColor: _brand,
+                                padding: const EdgeInsets.all(4)),
                             onPressed: () => setState(() => _servings += 1),
-                            icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                            icon: const Icon(Icons.add_rounded,
+                                size: 18, color: Colors.white),
                           ),
                         ],
                       ),
@@ -3895,17 +4143,28 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Schwierigkeit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A2A3A))),
+                      const Text('Schwierigkeit',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A2A3A))),
                       const SizedBox(height: 6),
                       DropdownButton<RecipeDifficulty>(
                         value: _difficulty,
                         isExpanded: true,
                         underline: const SizedBox(),
                         items: RecipeDifficulty.values.map((d) {
-                          final labels = ['Einfach', 'Mittel', 'Fortgeschritten'];
-                          return DropdownMenuItem(value: d, child: Text(labels[d.index]));
+                          final labels = [
+                            'Einfach',
+                            'Mittel',
+                            'Fortgeschritten'
+                          ];
+                          return DropdownMenuItem(
+                              value: d, child: Text(labels[d.index]));
                         }).toList(),
-                        onChanged: (v) { if (v != null) setState(() => _difficulty = v); },
+                        onChanged: (v) {
+                          if (v != null) setState(() => _difficulty = v);
+                        },
                       ),
                     ],
                   ),
@@ -3920,15 +4179,22 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                 style: FilledButton.styleFrom(
                   backgroundColor: _brand,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () async {
                   final title = _titleCtrl.text.trim();
                   if (title.isEmpty) return;
                   final ingredients = _ingredientsCtrl.text
-                      .split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+                      .split('\n')
+                      .map((s) => s.trim())
+                      .where((s) => s.isNotEmpty)
+                      .toList();
                   final steps = _stepsCtrl.text
-                      .split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+                      .split('\n')
+                      .map((s) => s.trim())
+                      .where((s) => s.isNotEmpty)
+                      .toList();
                   final draft = _RecipeDraft(
                     title: title,
                     description: _descCtrl.text.trim(),
@@ -3951,8 +4217,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                           },
                         )
                         .toList(),
-                    steps: steps.isEmpty ? ['Zubereitung wird noch ergänzt'] : steps,
-                    tags: _buildDraftTags(_duration, _difficulty, _category, _selectedInfoTags),
+                    steps: steps.isEmpty
+                        ? ['Zubereitung wird noch ergänzt']
+                        : steps,
+                    tags: _buildDraftTags(
+                        _duration, _difficulty, _category, _selectedInfoTags),
                   );
 
                   final success = await widget.onSubmit(draft);
@@ -3961,8 +4230,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                     Navigator.pop(context);
                   }
                 },
-                child: const Text('Rezept teilen 📖',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+                child: Text(_t('satt_share_recipe'),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white)),
               ),
             ),
           ],
@@ -3991,9 +4263,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
       hintStyle: const TextStyle(color: Color(0xFFB0BBC8), fontSize: 13),
       filled: true,
       fillColor: const Color(0xFFF8FAFD),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: _brand, width: 1.5)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _brand, width: 1.5)),
     );
   }
 }
@@ -4023,7 +4297,9 @@ class _DayPlanCard extends StatelessWidget {
         color: dayPlan.isToday ? const Color(0xFFFFF1EE) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: dayPlan.isToday ? const Color(0xFFE8543A) : const Color(0xFFE8E8E8),
+          color: dayPlan.isToday
+              ? const Color(0xFFE8543A)
+              : const Color(0xFFE8E8E8),
           width: dayPlan.isToday ? 2 : 1,
         ),
       ),
@@ -4033,8 +4309,11 @@ class _DayPlanCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: dayPlan.isToday ? const Color(0xFFE8543A) : const Color(0xFFF5F5F5),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              color: dayPlan.isToday
+                  ? const Color(0xFFE8543A)
+                  : const Color(0xFFF5F5F5),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(14)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -4047,7 +4326,9 @@ class _DayPlanCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: dayPlan.isToday ? Colors.white : const Color(0xFF516072),
+                        color: dayPlan.isToday
+                            ? Colors.white
+                            : const Color(0xFF516072),
                       ),
                     ),
                     Text(
@@ -4055,14 +4336,17 @@ class _DayPlanCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: dayPlan.isToday ? Colors.white70 : const Color(0xFF8A9BA8),
+                        color: dayPlan.isToday
+                            ? Colors.white70
+                            : const Color(0xFF8A9BA8),
                       ),
                     ),
                   ],
                 ),
                 if (dayPlan.isToday)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
@@ -4098,7 +4382,8 @@ class _DayPlanCard extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: onAddMeal,
                     icon: const Icon(Icons.add_rounded),
-                    label: Text(AppStringsManager.getString(languageService.currentLanguage, 'add_meal')),
+                    label: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'add_meal')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFE8543A),
                       side: const BorderSide(color: Color(0xFFE8543A)),
@@ -4113,18 +4398,19 @@ class _DayPlanCard extends StatelessWidget {
               child: Column(
                 children: [
                   ...dayPlan.meals.map((meal) => _MealListItem(
-                    meal: meal,
-                    onTap: () => onTapMeal(meal),
-                    onRemove: () => onRemoveMeal(meal.type),
-                  )),
+                        meal: meal,
+                        onTap: () => onTapMeal(meal),
+                        onRemove: () => onRemoveMeal(meal.type),
+                      )),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: onAddMeal,
                         icon: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('Hinzufügen'),
+                        label: Text(_t('satt_add')),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFFE8543A),
                           side: const BorderSide(color: Color(0xFFE8543A)),
@@ -4183,7 +4469,8 @@ class _MealListItem extends StatelessWidget {
                         color: Color(0xFF1A2A3A),
                       ),
                     ),
-                    if (meal.description != null && meal.description!.isNotEmpty)
+                    if (meal.description != null &&
+                        meal.description!.isNotEmpty)
                       Text(
                         meal.description!,
                         style: const TextStyle(
@@ -4350,7 +4637,8 @@ class _AddMealSheetState extends State<_AddMealSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE8543A), width: 2),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFE8543A), width: 2),
                   ),
                 ),
               ),
@@ -4369,7 +4657,8 @@ class _AddMealSheetState extends State<_AddMealSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE8543A), width: 2),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFE8543A), width: 2),
                   ),
                 ),
                 minLines: 2,
@@ -4390,7 +4679,8 @@ class _AddMealSheetState extends State<_AddMealSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE8543A), width: 2),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFE8543A), width: 2),
                   ),
                 ),
                 minLines: 3,
@@ -4540,4 +4830,3 @@ class _MealDetailSheet extends StatelessWidget {
     );
   }
 }
-

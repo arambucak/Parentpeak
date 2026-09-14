@@ -1,5 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Wird geworfen, wenn das tägliche KI-Limit erreicht ist. Erlaubt der UI,
+/// eine freundliche, spezifische Meldung statt einer generischen zu zeigen.
+class AiRateLimitException implements Exception {
+  final String message;
+  const AiRateLimitException(this.message);
+  @override
+  String toString() => message;
+}
+
 /// Rate limiter for Gemini AI requests.
 /// Prevents API key exhaustion at scale.
 ///
@@ -11,7 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AIRateLimiter {
   static const String _countKey = 'ai_rate.daily_count';
   static const String _dateKey = 'ai_rate.date';
-  static const int defaultDailyLimit = 25;
+  static const int defaultDailyLimit = 50;
 
   static int _dailyLimit = defaultDailyLimit;
   static int _todayCount = 0;

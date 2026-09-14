@@ -6,6 +6,8 @@ import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/create_community_event_screen.dart';
 import 'package:parentpeak/ui/events_activities_screen.dart';
 import 'package:parentpeak/ui/widgets/event_attendees_widget.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 /// Home-Widget: Events in deiner Nähe — Carousel + "Event eintragen" CTA.
 ///
@@ -21,6 +23,9 @@ class EventsCarouselWidget extends StatefulWidget {
 class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
   List<CommunityEvent> _events = [];
   bool _loading = true;
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   String _city = 'Berlin';
 
   @override
@@ -60,7 +65,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Events in deiner Nähe',
+              Text(_t('events_nearby'),
                   style: theme.textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w800)),
               Text(_city,
@@ -73,7 +78,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                 context,
                 MaterialPageRoute(
                     builder: (_) => const EventsActivitiesScreen())),
-            child: const Text('Alle',
+            child: Text(_t('all'),
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
           ),
         ]),
@@ -106,7 +111,8 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
   }
 
   Widget _eventCard(ThemeData theme, CommunityEvent event) {
-    return GestureDetector(behavior: HitTestBehavior.opaque, 
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.push(context,
           MaterialPageRoute(builder: (_) => const EventsActivitiesScreen())),
       child: Container(
@@ -174,7 +180,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                   color: const Color(0xFF16A34A).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('Kostenlos',
+                child: Text(_t('events_free'),
                     style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
@@ -209,7 +215,8 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
   }
 
   Widget _createEventCard(ThemeData theme) {
-    return GestureDetector(behavior: HitTestBehavior.opaque, 
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
@@ -244,14 +251,14 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                   color: Color(0xFF8B5CF6), size: 24),
             ),
             const SizedBox(height: 10),
-            Text('Event\neintragen',
+            Text(_t('events_add_event_short'),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF8B5CF6),
                     height: 1.3)),
             const SizedBox(height: 4),
-            Text('Kostenlos',
+            Text(_t('events_free'),
                 style: theme.textTheme.labelSmall?.copyWith(
                     color: const Color(0xFF8B5CF6).withValues(alpha: 0.6))),
           ],
@@ -275,12 +282,12 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
         child: Column(children: [
           const Text('\u{1F50D}', style: TextStyle(fontSize: 28)),
           const SizedBox(height: 10),
-          Text('Noch keine Events in deiner Nähe',
+          Text(_t('events_no_nearby'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center),
           const SizedBox(height: 4),
-          Text('Sei der Erste! Trage ein Event ein und hilf anderen Familien.',
+          Text(_t('events_be_first'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline),
               textAlign: TextAlign.center),
@@ -291,7 +298,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                 MaterialPageRoute(
                     builder: (_) => const CreateCommunityEventScreen())),
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Event eintragen'),
+            label: Text(_t('events_add_event')),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF8B5CF6),
               shape: RoundedRectangleBorder(
