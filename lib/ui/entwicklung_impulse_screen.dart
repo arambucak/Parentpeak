@@ -13,6 +13,7 @@ import 'package:parentpeak/models_and_widgets/weekly_impulse_feature.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:parentpeak/models/child_development_data.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/development_question_localizations.dart';
 import 'package:parentpeak/ui/widgets/eltern_wissen_widget.dart';
 import 'package:parentpeak/ui/widgets/expert_bibliothek_section.dart';
 import 'package:parentpeak/ui/widgets/development_progress_chart.dart';
@@ -97,7 +98,18 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       if (_isUsingFallbackImpulse) {
         _impulse = _buildLocalFallbackImpulse();
       }
+      if (_childProfile != null) {
+        _devDomains = _localizedDevelopmentDomains(_childProfile!.ageGroupId);
+      }
     });
+  }
+
+  List<DevDomain> _localizedDevelopmentDomains(String ageGroupId) {
+    return localizeDevelopmentDomains(
+      DevelopmentQuestionBank.getQuestionsForAge(ageGroupId),
+      languageService.currentLanguage,
+      ageGroupId,
+    );
   }
 
   Future<void> _loadImpulse() async {
@@ -982,8 +994,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         _childProfile = ChildProfile(
             name: name, birthDate: birth, careType: care ?? 'zuhause');
         _hasSpecialNeeds = prefs.getBool('dev.child_special_needs') ?? false;
-        _devDomains = DevelopmentQuestionBank.getQuestionsForAge(
-            _childProfile!.ageGroupId);
+        _devDomains = _localizedDevelopmentDomains(_childProfile!.ageGroupId);
       }
     }
     final saved = prefs.getString('dev.answers.v3');
@@ -1016,8 +1027,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       _childProfile =
           ChildProfile(name: name, birthDate: birth, careType: care);
       _hasSpecialNeeds = hasSpecialNeeds;
-      _devDomains =
-          DevelopmentQuestionBank.getQuestionsForAge(_childProfile!.ageGroupId);
+      _devDomains = _localizedDevelopmentDomains(_childProfile!.ageGroupId);
       _devAnswers.clear();
       _devDone = false;
       _aiReport = null;
@@ -1470,20 +1480,23 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   border: Border.all(
                       color: const Color(0xFF8B5CF6).withValues(alpha: 0.2)),
                 ),
-                child: CheckboxListTile(
-                  value: hasSpecialNeeds,
-                  onChanged: (v) =>
-                      setLocal(() => hasSpecialNeeds = v ?? false),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  activeColor: const Color(0xFF8B5CF6),
-                  title: Text(_t('development_special_needs'),
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  subtitle: Text(
-                    _t('development_special_needs_hint'),
-                    style: const TextStyle(fontSize: 11, height: 1.4),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: CheckboxListTile(
+                    value: hasSpecialNeeds,
+                    onChanged: (v) =>
+                        setLocal(() => hasSpecialNeeds = v ?? false),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    activeColor: const Color(0xFF8B5CF6),
+                    title: Text(_t('development_special_needs'),
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                      _t('development_special_needs_hint'),
+                      style: const TextStyle(fontSize: 11, height: 1.4),
+                    ),
                   ),
                 ),
               ),

@@ -724,6 +724,1148 @@ const DAILY_IMPULSE_POOL = [
   },
 ];
 
+// Per-language overlay for DAILY_IMPULSE_POOL entries, keyed by topic `key`.
+// Only translatable text fields are overridden; `category`/`key` stay as-is.
+const DAILY_IMPULSE_TRANSLATIONS = {
+  en: {
+    gfk_warum: {
+      title: 'Calmly handling "why" questions',
+      parent_lens: "Your child asks 'why?' a hundred times a day. It's not to annoy you — it's because their brain is building connections. They want to understand the world.",
+      parent_tips: [
+        "Use nonviolent communication (NVC): name your own feelings and needs clearly instead of scolding.",
+        "Answer 'why' questions briefly and simply — your child is looking for logic, not a scientific lecture.",
+        "Set boundaries lovingly through personal presence ('I don't want you to hit'), not through punishment.",
+      ],
+      practical_tip: "At the next 'why' question: first mirror the feeling ('You're curious!'), then answer in one sentence.",
+      discussion_body: "What short, calm phrase helps you when your child asks 'why' for the tenth time?",
+      companion_quick: "Today, choose just one calm answer to a why-question and stay deliberately brief afterward.",
+      companion_reflect: "When did your child seek the most connections today — and how could you calmly provide guidance?",
+    },
+    gfk_grenzen: {
+      title: 'Setting boundaries lovingly and clearly',
+      parent_lens: "Loving boundaries are not a contradiction. Children need both: the feeling of being loved AND clear guidance on what isn't okay. Boundaries without connection feel like walls — boundaries with connection feel like guardrails.",
+      parent_tips: [
+        "Name your child's feeling first, then the boundary: 'I see you're angry. And still: hitting isn't okay.'",
+        "Stay physically calm — your tone is louder than your words. A deep breath before reacting helps.",
+        "Announce consequences and follow through. Don't threaten, state them: 'If you ... then ...'",
+      ],
+      practical_tip: "Practice a sentence with feeling + boundary today: 'I understand you want that. And: no.' — and stay calm while saying it.",
+      discussion_body: "How do you react when you reach your own limits? Which phrase helps you stay calm?",
+      companion_quick: "One deep breath before the next boundary reaction — that's already half the battle.",
+      companion_reflect: "Was there a situation today where a calm boundary worked better than a loud no?",
+    },
+    gfk_ichbotschaft: {
+      title: '"I" messages instead of "you" accusations',
+      parent_lens: "\"You\" messages (\"You're so loud!\") trigger defensiveness. \"I\" messages (\"I'm getting tired and need quiet\") open doors. Children listen more when they don't feel attacked.",
+      parent_tips: [
+        "Turn accusations into \"I\" messages: instead of \"You never listen\" → \"I don't feel heard and that makes me sad.\"",
+        "Share your need: \"I need a moment of quiet to think.\" Children understand needs remarkably well.",
+        "Practice in everyday life: rephrase three classic sentences as \"I\" messages — in the morning brushing teeth, at lunch, at bedtime.",
+      ],
+      practical_tip: "Today, pick a situation where you'd usually say \"You always...\" — and replace it with \"I feel ... because I need ...\"",
+      discussion_body: "Which \"you\" message is hardest for you to rephrase? What helps with that?",
+      companion_quick: "Name the feeling + the need — that's the formula for a real \"I\" message.",
+      companion_reflect: "Did an \"I\" message today trigger a reaction that surprised you?",
+    },
+    gfk_trotz: {
+      title: 'Calmly accompanying defiant phases',
+      parent_lens: "Defiance isn't rebellion — it's development. When a child lies on the floor screaming, their prefrontal cortex simply isn't mature enough yet to regulate the emotion. They need you as a co-regulator.",
+      parent_tips: [
+        "Stay physically close without forcing it: get down to their level, speak calmly, don't touch if the child refuses.",
+        "Avoid discussions in the middle of the storm. The conversation comes once they've calmed down.",
+        "Use 'feeling bridges': 'You wanted the ice cream. That was really important to you. I understand.'",
+      ],
+      practical_tip: "When your child is beside themselves: sit next to them. Don't leave, don't intervene — just be there. That alone helps regulate.",
+      discussion_body: "What helps you stay calm yourselves when your child is in the middle of an emotional outburst?",
+      companion_quick: "Three words for defiant phases: stay close. Breathe calmly. Wait it out.",
+      companion_reflect: "What cost you the most energy today — and what helped you stay calm through it?",
+    },
+    gfk_geschwister: {
+      title: 'Using sibling conflict as a learning field',
+      parent_lens: "Siblings argue — that's normal and even important. In conflict, children learn compromise, perspective-taking and self-assertion. Your role is moderator, not judge.",
+      parent_tips: [
+        "Don't take sides: 'I see you're both angry right now. I'll listen to you first, then you.'",
+        "Let children find their own solutions when the situation isn't escalating. Step in only when there's real danger.",
+        "Strengthen each child individually: regular 1:1 moments without siblings reduce jealousy long-term.",
+      ],
+      practical_tip: "At the next argument: ask both children 'What do you need right now?' — before deciding who's right.",
+      discussion_body: "How do you handle it when siblings argue? What works best for you?",
+      companion_quick: "Moderator instead of judge — that's your role in sibling conflicts.",
+      companion_reflect: "Was there a moment today when your children resolved a conflict themselves? What did you learn from it?",
+    },
+    gfk_gefühle: {
+      title: 'Naming and acknowledging feelings',
+      parent_lens: "Children who can name their feelings have a huge advantage: they can communicate what they need. This step — from feeling to speaking — needs practice and your support.",
+      parent_tips: [
+        "Use the 'feelings barometer': ask in the evening 'How was your day on a scale of 1-5?' — and share your own first.",
+        "Name your own feelings out loud: 'I'm a bit stressed right now because I have a lot to think about.' Modeling works.",
+        "Read children's books about feelings — and pause afterward: 'What do you think the character felt? And you?'",
+      ],
+      practical_tip: "Tonight, ask: 'What made you happy today? What made you sad or angry?' — and just listen.",
+      discussion_body: "Which feeling is especially hard for your child to name? How do you approach that?",
+      companion_quick: "Feel first, then name — the feelings ABC starts with you as a role model.",
+      companion_reflect: "Which feeling moment of your child did you want to hold onto today?",
+    },
+    gfk_nein: {
+      title: 'Saying no — without guilt',
+      parent_lens: "Parents who never say no raise children who don't know boundaries. A loving no shows your child: I take my own needs seriously — and so may you.",
+      parent_tips: [
+        "A no doesn't need a long explanation. A clear 'No, that's not possible right now' is complete.",
+        "Guilt after a no is a signal, not a mistake. Ask yourself: is the no really wrong — or just uncomfortable?",
+        "Practice saying no to other adults too (playdates, commitments) — your child learns from your example.",
+      ],
+      practical_tip: "Today, say no once, deliberately — without apologizing. Notice how it feels.",
+      discussion_body: "When is it hardest for you to say no — to your children, or to others?",
+      companion_quick: "A no to one thing is a yes to something more important — usually to yourself.",
+      companion_reflect: "Was there a no today that felt right in hindsight?",
+    },
+    inclusion_stärken: {
+      title: 'Seeing strengths instead of judging weaknesses',
+      parent_lens: "Every child has a unique constellation of strengths. As parents, we often see the trouble spots first — even though we could be the first to polish the rough diamond.",
+      parent_tips: [
+        "Tonight, write down 3 strengths of your child — not achievements, but character traits ('curious', 'caring', 'persistent').",
+        "Name strengths concretely and promptly: 'You were so patient just now — that's really great.'",
+        "Avoid comparisons with siblings or other children. Every developmental curve is unique.",
+      ],
+      practical_tip: "Talk to your child today about one of their strengths — not as praise, but as an observation: 'I saw today how you...'",
+      discussion_body: "Which hidden strength of your child would you like to share today?",
+      companion_quick: "Seeing strengths doesn't mean ignoring weaknesses — it means enabling growth.",
+      companion_reflect: "Which strength of your child surprised or impressed you today?",
+    },
+    inclusion_selbstwert: {
+      title: 'Building self-worth every day',
+      parent_lens: "Self-worth doesn't come from praise alone — it comes from the experience: 'I can do something. I matter. I belong.' You can build in all three experiences daily.",
+      parent_tips: [
+        "Let your child make small decisions: 'Do you want to do the tasks first or play first?' Autonomy = self-worth.",
+        "Show genuine interest: put the phone away, look at their face, ask questions. 10 minutes of full attention work wonders.",
+        "Celebrate the process, not just the result: 'You tried that for so long — that's the important part.'",
+      ],
+      practical_tip: "Today: 10 minutes of undivided attention for your child — no phone, no distraction, just interest.",
+      discussion_body: "What makes your child especially proud of themselves — and how do you support that feeling?",
+      companion_quick: "Self-worth doesn't come from the mirror, but from the eyes of the people who love us.",
+      companion_reflect: "In which moment today did your child show 'I can do this!'?",
+    },
+    inclusion_scheitern: {
+      title: 'Seeing failure as a learning opportunity',
+      parent_lens: "The brain learns most strongly from mistakes — not from successes. When your child fails and you stay calm, you send the strongest signal: 'Failing is safe. I can handle it.'",
+      parent_tips: [
+        "When failing, show compassion first, then a solution: 'That was frustrating. What could we do differently next time?'",
+        "Share your own failures: 'I also once ... and then I learned ...' Modeling removes the taboo.",
+        "Avoid 'I told you so.' That closes doors. Instead: 'What did you take away from that?'",
+      ],
+      practical_tip: "Tell your child today about one of your own failures — and what you learned from it.",
+      discussion_body: "How does your family handle setbacks? What helps you see failure as part of learning?",
+      companion_quick: "Children who are allowed to make mistakes become braver adults.",
+      companion_reflect: "Was there a failure today that your child handled well? What helped with that?",
+    },
+    inclusion_hochsensibel: {
+      title: 'Understanding and supporting highly sensitive children',
+      parent_lens: "About 20% of children are highly sensitive — they perceive more, feel more intensely and need more recovery time. That's not a weakness, but a personality trait with its own strengths.",
+      parent_tips: [
+        "Reduce sensory overload: plan calm transition times before high-pressure situations (shopping, school, parties).",
+        "Predictability protects: announce what's coming ('We're leaving in 10 minutes'). Surprises are stressful for highly sensitive children.",
+        "Their sensitivity is a strength: they notice when someone is sad and think deeply. Name that positively.",
+      ],
+      practical_tip: "Today, plan 15 minutes of quiet 'recharge time' for your child after a high-pressure situation — no screen, no expectations.",
+      discussion_body: "Do you recognize highly sensitive traits in your child? What helps you handle it day to day?",
+      companion_quick: "Highly sensitive children don't need toughening up — they need protected spaces and understanding.",
+      companion_reflect: "When did your child process especially many impressions today — and how did they recover afterward?",
+    },
+    inclusion_freundschaft: {
+      title: 'Accompanying friendships — not steering them',
+      parent_lens: "Friendships are the most important place to learn social skills. Children learn giving and taking, negotiating and letting go — but only if we as parents let go and accompany instead of steering.",
+      parent_tips: [
+        "Ask, but don't judge: 'How did it go with ... today?' is better than 'I don't like them, they did ... recently.'",
+        "Let children resolve conflicts among themselves at first — step in only when real distress arises.",
+        "Actively enable friendships: playdates, invitations. Social opportunities don't just happen on their own.",
+      ],
+      practical_tip: "Ask your child today: 'Who in your class / group likes the same things as you?' — and think together about how to make time for it.",
+      discussion_body: "How do you give your children room for their own friendships — even when you don't always understand their choices?",
+      companion_quick: "Real friendship can't be forced — but you can create fertile ground for it together.",
+      companion_reflect: "Did your child talk about someone important to them today? What did you learn from it?",
+    },
+    inclusion_resilienz: {
+      title: 'Resilience — how children grow through challenges',
+      parent_lens: "Resilience isn't innate — it's practiced. Children become resilient when they experience challenges AND are supported through them. Not protection, but accompaniment is the key.",
+      parent_tips: [
+        "Let your child complete challenges: don't help too early. Only offer help once they truly can't go further.",
+        "Strengthen inner dialogue: 'What do you think you could do?' instead of giving the solution directly.",
+        "Talk about family crises age-appropriately: children who are left out develop fantasies worse than the truth.",
+      ],
+      practical_tip: "If your child fails today: wait 30 seconds before stepping in. Often the solution comes on its own.",
+      discussion_body: "Which challenge did your child master that surprised you?",
+      companion_quick: "Resilience grows in the space between challenge and support — not before it and not after it.",
+      companion_reflect: "How can you tell that your child grew inwardly today?",
+    },
+    inclusion_vielfalt: {
+      title: 'Experiencing diversity — difference as a strength',
+      parent_lens: "Children who learn early that people differ — in origin, abilities, ways of thinking — develop more empathy and less fear of contact. You can bring diversity to life in everyday moments.",
+      parent_tips: [
+        "Talk openly about differences — children notice them anyway. 'Yes, Lara has a different skin color than you — and her family comes from...'",
+        "Choose books, films and games with diverse characters — representation shapes worldview.",
+        "Celebrate family quirks: 'For us it's like this, and other families do it differently — that's the beauty of it.'",
+      ],
+      practical_tip: "Read a children's book today with a main character different from your child — and talk about it afterward.",
+      discussion_body: "How do you explain differences between people to children in a way that sparks curiosity instead of fear?",
+      companion_quick: "Children are naturally curious about differences — prejudice is learned later.",
+      companion_reflect: "Did your child ask a question about differences today that made you think?",
+    },
+    leadership_struktur: {
+      title: 'Daily structure as an anchor of security',
+      parent_lens: "A child's brain loves predictability. Rituals and structures aren't limitations — they're the scaffolding that gives children the freedom to develop safely.",
+      parent_tips: [
+        "Fixed anchors in the day: waking-up ritual, meals, bedtime. These three are enough for real stability.",
+        "Plan transition rituals: announce short transitions between activities. 'In 5 minutes we'll tidy up.'",
+        "Structure isn't stress — change it gradually if needed, not abruptly.",
+      ],
+      practical_tip: "Today, look at the daily schedule together with your child — discuss what's coming. That reduces resistance and uncertainty.",
+      discussion_body: "Which daily ritual is especially important to your family — and why?",
+      companion_quick: "Predictability creates security. Security creates readiness to learn.",
+      companion_reflect: "Which moment today showed that your child needs structure — or enjoyed it?",
+    },
+    leadership_schlaf: {
+      title: 'Sleep rituals — creating calm for body and mind',
+      parent_lens: "Sleep is developmental time, not a pause. During sleep, the brain processes the day, consolidates memories and regenerates. A good bedtime ritual is one of the most effective investments in your child.",
+      parent_tips: [
+        "30 minutes before sleep: no screens, no exciting games. Winding down takes time.",
+        "Always the same order: teeth, pajamas, story, lights out. Rituals signal to the brain: 'Now it's time for sleep.'",
+        "If your child can't fall asleep: breathe together. 4 seconds in, 6 seconds out — that activates the parasympathetic nervous system.",
+      ],
+      practical_tip: "Introduce a 3-minute breathing ritual before sleep tonight — breathe in, breathe out, together.",
+      discussion_body: "What's your favorite bedtime ritual — and how did you develop it?",
+      companion_quick: "A calm closing ritual is the best start to good sleep.",
+      companion_reflect: "How was falling asleep today — what helped, what disturbed it?",
+    },
+    leadership_bildschirm: {
+      title: 'Shaping screen time consciously',
+      parent_lens: "Screen time itself isn't the problem — it's uncontrolled, passive consumption without conversation afterward. With simple guidelines, screens become a healthy leisure activity.",
+      parent_tips: [
+        "Fixed times instead of spontaneous bans: 'After homework until 5pm' is clearer than 'not too much'.",
+        "Watch together and talk afterward: 'What did you like? What was strange or odd?' strengthens media literacy.",
+        "Set up screen-free spaces: bedroom and dinner table are good starting boundaries.",
+      ],
+      practical_tip: "Watch something together for 15 minutes today — and ask 2 questions about it afterward. That changes how your child perceives media.",
+      discussion_body: "How do you handle screen time in your family — what has worked, what less so?",
+      companion_quick: "Conscious media use isn't learned through bans, but through conversation.",
+      companion_reflect: "How did your child use media today — actively or passively? What did you notice?",
+    },
+    leadership_autoritaet: {
+      title: 'Authority through connection — not fear',
+      parent_lens: "Authoritative doesn't mean loud and strict. True parental authority arises when a child knows: 'You love me AND you're clear.' Connection and leadership don't exclude each other — they depend on each other.",
+      parent_tips: [
+        "Clear statements without discussion: 'This is how we're doing it now.' No negotiating afterward — just offer understanding.",
+        "Apologies make adults stronger, not weaker. 'That wasn't fair of me earlier' — children respect that.",
+        "Work out some rules together — that increases willingness to follow them.",
+      ],
+      practical_tip: "Today, phrase a rule as a positive instruction instead of a ban: 'We tidy up after playing' instead of 'Don't leave things lying around'.",
+      discussion_body: "How do you find the balance between leadership and your children's say?",
+      companion_quick: "Authority without connection is control. Connection without authority is chaos. Both together is leadership.",
+      companion_reflect: "Was there a moment today when your calm clarity achieved more than a power word?",
+    },
+    leadership_hausaufgaben: {
+      title: 'Homework without stress — a framework that works',
+      parent_lens: "Homework stress is often not a learning problem — it's a ritual problem. With the right structure and the right timing, the issue relaxes on its own.",
+      parent_tips: [
+        "Find the right time: right after school or after a short recovery break — but before evening.",
+        "I'm here, but I won't help right away: try it yourself first. After 10 minutes without progress: ask 'Where are you stuck?'",
+        "Prepare the workspace: a fixed spot, a tidy desk, no phone in sight — that reduces distraction.",
+      ],
+      practical_tip: "Today, define THE one homework time for the week together with your child — and write it down.",
+      discussion_body: "What made homework less stressful for you? Which routines work?",
+      companion_quick: "Structure while learning isn't a limitation — it's the engine for concentration.",
+      companion_reflect: "How did learning go today? What could you try differently tomorrow?",
+    },
+    leadership_selbstaendigkeit: {
+      title: 'Independence — letting go is also love',
+      parent_lens: "Children become independent when we trust them. But letting go feels risky — and that's normal. The art is: hand over more responsibility step by step.",
+      parent_tips: [
+        "Assign age-appropriate tasks: 3-year-olds put away toys, 6-year-olds set the table, 10-year-olds help cook.",
+        "Don't jump in when it's going slowly. Slow and by themselves is more valuable than fast and with help.",
+        "Accept mistakes in independent tasks: the glass of milk tips over — that's not failure, that's practice.",
+      ],
+      practical_tip: "Today, hand your child a new task you've always done yourself — and let them do it completely on their own.",
+      discussion_body: "What is your child's greatest achievement of independence that you're both proud of?",
+      companion_quick: "Every task a child completes themselves is an investment in their future self-confidence.",
+      companion_reflect: "When did you let go today — and how did that feel for you?",
+    },
+    leadership_natur: {
+      title: 'Nature and movement as a family ritual',
+      parent_lens: "Children who are regularly outside sleep better, concentrate better and are more emotionally stable. Nature isn't a leisure activity — it's a basic need.",
+      parent_tips: [
+        "15 minutes outside daily already has a measurable effect — no trip needed, even the walk to school counts.",
+        "Move together: bicycle, walk, playing field. Moving together strengthens bonding.",
+        "Let your child discover nature: stones, beetles, puddles. No program — just openness.",
+      ],
+      practical_tip: "Plan a 15-minute walk outside today — no destination, no program, just together.",
+      discussion_body: "Which nature experience from your own childhood would you like to pass on to your children?",
+      companion_quick: "Being outside is brain food — for children and adults.",
+      companion_reflect: "How did your time outside today change the mood?",
+    },
+    milestone_sprache: {
+      title: 'Language development — how to support it through play',
+      parent_lens: "Language development doesn't happen through vocabulary drills — it happens in dialogue. Children learn to speak when adults talk with them, listen to them and respond to what they say.",
+      parent_tips: [
+        "Describe your everyday life out loud: 'Now I'm cutting the carrots' — that enriches passive vocabulary.",
+        "Pick up on your child's statements and expand them: 'Ball!' — 'Yes, the red ball is rolling.'",
+        "Read aloud daily, even if the child can already read. Texts from books have different structures than everyday speech.",
+      ],
+      practical_tip: "Read aloud for 10 minutes today — and ask while reading: 'What do you think happens next?'",
+      discussion_body: "Which words or sentences of your child have recently surprised or touched you?",
+      companion_quick: "Language grows in conversation — not in silence.",
+      companion_reflect: "Which language progress of your child did you notice today?",
+    },
+    milestone_schule: {
+      title: 'Calmly accompanying school starts and transitions',
+      parent_lens: "Transitions — starting school, changing classes, new daycare — are the most intense learning phases for children. Your calm and confidence transfer to your child. You are the base of regulation.",
+      parent_tips: [
+        "Get to know new places beforehand: if possible, visit the new classroom or school before the first day.",
+        "Talk about feelings: 'It's okay to be nervous. I was nervous on my first day of school too.'",
+        "Small transition objects help: a photo in the bag, a small keepsake — objects create security.",
+      ],
+      practical_tip: "Ask your child today: 'What are you looking forward to about ...? What still worries you?' — and listen without judgment.",
+      discussion_body: "How have you accompanied an important transition for your child? What helped?",
+      companion_quick: "Transitions are an ending and a beginning at once — and both may be felt.",
+      companion_reflect: "Which emotion did your child show around a transition today?",
+    },
+    milestone_sozial: {
+      title: 'Social intelligence — the most important skill of the 21st century',
+      parent_lens: "IQ opens doors. EQ (emotional intelligence) lets people in. Children with high social competence can cooperate, communicate and empathize better — and they learn this from you.",
+      parent_tips: [
+        "Model empathy daily: 'The cat looks sad. Why do you think that is?'",
+        "Practice perspective-taking: 'How do you think ... felt when you said that?'",
+        "Praise social behavior explicitly: 'You waited until he finished speaking. That was very respectful.'",
+      ],
+      practical_tip: "Talk about a social situation after daycare or school today: 'Did anyone do something nice today?'",
+      discussion_body: "Which aspect of social competence do you find most important today — for children and adults?",
+      companion_quick: "Social competence isn't a talent — it's a skill that is practiced.",
+      companion_reflect: "When did your child show empathy today — even if it went unnoticed?",
+    },
+    milestone_emotion: {
+      title: 'Emotional maturity — when feelings are processed',
+      parent_lens: "Emotional maturity doesn't show in having no feelings — but in processing them. Children who are allowed to express feelings learn to handle them better in the long run.",
+      parent_tips: [
+        "All feelings are allowed — not all actions. 'You may be angry. You may not hit.'",
+        "Don't talk feelings away: instead of 'That's not so bad' → 'I can see this really affects you.'",
+        "Let emotions be felt in the body: 'Where do you feel that right now? In your stomach? In your chest?'",
+      ],
+      practical_tip: "Ask today: 'How does that feel in your body?' — and accept whatever answer comes.",
+      discussion_body: "Which feeling is hardest for your family to show openly?",
+      companion_quick: "Allowing feelings isn't weakness — it's emotional strength.",
+      companion_reflect: "Which emotion did your child show openly today — and how did you accompany it together?",
+    },
+    milestone_kreativitaet: {
+      title: 'Fostering creativity — without focusing on outcomes',
+      parent_lens: "Creativity is problem-solving in disguise. When children paint, build, craft or play, they train flexibility and originality — the skills of the future.",
+      parent_tips: [
+        "No focus on the end product: 'Tell me what you made' instead of 'What is that supposed to be?'",
+        "Offer materials without instructions: fabric, cardboard, natural materials — and then let go.",
+        "Be creative yourself: when parents paint, build, sing — without perfection — they allow their children the same.",
+      ],
+      practical_tip: "Offer 20 minutes of free crafting today — no template, no instructions, just materials.",
+      discussion_body: "What's the most creative project your child has ever come up with themselves?",
+      companion_quick: "Creativity needs space, time, and an adult who doesn't judge.",
+      companion_reflect: "What did your child invent, build or imagine today that surprised you?",
+    },
+    milestone_koerper: {
+      title: 'Strengthening body awareness — movement as a driver of development',
+      parent_lens: "Motor development and cognitive development are inseparably linked. Children who climb, balance and dance also develop their spatial thinking and concentration.",
+      parent_tips: [
+        "Build in movement daily: not as a sports program, but as everyday life — stairs instead of elevator, walking instead of carrying.",
+        "Alternate gross and fine motor skills: building (fine) and climbing (gross) complement each other wonderfully.",
+        "Reinforce body image positively: 'Your body can do so much' — regardless of appearance or performance.",
+      ],
+      practical_tip: "Plan 10 minutes of movement play today — balancing, hopping, rolling. No program, just body and fun.",
+      discussion_body: "Which movement activity brings your child the most joy — and why?",
+      companion_quick: "Movement isn't a leisure activity — it's an engine for learning.",
+      companion_reflect: "What did your child try or dare physically today that was new?",
+    },
+    milestone_uebergaenge: {
+      title: 'Preparing for puberty — early and relaxed',
+      parent_lens: "Puberty starts earlier than most parents think — and the course is set in childhood. Open communication and a secure parent-child relationship are the best preparation.",
+      parent_tips: [
+        "Talk about body changes early — matter-of-factly, without drama. Children who are informed have less fear.",
+        "Share your own puberty memories (appropriately): 'I was unsure about ... back then too' — that normalizes it.",
+        "Create space for privacy: knock, respect diaries. Trust arises through respect.",
+      ],
+      practical_tip: "Watch an age-appropriate video or book about body processes together with your child today — without shyness.",
+      discussion_body: "Looking back, what mattered to you during puberty — and what do you wish your parents had done?",
+      companion_quick: "The best puberty preparation is a strong relationship today.",
+      companion_reflect: "Did your child ask a question today that shows they're starting to reflect on themselves?",
+    },
+    gfk_wiedergutmachung: {
+      title: 'When parents lose it — making amends as a strength',
+      parent_lens: "No parent is patient all the time. When you lose it, that's not a failure as a parent — it's a human moment. But what comes after shapes the relationship more strongly than the outburst itself.",
+      parent_tips: [
+        "Making amends needs three steps: take responsibility ('I was wrong'), show compassion, and if needed, do it differently.",
+        "Apologize without 'but': 'I'm sorry I was so loud. That wasn't okay.' — done.",
+        "Your child sees you as human — that's good. Children learn through repair that relationships survive storms.",
+      ],
+      practical_tip: "If you didn't behave well in a situation today: go back to your child and say so. Three sentences are enough.",
+      discussion_body: "How have you as parents learned to handle your own outbursts — without judging yourselves too harshly?",
+      companion_quick: "Making amends teaches children something no guidebook can: that relationships can be repaired.",
+      companion_reflect: "Was there a moment today you would have handled differently in hindsight — and what did you take from it?",
+    },
+  },
+  tr: {
+    gfk_warum: {
+      title: '"Neden" sorularını sakin şekilde karşılamak',
+      parent_lens: "Çocuğunuz günde yüz kez 'Neden?' diye soruyor. Bunu sizi sinirlendirmek için değil, beyni bağlantılar kurduğu için yapıyor. Dünyayı anlamak istiyor.",
+      parent_tips: [
+        "Şiddetsiz iletişimi (NVC) kullanın: azarlamak yerine kendi duygu ve ihtiyaçlarınızı açıkça ifade edin.",
+        "'Neden' sorularını kısa ve basit yanıtlayın — çocuğunuz mantık arıyor, bilimsel bir ders değil.",
+        "Sınırları cezayla değil, kişisel varlığınızla sevgiyle koyun ('Vurmanı istemiyorum').",
+      ],
+      practical_tip: "Bir sonraki 'neden' sorusunda önce duyguyu yansıtın ('Meraklısın!'), sonra tek cümleyle yanıtlayın.",
+      discussion_body: "Çocuğunuz onuncu kez 'neden' diye sorduğunda hangi kısa, sakin ifade size yardımcı oluyor?",
+      companion_quick: "Bugün bir neden sorusuna sadece sakin bir yanıt verin ve sonrasında bilinçli olarak kısa kalın.",
+      companion_reflect: "Çocuğunuz bugün en çok ne zaman bağlantı aradı — ve ona nasıl sakin bir yön verebildiniz?",
+    },
+    gfk_grenzen: {
+      title: 'Sınırları sevgiyle ve netlikle koymak',
+      parent_lens: "Sevgi dolu sınırlar bir çelişki değildir. Çocukların ikisine de ihtiyacı var: sevildiğini hissetmek VE nelerin olmadığı konusunda net bir yönlendirme. Bağlantısız sınırlar duvar gibi hissettirir — bağlantılı sınırlar korkuluk gibi hissettirir.",
+      parent_tips: [
+        "Önce çocuğunuzun duygusunu, sonra sınırı adlandırın: 'Kızgın olduğunu görüyorum. Yine de: vurmak olmaz.'",
+        "Bedenen sakin kalın — tonunuz sözlerinizden daha yüksek sesle konuşur. Tepki vermeden önce derin bir nefes alın.",
+        "Sonuçları söyleyin ve uygulayın. Tehdit etmeyin, önceden bildirin: 'Eğer ... yaparsan o zaman ...'",
+      ],
+      practical_tip: "Bugün duygu + sınır cümlesi kurmayı deneyin: 'Bunu istediğini anlıyorum. Ve: hayır.' — ve bunu sakin bir şekilde söyleyin.",
+      discussion_body: "Kendi sınırlarınıza ulaştığınızda nasıl tepki veriyorsunuz? Hangi cümle sakin kalmanıza yardımcı oluyor?",
+      companion_quick: "Bir sonraki sınır tepkisinden önce derin bir nefes alın — işin yarısı bu.",
+      companion_reflect: "Bugün sakin bir sınırın yüksek sesli bir hayırdan daha iyi işlediği bir durum oldu mu?",
+    },
+    gfk_ichbotschaft: {
+      title: '"Sen" suçlamaları yerine "ben" mesajları',
+      parent_lens: "'Sen' mesajları ('Çok yüksek sesle konuşuyorsun!') savunmayı tetikler. 'Ben' mesajları ('Yoruluyorum ve sessizliğe ihtiyacım var') kapıları açar. Çocuklar kendilerini saldırıya uğramış hissetmediklerinde daha çok dinler.",
+      parent_tips: [
+        "Suçlamaları 'ben' mesajlarına dönüştürün: 'Sen hiç dinlemiyorsun' yerine → 'Kendimi duyulmuş hissetmiyorum ve bu beni üzüyor.'",
+        "İhtiyacınızı paylaşın: 'Şimdi düşünmek için kısa bir sessizliğe ihtiyacım var.' Çocuklar ihtiyaçları şaşırtıcı derecede iyi anlar.",
+        "Günlük hayatta pratik yapın: klasik üç cümleyi 'ben' mesajına dönüştürün — sabah diş fırçalarken, öğlen yemekte, akşam uyku öncesi.",
+      ],
+      practical_tip: "Bugün genellikle 'Sen hep...' dediğiniz bir durumu seçin — ve 'Ben ... hissediyorum çünkü ... ihtiyacım var' ile değiştirin.",
+      discussion_body: "Hangi 'sen' mesajını yeniden ifade etmek size en zor geliyor? Bu konuda ne yardımcı oluyor?",
+      companion_quick: "Duyguyu + ihtiyacı adlandırmak — gerçek bir 'ben' mesajının formülü budur.",
+      companion_reflect: "Bugün bir 'ben' mesajı sizi şaşırtan bir tepkiye yol açtı mı?",
+    },
+    gfk_trotz: {
+      title: 'İnat dönemlerini sakin bir şekilde desteklemek',
+      parent_lens: "İnat bir isyan değildir — bir gelişimdir. Bir çocuk yerde yatıp bağırdığında, prefrontal korteksi duyguyu düzenlemek için henüz yeterince olgunlaşmamıştır. Sizin ona bir eş-düzenleyici olarak ihtiyacı var.",
+      parent_tips: [
+        "Zorlamadan bedenen yakın kalın: diz seviyesine inin, sakin konuşun, çocuk reddediyorsa dokunmayın.",
+        "Fırtınanın ortasında tartışmaktan kaçının. Konuşma ancak sakinleştiğinde gelir.",
+        "'Duygu köprüleri' kullanın: 'Dondurmayı istedin. Bu senin için çok önemliydi. Bunu anlıyorum.'",
+      ],
+      practical_tip: "Çocuğunuz kendinden geçtiğinde: yanına oturun. Uzaklaşmayın, müdahale etmeyin — sadece orada olun. Bu bile düzenlemeye yardımcı olur.",
+      discussion_body: "Çocuğunuz duygusal bir patlamanın ortasındayken siz sakin kalmak için neye ihtiyaç duyuyorsunuz?",
+      companion_quick: "İnat dönemleri için üç kelime: yakın kal. Sakin nefes al. Bekle.",
+      companion_reflect: "Bugün sizi en çok ne yordu — ve bu sırada sakin kalmanıza ne yardımcı oldu?",
+    },
+    gfk_geschwister: {
+      title: 'Kardeş kavgalarını bir öğrenme alanı olarak kullanmak',
+      parent_lens: "Kardeşler kavga eder — bu normaldir ve hatta önemlidir. Kavgada çocuklar uzlaşmayı, bakış açısı değiştirmeyi ve kendini savunmayı öğrenir. Sizin rolünüz hakem değil, arabulucudur.",
+      parent_tips: [
+        "Taraf tutmayın: 'İkinizin de şu anda kızgın olduğunu görüyorum. Önce seni, sonra seni dinleyeceğim.'",
+        "Durum tırmanmıyorsa çocukların kendi çözümlerini bulmasına izin verin. Ancak gerçek bir tehlike varsa müdahale edin.",
+        "Her çocuğu tek tek güçlendirin: düzenli 1:1 anlar kıskançlığı uzun vadede azaltır.",
+      ],
+      practical_tip: "Bir sonraki kavgada her iki çocuğa da 'Şu anda neye ihtiyacın var?' diye sorun — kimin haklı olduğuna karar vermeden önce.",
+      discussion_body: "Kardeşler kavga ettiğinde bunu nasıl ele alıyorsunuz? Sizde en iyi ne işe yarıyor?",
+      companion_quick: "Hakem değil, arabulucu — kardeş çatışmalarındaki rolünüz budur.",
+      companion_reflect: "Bugün çocuklarınızın bir kavgayı kendi başlarına çözdüğü bir an oldu mu? Bundan ne öğrendiniz?",
+    },
+    gfk_gefühle: {
+      title: 'Duyguları adlandırmak ve kabul etmek',
+      parent_lens: "Duygularını adlandırabilen çocukların büyük bir avantajı vardır: neye ihtiyaç duyduklarını iletebilirler. Hissetmekten konuşmaya giden bu adım pratik ve sizin desteğinizi gerektirir.",
+      parent_tips: [
+        "'Duygu barometresini' kullanın: akşam 'Günün 1-5 arasında nasıldı?' diye sorun — ve önce siz anlatın.",
+        "Kendi duygularınızı yüksek sesle adlandırın: 'Şu anda biraz stresliyim çünkü çok düşünmem gerekiyor.' Örnek olmak işe yarar.",
+        "Duygularla ilgili çocuk kitapları okuyun — ve sonra durup sorun: 'Karakter ne hissetti sence? Ya sen?'",
+      ],
+      practical_tip: "Bu akşam sorun: 'Bugün seni ne mutlu etti? Seni ne üzdü veya kızdırdı?' — ve sadece dinleyin.",
+      discussion_body: "Çocuğunuzun adlandırması en zor olan duygu hangisi? Buna nasıl yaklaşıyorsunuz?",
+      companion_quick: "Önce hisset, sonra adlandır — duygu alfabesi sizin örnek olmanızla başlar.",
+      companion_reflect: "Bugün çocuğunuzun hangi duygu anını hatırlamak istediniz?",
+    },
+    gfk_nein: {
+      title: 'Vicdan azabı duymadan hayır demek',
+      parent_lens: "Hiç hayır demeyen ebeveynler, sınır tanımayan çocuklar yetiştirir. Sevgi dolu bir hayır çocuğunuza şunu gösterir: kendi ihtiyaçlarımı ciddiye alıyorum — sen de alabilirsin.",
+      parent_tips: [
+        "Bir hayırın uzun bir açıklamaya ihtiyacı yoktur. Net bir 'Hayır, şu anda olmaz' yeterlidir.",
+        "Hayırdan sonraki suçluluk bir hatanın değil, bir sinyalin işaretidir. Kendinize sorun: bu hayır gerçekten yanlış mı, yoksa sadece rahatsız edici mi?",
+        "Diğer yetişkinlere de hayır demeyi pratik edin (oyun randevuları, sözler) — çocuğunuz sizin örneğinizden öğrenir.",
+      ],
+      practical_tip: "Bugün bilinçli olarak bir kez hayır deyin — özür dilemeden. Nasıl hissettirdiğine dikkat edin.",
+      discussion_body: "Hayır demek size ne zaman en zor geliyor — çocuklarınıza mı, yoksa başkalarına mı?",
+      companion_quick: "Bir şeye hayır demek, daha önemli bir şeye — genellikle kendinize — evet demektir.",
+      companion_reflect: "Bugün geriye dönüp baktığınızda doğru hissettiren bir hayır oldu mu?",
+    },
+    inclusion_stärken: {
+      title: 'Zayıflıkları değerlendirmek yerine güçlü yönleri görmek',
+      parent_lens: "Her çocuğun kendine özgü bir güçlü yönler bileşimi vardır. Ebeveynler olarak genellikle önce eksikleri görürüz — oysa ham elması parlatabilecek ilk kişiler biz olabiliriz.",
+      parent_tips: [
+        "Bu akşam çocuğunuzun 3 güçlü yönünü yazın — başarılar değil, karakter özellikleri ('meraklı', 'şefkatli', 'azimli').",
+        "Güçlü yönleri somut ve zamanında adlandırın: 'Az önce çok sabırlıydın — bu gerçekten harika.'",
+        "Kardeşler veya diğer çocuklarla karşılaştırmaktan kaçının. Her gelişim eğrisi kendine özgüdür.",
+      ],
+      practical_tip: "Bugün çocuğunuzla güçlü yönlerinden biri hakkında konuşun — övgü olarak değil, bir gözlem olarak: 'Bugün senin ... yaptığını gördüm.'",
+      discussion_body: "Bugün çocuğunuzun hangi gizli güçlü yönünü paylaşmak istersiniz?",
+      companion_quick: "Güçlü yönleri görmek, zayıflıkları görmezden gelmek değildir — büyümeye olanak tanımaktır.",
+      companion_reflect: "Bugün çocuğunuzun hangi güçlü yönü sizi şaşırttı veya etkiledi?",
+    },
+    inclusion_selbstwert: {
+      title: 'Öz saygıyı her gün inşa etmek',
+      parent_lens: "Öz saygı yalnızca övgüyle oluşmaz — şu deneyimle oluşur: 'Bir şey yapabiliyorum. Önemliyim. Buraya aitim.' Bu üç deneyimi her gün yaşatabilirsiniz.",
+      parent_tips: [
+        "Çocuğunuzun küçük kararlar almasına izin verin: 'Önce ödevleri mi yapmak istersin, önce oynamak mı?' Özerklik = öz saygı.",
+        "Gerçek ilgi gösterin: telefonu bırakın, yüzüne bakın, sorular sorun. 10 dakika tam dikkat mucizeler yaratır.",
+        "Sadece sonucu değil, süreci kutlayın: 'Bunu bu kadar uzun süre denedin — önemli olan kısım bu.'",
+      ],
+      practical_tip: "Bugün: çocuğunuza 10 dakika bölünmemiş dikkat gösterin — telefon yok, dikkat dağıtıcı yok, sadece ilgi.",
+      discussion_body: "Çocuğunuzu kendisiyle özellikle gururlandıran nedir — ve bu duyguyu nasıl destekliyorsunuz?",
+      companion_quick: "Öz saygı aynadan değil, bizi sevenlerin gözlerinden gelir.",
+      companion_reflect: "Çocuğunuz bugün hangi anda 'Bunu yapabilirim!' dedi?",
+    },
+    inclusion_scheitern: {
+      title: 'Başarısızlığı bir öğrenme fırsatı olarak görmek',
+      parent_lens: "Beyin en güçlü şekilde hatalardan öğrenir — başarılardan değil. Çocuğunuz başarısız olduğunda siz sakin kalırsanız, ona en güçlü sinyali verirsiniz: 'Başarısız olmak güvenlidir. Ben bunu kaldırabilirim.'",
+      parent_tips: [
+        "Başarısızlıkta önce şefkat, sonra çözüm: 'Bu sinir bozucuydu. Bir dahaki sefere ne farklı yapabiliriz?'",
+        "Kendi başarısızlıklarınızdan bahsedin: 'Ben de bir keresinde ... ve sonra ... öğrendim.' Örnek olmak tabuyu kaldırır.",
+        "'Sana söylemiştim'den kaçının. Bu kapıları kapatır. Bunun yerine: 'Bundan ne çıkardın?'",
+      ],
+      practical_tip: "Bugün çocuğunuza kendi başarısızlıklarınızdan birinden bahsedin — ve bundan ne öğrendiğinizi anlatın.",
+      discussion_body: "Aile olarak yenilgilerle nasıl başa çıkıyorsunuz? Başarısızlığı öğrenmenin bir parçası olarak görmenize ne yardımcı oluyor?",
+      companion_quick: "Hata yapmasına izin verilen çocuklar daha cesur yetişkinler olur.",
+      companion_reflect: "Bugün çocuğunuzun iyi atlattığı bir başarısızlık oldu mu? Buna ne yardımcı oldu?",
+    },
+    inclusion_hochsensibel: {
+      title: 'Yüksek duyarlı çocukları anlamak ve desteklemek',
+      parent_lens: "Çocukların yaklaşık %20'si yüksek duyarlıdır — daha fazlasını algılar, daha yoğun hisseder ve daha fazla dinlenme süresine ihtiyaç duyarlar. Bu bir zayıflık değil, kendine özgü güçlü yönleri olan bir kişilik özelliğidir.",
+      parent_tips: [
+        "Uyaran yoğunluğunu azaltın: yüksek baskılı durumlardan önce (alışveriş, okul, parti) sakin geçiş süreleri planlayın.",
+        "Öngörülebilirlik korur: neler olacağını önceden bildirin ('10 dakika sonra gidiyoruz'). Sürprizler yüksek duyarlı çocuklar için yorucudur.",
+        "Duyarlılıkları bir güçtür: birinin üzgün olduğunu fark eder ve derin düşünürler. Bunu olumlu bir şekilde adlandırın.",
+      ],
+      practical_tip: "Bugün yüksek baskılı bir durumdan sonra çocuğunuz için 15 dakikalık sessiz bir 'şarj olma zamanı' planlayın — ekran yok, beklenti yok.",
+      discussion_body: "Çocuğunuzda yüksek duyarlı özellikler fark ediyor musunuz? Günlük hayatta bununla başa çıkmanıza ne yardımcı oluyor?",
+      companion_quick: "Yüksek duyarlı çocukların katılaşmaya değil, korunaklı alanlara ve anlayışa ihtiyacı vardır.",
+      companion_reflect: "Çocuğunuz bugün en çok ne zaman çok fazla izlenim işledi — ve bundan sonra nasıl toparlandı?",
+    },
+    inclusion_freundschaft: {
+      title: 'Arkadaşlıklara eşlik etmek — yönlendirmemek',
+      parent_lens: "Arkadaşlıklar sosyal beceriler için en önemli öğrenme yeridir. Çocuklar vermeyi ve almayı, müzakere etmeyi ve vazgeçmeyi öğrenir — ama sadece ebeveynler olarak biz bırakıp yönlendirmek yerine eşlik edersek.",
+      parent_tips: [
+        "Sorun ama yargılamayın: 'Bugün ... ile nasıl geçti?' 'Onu sevmiyorum, geçenlerde ... yaptı' demekten daha iyidir.",
+        "Çocukların önce kendi aralarındaki çatışmaları çözmesine izin verin — ancak gerçek bir sıkıntı olduğunda müdahale edin.",
+        "Arkadaşlıkları aktif olarak mümkün kılın: oyun randevuları, davetler. Sosyal fırsatlar kendiliğinden ortaya çıkmaz.",
+      ],
+      practical_tip: "Bugün çocuğunuza sorun: 'Sınıfından / grubundan kim senin sevdiğin şeyleri seviyor?' — ve birlikte zaman yaratmayı düşünün.",
+      discussion_body: "Seçimlerini her zaman anlamasanız bile çocuklarınıza kendi arkadaşlıkları için nasıl alan tanıyorsunuz?",
+      companion_quick: "Gerçek arkadaşlık zorla oluşturulamaz — ama birlikte verimli bir zemin hazırlayabilirsiniz.",
+      companion_reflect: "Çocuğunuz bugün kendisi için önemli olan biri hakkında konuştu mu? Bundan ne öğrendiniz?",
+    },
+    inclusion_resilienz: {
+      title: 'Dayanıklılık — çocuklar zorluklarla nasıl büyür',
+      parent_lens: "Dayanıklılık doğuştan gelmez — pratikle kazanılır. Çocuklar zorluklar yaşadıklarında VE bu sırada desteklendiklerinde dayanıklı hale gelirler. Anahtar koruma değil, eşliktir.",
+      parent_tips: [
+        "Çocuğunuzun zorlukları tamamlamasına izin verin: çok erken yardım etmeyin. Gerçekten daha fazla ilerleyemediğinde yardım teklif edin.",
+        "İçsel diyaloğu güçlendirin: doğrudan çözümü vermek yerine 'Ne yapabileceğini düşünüyorsun?' diye sorun.",
+        "Aile krizlerini yaşına uygun şekilde konuşun: dışlanan çocuklar gerçeğinden daha kötü fanteziler geliştirir.",
+      ],
+      practical_tip: "Çocuğunuz bugün başarısız olursa: müdahale etmeden önce 30 saniye bekleyin. Çözüm genellikle kendiliğinden gelir.",
+      discussion_body: "Çocuğunuz sizi şaşırtan hangi zorluğun üstesinden geldi?",
+      companion_quick: "Dayanıklılık, zorluk ile destek arasındaki alanda büyür — öncesinde veya sonrasında değil.",
+      companion_reflect: "Çocuğunuzun bugün içsel olarak büyüdüğünü nereden anlıyorsunuz?",
+    },
+    inclusion_vielfalt: {
+      title: 'Çeşitliliği deneyimlemek — farklılık bir güçtür',
+      parent_lens: "İnsanların köken, yetenek ve düşünce biçimi açısından farklı olduğunu erken öğrenen çocuklar, daha fazla empati ve daha az temas korkusu geliştirir. Çeşitliliği günlük hayatta canlı kılabilirsiniz.",
+      parent_tips: [
+        "Farklılıklar hakkında açıkça konuşun — çocuklar bunları zaten fark eder. 'Evet, Lara'nın ten rengi senden farklı — ve ailesi ... 'dan geliyor.'",
+        "Farklı karakterlerin olduğu kitaplar, filmler ve oyunlar seçin — temsil dünya görüşünü etkiler.",
+        "Aile kendine özgülüklerini kutlayın: 'Bizde böyle, başka ailelerde farklı — güzel olan da bu.'",
+      ],
+      practical_tip: "Bugün çocuğunuzdan farklı bir ana karakterin olduğu bir çocuk kitabı okuyun — ve sonrasında bunu konuşun.",
+      discussion_body: "Çocuklara insanlar arasındaki farklılıkları korku yerine merak uyandıracak şekilde nasıl anlatıyorsunuz?",
+      companion_quick: "Çocuklar doğal olarak farklılıklara meraklıdır — önyargıyı ancak sonradan öğrenirler.",
+      companion_reflect: "Çocuğunuz bugün sizi düşündüren, farklılıklarla ilgili bir soru sordu mu?",
+    },
+    leadership_struktur: {
+      title: 'Günlük yapı bir güven demiri olarak',
+      parent_lens: "Bir çocuğun beyni öngörülebilirliği sever. Ritüeller ve yapılar bir kısıtlama değildir — çocuklara güvenle gelişme özgürlüğü veren bir iskelettir.",
+      parent_tips: [
+        "Günde sabit demirler: uyanma ritüeli, öğünler, uyku saati. Gerçek istikrar için bu üçü yeterlidir.",
+        "Geçiş ritüelleri planlayın: etkinlikler arasında kısa geçişleri önceden bildirin. '5 dakika sonra topluyoruz.'",
+        "Yapı stres değildir — gerektiğinde aniden değil, kademeli olarak değiştirin.",
+      ],
+      practical_tip: "Bugün çocuğunuzla birlikte günlük plana bakın — ne geleceğini konuşun. Bu direnci ve belirsizliği azaltır.",
+      discussion_body: "Ailenizde hangi günlük ritüel özellikle önemli — ve neden?",
+      companion_quick: "Öngörülebilirlik güven yaratır. Güven öğrenmeye hazır olmayı yaratır.",
+      companion_reflect: "Bugün hangi an çocuğunuzun yapıya ihtiyaç duyduğunu — veya bundan keyif aldığını gösterdi?",
+    },
+    leadership_schlaf: {
+      title: 'Uyku ritüelleri — beden ve zihin için huzur yaratmak',
+      parent_lens: "Uyku bir mola değil, gelişim zamanıdır. Uyku sırasında beyin günü işler, anıları pekiştirir ve yenilenir. İyi bir uyku ritüeli çocuğunuza yapılan en etkili yatırımlardan biridir.",
+      parent_tips: [
+        "Uyumadan 30 dakika önce: ekran yok, heyecanlı oyunlar yok. Sakinleşmek zaman alır.",
+        "Her zaman aynı sıra: dişler, pijama, hikaye, ışık kapalı. Ritüeller beyne 'Şimdi uyku zamanı' sinyalini verir.",
+        "Çocuğunuz uyuyamıyorsa: birlikte nefes alın. 4 saniye al, 6 saniye ver — bu parasempatik sinir sistemini aktive eder.",
+      ],
+      practical_tip: "Bu akşam uyumadan önce 3 dakikalık bir nefes ritüeli uygulayın — nefes alın, verin, birlikte.",
+      discussion_body: "En sevdiğiniz uyku ritüeli nedir — ve onu nasıl geliştirdiniz?",
+      companion_quick: "Sakin bir kapanış ritüeli iyi bir uykuya en iyi başlangıçtır.",
+      companion_reflect: "Bugün uykuya dalmak nasıldı — ne yardımcı oldu, ne rahatsız etti?",
+    },
+    leadership_bildschirm: {
+      title: 'Ekran süresini bilinçli olarak şekillendirmek',
+      parent_lens: "Sorun olan ekran süresinin kendisi değil — sonrasında konuşma olmadan kontrolsüz, pasif tüketimdir. Basit çerçeve koşullarıyla ekran sağlıklı bir boş zaman etkinliği haline gelir.",
+      parent_tips: [
+        "Ani yasaklar yerine sabit zamanlar: 'Ödevlerden sonra saat 17'ye kadar' 'çok fazla değil' den daha nettir.",
+        "Birlikte izleyin ve sonra konuşun: 'Neyi beğendin? Ne tuhaf veya garip geldi?' medya okuryazarlığını güçlendirir.",
+        "Ekransız alanlar oluşturun: yatak odası ve yemek masası iyi başlangıç sınırlarıdır.",
+      ],
+      practical_tip: "Bugün birlikte 15 dakika bir şey izleyin — ve sonrasında bununla ilgili 2 soru sorun. Bu çocuğunuzun medyayı algılama biçimini değiştirir.",
+      discussion_body: "Ekran süresini evinizde nasıl yönetiyorsunuz — ne işe yaradı, ne daha az işe yaradı?",
+      companion_quick: "Bilinçli medya kullanımı yasakla değil, konuşmayla öğrenilir.",
+      companion_reflect: "Çocuğunuz bugün medyayı nasıl kullandı — aktif mi, pasif mi? Ne fark ettiniz?",
+    },
+    leadership_autoritaet: {
+      title: 'Korkuyla değil, bağla otorite',
+      parent_lens: "Otoriter olmak yüksek sesli ve katı olmak anlamına gelmez. Gerçek ebeveyn otoritesi, bir çocuk şunu bildiğinde ortaya çıkar: 'Beni seviyorsun VE nettsin.' Bağ ve liderlik birbirini dışlamaz — birbirini tamamlar.",
+      parent_tips: [
+        "Tartışma olmadan net ifadeler: 'Bunu şimdi böyle yapıyoruz.' Sonrasında pazarlık yok — sadece anlayış sunun.",
+        "Özürler yetişkinleri daha zayıf değil, daha güçlü yapar. 'Az önce bu benden adil değildi' — çocuklar buna saygı duyar.",
+        "Bazı kuralları birlikte oluşturun — bu onlara uyma isteğini artırır.",
+      ],
+      practical_tip: "Bugün bir kuralı yasak yerine olumlu bir görev olarak ifade edin: 'Oynadıktan sonra topluyoruz' yerine 'Ortalıkta bırakma.'",
+      discussion_body: "Liderlik ile çocuklarınızın söz hakkı arasındaki dengeyi nasıl buluyorsunuz?",
+      companion_quick: "Bağlantısız otorite kontroldür. Otoritesiz bağlantı kaostur. İkisi birlikte liderliktir.",
+      companion_reflect: "Bugün sakin netliğinizin güçlü bir sözden daha fazla işe yaradığı bir an oldu mu?",
+    },
+    leadership_hausaufgaben: {
+      title: 'Stressiz ödev — işe yarayan bir çerçeve',
+      parent_lens: "Ödev stresi genellikle bir öğrenme sorunu değildir — bir ritüel sorunudur. Doğru yapı ve doğru zamanlamayla konu kendiliğinden rahatlar.",
+      parent_tips: [
+        "Doğru zamanı bulun: okuldan hemen sonra veya kısa bir dinlenmeden sonra — ama akşamdan önce.",
+        "Buradayım ama hemen yardım etmiyorum: önce kendisi denesin. 10 dakika ilerleme olmazsa: 'Nerede takıldın?' diye sorun.",
+        "Çalışma alanını hazırlayın: sabit bir yer, düzenli bir masa, görüş alanında telefon yok — bu dikkat dağınıklığını azaltır.",
+      ],
+      practical_tip: "Bugün çocuğunuzla birlikte hafta için TEK bir ödev zamanı belirleyin — ve yazın.",
+      discussion_body: "Sizde ödevleri daha az stresli hale getiren ne oldu? Hangi rutinler işe yarıyor?",
+      companion_quick: "Öğrenirken yapı bir kısıtlama değildir — konsantrasyonun motorudur.",
+      companion_reflect: "Bugün öğrenme nasıl geçti? Yarın farklı ne deneyebilirsiniz?",
+    },
+    leadership_selbstaendigkeit: {
+      title: 'Bağımsızlık — bırakmak da sevgidir',
+      parent_lens: "Çocuklar onlara güvendiğimizde bağımsız hale gelir. Ama bırakmak riskli hissettirir — ve bu normaldir. Sanat, sorumluluğu adım adım devretmektir.",
+      parent_tips: [
+        "Yaşa uygun görevler verin: 3 yaşındakiler oyuncakları toplar, 6 yaşındakiler masayı kurar, 10 yaşındakiler yemek pişirmeye yardım eder.",
+        "Yavaş gittiğinde araya girmeyin. Yavaş ve kendi başına, hızlı ve yardımla olmaktan daha değerlidir.",
+        "Bağımsız görevlerdeki hataları kabul edin: süt bardağı devrilir — bu başarısızlık değil, alıştırmadır.",
+      ],
+      practical_tip: "Bugün çocuğunuza şimdiye kadar kendinizin yaptığı yeni bir görev devredin — ve tamamen kendi başına yapmasına izin verin.",
+      discussion_body: "Çocuğunuzun ikinizin de gurur duyduğu en büyük bağımsızlık başarısı nedir?",
+      companion_quick: "Çocuğun kendi başına tamamladığı her görev, gelecekteki özgüvenine yapılan bir yatırımdır.",
+      companion_reflect: "Bugün ne zaman bıraktınız — ve bu size nasıl hissettirdi?",
+    },
+    leadership_natur: {
+      title: 'Aile ritüeli olarak doğa ve hareket',
+      parent_lens: "Düzenli olarak dışarıda olan çocuklar daha iyi uyur, daha odaklıdır ve duygusal olarak daha dengelidir. Doğa bir boş zaman etkinliği değildir — temel bir ihtiyaçtır.",
+      parent_tips: [
+        "Günde 15 dakika dışarıda olmak bile ölçülebilir etkiye sahiptir — gezi gerekmez, okul yolu bile sayılır.",
+        "Birlikte hareket edin: bisiklet, yürüyüş, oyun alanı. Birlikte hareket etmek bağı güçlendirir.",
+        "Çocuğunuzun doğayı keşfetmesine izin verin: taşlar, böcekler, su birikintileri. Program yok — sadece açıklık.",
+      ],
+      practical_tip: "Bugün dışarıda 15 dakikalık bir tur planlayın — hedef yok, program yok, sadece birlikte.",
+      discussion_body: "Çocukluğunuzdan hangi doğa deneyimini çocuklarınıza aktarmak istersiniz?",
+      companion_quick: "Dışarıda olmak beyin için besindir — çocuklar ve yetişkinler için.",
+      companion_reflect: "Bugün dışarıda geçirdiğiniz zaman ruh halinizi nasıl değiştirdi?",
+    },
+    milestone_sprache: {
+      title: 'Dil gelişimi — oyunla nasıl desteklersiniz',
+      parent_lens: "Dil gelişimi kelime çalışmasıyla değil, diyalogla gerçekleşir. Çocuklar, yetişkinler onlarla konuştuğunda, onları dinlediğinde ve söylediklerine tepki verdiğinde konuşmayı öğrenir.",
+      parent_tips: [
+        "Günlük hayatınızı yüksek sesle anlatın: 'Şimdi havuçları kesiyorum' — bu pasif kelime dağarcığını zenginleştirir.",
+        "Çocuğunuzun ifadelerini alıp genişletin: 'Top!' — 'Evet, kırmızı top yuvarlanıyor.'",
+        "Çocuk kendisi okuyabilse bile her gün sesli okuyun. Kitaplardaki metinler günlük konuşmadan farklı yapılara sahiptir.",
+      ],
+      practical_tip: "Bugün 10 dakika sesli okuyun — ve okurken sorun: 'Sence şimdi ne olacak?'",
+      discussion_body: "Çocuğunuzun son zamanlarda söylediği hangi kelimeler veya cümleler sizi özellikle şaşırttı veya duygulandırdı?",
+      companion_quick: "Dil, sessizlikte değil, konuşmada büyür.",
+      companion_reflect: "Bugün çocuğunuzun hangi dil ilerlemesini fark ettiniz?",
+    },
+    milestone_schule: {
+      title: 'Okul başlangıcı ve geçişleri sakin bir şekilde desteklemek',
+      parent_lens: "Geçişler — okula başlama, sınıf değişikliği, yeni kreş — çocuklar için en yoğun öğrenme dönemleridir. Sizin sakinliğiniz ve güveniniz çocuğunuza yansır. Siz düzenleme temelisiniz.",
+      parent_tips: [
+        "Yeni yerleri önceden tanıyın: mümkünse ilk günden önce yeni sınıfı veya okulu ziyaret edin.",
+        "Duygular hakkında konuşun: 'Heyecanlanmak sorun değil. Ben de ilk okul gününde gergindim.'",
+        "Küçük geçiş nesneleri yardımcı olur: çantada bir fotoğraf, küçük bir hatıra — nesneler güven yaratır.",
+      ],
+      practical_tip: "Bugün çocuğunuza sorun: '... hakkında neyi sabırsızlıkla bekliyorsun? Seni hâlâ ne endişelendiriyor?' — ve yargılamadan dinleyin.",
+      discussion_body: "Çocuğunuzun önemli bir geçişine nasıl eşlik ettiniz? Ne yardımcı oldu?",
+      companion_quick: "Geçişler aynı anda hem bir son hem bir başlangıçtır — ve ikisi de hissedilebilir.",
+      companion_reflect: "Bugün çocuğunuz bir geçişle ilgili hangi duyguyu gösterdi?",
+    },
+    milestone_sozial: {
+      title: '21. yüzyılın en önemli becerisi — sosyal zeka',
+      parent_lens: "IQ kapıları açar. EQ (duygusal zeka) insanları içeri alır. Yüksek sosyal yeterliliğe sahip çocuklar daha iyi işbirliği yapabilir, iletişim kurabilir ve kendilerini başkalarının yerine koyabilir — bunu sizden öğrenirler.",
+      parent_tips: [
+        "Her gün empatiyi modelleyin: 'Kedi üzgün görünüyor. Sence neden?'",
+        "Bakış açısı değiştirmeyi pratik edin: 'Bunu söylediğinde ... sence nasıl hissetti?'",
+        "Sosyal davranışı açıkça övün: 'Konuşmasını bitirene kadar bekledin. Bu çok saygılıydı.'",
+      ],
+      practical_tip: "Bugün kreş veya okuldan sonra sosyal bir durum hakkında konuşun: 'Bugün biri güzel bir şey yaptı mı?'",
+      discussion_body: "Bugün için çocuklar ve yetişkinler için sosyal yeterliliğin hangi yönünü en önemli buluyorsunuz?",
+      companion_quick: "Sosyal yeterlilik bir yetenek değildir — pratikle kazanılan bir beceridir.",
+      companion_reflect: "Çocuğunuz bugün ne zaman empati gösterdi — belki fark edilmese bile?",
+    },
+    milestone_emotion: {
+      title: 'Duygusal olgunluk — duygular işlendiğinde',
+      parent_lens: "Duygusal olgunluk hiç duygu yaşamamakla değil, onları işlemekle kendini gösterir. Duygularını ifade etmesine izin verilen çocuklar uzun vadede bunlarla daha iyi başa çıkmayı öğrenir.",
+      parent_tips: [
+        "Tüm duygulara izin var — tüm davranışlara değil. 'Kızgın olabilirsin. Vuramazsın.'",
+        "Duyguları küçümsemeyin: 'O kadar da kötü değil' yerine → 'Bunun seni gerçekten etkilediğini görüyorum.'",
+        "Duyguların bedende hissedilmesine izin verin: 'Bunu şu anda nerede hissediyorsun? Karnında mı? Göğsünde mi?'",
+      ],
+      practical_tip: "Bugün sorun: 'Bu bedeninde nasıl hissettiriyor?' — ve gelen her yanıtı kabul edin.",
+      discussion_body: "Ailenizde hangi duyguyu açıkça göstermek en zor?",
+      companion_quick: "Duygulara izin vermek zayıflık değildir — duygusal güçtür.",
+      companion_reflect: "Çocuğunuz bugün hangi duyguyu açıkça gösterdi — ve buna birlikte nasıl eşlik ettiniz?",
+    },
+    milestone_kreativitaet: {
+      title: 'Sonuç odaklı olmadan yaratıcılığı desteklemek',
+      parent_lens: "Yaratıcılık kılık değiştirmiş problem çözme becerisidir. Çocuklar resim yaptığında, inşa ettiğinde, el işi yaptığında veya oynadığında esnekliği ve özgünlüğü geliştirirler — geleceğin becerileri bunlardır.",
+      parent_tips: [
+        "Son ürüne odaklanmayın: 'Ne yaptığını anlat' 'Bu ne olacaktı?' demekten daha iyidir.",
+        "Talimatsız malzemeler sunun: kumaş, karton, doğal malzemeler — ve sonra bırakın.",
+        "Kendiniz yaratıcı olun: ebeveynler mükemmellik aramadan resim yaptığında, inşa ettiğinde, şarkı söylediğinde çocuklarına da aynısına izin verirler.",
+      ],
+      practical_tip: "Bugün 20 dakika serbest el işi sunun — şablon yok, talimat yok, sadece malzemeler.",
+      discussion_body: "Çocuğunuzun şimdiye kadar kendisinin geliştirdiği en yaratıcı proje nedir?",
+      companion_quick: "Yaratıcılığın alana, zamana ve yargılamayan bir yetişkine ihtiyacı vardır.",
+      companion_reflect: "Çocuğunuz bugün ne icat etti, inşa etti veya hayal etti — sizi şaşırtan?",
+    },
+    milestone_koerper: {
+      title: 'Beden farkındalığını güçlendirmek — gelişim motoru olarak hareket',
+      parent_lens: "Motor gelişim ve bilişsel gelişim ayrılmaz bir şekilde bağlantılıdır. Tırmanan, denge kuran ve dans eden çocuklar mekansal düşünme becerilerini ve konsantrasyonlarını da geliştirirler.",
+      parent_tips: [
+        "Hareketi günlük hayata dahil edin: bir spor programı olarak değil, günlük yaşam olarak — asansör yerine merdiven, taşımak yerine yürümek.",
+        "Kaba ve ince motor becerilerini değiştirin: inşa etmek (ince) ve tırmanmak (kaba) birbirini harika tamamlar.",
+        "Beden imajını olumlu güçlendirin: 'Bedenin o kadar çok şey yapabiliyor' — görünüşten veya performanstan bağımsız olarak.",
+      ],
+      practical_tip: "Bugün 10 dakikalık bir hareket oyunu planlayın — denge kurma, zıplama, yuvarlanma. Program yok, sadece beden ve eğlence.",
+      discussion_body: "Çocuğunuza en çok keyif veren hareket etkinliği hangisi — ve neden?",
+      companion_quick: "Hareket bir boş zaman etkinliği değildir — öğrenme motorudur.",
+      companion_reflect: "Çocuğunuz bugün bedensel olarak yeni ne denedi veya cesaret etti?",
+    },
+    milestone_uebergaenge: {
+      title: 'Ergenliğe erken ve rahat bir şekilde hazırlanmak',
+      parent_lens: "Ergenlik çoğu ebeveynin düşündüğünden daha erken başlar — ve zemin çocuklukta hazırlanır. Açık iletişim ve güvenli bir ebeveyn-çocuk ilişkisi en iyi hazırlıktır.",
+      parent_tips: [
+        "Beden değişiklikleri hakkında erken konuşun — dramasız, olgun bir şekilde. Bilgilendirilmiş çocuklar daha az korku yaşar.",
+        "Kendi ergenlik anılarınızı (uygun şekilde) paylaşın: 'Ben de o zamanlar ... konusunda emin değildim' — bu normalleştirir.",
+        "Mahremiyet için alan yaratın: kapıyı çalın, günlükleri saygıyla karşılayın. Güven saygıyla oluşur.",
+      ],
+      practical_tip: "Bugün çocuğunuzla birlikte (yaşına uygun) beden süreçleri hakkında bir video veya kitaba bakın — çekinmeden.",
+      discussion_body: "Geriye dönüp baktığınızda ergenlikte sizin için ne önemliydi — ve ebeveynlerinizin ne yapmasını isterdiniz?",
+      companion_quick: "En iyi ergenlik hazırlığı bugünkü güçlü bir ilişkidir.",
+      companion_reflect: "Çocuğunuz bugün kendisi hakkında düşünmeye başladığını gösteren bir soru sordu mu?",
+    },
+    gfk_wiedergutmachung: {
+      title: 'Ebeveynler patladığında — telafi bir güçtür',
+      parent_lens: "Hiçbir ebeveyn her zaman sabırlı değildir. Patladığınızda bu bir ebeveyn olarak başarısızlık değildir — insani bir andır. Ama sonrasında gelenler, patlamanın kendisinden daha güçlü bir şekilde ilişkiyi şekillendirir.",
+      parent_tips: [
+        "Telafi üç adım gerektirir: sorumluluk almak ('Yanıldım'), şefkat göstermek ve gerekirse farklı yapmak.",
+        "'Ama' olmadan özür dileyin: 'Bu kadar yüksek sesle konuştuğum için üzgünüm. Bu doğru değildi.' — bu kadar.",
+        "Çocuğunuz sizi insan olarak görür — bu iyidir. Çocuklar onarımla ilişkilerin fırtınalara dayandığını öğrenir.",
+      ],
+      practical_tip: "Bugün bir durumda güzel davranmadıysanız: tekrar çocuğunuza gidin ve söyleyin. Üç cümle yeterlidir.",
+      discussion_body: "Ebeveyn olarak kendi patlamalarınızla nasıl başa çıkmayı öğrendiniz — kendinizi çok sert yargılamadan?",
+      companion_quick: "Telafi çocuklara hiçbir rehberin öğretemeyeceği bir şeyi öğretir: ilişkilerin onarılabilir olduğunu.",
+      companion_reflect: "Bugün geriye dönüp baktığınızda farklı yapacağınız bir an oldu mu — ve bundan ne çıkardınız?",
+    },
+  },
+  ku: {
+    gfk_warum: {
+      title: 'Bi arambûnê li pirsên "çima" bersiv bide',
+      parent_lens: "Zarokê te rojê sed carî ji te dipirse 'Çima?'. Ev ne ji bo aciz kirina te ye, lê ji ber ku mejiyê wî girêdanan çêdike. Ew dixwaze cîhanê fêm bike.",
+      parent_tips: [
+        "Zimanê zirav (NVC) bikar bîne: li şûna dexlê, hest û hewcedariyên xwe bi zelalî bibêje.",
+        "Pirsên 'çima' bi kurtasî û hêsanî bersiv bide — zarokê te li mantiqê digere, ne li axaftinên zanistî.",
+        "Sînoran bi evîndarî bi amadebûna xwe ya kesane deyne ('Ez naxwazim tu lêxî'), ne bi ceza.",
+      ],
+      practical_tip: "Di pirsa 'çima' ya bê de: pêşî hestê nîşan bide ('Tu meraqdar î!'), paşê bi hevokekê bersiv bide.",
+      discussion_body: "Kîjan hevoka kurt û aram ji te re dibe alîkar dema zarokê te careke dehan dipirse çima?",
+      companion_quick: "Îro tenê bi bersivek aram li pirsa çima bide û paşê bi zanebûn kurt bimîne.",
+      companion_reflect: "Îro zarokê te kengî li girêdanan gerand — û tu çawa karî bi aramî rê nîşan bidî?",
+    },
+    gfk_grenzen: {
+      title: 'Sînoran bi evîndarî û zelaliyê deynin',
+      parent_lens: "Sînorên evîndar ne dijberî ye. Zarok hewceyî her duyan e: hesta ku têne hezkirin Û zelaliya li ser tiştê ku nabe. Sînorên bêyî girêdanê wek dîwaran hîs dibin — sînorên bi girêdanê wek rêberan hîs dibin.",
+      parent_tips: [
+        "Pêşî hesta zarokê xwe bi nav bike, paşê sînorê: 'Ez dibînim tu hêrs î. Lê dîsa jî: lêdan nabe.'",
+        "Bi laşî aram bimîne — dengê te ji peyvên te bilindtir e. Berî bersivdanê nefeseke kûr bikişîne.",
+        "Encaman ragihîne û pêwendî bike. Tehdîd meke, ragihîne: 'Eger tu ... bikî, wê demê ...'",
+      ],
+      practical_tip: "Îro hevokeke hest + sînor biceribîne: 'Ez fêm dikim tu dixwazî. Lê: na.' — û di dema wê de aram bimîne.",
+      discussion_body: "Dema tu digihîjî sînorên xwe tu çawa bersiv didî? Kîjan hevok ji te re dibe alîkar ku aram bimînî?",
+      companion_quick: "Berî bersiva sînor a bê nefeseke kûr bikişîne — ev nîvê karî ye.",
+      companion_reflect: "Îro rewşek hebû ku sînorek aram çêtir ji hayreke bilind kar kir?",
+    },
+    gfk_ichbotschaft: {
+      title: 'Peyamên "ez" li şûna sûcdarkirinên "tu"',
+      parent_lens: "Peyamên 'tu' ('Tu pir dengbilind î!') berevaniyê derdixin. Peyamên 'ez' ('Ez westiyayî me û hewceyî bêdengiyê me') deriyan vedikin. Zarok bêtir guhdarî dikin dema hîs nakin ku têne êrîşkirin.",
+      parent_tips: [
+        "Sûcdarkirinan bike peyamên 'ez': li şûna 'Tu qet guhdarî nakî' → 'Ez hîs nakim ku têm bihîstin û ev min xemgîn dike.'",
+        "Hewcedariya xwe parve bike: 'Niha hewceyî bêdengiyeke kurt me da ku bifikirim.' Zarok hewcedariyan bi awayekî ecêb baş fêm dikin.",
+        "Di jiyana rojane de biceribîne: sê hevokên klasîk wek peyamên 'ez' ji nû ve formule bike — sibe dema diranan dişo, nîvro dema xwarinê, êvarê berî xewê.",
+      ],
+      practical_tip: "Îro rewşeke ku tu bi gelemperî 'Tu her tim...' dibêjî hilbijêre — û wê bi 'Ez ... hîs dikim ji ber ku hewceyî ... me' biguherîne.",
+      discussion_body: "Kîjan peyama 'tu' ji te re herî zor e ku were ji nû ve formulekirin? Çi ji te re dibe alîkar?",
+      companion_quick: "Hest + hewcedariyê bi nav bike — formula peyameke 'ez' a rastîn ev e.",
+      companion_reflect: "Îro peyameke 'ez' bersivek ku te ecêbmayî hişt derxist holê?",
+    },
+    gfk_trotz: {
+      title: 'Bi aramî li qonaxên serhişkiyê bibe hevrê',
+      parent_lens: "Serhişkî ne serhildan e — pêşveçûn e. Dema zarokek li erdê dirêj dibe û diqîre, korteksa wî ya pêşîn hê ne bi têra xwe pêşketî ye da ku hestê birêve bibe. Wî hewceyî te ye wek hev-birêveberekî.",
+      parent_tips: [
+        "Bêyî zorkirinê nêzîk bimîne: bikeve asta çokan, bi aramî biaxive, eger zarok red bike destlêdanê meke.",
+        "Di nîvê bahozê de nîqaşan meke. Axaftin tenê dema aram bibe tê.",
+        "'Pirên hestan' bikar bîne: 'Te dixwest bestenî. Ev ji te re girîng bû. Ez fêm dikim.'",
+      ],
+      practical_tip: "Dema zarokê te ji xwe derdikeve: li kêleka wî rûne. Neçe, destwerdanê meke — tenê li wir be. Ev bi xwe jî alîkar dibe.",
+      discussion_body: "Dema zarokê te di nîvê teqîneke hestî de ye, çi ji te re alîkar dibe ku aram bimînî?",
+      companion_quick: "Sê peyv ji bo qonaxên serhişkiyê: nêzîk bimîne. Bi aramî nefes bike. Bisekine.",
+      companion_reflect: "Îro çi ji te re herî zêde enerjî xwar — û çi ji te re alîkar bû ku di vê de aram bimînî?",
+    },
+    gfk_geschwister: {
+      title: 'Pevçûna xwişk û birayan wek qada fêrbûnê bikar bîne',
+      parent_lens: "Xwişk û bira pevdiçin — ev normal e û tewra girîng e. Di pevçûnê de zarok lihevhatinê, guherîna dîtinê û parastina xwe fêr dibin. Rola te ne dadger e, mîyaser e.",
+      parent_tips: [
+        "Alî negire: 'Ez dibînim herduyên we niha hêrs in. Ez ê pêşî te, paşê te bibihîzim.'",
+        "Bihêle zarok bi xwe çareseriyan bibînin dema rewş nagihîje asteke xeternak. Tenê di talûkeyê rastîn de destwerdanê bike.",
+        "Her zarokî bi tenê xurt bike: kêliyên 1:1 yên rêkûpêk bêyî xwişk û bira, çavnebariyê bi demdirêjî kêm dike.",
+      ],
+      practical_tip: "Di pevçûna bê de: ji herdu zarokan bipirse 'Niha çi hewce dikî?' — berî ku biryar bidî kî rast e.",
+      discussion_body: "Dema xwişk û bira pevdiçin hûn çawa lê dinêrin? Li ba we çi herî baş kar dike?",
+      companion_quick: "Mîyaser li şûna dadger — ev role te ye di pevçûnên xwişk û bira de.",
+      companion_reflect: "Îro kêliyek hebû ku zarokên te bi xwe pevçûnek çareser kirin? We ji vê çi fêr bû?",
+    },
+    gfk_gefühle: {
+      title: 'Hestan bi nav bike û qebûl bike',
+      parent_lens: "Zarokên ku dikarin hestên xwe bi nav bikin xwedan berjewendiyeke mezin in: dikarin ragihînin ka çi hewce dikin. Ev gav — ji hestkirinê ber bi axaftinê ve — pratî û piştgiriya te hewce dike.",
+      parent_tips: [
+        "'Barometreya hestan' bikar bîne: êvarê bipirse 'Roja te di navbera 1-5 de çawa bû?' — û pêşî tu bi xwe bibêje.",
+        "Hestên xwe bi dengekî bilind bi nav bike: 'Ez niha hinekî tengezar im ji ber ku divê ez pir bifikirim.' Fêrbûna bi mînak kar dike.",
+        "Pirtûkên zarokan ên li ser hestan bixwîne — û paşê bisekine: 'Tu difikirî karakter çi hîs kir? Û tu?'",
+      ],
+      practical_tip: "Vê êvarê bipirse: 'Çi te îro şa kir? Çi te xemgîn an hêrs kir?' — û tenê guhdarî bike.",
+      discussion_body: "Kîjan hest ji zarokê te re herî zor e ku bide nasîn? Hûn çawa lê nêzîk dibin?",
+      companion_quick: "Pêşî hîs bike, paşê bi nav bike — alfabeya hestan bi te re wek mînak dest pê dike.",
+      companion_reflect: "Kîjan kêliya hestî ya zarokê te ya îro te xwest bihêle bimîne?",
+    },
+    gfk_nein: {
+      title: 'Bêyî sûcdarbûnê "na" bêje',
+      parent_lens: "Dêûbavên ku qet na nabêjin, zarokên ku sînoran nas nakin mezin dikin. 'Na' ya bi evîndarî ji zarokê te re nîşan dide: ez hewcedariyên xwe bi ciddî digirim — û tu jî dikarî.",
+      parent_tips: [
+        "'Na' hewceyî ravekirineke dirêj nake. 'Na, niha nabe' ya zelal bes e.",
+        "Sûcdarbûn piştî 'na' nîşan e, ne çewtî. Ji xwe bipirse: ma ev 'na' bi rastî çewt e — an tenê ne rihet e?",
+        "Li hember mezinên din jî 'na' bêje (peymanên lîstinê, soz) — zarokê te ji mînaka te fêr dibe.",
+      ],
+      practical_tip: "Îro carekê bi zanebûn na bêje — bêyî lêborînê. Bihîs bike ka ev çawa hîs dike.",
+      discussion_body: "Na gotin ji te re kengî herî zor e — ji zarokên xwe re, an ji yên din re?",
+      companion_quick: "Na li tiştekî erê ye li tiştekî girîngtir — bi gelemperî li te bi xwe.",
+      companion_reflect: "Îro na hebû ku dema tu li paş dinêrî xwe rast hîs kir?",
+    },
+    inclusion_stärken: {
+      title: 'Li şûna nirxandina qelsiyan hêzan bibîne',
+      parent_lens: "Her zarokî xwedan komela hêzên xwe yên taybet e. Em wek dêûbav bi gelemperî pêşî deverên pirsgirêkê dibînin — lê em ê yên pêşîn bin ku dikarin elmasê xam biparjînin.",
+      parent_tips: [
+        "Vê êvarê 3 hêzên zarokê xwe binivîse — ne serkeftin, taybetmendiyên karakter ('meraqdar', 'lênêrîner', 'sernebir').",
+        "Hêzan bi awayekî konkret û bi dem bi nav bike: 'Tu niha pir sebirdar bûyî — ev bi rastî xweş e.'",
+        "Ji berhevdana bi xwişk û bira an zarokên din dûr bikeve. Her kêşeya pêşveçûnê taybet e.",
+      ],
+      practical_tip: "Îro bi zarokê xwe re li ser yek ji hêzên wî biaxive — ne wek pesn, wek dîtinek: 'Îro min dît ka tu çawa ...'",
+      discussion_body: "Kîjan hêza veşartî ya zarokê te dixwazî îro parve bikî?",
+      companion_quick: "Dîtina hêzan tê wateya ku qelsî neyê paşguhkirin — tê wateya pêşxistina mezinbûnê.",
+      companion_reflect: "Kîjan hêza zarokê te îro te ecêbmayî hişt an bi bandor kir?",
+    },
+    inclusion_selbstwert: {
+      title: 'Rojane nirxê xwe ava bike',
+      parent_lens: "Nirxê xwe tenê bi pesn çênabe — bi ezmûnê çêdibe: 'Ez dikarim tiştekî bikim. Ez girîng im. Ez aliyê vir im.' Tu dikarî her sê ezmûnan rojane çêbikî.",
+      parent_tips: [
+        "Bihêle zarokê te biryarên biçûk bigire: 'Tu dixwazî pêşî erkan bikî an pêşî bilîzî?' Serbixwebûn = nirxê xwe.",
+        "Eleqeya rastîn nîşan bide: têlefonê deyne, li rûyê wî binêre, bipirse. 10 deqîqe balê tam mucîzeyan çêdike.",
+        "Pêvajoyê pîroz bike, ne tenê encamê: 'Te ev qas dirêj biceribî — ev beşa girîng e.'",
+      ],
+      practical_tip: "Îro: 10 deqîqe ji zarokê xwe re balekî tam bide — bêyî têlefon, bêyî tiştên din, tenê eleqe.",
+      discussion_body: "Çi zarokê te bi taybetî bi xwe serbilind dike — û hûn vê hestê çawa piştgirî dikin?",
+      companion_quick: "Nirxê xwe ne ji neynikê tê, ji çavên kesên ku me hez dikin tê.",
+      companion_reflect: "Zarokê te îro di kîjan kêliyê de 'Ez dikarim vê bikim!' nîşan da?",
+    },
+    inclusion_scheitern: {
+      title: 'Têkçûnê wek derfeta fêrbûnê bibîne',
+      parent_lens: "Mejî bi qehremanî ji çewtiyan fêr dibe — ne ji serkeftinan. Dema zarokê te têk diçe û tu aram dimînî, tu jê re sînyala herî xurt dişînî: 'Têkçûn ewle ye. Ez pê re serî derdixim.'",
+      parent_tips: [
+        "Di têkçûnê de pêşî dilovanî, paşê çareserî: 'Ev acizker bû. Em ê carekê din çi bikin cûda?'",
+        "Ji têkçûnên xwe yên taybet bibêje: 'Min jî carekê ... û paşê min ... fêr bû.' Fêrbûna bi mînak tabûyê radike.",
+        "Ji 'Min ji te re got' dûr bikeve. Ev deriyan digire. Li şûna wê: 'Te ji vê çi girt?'",
+      ],
+      practical_tip: "Îro ji zarokê xwe re ji têkçûneke xwe ya taybet bibêje — û tiştê ku te jê fêr bû.",
+      discussion_body: "Hûn wek malbat çawa li dijî têkçûnan tevdigerin? Çi ji we re alîkar dibe ku têkçûnê wek beşek ji fêrbûnê bibînin?",
+      companion_quick: "Zarokên ku destûr têne dan çewtiyan bikin, mezinên wêrektir dibin.",
+      companion_reflect: "Îro têkçûnek hebû ku zarokê te baş jê derket? Çi ji vê re alîkar bû?",
+    },
+    inclusion_hochsensibel: {
+      title: 'Zarokên pir hestiyar fêm bike û piştgirî bike',
+      parent_lens: "Nêzîkî %20ê zarokan pir hestiyar in — ew bêtir têbînî dikin, bi awayekî tund hîs dikin û hewceyî demeke vegerê ya zêdetir in. Ev ne qelsî ye, taybetmendiyeke kesayetî ye ku xwedî hêzên xwe yên taybet e.",
+      parent_tips: [
+        "Zêdebariya hestan kêm bike: berî rewşên fişarê yên bilind (kirîn, dibistan, cejn) demên veguhastinê yên aram plansaz bike.",
+        "Pêşbînî diparêze: pêşiyê ragihîne çi tê ('10 deqîqe din em diçin'). Surprîz ji bo zarokên pir hestiyar giran in.",
+        "Hestiyariya wan hêz e: dema kesek xemgîn e têdigihin û kûr difikirin. Vê bi awayekî erênî bi nav bike.",
+      ],
+      practical_tip: "Îro piştî rewşeke fişarê ya bilind ji zarokê xwe re 15 deqîqeyên 'dema şarjê' ya bêdeng plansaz bike — bêyî ekran, bêyî hêvî.",
+      discussion_body: "Hûn taybetmendiyên pir hestiyar di zarokê xwe de nas dikin? Çi ji we re di jiyana rojane de alîkar dibe?",
+      companion_quick: "Zarokên pir hestiyar ne hewceyî hişkbûnê, hewceyî cihên parastî û fêmkirinê ne.",
+      companion_reflect: "Zarokê te îro kengî herî zêde bandor pêvajo kir — û paşê çawa xwe vegerand?",
+    },
+    inclusion_freundschaft: {
+      title: 'Hevaltiyan bibe hevrê — neke birêve',
+      parent_lens: "Hevaltî cîhê herî girîng ê fêrbûna jêhatîbûnên civakî ne. Zarok dan û standinê, danûstandinê û dev jê berdanê fêr dibin — lê tenê eger em wek dêûbav berdin û bibin hevrê li şûna ku birêve bibin.",
+      parent_tips: [
+        "Bipirse, lê dadgeriyê meke: 'Îro tevî ... çawa bû?' ji 'Ez jê hez nakim, wî berî nuha ... kir' çêtir e.",
+        "Bihêle zarok pêşî bi xwe pevçûnan çareser bikin — tenê dema tengasiyeke rastîn çêdibe destwerdanê bike.",
+        "Hevaltiyan bi çalakî mumkun bike: peymanên lîstinê, vexwendinan. Derfetên civakî bi xwe çênabin.",
+      ],
+      practical_tip: "Îro ji zarokê xwe bipirse: 'Kî ji polê / komê te ji tiştên ku tu jê hez dikî hez dike?' — û bi hev re bifikire ka hûn çawa dem çêdikin.",
+      discussion_body: "Hûn ji zarokên xwe re cihê hevaltiyên wan ên taybet çawa didin — her çend hûn hilbijartina wan her tim fêm nekin jî?",
+      companion_quick: "Hevaltiya rastîn bi zorê nayê çêkirin — lê hûn dikarin bi hev re axek berhemdar amade bikin.",
+      companion_reflect: "Zarokê te îro li ser kesekî ku ji te re girîng e axivî? We ji vê çi fêr bû?",
+    },
+    inclusion_resilienz: {
+      title: 'Berxwedan — zarok çawa bi zehmetiyan mezin dibin',
+      parent_lens: "Berxwedan ne ji dayîkbûnê tê — bi pratîkê tê. Zarok dema zehmetiyan dijîn Û di vê de têne piştgirîkirin bi hêz dibin. Ne parastin, hevaltî mifta wê ye.",
+      parent_tips: [
+        "Bihêle zarokê te zehmetiyan biqedîne: zû alîkarî meke. Tenê dema ku bi rastî nikare pêşve here alîkariyê pêşkêş bike.",
+        "Diyaloga hundirîn xurt bike: 'Tu difikirî tu çi dikarî bikî?' li şûna dayîna çareseriyê rasterast.",
+        "Li ser krîzên malbatê li gorî temenê biaxive: zarokên ku têne derxistin xeyalên ji rastiyê xerabtir pêş dixin.",
+      ],
+      practical_tip: "Eger zarokê te îro têk biçe: berî destwerdanê 30 çirkeyan bisekine. Bi gelemperî çareserî bi xwe tê.",
+      discussion_body: "Kîjan zehmetiya zarokê we serkeftî bi cih anî ku hûn ecêbmayî ma?",
+      companion_quick: "Berxwedan di navbera zehmetî û piştgiriyê de mezin dibe — ne berî wê, ne jî piştî wê.",
+      companion_reflect: "Hûn çawa dizanin ku zarokê we îro ji hundir ve mezin bûye?",
+    },
+    inclusion_vielfalt: {
+      title: 'Cûrbicûrbûnê bijî — cudahî wek hêz',
+      parent_lens: "Zarokên ku zû fêr dibin ku mirov cuda ne — di eslê xwe, jêhatîbûn û awayê fikirînê de — empatiyeke zêdetir û tirseke kêmtir a têkiliyê pêş dixin. Tu dikarî cûrbicûrbûnê di jiyana rojane de zindî bikî.",
+      parent_tips: [
+        "Bi eşkerayî li ser cudahiyan biaxive — zarok wan çawa be jî têbînî dikin. 'Erê, rengê çermê Lara ji ya te cuda ye — û malbata wê ji ... tê.'",
+        "Pirtûk, fîlm û listikên bi karakterên cûrbicûr hilbijêre — nûnertî cîhanbîniyê bandor dike.",
+        "Taybetmendiyên malbatê pîroz bike: 'Li ba me weha ye, li ba malbatên din cuda ye — xweşiya wê ev e.'",
+      ],
+      practical_tip: "Îro pirtûkeke zarokan bixwîne ku lehengê wê sereke ji zarokê te cuda ye — û paşê li ser wê biaxive.",
+      discussion_body: "Hûn cudahiyên di navbera mirovan de ji zarokan re çawa şirove dikin, bi awayekî ku meraq li şûna tirsê pêş dixin?",
+      companion_quick: "Zarok bi xwezayî li cudahiyan meraqdar in — pêşdaraziyê tenê paşê fêr dibin.",
+      companion_reflect: "Zarokê te îro pirseke li ser cudahiyan kir ku te xist fikirînê?",
+    },
+    leadership_struktur: {
+      title: 'Sazûmana rojane wek gîhayê ewlehiyê',
+      parent_lens: "Mejiyê zarokî ji pêşbîniyê hez dike. Rîtûel û sazûman ne sînordarî ne — ew perçîna ku azadiyê dide zarokan da ku bi ewlehî pêşve biçin, ne.",
+      parent_tips: [
+        "Gîhayên sabît di rojê de: rîtûela şiyarbûnê, xwarin, dema xewê. Ev sê ji bo îstîqrareke rastîn bes in.",
+        "Rîtûelên veguhastinê plansaz bike: di navbera çalakiyan de veguhastinên kurt ragihîne. 'Di 5 deqîqeyan de em kom dikin.'",
+        "Sazûman ne stres e — eger hewce be gav bi gav biguherîne, ne bi carekê.",
+      ],
+      practical_tip: "Îro bi zarokê xwe re li plana rojê binêre — li ser tiştê ku tê biaxivin. Ev berxwedan û ne diyariyê kêm dike.",
+      discussion_body: "Kîjan rîtûela rojane ji we re wek malbat bi taybetî girîng e — û çima?",
+      companion_quick: "Pêşbînî ewlehiyê çêdike. Ewlehî amadebûna fêrbûnê çêdike.",
+      companion_reflect: "Kîjan kêliya îro nîşan da ku zarokê te hewceyî sazûmanê bû — an jê hez kir?",
+    },
+    leadership_schlaf: {
+      title: 'Rîtûelên xewê — ji bo laş û hiş aramî çêbike',
+      parent_lens: "Xew ne rawestan e, dema pêşveçûnê ye. Di xewê de mejî rojê pêvajo dike, bîranînan xurt dike û ji nû ve çê dibe. Rîtûeleke xewê ya baş yek ji veberhênanên herî bi bandor e ji bo zarokê te.",
+      parent_tips: [
+        "30 deqîqe berî xewê: ne ekran, ne listikên heyecanewer. Aramkirin dem digire.",
+        "Her tim heman rêz: diran, cilê xewê, çîrok, ronahî vemirandin. Rîtûel ji mejî re sînyalê dişînin: 'Niha dema xewê ye.'",
+        "Eger zarokê te nikare rakeve: bi hev re nefes bikişînin. 4 çirke bikişîne, 6 çirke berde — ev pergala nervî ya parasempatîk çalak dike.",
+      ],
+      practical_tip: "Vê êvarê berî xewê rîtûeleke nefesê ya 3-deqîqeyî bide destpêkirin — bikişîne, berde, bi hev re.",
+      discussion_body: "Rîtûela we ya herî hezkirî ya xewê çi ye — û we çawa pêş xist?",
+      companion_quick: "Rîtûeleke dawîn a aram destpêka herî baş a xeweke baş e.",
+      companion_reflect: "Çûyina xewê îro çawa bû — çi alîkar bû, çi asteng bû?",
+    },
+    leadership_bildschirm: {
+      title: 'Dema ekranê bi hişmendî çêbike',
+      parent_lens: "Ne dema ekranê bixwe pirsgirêk e — vexwarina bêkontrol û pasîf a bêyî sohbet piştî wê pirsgirêk e. Bi şertên hêsan ekran dibe çalakiyeke betlaneyê ya tendurist.",
+      parent_tips: [
+        "Li şûna qedexeyên spontane demên sabît: 'Piştî erkên malê heta saet 17' ji 'ne pir zêde' zelaltir e.",
+        "Bi hev re temaşe bike û paşê biaxive: 'Çi ji te re xweş bû? Çi xerîb an ecêb bû?' jêhatîbûna medyayê xurt dike.",
+        "Cihên bê ekran çêke: jûreya xewê û maseya xwarinê sînorên baş ên destpêkê ne.",
+      ],
+      practical_tip: "Îro 15 deqîqe bi hev re li tiştekî binêre — û paşê 2 pirsan li ser bike. Ev awayê ku zarokê te medyayê têdigihe diguherîne.",
+      discussion_body: "Hûn dema ekranê li ba xwe çawa birêve dibin — çi bi kar hat, çi ne pir?",
+      companion_quick: "Bikaranîna medyayê ya hişmend ne bi qedexeyê, bi sohbetê tê fêrbûn.",
+      companion_reflect: "Zarokê te îro medya çawa bikar anî — çalak an pasîf? We çi têbînî kir?",
+    },
+    leadership_autoritaet: {
+      title: 'Otorîte bi girêdanê — ne bi tirsê',
+      parent_lens: "Otorîter ne wateya bi deng û hişk bûnê ye. Otorîteya rastîn a dêûbaviyê dema çêdibe ku zarokek dizane: 'Tu min hez dikî Û tu zelal î.' Girêdan û rêberî hev nagirin — hev pêwîst dikin.",
+      parent_tips: [
+        "Ragihandinên zelal bêyî nîqaşê: 'Em niha wisa dikin.' Piştre danûstandin tune — tenê fêmkirinê pêşkêş bike.",
+        "Lêborîn mezinan xurttir dike, ne qelstir. 'Berê ev ji min re ne adil bû' — zarok vê rêz digirin.",
+        "Hin qaîdeyan bi hev re çêke — ev amadebûna pabendbûnê zêde dike.",
+      ],
+      practical_tip: "Îro qaîdeyekê li şûna qedexeyekê wek erkeke erênî formule bike: 'Piştî lîstinê em kom dikin' li şûna 'Bernehêle.'",
+      discussion_body: "Hûn di navbera rêberî û gotina zarokên xwe de hevsengiyê çawa dibînin?",
+      companion_quick: "Otorîte bêyî girêdanê kontrol e. Girêdan bêyî otorîteyê kaos e. Herduyan bi hev re rêberî ye.",
+      companion_reflect: "Îro kêliyek hebû ku zelaliya te ya aram ji peyveke bihêz bêtir kar kir?",
+    },
+    leadership_hausaufgaben: {
+      title: 'Erkên malê bêyî stresê — çarçoveyeke ku kar dike',
+      parent_lens: "Stresa erkên malê bi gelemperî ne pirsgirêkeke fêrbûnê ye — pirsgirêkeke rîtûelê ye. Bi sazûmana rast û dema rast mijar bixwe aram dibe.",
+      parent_tips: [
+        "Dema rast bibîne: rasterast piştî dibistanê an piştî demeke kurt a vegerê — lê berî êvarê.",
+        "Ez li vir im, lê tavilê alîkarî nakim: pêşî bihêle bi xwe biceribîne. Piştî 10 deqîqeyan bêyî pêşveçûn: bipirse 'Li ku dişikilî?'",
+        "Cihê xebatê amade bike: cihek sabît, maseyeke rêkûpêk, têlefon ne di dîmenê de — ev bala belavkirinê kêm dike.",
+      ],
+      practical_tip: "Îro bi zarokê xwe re DEMA erkên malê ya hefteyê diyar bike — û binivîse.",
+      discussion_body: "Çi li ba we erkên malê kêmtir bi stres kir? Kîjan rêzik kar dikin?",
+      companion_quick: "Sazûman di fêrbûnê de sînordarî nine — motora baldariyê ye.",
+      companion_reflect: "Fêrbûn îro çawa çû? Sibê hûn dikarin çi cuda biceribînin?",
+    },
+    leadership_selbstaendigkeit: {
+      title: 'Serbixwebûn — berdan jî evîn e',
+      parent_lens: "Zarok dema em ji wan bawer dikin serbixwe dibin. Lê berdan xeternak dixuye — û ev normal e. Huner ev e: gav bi gav berpirsyariya zêdetir bide.",
+      parent_tips: [
+        "Erkên li gorî temenê bide: yên 3 salî listikan kom dikin, yên 6 salî masê amade dikin, yên 10 salî di xwarinpêjiyê de alîkarî dikin.",
+        "Dema hêdî diçe destwerdanê meke. Hêdî û bi serê xwe ji bilez û bi alîkariyê hêjatir e.",
+        "Çewtiyan di erkên serbixwe de qebûl bike: kasa şîr dibe — ev têkçûn nine, pratî ye.",
+      ],
+      practical_tip: "Îro erkekî nû ku heta niha te bi xwe dikir bide zarokê xwe — û bihêle bi tevahî bi xwe bike.",
+      discussion_body: "Serkeftina serbixwebûnê ya herî mezin a zarokê we ku herduyên we serbilind in çi ye?",
+      companion_quick: "Her erkê ku zarok bi xwe biqedîne, veberhênaneke li ser xwebaweriya wî ya paşerojê ye.",
+      companion_reflect: "Îro hûn kengî berdan — û ev ji we re çawa hîs kir?",
+    },
+    leadership_natur: {
+      title: 'Xwezayê û tevger wek rîtûelek malbatê',
+      parent_lens: "Zarokên ku bi rêkûpêk li derve ne çêtir radizên, baldartir in û ji aliyê hestî ve aramtir in. Xweza ne çalakiyeke betlaneyê ye — hewcedariyeke bingehîn e.",
+      parent_tips: [
+        "15 deqîqe rojane li derve xwedan bandoreke pîvanbar e jî — ne hewceyî gerê, tewra rêya dibistanê jî tê hesibandin.",
+        "Bi hev re tevbigere: bisîklet, meşî, zeviya lîstinê. Tevgera bi hev re girêdanê xurt dike.",
+        "Bihêle zarokê te xwezayê keşif bike: kevir, kêzik, gol. Bêyî program — tenê vebûn.",
+      ],
+      practical_tip: "Îro gerek 15-deqîqeyî li derve plansaz bike — bêyî armanc, bêyî program, tenê bi hev re.",
+      discussion_body: "Kîjan ezmûna xwezayê ya zaroktiya we dixwazin bidin zarokên xwe?",
+      companion_quick: "Li derve bûn xwarinê mejî ye — ji bo zarok û mezinan.",
+      companion_reflect: "Dema we ya li derve îro rewşê çawa guherand?",
+    },
+    milestone_sprache: {
+      title: 'Pêşveçûna zimanî — çawa bi lîstikê piştgirî bike',
+      parent_lens: "Pêşveçûna zimanî ne bi perwerdehiya peyvan çêdibe — bi diyalogê çêdibe. Zarok fêrî axaftinê dibin dema mezin pê re diaxivin, guhdariya wan dikin û bersivê didin gotinên wan.",
+      parent_tips: [
+        "Jiyana xwe ya rojane bi dengekî bilind rave bike: 'Niha ez gizeran dibirim' — ev ferhenga pasîf dewlemend dike.",
+        "Gotinên zarokê xwe hilgire û berfirehtir bike: 'Top!' — 'Erê, topa sor digerin.'",
+        "Rojane bi dengekî bilind bixwîne, her çend zarok bi xwe bikare bixwîne jî. Nivîsarên pirtûkan ji zimanê rojane cuda ne.",
+      ],
+      practical_tip: "Îro 10 deqîqe bi dengekî bilind bixwîne — û dema xwendinê bipirse: 'Tu difikirî paşê çi diqewime?'",
+      discussion_body: "Kîjan peyv an hevokên zarokê we ya dawî we bi taybetî ecêbmayî hiştin an bandor kirin?",
+      companion_quick: "Ziman di sohbetê de mezin dibe — ne di bêdengiyê de.",
+      companion_reflect: "Kîjan pêşveçûna zimanî ya zarokê te te îro têbînî kir?",
+    },
+    milestone_schule: {
+      title: 'Destpêka dibistanê û veguhastinan bi aramî bibe hevrê',
+      parent_lens: "Veguhastin — destpêka dibistanê, guherîna polê, baxçeyê zarokan a nû — ji bo zarokan qonaxên fêrbûnê yên herî tund in. Arambûn û pêbaweriya te li zarokê te derbas dibe. Tu bingeha sazûmanê yî.",
+      parent_tips: [
+        "Cihên nû berî demê nas bike: eger gengaz be, polê an dibistana nû berî roja pêşîn ser xwe bide.",
+        "Li ser hestan biaxive: 'Heyecanbûn xweş e. Ez jî di roja pêşîn a dibistanê de bêhncîkî bûm.'",
+        "Tiştên biçûk ên veguhastinê alîkar dibin: wêneyek di çenteyê de, tiştek biçûk a bîranînê — tişt ewlehiyê çêdikin.",
+      ],
+      practical_tip: "Îro ji zarokê xwe bipirse: 'Tu ji ... çi hêvî dikî? Çi hîn jî te xemgîn dike?' — û bêyî nirxandinê guhdarî bike.",
+      discussion_body: "Hûn veguhastineke girîng a zarokê xwe çawa bi hevrêtî pêşve birin? Çi alîkar bû?",
+      companion_quick: "Veguhastin bi hev re dawî û destpêk in — û her duyan dikarin werin hîskirin.",
+      companion_reflect: "Zarokê te îro li dora veguhastinekê kîjan hest nîşan da?",
+    },
+    milestone_sozial: {
+      title: 'Aqilê civakî — jêhatîbûna herî girîng a sedsala 21an',
+      parent_lens: "IQ deriyan vedike. EQ (aqilê hestî) mirovan dihêle têkevin. Zarokên ku xwedan jêhatîbûneke civakî ya bilind in çêtir dikarin hevkariyê bikin, ragihînin û xwe li şûna yên din deynin — ev ji te fêr dibin.",
+      parent_tips: [
+        "Rojane empatiyê wek mînak nîşan bide: 'Pisîk xemgîn xuya dike. Tu difikirî çima?'",
+        "Guherîna dîtinê biceribîne: 'Dema te ev got, tu difikirî ... çawa hîs kir?'",
+        "Tevgera civakî bi eşkereyî pesend bike: 'Te sekinî heta wî peyivîna xwe qedand. Ev pir bi rêz bû.'",
+      ],
+      practical_tip: "Îro piştî baxçeyê zarokan an dibistanê li ser rewşeke civakî biaxive: 'Kesekî îro tiştek xweş kir?'",
+      discussion_body: "Kîjan alîyê jêhatîbûna civakî ji bo zarok û mezinan îro herî girîng dibînin?",
+      companion_quick: "Jêhatîbûna civakî ne bûyereke xwezayî ye — jêhatîbûneke ku bi pratîkê tê kirin e.",
+      companion_reflect: "Zarokê te îro kengî empatî nîşan da — her çend bêyî têbînîkirinê be jî?",
+    },
+    milestone_emotion: {
+      title: 'Mezinbûna hestî — dema hest têne pêvajokirin',
+      parent_lens: "Mezinbûna hestî ne bi tunebûna hestan xwe nîşan dide — bi pêvajokirina wan. Zarokên ku destûr têne dan hestên xwe îfade bikin bi demdirêjî çêtir fêrî lihevkirina wan dibin.",
+      parent_tips: [
+        "Hemû hest destûr in — ne hemû tevger. 'Tu dikarî hêrs bî. Tu nikarî lêxî.'",
+        "Hestan nepişaftîne: li şûna 'Ne ew qas xerab e' → 'Ez dibînim ev bi rastî bandor li te kir.'",
+        "Bihêle hest di laş de werin hîskirin: 'Niha tu vê li ku hîs dikî? Di zikê xwe de? Di sînga xwe de?'",
+      ],
+      practical_tip: "Îro bipirse: 'Ev çawa di laşê te de hîs dike?' — û her bersivê qebûl bike.",
+      discussion_body: "Kîjan hest li ba we wek malbat herî zor e ku bi eşkereyî were nîşandan?",
+      companion_quick: "Destûrdana hestan ne qelsî ye — hêza hestî ye.",
+      companion_reflect: "Zarokê te îro kîjan hest bi eşkereyî nîşan da — û we bi hev re çawa lê hevrê bûn?",
+    },
+    milestone_kreativitaet: {
+      title: 'Afirandinê xurt bike — bêyî fokusa encamê',
+      parent_lens: "Afirandin çareserkirina pirsgirêkan e bi kincek din. Dema zarok wêne dikişînin, ava dikin, hunerê dikin an dilîzin, elastîkî û orîjînaliyê perwerde dikin — jêhatîbûnên pêşerojê ev in.",
+      parent_tips: [
+        "Fokus li ser hilberê dawîn nebe: 'Ji min re bibêje çi çêkirî' li şûna 'Ev dê çi be?' çêtir e.",
+        "Materyalên bêyî rêwerz pêşkêş bike: qumaş, karton, materyalên xwezayî — û paşê berde.",
+        "Bi xwe afirîner be: dema dêûbav bêyî bêkêmasî wêne dikişînin, ava dikin, distrên, ew heman tiştî destûrê didin zarokên xwe.",
+      ],
+      practical_tip: "Îro 20 deqîqe hunerkirina azad pêşkêş bike — bêyî şablon, bêyî rêwerz, tenê materyal.",
+      discussion_body: "Projeya herî afirîner a zarokê we ya ku wî/wê bi xwe pêş xistiye çi ye?",
+      companion_quick: "Afirandinê cih, dem û mezinekî ku nirxandinê nake hewce dike.",
+      companion_reflect: "Zarokê te îro çi îcad kir, ava kir an xeyal kir ku te ecêbmayî hişt?",
+    },
+    milestone_koerper: {
+      title: 'Haydariya laş xurt bike — tevger wek motora pêşveçûnê',
+      parent_lens: "Pêşveçûna motorîk û pêşveçûna zanebûnê bi hev ve girêdayî ne. Zarokên ku hildikişin, bîlansê digirin û distirin, herwiha fikirîna xwe ya cîhî û baldariya xwe pêş dixin.",
+      parent_tips: [
+        "Tevgerê rojane têxe: ne wek bernameya werzîşê, wek jiyana rojane — derence li şûna asansorê, meşîn li şûna hilgirtinê.",
+        "Motorîka mezin û biçûk biguherîne: avakirin (biçûk) û hilkişîn (mezin) hev bi awayekî xweş temam dikin.",
+        "Wêneya laş bi awayekî erênî xurt bike: 'Laşê te ev qas dikare bike' — ji dîtin an performansê serbixwe.",
+      ],
+      practical_tip: "Îro 10 deqîqe lîstika tevgerê plansaz bike — bîlanskirin, pengizîn, gindirîn. Bêyî program, tenê laş û kêf.",
+      discussion_body: "Kîjan çalakiya tevgerê ji zarokê te herî kêf dide — û çima?",
+      companion_quick: "Tevger ne çalakiyeke betlaneyê ye — motora fêrbûnê ye.",
+      companion_reflect: "Zarokê te îro bi laşî çi biceribî an wêrek kir ku nû bû?",
+    },
+    milestone_uebergaenge: {
+      title: 'Ji bo mezinbûna cinsî zû û bi aramî amade bibe',
+      parent_lens: "Mezinbûna cinsî ji ya piraniya dêûbavan difikirin zûtir dest pê dike — û rêç di zaroktiyê de tê danîn. Ragihandina vekirî û têkiliyeke ewle ya dêûbav-zarok amadebûna herî baş e.",
+      parent_tips: [
+        "Zû li ser guherînên laş biaxive — bi rastî, bêyî dramayê. Zarokên ku têne agahdarkirin tirseke kêmtir hene.",
+        "Bîranînên xwe yên mezinbûna cinsî parve bike (li gorî guncanî): 'Ez jî wê demê ne pêbawer bûm li ser ...' — ev normal dike.",
+        "Cih ji bo taybetmendiyê çêbike: li derî bide, rojnivîskan rêz bike. Baweri bi rêzgirtinê çêdibe.",
+      ],
+      practical_tip: "Îro bi zarokê xwe re (li gorî temenê) vîdyoyek an pirtûkek li ser pêvajoyên laş temaşe bike — bêyî fedîkirinê.",
+      discussion_body: "Dema hûn li paş dinêrin, di mezinbûna cinsî de çi ji we re girîng bû — û hûn dixwazin dêûbavên we çi bikirana?",
+      companion_quick: "Amadebûna herî baş a mezinbûna cinsî têkiliyeke bihêz a îro ye.",
+      companion_reflect: "Zarokê te îro pirsek kir ku nîşan dide dest bi fikirîna li ser xwe dike?",
+    },
+    gfk_wiedergutmachung: {
+      title: 'Dema dêûbav diteqin — qenckirinê wek hêz',
+      parent_lens: "Ti dêûbav her tim sebir nine. Dema tu diteqî, ev ne têkçûneke te ya wek dêûbav e — kêliyeke mirovahî ye. Lê tiştê ku piştre tê, têkiliyê ji teqînê bixwe bihêztir teşe dide.",
+      parent_tips: [
+        "Qenckirinê hewceyî sê gavan e: berpirsyariyê hilgire ('Min xelet kir'), dilovanî nîşan bide û eger hewce be cuda bike.",
+        "Bêyî 'lê' lêborînê bike: 'Bibore ku ez ev qas bi deng bûm. Ev ne rast bû.' — temam.",
+        "Zarokê te te wek mirov dibîne — ev baş e. Zarok bi qenckirinê fêr dibin ku têkilî li ber bahozan berxwe didin.",
+      ],
+      practical_tip: "Eger îro tu di rewşekê de bi xweşî tevnegerî: dîsa here ba zarokê xwe û bibêje. Sê hevok bes in.",
+      discussion_body: "Hûn wek dêûbav fêrî çi bûn ka bi teqînên xwe yên taybet re çawa mijûl bibin — bêyî ku xwe pir hişk nirxînin?",
+      companion_quick: "Qenckirin tiştekî ji zarokan re fêr dike ku ti rêbernameyek nikare: ku têkilî têne çêkirin.",
+      companion_reflect: "Îro kêliyek hebû ku tu li paş dinêrî bixwestana cuda bikira — û te ji vê çi girt?",
+    },
+  },
+};
+
 // Returns the impulse topic for today, cycling through the pool by day-of-year.
 function getTodayImpulseTopic() {
   const now = new Date();
@@ -768,10 +1910,74 @@ function buildWeeklyImpulseSeedPosts(schema, impulseId) {
   ];
 }
 
+const WEEKLY_IMPULSE_TRANSLATIONS = {
+  leadership_hausaufgaben: {
+    en: {
+      title: 'Homework without stress: a routine that works',
+      parent_lens:
+        'Homework stress is often not a learning problem: it is a routine problem. With the right structure and timing, the subject can become calmer on its own.',
+      parent_tips: [
+        'Find the right time: straight after school or after a short break, but before the evening.',
+        'I am here, but I do not help right away: let your child try first. If there is no progress after 10 minutes, ask: "Where are you getting stuck?"',
+        'Prepare the workspace: a regular spot, a tidy desk, and no phone in sight reduce distractions.',
+      ],
+      practical_tip:
+        'Agree with your child today on one homework time for the week and write it down.',
+      discussion_body:
+        'What has made homework less stressful for your family? Which routines work?',
+      companion_quick:
+        'Structure while learning is not a restriction: it helps concentration get going.',
+      companion_reflect:
+        'How did learning go today? What could you try differently tomorrow?',
+    },
+    tr: {
+      title: 'Stres olmadan ödev: işe yarayan bir düzen',
+      parent_lens:
+        'Ödev stresi çoğu zaman bir öğrenme sorunu değil, bir rutin sorunudur. Doğru düzen ve doğru zamanla konu kendiliğinden daha sakin hale gelir.',
+      parent_tips: [
+        'Doğru zamanı bulun: okuldan hemen sonra veya kısa bir dinlenmenin ardından, ama akşam olmadan önce.',
+        'Yanındayım ama hemen yardım etmiyorum: önce kendisi denesin. 10 dakika ilerleme olmazsa sorun: "Nerede takıldın?"',
+        'Çalışma alanını hazırlayın: sabit bir yer, düzenli bir masa ve görünürde telefon olmaması dikkati azaltır.',
+      ],
+      practical_tip:
+        'Bugün çocuğunuzla birlikte hafta için tek bir ödev zamanı belirleyin ve yazın.',
+      discussion_body:
+        'Sizde ödevleri daha stressiz hale getiren ne oldu? Hangi rutinler işe yarıyor?',
+      companion_quick:
+        'Öğrenmede düzen bir kısıtlama değildir: odaklanmayı harekete geçirir.',
+      companion_reflect:
+        'Bugün çalışma nasıl geçti? Yarın neyi farklı deneyebilirsiniz?',
+    },
+    ku: {
+      title: 'Erkên malê bê stres: rêzek ku dixebite',
+      parent_lens:
+        'Stresa erkên malê gelek caran ne pirsgirêkeke fêrbûnê ye, belkî pirsgirêka rîtualê ye. Bi rêzek rast û dema rast, mijar bi xwe aramtir dibe.',
+      parent_tips: [
+        'Dema rast bibînin: rasterast piştî dibistanê an piştî demeke kurt a bêhnvedanê, lê beriya êvarê.',
+        'Ez li vir im, lê yekser alîkarî nakim: bila zarok pêşî bi xwe biceribîne. Heke piştî 10 deqîqeyan pêşdeçûn tunebe, bipirsin: "Tu li ku derê dimînî?"',
+        'Cihê xebatê amade bikin: cihek sabît, maseyek rêk û telefonek ne li ber çavan, bala winda kêm dike.',
+      ],
+      practical_tip:
+        'Îro bi zarokê xwe re ji bo hefteyê demek yekane ya erkên malê diyar bikin û binivîsin.',
+      discussion_body:
+        'Çi tiştê li mala we erkên malê bê stres kir? Kîjan rîtual dixebitin?',
+      companion_quick:
+        'Rêz di fêrbûnê de sînordarkirin nîne: ew alîkariya konsantrasyonê dike.',
+      companion_reflect:
+        'Îro fêrbûn çawa çû? Hûn sibê dikarin çi cuda biceribînin?',
+    },
+  },
+};
+
+function localizeWeeklyImpulseTopic(topic, language) {
+  const translation = WEEKLY_IMPULSE_TRANSLATIONS[topic.key]?.[language];
+  return translation ? { ...topic, ...translation } : topic;
+}
+
 function buildWeeklyImpulseResponse({ schema, viewerUserId, language = 'de' }) {
   const lang = supportedAppLanguageNames.has(language) ? language : 'de';
   const today = new Date().toISOString().slice(0, 10);
-  const topic = getTodayImpulseTopic();
+  const topic = localizeWeeklyImpulseTopic(getTodayImpulseTopic(), lang);
   const impulseId = `imp_daily_${today}_${topic.key}`;
   const state = getWeeklyImpulseCommunityEntry(impulseId);
   const seedPosts = buildWeeklyImpulseSeedPosts(schema, impulseId);
@@ -11095,15 +12301,19 @@ app.get('/api/community-events/:id/attendees', async (req, res) => {
  */
 app.post('/api/treasures', async (req, res) => {
   const {
-    userId, title, description, location, latitude, longitude,
+    userId: requestedUserId, title, description, location, latitude, longitude,
     category, condition, isFree, price, visibility, shareRadiusKm, photoUrl, photoUrls
   } = req.body;
+  const userId = req.firebaseUid || requestedUserId;
 
   // Validate required fields
   if (!userId || !title || !location || latitude === undefined || longitude === undefined) {
     return res.status(400).json({
       error: 'userId, title, location, latitude, longitude erforderlich'
     });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Anzeige kann nur fuer das eigene Konto erstellt werden' });
   }
   // Echter Bann: gesperrte Nutzer koennen nichts mehr im Verschenkmarkt einstellen.
   if (await isUserSuspended(userId.toString().trim())) return respondSuspended(res);
@@ -11137,7 +12347,10 @@ app.post('/api/treasures', async (req, res) => {
         isFree: isFree !== false,
         price: isFree === false && price ? parseFloat(price) : null,
         visibility: visibility ? String(visibility).slice(0, 50) : 'nearby',
-        shareRadiusKm: shareRadiusKm ? parseFloat(shareRadiusKm) : 10,
+        shareRadiusKm: Math.min(
+          Math.max(shareRadiusKm ? parseFloat(shareRadiusKm) : 10, 1),
+          25,
+        ),
         photoUrl: photoUrl ? String(photoUrl).slice(0, 500) : null,
         photoUrls: Array.isArray(photoUrls)
           ? photoUrls
@@ -11199,12 +12412,19 @@ app.get('/api/treasures', async (req, res) => {
     if (latitude !== undefined && longitude !== undefined) {
       const viewerLat = parseFloat(latitude);
       const viewerLon = parseFloat(longitude);
-      const maxDistance = parseFloat(radiusKm) || 10;
+      const requestedRadius = parseFloat(radiusKm) || 10;
+      // The giveaway market is intentionally local. Never expand a client
+      // request beyond 25 km, even if an outdated app sends a larger radius.
+      const maxDistance = Math.min(Math.max(requestedRadius, 1), 25);
 
       treasures = treasures.filter(treasure => {
         if (!treasure.latitude || !treasure.longitude) return false;
         const distance = haversineDistance(viewerLat, viewerLon, treasure.latitude, treasure.longitude);
-        return distance <= maxDistance;
+        const listingRadius = Math.min(
+          Math.max(Number(treasure.shareRadiusKm) || 10, 1),
+          25,
+        );
+        return distance <= Math.min(maxDistance, listingRadius);
       }).sort((a, b) => {
         const distA = haversineDistance(viewerLat, viewerLon, a.latitude, a.longitude);
         const distB = haversineDistance(viewerLat, viewerLon, b.latitude, b.longitude);
@@ -11590,10 +12810,14 @@ app.post('/api/treasures/:id/report', async (req, res) => {
  */
 app.post('/api/treasures/:id/reserve', async (req, res) => {
   const { id } = req.params;
-  const { requesterUserId, preferredSlot, handoverMode, message } = req.body;
+  const { requesterUserId: requestedRequesterUserId, preferredSlot, handoverMode, message } = req.body;
+  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
 
   if (!requesterUserId) {
     return res.status(400).json({ error: 'requesterUserId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Reservierung nur fuer das eigene Konto erlaubt' });
   }
 
   try {
@@ -11604,7 +12828,7 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
     if (!treasure) {
       return res.status(404).json({ error: 'Treasure nicht gefunden' });
     }
-    if (treasure.status === 'archived') {
+    if (treasure.status !== 'available') {
       return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
     }
     // Eigenes Angebot kann man nicht reservieren
@@ -11634,21 +12858,31 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
       .join(' · ')
       .slice(0, 500);
 
-    const handover = await prisma.treasureHandover.create({
-      data: {
-        treasureId: id,
-        requesterId: String(requesterUserId).slice(0, 100),
-        status: 'reserved',
-        location: preferredSlot ? String(preferredSlot).slice(0, 200) : null,
-        notes: combinedNotes || null,
-        updatedAt: new Date(),
-      },
+    const handover = await prisma.$transaction(async tx => {
+      const claimed = await tx.treasureItem.updateMany({
+        where: { id, status: 'available' },
+        data: { status: 'reserved', updatedAt: new Date() },
+      });
+      if (claimed.count !== 1) {
+        const error = new Error('Treasure ist nicht mehr verfuegbar');
+        error.code = 'TREASURE_UNAVAILABLE';
+        throw error;
+      }
+      return tx.treasureHandover.create({
+        data: {
+          treasureId: id,
+          requesterId: String(requesterUserId).slice(0, 100),
+          status: 'reserved',
+          location: preferredSlot ? String(preferredSlot).slice(0, 200) : null,
+          notes: combinedNotes || null,
+          updatedAt: new Date(),
+        },
+      });
     });
-
-    // Artikel-Status auf 'reserved' setzen (bleibt sichtbar, aber markiert)
-    await prisma.treasureItem.update({
-      where: { id },
-      data: { status: 'reserved', updatedAt: new Date() },
+    await sendPushToUser(treasure.userId, {
+      title: 'Neue Reservierung',
+      body: `Jemand moechte "${treasure.title}" abholen.`,
+      data: { type: 'treasure_reservation', treasureId: id, handoverId: handover.id },
     });
 
     res.status(201).json({
@@ -11659,6 +12893,9 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
     });
   } catch (err) {
     console.error('❌ Treasure reserve error:', err.message);
+    if (err.code === 'TREASURE_UNAVAILABLE') {
+      return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
+    }
     res.status(500).json({ error: `Reservierung fehlgeschlagen: ${err.message}` });
   }
 });
@@ -11669,9 +12906,13 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
  */
 app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
   const { id } = req.params;
-  const { requesterUserId } = req.body;
+  const { requesterUserId: requestedRequesterUserId } = req.body;
+  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
   if (!requesterUserId) {
     return res.status(400).json({ error: 'requesterUserId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Stornierung nur fuer das eigene Konto erlaubt' });
   }
   try {
     await prisma.treasureHandover.updateMany({
@@ -11700,6 +12941,118 @@ app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
 });
 
 /**
+ * POST /api/treasures/:id/handovers/:handoverId/confirm
+ * The owner confirms a reservation for handover.
+ */
+app.post('/api/treasures/:id/handovers/:handoverId/confirm', async (req, res) => {
+  const { id, handoverId } = req.params;
+  const requestedUserId = req.body.userId;
+  const userId = req.firebaseUid || requestedUserId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Bestaetigung nur fuer das eigene Konto erlaubt' });
+  }
+
+  try {
+    const treasure = await prisma.treasureItem.findUnique({ where: { id } });
+    if (!treasure) {
+      return res.status(404).json({ error: 'Treasure nicht gefunden' });
+    }
+    if (treasure.userId !== String(userId)) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann eine Reservierung bestaetigen' });
+    }
+    const handover = await prisma.treasureHandover.findFirst({
+      where: { id: handoverId, treasureId: id, status: { in: ['pending', 'reserved'] } },
+    });
+    if (!handover) {
+      return res.status(404).json({ error: 'Aktive Reservierung nicht gefunden' });
+    }
+
+    const now = new Date();
+    const updated = await prisma.$transaction(async tx => {
+      const confirmed = await tx.treasureHandover.update({
+        where: { id: handoverId },
+        data: { status: 'confirmed', updatedAt: now },
+      });
+      await tx.treasureHandover.updateMany({
+        where: { treasureId: id, id: { not: handoverId }, status: { in: ['pending', 'reserved'] } },
+        data: { status: 'cancelled', updatedAt: now },
+      });
+      await tx.treasureItem.update({
+        where: { id },
+        data: { status: 'claimed', updatedAt: now },
+      });
+      return confirmed;
+    });
+    await sendPushToUser(updated.requesterId, {
+      title: 'Uebergabe bestaetigt',
+      body: `Die Uebergabe von "${treasure.title}" wurde bestaetigt.`,
+      data: { type: 'treasure_handover_update', treasureId: id, handoverId },
+    });
+    res.json({ handover: updated, message: 'Uebergabe bestaetigt' });
+  } catch (err) {
+    console.error('❌ Treasure handover confirmation error:', err.message);
+    res.status(500).json({ error: `Bestaetigung fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/treasures/:id/handovers/:handoverId/complete
+ * The owner marks a confirmed handover as completed.
+ */
+app.post('/api/treasures/:id/handovers/:handoverId/complete', async (req, res) => {
+  const { id, handoverId } = req.params;
+  const requestedUserId = req.body.userId;
+  const userId = req.firebaseUid || requestedUserId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Abschluss nur fuer das eigene Konto erlaubt' });
+  }
+
+  try {
+    const treasure = await prisma.treasureItem.findUnique({ where: { id } });
+    if (!treasure) {
+      return res.status(404).json({ error: 'Treasure nicht gefunden' });
+    }
+    if (treasure.userId !== String(userId)) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann die Uebergabe abschliessen' });
+    }
+    const handover = await prisma.treasureHandover.findFirst({
+      where: { id: handoverId, treasureId: id, status: 'confirmed' },
+    });
+    if (!handover) {
+      return res.status(404).json({ error: 'Bestaetigte Uebergabe nicht gefunden' });
+    }
+
+    const now = new Date();
+    const updated = await prisma.$transaction(async tx => {
+      const completed = await tx.treasureHandover.update({
+        where: { id: handoverId },
+        data: { status: 'completed', updatedAt: now },
+      });
+      await tx.treasureItem.update({
+        where: { id },
+        data: { status: 'archived', updatedAt: now },
+      });
+      return completed;
+    });
+    await sendPushToUser(updated.requesterId, {
+      title: 'Uebergabe abgeschlossen',
+      body: `"${treasure.title}" wurde als uebergeben markiert.`,
+      data: { type: 'treasure_handover_update', treasureId: id, handoverId },
+    });
+    res.json({ handover: updated, message: 'Uebergabe abgeschlossen' });
+  } catch (err) {
+    console.error('❌ Treasure handover completion error:', err.message);
+    res.status(500).json({ error: `Abschluss fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
  * GET /api/treasures/mine?userId=...
  * Liefert die eigenen Angebote MIT Reservierungen (für den Verschenker)
  * plus die vom Nutzer reservierten Artikel (für den Abholer).
@@ -11709,6 +13062,8 @@ app.get('/api/treasures/mine', async (req, res) => {
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+
   try {
     // Eigene Angebote + wer sie reserviert hat
     const myOffers = await prisma.treasureItem.findMany({
@@ -11720,9 +13075,13 @@ app.get('/api/treasures/mine', async (req, res) => {
 
     // Reservierungen die der Nutzer selbst gemacht hat
     const myReservations = await prisma.treasureHandover.findMany({
-      where: { requesterId: userId, status: { in: ['pending', 'reserved'] } },
+      where: {
+        requesterId: userId,
+        status: { in: ['pending', 'reserved', 'confirmed'] },
+      },
       orderBy: { createdAt: 'desc' },
       take: 100,
+      include: { treasure: { select: { title: true } } },
     });
 
     res.json({
@@ -11732,7 +13091,11 @@ app.get('/api/treasures/mine', async (req, res) => {
         photoUrl: t.photoUrl,
         status: t.status,
         reservations: (t.handovers || [])
-          .filter(h => h.status === 'reserved' || h.status === 'pending')
+          .filter(h =>
+            h.status === 'reserved' ||
+            h.status === 'pending' ||
+            h.status === 'confirmed'
+          )
           .map(h => ({
             id: h.id,
             requesterId: h.requesterId,
@@ -11745,6 +13108,7 @@ app.get('/api/treasures/mine', async (req, res) => {
       reservedByMe: myReservations.map(h => ({
         id: h.id,
         treasureId: h.treasureId,
+        treasureTitle: h.treasure.title,
         status: h.status,
         location: h.location,
         createdAt: h.createdAt,
@@ -11895,10 +13259,14 @@ app.get('/api/treasures/:id', async (req, res) => {
  */
 app.put('/api/treasures/:id', async (req, res) => {
   const { id } = req.params;
-  const { userId, title, description, location, latitude, longitude, condition, status } = req.body;
+  const { userId: requestedUserId, title, description, location, latitude, longitude, condition, status } = req.body;
+  const userId = req.firebaseUid || requestedUserId;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Bearbeitung nur fuer das eigene Konto erlaubt' });
   }
 
   try {
@@ -11948,10 +13316,16 @@ app.put('/api/treasures/:id', async (req, res) => {
  */
 app.delete('/api/treasures/:id', async (req, res) => {
   const { id } = req.params;
-  const { userId } = req.query;
+  const requestedUserId = typeof req.query.userId === 'string'
+    ? req.query.userId
+    : '';
+  const userId = req.firebaseUid || requestedUserId;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && requestedUserId !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Loeschung nur fuer das eigene Konto erlaubt' });
   }
 
   try {

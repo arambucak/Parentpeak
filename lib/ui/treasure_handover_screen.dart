@@ -3,18 +3,25 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
 import 'package:parentpeak/models_and_widgets/animation_helpers.dart';
 import 'package:parentpeak/ui/treasure_upload_screen.dart';
+import 'package:parentpeak/ui/widgets/treasure_mine_offer_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum TreasureHandoverMode { coffeeChat, flyingSwap }
 
 class TreasureHandoverScreen extends StatefulWidget {
-  const TreasureHandoverScreen({super.key});
+  const TreasureHandoverScreen({
+    super.key,
+    this.openMyListings = false,
+  });
+
+  final bool openMyListings;
 
   @override
   State<TreasureHandoverScreen> createState() => _TreasureHandoverScreenState();
@@ -54,6 +61,11 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     await _restoreSafetyState();
     await _loadListings();
     if (!mounted) return;
+    if (widget.openMyListings) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showMyListings();
+      });
+    }
     if (_scrollController.hasClients) {
       _scrollController.jumpTo(0);
     }
@@ -106,6 +118,11 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
+          IconButton(
+            tooltip: l10n.t('treasureMyListings', fallback: 'Meine Anzeigen'),
+            onPressed: _showMyListings,
+            icon: const Icon(Icons.inventory_2_outlined),
+          ),
           IconButton(
             tooltip: l10n.t('treasurePublishNow', fallback: 'Jetzt teilen'),
             onPressed: _openUpload,
@@ -384,18 +401,41 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
               const SizedBox(height: 14),
               staged(
                 order: 3,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    backgroundColor: const Color(0xFF1E5CD7),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: _openUpload,
-                  icon: const Icon(Icons.add_circle_outline_rounded),
-                  label: Text(
-                      l10n.t('treasurePublishNow', fallback: 'Jetzt teilen')),
-                ),
+                child: LocationService.instance.hasLocation
+                    ? FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          backgroundColor: const Color(0xFF1E5CD7),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: _openUpload,
+                        icon: const Icon(Icons.add_circle_outline_rounded),
+                        label: Text(l10n.t('treasurePublishNow',
+                            fallback: 'Jetzt teilen')),
+                      )
+                    : FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: () async {
+                          final located = await LocationService.instance
+                              .requestGPSLocation();
+                          if (!mounted) return;
+                          if (located) {
+                            await _loadListings();
+                          } else {
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(
+                                  content: Text(l10n.t('location_denied'))),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.my_location_rounded),
+                        label: Text(l10n.t('use_my_location')),
+                      ),
               ),
             ],
           ),
@@ -413,8 +453,8 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
         ? l10n.t('treasureHandoverCoffeeMode', fallback: 'Kurz treffen')
         : l10n.t('treasureHandoverFlyingSwap', fallback: 'Still tauschen');
     final detail = _selectedMode == TreasureHandoverMode.coffeeChat
-      ? _slotLabel(l10n, _selectedSlot)
-      : _dropPointLabel(l10n, _selectedDropPoint);
+        ? _slotLabel(l10n, _selectedSlot)
+        : _dropPointLabel(l10n, _selectedDropPoint);
 
     return Container(
       width: double.infinity,
@@ -601,9 +641,9 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
           ),
           child: Text(
             _globalDigitalMode
-              ? l10n.t('treasureGlobalMode')
-              : l10n.tFormat('treasureCurrentRadius',
-                {'radius': _discoveryScope}),
+                ? l10n.t('treasureGlobalMode')
+                : l10n.tFormat(
+                    'treasureCurrentRadius', {'radius': _discoveryScope}),
             style: const TextStyle(
               color: Color(0xFF385069),
               fontWeight: FontWeight.w700,
@@ -1149,6 +1189,138 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     });
   }
 
+  Future<void> _showMyListings() async {
+    final l10n = AppLocalizations.of(context);
+    final overview = await _listingService.loadMine();
+    if (!mounted) return;
+    if (overview == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.t('treasureHandoverUpdateFailed'))),
+      );
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.66,
+          minChildSize: 0.35,
+          maxChildSize: 0.9,
+          builder: (context, controller) => ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+            children: [
+              Text(
+                l10n.t('treasureMyListings', fallback: 'Meine Anzeigen'),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 14),
+              if (overview.offers.isEmpty && overview.reservedByMe.isEmpty)
+                Text(l10n.t('treasureMyListingsEmpty')),
+              for (final offer in overview.offers) ...[
+                TreasureMineOfferCard(
+                  offer: offer,
+                  l10n: l10n,
+                  onConfirm: (handover) {
+                    Navigator.of(sheetContext).pop();
+                    _updateOwnerHandover(offer.id, handover.id,
+                        complete: false);
+                  },
+                  onComplete: (handover) {
+                    Navigator.of(sheetContext).pop();
+                    _updateOwnerHandover(offer.id, handover.id, complete: true);
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (overview.reservedByMe.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  l10n.t('treasureReservations', fallback: 'Reservierungen'),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                for (final reservation in overview.reservedByMe)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                        reservation.treasureTitle ?? reservation.treasureId),
+                    subtitle: Text(
+                      reservation.status == 'confirmed'
+                          ? l10n.t('treasureReservationConfirmed')
+                          : reservation.location,
+                    ),
+                    trailing: reservation.status == 'confirmed'
+                        ? null
+                        : TextButton(
+                            onPressed: () {
+                              Navigator.of(sheetContext).pop();
+                              _cancelMyReservation(reservation.treasureId);
+                            },
+                            child: Text(l10n.t('treasureCancelReservation')),
+                          ),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateOwnerHandover(
+    String listingId,
+    String handoverId, {
+    required bool complete,
+  }) async {
+    final l10n = AppLocalizations.of(context);
+    final updated = complete
+        ? await _listingService.completeHandover(
+            listingId: listingId,
+            handoverId: handoverId,
+          )
+        : await _listingService.confirmHandover(
+            listingId: listingId,
+            handoverId: handoverId,
+          );
+    if (!mounted) return;
+    await _loadListings();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.t(
+          updated ? 'treasureHandoverUpdated' : 'treasureHandoverUpdateFailed',
+        )),
+      ),
+    );
+  }
+
+  Future<void> _cancelMyReservation(String listingId) async {
+    final l10n = AppLocalizations.of(context);
+    final cancelled =
+        await _listingService.cancelReservation(listingId: listingId);
+    if (!mounted) return;
+    await _loadListings();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.t(
+          cancelled
+              ? 'treasureHandoverUpdated'
+              : 'treasureHandoverUpdateFailed',
+        )),
+      ),
+    );
+  }
+
   Future<void> _restoreSafetyState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -1203,7 +1375,8 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                     items: reasons
                         .map((reason) => DropdownMenuItem<String>(
                               value: reason,
-                              child: Text(l10n.t('treasureReportReason_$reason')),
+                              child:
+                                  Text(l10n.t('treasureReportReason_$reason')),
                             ))
                         .toList(),
                     onChanged: (value) {
@@ -1281,6 +1454,57 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                 ),
         ),
         behavior: SnackBarBehavior.fixed,
+      ),
+    );
+  }
+
+  Future<void> _deleteListing(TreasureListing listing) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title:
+            Text(l10n.t('treasureDeleteTitle', fallback: 'Anzeige löschen?')),
+        content: Text(l10n.t(
+          'treasureDeleteText',
+          fallback:
+              'Die Anzeige wird dauerhaft entfernt. Bestehende Reservierungen werden aufgehoben.',
+        )),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.t('cancel', fallback: 'Abbrechen')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+                l10n.t('treasureDeleteAction', fallback: 'Anzeige löschen')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final deleted = await _listingService.deleteListing(listingId: listing.id);
+    if (!mounted) return;
+
+    if (deleted) {
+      setState(() {
+        _listings.removeWhere((item) => item.id == listing.id);
+        _reservedListingIds.remove(listing.id);
+        if (_selectedListing?.id == listing.id) _selectedListing = null;
+      });
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.t(
+          deleted ? 'treasureDeleteSuccess' : 'treasureDeleteFailed',
+          fallback: deleted
+              ? 'Deine Anzeige wurde gelöscht.'
+              : 'Die Anzeige konnte nicht gelöscht werden.',
+        )),
       ),
     );
   }
@@ -1380,8 +1604,9 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     if (value.contains('fahr') || value == 'vehicles') return 'vehicles';
     if (value.contains('kleidung') || value == 'clothing') return 'clothing';
     if (value.contains('spiel') || value == 'toys') return 'toys';
-    if (value.contains('buch') || value == 'books' || value == 'bücher')
+    if (value.contains('buch') || value == 'books' || value == 'bücher') {
       return 'books';
+    }
     if (value.contains('ausstatt') || value == 'equipment') return 'equipment';
     return 'toys';
   }
@@ -1844,6 +2069,34 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                               ),
                             ),
                           ),
+                          if (listing.ownerUserId ==
+                              AuthService.instance.currentUser?.uid)
+                            SizedBox(
+                              width: narrowActions
+                                  ? constraints.maxWidth
+                                  : (constraints.maxWidth - 8) / 2,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _deleteListing(listing);
+                                },
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: narrowActions ? 17 : 18,
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red.shade700,
+                                ),
+                                label: Text(
+                                  l10n.t(
+                                    'treasureDeleteAction',
+                                    fallback: 'Anzeige löschen',
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ),
                         ],
                       );
                     },
@@ -2030,7 +2283,10 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   ) {
     return _PickerFrame(
       title: l10n.t('treasureTimeWindowLabel', fallback: 'Verfügbare Zeiten'),
-        subtitle: l10n.t('treasureCoffeeSlotHint'),
+      subtitle: l10n.t(
+        'treasureCoffeeSlotHint',
+        fallback: 'Wählt eine Zeit, die für beide Familien gut passt.',
+      ),
       child: Column(
         children: coffeeSlots
             .map(
@@ -2059,8 +2315,15 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     List<String> dropPoints,
   ) {
     return _PickerFrame(
-        title: l10n.t('treasureContactlessPointLabel'),
-        subtitle: l10n.t('treasureDropPointHint'),
+      title: l10n.t(
+        'treasureContactlessPointLabel',
+        fallback: 'Abholpunkt',
+      ),
+      subtitle: l10n.t(
+        'treasureDropPointHint',
+        fallback:
+            'Wählt einen kontaktlosen Abholpunkt, der sich sicher anfühlt.',
+      ),
       child: Column(
         children: dropPoints
             .map(
@@ -2198,17 +2461,16 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     if (listing == null) return;
 
     final detailId = _selectedMode == TreasureHandoverMode.coffeeChat
-      ? _selectedSlot
-      : _selectedDropPoint;
+        ? _selectedSlot
+        : _selectedDropPoint;
     final detailLabel = _selectedMode == TreasureHandoverMode.coffeeChat
-      ? _slotLabel(l10n, detailId)
-      : _dropPointLabel(l10n, detailId);
+        ? _slotLabel(l10n, detailId)
+        : _dropPointLabel(l10n, detailId);
 
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
 
-    // Echte Reservierung: lokal speichern + Backend (best effort)
-    await _listingService.reserveListing(
+    final reserved = await _listingService.reserveListing(
       listingId: listing.id,
       preferredSlot: detailId,
       handoverMode:
@@ -2216,6 +2478,18 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     );
 
     if (!mounted) return;
+    if (!reserved) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.t(
+            'treasureNetworkError',
+            fallback:
+                'Die Reservierung konnte gerade nicht gespeichert werden.',
+          )),
+        ),
+      );
+      return;
+    }
     setState(() {
       _reservedListingIds = {..._reservedListingIds, listing.id};
     });
@@ -2227,9 +2501,10 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
             'treasureReservationSuccessDetail',
             {
               'title': listing.title,
-              'detailType': l10n.t(_selectedMode == TreasureHandoverMode.coffeeChat
-                  ? 'treasureTimeWindowLabel'
-                  : 'treasureContactlessPointLabel'),
+              'detailType': l10n.t(
+                  _selectedMode == TreasureHandoverMode.coffeeChat
+                      ? 'treasureTimeWindowLabel'
+                      : 'treasureContactlessPointLabel'),
               'detail': detailLabel ?? '—',
             },
           ),

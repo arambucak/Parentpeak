@@ -16,6 +16,7 @@ class TreasureListing {
     this.views = 0,
     this.imagePath,
     this.imagePaths = const [],
+    this.ownerUserId,
     required this.createdAt,
   });
 
@@ -35,6 +36,7 @@ class TreasureListing {
   final int views;
   final String? imagePath;
   final List<String> imagePaths;
+  final String? ownerUserId;
   final DateTime createdAt;
 
   List<String> get resolvedImagePaths {
@@ -58,7 +60,8 @@ class TreasureListing {
     return paths;
   }
 
-  String? get primaryImagePath => resolvedImagePaths.isEmpty ? null : resolvedImagePaths.first;
+  String? get primaryImagePath =>
+      resolvedImagePaths.isEmpty ? null : resolvedImagePaths.first;
   int get photoCount => resolvedImagePaths.length;
   bool get hasImages => photoCount > 0;
 
@@ -79,6 +82,7 @@ class TreasureListing {
     int? views,
     String? imagePath,
     List<String>? imagePaths,
+    String? ownerUserId,
     DateTime? createdAt,
   }) {
     return TreasureListing(
@@ -98,6 +102,7 @@ class TreasureListing {
       views: views ?? this.views,
       imagePath: imagePath ?? this.imagePath,
       imagePaths: imagePaths ?? this.imagePaths,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -113,7 +118,8 @@ class TreasureListing {
       category: map['category']?.toString() ?? '',
       sizeAge: map['sizeAge']?.toString() ?? '',
       conditionKey: map['conditionKey']?.toString() ?? 'round2',
-      distanceMeters: int.tryParse(map['distanceMeters']?.toString() ?? '') ?? 200,
+      distanceMeters:
+          int.tryParse(map['distanceMeters']?.toString() ?? '') ?? 200,
       colorLabel: map['colorLabel']?.toString() ?? '',
       note: map['note']?.toString() ?? '',
       locationLabel: map['locationLabel']?.toString(),
@@ -124,7 +130,9 @@ class TreasureListing {
       views: int.tryParse(map['views']?.toString() ?? '') ?? 0,
       imagePath: map['imagePath']?.toString(),
       imagePaths: imagePaths,
-      createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
+      ownerUserId: map['ownerUserId']?.toString(),
+      createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -147,6 +155,7 @@ class TreasureListing {
       'views': views,
       'imagePath': primaryImagePath,
       'imagePaths': resolvedPaths,
+      'ownerUserId': ownerUserId,
       'createdAt': createdAt.toIso8601String(),
     };
   }

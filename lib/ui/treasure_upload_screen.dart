@@ -23,7 +23,6 @@ class TreasureUploadScreen extends StatefulWidget {
 
 class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   static const String _defaultCategoryKey = 'vehicles';
-  static const String _defaultLocationKey = 'berlin_tiergarten';
   static const double _defaultDistanceMeters = 120;
   static const int _defaultConditionIndex = 1;
   static const String _defaultTitle = 'Rotes Laufrad';
@@ -34,8 +33,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   bool _voiceCaptured = false;
   List<XFile> _selectedImages = const [];
   bool _isAnalyzingImage = false;
+  bool _imageAnalysisFailed = false;
   String _selectedCategoryKey = _defaultCategoryKey;
-  String _selectedLocationKey = _defaultLocationKey;
   double _distanceMeters = _defaultDistanceMeters;
   bool _draftHydrated = false;
   Timer? _draftDebounce;
@@ -191,6 +190,17 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     );
                     return;
                   }
+                  final loc = LocationService.instance;
+                  if (!loc.hasLocation) {
+                    final located = await loc.requestGPSLocation();
+                    if (!located || !loc.hasLocation) {
+                      messenger.hideCurrentSnackBar();
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(l10n.t('location_denied'))),
+                      );
+                      return;
+                    }
+                  }
                   // Bilder JETZT hochladen (XFiles sind hier frisch/gültig)
                   final uploadedUrls = await ImageUploadService.instance
                       .uploadImages(_selectedImages);
@@ -209,14 +219,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
 
                   final categoryLabel =
                       _categoryLabelForKey(l10n, _selectedCategoryKey);
-                  // Echten Standort des Nutzers verwenden (Fallback: Stadtteil-Auswahl)
-                  final loc = LocationService.instance;
-                  final locationLabel = loc.hasLocation && loc.city != null
-                      ? loc.city!
-                      : _locationLabelForKey(l10n, _selectedLocationKey);
-                  final locationCoords = loc.hasLocation
-                      ? (loc.latitude!, loc.longitude!)
-                      : _locationCoordsForKey(_selectedLocationKey);
+                  final locationLabel = loc.city ?? l10n.t('location');
+                  final locationCoords = (loc.latitude!, loc.longitude!);
                   final title = _titleController.text.trim().isEmpty
                       ? l10n.t('treasureTitlePlaceholder',
                           fallback: 'Rotes Laufrad')
@@ -244,13 +248,26 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     imagePaths: uploadedUrls,
                     createdAt: DateTime.now(),
                   );
-                  final savedListings =
+                  final createdListing =
                       await TreasureListingService.instance.createListing(
                     listing,
                     userId: AuthService.instance.currentUser?.uid,
                   );
-                  final createdListing =
-                      savedListings.isNotEmpty ? savedListings.first : listing;
+                  if (createdListing == null) {
+                    if (!mounted) return;
+                    messenger.hideCurrentSnackBar();
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.t(
+                          'treasureUploadFailed',
+                          fallback:
+                              'Das Veröffentlichen hat gerade nicht geklappt. Dein Entwurf bleibt erhalten.',
+                        )),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
                   _draftDebounce?.cancel();
                   await TreasureListingService.instance.clearDraft();
                   if (!mounted) return;
@@ -460,24 +477,50 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       title: l10n.t('treasureAiTitle', fallback: 'Schnell erkannt'),
       subtitle: l10n.t('treasureAiHelper',
           fallback: 'Wir schlagen dir Kategorie und Farbe direkt vor.'),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _TagChip(label: categoryLabel),
-          _TagChip(label: colorLabel),
-          _TagChip(label: sizeAgeLabel),
-          _TagChip(
-            label: _selectedImages.isEmpty
-                ? l10n.t('treasureAiAccept', fallback: 'Übernehmen')
-                : l10n.tFormat(
-                    'treasurePhotoCount',
-                    {'count': '${_selectedImages.length}'},
-                    fallback: '${_selectedImages.length} Fotos',
-                  ),
-          ),
-        ],
-      ),
+      child: _isAnalyzingImage
+          ? Row(
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 10),
+                Text(l10n.t('treasureVoiceProcessing')),
+              ],
+            )
+          : _imageAnalysisFailed
+              ? Row(
+                  children: [
+                    Expanded(
+                        child: Text(l10n.t('fridge_photo_processing_failed'))),
+                    TextButton.icon(
+                      onPressed: _primarySelectedImage == null
+                          ? null
+                          : () => _analyzeImageWithAI(_primarySelectedImage!),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: Text(l10n.t('try_again')),
+                    ),
+                  ],
+                )
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _TagChip(label: categoryLabel),
+                    _TagChip(label: colorLabel),
+                    _TagChip(label: sizeAgeLabel),
+                    _TagChip(
+                      label: _selectedImages.isEmpty
+                          ? l10n.t('treasureAiAccept', fallback: 'Übernehmen')
+                          : l10n.tFormat(
+                              'treasurePhotoCount',
+                              {'count': '${_selectedImages.length}'},
+                              fallback: '${_selectedImages.length} Fotos',
+                            ),
+                    ),
+                  ],
+                ),
     );
   }
 
@@ -973,45 +1016,32 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   }
 
   Widget _buildLocationCard(AppLocalizations l10n) {
-    final options = [
-      ('berlin_tiergarten', 'Tiergarten, Berlin'),
-      ('berlin_prenzlauer_berg', 'Prenzlauer Berg, Berlin'),
-      ('hamburg_altona', 'Altona, Hamburg'),
-      ('muenchen_neuhausen', 'Neuhausen, München'),
-      ('koeln_suelz', 'Sülz, Köln'),
-    ];
+    final location = LocationService.instance;
+    final locationLabel = location.city;
 
     return _SectionFrame(
       title: l10n.t('treasurePickupLocationTitle', fallback: 'Abholbereich'),
       subtitle: l10n.t(
         'treasurePickupLocationHint',
-        fallback: 'Wähle den Bereich für realistische Entfernungen im Feed.',
+        fallback: 'Dein Standort bestimmt, welche Familien dein Angebot sehen.',
       ),
-      child: DropdownButtonFormField<String>(
-        initialValue: _selectedLocationKey,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: const Color(0xFFF4F7FC),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.location_on_outlined),
+        title: Text(locationLabel ?? l10n.t('location_denied')),
+        trailing: OutlinedButton(
+          onPressed: () async {
+            final located = await location.requestGPSLocation();
+            if (!mounted) return;
+            setState(() {});
+            if (!located) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.t('location_denied'))),
+              );
+            }
+          },
+          child: Text(l10n.t('use_my_location')),
         ),
-        items: options
-            .map(
-              (item) => DropdownMenuItem<String>(
-                value: item.$1,
-                child: Text(item.$2),
-              ),
-            )
-            .toList(),
-        onChanged: (value) {
-          if (value == null || value.isEmpty) return;
-          setState(() {
-            _selectedLocationKey = value;
-          });
-          _onDraftChanged();
-        },
       ),
     );
   }
@@ -1028,36 +1058,6 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
         return l10n.t('treasureCategoryEquipment', fallback: 'Ausstattung');
       default:
         return l10n.t('treasureCategoryVehicles', fallback: 'Fahrzeuge');
-    }
-  }
-
-  String _locationLabelForKey(AppLocalizations l10n, String key) {
-    switch (key) {
-      case 'berlin_prenzlauer_berg':
-        return 'Prenzlauer Berg, Berlin';
-      case 'hamburg_altona':
-        return 'Altona, Hamburg';
-      case 'muenchen_neuhausen':
-        return 'Neuhausen, München';
-      case 'koeln_suelz':
-        return 'Sülz, Köln';
-      default:
-        return 'Tiergarten, Berlin';
-    }
-  }
-
-  (double, double) _locationCoordsForKey(String key) {
-    switch (key) {
-      case 'berlin_prenzlauer_berg':
-        return (52.5386, 13.4246);
-      case 'hamburg_altona':
-        return (53.5513, 9.9352);
-      case 'muenchen_neuhausen':
-        return (48.1547, 11.5380);
-      case 'koeln_suelz':
-        return (50.9233, 6.9209);
-      default:
-        return (52.5145, 13.3501);
     }
   }
 
@@ -1094,7 +1094,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
 
   Future<void> _analyzeImageWithAI(XFile image) async {
     try {
-      setState(() => _isAnalyzingImage = true);
+      setState(() {
+        _isAnalyzingImage = true;
+        _imageAnalysisFailed = false;
+      });
       final bytes = await image.readAsBytes();
       final text = await GeminiAIService().generateText(
         'Du siehst ein Foto eines Gegenstands, den eine Familie verschenken möchte. '
@@ -1115,7 +1118,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       );
       if (!mounted) return;
       final parsed = _extractJson(text);
-      if (parsed == null) return;
+      if (parsed == null) {
+        setState(() => _imageAnalysisFailed = true);
+        return;
+      }
 
       final title = parsed['title']?.toString().trim() ?? '';
       final description = parsed['description']?.toString().trim() ?? '';
@@ -1172,6 +1178,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       });
     } catch (e) {
       debugPrint('Image analysis failed: $e');
+      if (mounted) setState(() => _imageAnalysisFailed = true);
     } finally {
       if (mounted) setState(() => _isAnalyzingImage = false);
     }
@@ -1273,8 +1280,6 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
               draft['sizeAge']?.toString() ?? _defaultSizeAge;
           _selectedCategoryKey =
               draft['categoryKey']?.toString() ?? _defaultCategoryKey;
-          _selectedLocationKey =
-              draft['locationKey']?.toString() ?? _defaultLocationKey;
           _distanceMeters =
               double.tryParse(draft['distanceMeters']?.toString() ?? '') ??
                   _defaultDistanceMeters;
@@ -1340,7 +1345,6 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       'note': _noteController.text.trim(),
       'sizeAge': _sizeAgeController.text.trim(),
       'categoryKey': _selectedCategoryKey,
-      'locationKey': _selectedLocationKey,
       'distanceMeters': _distanceMeters.round(),
       'conditionIndex': _conditionIndex,
       'imagePath': _primarySelectedImage?.path,
@@ -1355,7 +1359,6 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
         _noteController.text.trim().isNotEmpty ||
         _sizeAgeController.text.trim() != _defaultSizeAge ||
         _selectedCategoryKey != _defaultCategoryKey ||
-        _selectedLocationKey != _defaultLocationKey ||
         _distanceMeters.round() != _defaultDistanceMeters.round() ||
         _conditionIndex != _defaultConditionIndex;
   }
@@ -1414,7 +1417,6 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
         _noteController.clear();
         _sizeAgeController.text = _defaultSizeAge;
         _selectedCategoryKey = _defaultCategoryKey;
-        _selectedLocationKey = _defaultLocationKey;
         _distanceMeters = _defaultDistanceMeters;
         _conditionIndex = _defaultConditionIndex;
         _voiceCaptured = false;

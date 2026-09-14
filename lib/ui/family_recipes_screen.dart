@@ -9,6 +9,7 @@ import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/logic/family_recipe_share_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
+import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shared_family_recipe.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
@@ -36,6 +37,54 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
 
   String _t(String key) => AppLocalizations.of(context).t(key);
 
+  String _recipeCopy(String key, String fallback) {
+    const copies = {
+      'en': {
+        'title': 'Family Recipes',
+        'share': 'Share recipe',
+        'search': 'What do you feel like today? (e.g. potato salad, pasta)',
+        'quick': 'Quick (< 20 min)',
+        'vegetarian': 'Vegetarian',
+        'blw': 'BLW / finger food',
+        'magic': 'Create instant recipe',
+        'ai_recipe': 'AI instant recipe',
+        'ingredients': 'Ingredients',
+        'preparation': 'Preparation',
+        'from_you': 'From you',
+      },
+      'ku': {
+        'title': 'Xwarinên malbatê',
+        'share': 'Parvekirina reçeteyê',
+        'search': 'Îro hûn çi dixwazin? (mînak: salata kartolê, makarna)',
+        'quick': 'Bilez (< 20 deqîqe)',
+        'vegetarian': 'Vegetarî',
+        'blw': 'BLW / xwarina destê',
+        'magic': 'Reçeteya bilez çêbike',
+        'ai_recipe': 'Reçeteya bilez a AI',
+        'ingredients': 'Malzemeler',
+        'preparation': 'Amadekirin',
+        'from_you': 'Ji te',
+      },
+      'tr': {
+        'title': 'Aile Tarifleri',
+        'share': 'Tarif paylaş',
+        'search': 'Bugün canınız ne istiyor? (örn. patates salatası, makarna)',
+        'quick': 'Hızlı (< 20 dk.)',
+        'vegetarian': 'Vejetaryen',
+        'blw': 'BLW / ek gıda',
+        'magic': 'Hızlı tarif oluştur',
+        'ai_recipe': 'YZ hızlı tarifi',
+        'ingredients': 'Malzemeler',
+        'preparation': 'Hazırlanışı',
+        'from_you': 'Senden',
+      },
+    };
+    return copies[languageService.currentLanguage]?[key] ?? fallback;
+  }
+
+  String _filterLabel(String key, String fallback) =>
+      _recipeCopy(key, fallback);
+
   final _service = FamilyRecipeShareService.instance;
   final _aiService = FamilyRecipeService.instance;
   final _searchCtrl = TextEditingController();
@@ -52,11 +101,11 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
   bool _aiShared = false;
 
   // Schnell-Filter: Label -> Suchbegriff, der an die Server-Suche geht.
-  static const _filters = <String, String>{
-    'Schnell (< 20 Min)': 'schnell',
-    'Vegetarisch': 'vegetarisch',
-    'BLW / Beikost': 'blw',
-  };
+  Map<String, String> get _filters => {
+        _filterLabel('quick', 'Schnell (< 20 Min)'): 'schnell',
+        _filterLabel('vegetarian', 'Vegetarisch'): 'vegetarisch',
+        _filterLabel('blw', 'BLW / Beikost'): 'blw',
+      };
 
   @override
   void initState() {
@@ -244,7 +293,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Familien-Rezepte'),
+        title: Text(_recipeCopy('title', 'Familien-Rezepte')),
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -252,7 +301,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         backgroundColor: _accent,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Rezept teilen'),
+        label: Text(_recipeCopy('share', 'Rezept teilen')),
       ),
       body: Column(
         children: [
@@ -288,7 +337,8 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
             onChanged: _onSearchChanged,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: 'Wonach ist euch heute? (z. B. Kartoffelsalat, Nudeln)',
+              hintText: _recipeCopy('search',
+                  'Wonach ist euch heute? (z. B. Kartoffelsalat, Nudeln)'),
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
@@ -420,7 +470,9 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.auto_awesome_rounded),
-              label: Text(_generatingAi ? 'Zaubere …' : 'Blitz-Rezept zaubern'),
+              label: Text(_generatingAi
+                  ? _recipeCopy('magic', 'Zaubere …')
+                  : _recipeCopy('magic', 'Blitz-Rezept zaubern')),
               style: FilledButton.styleFrom(
                 backgroundColor: _accent,
                 padding: const EdgeInsets.symmetric(vertical: 13),
@@ -449,7 +501,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           Row(children: [
             const Text('✨', style: TextStyle(fontSize: 18)),
             const SizedBox(width: 6),
-            Text('KI-Blitz-Rezept',
+            Text(_recipeCopy('ai_recipe', 'KI-Blitz-Rezept'),
                 style: theme.textTheme.labelMedium
                     ?.copyWith(fontWeight: FontWeight.w700, color: _accent)),
           ]),
@@ -479,7 +531,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           ]),
           if (r.ingredients.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text('Zutaten',
+            Text(_recipeCopy('ingredients', 'Zutaten'),
                 style: theme.textTheme.labelMedium
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
@@ -496,7 +548,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           ],
           if (r.steps.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text('Zubereitung',
+            Text(_recipeCopy('preparation', 'Zubereitung'),
                 style: theme.textTheme.labelMedium
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
@@ -608,7 +660,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(r.isMine ? 'Von dir' : r.authorName,
+                    Text(
+                        r.isMine
+                            ? _recipeCopy('from_you', 'Von dir')
+                            : r.authorName,
                         style: theme.textTheme.labelSmall
                             ?.copyWith(color: theme.colorScheme.outline)),
                     if (r.prepMinutes > 0) ...[
@@ -629,7 +684,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                 ],
                 if (r.ingredients.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text('Zutaten',
+                  Text(_recipeCopy('ingredients', 'Zutaten'),
                       style: theme.textTheme.labelMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
@@ -652,7 +707,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                 ],
                 if (r.steps.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text('Zubereitung',
+                  Text(_recipeCopy('preparation', 'Zubereitung'),
                       style: theme.textTheme.labelMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
