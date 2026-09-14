@@ -5,7 +5,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_cache_service.dart';
 import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/models/event_attendee.dart';
-import 'package:parentpeak/logic/parent_friends_service.dart';
+import 'package:parentpeak/logic/friendship_service.dart';
 
 /// Service für Community-Events — verbindet App mit Backend.
 ///
@@ -218,16 +218,19 @@ class CommunityEventService extends ChangeNotifier {
         return const EventAttendeesResult(attendees: [], total: 0);
       }
 
-      final response = await _api!.getJson('/api/community-events/$eventId/attendees');
+      final response =
+          await _api!.getJson('/api/community-events/$eventId/attendees');
       final list = (response['attendees'] as List? ?? [])
           .map((e) => EventAttendee.fromJson(e as Map<String, dynamic>))
           .toList();
       final total = response['total'] as int? ?? list.length;
 
-      final friendsSvc = ParentFriendsService.instance;
+      // Netzwerk-Kontakte markieren: bestaetigte UID-Freunde (neues System).
+      final friendsSvc = FriendshipService.instance;
       await friendsSvc.load();
+      final friendUids = friendsSvc.friends.map((f) => f.uid).toSet();
       final markedList = list.map((a) {
-        if (!friendsSvc.isFriendByUserId(a.userId)) return a;
+        if (!friendUids.contains(a.userId)) return a;
         return EventAttendee(
           userId: a.userId,
           displayName: a.displayName,
@@ -255,7 +258,8 @@ class CommunityEventService extends ChangeNotifier {
     try {
       if (_api != null) {
         final uid = AuthService.instance.currentUser?.uid ?? '';
-        await _api!.delete('/api/community-events/$eventId?creatorId=${Uri.encodeComponent(uid)}');
+        await _api!.delete(
+            '/api/community-events/$eventId?creatorId=${Uri.encodeComponent(uid)}');
       }
       _events.removeWhere((e) => e.id == eventId);
       notifyListeners();

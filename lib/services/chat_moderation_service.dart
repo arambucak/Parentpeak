@@ -50,10 +50,26 @@ class ChatModerationService {
 
   bool _containsProfanity(String text) {
     const profanityPatterns = [
-      'fick', 'scheiß', 'arsch', 'hurensohn', 'wichser', 'fotze',
-      'missgeburt', 'behindert', 'spast', 'mongo',
-      'fuck', 'shit', 'bitch', 'asshole', 'cunt', 'nigger', 'faggot',
-      'siktir', 'amina', 'orospu',
+      'fick',
+      'scheiß',
+      'arsch',
+      'hurensohn',
+      'wichser',
+      'fotze',
+      'missgeburt',
+      'behindert',
+      'spast',
+      'mongo',
+      'fuck',
+      'shit',
+      'bitch',
+      'asshole',
+      'cunt',
+      'nigger',
+      'faggot',
+      'siktir',
+      'amina',
+      'orospu',
     ];
     for (final word in profanityPatterns) {
       if (text.contains(word)) return true;
@@ -63,10 +79,16 @@ class ChatModerationService {
 
   bool _containsHarassment(String text) {
     const patterns = [
-      'du bist dumm', 'du bist hässlich', 'halt die fresse',
-      'du bist eine schlechte mutter', 'du bist ein schlechter vater',
-      'dein kind ist', 'was für eltern',
-      'kill yourself', 'kys', 'bring dich um',
+      'du bist dumm',
+      'du bist hässlich',
+      'halt die fresse',
+      'du bist eine schlechte mutter',
+      'du bist ein schlechter vater',
+      'dein kind ist',
+      'was für eltern',
+      'kill yourself',
+      'kys',
+      'bring dich um',
     ];
     for (final pattern in patterns) {
       if (text.contains(pattern)) return true;
@@ -75,16 +97,15 @@ class ChatModerationService {
   }
 
   bool _isSpam(String message) {
-    // Repeated characters
+    // Sehr lange Wiederholung desselben Zeichens (z. B. "aaaaaaaaa") -> Spam.
     if (RegExp(r'(.)\1{8,}').hasMatch(message)) return true;
 
-    // Too many caps (shouting)
-    if (message.length > 20) {
-      final caps = message.replaceAll(RegExp(r'[^A-Z]'), '').length;
-      if (caps / message.length > 0.7) return true;
-    }
+    // Grossschreibung ist KEIN Spam. Eltern schreiben aus vielen legitimen
+    // Gruenden gross ("WICHTIG", "BITTE MELDEN") oder mit aktivierter
+    // Feststelltaste. Solche Nachrichten zu blockieren wirkt wie eine Strafe
+    // und widerspricht der GfK-Philosophie -> bewusst KEIN Caps-Block mehr.
 
-    // Too many links
+    // Zu viele Links deuten auf Spam hin.
     final linkCount = RegExp(r'https?://').allMatches(message).length;
     if (linkCount > 2) return true;
 
@@ -93,11 +114,20 @@ class ChatModerationService {
 
   bool _isCommercial(String text) {
     const patterns = [
-      'kaufe jetzt', 'buy now', 'angebot nur heute',
-      'klick hier', 'click here', 'gratis geschenk',
-      'verdiene geld', 'make money', 'earn money',
-      'mlm', 'network marketing', 'crypto invest',
-      'abnehmen in', 'weight loss',
+      'kaufe jetzt',
+      'buy now',
+      'angebot nur heute',
+      'klick hier',
+      'click here',
+      'gratis geschenk',
+      'verdiene geld',
+      'make money',
+      'earn money',
+      'mlm',
+      'network marketing',
+      'crypto invest',
+      'abnehmen in',
+      'weight loss',
     ];
     for (final pattern in patterns) {
       if (text.contains(pattern)) return true;
@@ -111,7 +141,10 @@ class ChatModerationService {
     if (RegExp(r'\+49\s?\d').hasMatch(text)) return true;
 
     // Full addresses (street + number)
-    if (RegExp(r'\b[A-ZÄÖÜ][a-zäöü]+(?:straße|str\.|weg|gasse|platz|allee)\s+\d', caseSensitive: false).hasMatch(text)) return true;
+    if (RegExp(
+            r'\b[A-ZÄÖÜ][a-zäöü]+(?:straße|str\.|weg|gasse|platz|allee)\s+\d',
+            caseSensitive: false)
+        .hasMatch(text)) return true;
 
     return false;
   }

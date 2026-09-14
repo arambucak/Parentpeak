@@ -12,11 +12,8 @@ class APIConfig {
   static bool _runtimeEnvInitialized = false;
 
   // Compile-time release values (set via --dart-define).
-  static const String _geminiApiKeyDefine =
-      String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-  static const String _backendApiTokenDefine = String.fromEnvironment(
-      'BACKEND_API_TOKEN',
-      defaultValue: 'pp_live_2026_q7N4mP2xK9aVtR8z');
+  static const String _backendApiTokenDefine =
+      String.fromEnvironment('BACKEND_API_TOKEN', defaultValue: '');
   static const String _backendBaseUrlDefine =
       String.fromEnvironment('BACKEND_BASE_URL', defaultValue: '');
   static const String _stripePublishableKeyDefine =
@@ -31,6 +28,11 @@ class APIConfig {
       String.fromEnvironment('CONTACT_EMAIL', defaultValue: '');
   static const String _contactSupportUrlDefine =
       String.fromEnvironment('CONTACT_SUPPORT_URL', defaultValue: '');
+  // Kommagetrennte Firebase-UIDs, die den Moderations-Admin-Bereich sehen
+  // duerfen. Nur fuer die Sichtbarkeit im Client — die echte Absicherung
+  // passiert serverseitig (ADMIN_USER_IDS auf Render).
+  static const String _adminUserIdsDefine =
+      String.fromEnvironment('ADMIN_USER_IDS', defaultValue: '');
 
   // gemini-3.5-flash-lite: grounding in ~6s, no thinking overhead.
   static const String geminiModelName = 'gemini-3.5-flash-lite';
@@ -46,42 +48,16 @@ class APIConfig {
   // Backend API configuration
   static const String backendBaseUrlFallback = '';
 
-  /// Hole den Gemini API-Key aus --dart-define oder .env.
-  static String? getGeminiApiKey() {
-    return _readEnvOrDefine('GEMINI_API_KEY');
-  }
-
   /// Ensure dotenv is loaded before reading runtime values.
   static Future<void> ensureRuntimeEnvLoaded() async {
     _loadRuntimeEnvCacheIfNeeded();
 
     try {
-      await dotenv.load(fileName: '.env', isOptional: true);
+      // Bundled placeholder only; real secrets arrive via --dart-define.
+      await dotenv.load(fileName: 'assets/env.template', isOptional: true);
     } catch (e) {
       debugPrint('APIConfig.ensureRuntimeEnvLoaded(): $e');
     }
-  }
-
-  /// Validiere ob ein API-Key vorhanden ist
-  static bool isGeminiApiKeyConfigured() {
-    final apiKey = getGeminiApiKey();
-    return apiKey != null && apiKey.isNotEmpty;
-  }
-
-  /// Gibt fehlende Pflicht-Secrets für produktive Builds zurück.
-  static List<String> getMissingRequiredSecrets() {
-    final missing = <String>[];
-
-    // Web bundles are public. Do not require privileged tokens there.
-    if (kIsWeb) {
-      return missing;
-    }
-
-    if (!isGeminiApiKeyConfigured()) {
-      missing.add('GEMINI_API_KEY');
-    }
-
-    return missing;
   }
 
   /// Gibt Fehlkonfigurationen zurück, die in Release Builds blockieren sollten.
@@ -136,6 +112,24 @@ class APIConfig {
 
   static String? getBackendApiToken() {
     return _readEnvOrDefine('BACKEND_API_TOKEN');
+  }
+
+  /// Firebase-UIDs, die den Moderations-Admin-Bereich sehen duerfen.
+  /// Nur fuer die Client-Sichtbarkeit; die echte Absicherung ist serverseitig.
+  static Set<String> getAdminUserIds() {
+    final raw = _readEnvOrDefine('ADMIN_USER_IDS');
+    if (raw == null || raw.trim().isEmpty) return <String>{};
+    return raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
+  }
+
+  /// Ist die aktuelle UID ein Moderations-Admin?
+  static bool isAdminUser(String? uid) {
+    if (uid == null || uid.isEmpty) return false;
+    return getAdminUserIds().contains(uid);
   }
 
   /// Stripe publishable key — set STRIPE_PUBLISHABLE_KEY in your .env.
@@ -266,6 +260,13 @@ class APIConfig {
     return _getEnvOrDefault(
       'BACKEND_PARENT_MATCHING_PROFILES_PATH',
       '/parent-matching/profiles',
+    );
+  }
+
+  static String getBackendParentMatchingDiscoveryPath() {
+    return _getEnvOrDefault(
+      'BACKEND_PARENT_MATCHING_DISCOVERY_PATH',
+      '/parent-matching/discover',
     );
   }
 
@@ -562,8 +563,6 @@ class APIConfig {
 
   static String? _readCompileTimeValue(String key) {
     switch (key) {
-      case 'GEMINI_API_KEY':
-        return _geminiApiKeyDefine.isNotEmpty ? _geminiApiKeyDefine : null;
       case 'BACKEND_API_TOKEN':
         return _backendApiTokenDefine.isNotEmpty
             ? _backendApiTokenDefine
@@ -592,6 +591,8 @@ class APIConfig {
         return _contactSupportUrlDefine.isNotEmpty
             ? _contactSupportUrlDefine
             : null;
+      case 'ADMIN_USER_IDS':
+        return _adminUserIdsDefine.isNotEmpty ? _adminUserIdsDefine : null;
       default:
         return null;
     }
@@ -651,6 +652,7 @@ DEINE PÄDAGOGISCHE GRUNDLAGE — ein integrativer Ansatz aus bewährten Konzept
    — Kein festgelegter Lehrplan — das Kind zeigt was es braucht.
 
 WIE DU ANTWORTEST:
+• SPRACHE: Antworte IMMER in der Sprache, in der der Nutzer schreibt. Wenn die Nachricht auf Türkisch kommt, antworte auf Türkisch. Wenn auf Englisch, antworte auf Englisch. Wenn auf Kurdisch, antworte auf Kurdisch. Passe deinen Stil an die jeweilige Sprache an.
 • Kurz und direkt. Maximal 8–10 Zeilen.
 • Konkret: Gib Beispiele die man HEUTE umsetzen kann.
 • Duze immer. Warm, nicht belehrend.

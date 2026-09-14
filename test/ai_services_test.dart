@@ -36,23 +36,23 @@ void main() {
       expect(AIRateLimiter.remainingRequests(), equals(before - 1));
     });
 
-    test('default daily limit is 25', () {
-      expect(AIRateLimiter.dailyLimit, equals(25));
+    test('default daily limit is 50', () {
+      expect(AIRateLimiter.dailyLimit, equals(50));
     });
 
     test('setDailyLimit changes limit', () {
-      AIRateLimiter.setDailyLimit(50);
-      expect(AIRateLimiter.dailyLimit, equals(50));
-      AIRateLimiter.setDailyLimit(25); // reset
+      AIRateLimiter.setDailyLimit(75);
+      expect(AIRateLimiter.dailyLimit, equals(75));
+      AIRateLimiter.setDailyLimit(50); // reset
     });
 
     test('limitReachedMessage is user-friendly', () {
       expect(AIRateLimiter.limitReachedMessage, contains('Morgen'));
-      expect(AIRateLimiter.limitReachedMessage, contains('25'));
+      expect(AIRateLimiter.limitReachedMessage, contains('50'));
     });
 
     test('statusText shows count/limit format', () {
-      expect(AIRateLimiter.statusText, matches(RegExp(r'\d+/25 heute')));
+      expect(AIRateLimiter.statusText, matches(RegExp(r'\d+/50 heute')));
     });
   });
 

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
 // ─── Page 1: Welcome ─────────────────────────────────────────────────────────
 
 class OnboardingWelcomePage extends StatelessWidget {
@@ -22,36 +25,51 @@ class OnboardingWelcomePage extends StatelessWidget {
       opacity: fadeAnimation,
       child: SlideTransition(
         position: slideAnimation,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Animiertes Icon
-              _buildHeroIcon(theme),
-              const SizedBox(height: 40),
-              Text(
-                'Willkommen bei\nParentpeak',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxHeight < 520;
+
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: isCompact
+                        ? MainAxisAlignment.start
+                        : MainAxisAlignment.center,
+                    children: [
+                      SizedBox(height: isCompact ? 16 : 0),
+                      // Animiertes Icon
+                      _buildHeroIcon(theme),
+                      SizedBox(height: isCompact ? 24 : 40),
+                      Text(
+                        _t('welcome_title'),
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _t('onboarding_subtitle'),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: isCompact ? 24 : 48),
+                      // Drei kleine Feature-Vorschau Punkte
+                      _buildFeatureHints(theme),
+                      SizedBox(height: isCompact ? 16 : 0),
+                    ],
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Dein Familienalltag. Eine App.\nLass uns kurz herausfinden, was dir\nam meisten hilft.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              // Drei kleine Feature-Vorschau Punkte
-              _buildFeatureHints(theme),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -89,9 +107,9 @@ class OnboardingWelcomePage extends StatelessWidget {
 
   Widget _buildFeatureHints(ThemeData theme) {
     final hints = [
-      (Icons.auto_awesome_rounded, 'Tipps'),
-      (Icons.calendar_month_rounded, 'Planung'),
-      (Icons.diversity_3_rounded, 'Community'),
+      (Icons.auto_awesome_rounded, _t('tips_title')),
+      (Icons.calendar_month_rounded, _t('calendar')),
+      (Icons.diversity_3_rounded, _t('community_title')),
     ];
 
     return Row(
@@ -163,7 +181,7 @@ class OnboardingRolePage extends StatelessWidget {
             children: [
               const SizedBox(height: 48),
               Text(
-                'In welcher Phase\nbist du gerade?',
+                _t('onboarding_phase'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   height: 1.2,
@@ -171,7 +189,7 @@ class OnboardingRolePage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Mehrfachauswahl moeglich — wähle alle die passen.',
+                _t('phase_multiselect'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -391,7 +409,7 @@ class OnboardingPrioritiesPage extends StatelessWidget {
             children: [
               const SizedBox(height: 48),
               Text(
-                'Was brauchst du\nam meisten?',
+                _t('onboarding_priorities'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   height: 1.2,
@@ -670,7 +688,7 @@ class OnboardingReadyPage extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               Text(
-                'Alles bereit!',
+                _t('onboarding_ready'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -1072,7 +1090,7 @@ class OnboardingCountryPage extends StatelessWidget {
               if (regions.isNotEmpty) ...[
                 const SizedBox(height: 24),
                 Text(
-                  'Region / Bundesland',
+                  _t('region'),
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

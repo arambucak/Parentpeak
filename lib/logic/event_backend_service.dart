@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/models/event_invitation.dart';
@@ -38,7 +37,8 @@ class EventBackendService {
         'limit': limit.toString(),
         'offset': offset.toString(),
       };
-      final payload = await _apiClient!.getJson(_appendQuery(_eventsPath, query));
+      final payload =
+          await _apiClient!.getJson(_appendQuery(_eventsPath, query));
       if (payload is Map<String, dynamic> && payload.containsKey('events')) {
         return _parseEventList(payload['events']);
       }
@@ -70,7 +70,8 @@ class EventBackendService {
         'visibility': 'publicNearby',
       };
 
-      final payload = await _apiClient!.getJson(_appendQuery(_eventsPath, query));
+      final payload =
+          await _apiClient!.getJson(_appendQuery(_eventsPath, query));
       if (payload is Map<String, dynamic> && payload.containsKey('events')) {
         return _parseEventList(payload['events']);
       }
@@ -160,23 +161,9 @@ class EventBackendService {
   Future<String?> uploadImage(File imageFile) async {
     if (_apiClient == null) return null;
     try {
-      final baseUrl = _apiClient!.baseUrl;
-      final uri = Uri.parse('$baseUrl/uploads/image');
-      final request = http.MultipartRequest('POST', uri);
-      if (_apiClient!.authToken != null && _apiClient!.authToken!.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer ${_apiClient!.authToken}';
-      }
-      request.files.add(
-        await http.MultipartFile.fromPath('image', imageFile.path),
-      );
-      final streamed = await request.send().timeout(const Duration(seconds: 30));
-      final body = await streamed.stream.bytesToString();
-      if (streamed.statusCode >= 200 && streamed.statusCode < 300) {
-        final decoded = jsonDecode(body) as Map<String, dynamic>;
-        return decoded['url']?.toString();
-      }
-      lastSyncError = 'Bild-Upload fehlgeschlagen: ${streamed.statusCode}';
-      return null;
+      final response =
+          await _apiClient!.uploadImageFile('/uploads/image', imageFile);
+      return response['url']?.toString();
     } catch (e) {
       lastSyncError = 'Bild-Upload fehlgeschlagen: $e';
       return null;
@@ -229,12 +216,13 @@ class EventBackendService {
     }
   }
 
-  Future<List<MeetupEvent>> fetchHostedInviteOnlyEvents(String hostUserId) async {
+  Future<List<MeetupEvent>> fetchHostedInviteOnlyEvents(
+      String hostUserId) async {
     if (_apiClient == null) return [];
     try {
       final path = APIConfig.getBackendHostedInviteOnlyEventsPath();
-      final payload =
-          await _apiClient!.getJson(_appendQuery(path, {'hostUserId': hostUserId}));
+      final payload = await _apiClient!
+          .getJson(_appendQuery(path, {'hostUserId': hostUserId}));
       return _parseEventList(payload);
     } catch (e) {
       lastSyncError = 'Host-Events konnten nicht geladen werden: $e';
@@ -242,22 +230,26 @@ class EventBackendService {
     }
   }
 
-  Future<List<EventInvitation>> fetchAcceptedInvitationsForEvent(String eventId) async {
+  Future<List<EventInvitation>> fetchAcceptedInvitationsForEvent(
+      String eventId) async {
     if (_apiClient == null) return [];
     try {
-      final payload = await _apiClient!.getJson('$_eventsPath/$eventId/invitations/accepted');
+      final payload = await _apiClient!
+          .getJson('$_eventsPath/$eventId/invitations/accepted');
       return _parseInvitationList(payload);
     } catch (e) {
-      lastSyncError = 'Angenommene Einladungen konnten nicht geladen werden: $e';
+      lastSyncError =
+          'Angenommene Einladungen konnten nicht geladen werden: $e';
       return [];
     }
   }
 
-  Future<List<EventParticipation>> fetchUserParticipations(String userId) async {
+  Future<List<EventParticipation>> fetchUserParticipations(
+      String userId) async {
     if (_apiClient == null) return [];
     try {
-      final payload = await _apiClient!
-          .getJson(_appendQuery('$_eventsPath/participations', {'userId': userId}));
+      final payload = await _apiClient!.getJson(
+          _appendQuery('$_eventsPath/participations', {'userId': userId}));
       return _parseParticipationList(payload);
     } catch (e) {
       lastSyncError = 'Teilnahmen konnten nicht geladen werden: $e';
@@ -265,11 +257,13 @@ class EventBackendService {
     }
   }
 
-  Future<List<EventParticipation>> fetchPendingRequestsForHost(String hostUserId) async {
+  Future<List<EventParticipation>> fetchPendingRequestsForHost(
+      String hostUserId) async {
     if (_apiClient == null) return [];
     try {
       final payload = await _apiClient!.getJson(
-        _appendQuery('$_eventsPath/participations/pending', {'hostUserId': hostUserId}),
+        _appendQuery(
+            '$_eventsPath/participations/pending', {'hostUserId': hostUserId}),
       );
       return _parseParticipationList(payload);
     } catch (e) {
@@ -349,7 +343,8 @@ class EventBackendService {
   }
 
   List<MeetupEvent> _parseEventList(dynamic payload) {
-    final list = _extractList(payload, const ['items', 'events', 'data', 'results']);
+    final list =
+        _extractList(payload, const ['items', 'events', 'data', 'results']);
     return list
         .whereType<Map>()
         .map((raw) => _normalizeEventMap(Map<String, dynamic>.from(raw)))
@@ -364,7 +359,8 @@ class EventBackendService {
   }
 
   List<EventInvitation> _parseInvitationList(dynamic payload) {
-    final list = _extractList(payload, const ['items', 'invitations', 'data', 'results']);
+    final list = _extractList(
+        payload, const ['items', 'invitations', 'data', 'results']);
     return list
         .whereType<Map>()
         .map((raw) => EventInvitation.fromJson(Map<String, dynamic>.from(raw)))
@@ -372,23 +368,26 @@ class EventBackendService {
   }
 
   EventInvitation? _parseSingleInvitation(dynamic payload) {
-    final map = _extractMap(payload, const ['item', 'invitation', 'data', 'result']);
+    final map =
+        _extractMap(payload, const ['item', 'invitation', 'data', 'result']);
     if (map == null) return null;
     return EventInvitation.fromJson(map);
   }
 
   EventParticipation? _parseSingleParticipation(dynamic payload) {
-    final map = _extractMap(payload, const ['item', 'participation', 'data', 'result']);
+    final map =
+        _extractMap(payload, const ['item', 'participation', 'data', 'result']);
     if (map == null) return null;
     return EventParticipation.fromJson(map);
   }
 
   List<EventParticipation> _parseParticipationList(dynamic payload) {
-    final list =
-        _extractList(payload, const ['items', 'participations', 'data', 'results']);
+    final list = _extractList(
+        payload, const ['items', 'participations', 'data', 'results']);
     return list
         .whereType<Map>()
-        .map((raw) => EventParticipation.fromJson(Map<String, dynamic>.from(raw)))
+        .map((raw) =>
+            EventParticipation.fromJson(Map<String, dynamic>.from(raw)))
         .toList();
   }
 
@@ -405,18 +404,22 @@ class EventBackendService {
 
     return {
       'id': (raw['id'] ?? raw['_id'] ?? '').toString(),
-      'hosterId': (raw['hosterId'] ?? raw['host_id'] ?? raw['hostUserId'] ?? '').toString(),
+      'hosterId': (raw['hosterId'] ?? raw['host_id'] ?? raw['hostUserId'] ?? '')
+          .toString(),
       'title': (raw['title'] ?? '').toString(),
       'description': (raw['description'] ?? '').toString(),
       'category': (raw['category'] ?? 'other').toString(),
       'ageGroups': (raw['ageGroups'] is List)
-          ? List<String>.from((raw['ageGroups'] as List).map((e) => e.toString()))
+          ? List<String>.from(
+              (raw['ageGroups'] as List).map((e) => e.toString()))
           : <String>[],
       'location': (raw['location'] ?? '').toString(),
       'latitude': parseDouble(raw['latitude'], 0),
       'longitude': parseDouble(raw['longitude'], 0),
-      'eventDate': (raw['eventDate'] ?? DateTime.now().toIso8601String()).toString(),
-      'createdAt': (raw['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
+      'eventDate':
+          (raw['eventDate'] ?? DateTime.now().toIso8601String()).toString(),
+      'createdAt':
+          (raw['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
       'paymentDate': raw['paymentDate']?.toString(),
       'maxParticipants': parseInt(raw['maxParticipants'], 20),
       'currentParticipants': parseInt(raw['currentParticipants'], 0),
@@ -428,7 +431,8 @@ class EventBackendService {
       'visibility': (raw['visibility'] ?? 'publicNearby').toString(),
       'shareRadiusKm': parseDouble(raw['shareRadiusKm'], 25),
       'invitedUserIds': (raw['invitedUserIds'] is List)
-          ? List<String>.from((raw['invitedUserIds'] as List).map((e) => e.toString()))
+          ? List<String>.from(
+              (raw['invitedUserIds'] as List).map((e) => e.toString()))
           : <String>[],
       'inviteCodeExpiresAt': raw['inviteCodeExpiresAt']?.toString(),
     };

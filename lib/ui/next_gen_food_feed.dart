@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:latlong2/latlong.dart';
@@ -129,7 +130,7 @@ class _NextGenFoodFeedScreenState extends State<NextGenFoodFeedScreen> {
         actions: [
           IconButton(
             onPressed: _openCreateContentSheet,
-            tooltip: 'Neuen Snack posten',
+            tooltip: context.tr('tooltip_new_snack'),
             icon: const Icon(Icons.add_circle_outline_rounded),
           ),
         ],

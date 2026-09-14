@@ -66,7 +66,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
     DevelopmentPhase(
       id: 'phase_0_12_m',
       ageRange: '0 bis 12 Monate',
-      title: 'Saeuglingsphase',
+      title: 'Säuglingsphase',
       categories: [
         DevelopmentCategory(
           name: 'Motorik',
@@ -81,7 +81,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'MO.02',
               title: 'Gezieltes Greifen',
               description:
-                  'Das Kind greift bewusst nach Gegenstaenden, die sich vor seiner Brust befinden.',
+                  'Das Kind greift bewusst nach Gegenständen, die sich vor seiner Brust befinden.',
             ),
             DevelopmentMilestoneItem(
               code: 'MO.03',
@@ -104,7 +104,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'KF.01',
               title: 'Objektpermanenz',
               description:
-                  'Das Kind sucht mit den Augen nach Gegenstaenden, die vor ihm versteckt wurden.',
+                  'Das Kind sucht mit den Augen nach Gegenständen, die vor ihm versteckt wurden.',
             ),
           ],
         ),
@@ -113,9 +113,9 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
           items: [
             DevelopmentMilestoneItem(
               code: 'SE.01',
-              title: 'Soziales Laecheln',
+              title: 'Soziales Lächeln',
               description:
-                  'Das Kind erwidert laechelnd den direkten Blickkontakt von Bezugspersonen.',
+                  'Das Kind erwidert lächelnd den direkten Blickkontakt von Bezugspersonen.',
             ),
             DevelopmentMilestoneItem(
               code: 'G.01',
@@ -139,13 +139,13 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'MO.04',
               title: 'Sicherer Stand',
               description:
-                  'Das Kind laeuft mehrere Schritte frei und sicher im Raum.',
+                  'Das Kind läuft mehrere Schritte frei und sicher im Raum.',
             ),
             DevelopmentMilestoneItem(
               code: 'MO.05',
               title: 'Feinmotorik',
               description:
-                  'Das Kind stapelt mindestens drei Baeusteine stabil zu einem Turm uebereinander.',
+                  'Das Kind stapelt mindestens drei Bausteine stabil zu einem Turm übereinander.',
             ),
           ],
         ),
@@ -156,19 +156,19 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'SP.02',
               title: 'Wortschatz',
               description:
-                  'Das Kind nutzt aktiv einen eigenen Wortschatz von mindestens 50 unterschiedlichen Woertern.',
+                  'Das Kind nutzt aktiv einen eigenen Wortschatz von mindestens 50 unterschiedlichen Wörtern.',
             ),
             DevelopmentMilestoneItem(
               code: 'SP.03',
               title: 'Satzbau',
               description:
-                  'Das Kind bildet einfache Saetze, die aus zwei oder drei Woertern bestehen.',
+                  'Das Kind bildet einfache Sätze, die aus zwei oder drei Wörtern bestehen.',
             ),
             DevelopmentMilestoneItem(
               code: 'KF.02',
               title: 'Sortieren',
               description:
-                  'Das Kind legt Gegenstaende nach einer bestimmten Eigenschaft zusammen.',
+                  'Das Kind legt Gegenstände nach einer bestimmten Eigenschaft zusammen.',
             ),
           ],
         ),
@@ -220,17 +220,17 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'SP.04',
               title: 'Grammatik',
               description:
-                  "Das Kind bildet weitgehend fehlerfreie Nebensaetze und nutzt Bindewoerter wie 'weil' oder 'und'.",
+                  "Das Kind bildet weitgehend fehlerfreie Nebensätze und nutzt Bindewörter wie 'weil' oder 'und'.",
             ),
             DevelopmentMilestoneItem(
               code: 'KF.03',
               title: 'Abzählen',
               description:
-                  'Das Kind zaehlt eine Menge von bis zu fuenf Elementen fehlerfrei ab.',
+                  'Das Kind zählt eine Menge von bis zu fünf Elementen fehlerfrei ab.',
             ),
             DevelopmentMilestoneItem(
               code: 'KF.04',
-              title: 'Merkfaehigkeit',
+              title: 'Merkfähigkeit',
               description:
                   'Das Kind findet bei einfachen Memory-Spielen zielsicher zusammengehörige Paare.',
             ),
@@ -284,13 +284,13 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'LSR.04',
               title: 'Kulturtechniken',
               description:
-                  'Das Kind liest und schreibt altersgerechte Texte fluessig und erfasst dabei den Sinn des Inhalts.',
+                  'Das Kind liest und schreibt altersgerechte Texte flüssig und erfasst dabei den Sinn des Inhalts.',
             ),
             DevelopmentMilestoneItem(
               code: 'KF.05',
               title: 'Logisches Denken',
               description:
-                  'Das Kind versteht abstrakte Zusammenhaenge wie mathematische Regeln oder Bruchrechnen.',
+                  'Das Kind versteht abstrakte Zusammenhänge wie mathematische Regeln oder Bruchrechnen.',
             ),
             DevelopmentMilestoneItem(
               code: 'KF.06',
@@ -307,13 +307,13 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'SE.04',
               title: 'Empathie',
               description:
-                  'Das Kind erkennt und versteht komplexere Beweggruende für die Gefühle und das Verhalten anderer.',
+                  'Das Kind erkennt und versteht komplexere Beweggründe für die Gefühle und das Verhalten anderer.',
             ),
             DevelopmentMilestoneItem(
               code: 'SE.05',
-              title: 'Konfliktloesung',
+              title: 'Konfliktlösung',
               description:
-                  'Das Kind loest kleinere Streitigkeiten mit Gleichaltrigen durch Kompromisse ohne Hilfe von Erwachsenen.',
+                  'Das Kind löst kleinere Streitigkeiten mit Gleichaltrigen durch Kompromisse ohne Hilfe von Erwachsenen.',
             ),
             DevelopmentMilestoneItem(
               code: 'G.04',
@@ -331,11 +331,11 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
       title: 'Adoleszenz und Jugendalter',
       categories: [
         DevelopmentCategory(
-          name: 'Identitaet und Psyche',
+          name: 'Identität und Psyche',
           items: [
             DevelopmentMilestoneItem(
               code: 'IP.01',
-              title: 'Identitaetsfindung',
+              title: 'Identitätsfindung',
               description:
                   'Der Jugendliche entwickelt eigene moralische, politische oder gesellschaftliche Werte abseits des Elternhauses.',
             ),
@@ -371,7 +371,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'SE.06',
               title: 'Peer-Beziehungen',
               description:
-                  'Der Jugendliche pflegt tiefgruendige, auf Vertrauen basierende Freundschaften oder Partnerschaften.',
+                  'Der Jugendliche pflegt tiefgründige, auf Vertrauen basierende Freundschaften oder Partnerschaften.',
             ),
             DevelopmentMilestoneItem(
               code: 'AK.02',
