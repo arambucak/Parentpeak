@@ -8,6 +8,15 @@ import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
+String _locationPickerCopy(String key, String fallback) {
+  const copies = {
+    'en': {'choose_location': 'Choose a location', 'confirm': 'Confirm'},
+    'ku': {'choose_location': 'Cih hilbijêre', 'confirm': 'Piştrast bike'},
+    'tr': {'choose_location': 'Bir konum seçin', 'confirm': 'Onayla'},
+  };
+  return copies[languageService.currentLanguage]?[key] ?? fallback;
+}
+
 /// Ergebnis des Location-Pickers.
 class PickedLocation {
   final String displayName;
@@ -403,8 +412,9 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                   onPressed: _currentLabel.isEmpty ? null : _confirm,
                   icon: const Icon(Icons.check_rounded, size: 18),
                   label: Text(_currentLabel.isEmpty
-                      ? 'Wähle einen Ort'
-                      : 'Bestaetigen: $_currentLabel'),
+                      ? _locationPickerCopy(
+                          'choose_location', 'Wähle einen Ort')
+                      : '${_locationPickerCopy('confirm', 'Bestaetigen')}: $_currentLabel'),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     padding: const EdgeInsets.symmetric(vertical: 14),

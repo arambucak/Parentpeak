@@ -15,21 +15,41 @@ const multer = require('multer');
 // Firebase Admin — initialised lazily so the server starts without credentials
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
 let firebaseAdmin = null;
+let firebaseStorageBucket = (process.env.FIREBASE_STORAGE_BUCKET || '').trim();
 try {
-  const admin = require('firebase-admin');
+  const {
+    applicationDefault,
+    cert,
+    getApps,
+    initializeApp,
+  } = require('firebase-admin/app');
+  const { getAuth } = require('firebase-admin/auth');
+  const { getMessaging } = require('firebase-admin/messaging');
+  const { getStorage } = require('firebase-admin/storage');
   const serviceAccountJson = (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
   if (serviceAccountJson) {
     const serviceAccount = JSON.parse(serviceAccountJson);
-    if (!admin.apps.length) {
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    firebaseStorageBucket =
+      firebaseStorageBucket ||
+      (serviceAccount.project_id
+        ? `${serviceAccount.project_id}.firebasestorage.app`
+        : '');
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: cert(serviceAccount),
+        ...(firebaseStorageBucket ? { storageBucket: firebaseStorageBucket } : {}),
+      });
     }
-    firebaseAdmin = admin;
+    firebaseAdmin = { auth: getAuth, messaging: getMessaging, storage: getStorage };
     console.log('🔑 Firebase Admin SDK initialisiert');
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    if (!admin.apps.length) {
-      admin.initializeApp({ credential: admin.credential.applicationDefault() });
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: applicationDefault(),
+        ...(firebaseStorageBucket ? { storageBucket: firebaseStorageBucket } : {}),
+      });
     }
-    firebaseAdmin = admin;
+    firebaseAdmin = { auth: getAuth, messaging: getMessaging, storage: getStorage };
     console.log('🔑 Firebase Admin SDK initialisiert (Application Default Credentials)');
   }
 } catch (err) {
@@ -107,6 +127,15 @@ async function initializePrisma() {
 const app = express();
 const PORT = Number.parseInt(process.env.PORT || '3000', 10);
 const backendApiToken = (process.env.BACKEND_API_TOKEN || '').trim();
+const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
+// Moderations-Admins: kommagetrennte Firebase-UIDs aus der Render-Env.
+// Niemals hardcodiert — nur ueber ADMIN_USER_IDS konfiguriert.
+const adminUserIds = new Set(
+  (process.env.ADMIN_USER_IDS || '')
+    .split(',')
+    .map(id => id.trim())
+    .filter(Boolean)
+);
 const requireAuthForWrites =
   (process.env.REQUIRE_AUTH_FOR_WRITES ||
     (process.env.NODE_ENV === 'production' ? '1' : '0')) === '1';
@@ -695,6 +724,1148 @@ const DAILY_IMPULSE_POOL = [
   },
 ];
 
+// Per-language overlay for DAILY_IMPULSE_POOL entries, keyed by topic `key`.
+// Only translatable text fields are overridden; `category`/`key` stay as-is.
+const DAILY_IMPULSE_TRANSLATIONS = {
+  en: {
+    gfk_warum: {
+      title: 'Calmly handling "why" questions',
+      parent_lens: "Your child asks 'why?' a hundred times a day. It's not to annoy you — it's because their brain is building connections. They want to understand the world.",
+      parent_tips: [
+        "Use nonviolent communication (NVC): name your own feelings and needs clearly instead of scolding.",
+        "Answer 'why' questions briefly and simply — your child is looking for logic, not a scientific lecture.",
+        "Set boundaries lovingly through personal presence ('I don't want you to hit'), not through punishment.",
+      ],
+      practical_tip: "At the next 'why' question: first mirror the feeling ('You're curious!'), then answer in one sentence.",
+      discussion_body: "What short, calm phrase helps you when your child asks 'why' for the tenth time?",
+      companion_quick: "Today, choose just one calm answer to a why-question and stay deliberately brief afterward.",
+      companion_reflect: "When did your child seek the most connections today — and how could you calmly provide guidance?",
+    },
+    gfk_grenzen: {
+      title: 'Setting boundaries lovingly and clearly',
+      parent_lens: "Loving boundaries are not a contradiction. Children need both: the feeling of being loved AND clear guidance on what isn't okay. Boundaries without connection feel like walls — boundaries with connection feel like guardrails.",
+      parent_tips: [
+        "Name your child's feeling first, then the boundary: 'I see you're angry. And still: hitting isn't okay.'",
+        "Stay physically calm — your tone is louder than your words. A deep breath before reacting helps.",
+        "Announce consequences and follow through. Don't threaten, state them: 'If you ... then ...'",
+      ],
+      practical_tip: "Practice a sentence with feeling + boundary today: 'I understand you want that. And: no.' — and stay calm while saying it.",
+      discussion_body: "How do you react when you reach your own limits? Which phrase helps you stay calm?",
+      companion_quick: "One deep breath before the next boundary reaction — that's already half the battle.",
+      companion_reflect: "Was there a situation today where a calm boundary worked better than a loud no?",
+    },
+    gfk_ichbotschaft: {
+      title: '"I" messages instead of "you" accusations',
+      parent_lens: "\"You\" messages (\"You're so loud!\") trigger defensiveness. \"I\" messages (\"I'm getting tired and need quiet\") open doors. Children listen more when they don't feel attacked.",
+      parent_tips: [
+        "Turn accusations into \"I\" messages: instead of \"You never listen\" → \"I don't feel heard and that makes me sad.\"",
+        "Share your need: \"I need a moment of quiet to think.\" Children understand needs remarkably well.",
+        "Practice in everyday life: rephrase three classic sentences as \"I\" messages — in the morning brushing teeth, at lunch, at bedtime.",
+      ],
+      practical_tip: "Today, pick a situation where you'd usually say \"You always...\" — and replace it with \"I feel ... because I need ...\"",
+      discussion_body: "Which \"you\" message is hardest for you to rephrase? What helps with that?",
+      companion_quick: "Name the feeling + the need — that's the formula for a real \"I\" message.",
+      companion_reflect: "Did an \"I\" message today trigger a reaction that surprised you?",
+    },
+    gfk_trotz: {
+      title: 'Calmly accompanying defiant phases',
+      parent_lens: "Defiance isn't rebellion — it's development. When a child lies on the floor screaming, their prefrontal cortex simply isn't mature enough yet to regulate the emotion. They need you as a co-regulator.",
+      parent_tips: [
+        "Stay physically close without forcing it: get down to their level, speak calmly, don't touch if the child refuses.",
+        "Avoid discussions in the middle of the storm. The conversation comes once they've calmed down.",
+        "Use 'feeling bridges': 'You wanted the ice cream. That was really important to you. I understand.'",
+      ],
+      practical_tip: "When your child is beside themselves: sit next to them. Don't leave, don't intervene — just be there. That alone helps regulate.",
+      discussion_body: "What helps you stay calm yourselves when your child is in the middle of an emotional outburst?",
+      companion_quick: "Three words for defiant phases: stay close. Breathe calmly. Wait it out.",
+      companion_reflect: "What cost you the most energy today — and what helped you stay calm through it?",
+    },
+    gfk_geschwister: {
+      title: 'Using sibling conflict as a learning field',
+      parent_lens: "Siblings argue — that's normal and even important. In conflict, children learn compromise, perspective-taking and self-assertion. Your role is moderator, not judge.",
+      parent_tips: [
+        "Don't take sides: 'I see you're both angry right now. I'll listen to you first, then you.'",
+        "Let children find their own solutions when the situation isn't escalating. Step in only when there's real danger.",
+        "Strengthen each child individually: regular 1:1 moments without siblings reduce jealousy long-term.",
+      ],
+      practical_tip: "At the next argument: ask both children 'What do you need right now?' — before deciding who's right.",
+      discussion_body: "How do you handle it when siblings argue? What works best for you?",
+      companion_quick: "Moderator instead of judge — that's your role in sibling conflicts.",
+      companion_reflect: "Was there a moment today when your children resolved a conflict themselves? What did you learn from it?",
+    },
+    gfk_gefühle: {
+      title: 'Naming and acknowledging feelings',
+      parent_lens: "Children who can name their feelings have a huge advantage: they can communicate what they need. This step — from feeling to speaking — needs practice and your support.",
+      parent_tips: [
+        "Use the 'feelings barometer': ask in the evening 'How was your day on a scale of 1-5?' — and share your own first.",
+        "Name your own feelings out loud: 'I'm a bit stressed right now because I have a lot to think about.' Modeling works.",
+        "Read children's books about feelings — and pause afterward: 'What do you think the character felt? And you?'",
+      ],
+      practical_tip: "Tonight, ask: 'What made you happy today? What made you sad or angry?' — and just listen.",
+      discussion_body: "Which feeling is especially hard for your child to name? How do you approach that?",
+      companion_quick: "Feel first, then name — the feelings ABC starts with you as a role model.",
+      companion_reflect: "Which feeling moment of your child did you want to hold onto today?",
+    },
+    gfk_nein: {
+      title: 'Saying no — without guilt',
+      parent_lens: "Parents who never say no raise children who don't know boundaries. A loving no shows your child: I take my own needs seriously — and so may you.",
+      parent_tips: [
+        "A no doesn't need a long explanation. A clear 'No, that's not possible right now' is complete.",
+        "Guilt after a no is a signal, not a mistake. Ask yourself: is the no really wrong — or just uncomfortable?",
+        "Practice saying no to other adults too (playdates, commitments) — your child learns from your example.",
+      ],
+      practical_tip: "Today, say no once, deliberately — without apologizing. Notice how it feels.",
+      discussion_body: "When is it hardest for you to say no — to your children, or to others?",
+      companion_quick: "A no to one thing is a yes to something more important — usually to yourself.",
+      companion_reflect: "Was there a no today that felt right in hindsight?",
+    },
+    inclusion_stärken: {
+      title: 'Seeing strengths instead of judging weaknesses',
+      parent_lens: "Every child has a unique constellation of strengths. As parents, we often see the trouble spots first — even though we could be the first to polish the rough diamond.",
+      parent_tips: [
+        "Tonight, write down 3 strengths of your child — not achievements, but character traits ('curious', 'caring', 'persistent').",
+        "Name strengths concretely and promptly: 'You were so patient just now — that's really great.'",
+        "Avoid comparisons with siblings or other children. Every developmental curve is unique.",
+      ],
+      practical_tip: "Talk to your child today about one of their strengths — not as praise, but as an observation: 'I saw today how you...'",
+      discussion_body: "Which hidden strength of your child would you like to share today?",
+      companion_quick: "Seeing strengths doesn't mean ignoring weaknesses — it means enabling growth.",
+      companion_reflect: "Which strength of your child surprised or impressed you today?",
+    },
+    inclusion_selbstwert: {
+      title: 'Building self-worth every day',
+      parent_lens: "Self-worth doesn't come from praise alone — it comes from the experience: 'I can do something. I matter. I belong.' You can build in all three experiences daily.",
+      parent_tips: [
+        "Let your child make small decisions: 'Do you want to do the tasks first or play first?' Autonomy = self-worth.",
+        "Show genuine interest: put the phone away, look at their face, ask questions. 10 minutes of full attention work wonders.",
+        "Celebrate the process, not just the result: 'You tried that for so long — that's the important part.'",
+      ],
+      practical_tip: "Today: 10 minutes of undivided attention for your child — no phone, no distraction, just interest.",
+      discussion_body: "What makes your child especially proud of themselves — and how do you support that feeling?",
+      companion_quick: "Self-worth doesn't come from the mirror, but from the eyes of the people who love us.",
+      companion_reflect: "In which moment today did your child show 'I can do this!'?",
+    },
+    inclusion_scheitern: {
+      title: 'Seeing failure as a learning opportunity',
+      parent_lens: "The brain learns most strongly from mistakes — not from successes. When your child fails and you stay calm, you send the strongest signal: 'Failing is safe. I can handle it.'",
+      parent_tips: [
+        "When failing, show compassion first, then a solution: 'That was frustrating. What could we do differently next time?'",
+        "Share your own failures: 'I also once ... and then I learned ...' Modeling removes the taboo.",
+        "Avoid 'I told you so.' That closes doors. Instead: 'What did you take away from that?'",
+      ],
+      practical_tip: "Tell your child today about one of your own failures — and what you learned from it.",
+      discussion_body: "How does your family handle setbacks? What helps you see failure as part of learning?",
+      companion_quick: "Children who are allowed to make mistakes become braver adults.",
+      companion_reflect: "Was there a failure today that your child handled well? What helped with that?",
+    },
+    inclusion_hochsensibel: {
+      title: 'Understanding and supporting highly sensitive children',
+      parent_lens: "About 20% of children are highly sensitive — they perceive more, feel more intensely and need more recovery time. That's not a weakness, but a personality trait with its own strengths.",
+      parent_tips: [
+        "Reduce sensory overload: plan calm transition times before high-pressure situations (shopping, school, parties).",
+        "Predictability protects: announce what's coming ('We're leaving in 10 minutes'). Surprises are stressful for highly sensitive children.",
+        "Their sensitivity is a strength: they notice when someone is sad and think deeply. Name that positively.",
+      ],
+      practical_tip: "Today, plan 15 minutes of quiet 'recharge time' for your child after a high-pressure situation — no screen, no expectations.",
+      discussion_body: "Do you recognize highly sensitive traits in your child? What helps you handle it day to day?",
+      companion_quick: "Highly sensitive children don't need toughening up — they need protected spaces and understanding.",
+      companion_reflect: "When did your child process especially many impressions today — and how did they recover afterward?",
+    },
+    inclusion_freundschaft: {
+      title: 'Accompanying friendships — not steering them',
+      parent_lens: "Friendships are the most important place to learn social skills. Children learn giving and taking, negotiating and letting go — but only if we as parents let go and accompany instead of steering.",
+      parent_tips: [
+        "Ask, but don't judge: 'How did it go with ... today?' is better than 'I don't like them, they did ... recently.'",
+        "Let children resolve conflicts among themselves at first — step in only when real distress arises.",
+        "Actively enable friendships: playdates, invitations. Social opportunities don't just happen on their own.",
+      ],
+      practical_tip: "Ask your child today: 'Who in your class / group likes the same things as you?' — and think together about how to make time for it.",
+      discussion_body: "How do you give your children room for their own friendships — even when you don't always understand their choices?",
+      companion_quick: "Real friendship can't be forced — but you can create fertile ground for it together.",
+      companion_reflect: "Did your child talk about someone important to them today? What did you learn from it?",
+    },
+    inclusion_resilienz: {
+      title: 'Resilience — how children grow through challenges',
+      parent_lens: "Resilience isn't innate — it's practiced. Children become resilient when they experience challenges AND are supported through them. Not protection, but accompaniment is the key.",
+      parent_tips: [
+        "Let your child complete challenges: don't help too early. Only offer help once they truly can't go further.",
+        "Strengthen inner dialogue: 'What do you think you could do?' instead of giving the solution directly.",
+        "Talk about family crises age-appropriately: children who are left out develop fantasies worse than the truth.",
+      ],
+      practical_tip: "If your child fails today: wait 30 seconds before stepping in. Often the solution comes on its own.",
+      discussion_body: "Which challenge did your child master that surprised you?",
+      companion_quick: "Resilience grows in the space between challenge and support — not before it and not after it.",
+      companion_reflect: "How can you tell that your child grew inwardly today?",
+    },
+    inclusion_vielfalt: {
+      title: 'Experiencing diversity — difference as a strength',
+      parent_lens: "Children who learn early that people differ — in origin, abilities, ways of thinking — develop more empathy and less fear of contact. You can bring diversity to life in everyday moments.",
+      parent_tips: [
+        "Talk openly about differences — children notice them anyway. 'Yes, Lara has a different skin color than you — and her family comes from...'",
+        "Choose books, films and games with diverse characters — representation shapes worldview.",
+        "Celebrate family quirks: 'For us it's like this, and other families do it differently — that's the beauty of it.'",
+      ],
+      practical_tip: "Read a children's book today with a main character different from your child — and talk about it afterward.",
+      discussion_body: "How do you explain differences between people to children in a way that sparks curiosity instead of fear?",
+      companion_quick: "Children are naturally curious about differences — prejudice is learned later.",
+      companion_reflect: "Did your child ask a question about differences today that made you think?",
+    },
+    leadership_struktur: {
+      title: 'Daily structure as an anchor of security',
+      parent_lens: "A child's brain loves predictability. Rituals and structures aren't limitations — they're the scaffolding that gives children the freedom to develop safely.",
+      parent_tips: [
+        "Fixed anchors in the day: waking-up ritual, meals, bedtime. These three are enough for real stability.",
+        "Plan transition rituals: announce short transitions between activities. 'In 5 minutes we'll tidy up.'",
+        "Structure isn't stress — change it gradually if needed, not abruptly.",
+      ],
+      practical_tip: "Today, look at the daily schedule together with your child — discuss what's coming. That reduces resistance and uncertainty.",
+      discussion_body: "Which daily ritual is especially important to your family — and why?",
+      companion_quick: "Predictability creates security. Security creates readiness to learn.",
+      companion_reflect: "Which moment today showed that your child needs structure — or enjoyed it?",
+    },
+    leadership_schlaf: {
+      title: 'Sleep rituals — creating calm for body and mind',
+      parent_lens: "Sleep is developmental time, not a pause. During sleep, the brain processes the day, consolidates memories and regenerates. A good bedtime ritual is one of the most effective investments in your child.",
+      parent_tips: [
+        "30 minutes before sleep: no screens, no exciting games. Winding down takes time.",
+        "Always the same order: teeth, pajamas, story, lights out. Rituals signal to the brain: 'Now it's time for sleep.'",
+        "If your child can't fall asleep: breathe together. 4 seconds in, 6 seconds out — that activates the parasympathetic nervous system.",
+      ],
+      practical_tip: "Introduce a 3-minute breathing ritual before sleep tonight — breathe in, breathe out, together.",
+      discussion_body: "What's your favorite bedtime ritual — and how did you develop it?",
+      companion_quick: "A calm closing ritual is the best start to good sleep.",
+      companion_reflect: "How was falling asleep today — what helped, what disturbed it?",
+    },
+    leadership_bildschirm: {
+      title: 'Shaping screen time consciously',
+      parent_lens: "Screen time itself isn't the problem — it's uncontrolled, passive consumption without conversation afterward. With simple guidelines, screens become a healthy leisure activity.",
+      parent_tips: [
+        "Fixed times instead of spontaneous bans: 'After homework until 5pm' is clearer than 'not too much'.",
+        "Watch together and talk afterward: 'What did you like? What was strange or odd?' strengthens media literacy.",
+        "Set up screen-free spaces: bedroom and dinner table are good starting boundaries.",
+      ],
+      practical_tip: "Watch something together for 15 minutes today — and ask 2 questions about it afterward. That changes how your child perceives media.",
+      discussion_body: "How do you handle screen time in your family — what has worked, what less so?",
+      companion_quick: "Conscious media use isn't learned through bans, but through conversation.",
+      companion_reflect: "How did your child use media today — actively or passively? What did you notice?",
+    },
+    leadership_autoritaet: {
+      title: 'Authority through connection — not fear',
+      parent_lens: "Authoritative doesn't mean loud and strict. True parental authority arises when a child knows: 'You love me AND you're clear.' Connection and leadership don't exclude each other — they depend on each other.",
+      parent_tips: [
+        "Clear statements without discussion: 'This is how we're doing it now.' No negotiating afterward — just offer understanding.",
+        "Apologies make adults stronger, not weaker. 'That wasn't fair of me earlier' — children respect that.",
+        "Work out some rules together — that increases willingness to follow them.",
+      ],
+      practical_tip: "Today, phrase a rule as a positive instruction instead of a ban: 'We tidy up after playing' instead of 'Don't leave things lying around'.",
+      discussion_body: "How do you find the balance between leadership and your children's say?",
+      companion_quick: "Authority without connection is control. Connection without authority is chaos. Both together is leadership.",
+      companion_reflect: "Was there a moment today when your calm clarity achieved more than a power word?",
+    },
+    leadership_hausaufgaben: {
+      title: 'Homework without stress — a framework that works',
+      parent_lens: "Homework stress is often not a learning problem — it's a ritual problem. With the right structure and the right timing, the issue relaxes on its own.",
+      parent_tips: [
+        "Find the right time: right after school or after a short recovery break — but before evening.",
+        "I'm here, but I won't help right away: try it yourself first. After 10 minutes without progress: ask 'Where are you stuck?'",
+        "Prepare the workspace: a fixed spot, a tidy desk, no phone in sight — that reduces distraction.",
+      ],
+      practical_tip: "Today, define THE one homework time for the week together with your child — and write it down.",
+      discussion_body: "What made homework less stressful for you? Which routines work?",
+      companion_quick: "Structure while learning isn't a limitation — it's the engine for concentration.",
+      companion_reflect: "How did learning go today? What could you try differently tomorrow?",
+    },
+    leadership_selbstaendigkeit: {
+      title: 'Independence — letting go is also love',
+      parent_lens: "Children become independent when we trust them. But letting go feels risky — and that's normal. The art is: hand over more responsibility step by step.",
+      parent_tips: [
+        "Assign age-appropriate tasks: 3-year-olds put away toys, 6-year-olds set the table, 10-year-olds help cook.",
+        "Don't jump in when it's going slowly. Slow and by themselves is more valuable than fast and with help.",
+        "Accept mistakes in independent tasks: the glass of milk tips over — that's not failure, that's practice.",
+      ],
+      practical_tip: "Today, hand your child a new task you've always done yourself — and let them do it completely on their own.",
+      discussion_body: "What is your child's greatest achievement of independence that you're both proud of?",
+      companion_quick: "Every task a child completes themselves is an investment in their future self-confidence.",
+      companion_reflect: "When did you let go today — and how did that feel for you?",
+    },
+    leadership_natur: {
+      title: 'Nature and movement as a family ritual',
+      parent_lens: "Children who are regularly outside sleep better, concentrate better and are more emotionally stable. Nature isn't a leisure activity — it's a basic need.",
+      parent_tips: [
+        "15 minutes outside daily already has a measurable effect — no trip needed, even the walk to school counts.",
+        "Move together: bicycle, walk, playing field. Moving together strengthens bonding.",
+        "Let your child discover nature: stones, beetles, puddles. No program — just openness.",
+      ],
+      practical_tip: "Plan a 15-minute walk outside today — no destination, no program, just together.",
+      discussion_body: "Which nature experience from your own childhood would you like to pass on to your children?",
+      companion_quick: "Being outside is brain food — for children and adults.",
+      companion_reflect: "How did your time outside today change the mood?",
+    },
+    milestone_sprache: {
+      title: 'Language development — how to support it through play',
+      parent_lens: "Language development doesn't happen through vocabulary drills — it happens in dialogue. Children learn to speak when adults talk with them, listen to them and respond to what they say.",
+      parent_tips: [
+        "Describe your everyday life out loud: 'Now I'm cutting the carrots' — that enriches passive vocabulary.",
+        "Pick up on your child's statements and expand them: 'Ball!' — 'Yes, the red ball is rolling.'",
+        "Read aloud daily, even if the child can already read. Texts from books have different structures than everyday speech.",
+      ],
+      practical_tip: "Read aloud for 10 minutes today — and ask while reading: 'What do you think happens next?'",
+      discussion_body: "Which words or sentences of your child have recently surprised or touched you?",
+      companion_quick: "Language grows in conversation — not in silence.",
+      companion_reflect: "Which language progress of your child did you notice today?",
+    },
+    milestone_schule: {
+      title: 'Calmly accompanying school starts and transitions',
+      parent_lens: "Transitions — starting school, changing classes, new daycare — are the most intense learning phases for children. Your calm and confidence transfer to your child. You are the base of regulation.",
+      parent_tips: [
+        "Get to know new places beforehand: if possible, visit the new classroom or school before the first day.",
+        "Talk about feelings: 'It's okay to be nervous. I was nervous on my first day of school too.'",
+        "Small transition objects help: a photo in the bag, a small keepsake — objects create security.",
+      ],
+      practical_tip: "Ask your child today: 'What are you looking forward to about ...? What still worries you?' — and listen without judgment.",
+      discussion_body: "How have you accompanied an important transition for your child? What helped?",
+      companion_quick: "Transitions are an ending and a beginning at once — and both may be felt.",
+      companion_reflect: "Which emotion did your child show around a transition today?",
+    },
+    milestone_sozial: {
+      title: 'Social intelligence — the most important skill of the 21st century',
+      parent_lens: "IQ opens doors. EQ (emotional intelligence) lets people in. Children with high social competence can cooperate, communicate and empathize better — and they learn this from you.",
+      parent_tips: [
+        "Model empathy daily: 'The cat looks sad. Why do you think that is?'",
+        "Practice perspective-taking: 'How do you think ... felt when you said that?'",
+        "Praise social behavior explicitly: 'You waited until he finished speaking. That was very respectful.'",
+      ],
+      practical_tip: "Talk about a social situation after daycare or school today: 'Did anyone do something nice today?'",
+      discussion_body: "Which aspect of social competence do you find most important today — for children and adults?",
+      companion_quick: "Social competence isn't a talent — it's a skill that is practiced.",
+      companion_reflect: "When did your child show empathy today — even if it went unnoticed?",
+    },
+    milestone_emotion: {
+      title: 'Emotional maturity — when feelings are processed',
+      parent_lens: "Emotional maturity doesn't show in having no feelings — but in processing them. Children who are allowed to express feelings learn to handle them better in the long run.",
+      parent_tips: [
+        "All feelings are allowed — not all actions. 'You may be angry. You may not hit.'",
+        "Don't talk feelings away: instead of 'That's not so bad' → 'I can see this really affects you.'",
+        "Let emotions be felt in the body: 'Where do you feel that right now? In your stomach? In your chest?'",
+      ],
+      practical_tip: "Ask today: 'How does that feel in your body?' — and accept whatever answer comes.",
+      discussion_body: "Which feeling is hardest for your family to show openly?",
+      companion_quick: "Allowing feelings isn't weakness — it's emotional strength.",
+      companion_reflect: "Which emotion did your child show openly today — and how did you accompany it together?",
+    },
+    milestone_kreativitaet: {
+      title: 'Fostering creativity — without focusing on outcomes',
+      parent_lens: "Creativity is problem-solving in disguise. When children paint, build, craft or play, they train flexibility and originality — the skills of the future.",
+      parent_tips: [
+        "No focus on the end product: 'Tell me what you made' instead of 'What is that supposed to be?'",
+        "Offer materials without instructions: fabric, cardboard, natural materials — and then let go.",
+        "Be creative yourself: when parents paint, build, sing — without perfection — they allow their children the same.",
+      ],
+      practical_tip: "Offer 20 minutes of free crafting today — no template, no instructions, just materials.",
+      discussion_body: "What's the most creative project your child has ever come up with themselves?",
+      companion_quick: "Creativity needs space, time, and an adult who doesn't judge.",
+      companion_reflect: "What did your child invent, build or imagine today that surprised you?",
+    },
+    milestone_koerper: {
+      title: 'Strengthening body awareness — movement as a driver of development',
+      parent_lens: "Motor development and cognitive development are inseparably linked. Children who climb, balance and dance also develop their spatial thinking and concentration.",
+      parent_tips: [
+        "Build in movement daily: not as a sports program, but as everyday life — stairs instead of elevator, walking instead of carrying.",
+        "Alternate gross and fine motor skills: building (fine) and climbing (gross) complement each other wonderfully.",
+        "Reinforce body image positively: 'Your body can do so much' — regardless of appearance or performance.",
+      ],
+      practical_tip: "Plan 10 minutes of movement play today — balancing, hopping, rolling. No program, just body and fun.",
+      discussion_body: "Which movement activity brings your child the most joy — and why?",
+      companion_quick: "Movement isn't a leisure activity — it's an engine for learning.",
+      companion_reflect: "What did your child try or dare physically today that was new?",
+    },
+    milestone_uebergaenge: {
+      title: 'Preparing for puberty — early and relaxed',
+      parent_lens: "Puberty starts earlier than most parents think — and the course is set in childhood. Open communication and a secure parent-child relationship are the best preparation.",
+      parent_tips: [
+        "Talk about body changes early — matter-of-factly, without drama. Children who are informed have less fear.",
+        "Share your own puberty memories (appropriately): 'I was unsure about ... back then too' — that normalizes it.",
+        "Create space for privacy: knock, respect diaries. Trust arises through respect.",
+      ],
+      practical_tip: "Watch an age-appropriate video or book about body processes together with your child today — without shyness.",
+      discussion_body: "Looking back, what mattered to you during puberty — and what do you wish your parents had done?",
+      companion_quick: "The best puberty preparation is a strong relationship today.",
+      companion_reflect: "Did your child ask a question today that shows they're starting to reflect on themselves?",
+    },
+    gfk_wiedergutmachung: {
+      title: 'When parents lose it — making amends as a strength',
+      parent_lens: "No parent is patient all the time. When you lose it, that's not a failure as a parent — it's a human moment. But what comes after shapes the relationship more strongly than the outburst itself.",
+      parent_tips: [
+        "Making amends needs three steps: take responsibility ('I was wrong'), show compassion, and if needed, do it differently.",
+        "Apologize without 'but': 'I'm sorry I was so loud. That wasn't okay.' — done.",
+        "Your child sees you as human — that's good. Children learn through repair that relationships survive storms.",
+      ],
+      practical_tip: "If you didn't behave well in a situation today: go back to your child and say so. Three sentences are enough.",
+      discussion_body: "How have you as parents learned to handle your own outbursts — without judging yourselves too harshly?",
+      companion_quick: "Making amends teaches children something no guidebook can: that relationships can be repaired.",
+      companion_reflect: "Was there a moment today you would have handled differently in hindsight — and what did you take from it?",
+    },
+  },
+  tr: {
+    gfk_warum: {
+      title: '"Neden" sorularını sakin şekilde karşılamak',
+      parent_lens: "Çocuğunuz günde yüz kez 'Neden?' diye soruyor. Bunu sizi sinirlendirmek için değil, beyni bağlantılar kurduğu için yapıyor. Dünyayı anlamak istiyor.",
+      parent_tips: [
+        "Şiddetsiz iletişimi (NVC) kullanın: azarlamak yerine kendi duygu ve ihtiyaçlarınızı açıkça ifade edin.",
+        "'Neden' sorularını kısa ve basit yanıtlayın — çocuğunuz mantık arıyor, bilimsel bir ders değil.",
+        "Sınırları cezayla değil, kişisel varlığınızla sevgiyle koyun ('Vurmanı istemiyorum').",
+      ],
+      practical_tip: "Bir sonraki 'neden' sorusunda önce duyguyu yansıtın ('Meraklısın!'), sonra tek cümleyle yanıtlayın.",
+      discussion_body: "Çocuğunuz onuncu kez 'neden' diye sorduğunda hangi kısa, sakin ifade size yardımcı oluyor?",
+      companion_quick: "Bugün bir neden sorusuna sadece sakin bir yanıt verin ve sonrasında bilinçli olarak kısa kalın.",
+      companion_reflect: "Çocuğunuz bugün en çok ne zaman bağlantı aradı — ve ona nasıl sakin bir yön verebildiniz?",
+    },
+    gfk_grenzen: {
+      title: 'Sınırları sevgiyle ve netlikle koymak',
+      parent_lens: "Sevgi dolu sınırlar bir çelişki değildir. Çocukların ikisine de ihtiyacı var: sevildiğini hissetmek VE nelerin olmadığı konusunda net bir yönlendirme. Bağlantısız sınırlar duvar gibi hissettirir — bağlantılı sınırlar korkuluk gibi hissettirir.",
+      parent_tips: [
+        "Önce çocuğunuzun duygusunu, sonra sınırı adlandırın: 'Kızgın olduğunu görüyorum. Yine de: vurmak olmaz.'",
+        "Bedenen sakin kalın — tonunuz sözlerinizden daha yüksek sesle konuşur. Tepki vermeden önce derin bir nefes alın.",
+        "Sonuçları söyleyin ve uygulayın. Tehdit etmeyin, önceden bildirin: 'Eğer ... yaparsan o zaman ...'",
+      ],
+      practical_tip: "Bugün duygu + sınır cümlesi kurmayı deneyin: 'Bunu istediğini anlıyorum. Ve: hayır.' — ve bunu sakin bir şekilde söyleyin.",
+      discussion_body: "Kendi sınırlarınıza ulaştığınızda nasıl tepki veriyorsunuz? Hangi cümle sakin kalmanıza yardımcı oluyor?",
+      companion_quick: "Bir sonraki sınır tepkisinden önce derin bir nefes alın — işin yarısı bu.",
+      companion_reflect: "Bugün sakin bir sınırın yüksek sesli bir hayırdan daha iyi işlediği bir durum oldu mu?",
+    },
+    gfk_ichbotschaft: {
+      title: '"Sen" suçlamaları yerine "ben" mesajları',
+      parent_lens: "'Sen' mesajları ('Çok yüksek sesle konuşuyorsun!') savunmayı tetikler. 'Ben' mesajları ('Yoruluyorum ve sessizliğe ihtiyacım var') kapıları açar. Çocuklar kendilerini saldırıya uğramış hissetmediklerinde daha çok dinler.",
+      parent_tips: [
+        "Suçlamaları 'ben' mesajlarına dönüştürün: 'Sen hiç dinlemiyorsun' yerine → 'Kendimi duyulmuş hissetmiyorum ve bu beni üzüyor.'",
+        "İhtiyacınızı paylaşın: 'Şimdi düşünmek için kısa bir sessizliğe ihtiyacım var.' Çocuklar ihtiyaçları şaşırtıcı derecede iyi anlar.",
+        "Günlük hayatta pratik yapın: klasik üç cümleyi 'ben' mesajına dönüştürün — sabah diş fırçalarken, öğlen yemekte, akşam uyku öncesi.",
+      ],
+      practical_tip: "Bugün genellikle 'Sen hep...' dediğiniz bir durumu seçin — ve 'Ben ... hissediyorum çünkü ... ihtiyacım var' ile değiştirin.",
+      discussion_body: "Hangi 'sen' mesajını yeniden ifade etmek size en zor geliyor? Bu konuda ne yardımcı oluyor?",
+      companion_quick: "Duyguyu + ihtiyacı adlandırmak — gerçek bir 'ben' mesajının formülü budur.",
+      companion_reflect: "Bugün bir 'ben' mesajı sizi şaşırtan bir tepkiye yol açtı mı?",
+    },
+    gfk_trotz: {
+      title: 'İnat dönemlerini sakin bir şekilde desteklemek',
+      parent_lens: "İnat bir isyan değildir — bir gelişimdir. Bir çocuk yerde yatıp bağırdığında, prefrontal korteksi duyguyu düzenlemek için henüz yeterince olgunlaşmamıştır. Sizin ona bir eş-düzenleyici olarak ihtiyacı var.",
+      parent_tips: [
+        "Zorlamadan bedenen yakın kalın: diz seviyesine inin, sakin konuşun, çocuk reddediyorsa dokunmayın.",
+        "Fırtınanın ortasında tartışmaktan kaçının. Konuşma ancak sakinleştiğinde gelir.",
+        "'Duygu köprüleri' kullanın: 'Dondurmayı istedin. Bu senin için çok önemliydi. Bunu anlıyorum.'",
+      ],
+      practical_tip: "Çocuğunuz kendinden geçtiğinde: yanına oturun. Uzaklaşmayın, müdahale etmeyin — sadece orada olun. Bu bile düzenlemeye yardımcı olur.",
+      discussion_body: "Çocuğunuz duygusal bir patlamanın ortasındayken siz sakin kalmak için neye ihtiyaç duyuyorsunuz?",
+      companion_quick: "İnat dönemleri için üç kelime: yakın kal. Sakin nefes al. Bekle.",
+      companion_reflect: "Bugün sizi en çok ne yordu — ve bu sırada sakin kalmanıza ne yardımcı oldu?",
+    },
+    gfk_geschwister: {
+      title: 'Kardeş kavgalarını bir öğrenme alanı olarak kullanmak',
+      parent_lens: "Kardeşler kavga eder — bu normaldir ve hatta önemlidir. Kavgada çocuklar uzlaşmayı, bakış açısı değiştirmeyi ve kendini savunmayı öğrenir. Sizin rolünüz hakem değil, arabulucudur.",
+      parent_tips: [
+        "Taraf tutmayın: 'İkinizin de şu anda kızgın olduğunu görüyorum. Önce seni, sonra seni dinleyeceğim.'",
+        "Durum tırmanmıyorsa çocukların kendi çözümlerini bulmasına izin verin. Ancak gerçek bir tehlike varsa müdahale edin.",
+        "Her çocuğu tek tek güçlendirin: düzenli 1:1 anlar kıskançlığı uzun vadede azaltır.",
+      ],
+      practical_tip: "Bir sonraki kavgada her iki çocuğa da 'Şu anda neye ihtiyacın var?' diye sorun — kimin haklı olduğuna karar vermeden önce.",
+      discussion_body: "Kardeşler kavga ettiğinde bunu nasıl ele alıyorsunuz? Sizde en iyi ne işe yarıyor?",
+      companion_quick: "Hakem değil, arabulucu — kardeş çatışmalarındaki rolünüz budur.",
+      companion_reflect: "Bugün çocuklarınızın bir kavgayı kendi başlarına çözdüğü bir an oldu mu? Bundan ne öğrendiniz?",
+    },
+    gfk_gefühle: {
+      title: 'Duyguları adlandırmak ve kabul etmek',
+      parent_lens: "Duygularını adlandırabilen çocukların büyük bir avantajı vardır: neye ihtiyaç duyduklarını iletebilirler. Hissetmekten konuşmaya giden bu adım pratik ve sizin desteğinizi gerektirir.",
+      parent_tips: [
+        "'Duygu barometresini' kullanın: akşam 'Günün 1-5 arasında nasıldı?' diye sorun — ve önce siz anlatın.",
+        "Kendi duygularınızı yüksek sesle adlandırın: 'Şu anda biraz stresliyim çünkü çok düşünmem gerekiyor.' Örnek olmak işe yarar.",
+        "Duygularla ilgili çocuk kitapları okuyun — ve sonra durup sorun: 'Karakter ne hissetti sence? Ya sen?'",
+      ],
+      practical_tip: "Bu akşam sorun: 'Bugün seni ne mutlu etti? Seni ne üzdü veya kızdırdı?' — ve sadece dinleyin.",
+      discussion_body: "Çocuğunuzun adlandırması en zor olan duygu hangisi? Buna nasıl yaklaşıyorsunuz?",
+      companion_quick: "Önce hisset, sonra adlandır — duygu alfabesi sizin örnek olmanızla başlar.",
+      companion_reflect: "Bugün çocuğunuzun hangi duygu anını hatırlamak istediniz?",
+    },
+    gfk_nein: {
+      title: 'Vicdan azabı duymadan hayır demek',
+      parent_lens: "Hiç hayır demeyen ebeveynler, sınır tanımayan çocuklar yetiştirir. Sevgi dolu bir hayır çocuğunuza şunu gösterir: kendi ihtiyaçlarımı ciddiye alıyorum — sen de alabilirsin.",
+      parent_tips: [
+        "Bir hayırın uzun bir açıklamaya ihtiyacı yoktur. Net bir 'Hayır, şu anda olmaz' yeterlidir.",
+        "Hayırdan sonraki suçluluk bir hatanın değil, bir sinyalin işaretidir. Kendinize sorun: bu hayır gerçekten yanlış mı, yoksa sadece rahatsız edici mi?",
+        "Diğer yetişkinlere de hayır demeyi pratik edin (oyun randevuları, sözler) — çocuğunuz sizin örneğinizden öğrenir.",
+      ],
+      practical_tip: "Bugün bilinçli olarak bir kez hayır deyin — özür dilemeden. Nasıl hissettirdiğine dikkat edin.",
+      discussion_body: "Hayır demek size ne zaman en zor geliyor — çocuklarınıza mı, yoksa başkalarına mı?",
+      companion_quick: "Bir şeye hayır demek, daha önemli bir şeye — genellikle kendinize — evet demektir.",
+      companion_reflect: "Bugün geriye dönüp baktığınızda doğru hissettiren bir hayır oldu mu?",
+    },
+    inclusion_stärken: {
+      title: 'Zayıflıkları değerlendirmek yerine güçlü yönleri görmek',
+      parent_lens: "Her çocuğun kendine özgü bir güçlü yönler bileşimi vardır. Ebeveynler olarak genellikle önce eksikleri görürüz — oysa ham elması parlatabilecek ilk kişiler biz olabiliriz.",
+      parent_tips: [
+        "Bu akşam çocuğunuzun 3 güçlü yönünü yazın — başarılar değil, karakter özellikleri ('meraklı', 'şefkatli', 'azimli').",
+        "Güçlü yönleri somut ve zamanında adlandırın: 'Az önce çok sabırlıydın — bu gerçekten harika.'",
+        "Kardeşler veya diğer çocuklarla karşılaştırmaktan kaçının. Her gelişim eğrisi kendine özgüdür.",
+      ],
+      practical_tip: "Bugün çocuğunuzla güçlü yönlerinden biri hakkında konuşun — övgü olarak değil, bir gözlem olarak: 'Bugün senin ... yaptığını gördüm.'",
+      discussion_body: "Bugün çocuğunuzun hangi gizli güçlü yönünü paylaşmak istersiniz?",
+      companion_quick: "Güçlü yönleri görmek, zayıflıkları görmezden gelmek değildir — büyümeye olanak tanımaktır.",
+      companion_reflect: "Bugün çocuğunuzun hangi güçlü yönü sizi şaşırttı veya etkiledi?",
+    },
+    inclusion_selbstwert: {
+      title: 'Öz saygıyı her gün inşa etmek',
+      parent_lens: "Öz saygı yalnızca övgüyle oluşmaz — şu deneyimle oluşur: 'Bir şey yapabiliyorum. Önemliyim. Buraya aitim.' Bu üç deneyimi her gün yaşatabilirsiniz.",
+      parent_tips: [
+        "Çocuğunuzun küçük kararlar almasına izin verin: 'Önce ödevleri mi yapmak istersin, önce oynamak mı?' Özerklik = öz saygı.",
+        "Gerçek ilgi gösterin: telefonu bırakın, yüzüne bakın, sorular sorun. 10 dakika tam dikkat mucizeler yaratır.",
+        "Sadece sonucu değil, süreci kutlayın: 'Bunu bu kadar uzun süre denedin — önemli olan kısım bu.'",
+      ],
+      practical_tip: "Bugün: çocuğunuza 10 dakika bölünmemiş dikkat gösterin — telefon yok, dikkat dağıtıcı yok, sadece ilgi.",
+      discussion_body: "Çocuğunuzu kendisiyle özellikle gururlandıran nedir — ve bu duyguyu nasıl destekliyorsunuz?",
+      companion_quick: "Öz saygı aynadan değil, bizi sevenlerin gözlerinden gelir.",
+      companion_reflect: "Çocuğunuz bugün hangi anda 'Bunu yapabilirim!' dedi?",
+    },
+    inclusion_scheitern: {
+      title: 'Başarısızlığı bir öğrenme fırsatı olarak görmek',
+      parent_lens: "Beyin en güçlü şekilde hatalardan öğrenir — başarılardan değil. Çocuğunuz başarısız olduğunda siz sakin kalırsanız, ona en güçlü sinyali verirsiniz: 'Başarısız olmak güvenlidir. Ben bunu kaldırabilirim.'",
+      parent_tips: [
+        "Başarısızlıkta önce şefkat, sonra çözüm: 'Bu sinir bozucuydu. Bir dahaki sefere ne farklı yapabiliriz?'",
+        "Kendi başarısızlıklarınızdan bahsedin: 'Ben de bir keresinde ... ve sonra ... öğrendim.' Örnek olmak tabuyu kaldırır.",
+        "'Sana söylemiştim'den kaçının. Bu kapıları kapatır. Bunun yerine: 'Bundan ne çıkardın?'",
+      ],
+      practical_tip: "Bugün çocuğunuza kendi başarısızlıklarınızdan birinden bahsedin — ve bundan ne öğrendiğinizi anlatın.",
+      discussion_body: "Aile olarak yenilgilerle nasıl başa çıkıyorsunuz? Başarısızlığı öğrenmenin bir parçası olarak görmenize ne yardımcı oluyor?",
+      companion_quick: "Hata yapmasına izin verilen çocuklar daha cesur yetişkinler olur.",
+      companion_reflect: "Bugün çocuğunuzun iyi atlattığı bir başarısızlık oldu mu? Buna ne yardımcı oldu?",
+    },
+    inclusion_hochsensibel: {
+      title: 'Yüksek duyarlı çocukları anlamak ve desteklemek',
+      parent_lens: "Çocukların yaklaşık %20'si yüksek duyarlıdır — daha fazlasını algılar, daha yoğun hisseder ve daha fazla dinlenme süresine ihtiyaç duyarlar. Bu bir zayıflık değil, kendine özgü güçlü yönleri olan bir kişilik özelliğidir.",
+      parent_tips: [
+        "Uyaran yoğunluğunu azaltın: yüksek baskılı durumlardan önce (alışveriş, okul, parti) sakin geçiş süreleri planlayın.",
+        "Öngörülebilirlik korur: neler olacağını önceden bildirin ('10 dakika sonra gidiyoruz'). Sürprizler yüksek duyarlı çocuklar için yorucudur.",
+        "Duyarlılıkları bir güçtür: birinin üzgün olduğunu fark eder ve derin düşünürler. Bunu olumlu bir şekilde adlandırın.",
+      ],
+      practical_tip: "Bugün yüksek baskılı bir durumdan sonra çocuğunuz için 15 dakikalık sessiz bir 'şarj olma zamanı' planlayın — ekran yok, beklenti yok.",
+      discussion_body: "Çocuğunuzda yüksek duyarlı özellikler fark ediyor musunuz? Günlük hayatta bununla başa çıkmanıza ne yardımcı oluyor?",
+      companion_quick: "Yüksek duyarlı çocukların katılaşmaya değil, korunaklı alanlara ve anlayışa ihtiyacı vardır.",
+      companion_reflect: "Çocuğunuz bugün en çok ne zaman çok fazla izlenim işledi — ve bundan sonra nasıl toparlandı?",
+    },
+    inclusion_freundschaft: {
+      title: 'Arkadaşlıklara eşlik etmek — yönlendirmemek',
+      parent_lens: "Arkadaşlıklar sosyal beceriler için en önemli öğrenme yeridir. Çocuklar vermeyi ve almayı, müzakere etmeyi ve vazgeçmeyi öğrenir — ama sadece ebeveynler olarak biz bırakıp yönlendirmek yerine eşlik edersek.",
+      parent_tips: [
+        "Sorun ama yargılamayın: 'Bugün ... ile nasıl geçti?' 'Onu sevmiyorum, geçenlerde ... yaptı' demekten daha iyidir.",
+        "Çocukların önce kendi aralarındaki çatışmaları çözmesine izin verin — ancak gerçek bir sıkıntı olduğunda müdahale edin.",
+        "Arkadaşlıkları aktif olarak mümkün kılın: oyun randevuları, davetler. Sosyal fırsatlar kendiliğinden ortaya çıkmaz.",
+      ],
+      practical_tip: "Bugün çocuğunuza sorun: 'Sınıfından / grubundan kim senin sevdiğin şeyleri seviyor?' — ve birlikte zaman yaratmayı düşünün.",
+      discussion_body: "Seçimlerini her zaman anlamasanız bile çocuklarınıza kendi arkadaşlıkları için nasıl alan tanıyorsunuz?",
+      companion_quick: "Gerçek arkadaşlık zorla oluşturulamaz — ama birlikte verimli bir zemin hazırlayabilirsiniz.",
+      companion_reflect: "Çocuğunuz bugün kendisi için önemli olan biri hakkında konuştu mu? Bundan ne öğrendiniz?",
+    },
+    inclusion_resilienz: {
+      title: 'Dayanıklılık — çocuklar zorluklarla nasıl büyür',
+      parent_lens: "Dayanıklılık doğuştan gelmez — pratikle kazanılır. Çocuklar zorluklar yaşadıklarında VE bu sırada desteklendiklerinde dayanıklı hale gelirler. Anahtar koruma değil, eşliktir.",
+      parent_tips: [
+        "Çocuğunuzun zorlukları tamamlamasına izin verin: çok erken yardım etmeyin. Gerçekten daha fazla ilerleyemediğinde yardım teklif edin.",
+        "İçsel diyaloğu güçlendirin: doğrudan çözümü vermek yerine 'Ne yapabileceğini düşünüyorsun?' diye sorun.",
+        "Aile krizlerini yaşına uygun şekilde konuşun: dışlanan çocuklar gerçeğinden daha kötü fanteziler geliştirir.",
+      ],
+      practical_tip: "Çocuğunuz bugün başarısız olursa: müdahale etmeden önce 30 saniye bekleyin. Çözüm genellikle kendiliğinden gelir.",
+      discussion_body: "Çocuğunuz sizi şaşırtan hangi zorluğun üstesinden geldi?",
+      companion_quick: "Dayanıklılık, zorluk ile destek arasındaki alanda büyür — öncesinde veya sonrasında değil.",
+      companion_reflect: "Çocuğunuzun bugün içsel olarak büyüdüğünü nereden anlıyorsunuz?",
+    },
+    inclusion_vielfalt: {
+      title: 'Çeşitliliği deneyimlemek — farklılık bir güçtür',
+      parent_lens: "İnsanların köken, yetenek ve düşünce biçimi açısından farklı olduğunu erken öğrenen çocuklar, daha fazla empati ve daha az temas korkusu geliştirir. Çeşitliliği günlük hayatta canlı kılabilirsiniz.",
+      parent_tips: [
+        "Farklılıklar hakkında açıkça konuşun — çocuklar bunları zaten fark eder. 'Evet, Lara'nın ten rengi senden farklı — ve ailesi ... 'dan geliyor.'",
+        "Farklı karakterlerin olduğu kitaplar, filmler ve oyunlar seçin — temsil dünya görüşünü etkiler.",
+        "Aile kendine özgülüklerini kutlayın: 'Bizde böyle, başka ailelerde farklı — güzel olan da bu.'",
+      ],
+      practical_tip: "Bugün çocuğunuzdan farklı bir ana karakterin olduğu bir çocuk kitabı okuyun — ve sonrasında bunu konuşun.",
+      discussion_body: "Çocuklara insanlar arasındaki farklılıkları korku yerine merak uyandıracak şekilde nasıl anlatıyorsunuz?",
+      companion_quick: "Çocuklar doğal olarak farklılıklara meraklıdır — önyargıyı ancak sonradan öğrenirler.",
+      companion_reflect: "Çocuğunuz bugün sizi düşündüren, farklılıklarla ilgili bir soru sordu mu?",
+    },
+    leadership_struktur: {
+      title: 'Günlük yapı bir güven demiri olarak',
+      parent_lens: "Bir çocuğun beyni öngörülebilirliği sever. Ritüeller ve yapılar bir kısıtlama değildir — çocuklara güvenle gelişme özgürlüğü veren bir iskelettir.",
+      parent_tips: [
+        "Günde sabit demirler: uyanma ritüeli, öğünler, uyku saati. Gerçek istikrar için bu üçü yeterlidir.",
+        "Geçiş ritüelleri planlayın: etkinlikler arasında kısa geçişleri önceden bildirin. '5 dakika sonra topluyoruz.'",
+        "Yapı stres değildir — gerektiğinde aniden değil, kademeli olarak değiştirin.",
+      ],
+      practical_tip: "Bugün çocuğunuzla birlikte günlük plana bakın — ne geleceğini konuşun. Bu direnci ve belirsizliği azaltır.",
+      discussion_body: "Ailenizde hangi günlük ritüel özellikle önemli — ve neden?",
+      companion_quick: "Öngörülebilirlik güven yaratır. Güven öğrenmeye hazır olmayı yaratır.",
+      companion_reflect: "Bugün hangi an çocuğunuzun yapıya ihtiyaç duyduğunu — veya bundan keyif aldığını gösterdi?",
+    },
+    leadership_schlaf: {
+      title: 'Uyku ritüelleri — beden ve zihin için huzur yaratmak',
+      parent_lens: "Uyku bir mola değil, gelişim zamanıdır. Uyku sırasında beyin günü işler, anıları pekiştirir ve yenilenir. İyi bir uyku ritüeli çocuğunuza yapılan en etkili yatırımlardan biridir.",
+      parent_tips: [
+        "Uyumadan 30 dakika önce: ekran yok, heyecanlı oyunlar yok. Sakinleşmek zaman alır.",
+        "Her zaman aynı sıra: dişler, pijama, hikaye, ışık kapalı. Ritüeller beyne 'Şimdi uyku zamanı' sinyalini verir.",
+        "Çocuğunuz uyuyamıyorsa: birlikte nefes alın. 4 saniye al, 6 saniye ver — bu parasempatik sinir sistemini aktive eder.",
+      ],
+      practical_tip: "Bu akşam uyumadan önce 3 dakikalık bir nefes ritüeli uygulayın — nefes alın, verin, birlikte.",
+      discussion_body: "En sevdiğiniz uyku ritüeli nedir — ve onu nasıl geliştirdiniz?",
+      companion_quick: "Sakin bir kapanış ritüeli iyi bir uykuya en iyi başlangıçtır.",
+      companion_reflect: "Bugün uykuya dalmak nasıldı — ne yardımcı oldu, ne rahatsız etti?",
+    },
+    leadership_bildschirm: {
+      title: 'Ekran süresini bilinçli olarak şekillendirmek',
+      parent_lens: "Sorun olan ekran süresinin kendisi değil — sonrasında konuşma olmadan kontrolsüz, pasif tüketimdir. Basit çerçeve koşullarıyla ekran sağlıklı bir boş zaman etkinliği haline gelir.",
+      parent_tips: [
+        "Ani yasaklar yerine sabit zamanlar: 'Ödevlerden sonra saat 17'ye kadar' 'çok fazla değil' den daha nettir.",
+        "Birlikte izleyin ve sonra konuşun: 'Neyi beğendin? Ne tuhaf veya garip geldi?' medya okuryazarlığını güçlendirir.",
+        "Ekransız alanlar oluşturun: yatak odası ve yemek masası iyi başlangıç sınırlarıdır.",
+      ],
+      practical_tip: "Bugün birlikte 15 dakika bir şey izleyin — ve sonrasında bununla ilgili 2 soru sorun. Bu çocuğunuzun medyayı algılama biçimini değiştirir.",
+      discussion_body: "Ekran süresini evinizde nasıl yönetiyorsunuz — ne işe yaradı, ne daha az işe yaradı?",
+      companion_quick: "Bilinçli medya kullanımı yasakla değil, konuşmayla öğrenilir.",
+      companion_reflect: "Çocuğunuz bugün medyayı nasıl kullandı — aktif mi, pasif mi? Ne fark ettiniz?",
+    },
+    leadership_autoritaet: {
+      title: 'Korkuyla değil, bağla otorite',
+      parent_lens: "Otoriter olmak yüksek sesli ve katı olmak anlamına gelmez. Gerçek ebeveyn otoritesi, bir çocuk şunu bildiğinde ortaya çıkar: 'Beni seviyorsun VE nettsin.' Bağ ve liderlik birbirini dışlamaz — birbirini tamamlar.",
+      parent_tips: [
+        "Tartışma olmadan net ifadeler: 'Bunu şimdi böyle yapıyoruz.' Sonrasında pazarlık yok — sadece anlayış sunun.",
+        "Özürler yetişkinleri daha zayıf değil, daha güçlü yapar. 'Az önce bu benden adil değildi' — çocuklar buna saygı duyar.",
+        "Bazı kuralları birlikte oluşturun — bu onlara uyma isteğini artırır.",
+      ],
+      practical_tip: "Bugün bir kuralı yasak yerine olumlu bir görev olarak ifade edin: 'Oynadıktan sonra topluyoruz' yerine 'Ortalıkta bırakma.'",
+      discussion_body: "Liderlik ile çocuklarınızın söz hakkı arasındaki dengeyi nasıl buluyorsunuz?",
+      companion_quick: "Bağlantısız otorite kontroldür. Otoritesiz bağlantı kaostur. İkisi birlikte liderliktir.",
+      companion_reflect: "Bugün sakin netliğinizin güçlü bir sözden daha fazla işe yaradığı bir an oldu mu?",
+    },
+    leadership_hausaufgaben: {
+      title: 'Stressiz ödev — işe yarayan bir çerçeve',
+      parent_lens: "Ödev stresi genellikle bir öğrenme sorunu değildir — bir ritüel sorunudur. Doğru yapı ve doğru zamanlamayla konu kendiliğinden rahatlar.",
+      parent_tips: [
+        "Doğru zamanı bulun: okuldan hemen sonra veya kısa bir dinlenmeden sonra — ama akşamdan önce.",
+        "Buradayım ama hemen yardım etmiyorum: önce kendisi denesin. 10 dakika ilerleme olmazsa: 'Nerede takıldın?' diye sorun.",
+        "Çalışma alanını hazırlayın: sabit bir yer, düzenli bir masa, görüş alanında telefon yok — bu dikkat dağınıklığını azaltır.",
+      ],
+      practical_tip: "Bugün çocuğunuzla birlikte hafta için TEK bir ödev zamanı belirleyin — ve yazın.",
+      discussion_body: "Sizde ödevleri daha az stresli hale getiren ne oldu? Hangi rutinler işe yarıyor?",
+      companion_quick: "Öğrenirken yapı bir kısıtlama değildir — konsantrasyonun motorudur.",
+      companion_reflect: "Bugün öğrenme nasıl geçti? Yarın farklı ne deneyebilirsiniz?",
+    },
+    leadership_selbstaendigkeit: {
+      title: 'Bağımsızlık — bırakmak da sevgidir',
+      parent_lens: "Çocuklar onlara güvendiğimizde bağımsız hale gelir. Ama bırakmak riskli hissettirir — ve bu normaldir. Sanat, sorumluluğu adım adım devretmektir.",
+      parent_tips: [
+        "Yaşa uygun görevler verin: 3 yaşındakiler oyuncakları toplar, 6 yaşındakiler masayı kurar, 10 yaşındakiler yemek pişirmeye yardım eder.",
+        "Yavaş gittiğinde araya girmeyin. Yavaş ve kendi başına, hızlı ve yardımla olmaktan daha değerlidir.",
+        "Bağımsız görevlerdeki hataları kabul edin: süt bardağı devrilir — bu başarısızlık değil, alıştırmadır.",
+      ],
+      practical_tip: "Bugün çocuğunuza şimdiye kadar kendinizin yaptığı yeni bir görev devredin — ve tamamen kendi başına yapmasına izin verin.",
+      discussion_body: "Çocuğunuzun ikinizin de gurur duyduğu en büyük bağımsızlık başarısı nedir?",
+      companion_quick: "Çocuğun kendi başına tamamladığı her görev, gelecekteki özgüvenine yapılan bir yatırımdır.",
+      companion_reflect: "Bugün ne zaman bıraktınız — ve bu size nasıl hissettirdi?",
+    },
+    leadership_natur: {
+      title: 'Aile ritüeli olarak doğa ve hareket',
+      parent_lens: "Düzenli olarak dışarıda olan çocuklar daha iyi uyur, daha odaklıdır ve duygusal olarak daha dengelidir. Doğa bir boş zaman etkinliği değildir — temel bir ihtiyaçtır.",
+      parent_tips: [
+        "Günde 15 dakika dışarıda olmak bile ölçülebilir etkiye sahiptir — gezi gerekmez, okul yolu bile sayılır.",
+        "Birlikte hareket edin: bisiklet, yürüyüş, oyun alanı. Birlikte hareket etmek bağı güçlendirir.",
+        "Çocuğunuzun doğayı keşfetmesine izin verin: taşlar, böcekler, su birikintileri. Program yok — sadece açıklık.",
+      ],
+      practical_tip: "Bugün dışarıda 15 dakikalık bir tur planlayın — hedef yok, program yok, sadece birlikte.",
+      discussion_body: "Çocukluğunuzdan hangi doğa deneyimini çocuklarınıza aktarmak istersiniz?",
+      companion_quick: "Dışarıda olmak beyin için besindir — çocuklar ve yetişkinler için.",
+      companion_reflect: "Bugün dışarıda geçirdiğiniz zaman ruh halinizi nasıl değiştirdi?",
+    },
+    milestone_sprache: {
+      title: 'Dil gelişimi — oyunla nasıl desteklersiniz',
+      parent_lens: "Dil gelişimi kelime çalışmasıyla değil, diyalogla gerçekleşir. Çocuklar, yetişkinler onlarla konuştuğunda, onları dinlediğinde ve söylediklerine tepki verdiğinde konuşmayı öğrenir.",
+      parent_tips: [
+        "Günlük hayatınızı yüksek sesle anlatın: 'Şimdi havuçları kesiyorum' — bu pasif kelime dağarcığını zenginleştirir.",
+        "Çocuğunuzun ifadelerini alıp genişletin: 'Top!' — 'Evet, kırmızı top yuvarlanıyor.'",
+        "Çocuk kendisi okuyabilse bile her gün sesli okuyun. Kitaplardaki metinler günlük konuşmadan farklı yapılara sahiptir.",
+      ],
+      practical_tip: "Bugün 10 dakika sesli okuyun — ve okurken sorun: 'Sence şimdi ne olacak?'",
+      discussion_body: "Çocuğunuzun son zamanlarda söylediği hangi kelimeler veya cümleler sizi özellikle şaşırttı veya duygulandırdı?",
+      companion_quick: "Dil, sessizlikte değil, konuşmada büyür.",
+      companion_reflect: "Bugün çocuğunuzun hangi dil ilerlemesini fark ettiniz?",
+    },
+    milestone_schule: {
+      title: 'Okul başlangıcı ve geçişleri sakin bir şekilde desteklemek',
+      parent_lens: "Geçişler — okula başlama, sınıf değişikliği, yeni kreş — çocuklar için en yoğun öğrenme dönemleridir. Sizin sakinliğiniz ve güveniniz çocuğunuza yansır. Siz düzenleme temelisiniz.",
+      parent_tips: [
+        "Yeni yerleri önceden tanıyın: mümkünse ilk günden önce yeni sınıfı veya okulu ziyaret edin.",
+        "Duygular hakkında konuşun: 'Heyecanlanmak sorun değil. Ben de ilk okul gününde gergindim.'",
+        "Küçük geçiş nesneleri yardımcı olur: çantada bir fotoğraf, küçük bir hatıra — nesneler güven yaratır.",
+      ],
+      practical_tip: "Bugün çocuğunuza sorun: '... hakkında neyi sabırsızlıkla bekliyorsun? Seni hâlâ ne endişelendiriyor?' — ve yargılamadan dinleyin.",
+      discussion_body: "Çocuğunuzun önemli bir geçişine nasıl eşlik ettiniz? Ne yardımcı oldu?",
+      companion_quick: "Geçişler aynı anda hem bir son hem bir başlangıçtır — ve ikisi de hissedilebilir.",
+      companion_reflect: "Bugün çocuğunuz bir geçişle ilgili hangi duyguyu gösterdi?",
+    },
+    milestone_sozial: {
+      title: '21. yüzyılın en önemli becerisi — sosyal zeka',
+      parent_lens: "IQ kapıları açar. EQ (duygusal zeka) insanları içeri alır. Yüksek sosyal yeterliliğe sahip çocuklar daha iyi işbirliği yapabilir, iletişim kurabilir ve kendilerini başkalarının yerine koyabilir — bunu sizden öğrenirler.",
+      parent_tips: [
+        "Her gün empatiyi modelleyin: 'Kedi üzgün görünüyor. Sence neden?'",
+        "Bakış açısı değiştirmeyi pratik edin: 'Bunu söylediğinde ... sence nasıl hissetti?'",
+        "Sosyal davranışı açıkça övün: 'Konuşmasını bitirene kadar bekledin. Bu çok saygılıydı.'",
+      ],
+      practical_tip: "Bugün kreş veya okuldan sonra sosyal bir durum hakkında konuşun: 'Bugün biri güzel bir şey yaptı mı?'",
+      discussion_body: "Bugün için çocuklar ve yetişkinler için sosyal yeterliliğin hangi yönünü en önemli buluyorsunuz?",
+      companion_quick: "Sosyal yeterlilik bir yetenek değildir — pratikle kazanılan bir beceridir.",
+      companion_reflect: "Çocuğunuz bugün ne zaman empati gösterdi — belki fark edilmese bile?",
+    },
+    milestone_emotion: {
+      title: 'Duygusal olgunluk — duygular işlendiğinde',
+      parent_lens: "Duygusal olgunluk hiç duygu yaşamamakla değil, onları işlemekle kendini gösterir. Duygularını ifade etmesine izin verilen çocuklar uzun vadede bunlarla daha iyi başa çıkmayı öğrenir.",
+      parent_tips: [
+        "Tüm duygulara izin var — tüm davranışlara değil. 'Kızgın olabilirsin. Vuramazsın.'",
+        "Duyguları küçümsemeyin: 'O kadar da kötü değil' yerine → 'Bunun seni gerçekten etkilediğini görüyorum.'",
+        "Duyguların bedende hissedilmesine izin verin: 'Bunu şu anda nerede hissediyorsun? Karnında mı? Göğsünde mi?'",
+      ],
+      practical_tip: "Bugün sorun: 'Bu bedeninde nasıl hissettiriyor?' — ve gelen her yanıtı kabul edin.",
+      discussion_body: "Ailenizde hangi duyguyu açıkça göstermek en zor?",
+      companion_quick: "Duygulara izin vermek zayıflık değildir — duygusal güçtür.",
+      companion_reflect: "Çocuğunuz bugün hangi duyguyu açıkça gösterdi — ve buna birlikte nasıl eşlik ettiniz?",
+    },
+    milestone_kreativitaet: {
+      title: 'Sonuç odaklı olmadan yaratıcılığı desteklemek',
+      parent_lens: "Yaratıcılık kılık değiştirmiş problem çözme becerisidir. Çocuklar resim yaptığında, inşa ettiğinde, el işi yaptığında veya oynadığında esnekliği ve özgünlüğü geliştirirler — geleceğin becerileri bunlardır.",
+      parent_tips: [
+        "Son ürüne odaklanmayın: 'Ne yaptığını anlat' 'Bu ne olacaktı?' demekten daha iyidir.",
+        "Talimatsız malzemeler sunun: kumaş, karton, doğal malzemeler — ve sonra bırakın.",
+        "Kendiniz yaratıcı olun: ebeveynler mükemmellik aramadan resim yaptığında, inşa ettiğinde, şarkı söylediğinde çocuklarına da aynısına izin verirler.",
+      ],
+      practical_tip: "Bugün 20 dakika serbest el işi sunun — şablon yok, talimat yok, sadece malzemeler.",
+      discussion_body: "Çocuğunuzun şimdiye kadar kendisinin geliştirdiği en yaratıcı proje nedir?",
+      companion_quick: "Yaratıcılığın alana, zamana ve yargılamayan bir yetişkine ihtiyacı vardır.",
+      companion_reflect: "Çocuğunuz bugün ne icat etti, inşa etti veya hayal etti — sizi şaşırtan?",
+    },
+    milestone_koerper: {
+      title: 'Beden farkındalığını güçlendirmek — gelişim motoru olarak hareket',
+      parent_lens: "Motor gelişim ve bilişsel gelişim ayrılmaz bir şekilde bağlantılıdır. Tırmanan, denge kuran ve dans eden çocuklar mekansal düşünme becerilerini ve konsantrasyonlarını da geliştirirler.",
+      parent_tips: [
+        "Hareketi günlük hayata dahil edin: bir spor programı olarak değil, günlük yaşam olarak — asansör yerine merdiven, taşımak yerine yürümek.",
+        "Kaba ve ince motor becerilerini değiştirin: inşa etmek (ince) ve tırmanmak (kaba) birbirini harika tamamlar.",
+        "Beden imajını olumlu güçlendirin: 'Bedenin o kadar çok şey yapabiliyor' — görünüşten veya performanstan bağımsız olarak.",
+      ],
+      practical_tip: "Bugün 10 dakikalık bir hareket oyunu planlayın — denge kurma, zıplama, yuvarlanma. Program yok, sadece beden ve eğlence.",
+      discussion_body: "Çocuğunuza en çok keyif veren hareket etkinliği hangisi — ve neden?",
+      companion_quick: "Hareket bir boş zaman etkinliği değildir — öğrenme motorudur.",
+      companion_reflect: "Çocuğunuz bugün bedensel olarak yeni ne denedi veya cesaret etti?",
+    },
+    milestone_uebergaenge: {
+      title: 'Ergenliğe erken ve rahat bir şekilde hazırlanmak',
+      parent_lens: "Ergenlik çoğu ebeveynin düşündüğünden daha erken başlar — ve zemin çocuklukta hazırlanır. Açık iletişim ve güvenli bir ebeveyn-çocuk ilişkisi en iyi hazırlıktır.",
+      parent_tips: [
+        "Beden değişiklikleri hakkında erken konuşun — dramasız, olgun bir şekilde. Bilgilendirilmiş çocuklar daha az korku yaşar.",
+        "Kendi ergenlik anılarınızı (uygun şekilde) paylaşın: 'Ben de o zamanlar ... konusunda emin değildim' — bu normalleştirir.",
+        "Mahremiyet için alan yaratın: kapıyı çalın, günlükleri saygıyla karşılayın. Güven saygıyla oluşur.",
+      ],
+      practical_tip: "Bugün çocuğunuzla birlikte (yaşına uygun) beden süreçleri hakkında bir video veya kitaba bakın — çekinmeden.",
+      discussion_body: "Geriye dönüp baktığınızda ergenlikte sizin için ne önemliydi — ve ebeveynlerinizin ne yapmasını isterdiniz?",
+      companion_quick: "En iyi ergenlik hazırlığı bugünkü güçlü bir ilişkidir.",
+      companion_reflect: "Çocuğunuz bugün kendisi hakkında düşünmeye başladığını gösteren bir soru sordu mu?",
+    },
+    gfk_wiedergutmachung: {
+      title: 'Ebeveynler patladığında — telafi bir güçtür',
+      parent_lens: "Hiçbir ebeveyn her zaman sabırlı değildir. Patladığınızda bu bir ebeveyn olarak başarısızlık değildir — insani bir andır. Ama sonrasında gelenler, patlamanın kendisinden daha güçlü bir şekilde ilişkiyi şekillendirir.",
+      parent_tips: [
+        "Telafi üç adım gerektirir: sorumluluk almak ('Yanıldım'), şefkat göstermek ve gerekirse farklı yapmak.",
+        "'Ama' olmadan özür dileyin: 'Bu kadar yüksek sesle konuştuğum için üzgünüm. Bu doğru değildi.' — bu kadar.",
+        "Çocuğunuz sizi insan olarak görür — bu iyidir. Çocuklar onarımla ilişkilerin fırtınalara dayandığını öğrenir.",
+      ],
+      practical_tip: "Bugün bir durumda güzel davranmadıysanız: tekrar çocuğunuza gidin ve söyleyin. Üç cümle yeterlidir.",
+      discussion_body: "Ebeveyn olarak kendi patlamalarınızla nasıl başa çıkmayı öğrendiniz — kendinizi çok sert yargılamadan?",
+      companion_quick: "Telafi çocuklara hiçbir rehberin öğretemeyeceği bir şeyi öğretir: ilişkilerin onarılabilir olduğunu.",
+      companion_reflect: "Bugün geriye dönüp baktığınızda farklı yapacağınız bir an oldu mu — ve bundan ne çıkardınız?",
+    },
+  },
+  ku: {
+    gfk_warum: {
+      title: 'Bi arambûnê li pirsên "çima" bersiv bide',
+      parent_lens: "Zarokê te rojê sed carî ji te dipirse 'Çima?'. Ev ne ji bo aciz kirina te ye, lê ji ber ku mejiyê wî girêdanan çêdike. Ew dixwaze cîhanê fêm bike.",
+      parent_tips: [
+        "Zimanê zirav (NVC) bikar bîne: li şûna dexlê, hest û hewcedariyên xwe bi zelalî bibêje.",
+        "Pirsên 'çima' bi kurtasî û hêsanî bersiv bide — zarokê te li mantiqê digere, ne li axaftinên zanistî.",
+        "Sînoran bi evîndarî bi amadebûna xwe ya kesane deyne ('Ez naxwazim tu lêxî'), ne bi ceza.",
+      ],
+      practical_tip: "Di pirsa 'çima' ya bê de: pêşî hestê nîşan bide ('Tu meraqdar î!'), paşê bi hevokekê bersiv bide.",
+      discussion_body: "Kîjan hevoka kurt û aram ji te re dibe alîkar dema zarokê te careke dehan dipirse çima?",
+      companion_quick: "Îro tenê bi bersivek aram li pirsa çima bide û paşê bi zanebûn kurt bimîne.",
+      companion_reflect: "Îro zarokê te kengî li girêdanan gerand — û tu çawa karî bi aramî rê nîşan bidî?",
+    },
+    gfk_grenzen: {
+      title: 'Sînoran bi evîndarî û zelaliyê deynin',
+      parent_lens: "Sînorên evîndar ne dijberî ye. Zarok hewceyî her duyan e: hesta ku têne hezkirin Û zelaliya li ser tiştê ku nabe. Sînorên bêyî girêdanê wek dîwaran hîs dibin — sînorên bi girêdanê wek rêberan hîs dibin.",
+      parent_tips: [
+        "Pêşî hesta zarokê xwe bi nav bike, paşê sînorê: 'Ez dibînim tu hêrs î. Lê dîsa jî: lêdan nabe.'",
+        "Bi laşî aram bimîne — dengê te ji peyvên te bilindtir e. Berî bersivdanê nefeseke kûr bikişîne.",
+        "Encaman ragihîne û pêwendî bike. Tehdîd meke, ragihîne: 'Eger tu ... bikî, wê demê ...'",
+      ],
+      practical_tip: "Îro hevokeke hest + sînor biceribîne: 'Ez fêm dikim tu dixwazî. Lê: na.' — û di dema wê de aram bimîne.",
+      discussion_body: "Dema tu digihîjî sînorên xwe tu çawa bersiv didî? Kîjan hevok ji te re dibe alîkar ku aram bimînî?",
+      companion_quick: "Berî bersiva sînor a bê nefeseke kûr bikişîne — ev nîvê karî ye.",
+      companion_reflect: "Îro rewşek hebû ku sînorek aram çêtir ji hayreke bilind kar kir?",
+    },
+    gfk_ichbotschaft: {
+      title: 'Peyamên "ez" li şûna sûcdarkirinên "tu"',
+      parent_lens: "Peyamên 'tu' ('Tu pir dengbilind î!') berevaniyê derdixin. Peyamên 'ez' ('Ez westiyayî me û hewceyî bêdengiyê me') deriyan vedikin. Zarok bêtir guhdarî dikin dema hîs nakin ku têne êrîşkirin.",
+      parent_tips: [
+        "Sûcdarkirinan bike peyamên 'ez': li şûna 'Tu qet guhdarî nakî' → 'Ez hîs nakim ku têm bihîstin û ev min xemgîn dike.'",
+        "Hewcedariya xwe parve bike: 'Niha hewceyî bêdengiyeke kurt me da ku bifikirim.' Zarok hewcedariyan bi awayekî ecêb baş fêm dikin.",
+        "Di jiyana rojane de biceribîne: sê hevokên klasîk wek peyamên 'ez' ji nû ve formule bike — sibe dema diranan dişo, nîvro dema xwarinê, êvarê berî xewê.",
+      ],
+      practical_tip: "Îro rewşeke ku tu bi gelemperî 'Tu her tim...' dibêjî hilbijêre — û wê bi 'Ez ... hîs dikim ji ber ku hewceyî ... me' biguherîne.",
+      discussion_body: "Kîjan peyama 'tu' ji te re herî zor e ku were ji nû ve formulekirin? Çi ji te re dibe alîkar?",
+      companion_quick: "Hest + hewcedariyê bi nav bike — formula peyameke 'ez' a rastîn ev e.",
+      companion_reflect: "Îro peyameke 'ez' bersivek ku te ecêbmayî hişt derxist holê?",
+    },
+    gfk_trotz: {
+      title: 'Bi aramî li qonaxên serhişkiyê bibe hevrê',
+      parent_lens: "Serhişkî ne serhildan e — pêşveçûn e. Dema zarokek li erdê dirêj dibe û diqîre, korteksa wî ya pêşîn hê ne bi têra xwe pêşketî ye da ku hestê birêve bibe. Wî hewceyî te ye wek hev-birêveberekî.",
+      parent_tips: [
+        "Bêyî zorkirinê nêzîk bimîne: bikeve asta çokan, bi aramî biaxive, eger zarok red bike destlêdanê meke.",
+        "Di nîvê bahozê de nîqaşan meke. Axaftin tenê dema aram bibe tê.",
+        "'Pirên hestan' bikar bîne: 'Te dixwest bestenî. Ev ji te re girîng bû. Ez fêm dikim.'",
+      ],
+      practical_tip: "Dema zarokê te ji xwe derdikeve: li kêleka wî rûne. Neçe, destwerdanê meke — tenê li wir be. Ev bi xwe jî alîkar dibe.",
+      discussion_body: "Dema zarokê te di nîvê teqîneke hestî de ye, çi ji te re alîkar dibe ku aram bimînî?",
+      companion_quick: "Sê peyv ji bo qonaxên serhişkiyê: nêzîk bimîne. Bi aramî nefes bike. Bisekine.",
+      companion_reflect: "Îro çi ji te re herî zêde enerjî xwar — û çi ji te re alîkar bû ku di vê de aram bimînî?",
+    },
+    gfk_geschwister: {
+      title: 'Pevçûna xwişk û birayan wek qada fêrbûnê bikar bîne',
+      parent_lens: "Xwişk û bira pevdiçin — ev normal e û tewra girîng e. Di pevçûnê de zarok lihevhatinê, guherîna dîtinê û parastina xwe fêr dibin. Rola te ne dadger e, mîyaser e.",
+      parent_tips: [
+        "Alî negire: 'Ez dibînim herduyên we niha hêrs in. Ez ê pêşî te, paşê te bibihîzim.'",
+        "Bihêle zarok bi xwe çareseriyan bibînin dema rewş nagihîje asteke xeternak. Tenê di talûkeyê rastîn de destwerdanê bike.",
+        "Her zarokî bi tenê xurt bike: kêliyên 1:1 yên rêkûpêk bêyî xwişk û bira, çavnebariyê bi demdirêjî kêm dike.",
+      ],
+      practical_tip: "Di pevçûna bê de: ji herdu zarokan bipirse 'Niha çi hewce dikî?' — berî ku biryar bidî kî rast e.",
+      discussion_body: "Dema xwişk û bira pevdiçin hûn çawa lê dinêrin? Li ba we çi herî baş kar dike?",
+      companion_quick: "Mîyaser li şûna dadger — ev role te ye di pevçûnên xwişk û bira de.",
+      companion_reflect: "Îro kêliyek hebû ku zarokên te bi xwe pevçûnek çareser kirin? We ji vê çi fêr bû?",
+    },
+    gfk_gefühle: {
+      title: 'Hestan bi nav bike û qebûl bike',
+      parent_lens: "Zarokên ku dikarin hestên xwe bi nav bikin xwedan berjewendiyeke mezin in: dikarin ragihînin ka çi hewce dikin. Ev gav — ji hestkirinê ber bi axaftinê ve — pratî û piştgiriya te hewce dike.",
+      parent_tips: [
+        "'Barometreya hestan' bikar bîne: êvarê bipirse 'Roja te di navbera 1-5 de çawa bû?' — û pêşî tu bi xwe bibêje.",
+        "Hestên xwe bi dengekî bilind bi nav bike: 'Ez niha hinekî tengezar im ji ber ku divê ez pir bifikirim.' Fêrbûna bi mînak kar dike.",
+        "Pirtûkên zarokan ên li ser hestan bixwîne — û paşê bisekine: 'Tu difikirî karakter çi hîs kir? Û tu?'",
+      ],
+      practical_tip: "Vê êvarê bipirse: 'Çi te îro şa kir? Çi te xemgîn an hêrs kir?' — û tenê guhdarî bike.",
+      discussion_body: "Kîjan hest ji zarokê te re herî zor e ku bide nasîn? Hûn çawa lê nêzîk dibin?",
+      companion_quick: "Pêşî hîs bike, paşê bi nav bike — alfabeya hestan bi te re wek mînak dest pê dike.",
+      companion_reflect: "Kîjan kêliya hestî ya zarokê te ya îro te xwest bihêle bimîne?",
+    },
+    gfk_nein: {
+      title: 'Bêyî sûcdarbûnê "na" bêje',
+      parent_lens: "Dêûbavên ku qet na nabêjin, zarokên ku sînoran nas nakin mezin dikin. 'Na' ya bi evîndarî ji zarokê te re nîşan dide: ez hewcedariyên xwe bi ciddî digirim — û tu jî dikarî.",
+      parent_tips: [
+        "'Na' hewceyî ravekirineke dirêj nake. 'Na, niha nabe' ya zelal bes e.",
+        "Sûcdarbûn piştî 'na' nîşan e, ne çewtî. Ji xwe bipirse: ma ev 'na' bi rastî çewt e — an tenê ne rihet e?",
+        "Li hember mezinên din jî 'na' bêje (peymanên lîstinê, soz) — zarokê te ji mînaka te fêr dibe.",
+      ],
+      practical_tip: "Îro carekê bi zanebûn na bêje — bêyî lêborînê. Bihîs bike ka ev çawa hîs dike.",
+      discussion_body: "Na gotin ji te re kengî herî zor e — ji zarokên xwe re, an ji yên din re?",
+      companion_quick: "Na li tiştekî erê ye li tiştekî girîngtir — bi gelemperî li te bi xwe.",
+      companion_reflect: "Îro na hebû ku dema tu li paş dinêrî xwe rast hîs kir?",
+    },
+    inclusion_stärken: {
+      title: 'Li şûna nirxandina qelsiyan hêzan bibîne',
+      parent_lens: "Her zarokî xwedan komela hêzên xwe yên taybet e. Em wek dêûbav bi gelemperî pêşî deverên pirsgirêkê dibînin — lê em ê yên pêşîn bin ku dikarin elmasê xam biparjînin.",
+      parent_tips: [
+        "Vê êvarê 3 hêzên zarokê xwe binivîse — ne serkeftin, taybetmendiyên karakter ('meraqdar', 'lênêrîner', 'sernebir').",
+        "Hêzan bi awayekî konkret û bi dem bi nav bike: 'Tu niha pir sebirdar bûyî — ev bi rastî xweş e.'",
+        "Ji berhevdana bi xwişk û bira an zarokên din dûr bikeve. Her kêşeya pêşveçûnê taybet e.",
+      ],
+      practical_tip: "Îro bi zarokê xwe re li ser yek ji hêzên wî biaxive — ne wek pesn, wek dîtinek: 'Îro min dît ka tu çawa ...'",
+      discussion_body: "Kîjan hêza veşartî ya zarokê te dixwazî îro parve bikî?",
+      companion_quick: "Dîtina hêzan tê wateya ku qelsî neyê paşguhkirin — tê wateya pêşxistina mezinbûnê.",
+      companion_reflect: "Kîjan hêza zarokê te îro te ecêbmayî hişt an bi bandor kir?",
+    },
+    inclusion_selbstwert: {
+      title: 'Rojane nirxê xwe ava bike',
+      parent_lens: "Nirxê xwe tenê bi pesn çênabe — bi ezmûnê çêdibe: 'Ez dikarim tiştekî bikim. Ez girîng im. Ez aliyê vir im.' Tu dikarî her sê ezmûnan rojane çêbikî.",
+      parent_tips: [
+        "Bihêle zarokê te biryarên biçûk bigire: 'Tu dixwazî pêşî erkan bikî an pêşî bilîzî?' Serbixwebûn = nirxê xwe.",
+        "Eleqeya rastîn nîşan bide: têlefonê deyne, li rûyê wî binêre, bipirse. 10 deqîqe balê tam mucîzeyan çêdike.",
+        "Pêvajoyê pîroz bike, ne tenê encamê: 'Te ev qas dirêj biceribî — ev beşa girîng e.'",
+      ],
+      practical_tip: "Îro: 10 deqîqe ji zarokê xwe re balekî tam bide — bêyî têlefon, bêyî tiştên din, tenê eleqe.",
+      discussion_body: "Çi zarokê te bi taybetî bi xwe serbilind dike — û hûn vê hestê çawa piştgirî dikin?",
+      companion_quick: "Nirxê xwe ne ji neynikê tê, ji çavên kesên ku me hez dikin tê.",
+      companion_reflect: "Zarokê te îro di kîjan kêliyê de 'Ez dikarim vê bikim!' nîşan da?",
+    },
+    inclusion_scheitern: {
+      title: 'Têkçûnê wek derfeta fêrbûnê bibîne',
+      parent_lens: "Mejî bi qehremanî ji çewtiyan fêr dibe — ne ji serkeftinan. Dema zarokê te têk diçe û tu aram dimînî, tu jê re sînyala herî xurt dişînî: 'Têkçûn ewle ye. Ez pê re serî derdixim.'",
+      parent_tips: [
+        "Di têkçûnê de pêşî dilovanî, paşê çareserî: 'Ev acizker bû. Em ê carekê din çi bikin cûda?'",
+        "Ji têkçûnên xwe yên taybet bibêje: 'Min jî carekê ... û paşê min ... fêr bû.' Fêrbûna bi mînak tabûyê radike.",
+        "Ji 'Min ji te re got' dûr bikeve. Ev deriyan digire. Li şûna wê: 'Te ji vê çi girt?'",
+      ],
+      practical_tip: "Îro ji zarokê xwe re ji têkçûneke xwe ya taybet bibêje — û tiştê ku te jê fêr bû.",
+      discussion_body: "Hûn wek malbat çawa li dijî têkçûnan tevdigerin? Çi ji we re alîkar dibe ku têkçûnê wek beşek ji fêrbûnê bibînin?",
+      companion_quick: "Zarokên ku destûr têne dan çewtiyan bikin, mezinên wêrektir dibin.",
+      companion_reflect: "Îro têkçûnek hebû ku zarokê te baş jê derket? Çi ji vê re alîkar bû?",
+    },
+    inclusion_hochsensibel: {
+      title: 'Zarokên pir hestiyar fêm bike û piştgirî bike',
+      parent_lens: "Nêzîkî %20ê zarokan pir hestiyar in — ew bêtir têbînî dikin, bi awayekî tund hîs dikin û hewceyî demeke vegerê ya zêdetir in. Ev ne qelsî ye, taybetmendiyeke kesayetî ye ku xwedî hêzên xwe yên taybet e.",
+      parent_tips: [
+        "Zêdebariya hestan kêm bike: berî rewşên fişarê yên bilind (kirîn, dibistan, cejn) demên veguhastinê yên aram plansaz bike.",
+        "Pêşbînî diparêze: pêşiyê ragihîne çi tê ('10 deqîqe din em diçin'). Surprîz ji bo zarokên pir hestiyar giran in.",
+        "Hestiyariya wan hêz e: dema kesek xemgîn e têdigihin û kûr difikirin. Vê bi awayekî erênî bi nav bike.",
+      ],
+      practical_tip: "Îro piştî rewşeke fişarê ya bilind ji zarokê xwe re 15 deqîqeyên 'dema şarjê' ya bêdeng plansaz bike — bêyî ekran, bêyî hêvî.",
+      discussion_body: "Hûn taybetmendiyên pir hestiyar di zarokê xwe de nas dikin? Çi ji we re di jiyana rojane de alîkar dibe?",
+      companion_quick: "Zarokên pir hestiyar ne hewceyî hişkbûnê, hewceyî cihên parastî û fêmkirinê ne.",
+      companion_reflect: "Zarokê te îro kengî herî zêde bandor pêvajo kir — û paşê çawa xwe vegerand?",
+    },
+    inclusion_freundschaft: {
+      title: 'Hevaltiyan bibe hevrê — neke birêve',
+      parent_lens: "Hevaltî cîhê herî girîng ê fêrbûna jêhatîbûnên civakî ne. Zarok dan û standinê, danûstandinê û dev jê berdanê fêr dibin — lê tenê eger em wek dêûbav berdin û bibin hevrê li şûna ku birêve bibin.",
+      parent_tips: [
+        "Bipirse, lê dadgeriyê meke: 'Îro tevî ... çawa bû?' ji 'Ez jê hez nakim, wî berî nuha ... kir' çêtir e.",
+        "Bihêle zarok pêşî bi xwe pevçûnan çareser bikin — tenê dema tengasiyeke rastîn çêdibe destwerdanê bike.",
+        "Hevaltiyan bi çalakî mumkun bike: peymanên lîstinê, vexwendinan. Derfetên civakî bi xwe çênabin.",
+      ],
+      practical_tip: "Îro ji zarokê xwe bipirse: 'Kî ji polê / komê te ji tiştên ku tu jê hez dikî hez dike?' — û bi hev re bifikire ka hûn çawa dem çêdikin.",
+      discussion_body: "Hûn ji zarokên xwe re cihê hevaltiyên wan ên taybet çawa didin — her çend hûn hilbijartina wan her tim fêm nekin jî?",
+      companion_quick: "Hevaltiya rastîn bi zorê nayê çêkirin — lê hûn dikarin bi hev re axek berhemdar amade bikin.",
+      companion_reflect: "Zarokê te îro li ser kesekî ku ji te re girîng e axivî? We ji vê çi fêr bû?",
+    },
+    inclusion_resilienz: {
+      title: 'Berxwedan — zarok çawa bi zehmetiyan mezin dibin',
+      parent_lens: "Berxwedan ne ji dayîkbûnê tê — bi pratîkê tê. Zarok dema zehmetiyan dijîn Û di vê de têne piştgirîkirin bi hêz dibin. Ne parastin, hevaltî mifta wê ye.",
+      parent_tips: [
+        "Bihêle zarokê te zehmetiyan biqedîne: zû alîkarî meke. Tenê dema ku bi rastî nikare pêşve here alîkariyê pêşkêş bike.",
+        "Diyaloga hundirîn xurt bike: 'Tu difikirî tu çi dikarî bikî?' li şûna dayîna çareseriyê rasterast.",
+        "Li ser krîzên malbatê li gorî temenê biaxive: zarokên ku têne derxistin xeyalên ji rastiyê xerabtir pêş dixin.",
+      ],
+      practical_tip: "Eger zarokê te îro têk biçe: berî destwerdanê 30 çirkeyan bisekine. Bi gelemperî çareserî bi xwe tê.",
+      discussion_body: "Kîjan zehmetiya zarokê we serkeftî bi cih anî ku hûn ecêbmayî ma?",
+      companion_quick: "Berxwedan di navbera zehmetî û piştgiriyê de mezin dibe — ne berî wê, ne jî piştî wê.",
+      companion_reflect: "Hûn çawa dizanin ku zarokê we îro ji hundir ve mezin bûye?",
+    },
+    inclusion_vielfalt: {
+      title: 'Cûrbicûrbûnê bijî — cudahî wek hêz',
+      parent_lens: "Zarokên ku zû fêr dibin ku mirov cuda ne — di eslê xwe, jêhatîbûn û awayê fikirînê de — empatiyeke zêdetir û tirseke kêmtir a têkiliyê pêş dixin. Tu dikarî cûrbicûrbûnê di jiyana rojane de zindî bikî.",
+      parent_tips: [
+        "Bi eşkerayî li ser cudahiyan biaxive — zarok wan çawa be jî têbînî dikin. 'Erê, rengê çermê Lara ji ya te cuda ye — û malbata wê ji ... tê.'",
+        "Pirtûk, fîlm û listikên bi karakterên cûrbicûr hilbijêre — nûnertî cîhanbîniyê bandor dike.",
+        "Taybetmendiyên malbatê pîroz bike: 'Li ba me weha ye, li ba malbatên din cuda ye — xweşiya wê ev e.'",
+      ],
+      practical_tip: "Îro pirtûkeke zarokan bixwîne ku lehengê wê sereke ji zarokê te cuda ye — û paşê li ser wê biaxive.",
+      discussion_body: "Hûn cudahiyên di navbera mirovan de ji zarokan re çawa şirove dikin, bi awayekî ku meraq li şûna tirsê pêş dixin?",
+      companion_quick: "Zarok bi xwezayî li cudahiyan meraqdar in — pêşdaraziyê tenê paşê fêr dibin.",
+      companion_reflect: "Zarokê te îro pirseke li ser cudahiyan kir ku te xist fikirînê?",
+    },
+    leadership_struktur: {
+      title: 'Sazûmana rojane wek gîhayê ewlehiyê',
+      parent_lens: "Mejiyê zarokî ji pêşbîniyê hez dike. Rîtûel û sazûman ne sînordarî ne — ew perçîna ku azadiyê dide zarokan da ku bi ewlehî pêşve biçin, ne.",
+      parent_tips: [
+        "Gîhayên sabît di rojê de: rîtûela şiyarbûnê, xwarin, dema xewê. Ev sê ji bo îstîqrareke rastîn bes in.",
+        "Rîtûelên veguhastinê plansaz bike: di navbera çalakiyan de veguhastinên kurt ragihîne. 'Di 5 deqîqeyan de em kom dikin.'",
+        "Sazûman ne stres e — eger hewce be gav bi gav biguherîne, ne bi carekê.",
+      ],
+      practical_tip: "Îro bi zarokê xwe re li plana rojê binêre — li ser tiştê ku tê biaxivin. Ev berxwedan û ne diyariyê kêm dike.",
+      discussion_body: "Kîjan rîtûela rojane ji we re wek malbat bi taybetî girîng e — û çima?",
+      companion_quick: "Pêşbînî ewlehiyê çêdike. Ewlehî amadebûna fêrbûnê çêdike.",
+      companion_reflect: "Kîjan kêliya îro nîşan da ku zarokê te hewceyî sazûmanê bû — an jê hez kir?",
+    },
+    leadership_schlaf: {
+      title: 'Rîtûelên xewê — ji bo laş û hiş aramî çêbike',
+      parent_lens: "Xew ne rawestan e, dema pêşveçûnê ye. Di xewê de mejî rojê pêvajo dike, bîranînan xurt dike û ji nû ve çê dibe. Rîtûeleke xewê ya baş yek ji veberhênanên herî bi bandor e ji bo zarokê te.",
+      parent_tips: [
+        "30 deqîqe berî xewê: ne ekran, ne listikên heyecanewer. Aramkirin dem digire.",
+        "Her tim heman rêz: diran, cilê xewê, çîrok, ronahî vemirandin. Rîtûel ji mejî re sînyalê dişînin: 'Niha dema xewê ye.'",
+        "Eger zarokê te nikare rakeve: bi hev re nefes bikişînin. 4 çirke bikişîne, 6 çirke berde — ev pergala nervî ya parasempatîk çalak dike.",
+      ],
+      practical_tip: "Vê êvarê berî xewê rîtûeleke nefesê ya 3-deqîqeyî bide destpêkirin — bikişîne, berde, bi hev re.",
+      discussion_body: "Rîtûela we ya herî hezkirî ya xewê çi ye — û we çawa pêş xist?",
+      companion_quick: "Rîtûeleke dawîn a aram destpêka herî baş a xeweke baş e.",
+      companion_reflect: "Çûyina xewê îro çawa bû — çi alîkar bû, çi asteng bû?",
+    },
+    leadership_bildschirm: {
+      title: 'Dema ekranê bi hişmendî çêbike',
+      parent_lens: "Ne dema ekranê bixwe pirsgirêk e — vexwarina bêkontrol û pasîf a bêyî sohbet piştî wê pirsgirêk e. Bi şertên hêsan ekran dibe çalakiyeke betlaneyê ya tendurist.",
+      parent_tips: [
+        "Li şûna qedexeyên spontane demên sabît: 'Piştî erkên malê heta saet 17' ji 'ne pir zêde' zelaltir e.",
+        "Bi hev re temaşe bike û paşê biaxive: 'Çi ji te re xweş bû? Çi xerîb an ecêb bû?' jêhatîbûna medyayê xurt dike.",
+        "Cihên bê ekran çêke: jûreya xewê û maseya xwarinê sînorên baş ên destpêkê ne.",
+      ],
+      practical_tip: "Îro 15 deqîqe bi hev re li tiştekî binêre — û paşê 2 pirsan li ser bike. Ev awayê ku zarokê te medyayê têdigihe diguherîne.",
+      discussion_body: "Hûn dema ekranê li ba xwe çawa birêve dibin — çi bi kar hat, çi ne pir?",
+      companion_quick: "Bikaranîna medyayê ya hişmend ne bi qedexeyê, bi sohbetê tê fêrbûn.",
+      companion_reflect: "Zarokê te îro medya çawa bikar anî — çalak an pasîf? We çi têbînî kir?",
+    },
+    leadership_autoritaet: {
+      title: 'Otorîte bi girêdanê — ne bi tirsê',
+      parent_lens: "Otorîter ne wateya bi deng û hişk bûnê ye. Otorîteya rastîn a dêûbaviyê dema çêdibe ku zarokek dizane: 'Tu min hez dikî Û tu zelal î.' Girêdan û rêberî hev nagirin — hev pêwîst dikin.",
+      parent_tips: [
+        "Ragihandinên zelal bêyî nîqaşê: 'Em niha wisa dikin.' Piştre danûstandin tune — tenê fêmkirinê pêşkêş bike.",
+        "Lêborîn mezinan xurttir dike, ne qelstir. 'Berê ev ji min re ne adil bû' — zarok vê rêz digirin.",
+        "Hin qaîdeyan bi hev re çêke — ev amadebûna pabendbûnê zêde dike.",
+      ],
+      practical_tip: "Îro qaîdeyekê li şûna qedexeyekê wek erkeke erênî formule bike: 'Piştî lîstinê em kom dikin' li şûna 'Bernehêle.'",
+      discussion_body: "Hûn di navbera rêberî û gotina zarokên xwe de hevsengiyê çawa dibînin?",
+      companion_quick: "Otorîte bêyî girêdanê kontrol e. Girêdan bêyî otorîteyê kaos e. Herduyan bi hev re rêberî ye.",
+      companion_reflect: "Îro kêliyek hebû ku zelaliya te ya aram ji peyveke bihêz bêtir kar kir?",
+    },
+    leadership_hausaufgaben: {
+      title: 'Erkên malê bêyî stresê — çarçoveyeke ku kar dike',
+      parent_lens: "Stresa erkên malê bi gelemperî ne pirsgirêkeke fêrbûnê ye — pirsgirêkeke rîtûelê ye. Bi sazûmana rast û dema rast mijar bixwe aram dibe.",
+      parent_tips: [
+        "Dema rast bibîne: rasterast piştî dibistanê an piştî demeke kurt a vegerê — lê berî êvarê.",
+        "Ez li vir im, lê tavilê alîkarî nakim: pêşî bihêle bi xwe biceribîne. Piştî 10 deqîqeyan bêyî pêşveçûn: bipirse 'Li ku dişikilî?'",
+        "Cihê xebatê amade bike: cihek sabît, maseyeke rêkûpêk, têlefon ne di dîmenê de — ev bala belavkirinê kêm dike.",
+      ],
+      practical_tip: "Îro bi zarokê xwe re DEMA erkên malê ya hefteyê diyar bike — û binivîse.",
+      discussion_body: "Çi li ba we erkên malê kêmtir bi stres kir? Kîjan rêzik kar dikin?",
+      companion_quick: "Sazûman di fêrbûnê de sînordarî nine — motora baldariyê ye.",
+      companion_reflect: "Fêrbûn îro çawa çû? Sibê hûn dikarin çi cuda biceribînin?",
+    },
+    leadership_selbstaendigkeit: {
+      title: 'Serbixwebûn — berdan jî evîn e',
+      parent_lens: "Zarok dema em ji wan bawer dikin serbixwe dibin. Lê berdan xeternak dixuye — û ev normal e. Huner ev e: gav bi gav berpirsyariya zêdetir bide.",
+      parent_tips: [
+        "Erkên li gorî temenê bide: yên 3 salî listikan kom dikin, yên 6 salî masê amade dikin, yên 10 salî di xwarinpêjiyê de alîkarî dikin.",
+        "Dema hêdî diçe destwerdanê meke. Hêdî û bi serê xwe ji bilez û bi alîkariyê hêjatir e.",
+        "Çewtiyan di erkên serbixwe de qebûl bike: kasa şîr dibe — ev têkçûn nine, pratî ye.",
+      ],
+      practical_tip: "Îro erkekî nû ku heta niha te bi xwe dikir bide zarokê xwe — û bihêle bi tevahî bi xwe bike.",
+      discussion_body: "Serkeftina serbixwebûnê ya herî mezin a zarokê we ku herduyên we serbilind in çi ye?",
+      companion_quick: "Her erkê ku zarok bi xwe biqedîne, veberhênaneke li ser xwebaweriya wî ya paşerojê ye.",
+      companion_reflect: "Îro hûn kengî berdan — û ev ji we re çawa hîs kir?",
+    },
+    leadership_natur: {
+      title: 'Xwezayê û tevger wek rîtûelek malbatê',
+      parent_lens: "Zarokên ku bi rêkûpêk li derve ne çêtir radizên, baldartir in û ji aliyê hestî ve aramtir in. Xweza ne çalakiyeke betlaneyê ye — hewcedariyeke bingehîn e.",
+      parent_tips: [
+        "15 deqîqe rojane li derve xwedan bandoreke pîvanbar e jî — ne hewceyî gerê, tewra rêya dibistanê jî tê hesibandin.",
+        "Bi hev re tevbigere: bisîklet, meşî, zeviya lîstinê. Tevgera bi hev re girêdanê xurt dike.",
+        "Bihêle zarokê te xwezayê keşif bike: kevir, kêzik, gol. Bêyî program — tenê vebûn.",
+      ],
+      practical_tip: "Îro gerek 15-deqîqeyî li derve plansaz bike — bêyî armanc, bêyî program, tenê bi hev re.",
+      discussion_body: "Kîjan ezmûna xwezayê ya zaroktiya we dixwazin bidin zarokên xwe?",
+      companion_quick: "Li derve bûn xwarinê mejî ye — ji bo zarok û mezinan.",
+      companion_reflect: "Dema we ya li derve îro rewşê çawa guherand?",
+    },
+    milestone_sprache: {
+      title: 'Pêşveçûna zimanî — çawa bi lîstikê piştgirî bike',
+      parent_lens: "Pêşveçûna zimanî ne bi perwerdehiya peyvan çêdibe — bi diyalogê çêdibe. Zarok fêrî axaftinê dibin dema mezin pê re diaxivin, guhdariya wan dikin û bersivê didin gotinên wan.",
+      parent_tips: [
+        "Jiyana xwe ya rojane bi dengekî bilind rave bike: 'Niha ez gizeran dibirim' — ev ferhenga pasîf dewlemend dike.",
+        "Gotinên zarokê xwe hilgire û berfirehtir bike: 'Top!' — 'Erê, topa sor digerin.'",
+        "Rojane bi dengekî bilind bixwîne, her çend zarok bi xwe bikare bixwîne jî. Nivîsarên pirtûkan ji zimanê rojane cuda ne.",
+      ],
+      practical_tip: "Îro 10 deqîqe bi dengekî bilind bixwîne — û dema xwendinê bipirse: 'Tu difikirî paşê çi diqewime?'",
+      discussion_body: "Kîjan peyv an hevokên zarokê we ya dawî we bi taybetî ecêbmayî hiştin an bandor kirin?",
+      companion_quick: "Ziman di sohbetê de mezin dibe — ne di bêdengiyê de.",
+      companion_reflect: "Kîjan pêşveçûna zimanî ya zarokê te te îro têbînî kir?",
+    },
+    milestone_schule: {
+      title: 'Destpêka dibistanê û veguhastinan bi aramî bibe hevrê',
+      parent_lens: "Veguhastin — destpêka dibistanê, guherîna polê, baxçeyê zarokan a nû — ji bo zarokan qonaxên fêrbûnê yên herî tund in. Arambûn û pêbaweriya te li zarokê te derbas dibe. Tu bingeha sazûmanê yî.",
+      parent_tips: [
+        "Cihên nû berî demê nas bike: eger gengaz be, polê an dibistana nû berî roja pêşîn ser xwe bide.",
+        "Li ser hestan biaxive: 'Heyecanbûn xweş e. Ez jî di roja pêşîn a dibistanê de bêhncîkî bûm.'",
+        "Tiştên biçûk ên veguhastinê alîkar dibin: wêneyek di çenteyê de, tiştek biçûk a bîranînê — tişt ewlehiyê çêdikin.",
+      ],
+      practical_tip: "Îro ji zarokê xwe bipirse: 'Tu ji ... çi hêvî dikî? Çi hîn jî te xemgîn dike?' — û bêyî nirxandinê guhdarî bike.",
+      discussion_body: "Hûn veguhastineke girîng a zarokê xwe çawa bi hevrêtî pêşve birin? Çi alîkar bû?",
+      companion_quick: "Veguhastin bi hev re dawî û destpêk in — û her duyan dikarin werin hîskirin.",
+      companion_reflect: "Zarokê te îro li dora veguhastinekê kîjan hest nîşan da?",
+    },
+    milestone_sozial: {
+      title: 'Aqilê civakî — jêhatîbûna herî girîng a sedsala 21an',
+      parent_lens: "IQ deriyan vedike. EQ (aqilê hestî) mirovan dihêle têkevin. Zarokên ku xwedan jêhatîbûneke civakî ya bilind in çêtir dikarin hevkariyê bikin, ragihînin û xwe li şûna yên din deynin — ev ji te fêr dibin.",
+      parent_tips: [
+        "Rojane empatiyê wek mînak nîşan bide: 'Pisîk xemgîn xuya dike. Tu difikirî çima?'",
+        "Guherîna dîtinê biceribîne: 'Dema te ev got, tu difikirî ... çawa hîs kir?'",
+        "Tevgera civakî bi eşkereyî pesend bike: 'Te sekinî heta wî peyivîna xwe qedand. Ev pir bi rêz bû.'",
+      ],
+      practical_tip: "Îro piştî baxçeyê zarokan an dibistanê li ser rewşeke civakî biaxive: 'Kesekî îro tiştek xweş kir?'",
+      discussion_body: "Kîjan alîyê jêhatîbûna civakî ji bo zarok û mezinan îro herî girîng dibînin?",
+      companion_quick: "Jêhatîbûna civakî ne bûyereke xwezayî ye — jêhatîbûneke ku bi pratîkê tê kirin e.",
+      companion_reflect: "Zarokê te îro kengî empatî nîşan da — her çend bêyî têbînîkirinê be jî?",
+    },
+    milestone_emotion: {
+      title: 'Mezinbûna hestî — dema hest têne pêvajokirin',
+      parent_lens: "Mezinbûna hestî ne bi tunebûna hestan xwe nîşan dide — bi pêvajokirina wan. Zarokên ku destûr têne dan hestên xwe îfade bikin bi demdirêjî çêtir fêrî lihevkirina wan dibin.",
+      parent_tips: [
+        "Hemû hest destûr in — ne hemû tevger. 'Tu dikarî hêrs bî. Tu nikarî lêxî.'",
+        "Hestan nepişaftîne: li şûna 'Ne ew qas xerab e' → 'Ez dibînim ev bi rastî bandor li te kir.'",
+        "Bihêle hest di laş de werin hîskirin: 'Niha tu vê li ku hîs dikî? Di zikê xwe de? Di sînga xwe de?'",
+      ],
+      practical_tip: "Îro bipirse: 'Ev çawa di laşê te de hîs dike?' — û her bersivê qebûl bike.",
+      discussion_body: "Kîjan hest li ba we wek malbat herî zor e ku bi eşkereyî were nîşandan?",
+      companion_quick: "Destûrdana hestan ne qelsî ye — hêza hestî ye.",
+      companion_reflect: "Zarokê te îro kîjan hest bi eşkereyî nîşan da — û we bi hev re çawa lê hevrê bûn?",
+    },
+    milestone_kreativitaet: {
+      title: 'Afirandinê xurt bike — bêyî fokusa encamê',
+      parent_lens: "Afirandin çareserkirina pirsgirêkan e bi kincek din. Dema zarok wêne dikişînin, ava dikin, hunerê dikin an dilîzin, elastîkî û orîjînaliyê perwerde dikin — jêhatîbûnên pêşerojê ev in.",
+      parent_tips: [
+        "Fokus li ser hilberê dawîn nebe: 'Ji min re bibêje çi çêkirî' li şûna 'Ev dê çi be?' çêtir e.",
+        "Materyalên bêyî rêwerz pêşkêş bike: qumaş, karton, materyalên xwezayî — û paşê berde.",
+        "Bi xwe afirîner be: dema dêûbav bêyî bêkêmasî wêne dikişînin, ava dikin, distrên, ew heman tiştî destûrê didin zarokên xwe.",
+      ],
+      practical_tip: "Îro 20 deqîqe hunerkirina azad pêşkêş bike — bêyî şablon, bêyî rêwerz, tenê materyal.",
+      discussion_body: "Projeya herî afirîner a zarokê we ya ku wî/wê bi xwe pêş xistiye çi ye?",
+      companion_quick: "Afirandinê cih, dem û mezinekî ku nirxandinê nake hewce dike.",
+      companion_reflect: "Zarokê te îro çi îcad kir, ava kir an xeyal kir ku te ecêbmayî hişt?",
+    },
+    milestone_koerper: {
+      title: 'Haydariya laş xurt bike — tevger wek motora pêşveçûnê',
+      parent_lens: "Pêşveçûna motorîk û pêşveçûna zanebûnê bi hev ve girêdayî ne. Zarokên ku hildikişin, bîlansê digirin û distirin, herwiha fikirîna xwe ya cîhî û baldariya xwe pêş dixin.",
+      parent_tips: [
+        "Tevgerê rojane têxe: ne wek bernameya werzîşê, wek jiyana rojane — derence li şûna asansorê, meşîn li şûna hilgirtinê.",
+        "Motorîka mezin û biçûk biguherîne: avakirin (biçûk) û hilkişîn (mezin) hev bi awayekî xweş temam dikin.",
+        "Wêneya laş bi awayekî erênî xurt bike: 'Laşê te ev qas dikare bike' — ji dîtin an performansê serbixwe.",
+      ],
+      practical_tip: "Îro 10 deqîqe lîstika tevgerê plansaz bike — bîlanskirin, pengizîn, gindirîn. Bêyî program, tenê laş û kêf.",
+      discussion_body: "Kîjan çalakiya tevgerê ji zarokê te herî kêf dide — û çima?",
+      companion_quick: "Tevger ne çalakiyeke betlaneyê ye — motora fêrbûnê ye.",
+      companion_reflect: "Zarokê te îro bi laşî çi biceribî an wêrek kir ku nû bû?",
+    },
+    milestone_uebergaenge: {
+      title: 'Ji bo mezinbûna cinsî zû û bi aramî amade bibe',
+      parent_lens: "Mezinbûna cinsî ji ya piraniya dêûbavan difikirin zûtir dest pê dike — û rêç di zaroktiyê de tê danîn. Ragihandina vekirî û têkiliyeke ewle ya dêûbav-zarok amadebûna herî baş e.",
+      parent_tips: [
+        "Zû li ser guherînên laş biaxive — bi rastî, bêyî dramayê. Zarokên ku têne agahdarkirin tirseke kêmtir hene.",
+        "Bîranînên xwe yên mezinbûna cinsî parve bike (li gorî guncanî): 'Ez jî wê demê ne pêbawer bûm li ser ...' — ev normal dike.",
+        "Cih ji bo taybetmendiyê çêbike: li derî bide, rojnivîskan rêz bike. Baweri bi rêzgirtinê çêdibe.",
+      ],
+      practical_tip: "Îro bi zarokê xwe re (li gorî temenê) vîdyoyek an pirtûkek li ser pêvajoyên laş temaşe bike — bêyî fedîkirinê.",
+      discussion_body: "Dema hûn li paş dinêrin, di mezinbûna cinsî de çi ji we re girîng bû — û hûn dixwazin dêûbavên we çi bikirana?",
+      companion_quick: "Amadebûna herî baş a mezinbûna cinsî têkiliyeke bihêz a îro ye.",
+      companion_reflect: "Zarokê te îro pirsek kir ku nîşan dide dest bi fikirîna li ser xwe dike?",
+    },
+    gfk_wiedergutmachung: {
+      title: 'Dema dêûbav diteqin — qenckirinê wek hêz',
+      parent_lens: "Ti dêûbav her tim sebir nine. Dema tu diteqî, ev ne têkçûneke te ya wek dêûbav e — kêliyeke mirovahî ye. Lê tiştê ku piştre tê, têkiliyê ji teqînê bixwe bihêztir teşe dide.",
+      parent_tips: [
+        "Qenckirinê hewceyî sê gavan e: berpirsyariyê hilgire ('Min xelet kir'), dilovanî nîşan bide û eger hewce be cuda bike.",
+        "Bêyî 'lê' lêborînê bike: 'Bibore ku ez ev qas bi deng bûm. Ev ne rast bû.' — temam.",
+        "Zarokê te te wek mirov dibîne — ev baş e. Zarok bi qenckirinê fêr dibin ku têkilî li ber bahozan berxwe didin.",
+      ],
+      practical_tip: "Eger îro tu di rewşekê de bi xweşî tevnegerî: dîsa here ba zarokê xwe û bibêje. Sê hevok bes in.",
+      discussion_body: "Hûn wek dêûbav fêrî çi bûn ka bi teqînên xwe yên taybet re çawa mijûl bibin — bêyî ku xwe pir hişk nirxînin?",
+      companion_quick: "Qenckirin tiştekî ji zarokan re fêr dike ku ti rêbernameyek nikare: ku têkilî têne çêkirin.",
+      companion_reflect: "Îro kêliyek hebû ku tu li paş dinêrî bixwestana cuda bikira — û te ji vê çi girt?",
+    },
+  },
+};
+
 // Returns the impulse topic for today, cycling through the pool by day-of-year.
 function getTodayImpulseTopic() {
   const now = new Date();
@@ -739,9 +1910,74 @@ function buildWeeklyImpulseSeedPosts(schema, impulseId) {
   ];
 }
 
-function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
+const WEEKLY_IMPULSE_TRANSLATIONS = {
+  leadership_hausaufgaben: {
+    en: {
+      title: 'Homework without stress: a routine that works',
+      parent_lens:
+        'Homework stress is often not a learning problem: it is a routine problem. With the right structure and timing, the subject can become calmer on its own.',
+      parent_tips: [
+        'Find the right time: straight after school or after a short break, but before the evening.',
+        'I am here, but I do not help right away: let your child try first. If there is no progress after 10 minutes, ask: "Where are you getting stuck?"',
+        'Prepare the workspace: a regular spot, a tidy desk, and no phone in sight reduce distractions.',
+      ],
+      practical_tip:
+        'Agree with your child today on one homework time for the week and write it down.',
+      discussion_body:
+        'What has made homework less stressful for your family? Which routines work?',
+      companion_quick:
+        'Structure while learning is not a restriction: it helps concentration get going.',
+      companion_reflect:
+        'How did learning go today? What could you try differently tomorrow?',
+    },
+    tr: {
+      title: 'Stres olmadan ödev: işe yarayan bir düzen',
+      parent_lens:
+        'Ödev stresi çoğu zaman bir öğrenme sorunu değil, bir rutin sorunudur. Doğru düzen ve doğru zamanla konu kendiliğinden daha sakin hale gelir.',
+      parent_tips: [
+        'Doğru zamanı bulun: okuldan hemen sonra veya kısa bir dinlenmenin ardından, ama akşam olmadan önce.',
+        'Yanındayım ama hemen yardım etmiyorum: önce kendisi denesin. 10 dakika ilerleme olmazsa sorun: "Nerede takıldın?"',
+        'Çalışma alanını hazırlayın: sabit bir yer, düzenli bir masa ve görünürde telefon olmaması dikkati azaltır.',
+      ],
+      practical_tip:
+        'Bugün çocuğunuzla birlikte hafta için tek bir ödev zamanı belirleyin ve yazın.',
+      discussion_body:
+        'Sizde ödevleri daha stressiz hale getiren ne oldu? Hangi rutinler işe yarıyor?',
+      companion_quick:
+        'Öğrenmede düzen bir kısıtlama değildir: odaklanmayı harekete geçirir.',
+      companion_reflect:
+        'Bugün çalışma nasıl geçti? Yarın neyi farklı deneyebilirsiniz?',
+    },
+    ku: {
+      title: 'Erkên malê bê stres: rêzek ku dixebite',
+      parent_lens:
+        'Stresa erkên malê gelek caran ne pirsgirêkeke fêrbûnê ye, belkî pirsgirêka rîtualê ye. Bi rêzek rast û dema rast, mijar bi xwe aramtir dibe.',
+      parent_tips: [
+        'Dema rast bibînin: rasterast piştî dibistanê an piştî demeke kurt a bêhnvedanê, lê beriya êvarê.',
+        'Ez li vir im, lê yekser alîkarî nakim: bila zarok pêşî bi xwe biceribîne. Heke piştî 10 deqîqeyan pêşdeçûn tunebe, bipirsin: "Tu li ku derê dimînî?"',
+        'Cihê xebatê amade bikin: cihek sabît, maseyek rêk û telefonek ne li ber çavan, bala winda kêm dike.',
+      ],
+      practical_tip:
+        'Îro bi zarokê xwe re ji bo hefteyê demek yekane ya erkên malê diyar bikin û binivîsin.',
+      discussion_body:
+        'Çi tiştê li mala we erkên malê bê stres kir? Kîjan rîtual dixebitin?',
+      companion_quick:
+        'Rêz di fêrbûnê de sînordarkirin nîne: ew alîkariya konsantrasyonê dike.',
+      companion_reflect:
+        'Îro fêrbûn çawa çû? Hûn sibê dikarin çi cuda biceribînin?',
+    },
+  },
+};
+
+function localizeWeeklyImpulseTopic(topic, language) {
+  const translation = WEEKLY_IMPULSE_TRANSLATIONS[topic.key]?.[language];
+  return translation ? { ...topic, ...translation } : topic;
+}
+
+function buildWeeklyImpulseResponse({ schema, viewerUserId, language = 'de' }) {
+  const lang = supportedAppLanguageNames.has(language) ? language : 'de';
   const today = new Date().toISOString().slice(0, 10);
-  const topic = getTodayImpulseTopic();
+  const topic = localizeWeeklyImpulseTopic(getTodayImpulseTopic(), lang);
   const impulseId = `imp_daily_${today}_${topic.key}`;
   const state = getWeeklyImpulseCommunityEntry(impulseId);
   const seedPosts = buildWeeklyImpulseSeedPosts(schema, impulseId);
@@ -760,9 +1996,101 @@ function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
       };
     });
 
+  const labels = {
+    de: {
+      hero_headline: 'Dein Tagesimpuls für heute',
+      prefix: 'Drei alltagsnahe Impulse:',
+      greeting: 'Hallo und schön, dass du da bist.',
+      closing: 'Du machst das gut.',
+      quick_title: 'Heute in 2 Minuten',
+      quick_fmt: 'Sofort-Impuls',
+      und_title: 'Kurz verstanden',
+      und_fmt: 'Verstehen',
+      prac_title: 'Praxis für heute',
+      prac_fmt: 'Praxis',
+      refl_title: 'Abend-Reflexion',
+      refl_fmt: 'Reflexion',
+      deep_title: 'Tipp für den Alltag',
+      deep_fmt: 'Artikel',
+      question_title: 'Frage des Tages',
+      min: 'Min',
+    },
+    en: {
+      hero_headline: 'Your Daily Impulse',
+      prefix: 'Three practical tips:',
+      greeting: 'Hello and welcome!',
+      closing: 'You are doing great.',
+      quick_title: 'Today in 2 minutes',
+      quick_fmt: 'Instant Impulse',
+      und_title: 'Quick Summary',
+      und_fmt: 'Understanding',
+      prac_title: 'Practice for Today',
+      prac_fmt: 'Practice',
+      refl_title: 'Evening Reflection',
+      refl_fmt: 'Reflection',
+      deep_title: 'Daily Life Tip',
+      deep_fmt: 'Article',
+      question_title: 'Question of the Day',
+      min: 'min',
+    },
+    tr: {
+      hero_headline: 'Günün İlhamı',
+      prefix: 'Üç pratik ipucu:',
+      greeting: 'Merhaba, hoş geldin.',
+      closing: 'Harika gidiyorsun.',
+      quick_title: 'Bugün 2 Dakikada',
+      quick_fmt: 'Hızlı İlham',
+      und_title: 'Özetle',
+      und_fmt: 'Anlama',
+      prac_title: 'Günün Uygulaması',
+      prac_fmt: 'Uygulama',
+      refl_title: 'Akşam Değerlendirmesi',
+      refl_fmt: 'Düşünce',
+      deep_title: 'Günlük Hayat İpucu',
+      deep_fmt: 'Makale',
+      question_title: 'Günün Sorusu',
+      min: 'dk',
+    },
+    ku: {
+      hero_headline: 'Îlhama Te ya Rojê',
+      prefix: 'Sê şîretên me yên ji bo jiyanê:',
+      greeting: 'Merheba, bi xêr hatî.',
+      closing: 'Tu vê yekê pir baş dikî.',
+      quick_title: 'Îro di 2 Deqîqeyan de',
+      quick_fmt: 'Îlhama Bilez',
+      und_title: 'Kurtenêrîn',
+      und_fmt: 'Têgihîştin',
+      prac_title: 'Prensîba Îro',
+      prac_fmt: 'Pratîk',
+      refl_title: 'Ramana Êvarê',
+      refl_fmt: 'Ramana Kûr',
+      deep_title: 'Şîreta Jiyana Rojane',
+      deep_fmt: 'Gutar',
+      question_title: 'Pirsiyarê Rojê',
+      min: 'deq',
+    },
+  }[lang] || {
+    hero_headline: 'Your Daily Impulse',
+    prefix: 'Three practical tips:',
+    greeting: 'Hello and welcome!',
+    closing: 'You are doing great.',
+    quick_title: 'Today in 2 minutes',
+    quick_fmt: 'Instant Impulse',
+    und_title: 'Quick Summary',
+    und_fmt: 'Understanding',
+    prac_title: 'Practice for Today',
+    prac_fmt: 'Practice',
+    refl_title: 'Evening Reflection',
+    refl_fmt: 'Reflection',
+    deep_title: 'Daily Life Tip',
+    deep_fmt: 'Article',
+    question_title: 'Question of the Day',
+    min: 'min',
+  };
+
   const contentBody =
     `${topic.parent_lens}\n\n` +
-    `Drei alltagsnahe Impulse:\n` +
+    `${labels.prefix}\n` +
     `- ${topic.parent_tips[0]}\n` +
     `- ${topic.parent_tips[1]}\n` +
     `- ${topic.parent_tips[2]}`;
@@ -770,55 +2098,55 @@ function buildWeeklyImpulseResponse({ schema, viewerUserId }) {
   return {
     id: impulseId,
     title: topic.title,
-    hero_headline: 'Dein Tagesimpuls für heute',
+    hero_headline: labels.hero_headline,
     hero_description: topic.parent_lens,
     content_body: contentBody,
     practical_tip: topic.practical_tip,
     audio_script:
-      `Hallo und schön, dass du da bist. ${topic.parent_lens} ` +
-      `${topic.practical_tip} Du machst das gut.`,
+      `${labels.greeting} ${topic.parent_lens} ` +
+      `${topic.practical_tip} ${labels.closing}`,
     category: topic.category,
     publish_date: today,
     companion_impulses: [
       {
         id: `${impulseId}_quick`,
-        title: 'Heute in 2 Minuten',
+        title: labels.quick_title,
         summary: topic.companion_quick,
-        duration_label: '2 Min',
-        format_label: 'Sofort-Impuls',
+        duration_label: `2 ${labels.min}`,
+        format_label: labels.quick_fmt,
       },
       {
         id: `${impulseId}_understand`,
-        title: 'Kurz verstanden',
+        title: labels.und_title,
         summary: topic.parent_lens,
-        duration_label: '3 Min',
-        format_label: 'Verstehen',
+        duration_label: `3 ${labels.min}`,
+        format_label: labels.und_fmt,
       },
       {
         id: `${impulseId}_practice`,
-        title: 'Praxis für heute',
+        title: labels.prac_title,
         summary: topic.parent_tips[0],
-        duration_label: '4 Min',
-        format_label: 'Praxis',
+        duration_label: `4 ${labels.min}`,
+        format_label: labels.prac_fmt,
       },
       {
         id: `${impulseId}_reflect`,
-        title: 'Abend-Reflexion',
+        title: labels.refl_title,
         summary: topic.companion_reflect,
-        duration_label: '2 Min',
-        format_label: 'Reflexion',
+        duration_label: `2 ${labels.min}`,
+        format_label: labels.refl_fmt,
       },
       {
         id: `${impulseId}_deepdive`,
-        title: 'Tipp für den Alltag',
+        title: labels.deep_title,
         summary: topic.parent_tips[1],
-        duration_label: '5 Min',
-        format_label: 'Artikel',
+        duration_label: `5 ${labels.min}`,
+        format_label: labels.deep_fmt,
       },
     ],
     discussion_prompt: {
       id: `${impulseId}_discussion`,
-      title: 'Frage des Tages',
+      title: labels.question_title,
       body: topic.discussion_body,
     },
     community_posts: mergedPosts,
@@ -945,12 +2273,62 @@ async function verifyFirebaseIdToken(req) {
   }
 }
 
+async function authorizeAccountOwner(req, res, userId) {
+  const authHeader = req.headers.authorization || '';
+  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
+    return true;
+  }
+
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (verified) {
+    if (uid !== userId) {
+      res.status(403).json({ error: 'Konto-Loeschung nur fuer das eigene Konto erlaubt' });
+      return false;
+    }
+    req.firebaseUid = uid;
+    return true;
+  }
+
+  if (!isProduction && !requireAuthForWrites && !firebaseRequireAuth) {
+    return true;
+  }
+
+  res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
+  return false;
+}
+
 // Middleware: if FIREBASE_REQUIRE_AUTH=1 AND Firebase Admin is configured,
 // reject write requests whose token does not match the acting userId.
 const firebaseRequireAuth = (process.env.FIREBASE_REQUIRE_AUTH || '0') === '1';
 
+// Pfade, die den Nutzer ueber die userId im Body/Path identifizieren (nicht
+// ueber den Token). Diese Schreib-Endpoints muessen auch ohne verifizierten
+// Firebase-Token funktionieren, sonst schlagen sie auf Web (Session-Restore-
+// Timing) still fehl. Muss mit der zweiten Middleware konsistent sein.
+const socialNoTokenWritePaths = [
+  '/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat',
+  '/api/friends', '/api/safety', '/api/onboarding', '/api/account',
+  '/api/profile', '/api/friendships', '/api/recipes',
+];
+
+function isNoTokenWritePath(reqPath) {
+  return socialNoTokenWritePaths.some(
+    p => reqPath === p || reqPath.startsWith(p + '/'));
+}
+
 async function firebaseAuthMiddleware(req, res, next) {
   if (!firebaseRequireAuth || !firebaseAdmin || !WRITE_METHODS.has(req.method)) {
+    return next();
+  }
+  // userId-basierte Social-Endpoints: Token optional (best-effort verifizieren),
+  // aber nie hart ablehnen — sonst gehen Profil/Freundschaft auf Web verloren.
+  if (isNoTokenWritePath(req.path)) {
+    const { uid, verified } = await verifyFirebaseIdToken(req);
+    if (verified) req.firebaseUid = uid;
+    return next();
+  }
+  const authHeader = req.headers.authorization || '';
+  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
     return next();
   }
   const { uid, verified } = await verifyFirebaseIdToken(req);
@@ -1075,6 +2453,7 @@ app.post('/payments/stripe/webhook', express.raw({ type: 'application/json' }), 
   });
 });
 
+app.use('/ai/generate', express.json({ limit: '6mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.use(async (req, res, next) => {
@@ -1115,7 +2494,7 @@ app.use(async (req, res, next) => {
 
   // Calendar and todo endpoints: accept userId from request body as lightweight auth.
   // Firebase token verification is still attempted; body userId is the fallback.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships', '/api/recipes'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
@@ -1150,6 +2529,218 @@ app.use(async (req, res, next) => {
   }
 
   res.status(401).json({ error: 'Unauthorized' });
+});
+
+const allowedGeminiModels = new Set([
+  'gemini-3.5-flash-lite',
+  'gemini-3.5-flash',
+]);
+const supportedAppLanguageNames = new Map([
+  ['de', 'German'],
+  ['en', 'English'],
+  ['tr', 'Turkish'],
+  ['ku', 'Kurmancî Kurdish in Latin Hawar script'],
+  ['ar', 'Arabic'],
+  ['fa', 'Farsi'],
+  ['ckb', 'Sorani Kurdish'],
+  ['fr', 'French'],
+  ['es', 'Spanish'],
+  ['it', 'Italian'],
+  ['pt', 'Portuguese'],
+  ['nl', 'Dutch'],
+  ['pl', 'Polish'],
+  ['ja', 'Japanese'],
+  ['zh', 'Simplified Chinese'],
+  ['hi', 'Hindi'],
+]);
+
+function normalizeAppLanguage(value) {
+  const language = String(value || 'de').trim().toLowerCase();
+  return supportedAppLanguageNames.has(language) ? language : 'de';
+}
+
+function buildLanguageInstruction(language) {
+  return `Respond exclusively in ${supportedAppLanguageNames.get(language)}. Do not mix languages.`;
+}
+
+/**
+ * GET /ai/health
+ * Öffentlicher Selbsttest: prüft ob der Gemini-Key funktioniert
+ * (ohne Secrets preiszugeben). Für Launch-Monitoring.
+ */
+app.get('/ai/health', async (req, res) => {
+  if (!geminiApiKey) {
+    return res.json({ ok: false, reason: 'GEMINI_API_KEY nicht gesetzt' });
+  }
+  const model = 'gemini-3.5-flash';
+  const body = JSON.stringify({
+    contents: [{ role: 'user', parts: [{ text: 'ping' }] }],
+    generationConfig: { maxOutputTokens: 5 },
+  });
+  const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  try {
+    // Erst Header, dann Query-Param (wie im Proxy)
+    let up = await fetch(baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiApiKey },
+      body,
+      signal: AbortSignal.timeout(15000),
+    });
+    let method = 'header';
+    if (up.status === 401 || up.status === 403) {
+      up = await fetch(`${baseUrl}?key=${encodeURIComponent(geminiApiKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: AbortSignal.timeout(15000),
+      });
+      method = 'query';
+    }
+    return res.json({
+      ok: up.ok,
+      status: up.status,
+      authMethod: up.ok ? method : null,
+      reason: up.ok ? 'Gemini erreichbar' : `Gemini antwortet mit ${up.status}`,
+    });
+  } catch (e) {
+    return res.json({ ok: false, reason: `Fehler: ${e.message}` });
+  }
+});
+
+app.post('/ai/generate', async (req, res) => {
+  if (!geminiApiKey) {
+    return res.status(503).json({ error: 'KI-Dienst nicht konfiguriert' });
+  }
+
+  const model = String(req.body?.model || 'gemini-3.5-flash-lite').trim();
+  const prompt = String(req.body?.prompt || '').trim();
+  const systemInstruction = String(req.body?.systemInstruction || '').trim();
+  const appLanguage = normalizeAppLanguage(req.body?.language);
+  const useGoogleSearch = req.body?.useGoogleSearch === true;
+  const imageBase64 = String(req.body?.imageBase64 || '').trim();
+  const imageMimeType = String(req.body?.imageMimeType || '').trim();
+  const allowedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+  if (!allowedGeminiModels.has(model)) {
+    return res.status(400).json({ error: 'Nicht unterstütztes KI-Modell' });
+  }
+  if (!prompt || prompt.length > 30000 || systemInstruction.length > 10000) {
+    return res.status(400).json({ error: 'Ungültige Prompt-Länge' });
+  }
+  if (imageBase64) {
+    if (!allowedImageMimeTypes.has(imageMimeType)) {
+      return res.status(400).json({ error: 'Nicht unterstütztes Bildformat' });
+    }
+    const estimatedBytes = Math.floor(imageBase64.length * 0.75);
+    if (estimatedBytes > 4 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Bild ist zu groß' });
+    }
+  }
+
+  const finalSystemInstruction = [
+    systemInstruction,
+    buildLanguageInstruction(appLanguage),
+  ].filter(Boolean).join('\n\n');
+
+  const requestBody = {
+    contents: [{
+      role: 'user',
+      parts: [
+        { text: prompt },
+        ...(imageBase64
+          ? [{ inline_data: { mime_type: imageMimeType, data: imageBase64 } }]
+          : []),
+      ],
+    }],
+    generationConfig: {
+      temperature: useGoogleSearch ? 1.0 : 0.7,
+      maxOutputTokens: useGoogleSearch ? 6000 : 8192,
+    },
+    systemInstruction: { parts: [{ text: finalSystemInstruction }] },
+    ...(useGoogleSearch ? { tools: [{ google_search: {} }] } : {}),
+  };
+
+  // Hilfsfunktion: einen Gemini-Aufruf ausführen und Text + Grounding-URLs zurückgeben.
+  // Robust: probiert erst den Header, bei 401/403 den Key als Query-Parameter
+  // (neuere AQ.-Keys akzeptieren teils nur eine der beiden Methoden).
+  async function callGemini(body) {
+    const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const jsonBody = JSON.stringify(body);
+
+    async function attempt(useQueryParam) {
+      const url = useQueryParam
+        ? `${baseUrl}?key=${encodeURIComponent(geminiApiKey)}`
+        : baseUrl;
+      const headers = { 'Content-Type': 'application/json' };
+      if (!useQueryParam) headers['x-goog-api-key'] = geminiApiKey;
+      return fetch(url, {
+        method: 'POST',
+        headers,
+        body: jsonBody,
+        signal: AbortSignal.timeout(35000),
+      });
+    }
+
+    let upstream = await attempt(false);
+    // Bei Auth-Fehler: mit Query-Parameter erneut versuchen
+    if (upstream.status === 401 || upstream.status === 403) {
+      upstream = await attempt(true);
+    }
+
+    const payload = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      const detail = payload?.error?.message || `HTTP ${upstream.status}`;
+      throw new Error(detail);
+    }
+    const candidate = Array.isArray(payload.candidates) ? payload.candidates[0] : null;
+    const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+    const text = parts.map(part => String(part?.text || '')).join('').trim();
+    const groundingChunks = Array.isArray(candidate?.groundingMetadata?.groundingChunks)
+      ? candidate.groundingMetadata.groundingChunks
+      : [];
+    const groundingUrls = groundingChunks
+      .map(chunk => chunk?.web?.uri)
+      .filter(uri => typeof uri === 'string' && uri.startsWith('https://'));
+    return { text, groundingUrls };
+  }
+
+  try {
+    let result;
+    try {
+      result = await callGemini(requestBody);
+    } catch (groundingError) {
+      // Wenn Grounding fehlschlägt: automatisch OHNE Grounding erneut versuchen.
+      if (useGoogleSearch) {
+        console.warn(`Grounding failed (${groundingError.message}) — retry without grounding`);
+        const fallbackBody = {
+          ...requestBody,
+          generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+        };
+        delete fallbackBody.tools;
+        result = await callGemini(fallbackBody);
+      } else {
+        throw groundingError;
+      }
+    }
+
+    // Wenn Grounding zwar erfolgreich, aber leerer Text: ohne Grounding erneut.
+    if ((!result.text || result.text.length === 0) && useGoogleSearch) {
+      const fallbackBody = {
+        ...requestBody,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+      };
+      delete fallbackBody.tools;
+      result = await callGemini(fallbackBody);
+    }
+
+    if (!result.text) {
+      return res.status(502).json({ error: 'KI-Dienst lieferte keine Antwort' });
+    }
+    return res.json({ text: result.text, groundingUrls: result.groundingUrls });
+  } catch (error) {
+    console.error(`Gemini proxy failed: ${error.message}`);
+    return res.status(502).json({ error: 'KI-Dienst vorübergehend nicht verfügbar' });
+  }
 });
 
 // Providers-Daten aus JSON laden
@@ -1636,6 +3227,10 @@ async function ensureSocialSchemaReady() {
       "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  // code -> userId, damit Push-Nachrichten den echten Empfaenger erreichen.
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "FriendRegistry" ADD COLUMN IF NOT EXISTS "userId" TEXT;`
+  );
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "FriendPendingConnection" (
       "id" TEXT PRIMARY KEY,
@@ -1687,6 +3282,134 @@ async function ensureSocialSchemaReady() {
     );
   `);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_calendar_user" ON "CalendarEvent"("userId");`);
+  // Durable friend list per user (survives reinstall). Symmetric edges are
+  // written on both sides so each user can restore their own list by code.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "FriendEdge" (
+      "ownerCode" TEXT NOT NULL,
+      "friendCode" TEXT NOT NULL,
+      "friendName" TEXT NOT NULL DEFAULT 'Familie',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("ownerCode", "friendCode")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_friendedge_owner" ON "FriendEdge"("ownerCode");`);
+  // Server-side safety: blocked users + reports (moderation trail).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SafetyBlock" (
+      "blockerUserId" TEXT NOT NULL,
+      "blockedUserId" TEXT NOT NULL,
+      "blockedName" TEXT NOT NULL DEFAULT '',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("blockerUserId", "blockedUserId")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_safetyblock_blocker" ON "SafetyBlock"("blockerUserId");`);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SafetyReport" (
+      "id" TEXT PRIMARY KEY,
+      "reporterUserId" TEXT NOT NULL,
+      "reportedUserId" TEXT NOT NULL,
+      "contentType" TEXT NOT NULL DEFAULT 'profile',
+      "content" TEXT NOT NULL DEFAULT '',
+      "reason" TEXT NOT NULL DEFAULT 'other',
+      "status" TEXT NOT NULL DEFAULT 'pending',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_safetyreport_reported" ON "SafetyReport"("reportedUserId");`);
+  // Soft-Suspend (umkehrbar): gesperrte Accounts, gesetzt durch Moderation.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SafetySuspension" (
+      "userId" TEXT PRIMARY KEY,
+      "reason" TEXT NOT NULL DEFAULT '',
+      "suspendedBy" TEXT NOT NULL DEFAULT '',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  // Onboarding Minimal-Sync (Option A): nur unkritische Stammdaten, damit der
+  // Nutzer auf einem neuen Geraet nicht erneut durchs Onboarding muss.
+  // KEINE sensiblen Kinderdaten hier.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "OnboardingProfile" (
+      "userId" TEXT PRIMARY KEY,
+      "completed" BOOLEAN NOT NULL DEFAULT FALSE,
+      "familyName" TEXT NOT NULL DEFAULT '',
+      "parentRole" TEXT NOT NULL DEFAULT '',
+      "priorities" TEXT NOT NULL DEFAULT '',
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  // ── NEUES FUNDAMENT: UserProfile (uid = Identitaet, Name app-weit) ────────
+  // displayName kommt aus der Registrierung. username optional, Default privat
+  // + nicht auffindbar (Datenschutz fuer Familien).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "UserProfile" (
+      "userId" TEXT PRIMARY KEY,
+      "displayName" TEXT NOT NULL DEFAULT '',
+      "username" TEXT,
+      "searchable" BOOLEAN NOT NULL DEFAULT FALSE,
+      "isPrivate" BOOLEAN NOT NULL DEFAULT TRUE,
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "idx_userprofile_username" ON "UserProfile"(LOWER("username")) WHERE "username" IS NOT NULL;`);
+  // Freundschaft als UID-zu-UID-Beziehung. userLow/userHigh sind die beiden
+  // UIDs kanonisch sortiert (userLow < userHigh) -> genau EINE Zeile pro Paar.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Friendship" (
+      "userLow" TEXT NOT NULL,
+      "userHigh" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'pending',
+      "requestedBy" TEXT NOT NULL DEFAULT '',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("userLow", "userHigh")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_friendship_low" ON "Friendship"("userLow");`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_friendship_high" ON "Friendship"("userHigh");`);
+  // Kurzlebige Einladungs-Token (Link/QR): token -> einladende UID.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "FriendInvite" (
+      "token" TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  // ── Phase 3a: Familien-Rezepte teilen ──────────────────────────────────────
+  // Sichtbarkeit: 'public' (Fuer alle Familien) | 'friends' (Nur meine Freunde,
+  // Default) | 'private' (Nur fuer mich). Zutaten/Schritte als JSON-Text.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Recipe" (
+      "id" TEXT PRIMARY KEY,
+      "authorUserId" TEXT NOT NULL,
+      "authorName" TEXT NOT NULL DEFAULT 'Familie',
+      "title" TEXT NOT NULL,
+      "description" TEXT NOT NULL DEFAULT '',
+      "photoUrl" TEXT NOT NULL DEFAULT '',
+      "ingredients" TEXT NOT NULL DEFAULT '[]',
+      "steps" TEXT NOT NULL DEFAULT '[]',
+      "prepMinutes" INT NOT NULL DEFAULT 0,
+      "visibility" TEXT NOT NULL DEFAULT 'friends',
+      "tags" TEXT NOT NULL DEFAULT '[]',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_recipe_author" ON "Recipe"("authorUserId");`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_recipe_visibility" ON "Recipe"("visibility");`);
+  // Reaktionen: 'cook' ("Das kochen wir nach!") | 'tasty' ("Hat geschmeckt!").
+  // Genau eine Zeile pro (Rezept, Nutzer, Typ) -> togglebar.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "RecipeReaction" (
+      "recipeId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "type" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("recipeId", "userId", "type")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_recipereaction_recipe" ON "RecipeReaction"("recipeId");`);
   socialSchemaEnsured = true;
 }
 
@@ -3023,11 +4746,157 @@ function deleteAccountDataByUserIdInMemory(userId) {
   return removed;
 }
 
+function localUploadFilenameFromUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const pathname = decodeURIComponent(new URL(value, 'http://localhost').pathname);
+    const match = pathname.match(/^\/uploads\/([^/]+)$/);
+    if (!match || !/^[a-zA-Z0-9._-]+$/.test(match[1])) return null;
+    return match[1];
+  } catch (_) {
+    return null;
+  }
+}
+
+function firebaseStorageObjectFromUrl(value) {
+  if (!firebaseStorageBucket || typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value);
+    let bucket = '';
+    let objectPath = '';
+
+    if (url.hostname === 'firebasestorage.googleapis.com') {
+      const match = url.pathname.match(/^\/v0\/b\/([^/]+)\/o\/(.+)$/);
+      if (!match) return null;
+      bucket = decodeURIComponent(match[1]);
+      objectPath = decodeURIComponent(match[2]);
+    } else if (url.hostname === 'storage.googleapis.com') {
+      const parts = url.pathname.split('/').filter(Boolean);
+      bucket = decodeURIComponent(parts.shift() || '');
+      objectPath = decodeURIComponent(parts.join('/'));
+    } else if (url.hostname === `${firebaseStorageBucket}.storage.googleapis.com`) {
+      bucket = firebaseStorageBucket;
+      objectPath = decodeURIComponent(url.pathname.replace(/^\//, ''));
+    } else {
+      return null;
+    }
+
+    if (bucket !== firebaseStorageBucket || objectPath.includes('..')) return null;
+    if (!/^(treasures|events)\/[^/]+$/.test(objectPath)) return null;
+    return objectPath;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function getRemainingMediaReferences() {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT "imageUrl" AS url FROM "Event" WHERE "imageUrl" IS NOT NULL
+     UNION ALL SELECT "photoUrl" FROM "TreasureItem" WHERE "photoUrl" IS NOT NULL
+     UNION ALL SELECT unnest("photoUrls") FROM "TreasureItem"
+     UNION ALL SELECT "imageUrl" FROM "SharedRecipe" WHERE "imageUrl" IS NOT NULL
+     UNION ALL SELECT "imageUrl" FROM "CommunityEvent" WHERE "imageUrl" IS NOT NULL
+     UNION ALL SELECT "avatar" FROM "User" WHERE "avatar" IS NOT NULL`,
+  );
+  return rows.map(row => row.url).filter(Boolean);
+}
+
+async function deleteUnreferencedAccountMedia(mediaUrls) {
+  const remainingUrls = await getRemainingMediaReferences();
+  const referencedLocalFiles = new Set(
+    remainingUrls.map(localUploadFilenameFromUrl).filter(Boolean),
+  );
+  const referencedFirebaseObjects = new Set(
+    remainingUrls.map(firebaseStorageObjectFromUrl).filter(Boolean),
+  );
+  const filenames = [...new Set(mediaUrls.map(localUploadFilenameFromUrl).filter(Boolean))];
+  const firebaseObjects = [
+    ...new Set(mediaUrls.map(firebaseStorageObjectFromUrl).filter(Boolean)),
+  ];
+  let removedLocalFiles = 0;
+  let removedFirebaseObjects = 0;
+
+  for (const filename of filenames) {
+    if (referencedLocalFiles.has(filename)) continue;
+
+    const filePath = path.join(uploadsDir, filename);
+    if (path.dirname(filePath) !== uploadsDir) continue;
+    try {
+      await fs.promises.unlink(filePath);
+      removedLocalFiles += 1;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
+        console.warn(`Upload-Cleanup fehlgeschlagen (${filename}):`, error?.message || error);
+      }
+    }
+  }
+
+  if (firebaseAdmin && firebaseStorageBucket) {
+    const bucket = firebaseAdmin.storage().bucket(firebaseStorageBucket);
+    for (const objectPath of firebaseObjects) {
+      if (referencedFirebaseObjects.has(objectPath)) continue;
+      try {
+        await bucket.file(objectPath).delete({ ignoreNotFound: true });
+        removedFirebaseObjects += 1;
+      } catch (error) {
+        console.warn(
+          `Firebase-Storage-Cleanup fehlgeschlagen (${objectPath}):`,
+          error?.message || error,
+        );
+      }
+    }
+  }
+
+  return { removedLocalFiles, removedFirebaseObjects };
+}
+
 async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
-  const hostedEvents = await prisma.event.findMany({
-    where: { hosterId: userId },
-    select: { id: true },
-  });
+  const [userMedia, hostedEvents, ownedTreasures, ownedRecipes, ownedCommunityEvents] =
+    await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatar: true },
+      }),
+      prisma.event.findMany({
+        where: { hosterId: userId },
+        select: { id: true, imageUrl: true },
+      }),
+      prisma.treasureItem.findMany({
+        where: { userId },
+        select: { photoUrl: true, photoUrls: true },
+      }),
+      prisma.sharedRecipe.findMany({
+        where: { creatorUserId: userId },
+        select: { imageUrl: true },
+      }),
+      prisma.communityEvent.findMany({
+        where: { creatorId: userId },
+        select: { imageUrl: true },
+      }),
+    ]);
+
+  const mediaUrls = [
+    userMedia?.avatar,
+    ...hostedEvents.map(item => item.imageUrl),
+    ...ownedTreasures.flatMap(item => [item.photoUrl, ...item.photoUrls]),
+    ...ownedRecipes.map(item => item.imageUrl),
+    ...ownedCommunityEvents.map(item => item.imageUrl),
+  ].filter(Boolean);
+
+  const directlyOwnedCounts = await Promise.all([
+    prisma.treasureReport.count({ where: { reporterUserId: userId } }),
+    prisma.treasureItem.count({ where: { userId } }),
+    prisma.parentMatchingProfile.count({ where: { ownerUserId: userId } }),
+    prisma.sharedRecipe.count({ where: { creatorUserId: userId } }),
+    prisma.foodOfferComment.count({ where: { userId } }),
+    prisma.foodOfferReservation.count({ where: { userId } }),
+    prisma.recipeRating.count({ where: { userId } }),
+    prisma.recipeFavorite.count({ where: { userId } }),
+    prisma.recipeReport.count({ where: { reportedById: userId } }),
+    prisma.communityEvent.count({ where: { creatorId: userId } }),
+    prisma.communityEventFlag.count({ where: { userId } }),
+    prisma.communityEventInterest.count({ where: { userId } }),
+  ]);
 
   const familyRequestCount = await prisma.familyRequest.count({
     where: {
@@ -3054,9 +4923,16 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
 
   if (options.dryRun === true) {
     return {
-      removed: familyRequestCount + hostAuditPaymentCount + userCount + parentMatchingActionCount,
+      removed:
+        hostedEvents.length +
+        directlyOwnedCounts.reduce((sum, count) => sum + count, 0) +
+        familyRequestCount +
+        hostAuditPaymentCount +
+        userCount +
+        parentMatchingActionCount,
       parentMatchingActionCount,
       hostedEventIds: hostedEvents.map(item => item.id),
+      mediaUrls,
       dryRun: true,
     };
   }
@@ -3077,6 +4953,38 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
     },
   })).count;
 
+  removed += (await prisma.event.deleteMany({
+    where: { hosterId: userId },
+  })).count;
+
+  removed += (await prisma.treasureReport.deleteMany({
+    where: { reporterUserId: userId },
+  })).count;
+  removed += (await prisma.treasureItem.deleteMany({
+    where: { userId },
+  })).count;
+
+  removed += (await prisma.foodOfferComment.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.foodOfferReservation.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.recipeRating.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.recipeFavorite.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.recipeReport.deleteMany({
+    where: { reportedById: userId },
+  })).count;
+  removed += (await prisma.sharedRecipe.deleteMany({
+    where: { creatorUserId: userId },
+  })).count;
+
+  removed += (await prisma.communityEventFlag.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.communityEventInterest.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.communityEvent.deleteMany({
+    where: { creatorId: userId },
+  })).count;
+
+  removed += (await prisma.parentMatchingProfile.deleteMany({
+    where: { ownerUserId: userId },
+  })).count;
+
   if (typeof prisma.parentMatchingAction?.deleteMany === 'function') {
     removed += (await prisma.parentMatchingAction.deleteMany({
       where: { actorUserId: userId },
@@ -3088,6 +4996,96 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
   return {
     removed,
     hostedEventIds: hostedEvents.map(item => item.id),
+    mediaUrls,
+  };
+}
+
+async function exportAccountDataByUserIdPrisma(userId) {
+  const [
+    user,
+    createdFamilies,
+    hostedEvents,
+    eventParticipations,
+    messages,
+    chatReports,
+    treasureItems,
+    treasureRatings,
+    treasureHandovers,
+    treasureReports,
+    paymentTransactions,
+    parentMatchingProfiles,
+    parentMatchingActions,
+    sharedRecipes,
+    foodOfferComments,
+    foodOfferReservations,
+    recipeRatings,
+    recipeFavorites,
+    recipeReports,
+    communityEvents,
+    communityEventFlags,
+    communityEventInterests,
+  ] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        bio: true,
+        createdAt: true,
+        trialExpiresAt: true,
+        isPremium: true,
+        premiumExpiresAt: true,
+      },
+    }),
+    prisma.family.findMany({ where: { createdById: userId } }),
+    prisma.event.findMany({ where: { hosterId: userId } }),
+    prisma.eventParticipation.findMany({ where: { userId } }),
+    prisma.message.findMany({ where: { authorId: userId } }),
+    prisma.chatReport.findMany({ where: { reportedById: userId } }),
+    prisma.treasureItem.findMany({ where: { userId } }),
+    prisma.treasureRating.findMany({ where: { fromUserId: userId } }),
+    prisma.treasureHandover.findMany({ where: { requesterId: userId } }),
+    prisma.treasureReport.findMany({ where: { reporterUserId: userId } }),
+    prisma.paymentTransaction.findMany({ where: { userId } }),
+    prisma.parentMatchingProfile.findMany({ where: { ownerUserId: userId } }),
+    prisma.parentMatchingAction.findMany({ where: { actorUserId: userId } }),
+    prisma.sharedRecipe.findMany({ where: { creatorUserId: userId } }),
+    prisma.foodOfferComment.findMany({ where: { userId } }),
+    prisma.foodOfferReservation.findMany({ where: { userId } }),
+    prisma.recipeRating.findMany({ where: { userId } }),
+    prisma.recipeFavorite.findMany({ where: { userId } }),
+    prisma.recipeReport.findMany({ where: { reportedById: userId } }),
+    prisma.communityEvent.findMany({ where: { creatorId: userId } }),
+    prisma.communityEventFlag.findMany({ where: { userId } }),
+    prisma.communityEventInterest.findMany({ where: { userId } }),
+  ]);
+
+  return {
+    user,
+    createdFamilies,
+    hostedEvents,
+    eventParticipations,
+    messages,
+    chatReports,
+    treasureItems,
+    treasureRatings,
+    treasureHandovers,
+    treasureReports,
+    paymentTransactions,
+    parentMatchingProfiles,
+    parentMatchingActions,
+    sharedRecipes,
+    foodOfferComments,
+    foodOfferReservations,
+    recipeRatings,
+    recipeFavorites,
+    recipeReports,
+    communityEvents,
+    communityEventFlags,
+    communityEventInterests,
   };
 }
 
@@ -3175,6 +5173,7 @@ app.post('/account/delete-data', async (req, res) => {
   if (!userId) {
     return res.status(400).json({ error: 'userId ist erforderlich' });
   }
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
 
   try {
     const prismaResult = await deleteAccountDataByUserIdPrisma(userId, { dryRun });
@@ -3190,6 +5189,10 @@ app.post('/account/delete-data', async (req, res) => {
       }
     }
 
+    const mediaCleanup = dryRun
+      ? { removedLocalFiles: 0, removedFirebaseObjects: 0 }
+      : await deleteUnreferencedAccountMedia(prismaResult.mediaUrls);
+
     const removedEntries = prismaResult.removed + removedMemoryEntries;
     return res.json({
       ok: true,
@@ -3198,6 +5201,7 @@ app.post('/account/delete-data', async (req, res) => {
       removedEntries,
       removedDbEntries: prismaResult.removed,
       removedMemoryEntries,
+      ...mediaCleanup,
       mode: 'prisma',
     });
   } catch (error) {
@@ -3208,6 +5212,28 @@ app.post('/account/delete-data', async (req, res) => {
       ? countAccountDataByUserIdInMemory(userId)
       : deleteAccountDataByUserIdInMemory(userId);
     return res.json({ ok: true, userId, dryRun, removedEntries, mode: 'in-memory' });
+  }
+});
+
+app.get('/account/export-data', async (req, res) => {
+  const userId = (req.query.userId || '').toString().trim();
+  if (!userId) {
+    return res.status(400).json({ error: 'userId ist erforderlich' });
+  }
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+
+  try {
+    const data = await exportAccountDataByUserIdPrisma(userId);
+    return res.json({
+      exportDate: new Date().toISOString(),
+      userId,
+      data,
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /account/export-data', error)) {
+      return;
+    }
+    return res.status(503).json({ error: 'Datenexport derzeit nicht verfuegbar' });
   }
 });
 
@@ -3255,8 +5281,9 @@ app.get('/api/weekly-impulse', (req, res) => {
     typeof req.query.viewerUserId === 'string' && req.query.viewerUserId.trim()
       ? req.query.viewerUserId.trim()
       : '';
+  const language = normalizeAppLanguage(req.query.language);
 
-  res.json(buildWeeklyImpulseResponse({ schema, viewerUserId }));
+  res.json(buildWeeklyImpulseResponse({ schema, viewerUserId, language }));
 });
 
 app.post('/api/weekly-impulse/community/posts', (req, res) => {
@@ -4762,96 +6789,1342 @@ app.post('/parent-matching/messages', async (req, res) => {
 const friendRegistry = new Map();          // in-memory fallback
 const friendPendingConnections = new Map(); // in-memory fallback
 
-app.post('/api/friends/register', async (req, res) => {
-  const code = (req.body.code || '').toString().trim().toLowerCase();
-  const name = (req.body.name || '').toString().trim();
-  if (!code || !name) return res.status(400).json({ error: 'code und name erforderlich' });
-  try {
-    await ensureSocialSchemaReady();
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "FriendRegistry" ("code", "name", "updatedAt") VALUES ($1, $2, NOW())
-       ON CONFLICT ("code") DO UPDATE SET "name" = $2, "updatedAt" = NOW()`,
-      code, name
-    );
-    return res.json({ ok: true });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/friends/register', error)) return;
-    friendRegistry.set(code, { name, updatedAt: new Date().toISOString() });
-    return res.json({ ok: true });
-  }
-});
-
+// Aufloesen von Name + UID zu einem (alten) Freundes-Code. BEHALTEN als
+// Bruecke: alte Einladungslinks + resolveCode im Client + DSGVO/Push-Altlasten.
 app.get('/api/friends/lookup/:code', async (req, res) => {
-  const code = (req.params.code || '').toString().trim().toLowerCase();
+  const code = canonicalCode(req.params.code);
   try {
     await ensureSocialSchemaReady();
     const rows = await prisma.$queryRawUnsafe(
-      `SELECT "name" FROM "FriendRegistry" WHERE "code" = $1`, code
+      `SELECT "name", "userId" FROM "FriendRegistry" WHERE "code" = $1`, code
     );
-    if (rows.length > 0) return res.json({ name: rows[0].name });
+    // Gibt jetzt auch die userId zurueck -> Code kann in eine UID-Freundschaft
+    // ueberfuehrt werden (Bruecke vom alten Code-Weg ins neue UID-System).
+    if (rows.length > 0) {
+      return res.json({ name: rows[0].name, uid: rows[0].userId || null });
+    }
     const mem = friendRegistry.get(code);
-    if (mem) return res.json({ name: mem.name });
+    if (mem) return res.json({ name: mem.name, uid: mem.userId || null });
     return res.status(404).json({ error: 'Nicht gefunden' });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'GET /api/friends/lookup', error)) return;
     const entry = friendRegistry.get(code);
     if (!entry) return res.status(404).json({ error: 'Nicht gefunden' });
-    return res.json({ name: entry.name });
+    return res.json({ name: entry.name, uid: entry.userId || null });
   }
 });
 
-app.post('/api/friends/connect', async (req, res) => {
-  const fromCode = (req.body.fromCode || '').toString().trim().toLowerCase();
-  const fromName = (req.body.fromName || '').toString().trim();
-  const toCode   = (req.body.toCode   || '').toString().trim().toLowerCase();
-  if (!fromCode || !toCode) return res.status(400).json({ error: 'fromCode und toCode erforderlich' });
+// ─── Durable friend list (Prio 2): survives reinstall ──────────────────────
+const friendEdges = new Map();   // in-memory fallback: ownerCode -> [{friendCode, friendName}]
+const safetyBlocks = new Map();  // in-memory fallback: blockerUserId -> Set(blockedUserId)
+const safetyReports = [];        // in-memory fallback
+const safetySuspensions = new Map(); // in-memory fallback: userId -> {reason, suspendedBy, createdAt}
+
+// ─── Echter Bann (Suspension) — zentraler Check ────────────────────────────
+// Kleiner Cache, damit haeufige Schreib-Aktionen die DB nicht ueberlasten.
+const _suspensionCache = new Map(); // userId -> { suspended: bool, ts: number }
+const _suspensionCacheTtlMs = 30 * 1000;
+
+/// Prueft, ob ein Nutzer gesperrt ist. Fehlertolerant: bei DB-Problemen
+/// greift der In-Memory-Fallback. Leere userId -> nie gesperrt.
+async function isUserSuspended(userId) {
+  const id = (userId || '').toString().trim();
+  if (!id) return false;
+  const cached = _suspensionCache.get(id);
+  if (cached && Date.now() - cached.ts < _suspensionCacheTtlMs) {
+    return cached.suspended;
+  }
+  // "Check both": Der uebergebene Wert kann eine Firebase-UID ODER ein
+  // Freundes-Code sein. Wir sammeln beide Identitaeten (UID + Code) und
+  // pruefen, ob EINE davon gesperrt ist. So greift der Bann unabhaengig davon,
+  // ob per Code oder per UID gesperrt wurde.
+  const candidates = new Set([id]);
   try {
     await ensureSocialSchemaReady();
-    const existing = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "FriendPendingConnection" WHERE "toCode" = $1 AND "fromCode" = $2`,
-      toCode, fromCode
+    if (id.startsWith('pp-')) {
+      // id ist ein Code -> zugehoerige userId ergaenzen.
+      const reg = await resolveFriendRegistry(id);
+      if (reg.userId) candidates.add(reg.userId);
+    } else {
+      // id ist (vermutlich) eine UID -> zugehoerige(n) Code(s) ergaenzen.
+      const codeRows = await prisma.$queryRawUnsafe(
+        `SELECT "code" FROM "FriendRegistry" WHERE "userId" = $1`, id
+      );
+      for (const r of codeRows) if (r.code) candidates.add(r.code);
+    }
+  } catch (_) {
+    // Fallback: Registry ueber In-Memory-Map.
+    if (id.startsWith('pp-')) {
+      const mem = friendRegistry.get(id);
+      if (mem && mem.userId) candidates.add(mem.userId);
+    } else {
+      for (const [code, v] of friendRegistry.entries()) {
+        if (v && v.userId === id) candidates.add(code);
+      }
+    }
+  }
+
+  let suspended = false;
+  const list = [...candidates];
+  try {
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "SafetySuspension" WHERE "userId" = ANY($1::text[]) LIMIT 1`,
+      list
     );
-    if (existing.length === 0) {
+    suspended = rows.length > 0;
+  } catch (_) {
+    suspended = list.some(c => safetySuspensions.has(c));
+  }
+  _suspensionCache.set(id, { suspended, ts: Date.now() });
+  return suspended;
+}
+
+/// Einheitliche 403-Antwort fuer gesperrte Konten.
+function respondSuspended(res) {
+  return res.status(403).json({
+    error:
+      'Dein Konto wurde vorübergehend eingeschränkt. Bei Fragen wende dich an unseren Support.',
+    code: 'account_suspended',
+  });
+}
+
+// Cache invalidieren, wenn sich der Suspend-Status aendert.
+function invalidateSuspensionCache(userId) {
+  const id = (userId || '').toString().trim();
+  if (id) _suspensionCache.delete(id);
+}
+
+/// Liefert alle Identitaeten (UID + Code) zu einem gegebenen Wert, damit
+/// Sperren/Entsperren immer beide Seiten trifft.
+async function expandIdentities(rawId) {
+  const id = (rawId || '').toString().trim();
+  if (!id) return [];
+  const out = new Set([id]);
+  try {
+    await ensureSocialSchemaReady();
+    if (id.startsWith('pp-')) {
+      const reg = await resolveFriendRegistry(id);
+      if (reg.userId) out.add(reg.userId);
+    } else {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT "code" FROM "FriendRegistry" WHERE "userId" = $1`, id
+      );
+      for (const r of rows) if (r.code) out.add(r.code);
+    }
+  } catch (_) {
+    if (id.startsWith('pp-')) {
+      const mem = friendRegistry.get(id);
+      if (mem && mem.userId) out.add(mem.userId);
+    } else {
+      for (const [code, v] of friendRegistry.entries()) {
+        if (v && v.userId === id) out.add(code);
+      }
+    }
+  }
+  return [...out];
+}
+
+// Loest Name + userId zu einem Freundes-Code auf (DB + In-Memory-Fallback).
+// BEHALTEN: von isUserSuspended + Chat-Push (Alt-Raeume) + DSGVO genutzt.
+async function resolveFriendRegistry(code) {
+  const c = (code || '').toString().trim().toLowerCase();
+  if (!c) return { name: null, userId: null };
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "name", "userId" FROM "FriendRegistry" WHERE "code" = $1`, c
+    );
+    if (rows.length > 0) {
+      return { name: rows[0].name || null, userId: rows[0].userId || null };
+    }
+  } catch (_) {
+    const mem = friendRegistry.get(c);
+    if (mem) return { name: mem.name || null, userId: mem.userId || null };
+  }
+  return { name: null, userId: null };
+}
+
+// Bringt einen Freundes-Code in die kanonische Form 'pp-xxxxxx' (klein, genau
+// ein Bindestrich nach 'pp'). Verhindert kaputte Codes ohne Bindestrich.
+function canonicalCode(raw) {
+  let s = (raw || '').toString().trim().toLowerCase().replace(/\s/g, '');
+  s = s.replace(/-/g, '');
+  if (s.startsWith('pp')) {
+    const rest = s.slice(2);
+    return rest ? `pp-${rest}` : 'pp-';
+  }
+  return s ? `pp-${s}` : '';
+}
+
+// Diagnose (read-only) fuer Freundschaft/Chat. Gibt KEINE Geheimnisse preis:
+// ─── Onboarding Minimal-Sync (Option A) ────────────────────────────────────
+const onboardingProfiles = new Map(); // in-memory fallback: userId -> {...}
+
+// Onboarding-Status/Stammdaten fuer einen Nutzer abrufen.
+app.get('/api/onboarding/:userId', async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "completed", "familyName", "parentRole", "priorities" FROM "OnboardingProfile" WHERE "userId" = $1`,
+      userId
+    );
+    if (rows.length === 0) {
+      return res.json({ completed: false });
+    }
+    const r = rows[0];
+    return res.json({
+      completed: r.completed === true,
+      familyName: r.familyName || '',
+      parentRole: r.parentRole || '',
+      priorities: r.priorities ? r.priorities.split('|').filter(Boolean) : [],
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/onboarding', error)) return;
+    const mem = onboardingProfiles.get(userId);
+    if (!mem) return res.json({ completed: false });
+    return res.json(mem);
+  }
+});
+
+// Onboarding-Status/Stammdaten speichern (nur unkritische Felder).
+app.post('/api/onboarding', async (req, res) => {
+  const userId = (req.body.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const completed = req.body.completed === true;
+  const familyName = (req.body.familyName || '').toString().trim().slice(0, 100);
+  const parentRole = (req.body.parentRole || '').toString().trim().slice(0, 50);
+  const priorities = Array.isArray(req.body.priorities)
+      ? req.body.priorities.map(p => p.toString().trim()).filter(Boolean).join('|').slice(0, 300)
+      : '';
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "OnboardingProfile" ("userId", "completed", "familyName", "parentRole", "priorities", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       ON CONFLICT ("userId") DO UPDATE SET
+         "completed" = "OnboardingProfile"."completed" OR $2,
+         "familyName" = COALESCE(NULLIF($3, ''), "OnboardingProfile"."familyName"),
+         "parentRole" = COALESCE(NULLIF($4, ''), "OnboardingProfile"."parentRole"),
+         "priorities" = COALESCE(NULLIF($5, ''), "OnboardingProfile"."priorities"),
+         "updatedAt" = NOW()`,
+      userId, completed, familyName, parentRole, priorities
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/onboarding', error)) return;
+    const prev = onboardingProfiles.get(userId) || { completed: false, familyName: '', parentRole: '', priorities: [] };
+    onboardingProfiles.set(userId, {
+      completed: prev.completed || completed,
+      familyName: familyName || prev.familyName,
+      parentRole: parentRole || prev.parentRole,
+      priorities: priorities ? priorities.split('|').filter(Boolean) : prev.priorities,
+    });
+    return res.json({ ok: true });
+  }
+});
+
+// ─── UserProfile (Identitaet: uid -> Name) ─────────────────────────────────
+const userProfiles = new Map(); // in-memory fallback: uid -> {displayName, username, searchable, isPrivate}
+
+// Aufloesen des Anzeigenamens fuer eine UID (UserProfile bevorzugt).
+async function resolveDisplayName(uid) {
+  const id = (uid || '').toString().trim();
+  if (!id) return '';
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "displayName" FROM "UserProfile" WHERE "userId" = $1`, id
+    );
+    if (rows.length > 0 && rows[0].displayName) return rows[0].displayName;
+  } catch (_) {
+    const mem = userProfiles.get(id);
+    if (mem && mem.displayName) return mem.displayName;
+  }
+  return '';
+}
+
+app.get('/api/profile/:userId', async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "displayName", "username", "searchable", "isPrivate" FROM "UserProfile" WHERE "userId" = $1`,
+      userId
+    );
+    if (rows.length === 0) return res.json({ exists: false });
+    const r = rows[0];
+    return res.json({
+      exists: true,
+      displayName: r.displayName || '',
+      username: r.username || null,
+      searchable: r.searchable === true,
+      isPrivate: r.isPrivate !== false,
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/profile', error)) return;
+    const mem = userProfiles.get(userId);
+    if (!mem) return res.json({ exists: false });
+    return res.json({ exists: true, ...mem });
+  }
+});
+
+app.post('/api/profile', async (req, res) => {
+  const userId = (req.body.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const displayName = (req.body.displayName || '').toString().trim().slice(0, 100);
+  const hasUsername = Object.prototype.hasOwnProperty.call(req.body, 'username');
+  const username = hasUsername
+      ? (req.body.username || '').toString().trim().toLowerCase().slice(0, 30)
+      : undefined;
+  const hasSearchable = Object.prototype.hasOwnProperty.call(req.body, 'searchable');
+  const searchable = req.body.searchable === true;
+  const hasPrivate = Object.prototype.hasOwnProperty.call(req.body, 'isPrivate');
+  const isPrivate = req.body.isPrivate !== false;
+  try {
+    await ensureSocialSchemaReady();
+    // Upsert; leere Felder ueberschreiben bestehende Werte nicht.
+    await prisma.$executeRawUnsafe(
+      // WICHTIG: username als NULLIF(...,'') einfuegen, damit leere Usernames
+      // NULL sind und NICHT vom partiellen Unique-Index erfasst werden
+      // (sonst kollidieren mehrere Profile mit username='' -> Fehler).
+      `INSERT INTO "UserProfile" ("userId", "displayName", "username", "searchable", "isPrivate", "updatedAt")
+       VALUES ($1, $2, NULLIF($3, ''), $4, $5, NOW())
+       ON CONFLICT ("userId") DO UPDATE SET
+         "displayName" = COALESCE(NULLIF($2, ''), "UserProfile"."displayName"),
+         "username" = ${hasUsername ? 'NULLIF($3, \'\')' : '"UserProfile"."username"'},
+         "searchable" = ${hasSearchable ? '$4' : '"UserProfile"."searchable"'},
+         "isPrivate" = ${hasPrivate ? '$5' : '"UserProfile"."isPrivate"'},
+         "updatedAt" = NOW()`,
+      userId, displayName, username ?? '', searchable, isPrivate
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/profile', error)) return;
+    const prev = userProfiles.get(userId) || { displayName: '', username: null, searchable: false, isPrivate: true };
+    userProfiles.set(userId, {
+      displayName: displayName || prev.displayName,
+      username: hasUsername ? (username || null) : prev.username,
+      searchable: hasSearchable ? searchable : prev.searchable,
+      isPrivate: hasPrivate ? isPrivate : prev.isPrivate,
+    });
+    return res.json({ ok: true });
+  }
+});
+
+// ─── Freundschaft (UID-zu-UID, Anfrage/Annehmen) ───────────────────────────
+const friendships = new Map(); // in-memory fallback: "low__high" -> {status, requestedBy}
+const friendInvites = new Map(); // token -> uid
+
+function pairKey(a, b) {
+  return [a, b].sort();
+}
+
+// App-weiter Check: sind zwei UIDs bestaetigte Freunde?
+async function areFriends(uidA, uidB) {
+  const a = (uidA || '').toString().trim();
+  const b = (uidB || '').toString().trim();
+  if (!a || !b || a === b) return false;
+  const [low, high] = pairKey(a, b);
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "Friendship" WHERE "userLow" = $1 AND "userHigh" = $2 AND "status" = 'accepted' LIMIT 1`,
+      low, high
+    );
+    return rows.length > 0;
+  } catch (_) {
+    const f = friendships.get(`${low}__${high}`);
+    return !!f && f.status === 'accepted';
+  }
+}
+
+// Deterministische Chat-Raum-ID aus zwei UIDs (beide Seiten identisch).
+function friendRoomId(uidA, uidB) {
+  return pairKey(uidA, uidB).join('__');
+}
+
+// Aus einer roomId die Gegenseite (die UID, die NICHT selfUid ist) im NEUEN
+// Format uidA__uidB herausloesen. Altes pp-Format -> null (hier nicht relevant).
+function otherUidFromRoomId(roomId, selfUid) {
+  const rid = (roomId || '').toString().trim();
+  const me = (selfUid || '').toString().trim();
+  if (!rid.includes('__')) return null;
+  const parts = rid.split('__').filter(Boolean);
+  return parts.find(p => p !== me) || null;
+}
+
+// Hat einer der beiden den anderen blockiert (Richtung egal)? Fehlertolerant.
+async function isBlockedBetween(uidA, uidB) {
+  const a = (uidA || '').toString().trim();
+  const b = (uidB || '').toString().trim();
+  if (!a || !b) return false;
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "SafetyBlock"
+       WHERE ("blockerUserId" = $1 AND "blockedUserId" = $2)
+          OR ("blockerUserId" = $2 AND "blockedUserId" = $1) LIMIT 1`,
+      a, b
+    );
+    return rows.length > 0;
+  } catch (_) {
+    const setA = safetyBlocks.get(a);
+    const setB = safetyBlocks.get(b);
+    return (!!setA && setA.has(b)) || (!!setB && setB.has(a));
+  }
+}
+
+// Hat der ANDERE mich blockiert? (Einseitig: otherUid -> me.) Fuer den
+// Lese-Zugriff: Wer blockiert wurde, verliert den Zugriff auf den Chat.
+async function hasBlockedMe(otherUid, selfUid) {
+  const other = (otherUid || '').toString().trim();
+  const me = (selfUid || '').toString().trim();
+  if (!other || !me) return false;
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "SafetyBlock" WHERE "blockerUserId" = $1 AND "blockedUserId" = $2 LIMIT 1`,
+      other, me
+    );
+    return rows.length > 0;
+  } catch (_) {
+    const set = safetyBlocks.get(other);
+    return !!set && set.has(me);
+  }
+}
+
+// Freundschaftsanfrage senden (oder direkt bestaetigen, wenn Ziel nicht privat).
+app.post('/api/friendships/request', async (req, res) => {
+  const fromUid = (req.body.fromUid || '').toString().trim();
+  const toUid = (req.body.toUid || '').toString().trim();
+  if (!fromUid || !toUid) return res.status(400).json({ error: 'fromUid und toUid erforderlich' });
+  if (fromUid === toUid) return res.status(400).json({ error: 'Eigene UID nicht erlaubt' });
+  const [low, high] = pairKey(fromUid, toUid);
+  try {
+    await ensureSocialSchemaReady();
+    // Ist das Ziel-Profil oeffentlich (nicht privat)? Dann sofort 'accepted'.
+    let targetPrivate = true;
+    try {
+      const p = await prisma.$queryRawUnsafe(
+        `SELECT "isPrivate" FROM "UserProfile" WHERE "userId" = $1`, toUid
+      );
+      if (p.length > 0) targetPrivate = p[0].isPrivate !== false;
+    } catch (_) {}
+    const status = targetPrivate ? 'pending' : 'accepted';
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Friendship" ("userLow", "userHigh", "status", "requestedBy", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, NOW(), NOW())
+       ON CONFLICT ("userLow", "userHigh") DO UPDATE SET
+         "status" = CASE WHEN "Friendship"."status" = 'accepted' THEN 'accepted' ELSE $3 END,
+         "updatedAt" = NOW()`,
+      low, high, status, fromUid
+    );
+    return res.json({ ok: true, status, roomId: friendRoomId(fromUid, toUid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friendships/request', error)) return;
+    const key = `${low}__${high}`;
+    const prev = friendships.get(key);
+    friendships.set(key, { status: prev?.status === 'accepted' ? 'accepted' : 'pending', requestedBy: fromUid });
+    return res.json({ ok: true, status: 'pending', roomId: friendRoomId(fromUid, toUid) });
+  }
+});
+
+// Anfrage annehmen.
+app.post('/api/friendships/accept', async (req, res) => {
+  const uid = (req.body.uid || '').toString().trim();
+  const otherUid = (req.body.otherUid || '').toString().trim();
+  if (!uid || !otherUid) return res.status(400).json({ error: 'uid und otherUid erforderlich' });
+  const [low, high] = pairKey(uid, otherUid);
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Friendship" SET "status" = 'accepted', "updatedAt" = NOW() WHERE "userLow" = $1 AND "userHigh" = $2`,
+      low, high
+    );
+    return res.json({ ok: true, roomId: friendRoomId(uid, otherUid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friendships/accept', error)) return;
+    const key = `${low}__${high}`;
+    if (friendships.has(key)) friendships.get(key).status = 'accepted';
+    else friendships.set(key, { status: 'accepted', requestedBy: otherUid });
+    return res.json({ ok: true, roomId: friendRoomId(uid, otherUid) });
+  }
+});
+
+// Freundschaft/Anfrage entfernen (unfriend / ablehnen).
+app.delete('/api/friendships', async (req, res) => {
+  const uid = (req.query.uid || req.body?.uid || '').toString().trim();
+  const otherUid = (req.query.otherUid || req.body?.otherUid || '').toString().trim();
+  if (!uid || !otherUid) return res.status(400).json({ error: 'uid und otherUid erforderlich' });
+  const [low, high] = pairKey(uid, otherUid);
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "Friendship" WHERE "userLow" = $1 AND "userHigh" = $2`, low, high
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/friendships', error)) return;
+    friendships.delete(`${low}__${high}`);
+    return res.json({ ok: true });
+  }
+});
+
+// Freundesliste + offene Anfragen (mit Namen) fuer eine UID.
+app.get('/api/friendships/:uid', async (req, res) => {
+  const uid = (req.params.uid || '').toString().trim();
+  if (!uid) return res.status(400).json({ error: 'uid erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT f."userLow", f."userHigh", f."status", f."requestedBy",
+              pl."displayName" AS "lowName", ph."displayName" AS "highName"
+       FROM "Friendship" f
+       LEFT JOIN "UserProfile" pl ON pl."userId" = f."userLow"
+       LEFT JOIN "UserProfile" ph ON ph."userId" = f."userHigh"
+       WHERE f."userLow" = $1 OR f."userHigh" = $1`,
+      uid
+    );
+    const friends = [];
+    const incoming = []; // Anfragen an mich
+    const outgoing = []; // von mir gesendete Anfragen
+    for (const r of rows) {
+      const otherUid = r.userLow === uid ? r.userHigh : r.userLow;
+      const otherName =
+          (r.userLow === uid ? r.highName : r.lowName) || 'Familie';
+      const entry = { uid: otherUid, name: otherName, roomId: friendRoomId(uid, otherUid) };
+      if (r.status === 'accepted') friends.push(entry);
+      else if (r.requestedBy === uid) outgoing.push(entry);
+      else incoming.push(entry);
+    }
+    return res.json({ friends, incoming, outgoing });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/friendships', error)) return;
+    return res.json({ friends: [], incoming: [], outgoing: [] });
+  }
+});
+
+// Einladungs-Token erzeugen (fuer Link/QR).
+app.post('/api/friendships/invite', async (req, res) => {
+  const userId = (req.body.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const token = generateId('inv').replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "FriendInvite" ("token", "userId", "createdAt") VALUES ($1, $2, NOW())
+       ON CONFLICT ("token") DO NOTHING`,
+      token, userId
+    );
+    return res.json({ ok: true, token });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/friendships/invite', error)) return;
+    friendInvites.set(token, userId);
+    return res.json({ ok: true, token });
+  }
+});
+
+// Einladungs-Token aufloesen -> UID + Name des Einladenden.
+app.get('/api/friendships/resolve-invite/:token', async (req, res) => {
+  const token = (req.params.token || '').toString().trim();
+  if (!token) return res.status(400).json({ error: 'token erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "userId" FROM "FriendInvite" WHERE "token" = $1`, token
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Einladung ungueltig' });
+    const uid = rows[0].userId;
+    const name = await resolveDisplayName(uid);
+    return res.json({ ok: true, uid, name });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/friendships/resolve-invite', error)) return;
+    const uid = friendInvites.get(token);
+    if (!uid) return res.status(404).json({ error: 'Einladung ungueltig' });
+    return res.json({ ok: true, uid, name: userProfiles.get(uid)?.displayName || '' });
+  }
+});
+
+// ─── Phase 3a: Familien-Rezepte teilen ─────────────────────────────────────
+const recipes = new Map();          // in-memory fallback: id -> recipe row
+const recipeReactions = new Map();  // in-memory fallback: recipeId -> [{userId,type}]
+
+// Erlaubte Sichtbarkeiten.
+const RECIPE_VISIBILITIES = new Set(['public', 'friends', 'private']);
+
+// Sicheres JSON-Parsen einer Text-Spalte (Zutaten/Schritte/Tags).
+function parseJsonArray(raw) {
+  try {
+    const v = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(v) ? v.map(x => x.toString()) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+// Baut die Client-Antwort fuer ein Rezept inkl. Reaktions-Zaehler und ob der
+// anfragende Nutzer selbst reagiert hat.
+async function buildRecipeForClient(row, requesterUid) {
+  const id = row.id;
+  let cook = 0;
+  let tasty = 0;
+  let myCook = false;
+  let myTasty = false;
+  try {
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "userId", "type" FROM "RecipeReaction" WHERE "recipeId" = $1`, id
+    );
+    for (const r of rows) {
+      if (r.type === 'cook') { cook++; if (r.userId === requesterUid) myCook = true; }
+      else if (r.type === 'tasty') { tasty++; if (r.userId === requesterUid) myTasty = true; }
+    }
+  } catch (_) {
+    const list = recipeReactions.get(id) || [];
+    for (const r of list) {
+      if (r.type === 'cook') { cook++; if (r.userId === requesterUid) myCook = true; }
+      else if (r.type === 'tasty') { tasty++; if (r.userId === requesterUid) myTasty = true; }
+    }
+  }
+  return {
+    id,
+    authorUserId: row.authorUserId,
+    authorName: row.authorName || 'Familie',
+    title: row.title || '',
+    description: row.description || '',
+    photoUrl: row.photoUrl || '',
+    ingredients: parseJsonArray(row.ingredients),
+    steps: parseJsonArray(row.steps),
+    prepMinutes: Number(row.prepMinutes) || 0,
+    visibility: row.visibility || 'friends',
+    tags: parseJsonArray(row.tags),
+    createdAt: row.createdAt,
+    cookCount: cook,
+    tastyCount: tasty,
+    myCook,
+    myTasty,
+    isMine: row.authorUserId === requesterUid,
+  };
+}
+
+// Rezept erstellen. Foto-URL kommt vom bereits vorhandenen /uploads/image.
+app.post('/api/recipes', async (req, res) => {
+  const authorUserId = (req.body.authorUserId || '').toString().trim();
+  const title = (req.body.title || '').toString().trim().slice(0, 120);
+  if (!authorUserId) return res.status(400).json({ error: 'authorUserId erforderlich' });
+  if (!title) return res.status(400).json({ error: 'Titel erforderlich' });
+  // Echter Bann: gesperrte Nutzer koennen keine Rezepte mehr teilen.
+  if (await isUserSuspended(authorUserId)) return respondSuspended(res);
+
+  const authorName = (req.body.authorName || 'Familie').toString().trim().slice(0, 100) || 'Familie';
+  const description = (req.body.description || '').toString().trim().slice(0, 2000);
+  const photoUrl = (req.body.photoUrl || '').toString().trim().slice(0, 500);
+  const ingredients = Array.isArray(req.body.ingredients)
+      ? req.body.ingredients.map(x => x.toString().trim()).filter(Boolean).slice(0, 60)
+      : [];
+  const steps = Array.isArray(req.body.steps)
+      ? req.body.steps.map(x => x.toString().trim()).filter(Boolean).slice(0, 40)
+      : [];
+  const prepMinutes = Math.max(0, Math.min(600, parseInt(req.body.prepMinutes, 10) || 0));
+  let visibility = (req.body.visibility || 'friends').toString().trim();
+  if (!RECIPE_VISIBILITIES.has(visibility)) visibility = 'friends';
+  const tags = Array.isArray(req.body.tags)
+      ? req.body.tags.map(x => x.toString().trim()).filter(Boolean).slice(0, 12)
+      : [];
+  const id = generateId('rcp');
+  const row = {
+    id, authorUserId, authorName, title, description, photoUrl,
+    ingredients: JSON.stringify(ingredients), steps: JSON.stringify(steps),
+    prepMinutes, visibility, tags: JSON.stringify(tags),
+    createdAt: new Date().toISOString(),
+  };
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Recipe" ("id","authorUserId","authorName","title","description","photoUrl","ingredients","steps","prepMinutes","visibility","tags","createdAt")
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW())`,
+      id, authorUserId, authorName, title, description, photoUrl,
+      row.ingredients, row.steps, prepMinutes, visibility, row.tags
+    );
+    const out = await buildRecipeForClient(row, authorUserId);
+    return res.status(201).json({ ok: true, recipe: out });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/recipes', error)) return;
+    recipes.set(id, row);
+    const out = await buildRecipeForClient(row, authorUserId);
+    return res.status(201).json({ ok: true, recipe: out });
+  }
+});
+
+// Rezept-Liste fuer einen Nutzer: eigene + oeffentliche + von bestaetigten
+// Freunden. Sichtbarkeit wird SERVERSEITIG durchgesetzt. Optional: Suche (q)
+// ueber Titel/Beschreibung/Zutaten und Filter-Tags.
+app.get('/api/recipes', async (req, res) => {
+  const uid = (req.query.userId || '').toString().trim();
+  const q = (req.query.q || '').toString().trim().toLowerCase();
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Recipe" ORDER BY "createdAt" DESC LIMIT 500`
+    );
+    // Bestaetigte Freunde des Anfragenden ermitteln (fuer 'friends'-Sicht).
+    let friendUids = new Set();
+    if (uid) {
+      try {
+        const fr = await prisma.$queryRawUnsafe(
+          `SELECT "userLow", "userHigh" FROM "Friendship"
+           WHERE ("userLow" = $1 OR "userHigh" = $1) AND "status" = 'accepted'`,
+          uid
+        );
+        for (const f of fr) {
+          friendUids.add(f.userLow === uid ? f.userHigh : f.userLow);
+        }
+      } catch (_) {}
+    }
+    const visible = rows.filter(r => {
+      if (r.authorUserId === uid) return true;              // eigene immer
+      if (r.visibility === 'public') return true;           // fuer alle
+      if (r.visibility === 'friends') return friendUids.has(r.authorUserId);
+      return false;                                          // 'private': nie fremd
+    });
+    const matched = q
+      ? visible.filter(r => {
+          const hay = [
+            r.title || '', r.description || '',
+            parseJsonArray(r.ingredients).join(' '),
+            parseJsonArray(r.tags).join(' '),
+          ].join(' ').toLowerCase();
+          return hay.includes(q);
+        })
+      : visible;
+    const out = [];
+    for (const r of matched) out.push(await buildRecipeForClient(r, uid));
+    return res.json({ recipes: out });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/recipes', error)) return;
+    return res.json({ recipes: [] });
+  }
+});
+
+// Einzelnes Rezept (mit Sichtbarkeitspruefung).
+app.get('/api/recipes/:id', async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = (req.query.userId || '').toString().trim();
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Recipe" WHERE "id" = $1`, id
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Rezept nicht gefunden' });
+    const r = rows[0];
+    let allowed = r.authorUserId === uid || r.visibility === 'public';
+    if (!allowed && r.visibility === 'friends' && uid) {
+      allowed = await areFriends(uid, r.authorUserId);
+    }
+    if (!allowed) return res.status(403).json({ error: 'Kein Zugriff', code: 'not_visible' });
+    return res.json({ recipe: await buildRecipeForClient(r, uid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/recipes/:id', error)) return;
+    return res.status(404).json({ error: 'Rezept nicht gefunden' });
+  }
+});
+
+// Rezept loeschen (nur der Autor).
+app.delete('/api/recipes/:id', async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = (req.query.userId || req.body?.userId || '').toString().trim();
+  if (!id || !uid) return res.status(400).json({ error: 'id und userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "authorUserId" FROM "Recipe" WHERE "id" = $1`, id
+    );
+    if (rows.length === 0) return res.json({ ok: true }); // schon weg
+    if (rows[0].authorUserId !== uid) {
+      return res.status(403).json({ error: 'Nur der Autor darf loeschen' });
+    }
+    await prisma.$executeRawUnsafe(`DELETE FROM "RecipeReaction" WHERE "recipeId" = $1`, id);
+    await prisma.$executeRawUnsafe(`DELETE FROM "Recipe" WHERE "id" = $1`, id);
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/recipes/:id', error)) return;
+    recipes.delete(id);
+    recipeReactions.delete(id);
+    return res.json({ ok: true });
+  }
+});
+
+// Reaktion toggeln: 'cook' ("Das kochen wir nach!") oder 'tasty'
+// ("Hat geschmeckt!"). Nur erlaubt, wenn das Rezept fuer den Nutzer sichtbar
+// ist. Gesperrte Nutzer koennen nicht reagieren.
+app.post('/api/recipes/:id/react', async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = (req.body.userId || '').toString().trim();
+  const type = (req.body.type || '').toString().trim();
+  if (!id || !uid) return res.status(400).json({ error: 'id und userId erforderlich' });
+  if (type !== 'cook' && type !== 'tasty') {
+    return res.status(400).json({ error: 'type muss cook oder tasty sein' });
+  }
+  if (await isUserSuspended(uid)) return respondSuspended(res);
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Recipe" WHERE "id" = $1`, id
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Rezept nicht gefunden' });
+    const r = rows[0];
+    let allowed = r.authorUserId === uid || r.visibility === 'public';
+    if (!allowed && r.visibility === 'friends' && uid) {
+      allowed = await areFriends(uid, r.authorUserId);
+    }
+    if (!allowed) return res.status(403).json({ error: 'Kein Zugriff', code: 'not_visible' });
+    // Toggle: existiert die Reaktion, entfernen; sonst anlegen.
+    const existing = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "RecipeReaction" WHERE "recipeId" = $1 AND "userId" = $2 AND "type" = $3 LIMIT 1`,
+      id, uid, type
+    );
+    if (existing.length > 0) {
       await prisma.$executeRawUnsafe(
-        `INSERT INTO "FriendPendingConnection" ("id", "toCode", "fromCode", "fromName", "connectedAt") VALUES ($1, $2, $3, $4, NOW())`,
-        generateId('fpc'), toCode, fromCode, fromName
+        `DELETE FROM "RecipeReaction" WHERE "recipeId" = $1 AND "userId" = $2 AND "type" = $3`,
+        id, uid, type
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "RecipeReaction" ("recipeId","userId","type","createdAt") VALUES ($1,$2,$3,NOW())
+         ON CONFLICT ("recipeId","userId","type") DO NOTHING`,
+        id, uid, type
+      );
+    }
+    return res.json({ ok: true, recipe: await buildRecipeForClient(r, uid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/recipes/:id/react', error)) return;
+    return res.json({ ok: true });
+  }
+});
+
+// ─── DSGVO: Konto-Loeschung (Recht auf Loeschung, Art. 17) ─────────────────
+// Entfernt ALLE personenbezogenen Zeilen zu einem Nutzer (per userId UND per
+// zugehoerigem Freundes-Code). Token-exempt (/api/onboarding-Muster: userId
+// identifiziert), aber der Client ruft es mit Firebase-Token auf.
+app.delete('/api/account/:userId', async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+  const deleted = {};
+  try {
+    await ensureSocialSchemaReady();
+    // Zugehoerige Freundes-Codes dieses Nutzers ermitteln (fuer code-basierte Tabellen).
+    let codes = [];
+    try {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT "code" FROM "FriendRegistry" WHERE "userId" = $1`, userId
+      );
+      codes = rows.map(r => r.code).filter(Boolean);
+    } catch (_) {}
+    const idList = [userId, ...codes];
+
+    const run = async (label, sql, ...params) => {
+      try {
+        const r = await prisma.$executeRawUnsafe(sql, ...params);
+        deleted[label] = typeof r === 'number' ? r : 1;
+      } catch (e) {
+        deleted[label] = `error: ${e?.message || e}`;
+      }
+    };
+
+    // Onboarding + Profil
+    await run('onboarding', `DELETE FROM "OnboardingProfile" WHERE "userId" = $1`, userId);
+    await run('userProfile', `DELETE FROM "UserProfile" WHERE "userId" = $1`, userId);
+    // UID-Freundschaften + Einladungen
+    await run('friendships', `DELETE FROM "Friendship" WHERE "userLow" = $1 OR "userHigh" = $1`, userId);
+    await run('friendInvites', `DELETE FROM "FriendInvite" WHERE "userId" = $1`, userId);
+    // Familien-Rezepte + Reaktionen dieses Nutzers
+    await run('recipeReactionsByUser', `DELETE FROM "RecipeReaction" WHERE "userId" = $1`, userId);
+    await run('recipeReactionsOnOwn', `DELETE FROM "RecipeReaction" WHERE "recipeId" IN (SELECT "id" FROM "Recipe" WHERE "authorUserId" = $1)`, userId);
+    // DSGVO: Foto-URLs der eigenen Rezepte VOR dem Loeschen einsammeln, damit
+    // wir die Bilddateien anschliessend physisch entfernen koennen. Die
+    // Tabelle "Recipe" (Phase 3a) wird vom Prisma-Loeschpfad nicht erfasst.
+    let recipePhotoUrls = [];
+    try {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT "photoUrl" FROM "Recipe" WHERE "authorUserId" = $1 AND "photoUrl" <> ''`,
+        userId
+      );
+      recipePhotoUrls = rows.map(r => r.photoUrl).filter(Boolean);
+    } catch (_) {}
+    await run('recipes', `DELETE FROM "Recipe" WHERE "authorUserId" = $1`, userId);
+    // UID-basierte Chat-Raeume (roomId enthaelt die UID)
+    await run('chatRoomsUid', `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${userId}%`);
+    // Freundschafts-Registry + Kanten (per userId-Code)
+    await run('friendEdges', `DELETE FROM "FriendEdge" WHERE "ownerCode" = ANY($1::text[]) OR "friendCode" = ANY($1::text[])`, idList);
+    await run('friendRegistry', `DELETE FROM "FriendRegistry" WHERE "userId" = $1 OR "code" = ANY($2::text[])`, userId, idList);
+    await run('pendingConnections', `DELETE FROM "FriendPendingConnection" WHERE "toCode" = ANY($1::text[]) OR "fromCode" = ANY($1::text[])`, idList);
+    // Chat-Nachrichten dieses Autors + Raeume, die seinen Code enthalten
+    await run('chatByAuthor', `DELETE FROM "FriendChatMessage" WHERE "authorUserId" = $1`, userId);
+    for (const c of codes) {
+      await run(`chatRoom_${c}`, `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${c}%`);
+    }
+    // Safety
+    await run('safetyBlocksBy', `DELETE FROM "SafetyBlock" WHERE "blockerUserId" = ANY($1::text[]) OR "blockedUserId" = ANY($1::text[])`, idList);
+    await run('safetyReports', `DELETE FROM "SafetyReport" WHERE "reporterUserId" = ANY($1::text[]) OR "reportedUserId" = ANY($1::text[])`, idList);
+    await run('safetySuspension', `DELETE FROM "SafetySuspension" WHERE "userId" = ANY($1::text[])`, idList);
+
+    // In-Memory-Fallbacks ebenfalls saeubern (best-effort).
+    onboardingProfiles.delete(userId);
+    userProfiles.delete(userId);
+    friendInvites.forEach((v, k) => { if (v === userId) friendInvites.delete(k); });
+    friendships.forEach((v, k) => { if (k.includes(userId)) friendships.delete(k); });
+    for (const id of idList) {
+      friendRegistry.delete(id);
+      friendEdges.delete(id);
+      friendPendingConnections.delete(id);
+      safetyBlocks.delete(id);
+      safetySuspensions.delete(id);
+      invalidateSuspensionCache(id);
+    }
+
+    // DSGVO: Rezept-Bilddateien physisch entfernen (referenz-sicher — loescht
+    // nur, wenn kein anderer Datensatz das Bild noch nutzt). Fehler hier sind
+    // unkritisch fuer die Konto-Loeschung (best effort), werden aber gemeldet.
+    if (recipePhotoUrls.length > 0) {
+      try {
+        const media = await deleteUnreferencedAccountMedia(recipePhotoUrls);
+        deleted.recipeMedia = media;
+      } catch (e) {
+        deleted.recipeMedia = `error: ${e?.message || e}`;
+      }
+    }
+
+    return res.json({ ok: true, userId, codes, deleted });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/account', error)) return;
+    return res.status(500).json({ error: 'Konto-Loeschung fehlgeschlagen' });
+  }
+});
+
+// ─── Safety (Prio 4): server-side block + report ───────────────────────────
+app.post('/api/safety/block', async (req, res) => {
+  const blockerUserId = (req.body.blockerUserId || '').toString().trim();
+  const blockedUserId = (req.body.blockedUserId || '').toString().trim();
+  const blockedName = (req.body.blockedName || '').toString().trim().slice(0, 100);
+  if (!blockerUserId || !blockedUserId) {
+    return res.status(400).json({ error: 'blockerUserId und blockedUserId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SafetyBlock" ("blockerUserId", "blockedUserId", "blockedName", "createdAt")
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT ("blockerUserId", "blockedUserId") DO UPDATE SET "blockedName" = $3`,
+      blockerUserId, blockedUserId, blockedName
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/safety/block', error)) return;
+    if (!safetyBlocks.has(blockerUserId)) safetyBlocks.set(blockerUserId, new Set());
+    safetyBlocks.get(blockerUserId).add(blockedUserId);
+    return res.json({ ok: true });
+  }
+});
+
+app.post('/api/safety/unblock', async (req, res) => {
+  const blockerUserId = (req.body.blockerUserId || '').toString().trim();
+  const blockedUserId = (req.body.blockedUserId || '').toString().trim();
+  if (!blockerUserId || !blockedUserId) {
+    return res.status(400).json({ error: 'blockerUserId und blockedUserId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "SafetyBlock" WHERE "blockerUserId" = $1 AND "blockedUserId" = $2`,
+      blockerUserId, blockedUserId
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/safety/unblock', error)) return;
+    safetyBlocks.get(blockerUserId)?.delete(blockedUserId);
+    return res.json({ ok: true });
+  }
+});
+
+app.get('/api/safety/blocks/:userId', async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "blockedUserId", "blockedName", "createdAt" FROM "SafetyBlock" WHERE "blockerUserId" = $1`,
+      userId
+    );
+    return res.json({ blocks: rows });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/safety/blocks', error)) return;
+    const set = safetyBlocks.get(userId) || new Set();
+    return res.json({ blocks: [...set].map(id => ({ blockedUserId: id, blockedName: '', createdAt: new Date().toISOString() })) });
+  }
+});
+
+app.post('/api/safety/report', async (req, res) => {
+  const reporterUserId = (req.body.reporterUserId || '').toString().trim();
+  const reportedUserId = (req.body.reportedUserId || '').toString().trim();
+  const contentType = (req.body.contentType || 'profile').toString().trim().slice(0, 30);
+  const content = (req.body.content || '').toString().trim().slice(0, 1000);
+  const reason = (req.body.reason || 'other').toString().trim().slice(0, 50);
+  if (!reportedUserId) {
+    return res.status(400).json({ error: 'reportedUserId erforderlich' });
+  }
+  const id = generateId('rep');
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SafetyReport" ("id", "reporterUserId", "reportedUserId", "contentType", "content", "reason", "status", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW())`,
+      id, reporterUserId || 'anonymous', reportedUserId, contentType, content, reason
+    );
+    const countRows = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS n FROM "SafetyReport" WHERE "reportedUserId" = $1`,
+      reportedUserId
+    );
+    const reportCount = countRows?.[0]?.n ?? 1;
+    return res.json({ ok: true, id, reportCount });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/safety/report', error)) return;
+    safetyReports.push({ id, reporterUserId, reportedUserId, contentType, content, reason, createdAt: new Date().toISOString() });
+    const reportCount = safetyReports.filter(r => r.reportedUserId === reportedUserId).length;
+    return res.json({ ok: true, id, reportCount });
+  }
+});
+
+// ─── Moderations-Dashboard (Admin) ─────────────────────────────────────────
+// Zugriff nur fuer Firebase-UIDs aus ADMIN_USER_IDS (Render-Env). Der
+// Backend-API-Token wird als Fallback fuer serverseitige Tools akzeptiert.
+async function requireAdmin(req, res, next) {
+  // Fallback: statischer Server-Token (nur fuer serverseitige Tools).
+  const authHeader = req.headers.authorization || '';
+  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
+    return next();
+  }
+  // Regulaer: Firebase-ID-Token pruefen und UID gegen die Admin-Liste.
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (!verified || !uid) {
+    return res.status(401).json({ error: 'Anmeldung erforderlich' });
+  }
+  if (adminUserIds.size === 0 || !adminUserIds.has(uid)) {
+    return res.status(403).json({ error: 'Kein Admin-Zugriff' });
+  }
+  req.firebaseUid = uid;
+  return next();
+}
+
+// Liste aller Meldungen, gruppiert pro gemeldetem User.
+app.get('/admin/reports', requireAdmin, async (req, res) => {
+  const status = (req.query.status || 'pending').toString().trim();
+  try {
+    await ensureSocialSchemaReady();
+    const where = status === 'all' ? '' : `WHERE r."status" = '${status.replace(/'/g, '')}'`;
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT r."reportedUserId",
+              COUNT(*)::int AS "reportCount",
+              MAX(r."createdAt") AS "lastReportedAt",
+              (ARRAY_AGG(r."reason" ORDER BY r."createdAt" DESC))[1] AS "lastReason",
+              BOOL_OR(s."userId" IS NOT NULL) AS "suspended",
+              MAX(reg."name") AS "displayName"
+       FROM "SafetyReport" r
+       LEFT JOIN "SafetySuspension" s ON s."userId" = r."reportedUserId"
+       LEFT JOIN "FriendRegistry" reg ON reg."code" = r."reportedUserId" OR reg."userId" = r."reportedUserId"
+       ${where}
+       GROUP BY r."reportedUserId"
+       ORDER BY "lastReportedAt" DESC
+       LIMIT 200`
+    );
+    // Detail-Meldungen mitliefern (kompakt), damit das Dashboard sie zeigen kann.
+    const detailRows = await prisma.$queryRawUnsafe(
+      `SELECT "id", "reportedUserId", "reporterUserId", "contentType", "content", "reason", "status", "createdAt"
+       FROM "SafetyReport"
+       ${status === 'all' ? '' : `WHERE "status" = '${status.replace(/'/g, '')}'`}
+       ORDER BY "createdAt" DESC
+       LIMIT 500`
+    );
+    return res.json({ groups: rows, reports: detailRows });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /admin/reports', error)) return;
+    // In-memory Fallback
+    const byUser = new Map();
+    for (const r of safetyReports) {
+      if (status !== 'all' && (r.status || 'pending') !== status) continue;
+      const g = byUser.get(r.reportedUserId) || { reportedUserId: r.reportedUserId, reportCount: 0, lastReportedAt: r.createdAt, lastReason: r.reason, suspended: safetySuspensions.has(r.reportedUserId) };
+      g.reportCount += 1;
+      if (r.createdAt > g.lastReportedAt) { g.lastReportedAt = r.createdAt; g.lastReason = r.reason; }
+      byUser.set(r.reportedUserId, g);
+    }
+    return res.json({ groups: [...byUser.values()], reports: safetyReports.slice(-500).reverse() });
+  }
+});
+
+// Meldung(en) als geprueft/ignoriert markieren. Ohne :id -> alle eines Users.
+app.post('/admin/reports/resolve', requireAdmin, async (req, res) => {
+  const reportId = (req.body.reportId || '').toString().trim();
+  const reportedUserId = (req.body.reportedUserId || '').toString().trim();
+  if (!reportId && !reportedUserId) {
+    return res.status(400).json({ error: 'reportId oder reportedUserId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    if (reportId) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "SafetyReport" SET "status" = 'resolved' WHERE "id" = $1`, reportId
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "SafetyReport" SET "status" = 'resolved' WHERE "reportedUserId" = $1`, reportedUserId
       );
     }
     return res.json({ ok: true });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/friends/connect', error)) return;
-    if (!friendPendingConnections.has(toCode)) friendPendingConnections.set(toCode, []);
-    const list = friendPendingConnections.get(toCode);
-    if (!list.some(e => e.fromCode === fromCode)) {
-      list.push({ fromCode, fromName, connectedAt: new Date().toISOString() });
+    if (respondWithStrictPersistenceError(res, 'POST /admin/reports/resolve', error)) return;
+    for (const r of safetyReports) {
+      if ((reportId && r.id === reportId) || (reportedUserId && r.reportedUserId === reportedUserId)) {
+        r.status = 'resolved';
+      }
     }
     return res.json({ ok: true });
   }
 });
 
-app.get('/api/friends/pending/:code', async (req, res) => {
-  const code = (req.params.code || '').toString().trim().toLowerCase();
+// Account sperren (Soft-Suspend, umkehrbar).
+app.post('/admin/users/:userId/suspend', requireAdmin, async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  const reason = (req.body.reason || '').toString().trim().slice(0, 300);
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  // Beide Identitaeten (UID + Code) sperren, damit der Bann ueberall greift.
+  const identities = await expandIdentities(userId);
   try {
     await ensureSocialSchemaReady();
-    const connections = await prisma.$queryRawUnsafe(
-      `SELECT "fromCode", "fromName", "connectedAt" FROM "FriendPendingConnection" WHERE "toCode" = $1`,
-      code
-    );
-    await prisma.$executeRawUnsafe(
-      `DELETE FROM "FriendPendingConnection" WHERE "toCode" = $1`, code
-    );
-    return res.json({ connections });
+    for (const ident of identities) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "SafetySuspension" ("userId", "reason", "suspendedBy", "createdAt")
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT ("userId") DO UPDATE SET "reason" = $2, "suspendedBy" = $3`,
+        ident, reason, req.firebaseUid || 'admin'
+      );
+      invalidateSuspensionCache(ident);
+    }
+    return res.json({ ok: true, suspended: true, identities });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /api/friends/pending', error)) return;
-    const connections = friendPendingConnections.get(code) || [];
-    friendPendingConnections.delete(code);
-    return res.json({ connections });
+    if (respondWithStrictPersistenceError(res, 'POST /admin/users/suspend', error)) return;
+    for (const ident of identities) {
+      safetySuspensions.set(ident, { reason, suspendedBy: req.firebaseUid || 'admin', createdAt: new Date().toISOString() });
+      invalidateSuspensionCache(ident);
+    }
+    return res.json({ ok: true, suspended: true, identities });
+  }
+});
+
+// Account entsperren.
+app.post('/admin/users/:userId/unsuspend', requireAdmin, async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const identities = await expandIdentities(userId);
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "SafetySuspension" WHERE "userId" = ANY($1::text[])`, identities
+    );
+    for (const ident of identities) invalidateSuspensionCache(ident);
+    return res.json({ ok: true, suspended: false });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /admin/users/unsuspend', error)) return;
+    for (const ident of identities) { safetySuspensions.delete(ident); invalidateSuspensionCache(ident); }
+    return res.json({ ok: true, suspended: false });
+  }
+});
+
+// ─── Admin: Cleanup kaputter Freundschafts-Kanten (Altlasten) ──────────────
+// Eine Kante gilt als kaputt, wenn ein Code nicht kanonisch ist
+// (z.B. 'pprkfns8' statt 'pp-rkfns8') ODER auf einen Code ohne Registry-
+// Eintrag zeigt (Phantom-Code, den es als Nutzer nie gab).
+async function findBrokenFriendEdges() {
+  await ensureSocialSchemaReady();
+  const edges = await prisma.$queryRawUnsafe(
+    `SELECT "ownerCode", "friendCode", "friendName" FROM "FriendEdge"`
+  );
+  const regRows = await prisma.$queryRawUnsafe(
+    `SELECT "code" FROM "FriendRegistry"`
+  );
+  const known = new Set(regRows.map(r => r.code));
+  const broken = [];
+  for (const e of edges) {
+    const ownerBad = e.ownerCode !== canonicalCode(e.ownerCode);
+    const friendBad = e.friendCode !== canonicalCode(e.friendCode);
+    // Ein Code ist "Phantom", wenn er kanonisch ist, aber keine Registry hat.
+    const ownerPhantom = !ownerBad && !known.has(e.ownerCode);
+    const friendPhantom = !friendBad && !known.has(e.friendCode);
+    if (ownerBad || friendBad || ownerPhantom || friendPhantom) {
+      broken.push({
+        ownerCode: e.ownerCode,
+        friendCode: e.friendCode,
+        friendName: e.friendName,
+        reasons: [
+          ownerBad ? 'ownerCode nicht kanonisch' : null,
+          friendBad ? 'friendCode nicht kanonisch' : null,
+          ownerPhantom ? 'ownerCode ohne Registry (Phantom)' : null,
+          friendPhantom ? 'friendCode ohne Registry (Phantom)' : null,
+        ].filter(Boolean),
+      });
+    }
+  }
+  return { totalEdges: edges.length, broken };
+}
+
+// Ein Identifikator ist eine roomId (nie eine gueltige Nutzer-Identitaet):
+// - NEUES Format: enthaelt '__' (uidA__uidB)
+// - ALTES Format: mehr als ein 'pp-' (pp-13za66-pp-rkfns8)
+function looksLikeRoomId(id) {
+  const s = (id || '').toString();
+  if (s.includes('__')) return true;
+  const matches = s.toLowerCase().match(/pp-/g);
+  return matches != null && matches.length >= 2;
+}
+
+// Findet Registry-Fehlmappings: mehrere Codes, die auf dieselbe userId zeigen.
+// Behalten wird der zuletzt aktualisierte Code; die aelteren werden entkoppelt.
+async function findBrokenRegistryMappings() {
+  await ensureSocialSchemaReady();
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT "code", "userId", "updatedAt" FROM "FriendRegistry"
+     WHERE "userId" IS NOT NULL AND "userId" <> '' ORDER BY "updatedAt" DESC`
+  );
+  const seen = new Set();
+  const staleCodes = []; // aeltere Codes, die dieselbe UID doppeln
+  for (const r of rows) {
+    if (seen.has(r.userId)) {
+      staleCodes.push(r.code); // aelter (weil nach DESC-Sortierung spaeter)
+    } else {
+      seen.add(r.userId);
+    }
+  }
+  return staleCodes;
+}
+
+// Findet verwaiste Safety-Eintraege (Suspension/Report), deren id eine roomId
+// ist — diese entstanden durch den frueheren Melden/Sperren-Bug.
+async function findBrokenSafetyEntries() {
+  await ensureSocialSchemaReady();
+  const suspensions = await prisma.$queryRawUnsafe(
+    `SELECT "userId" FROM "SafetySuspension"`
+  );
+  const reports = await prisma.$queryRawUnsafe(
+    `SELECT "id", "reportedUserId" FROM "SafetyReport"`
+  );
+  const badSuspensions = suspensions
+    .filter(s => looksLikeRoomId(s.userId))
+    .map(s => s.userId);
+  const badReports = reports
+    .filter(r => looksLikeRoomId(r.reportedUserId))
+    .map(r => r.id);
+  return { badSuspensions, badReports };
+}
+
+// Vorschau (Dry-Run): zeigt, WAS geloescht wuerde. Loescht nichts.
+app.get('/admin/friends/cleanup-preview', requireAdmin, async (req, res) => {
+  try {
+    const { totalEdges, broken } = await findBrokenFriendEdges();
+    const { badSuspensions, badReports } = await findBrokenSafetyEntries();
+    const staleRegistryCodes = await findBrokenRegistryMappings();
+    return res.json({
+      totalEdges,
+      brokenCount:
+          broken.length + badSuspensions.length + badReports.length +
+          staleRegistryCodes.length,
+      broken,
+      badSuspensions,
+      badReports,
+      staleRegistryCodes,
+      note: 'Nur Vorschau. Zum Loeschen: POST /admin/friends/cleanup mit {"confirm":true}.',
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /admin/friends/cleanup-preview', error)) return;
+    return res.status(500).json({ error: 'Cleanup-Vorschau fehlgeschlagen' });
+  }
+});
+
+// Loeschen — nur mit explizitem confirm:true. Ohne confirm -> Vorschau.
+app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
+  const confirm = req.body && req.body.confirm === true;
+  try {
+    const { totalEdges, broken } = await findBrokenFriendEdges();
+    const { badSuspensions, badReports } = await findBrokenSafetyEntries();
+    const staleRegistryCodes = await findBrokenRegistryMappings();
+    const totalBroken = broken.length + badSuspensions.length +
+        badReports.length + staleRegistryCodes.length;
+    if (!confirm) {
+      return res.json({
+        dryRun: true,
+        totalEdges,
+        brokenCount: totalBroken,
+        broken,
+        badSuspensions,
+        badReports,
+        staleRegistryCodes,
+        note: 'Kein confirm:true -> nichts geloescht. Sende {"confirm":true} zum Loeschen.',
+      });
+    }
+    let deleted = 0;
+    for (const e of broken) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "FriendEdge" WHERE "ownerCode" = $1 AND "friendCode" = $2`,
+        e.ownerCode, e.friendCode
+      );
+      deleted += 1;
+    }
+    // Verwaiste roomId-Sperren + -Meldungen entfernen (frueherer Bug).
+    for (const uid of badSuspensions) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "SafetySuspension" WHERE "userId" = $1`, uid
+      );
+      invalidateSuspensionCache(uid);
+      deleted += 1;
+    }
+    for (const rid of badReports) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "SafetyReport" WHERE "id" = $1`, rid
+      );
+      deleted += 1;
+    }
+    // Fehlgemappte Alt-Codes entkoppeln (userId -> NULL), damit eine UID nur
+    // noch zu ihrem aktuellen Code gehoert. Registry-Zeile bleibt erhalten.
+    for (const staleCode of staleRegistryCodes) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "FriendRegistry" SET "userId" = NULL WHERE "code" = $1`, staleCode
+      );
+      deleted += 1;
+    }
+    return res.json({ ok: true, deleted, scanned: totalEdges });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /admin/friends/cleanup', error)) return;
+    return res.status(500).json({ error: 'Cleanup fehlgeschlagen' });
   }
 });
 
 app.get('/friend-chat/messages', async (req, res) => {
   const roomId = (req.query.roomId || '').toString().trim();
   if (!roomId) return res.status(400).json({ error: 'roomId fehlt' });
+  // Block-Schutz beim LESEN: Wer vom anderen blockiert wurde, verliert den
+  // Zugriff auf den Chat komplett. 'Entfernen' (unfriend) sperrt NICHT das
+  // Lesen -> Verlauf bleibt Nur-Lese-Archiv. Nur ein echter Block sperrt.
+  const requesterUid = (req.query.userId || '').toString().trim();
+  if (requesterUid) {
+    const otherUid = otherUidFromRoomId(roomId, requesterUid);
+    if (otherUid && (await hasBlockedMe(otherUid, requesterUid))) {
+      return res.status(403).json({
+        error: 'Diese Unterhaltung ist nicht mehr verfügbar.',
+        code: 'blocked',
+      });
+    }
+  }
   try {
     await ensureSocialSchemaReady();
     const messages = await prisma.$queryRawUnsafe(
@@ -4873,34 +8146,77 @@ app.post('/friend-chat/messages', async (req, res) => {
   if (!roomId || !userId || !content) {
     return res.status(400).json({ error: 'roomId, userId und content erforderlich' });
   }
+  // Echter Bann: gesperrte Nutzer koennen keine Nachrichten mehr senden.
+  if (await isUserSuspended(userId)) return respondSuspended(res);
+
+  // Chat-Schutz (NEUES UID-Format uidA__uidB): Nur bestaetigte Freunde duerfen
+  // NEUE Nachrichten senden. Nach 'Entfernen' -> keine Freundschaft mehr ->
+  // gesperrt. Nach 'Blockieren' -> ebenfalls gesperrt. Der Verlauf bleibt via
+  // GET lesbar (Nur-Lese-Archiv). Alte pp-Raeume: keine Pruefung (Auslauf).
+  const otherUid = otherUidFromRoomId(roomId, userId);
+  if (otherUid) {
+    if (await isBlockedBetween(userId, otherUid)) {
+      return res.status(403).json({
+        error: 'Diese Unterhaltung ist nicht mehr verfügbar.',
+        code: 'blocked',
+      });
+    }
+    if (!(await areFriends(userId, otherUid))) {
+      return res.status(403).json({
+        error: 'Ihr seid aktuell nicht mehr verbunden. Frühere Nachrichten '
+          + 'kannst du weiter nachlesen.',
+        code: 'not_friends',
+      });
+    }
+  }
+
   const item = { id: generateId('fc'), roomId, authorUserId: userId, authorName: userName, content, createdAt: new Date().toISOString() };
+
+  // Push an den ECHTEN Empfaenger: roomId = codeA-codeB. Wir bestimmen den
+  // Empfaenger-Code (die Haelfte, die NICHT der Sender ist) und loesen dessen
+  // userId via FriendRegistry auf. Fehler hier sind unkritisch (best effort).
+  const pushToRecipient = async () => {
+    try {
+      let recipientUid = null;
+      if (roomId.includes('__')) {
+        // NEUES Format: roomId = uidA__uidB -> Empfaenger = Haelfte != Sender.
+        const parts = roomId.split('__');
+        recipientUid = parts.find(p => p && p !== userId) || null;
+      } else {
+        // ALTES Format: roomId = pp-aaaaaa-pp-bbbbbb -> Code -> userId.
+        const codes = roomId.match(/pp-[a-z0-9]+/gi) || [];
+        if (codes.length >= 2) {
+          const senderCode = ('pp-' + userId.substring(0, 6)).toLowerCase();
+          const recipientCode =
+              codes.find(c => c.toLowerCase() !== senderCode) || codes[0];
+          if (recipientCode) {
+            const reg = await resolveFriendRegistry(recipientCode);
+            recipientUid = reg.userId || null;
+          }
+        }
+      }
+      if (!recipientUid) return;
+      await sendPushToUser(recipientUid, {
+        title: userName || 'Neue Nachricht',
+        body: content.length > 100 ? content.substring(0, 100) + '...' : content,
+        data: { type: 'friend_chat', roomId, senderId: userId },
+      });
+    } catch (_) {}
+  };
+
   try {
     await ensureSocialSchemaReady();
     await prisma.$executeRawUnsafe(
       `INSERT INTO "FriendChatMessage" ("id", "roomId", "authorUserId", "authorName", "content", "createdAt") VALUES ($1, $2, $3, $4, $5, NOW())`,
       item.id, roomId, userId, userName, content
     );
-    // Send push notification to the other person
-    try {
-      await sendPushToUser(roomId, {
-        title: userName || 'Neue Nachricht',
-        body: content.length > 100 ? content.substring(0, 100) + '...' : content,
-        data: { type: 'friend_chat', roomId, senderId: userId },
-      });
-    } catch (_) {}
+    await pushToRecipient();
     return res.status(201).json({ item });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /friend-chat/messages', error)) return;
     if (!friendChatMessages.has(roomId)) friendChatMessages.set(roomId, []);
     friendChatMessages.get(roomId).push(item);
-    // Send push notification to the other person (fallback path)
-    try {
-      await sendPushToUser(roomId, {
-        title: userName || 'Neue Nachricht',
-        body: content.length > 100 ? content.substring(0, 100) + '...' : content,
-        data: { type: 'friend_chat', roomId, senderId: userId },
-      });
-    } catch (_) {}
+    await pushToRecipient();
     return res.status(201).json({ item });
   }
 });
@@ -5444,6 +8760,10 @@ app.get('/events/item/:id', async (req, res) => {
 
 app.post('/events', async (req, res) => {
   const body = req.body || {};
+  // Echter Bann: gesperrte Nutzer koennen keine Events mehr erstellen.
+  if (body.hosterId && await isUserSuspended(body.hosterId.toString().trim())) {
+    return respondSuspended(res);
+  }
   const item = {
     id: body.id || generateId('event'),
     hosterId: body.hosterId || 'host_demo_001',
@@ -7460,6 +10780,8 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
   if (!userId || !name || !city) {
     return res.status(400).json({ error: 'userId, name, city erforderlich' });
   }
+  // Echter Bann: gesperrte Nutzer koennen ihr Profil nicht (neu) veroeffentlichen.
+  if (await isUserSuspended(userId)) return respondSuspended(res);
 
   if (age && (age < 18 || age > 120)) {
     return res.status(400).json({ error: 'Alter muss zwischen 18 und 120 liegen' });
@@ -7505,89 +10827,141 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
   }
 });
 
-/**
- * GET /api/parent-matching/find
- * Find matching parent profiles with smart algorithm
- */
-app.get('/api/parent-matching/find', async (req, res) => {
-  const { userId, limit = '10', maxDistanceKm = '25' } = req.query;
+function normalizeParentMatchingCity(value) {
+  return String(value || '')
+    .trim()
+    .toLocaleLowerCase('de-DE')
+    .split(',')[0]
+    .replace(/[^a-z0-9äöüß]/g, '');
+}
 
-  if (!userId) {
-    return res.status(400).json({ error: 'userId erforderlich' });
-  }
+function scoreParentMatchingCandidates({ userProfile, candidates, blockedIds, suspendedIds, limit, maxDistanceKm }) {
+  const maxDistance = Number.parseFloat(maxDistanceKm) || 25;
+  const ownCity = normalizeParentMatchingCity(userProfile.city);
+  const hasCoordinates = profile =>
+    Number.isFinite(profile.latitude) && Number.isFinite(profile.longitude);
+  const hasOwnCoordinates = hasCoordinates(userProfile);
 
-  try {
-    const userProfile = await prisma.parentMatchingProfile.findUnique({
-      where: { ownerUserId: userId },
-    });
-
-    if (!userProfile) {
-      return res.json({ matches: [], message: 'Benutzerprofil nicht gefunden' });
-    }
-
-    const allProfiles = await prisma.parentMatchingProfile.findMany({
-      where: {
-        isActive: true,
-        ownerUserId: { not: userId },
-      },
-      take: 100, // Get top candidates to score
-    });
-
-    const scored = allProfiles.map(candidate => {
+  const matches = candidates
+    .filter(profile => !blockedIds.has(profile.ownerUserId) && !suspendedIds.has(profile.ownerUserId))
+    .map(candidate => {
+      const reasons = [];
+      const breakdown = {};
       let score = 0;
-      let breakdown = {};
+      const sameCity = ownCity && ownCity === normalizeParentMatchingCity(candidate.city);
+      const candidateHasCoordinates = hasCoordinates(candidate);
 
-      // Geographic proximity (0-40 points)
-      if (userProfile.latitude && userProfile.longitude && candidate.latitude && candidate.longitude) {
+      if (hasOwnCoordinates && candidateHasCoordinates) {
         const distance = haversineDistance(
-          userProfile.latitude,
-          userProfile.longitude,
-          candidate.latitude,
-          candidate.longitude,
-        );
-
+          userProfile.latitude, userProfile.longitude, candidate.latitude, candidate.longitude);
+        if (distance > maxDistance) return null;
         breakdown.distanceKm = Math.round(distance);
-        if (distance <= parseFloat(maxDistanceKm)) {
-          breakdown.proximityScore = Math.max(0, 40 - distance);
-          score += breakdown.proximityScore;
-        }
+        breakdown.proximityScore = Math.max(0, Math.round(30 - distance));
+        score += breakdown.proximityScore;
+        if (distance <= 10) reasons.push('nearby');
+      } else if (sameCity) {
+        breakdown.locationLabel = 'same_city';
+        breakdown.cityScore = 18;
+        score += breakdown.cityScore;
+        reasons.push('same_city');
       }
 
-      // Interest overlap (0-30 points)
-      const interestSimilarity = jaccardSimilarity(userProfile.interests, candidate.interests);
-      breakdown.interestSimilarity = Math.round(interestSimilarity * 100) / 100;
-      breakdown.interestScore = Math.round(interestSimilarity * 30);
-      score += breakdown.interestScore;
-
-      // Child age compatibility (0-20 points)
-      const childAgeSimilarity = jaccardSimilarity(userProfile.childAges, candidate.childAges);
-      breakdown.childAgeScore = Math.round(childAgeSimilarity * 20);
-      score += breakdown.childAgeScore;
-
-      // Family form alignment (0-10 points)
+      const categories = [
+        ['interests', userProfile.interests, candidate.interests, 20, 'shared_interests'],
+        ['childAge', userProfile.childAges, candidate.childAges, 15, 'similar_child_age'],
+        ['languages', userProfile.languages, candidate.languages, 15, 'shared_languages'],
+        ['values', userProfile.valuesFocus, candidate.valuesFocus, 15, 'shared_values'],
+      ];
+      for (const [key, ownValues, candidateValues, weight, reason] of categories) {
+        const similarity = jaccardSimilarity(ownValues, candidateValues);
+        const categoryScore = Math.round(similarity * weight);
+        breakdown[`${key}Score`] = categoryScore;
+        score += categoryScore;
+        if (similarity > 0) reasons.push(reason);
+      }
       if (userProfile.familyForm && candidate.familyForm && userProfile.familyForm === candidate.familyForm) {
-        breakdown.familyFormScore = 10;
-        score += 10;
+        breakdown.familyFormScore = 5;
+        score += breakdown.familyFormScore;
+        reasons.push('shared_family_form');
       }
 
       return {
-        profile: candidate,
-        score: Math.round(score),
-        breakdown,
+        profile: mapParentMatchingProfileForClient(candidate),
+        score: Math.min(100, Math.round(score)),
+        breakdown: { ...breakdown, reasons: reasons.slice(0, 3) },
       };
-    });
+    })
+    .filter(Boolean)
+    .filter(match => match.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.min(Math.max(Number.parseInt(limit, 10) || 10, 1), 100));
 
-    const topMatches = scored
-      .sort((a, b) => b.score - a.score)
-      .slice(0, parseInt(limit, 10))
-      .filter(m => m.score > 0);
+  return { matches };
+}
 
-    res.json({ matches: topMatches });
-  } catch (err) {
-    console.error('❌ Fehler beim Matching-Algorithmus:', err);
-    res.status(500).json({ error: 'Matching konnte nicht durchgeführt werden' });
+async function discoverParentMatchingProfiles({ userId, limit, maxDistanceKm }) {
+  const userProfile = await getMyParentMatchingProfile(userId);
+  if (!userProfile) return { matches: [], message: 'Benutzerprofil nicht gefunden' };
+  const candidates = await prisma.parentMatchingProfile.findMany({
+    where: { isActive: true, ownerUserId: { not: userId } },
+    take: 100,
+  });
+  let blockedIds = new Set();
+  let suspendedIds = new Set();
+  try {
+    await ensureSocialSchemaReady();
+    const blockRows = await prisma.$queryRawUnsafe(
+      `SELECT "blockedUserId" FROM "SafetyBlock" WHERE "blockerUserId" = $1`, userId);
+    blockedIds = new Set(blockRows.map(row => row.blockedUserId));
+    const suspensionRows = await prisma.$queryRawUnsafe(`SELECT "userId" FROM "SafetySuspension"`);
+    suspendedIds = new Set(suspensionRows.map(row => row.userId));
+  } catch (_) {
+    blockedIds = safetyBlocks.get(userId) || new Set();
+    suspendedIds = new Set([...safetySuspensions.keys()]);
   }
-});
+  return scoreParentMatchingCandidates({
+    userProfile, candidates, blockedIds, suspendedIds, limit, maxDistanceKm,
+  });
+}
+
+function discoverParentMatchingProfilesInMemory({ userId, limit, maxDistanceKm }) {
+  const userProfile = getMyParentMatchingProfileInMemory(userId);
+  if (!userProfile) return { matches: [], message: 'Benutzerprofil nicht gefunden' };
+  return scoreParentMatchingCandidates({
+    userProfile,
+    candidates: parentProfiles.filter(profile => profile.isActive !== false && profile.ownerUserId !== userId),
+    blockedIds: safetyBlocks.get(userId) || new Set(),
+    suspendedIds: new Set([...safetySuspensions.keys()]),
+    limit,
+    maxDistanceKm,
+  });
+}
+
+async function respondWithParentMatchingDiscovery(req, res) {
+  const userId = (req.query.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    return res.json(await discoverParentMatchingProfiles({
+      userId,
+      limit: req.query.limit || '10',
+      maxDistanceKm: req.query.maxDistanceKm || '25',
+    }));
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/discover', error)) {
+      return;
+    }
+    console.error('Parent matching discovery failed:', error);
+    return res.json(discoverParentMatchingProfilesInMemory({
+      userId,
+      limit: req.query.limit || '10',
+      maxDistanceKm: req.query.maxDistanceKm || '25',
+    }));
+  }
+}
+
+app.get('/parent-matching/discover', respondWithParentMatchingDiscovery);
+// Legacy adapter: keep old clients functional without maintaining a second algorithm.
+app.get('/api/parent-matching/find', respondWithParentMatchingDiscovery);
 
 /**
  * POST /api/parent-matching/record-action
@@ -8411,6 +11785,8 @@ app.post('/api/events', async (req, res) => {
       error: 'hosterId, title, location, latitude, longitude erforderlich'
     });
   }
+  // Echter Bann: gesperrte Nutzer koennen keine Events mehr erstellen.
+  if (await isUserSuspended(hosterId.toString().trim())) return respondSuspended(res);
 
   // Validate coordinates
   if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -8925,9 +12301,10 @@ app.get('/api/community-events/:id/attendees', async (req, res) => {
  */
 app.post('/api/treasures', async (req, res) => {
   const {
-    userId, title, description, location, latitude, longitude,
-    category, condition, isFree, price, visibility, shareRadiusKm, photoUrl
+    userId: requestedUserId, title, description, location, latitude, longitude,
+    category, condition, isFree, price, visibility, shareRadiusKm, photoUrl, photoUrls
   } = req.body;
+  const userId = req.firebaseUid || requestedUserId;
 
   // Validate required fields
   if (!userId || !title || !location || latitude === undefined || longitude === undefined) {
@@ -8935,6 +12312,11 @@ app.post('/api/treasures', async (req, res) => {
       error: 'userId, title, location, latitude, longitude erforderlich'
     });
   }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Anzeige kann nur fuer das eigene Konto erstellt werden' });
+  }
+  // Echter Bann: gesperrte Nutzer koennen nichts mehr im Verschenkmarkt einstellen.
+  if (await isUserSuspended(userId.toString().trim())) return respondSuspended(res);
 
   // Validate coordinates
   if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -8965,8 +12347,17 @@ app.post('/api/treasures', async (req, res) => {
         isFree: isFree !== false,
         price: isFree === false && price ? parseFloat(price) : null,
         visibility: visibility ? String(visibility).slice(0, 50) : 'nearby',
-        shareRadiusKm: shareRadiusKm ? parseFloat(shareRadiusKm) : 10,
+        shareRadiusKm: Math.min(
+          Math.max(shareRadiusKm ? parseFloat(shareRadiusKm) : 10, 1),
+          25,
+        ),
         photoUrl: photoUrl ? String(photoUrl).slice(0, 500) : null,
+        photoUrls: Array.isArray(photoUrls)
+          ? photoUrls
+              .map(u => String(u).slice(0, 500))
+              .filter(u => u.startsWith('http'))
+              .slice(0, 8)
+          : (photoUrl ? [String(photoUrl).slice(0, 500)] : []),
         expiresAt: expiresAt,
         status: severeContent ? 'archived' : 'available',
       },
@@ -9021,12 +12412,19 @@ app.get('/api/treasures', async (req, res) => {
     if (latitude !== undefined && longitude !== undefined) {
       const viewerLat = parseFloat(latitude);
       const viewerLon = parseFloat(longitude);
-      const maxDistance = parseFloat(radiusKm) || 10;
+      const requestedRadius = parseFloat(radiusKm) || 10;
+      // The giveaway market is intentionally local. Never expand a client
+      // request beyond 25 km, even if an outdated app sends a larger radius.
+      const maxDistance = Math.min(Math.max(requestedRadius, 1), 25);
 
       treasures = treasures.filter(treasure => {
         if (!treasure.latitude || !treasure.longitude) return false;
         const distance = haversineDistance(viewerLat, viewerLon, treasure.latitude, treasure.longitude);
-        return distance <= maxDistance;
+        const listingRadius = Math.min(
+          Math.max(Number(treasure.shareRadiusKm) || 10, 1),
+          25,
+        );
+        return distance <= Math.min(maxDistance, listingRadius);
       }).sort((a, b) => {
         const distA = haversineDistance(viewerLat, viewerLon, a.latitude, a.longitude);
         const distB = haversineDistance(viewerLat, viewerLon, b.latitude, b.longitude);
@@ -9049,9 +12447,20 @@ app.get('/api/treasures', async (req, res) => {
       isFree: t.isFree,
       price: t.price,
       photoUrl: t.photoUrl,
+      photoUrls: Array.isArray(t.photoUrls) ? t.photoUrls : [],
+      pickupSlots: Array.isArray(t.pickupSlots) ? t.pickupSlots : [],
       status: t.status,
+      views: t.views,
       rating: t.rating,
       ratingCount: t.ratingCount,
+      // Reservierungs-Zähler (offene Reservierungen)
+      reservedCount: Array.isArray(t.handovers)
+        ? t.handovers.filter(h => h.status === 'pending' || h.status === 'reserved').length
+        : 0,
+      // Echte Distanz in km (falls Betrachter-Koordinaten vorhanden)
+      distanceKm: (latitude !== undefined && longitude !== undefined && t.latitude && t.longitude)
+        ? Math.round(haversineDistance(parseFloat(latitude), parseFloat(longitude), t.latitude, t.longitude) * 10) / 10
+        : null,
       createdAt: t.createdAt,
       expiresAt: t.expiresAt,
     }));
@@ -9395,6 +12804,323 @@ app.post('/api/treasures/:id/report', async (req, res) => {
 });
 
 /**
+ * POST /api/treasures/:id/reserve
+ * Reserviert einen Schatz für einen Nutzer (erzeugt einen TreasureHandover).
+ * Der Verschenker sieht die Reservierung über GET /api/treasures/mine.
+ */
+app.post('/api/treasures/:id/reserve', async (req, res) => {
+  const { id } = req.params;
+  const { requesterUserId: requestedRequesterUserId, preferredSlot, handoverMode, message } = req.body;
+  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
+
+  if (!requesterUserId) {
+    return res.status(400).json({ error: 'requesterUserId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Reservierung nur fuer das eigene Konto erlaubt' });
+  }
+
+  try {
+    const treasure = await prisma.treasureItem.findUnique({
+      where: { id },
+      include: { handovers: true },
+    });
+    if (!treasure) {
+      return res.status(404).json({ error: 'Treasure nicht gefunden' });
+    }
+    if (treasure.status !== 'available') {
+      return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
+    }
+    // Eigenes Angebot kann man nicht reservieren
+    if (treasure.userId === String(requesterUserId)) {
+      return res.status(400).json({ error: 'Du kannst dein eigenes Angebot nicht reservieren' });
+    }
+
+    // Doppelte Reservierung desselben Nutzers vermeiden
+    const existing = await prisma.treasureHandover.findFirst({
+      where: {
+        treasureId: id,
+        requesterId: String(requesterUserId),
+        status: { in: ['pending', 'reserved'] },
+      },
+    });
+    if (existing) {
+      return res.status(200).json({
+        handover: existing,
+        alreadyReserved: true,
+        message: 'Bereits von dir reserviert',
+      });
+    }
+
+    const modeNote = handoverMode === 'swap' ? 'Stiller Tausch' : 'Kurz treffen';
+    const combinedNotes = [modeNote, message]
+      .filter(Boolean)
+      .join(' · ')
+      .slice(0, 500);
+
+    const handover = await prisma.$transaction(async tx => {
+      const claimed = await tx.treasureItem.updateMany({
+        where: { id, status: 'available' },
+        data: { status: 'reserved', updatedAt: new Date() },
+      });
+      if (claimed.count !== 1) {
+        const error = new Error('Treasure ist nicht mehr verfuegbar');
+        error.code = 'TREASURE_UNAVAILABLE';
+        throw error;
+      }
+      return tx.treasureHandover.create({
+        data: {
+          treasureId: id,
+          requesterId: String(requesterUserId).slice(0, 100),
+          status: 'reserved',
+          location: preferredSlot ? String(preferredSlot).slice(0, 200) : null,
+          notes: combinedNotes || null,
+          updatedAt: new Date(),
+        },
+      });
+    });
+    await sendPushToUser(treasure.userId, {
+      title: 'Neue Reservierung',
+      body: `Jemand moechte "${treasure.title}" abholen.`,
+      data: { type: 'treasure_reservation', treasureId: id, handoverId: handover.id },
+    });
+
+    res.status(201).json({
+      handover,
+      alreadyReserved: false,
+      giverUserId: treasure.userId,
+      message: 'Reservierung gespeichert. Die schenkende Familie wurde benachrichtigt.',
+    });
+  } catch (err) {
+    console.error('❌ Treasure reserve error:', err.message);
+    if (err.code === 'TREASURE_UNAVAILABLE') {
+      return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
+    }
+    res.status(500).json({ error: `Reservierung fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/treasures/:id/cancel-reservation
+ * Hebt die Reservierung des anfragenden Nutzers auf.
+ */
+app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
+  const { id } = req.params;
+  const { requesterUserId: requestedRequesterUserId } = req.body;
+  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
+  if (!requesterUserId) {
+    return res.status(400).json({ error: 'requesterUserId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Stornierung nur fuer das eigene Konto erlaubt' });
+  }
+  try {
+    await prisma.treasureHandover.updateMany({
+      where: {
+        treasureId: id,
+        requesterId: String(requesterUserId),
+        status: { in: ['pending', 'reserved'] },
+      },
+      data: { status: 'cancelled', updatedAt: new Date() },
+    });
+    // Wenn keine offenen Reservierungen mehr: Artikel wieder 'available'
+    const openCount = await prisma.treasureHandover.count({
+      where: { treasureId: id, status: { in: ['pending', 'reserved'] } },
+    });
+    if (openCount === 0) {
+      await prisma.treasureItem.update({
+        where: { id },
+        data: { status: 'available', updatedAt: new Date() },
+      }).catch(() => {});
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Cancel reservation error:', err.message);
+    res.status(500).json({ error: `Stornierung fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/treasures/:id/handovers/:handoverId/confirm
+ * The owner confirms a reservation for handover.
+ */
+app.post('/api/treasures/:id/handovers/:handoverId/confirm', async (req, res) => {
+  const { id, handoverId } = req.params;
+  const requestedUserId = req.body.userId;
+  const userId = req.firebaseUid || requestedUserId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Bestaetigung nur fuer das eigene Konto erlaubt' });
+  }
+
+  try {
+    const treasure = await prisma.treasureItem.findUnique({ where: { id } });
+    if (!treasure) {
+      return res.status(404).json({ error: 'Treasure nicht gefunden' });
+    }
+    if (treasure.userId !== String(userId)) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann eine Reservierung bestaetigen' });
+    }
+    const handover = await prisma.treasureHandover.findFirst({
+      where: { id: handoverId, treasureId: id, status: { in: ['pending', 'reserved'] } },
+    });
+    if (!handover) {
+      return res.status(404).json({ error: 'Aktive Reservierung nicht gefunden' });
+    }
+
+    const now = new Date();
+    const updated = await prisma.$transaction(async tx => {
+      const confirmed = await tx.treasureHandover.update({
+        where: { id: handoverId },
+        data: { status: 'confirmed', updatedAt: now },
+      });
+      await tx.treasureHandover.updateMany({
+        where: { treasureId: id, id: { not: handoverId }, status: { in: ['pending', 'reserved'] } },
+        data: { status: 'cancelled', updatedAt: now },
+      });
+      await tx.treasureItem.update({
+        where: { id },
+        data: { status: 'claimed', updatedAt: now },
+      });
+      return confirmed;
+    });
+    await sendPushToUser(updated.requesterId, {
+      title: 'Uebergabe bestaetigt',
+      body: `Die Uebergabe von "${treasure.title}" wurde bestaetigt.`,
+      data: { type: 'treasure_handover_update', treasureId: id, handoverId },
+    });
+    res.json({ handover: updated, message: 'Uebergabe bestaetigt' });
+  } catch (err) {
+    console.error('❌ Treasure handover confirmation error:', err.message);
+    res.status(500).json({ error: `Bestaetigung fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/treasures/:id/handovers/:handoverId/complete
+ * The owner marks a confirmed handover as completed.
+ */
+app.post('/api/treasures/:id/handovers/:handoverId/complete', async (req, res) => {
+  const { id, handoverId } = req.params;
+  const requestedUserId = req.body.userId;
+  const userId = req.firebaseUid || requestedUserId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Abschluss nur fuer das eigene Konto erlaubt' });
+  }
+
+  try {
+    const treasure = await prisma.treasureItem.findUnique({ where: { id } });
+    if (!treasure) {
+      return res.status(404).json({ error: 'Treasure nicht gefunden' });
+    }
+    if (treasure.userId !== String(userId)) {
+      return res.status(403).json({ error: 'Nur der Ersteller kann die Uebergabe abschliessen' });
+    }
+    const handover = await prisma.treasureHandover.findFirst({
+      where: { id: handoverId, treasureId: id, status: 'confirmed' },
+    });
+    if (!handover) {
+      return res.status(404).json({ error: 'Bestaetigte Uebergabe nicht gefunden' });
+    }
+
+    const now = new Date();
+    const updated = await prisma.$transaction(async tx => {
+      const completed = await tx.treasureHandover.update({
+        where: { id: handoverId },
+        data: { status: 'completed', updatedAt: now },
+      });
+      await tx.treasureItem.update({
+        where: { id },
+        data: { status: 'archived', updatedAt: now },
+      });
+      return completed;
+    });
+    await sendPushToUser(updated.requesterId, {
+      title: 'Uebergabe abgeschlossen',
+      body: `"${treasure.title}" wurde als uebergeben markiert.`,
+      data: { type: 'treasure_handover_update', treasureId: id, handoverId },
+    });
+    res.json({ handover: updated, message: 'Uebergabe abgeschlossen' });
+  } catch (err) {
+    console.error('❌ Treasure handover completion error:', err.message);
+    res.status(500).json({ error: `Abschluss fehlgeschlagen: ${err.message}` });
+  }
+});
+
+/**
+ * GET /api/treasures/mine?userId=...
+ * Liefert die eigenen Angebote MIT Reservierungen (für den Verschenker)
+ * plus die vom Nutzer reservierten Artikel (für den Abholer).
+ */
+app.get('/api/treasures/mine', async (req, res) => {
+  const userId = String(req.query.userId || '').trim();
+  if (!userId) {
+    return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+
+  try {
+    // Eigene Angebote + wer sie reserviert hat
+    const myOffers = await prisma.treasureItem.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: { handovers: true },
+      take: 100,
+    });
+
+    // Reservierungen die der Nutzer selbst gemacht hat
+    const myReservations = await prisma.treasureHandover.findMany({
+      where: {
+        requesterId: userId,
+        status: { in: ['pending', 'reserved', 'confirmed'] },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: { treasure: { select: { title: true } } },
+    });
+
+    res.json({
+      offers: myOffers.map(t => ({
+        id: t.id,
+        title: t.title,
+        photoUrl: t.photoUrl,
+        status: t.status,
+        reservations: (t.handovers || [])
+          .filter(h =>
+            h.status === 'reserved' ||
+            h.status === 'pending' ||
+            h.status === 'confirmed'
+          )
+          .map(h => ({
+            id: h.id,
+            requesterId: h.requesterId,
+            status: h.status,
+            location: h.location,
+            notes: h.notes,
+            createdAt: h.createdAt,
+          })),
+      })),
+      reservedByMe: myReservations.map(h => ({
+        id: h.id,
+        treasureId: h.treasureId,
+        treasureTitle: h.treasure.title,
+        status: h.status,
+        location: h.location,
+        createdAt: h.createdAt,
+      })),
+    });
+  } catch (err) {
+    console.error('❌ Treasures mine error:', err.message);
+    res.status(500).json({ error: `Failed to load: ${err.message}` });
+  }
+});
+
+/**
  * GET /api/treasures/reports
  * List treasure reports (admin token required)
  */
@@ -9533,10 +13259,14 @@ app.get('/api/treasures/:id', async (req, res) => {
  */
 app.put('/api/treasures/:id', async (req, res) => {
   const { id } = req.params;
-  const { userId, title, description, location, latitude, longitude, condition, status } = req.body;
+  const { userId: requestedUserId, title, description, location, latitude, longitude, condition, status } = req.body;
+  const userId = req.firebaseUid || requestedUserId;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Bearbeitung nur fuer das eigene Konto erlaubt' });
   }
 
   try {
@@ -9586,10 +13316,16 @@ app.put('/api/treasures/:id', async (req, res) => {
  */
 app.delete('/api/treasures/:id', async (req, res) => {
   const { id } = req.params;
-  const { userId } = req.query;
+  const requestedUserId = typeof req.query.userId === 'string'
+    ? req.query.userId
+    : '';
+  const userId = req.firebaseUid || requestedUserId;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
+  }
+  if (req.firebaseUid && requestedUserId !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Loeschung nur fuer das eigene Konto erlaubt' });
   }
 
   try {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/photo_backend_service.dart';
@@ -103,7 +104,7 @@ class _PhotosScreenState extends State<PhotosScreen>
           IconButton(
             onPressed: _loadAlbums,
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Synchronisieren',
+            tooltip: context.tr('tooltip_sync'),
           ),
         ],
       ),

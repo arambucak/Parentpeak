@@ -13,6 +13,9 @@ class MarketplaceScreen extends StatefulWidget {
 class _MarketplaceScreenState extends State<MarketplaceScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   late TabController _educationSubTabController;
   List<Provider> _allProviders = [];
   String? _selectedCategory;
@@ -96,7 +99,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'marketplace')),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'marketplace')),
         elevation: 0,
         backgroundColor: Colors.blue.shade600,
         bottom: TabBar(
@@ -118,13 +122,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
         ),
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Laden...'),
+                  Text(_t('loading')),
                 ],
               ),
             )
@@ -139,7 +143,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
-                        child: Text(AppStringsManager.getString(languageService.currentLanguage, 'try_again')),
+                        child: Text(AppStringsManager.getString(
+                            languageService.currentLanguage, 'try_again')),
                       ),
                     ],
                   ),
@@ -166,15 +171,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
 
     // Bekome alle Provider für diesen Tab
     List<Provider> tabProviders;
-    
+
     if (tabIndex == 0) {
       tabProviders = _allProviders
           .where((p) => p.categoryGroup == 'Bildungsangebote')
           .toList();
     } else if (tabIndex == 1) {
-      tabProviders = _allProviders
-          .where((p) => p.categoryGroup == 'Betreuung')
-          .toList();
+      tabProviders =
+          _allProviders.where((p) => p.categoryGroup == 'Betreuung').toList();
     } else {
       tabProviders = _allProviders
           .where((p) => p.categoryGroup == 'Kaufen & Verkaufen')
@@ -182,10 +186,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
     }
 
     // Bekome alle einzigartigen Kategorien für diesen Tab
-    final uniqueCategories = tabProviders
-        .map((p) => p.category)
-        .toSet()
-        .toList();
+    final uniqueCategories =
+        tabProviders.map((p) => p.category).toSet().toList();
     uniqueCategories.sort();
 
     // Falls keine Kategorie ausgewählt, zeige Kategorien
@@ -194,9 +196,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
     }
 
     // Falls Kategorie ausgewählt, zeige Anbieter für diese Kategorie
-    final categoryProviders = tabProviders
-        .where((p) => p.category == _selectedCategory)
-        .toList();
+    final categoryProviders =
+        tabProviders.where((p) => p.category == _selectedCategory).toList();
 
     // Wende Filter an
     List<Provider> filtered = categoryProviders;
@@ -268,7 +269,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
           ),
         ),
         const SizedBox(height: 12),
-        
+
         // Filter Section - nur für Tab 0 und 1
         if (tabIndex < 2)
           Padding(
@@ -279,11 +280,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Filter',
+                    Text(_t('market_filter'),
                         style: Theme.of(context).textTheme.titleMedium),
                     TextButton(
                       onPressed: _resetFilters,
-                      child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reset_filter')),
+                      child: Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'reset_filter')),
                     ),
                   ],
                 ),
@@ -315,7 +317,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
               ],
             ),
           ),
-        
+
         // Anbieter-Liste
         Expanded(
           child: filtered.isEmpty
@@ -323,13 +325,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                      const Icon(Icons.search_off,
+                          size: 64, color: Colors.grey),
                       const SizedBox(height: 16),
-                      Text(AppStringsManager.getString(languageService.currentLanguage, 'no_offers')),
+                      Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'no_offers')),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: _resetFilters,
-                        child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reset_filter')),
+                        child: Text(AppStringsManager.getString(
+                            languageService.currentLanguage, 'reset_filter')),
                       ),
                     ],
                   ),
@@ -389,10 +394,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
         .toList();
 
     // Bekome alle einzigartigen Kategorien
-    final uniqueCategories = educationProviders
-        .map((p) => p.category)
-        .toSet()
-        .toList();
+    final uniqueCategories =
+        educationProviders.map((p) => p.category).toSet().toList();
     uniqueCategories.sort();
 
     // Falls keine Kategorie ausgewählt, zeige Kategorien
@@ -478,11 +481,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Filter',
+                  Text(_t('market_filter'),
                       style: Theme.of(context).textTheme.titleMedium),
                   TextButton(
                     onPressed: _resetFilters,
-                    child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reset_filter')),
+                    child: Text(AppStringsManager.getString(
+                        languageService.currentLanguage, 'reset_filter')),
                   ),
                 ],
               ),
@@ -520,13 +524,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                      const Icon(Icons.search_off,
+                          size: 64, color: Colors.grey),
                       const SizedBox(height: 16),
-                      Text(AppStringsManager.getString(languageService.currentLanguage, 'no_offers')),
+                      Text(AppStringsManager.getString(
+                          languageService.currentLanguage, 'no_offers')),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: _resetFilters,
-                        child: Text(AppStringsManager.getString(languageService.currentLanguage, 'reset_filter')),
+                        child: Text(AppStringsManager.getString(
+                            languageService.currentLanguage, 'reset_filter')),
                       ),
                     ],
                   ),
@@ -572,12 +579,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Kategorien als Grid
         Expanded(
           child: categories.isEmpty
-              ? const Center(
-                  child: Text('Keine Kategorien verfügbar'),
+              ? Center(
+                  child: Text(_t('market_no_categories')),
                 )
               : GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -626,12 +633,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Kategorien als Grid
         Expanded(
           child: categories.isEmpty
-              ? const Center(
-                  child: Text('Keine Kategorien verfügbar'),
+              ? Center(
+                  child: Text(_t('market_no_categories')),
                 )
               : GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -654,10 +661,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
 
   Widget _buildCategoryCard(String category, int tabIndex) {
     // Bekome Anzahl der Anbieter für diese Kategorie
-    final providers = _allProviders
-        .where((p) => p.category == category)
-        .toList();
-    
+    final providers =
+        _allProviders.where((p) => p.category == category).toList();
+
     // Icons für verschiedene Kategorien
     IconData icon = Icons.school;
     if (tabIndex == 0) {
@@ -760,7 +766,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       if (provider.age > 0)
                         Text(
                           '${provider.age} Jahre alt',
-                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                          style:
+                              TextStyle(fontSize: 11, color: Colors.grey[600]),
                         ),
                       const SizedBox(height: 4),
                       Row(
@@ -803,7 +810,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
               children: [
                 ElevatedButton.icon(
                   icon: const Icon(Icons.message),
-                  label: const Text('Kontakt'),
+                  label: Text(_t('market_contact')),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Kontakt zu ${provider.name}')),
@@ -812,7 +819,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.info),
-                  label: const Text('Details'),
+                  label: Text(_t('market_details')),
                   onPressed: () {
                     _showProviderDetails(provider);
                   },
@@ -865,7 +872,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
               _detailRow('Spezialisierung', provider.subcategory),
               if (provider.price > 0)
                 _detailRow('Preis', '€${provider.price}/${provider.priceUnit}'),
-              _detailRow('Bewertung', '${provider.rating} ⭐ (${provider.reviews})'),
+              _detailRow(
+                  'Bewertung', '${provider.rating} ⭐ (${provider.reviews})'),
               if (provider.languages.isNotEmpty)
                 _detailRow('Sprachen', provider.languages.join(', ')),
               _detailRow('Erreichbarkeit', provider.availability),
@@ -881,7 +889,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.message),
-                  label: Text(AppStringsManager.getString(languageService.currentLanguage, 'contact_now')),
+                  label: Text(AppStringsManager.getString(
+                      languageService.currentLanguage, 'contact_now')),
                   onPressed: () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(

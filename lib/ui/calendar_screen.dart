@@ -13,6 +13,35 @@ import 'package:parentpeak/services/holiday_service.dart';
 import 'package:parentpeak/widgets/language_change_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+String _displayCalendarPersonLabel(String label, BuildContext context) {
+  if (label == 'Alle') {
+    return AppStringsManager.getString(
+      languageService.currentLanguage,
+      'filter_all',
+    );
+  }
+  if (label == 'Eltern') {
+    return AppStringsManager.getString(
+      languageService.currentLanguage,
+      'calendar_person_parents',
+    );
+  }
+  if (label == 'Kindergarten') {
+    return AppStringsManager.getString(
+      languageService.currentLanguage,
+      'calendar_person_kindergarten',
+    );
+  }
+  if (label == '\u{1F382} Geburtstag') {
+    final title = AppStringsManager.getString(
+      languageService.currentLanguage,
+      'calendar_person_birthday',
+    );
+    return '\u{1F382} $title';
+  }
+  return label;
+}
+
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
 
@@ -23,6 +52,9 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen>
     with LanguageChangeMixin<CalendarScreen> {
   final List<_CalendarEvent> _events = [];
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
   final CalendarBackendService _calendarService =
       BackendServiceFactory.createCalendarService();
   final TextEditingController _titleController = TextEditingController();
@@ -128,7 +160,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Person hinzufügen'),
+        title: Text(_t('calendar_add_person')),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -141,11 +173,12 @@ class _CalendarScreenState extends State<CalendarScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: const Text('Hinzufügen'),
+            child: Text(_t('calendar_add')),
           ),
         ],
       ),
@@ -335,19 +368,22 @@ class _CalendarScreenState extends State<CalendarScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Termin löschen?'),
-        content: Text('„${event.title}" wird unwiderruflich gelöscht.'),
+        title: Text(_t('calendar_delete_event')),
+        content: Text(_t('calendar_delete_event_confirm')
+            .replaceAll('{title}', event.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'delete_action')),
           ),
         ],
       ),
@@ -370,7 +406,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Termin gelöscht.')),
+          SnackBar(content: Text(_t('calendar_event_deleted'))),
         );
       }
     }
@@ -670,15 +706,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                               isExpanded: true,
                               items: [
                                 ..._personColors.keys.map((p) =>
-                                    DropdownMenuItem(value: p, child: Text(p))),
-                                const DropdownMenuItem(
+                                    DropdownMenuItem(value: p, child: Text(_displayCalendarPersonLabel(p, context)))),
+                                DropdownMenuItem(
                                   value: '__add__',
                                   child: Row(
                                     children: [
                                       Icon(Icons.add_circle_outline_rounded,
                                           size: 16, color: Color(0xFF4CAF50)),
                                       SizedBox(width: 6),
-                                      Text('Neue Person…',
+                                      Text(_t('calendar_new_person'),
                                           style: TextStyle(
                                               color: Color(0xFF4CAF50),
                                               fontWeight: FontWeight.w600)),
@@ -1067,13 +1103,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                         border: Border.all(
                             color: const Color(0xFF4CAF50), width: 0.8),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.add_rounded,
                               size: 13, color: Color(0xFF4CAF50)),
                           SizedBox(width: 3),
-                          Text('Person',
+                          Text(_t('calendar_person'),
                               style: TextStyle(
                                   fontSize: 11,
                                   color: Color(0xFF4CAF50),
@@ -1369,7 +1405,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFDC2626))),
-                  const Text('Gesetzlicher Feiertag',
+                  Text(_t('calendar_public_holiday'),
                       style: TextStyle(fontSize: 11, color: Color(0xFFEF4444))),
                 ],
               ),
@@ -1447,14 +1483,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Feiertage & Schulferien',
+                Text(_t('calendar_holidays_title'),
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text('Wähle dein Land und deine Region',
+                Text(_t('calendar_choose_region'),
                     style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                 const SizedBox(height: 20),
-                const Text('Land',
+                Text(_t('calendar_country'),
                     style:
                         TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
@@ -1509,7 +1545,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                   }).toList(),
                 ),
                 const SizedBox(height: 20),
-                const Text('Region / Bundesland',
+                Text(_t('calendar_region'),
                     style:
                         TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
@@ -1564,7 +1600,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Speichern',
+                    child: Text(_t('finance_save'),
                         style: TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
@@ -1595,7 +1631,8 @@ class _CalendarScreenState extends State<CalendarScreen>
             ),
             ListTile(
               leading: const Icon(Icons.edit_rounded),
-              title: Text(AppStringsManager.getString(languageService.currentLanguage, 'rename')),
+              title: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'rename')),
               onTap: () {
                 Navigator.pop(ctx);
                 _renameCustomPerson(personName);
@@ -1604,7 +1641,9 @@ class _CalendarScreenState extends State<CalendarScreen>
             ListTile(
               leading: Icon(Icons.delete_rounded,
                   color: Theme.of(context).colorScheme.error),
-              title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action'),
+              title: Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'delete_action'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1623,7 +1662,8 @@ class _CalendarScreenState extends State<CalendarScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'rename_person')),
+        title: Text(AppStringsManager.getString(
+            languageService.currentLanguage, 'rename_person')),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -1632,10 +1672,12 @@ class _CalendarScreenState extends State<CalendarScreen>
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel'))),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'save'))),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'save'))),
         ],
       ),
     );
@@ -1671,12 +1713,14 @@ class _CalendarScreenState extends State<CalendarScreen>
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(AppStringsManager.getString(languageService.currentLanguage, 'cancel'))),
+              child: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'cancel'))),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.error),
-            child: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action')),
+            child: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'delete_action')),
           ),
         ],
       ),
@@ -1719,7 +1763,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(
-            label,
+            _displayCalendarPersonLabel(label, context),
             style: TextStyle(
               fontSize: 11,
               color: selected ? color : const Color(0xFF4A5568),
@@ -2024,7 +2068,7 @@ class _EventCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                event.person,
+                                _displayCalendarPersonLabel(event.person, context),
                                 style: TextStyle(
                                   color: color,
                                   fontWeight: FontWeight.w700,
@@ -2203,7 +2247,8 @@ class _EventCard extends StatelessWidget {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             ListTile(
               leading: const Icon(Icons.edit_rounded),
-              title: const Text('Bearbeiten'),
+              title: Text(AppStringsManager.getString(
+                  languageService.currentLanguage, 'calendar_edit')),
               onTap: () {
                 Navigator.pop(ctx);
                 onEdit?.call();
@@ -2212,7 +2257,9 @@ class _EventCard extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.delete_rounded,
                   color: Theme.of(context).colorScheme.error),
-              title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action'),
+              title: Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'delete_action'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -2687,7 +2734,9 @@ class _WeekPreview extends StatelessWidget {
                           ),
                           ListTile(
                             leading: const Icon(Icons.open_in_new_rounded),
-                            title: const Text('Zum Tag springen'),
+                            title: Text(AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'calendar_jump_to_day')),
                             onTap: () {
                               Navigator.pop(ctx);
                               onDayTap(e.start);
@@ -2696,7 +2745,10 @@ class _WeekPreview extends StatelessWidget {
                           ListTile(
                             leading: Icon(Icons.delete_rounded,
                                 color: Theme.of(context).colorScheme.error),
-                            title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action'),
+                            title: Text(
+                                AppStringsManager.getString(
+                                    languageService.currentLanguage,
+                                    'delete_action'),
                                 style: TextStyle(
                                     color:
                                         Theme.of(context).colorScheme.error)),
@@ -2780,8 +2832,11 @@ class _WeekPreview extends StatelessWidget {
                                           ListTile(
                                             leading: const Icon(
                                                 Icons.open_in_new_rounded),
-                                            title:
-                                                const Text('Zum Tag springen'),
+                                            title: Text(
+                                                AppStringsManager.getString(
+                                                    languageService
+                                                        .currentLanguage,
+                                                    'calendar_jump_to_day')),
                                             onTap: () {
                                               Navigator.pop(ctx);
                                               onDayTap(e.start);
@@ -2792,7 +2847,11 @@ class _WeekPreview extends StatelessWidget {
                                                 color: Theme.of(context)
                                                     .colorScheme
                                                     .error),
-                                            title: Text(AppStringsManager.getString(languageService.currentLanguage, 'delete_action'),
+                                            title: Text(
+                                                AppStringsManager.getString(
+                                                    languageService
+                                                        .currentLanguage,
+                                                    'delete_action'),
                                                 style: TextStyle(
                                                     color: Theme.of(context)
                                                         .colorScheme

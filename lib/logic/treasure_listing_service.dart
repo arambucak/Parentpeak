@@ -27,6 +27,7 @@ class TreasureListingService {
   static final TreasureListingService instance = TreasureListingService._();
   static const String _storageKey = 'treasure_listings.v1';
   static const String _draftStorageKey = 'treasure_upload_draft.v1';
+  static const double _localDiscoveryRadiusKm = 25;
 
   List<TreasureListing>? _cache;
   final TreasureBackendService _backendService = TreasureBackendService();
@@ -36,79 +37,35 @@ class TreasureListingService {
 
   Future<TreasureDiscoveryResult> loadListingsWithFallback() async {
     if (_backendService.isEnabled) {
-      const radii = <double>[10, 50, 100, 1200];
-      const scopes = <String>['10km', '50km', '100km', 'country'];
-
       final loc = LocationService.instance;
-      final lat = loc.latitude;
-      final lng = loc.longitude;
-
-      for (var i = 0; i < radii.length; i++) {
-        final remoteListings = await _backendService.fetchTreasures(
-          radiusKm: radii[i],
-          latitude: lat,
-          longitude: lng,
+      if (!loc.hasLocation) {
+        _cache = [];
+        lastSyncError =
+            'Standort benötigt, um Angebote in deiner Nähe zu zeigen.';
+        return const TreasureDiscoveryResult(
+          listings: [],
+          scope: '25km',
+          globalDigitalMode: false,
+          showInviteBanner: false,
         );
-        if (remoteListings.isNotEmpty) {
-          _cache = remoteListings;
-          await _persist();
-          lastSyncError = _backendService.lastSyncError;
-          return TreasureDiscoveryResult(
-            listings: List<TreasureListing>.from(_cache!),
-            scope: scopes[i],
-            globalDigitalMode: false,
-            showInviteBanner: i > 0,
-          );
-        }
       }
 
-      final fallbackDigital = <TreasureListing>[
-        TreasureListing(
-          id: 'digital-room-kids-books',
-          title: 'Globaler Tauschraum: Kinderbücher',
-          category: 'Bücher',
-          sizeAge: '0-9 Jahre',
-          conditionKey: 'round2',
-          distanceMeters: 0,
-          colorLabel: 'Online',
-          note:
-              'Digitale Matching-Liste für Familien, die Kinderbücher verschenken oder suchen.',
-          locationLabel: 'Online',
-          createdAt: DateTime.now(),
-        ),
-        TreasureListing(
-          id: 'digital-room-clothes',
-          title: 'Globaler Tauschraum: Kleidung',
-          category: 'Kleidung',
-          sizeAge: 'Baby bis Schule',
-          conditionKey: 'round2',
-          distanceMeters: 0,
-          colorLabel: 'Online',
-          note:
-              'Kleidungspakete nach Größe sortiert mit direktem Elternkontakt.',
-          locationLabel: 'Online',
-          createdAt: DateTime.now(),
-        ),
-        TreasureListing(
-          id: 'digital-room-toys',
-          title: 'Globaler Tauschraum: Spielzeug',
-          category: 'Spielzeug',
-          sizeAge: '2-10 Jahre',
-          conditionKey: 'round2',
-          distanceMeters: 0,
-          colorLabel: 'Online',
-          note:
-              'Themenbasierter digitaler Marktplatz für Spielsachen und Lernmaterialien.',
-          locationLabel: 'Online',
-          createdAt: DateTime.now(),
-        ),
-      ];
+      final lat = loc.latitude;
+      final lng = loc.longitude;
+      final remoteListings = await _backendService.fetchTreasures(
+        radiusKm: _localDiscoveryRadiusKm,
+        latitude: lat,
+        longitude: lng,
+      );
+      _cache = remoteListings;
+      await _persist();
+      lastSyncError = _backendService.lastSyncError;
 
       return TreasureDiscoveryResult(
-        listings: fallbackDigital,
-        scope: 'global',
-        globalDigitalMode: true,
-        showInviteBanner: true,
+        listings: List<TreasureListing>.from(_cache!),
+        scope: '25km',
+        globalDigitalMode: false,
+        showInviteBanner: false,
       );
     }
 
@@ -128,17 +85,21 @@ class TreasureListingService {
 
     if (_backendService.isEnabled) {
       final loc = LocationService.instance;
+      if (!loc.hasLocation) {
+        _cache = [];
+        lastSyncError =
+            'Standort benötigt, um Angebote in deiner Nähe zu zeigen.';
+        return const [];
+      }
       final remoteListings = await _backendService.fetchTreasures(
+        radiusKm: _localDiscoveryRadiusKm,
         latitude: loc.latitude,
         longitude: loc.longitude,
       );
-      if (remoteListings.isNotEmpty || _backendService.lastSyncError == null) {
-        _cache = remoteListings;
-        await _persist();
-        lastSyncError = _backendService.lastSyncError;
-        return List<TreasureListing>.from(_cache!);
-      }
+      _cache = remoteListings;
+      await _persist();
       lastSyncError = _backendService.lastSyncError;
+      return List<TreasureListing>.from(_cache!);
     }
 
     try {
@@ -162,42 +123,156 @@ class TreasureListingService {
     return List<TreasureListing>.from(_cache!);
   }
 
-  Future<List<TreasureListing>> createListing(
+  Future<TreasureListing?> createListing(
     TreasureListing listing, {
     String? userId,
   }) async {
-    if (_backendService.isEnabled) {
-      final resolvedUserId = (userId != null && userId.trim().isNotEmpty)
-          ? userId.trim()
-          : (AuthService.instance.currentUser?.uid ?? 'anonymous-user');
-      final created = await _backendService.createTreasure(
-        listing: listing,
-        userId: resolvedUserId,
-        location: listing.locationLabel ?? 'Familien-Nachbarschaft',
-        latitude: listing.latitude ?? 52.5200,
-        longitude: listing.longitude ?? 13.4050,
-      );
+    if (listing.latitude == null || listing.longitude == null) {
+      lastSyncError = 'Standort benötigt, um ein Angebot zu veröffentlichen.';
+      return null;
+    }
 
-      if (created != null) {
-        final listings = await loadListings();
-        final merged = [
-          created,
-          ...listings.where((item) => item.id != created.id),
-        ];
-        _cache = merged;
-        await _persist();
-        lastSyncError = _backendService.lastSyncError;
-        return List<TreasureListing>.from(_cache!);
-      }
+    if (!_backendService.isEnabled) {
+      lastSyncError = 'Verschenkmarkt ist gerade nicht verfügbar.';
+      return null;
+    }
+
+    final resolvedUserId = (userId != null && userId.trim().isNotEmpty)
+        ? userId.trim()
+        : AuthService.instance.currentUser?.uid;
+    if (resolvedUserId == null || resolvedUserId.isEmpty) {
+      lastSyncError = 'Bitte melde dich an, um ein Angebot zu veröffentlichen.';
+      return null;
+    }
+
+    final created = await _backendService.createTreasure(
+      listing: listing,
+      userId: resolvedUserId,
+      location: listing.locationLabel ?? 'Familien-Nachbarschaft',
+      latitude: listing.latitude!,
+      longitude: listing.longitude!,
+    );
+    if (created == null) {
       lastSyncError = _backendService.lastSyncError;
+      return null;
+    }
+
+    _cache = [
+      created,
+      ...?_cache?.where((item) => item.id != created.id),
+    ];
+    await _persist();
+    lastSyncError = null;
+    return created;
+  }
+
+  static const String _reservedStorageKey = 'treasure_reserved_ids.v1';
+
+  /// IDs der reservierten Schätze (lokal, damit "reserviert" sofort sichtbar ist).
+  Future<Set<String>> loadReservedIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    return (prefs.getStringList(_reservedStorageKey) ?? const []).toSet();
+  }
+
+  Future<bool> reserveListing({
+    required String listingId,
+    String? preferredSlot,
+    String? handoverMode,
+    String? message,
+  }) async {
+    final userId = AuthService.instance.currentUser?.uid ?? 'guest';
+
+    if (_backendService.isEnabled) {
+      final ok = await _backendService.reserveTreasure(
+        treasureId: listingId,
+        requesterUserId: userId,
+        preferredSlot: preferredSlot,
+        handoverMode: handoverMode,
+        message: message,
+      );
+      lastSyncError = ok ? null : _backendService.lastSyncError;
+      if (!ok) return false;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final reserved =
+        (prefs.getStringList(_reservedStorageKey) ?? <String>[]).toSet();
+    reserved.add(listingId);
+    await prefs.setStringList(_reservedStorageKey, reserved.toList());
+    return true;
+  }
+
+  Future<bool> deleteListing({required String listingId}) async {
+    final userId = AuthService.instance.currentUser?.uid;
+    if (userId == null || userId.isEmpty) {
+      lastSyncError = 'Bitte melde dich an, um deine Anzeige zu löschen.';
+      return false;
+    }
+
+    if (_backendService.isEnabled) {
+      final deleted = await _backendService.deleteTreasure(
+        treasureId: listingId,
+        userId: userId,
+      );
+      lastSyncError = deleted ? null : _backendService.lastSyncError;
+      if (!deleted) return false;
     }
 
     final listings = await loadListings();
-    listings.insert(0, listing);
-    _cache = listings;
+    _cache = listings.where((item) => item.id != listingId).toList();
     await _persist();
-    lastSyncError = 'Backend nicht erreichbar - lokal gespeichert.';
-    return List<TreasureListing>.from(_cache!);
+    return true;
+  }
+
+  Future<TreasureMineOverview?> loadMine() async {
+    final userId = AuthService.instance.currentUser?.uid;
+    if (userId == null || userId.isEmpty) {
+      lastSyncError = 'Bitte melde dich an, um deine Anzeigen zu sehen.';
+      return null;
+    }
+    final overview = await _backendService.fetchMine(userId: userId);
+    lastSyncError = _backendService.lastSyncError;
+    return overview;
+  }
+
+  Future<bool> confirmHandover({
+    required String listingId,
+    required String handoverId,
+  }) =>
+      _updateHandoverStatus(listingId, handoverId, 'confirm');
+
+  Future<bool> completeHandover({
+    required String listingId,
+    required String handoverId,
+  }) =>
+      _updateHandoverStatus(listingId, handoverId, 'complete');
+
+  Future<bool> cancelReservation({required String listingId}) async {
+    final userId = AuthService.instance.currentUser?.uid;
+    if (userId == null || userId.isEmpty) return false;
+    final cancelled = await _backendService.cancelReservation(
+      treasureId: listingId,
+      requesterUserId: userId,
+    );
+    lastSyncError = cancelled ? null : _backendService.lastSyncError;
+    return cancelled;
+  }
+
+  Future<bool> _updateHandoverStatus(
+    String listingId,
+    String handoverId,
+    String action,
+  ) async {
+    final userId = AuthService.instance.currentUser?.uid;
+    if (userId == null || userId.isEmpty) return false;
+    final updated = await _backendService.updateHandoverStatus(
+      treasureId: listingId,
+      handoverId: handoverId,
+      userId: userId,
+      action: action,
+    );
+    lastSyncError = updated ? null : _backendService.lastSyncError;
+    return updated;
   }
 
   Future<bool> reportListing({

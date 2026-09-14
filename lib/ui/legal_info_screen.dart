@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LegalInfoScreen extends StatelessWidget {
@@ -195,7 +196,7 @@ class _ComplianceLinksSection extends StatelessWidget {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Link konnte nicht geöffnet werden.')),
+        SnackBar(content: Text(context.tr('common_link_open_failed'))),
       );
     }
   }
@@ -289,7 +290,7 @@ class _ComplianceLink extends StatelessWidget {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Link konnte nicht geöffnet werden.')),
+        SnackBar(content: Text(context.tr('common_link_open_failed'))),
       );
     }
   }

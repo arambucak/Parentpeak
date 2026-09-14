@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/shopping_backend_service.dart';
@@ -175,8 +176,8 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
     final completeKey = isTodos ? 'done' : 'checked';
     final titleKey = isTodos ? 'title' : 'name';
     final subtitleHint = isTodos
-        ? 'Neue Aufgabe hinzufügen...'
-        : 'Neuen Einkaufsartikel hinzufügen...';
+      ? context.tr('organization_add_todo_hint')
+      : context.tr('organization_add_shopping_hint');
 
     final openItems = activeItems
         .where((item) => !(item[completeKey] as bool? ?? false))
@@ -192,12 +193,12 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Organisation'),
+        title: Text(context.tr('organization_title')),
         actions: [
           IconButton(
             onPressed: _loadData,
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Synchronisieren',
+            tooltip: context.tr('tooltip_sync'),
           ),
         ],
       ),
@@ -205,16 +206,16 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           SegmentedButton<_OrganizationMode>(
-            segments: const [
+            segments: [
               ButtonSegment<_OrganizationMode>(
                 value: _OrganizationMode.todos,
-                icon: Icon(Icons.task_alt_rounded),
-                label: Text('To-do'),
+                icon: const Icon(Icons.task_alt_rounded),
+                label: Text(context.tr('family_hub_tab_todo')),
               ),
               ButtonSegment<_OrganizationMode>(
                 value: _OrganizationMode.shopping,
-                icon: Icon(Icons.shopping_cart_rounded),
-                label: Text('Einkauf'),
+                icon: const Icon(Icons.shopping_cart_rounded),
+                label: Text(context.tr('family_hub_tab_shopping')),
               ),
             ],
             selected: {_mode},
@@ -237,11 +238,11 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                     Icons.cloud_done_rounded,
                     color: theme.colorScheme.primary,
                   ),
-                  title: const Text('Lokaler Modus aktiv'),
+                  title: Text(context.tr('organization_local_mode')),
                   subtitle: Text(syncError),
                   trailing: TextButton(
                     onPressed: _loadData,
-                    child: const Text('Erneut versuchen'),
+                    child: Text(context.tr('try_again')),
                   ),
                 )
                 ),
@@ -264,7 +265,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Offline-Modus — Änderungen werden lokal gespeichert und beim nächsten Sync nachgesendet.',
+                      context.tr('organization_offline_notice'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -322,13 +323,13 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
             Row(
               children: [
                 _SummaryChip(
-                  label: 'Offen',
+                  label: context.tr('status_open'),
                   value: openItems.length,
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
                 _SummaryChip(
-                  label: 'Erledigt',
+                  label: context.tr('status_done'),
                   value: doneItems.length,
                   color: Colors.green,
                 ),
@@ -341,8 +342,8 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                 child: Center(
                   child: Text(
                     isTodos
-                        ? 'Noch keine Aufgaben vorhanden.'
-                        : 'Noch keine Einkaufseintraege vorhanden.',
+                      ? context.tr('organization_no_todos')
+                      : context.tr('organization_no_shopping_items'),
                   ),
                 ),
               )
@@ -351,7 +352,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    'Offen',
+                    context.tr('status_open'),
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
@@ -385,7 +386,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                         ),
                       ),
                       subtitle: Text(
-                        (item['category'] ?? 'Allgemein').toString(),
+                        _localizedCategory(item['category']),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -402,7 +403,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(0, 6, 0, 8),
                   child: Text(
-                    'Erledigt',
+                    context.tr('status_done'),
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
@@ -436,7 +437,7 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
                         ),
                       ),
                       subtitle: Text(
-                        (item['category'] ?? 'Allgemein').toString(),
+                        _localizedCategory(item['category']),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -454,6 +455,13 @@ class _OrganizationScreenState extends State<OrganizationScreen> {
         ],
       ),
     );
+  }
+
+  String _localizedCategory(dynamic category) {
+    final value = category?.toString() ?? '';
+    return value.isEmpty || value == 'Allgemein'
+        ? context.tr('organization_category_general')
+        : value;
   }
 }
 
