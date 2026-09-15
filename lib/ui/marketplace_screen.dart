@@ -126,8 +126,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
                   Text(_t('loading')),
                 ],
               ),

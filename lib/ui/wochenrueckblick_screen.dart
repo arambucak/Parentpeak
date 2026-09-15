@@ -137,7 +137,6 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
 
   // Archive
   List<WeeklyReflection> _archive = [];
-  WeeklyReflection? _currentWeekReflection;
   bool _showArchive = false;
 
   late AnimationController _fadeCtrl;
@@ -197,7 +196,6 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
     if (mounted) {
       setState(() {
         _archive = all;
-        _currentWeekReflection = current;
         if (current != null) {
           _selectedMood = current.overallMood;
           _wellCtrl.text = current.whatWentWell;
@@ -243,7 +241,6 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
       lookingForwardTo: _lookingForwardCtrl.text.trim(),
     );
     await WeeklyReflectionService.save(reflection);
-    setState(() => _currentWeekReflection = reflection);
 
     // Generate AI feedback
     setState(() => _aiLoading = true);
@@ -257,7 +254,6 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
         setState(() {
           _aiFeedback = response;
           _aiLoading = false;
-          _currentWeekReflection = updated;
         });
       }
     } catch (e) {
@@ -299,7 +295,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
         title: Text(
             AppStringsManager.getString(
                 languageService.currentLanguage, 'weekly_review'),
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
         centerTitle: false,
         actions: [
           if (_archive.isNotEmpty)
@@ -422,17 +418,17 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        Center(
-          child: Text('\u{1F49C}', style: const TextStyle(fontSize: 48)),
+        const Center(
+          child: Text('\u{1F49C}', style: TextStyle(fontSize: 48)),
         ),
         const SizedBox(height: 20),
         Center(
           child: Text(
             _t('how_was_week'),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF1F2937),
+              color: Color(0xFF1F2937),
             ),
             textAlign: TextAlign.center,
           ),
@@ -442,9 +438,9 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
           child: Text(
             _reviewCopy('mood_subtitle',
                 'Dein Gesamteindruck — es gibt kein Richtig oder Falsch.'),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
-              color: const Color(0xFF6B7280),
+              color: Color(0xFF6B7280),
             ),
             textAlign: TextAlign.center,
           ),
@@ -707,12 +703,12 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
             ),
             child: Row(
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: const Color(0xFF7C3AED),
+                    color: Color(0xFF7C3AED),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -720,7 +716,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
                   child: Text(
                     _reviewCopy(
                         'ai_loading', 'KI denkt über deine Woche nach...'),
-                    style: TextStyle(
+                    style: const TextStyle(
                         color: Color(0xFF6B21A8),
                         fontWeight: FontWeight.w500,
                         fontSize: 13),
@@ -752,10 +748,10 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
                     const SizedBox(width: 8),
                     Text(
                       _reviewCopy('ai_feedback', 'Dein KI-Feedback'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF6B21A8),
+                        color: Color(0xFF6B21A8),
                       ),
                     ),
                   ],
@@ -805,7 +801,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
           child: TextButton(
             onPressed: _startNewReflection,
             child: Text(_t('review_fill_again'),
-                style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
           ),
         ),
       ],
@@ -863,7 +859,6 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
       _learnedCtrl.clear();
       _lookingForwardCtrl.clear();
       _aiFeedback = null;
-      _currentWeekReflection = null;
       _fadeCtrl.reset();
       _fadeCtrl.forward();
     });
@@ -909,7 +904,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
               leading:
                   const Icon(Icons.delete_rounded, color: Color(0xFFDC2626)),
               title: Text(_t('review_delete'),
-                  style: TextStyle(color: Color(0xFFDC2626))),
+                  style: const TextStyle(color: Color(0xFFDC2626))),
               onTap: () {
                 Navigator.pop(ctx);
                 _deleteReflection(r);
@@ -931,7 +926,6 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
       _learnedCtrl.text = r.whatILearned;
       _lookingForwardCtrl.text = r.lookingForwardTo;
       _aiFeedback = null;
-      _currentWeekReflection = null;
       _fadeCtrl.reset();
       _fadeCtrl.forward();
     });

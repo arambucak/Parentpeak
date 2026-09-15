@@ -18,10 +18,8 @@ class FamilyRecipeService {
   static final FamilyRecipeService instance = FamilyRecipeService._();
   FamilyRecipeService._();
 
-  static const _cacheKey = 'familyküche.recipes';
   static const _savedKey = 'familyküche.saved';
 
-  List<FamilyRecipe> _recentRecipes = [];
   List<FamilyRecipe> _savedRecipes = [];
   int _childAge = 3;
   List<String> _allergies = [];
@@ -242,8 +240,9 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   /// Speichert ein Rezept als Favorit.
   Future<void> saveRecipe(FamilyRecipe recipe) async {
     _savedRecipes.insert(0, recipe);
-    if (_savedRecipes.length > 30)
+    if (_savedRecipes.length > 30) {
       _savedRecipes = _savedRecipes.take(30).toList();
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         _savedKey, jsonEncode(_savedRecipes.map((r) => r.toJson()).toList()));

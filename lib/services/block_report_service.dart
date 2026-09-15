@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -174,7 +173,7 @@ class BlockReportService {
     if (moderationResult != null) {
       // Content is clearly harmful → auto-action
       debugPrint('BlockReportService: Auto-moderated: $moderationResult');
-      return ReportResult(
+      return const ReportResult(
         action: ReportAction.autoRemoved,
         message:
             'Der Inhalt wurde automatisch entfernt. Danke für deine Meldung.',
@@ -185,14 +184,14 @@ class BlockReportService {
     final userReportCount =
         _reports.where((r) => r.reportedUserId == reportedUserId).length;
     if (userReportCount >= 3) {
-      return ReportResult(
+      return const ReportResult(
         action: ReportAction.userWarned,
         message:
             'Dieser Nutzer wurde bereits mehrfach gemeldet. Wir prüfen den Fall.',
       );
     }
 
-    return ReportResult(
+    return const ReportResult(
       action: ReportAction.reviewPending,
       message: 'Danke für deine Meldung. Wir prüfen den Inhalt.',
     );
@@ -208,8 +207,9 @@ class BlockReportService {
     await prefs.setString(
         _blockedKey, jsonEncode(_blockedUsers.map((u) => u.toJson()).toList()));
     // Keep max 100 reports
-    if (_reports.length > 100)
+    if (_reports.length > 100) {
       _reports = _reports.sublist(_reports.length - 100);
+    }
     await prefs.setString(
         _reportsKey, jsonEncode(_reports.map((r) => r.toJson()).toList()));
   }

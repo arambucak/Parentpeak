@@ -90,7 +90,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(context.tr('table_moment_saved')),
       behavior: SnackBarBehavior.floating,
-      backgroundColor: Color(0xFF16A34A),
+      backgroundColor: const Color(0xFF16A34A),
     ));
   }
 

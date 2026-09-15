@@ -20,12 +20,10 @@ class MoodCheckWidget extends StatefulWidget {
 class _MoodCheckWidgetState extends State<MoodCheckWidget>
     with SingleTickerProviderStateMixin {
   static const String _storagePrefix = 'mood.daily.';
-  static const String _notePrefix = 'mood.note.';
 
   int? _todayLevel; // 1-5 (1=schwierig, 5=super)
   List<int?> _weekLevels = List.filled(7, null);
   bool _justRecorded = false;
-  String? _todayNote;
 
   late final AnimationController _celebrateController;
 
@@ -92,7 +90,6 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
     final now = DateTime.now();
     final today = _dayKey(now);
     final todayStr = prefs.getString('$_storagePrefix$today');
-    final note = prefs.getString('$_notePrefix$today');
 
     final weekLevels = <int?>[];
     for (int i = 6; i >= 0; i--) {
@@ -106,7 +103,6 @@ class _MoodCheckWidgetState extends State<MoodCheckWidget>
       setState(() {
         _todayLevel = todayStr != null ? int.tryParse(todayStr) : null;
         _weekLevels = weekLevels;
-        _todayNote = note;
       });
     }
   }

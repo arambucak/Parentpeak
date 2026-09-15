@@ -133,8 +133,9 @@ class FriendshipService extends ChangeNotifier {
   Future<bool> sendRequest(String toUid) async {
     final api = _api;
     final uid = _uid;
-    if (api == null || uid == null || uid.isEmpty || toUid.isEmpty)
+    if (api == null || uid == null || uid.isEmpty || toUid.isEmpty) {
       return false;
+    }
     if (uid == toUid) return false;
     // Sicherheitsnetz: eigenen Anzeigenamen serverseitig sichern, BEVOR die
     // Anfrage rausgeht — so sieht der Empfaenger nie 'Familie'.
@@ -164,8 +165,9 @@ class FriendshipService extends ChangeNotifier {
   Future<bool> accept(String otherUid) async {
     final api = _api;
     final uid = _uid;
-    if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty)
+    if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty) {
       return false;
+    }
     try {
       await api.postJsonAny('/api/friendships/accept', {
         'uid': uid,
@@ -183,8 +185,9 @@ class FriendshipService extends ChangeNotifier {
   Future<bool> remove(String otherUid) async {
     final api = _api;
     final uid = _uid;
-    if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty)
+    if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty) {
       return false;
+    }
     try {
       await api.delete('/api/friendships?uid=$uid&otherUid=$otherUid');
       await load();

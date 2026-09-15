@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/logic/event_cache_service.dart';
 import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -79,7 +78,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                 MaterialPageRoute(
                     builder: (_) => const EventsActivitiesScreen())),
             child: Text(_t('all'),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
           ),
         ]),
       ),
@@ -181,7 +180,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(_t('events_free'),
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF16A34A))),

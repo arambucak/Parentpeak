@@ -527,7 +527,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                       Text(
                           AppStringsManager.getString(
                               languageService.currentLanguage, 'parent_coins'),
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFFEA580C))),
@@ -621,7 +621,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(_t('network_coming_soon'),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white)),
@@ -629,7 +629,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                           Text(
                               _networkCopy('coins_secured',
                                   'Deine Coins sind gesichert. Bald kannst du damit Features freischalten. 🎁'),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 11,
                                   color: Colors.white,
                                   height: 1.3)),
@@ -1879,7 +1879,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               child: Text(
                   AppStringsManager.getString(
                       languageService.currentLanguage, 'done_btn'),
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
         ]),
@@ -1986,7 +1986,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             child: Text(
                 AppStringsManager.getString(
                     languageService.currentLanguage, 'app_invitation'),
-                style: TextStyle(
+                style: const TextStyle(
                     color: Color(0xFF0D9488),
                     fontSize: 12,
                     fontWeight: FontWeight.w700)),
@@ -2049,7 +2049,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     borderRadius: BorderRadius.circular(14)),
               ),
               child: Text(_t('done'),
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
         ]),
@@ -2607,7 +2607,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               label: Text(
                   AppStringsManager.getString(
                       languageService.currentLanguage, 'custom_value'),
-                  style: TextStyle(fontSize: 11)),
+                  style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
                   _valuesCustomCtrl, 'Was ist euch noch wichtig?'),
               shape: RoundedRectangleBorder(
@@ -2656,7 +2656,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               label: Text(
                   AppStringsManager.getString(
                       languageService.currentLanguage, 'custom_idea'),
-                  style: TextStyle(fontSize: 11)),
+                  style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
                   _lookingForCustomCtrl, 'Was wünscht ihr euch noch?'),
               shape: RoundedRectangleBorder(
@@ -2722,7 +2722,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               label: Text(
                   AppStringsManager.getString(
                       languageService.currentLanguage, 'other_time'),
-                  style: TextStyle(fontSize: 11)),
+                  style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
                   _availCustomCtrl, 'z.B. Nur in Ferien, Nur Feiertage...'),
               shape: RoundedRectangleBorder(
@@ -2815,7 +2815,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               label: Text(
                   AppStringsManager.getString(
                       languageService.currentLanguage, 'custom_entry'),
-                  style: TextStyle(fontSize: 11)),
+                  style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(_specialsCustomCtrl,
                   'Was sollten andere Familien noch wissen?'),
               shape: RoundedRectangleBorder(

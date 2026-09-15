@@ -95,10 +95,10 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 1.5),
       ),
-      child: Center(
+      child: const Center(
           child: Text(
         '\u{1F464}',
-        style: const TextStyle(fontSize: 8),
+        style: TextStyle(fontSize: 8),
       )),
     );
   }

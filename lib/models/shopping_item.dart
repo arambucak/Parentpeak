@@ -102,43 +102,63 @@ class ShoppingItem {
         lower.contains('kaese') ||
         lower.contains('butter') ||
         lower.contains('sahne') ||
-        lower.contains('quark')) return '\u{1F95B}';
+        lower.contains('quark')) {
+      return '\u{1F95B}';
+    }
     if (lower.contains('brot') ||
         lower.contains('broetchen') ||
-        lower.contains('toast')) return '\u{1F35E}';
+        lower.contains('toast')) {
+      return '\u{1F35E}';
+    }
     if (lower.contains('obst') ||
         lower.contains('apfel') ||
         lower.contains('banane') ||
         lower.contains('erdbeere') ||
-        lower.contains('orange')) return '\u{1F34E}';
+        lower.contains('orange')) {
+      return '\u{1F34E}';
+    }
     if (lower.contains('gemuese') ||
         lower.contains('karotte') ||
         lower.contains('brokkoli') ||
         lower.contains('tomate') ||
         lower.contains('salat') ||
-        lower.contains('gurke')) return '\u{1F966}';
+        lower.contains('gurke')) {
+      return '\u{1F966}';
+    }
     if (lower.contains('fleisch') ||
         lower.contains('wurst') ||
         lower.contains('schinken') ||
-        lower.contains('hack')) return '\u{1F356}';
+        lower.contains('hack')) {
+      return '\u{1F356}';
+    }
     if (lower.contains('nudel') ||
         lower.contains('reis') ||
         lower.contains('mehl') ||
-        lower.contains('pasta')) return '\u{1F35D}';
+        lower.contains('pasta')) {
+      return '\u{1F35D}';
+    }
     if (lower.contains('wasser') ||
         lower.contains('saft') ||
         lower.contains('cola') ||
-        lower.contains('limo')) return '\u{1F4A7}';
+        lower.contains('limo')) {
+      return '\u{1F4A7}';
+    }
     if (lower.contains('windel') ||
         lower.contains('feuchttuch') ||
-        lower.contains('creme')) return '\u{1F476}';
+        lower.contains('creme')) {
+      return '\u{1F476}';
+    }
     if (lower.contains('wasch') ||
         lower.contains('spuel') ||
         lower.contains('seife') ||
-        lower.contains('shampoo')) return '\u{1F9F4}';
+        lower.contains('shampoo')) {
+      return '\u{1F9F4}';
+    }
     if (lower.contains('toiletten') ||
         lower.contains('küchen') ||
-        lower.contains('papier')) return '\u{1F9FB}';
+        lower.contains('papier')) {
+      return '\u{1F9FB}';
+    }
     return '\u{1F6D2}';
   }
 }

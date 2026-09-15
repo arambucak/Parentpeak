@@ -186,10 +186,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
       // Web needs more time: browser uses WiFi/IP geolocation
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: LocationSettings(
+        locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
           timeLimit:
-              kIsWeb ? const Duration(seconds: 20) : const Duration(seconds: 6),
+              kIsWeb ? Duration(seconds: 20) : Duration(seconds: 6),
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);

@@ -122,7 +122,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       messenger.showSnackBar(SnackBar(
         content: Text(context.tr('admin_cleanup_empty')),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF16A34A),
+        backgroundColor: const Color(0xFF16A34A),
       ));
       return;
     }
@@ -281,7 +281,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                   color: theme.colorScheme.outline.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8)),
               child: Text(context.tr('admin_locked'),
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
             ),
           const Spacer(),
           if (g.lastReportedAt != null)

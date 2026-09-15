@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/auth_service.dart';
@@ -13,13 +12,10 @@ import 'package:parentpeak/logic/entitlement_service.dart';
 import 'package:parentpeak/ui/calendar_screen.dart';
 import 'package:parentpeak/ui/events_activities_screen.dart';
 import 'package:parentpeak/ui/event_invitations_screen.dart';
-import 'package:parentpeak/ui/organization_screen.dart';
 import 'package:parentpeak/ui/familien_zentrale_screen.dart';
 import 'package:parentpeak/ui/entwicklung_impulse_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
-import 'package:parentpeak/ui/finance_budget_screen.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
-import 'package:parentpeak/ui/gemeinsam_satt_screen.dart';
 import 'package:parentpeak/ui/familien_kueche_screen.dart';
 import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
@@ -27,8 +23,6 @@ import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/ui/widgets/home/context_home_card.dart';
-import 'package:parentpeak/ui/widgets/home/quick_actions_row.dart';
-import 'package:parentpeak/ui/widgets/home/events_carousel_widget.dart';
 import 'package:parentpeak/services/mood_history_service.dart';
 import 'package:parentpeak/ui/wochenrueckblick_screen.dart';
 import 'package:parentpeak/ui/ritual_ruhe_screen.dart';
@@ -291,6 +285,7 @@ class _HomeScreenState extends State<HomeScreen>
     await prefs.setStringList(_tileOrderStorageKey, updated);
   }
 
+  // ignore: unused_element
   Future<void> _resetTileOrder() async {
     if (_customTileOrderIds.isEmpty) return;
 
@@ -576,6 +571,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  // ignore: unused_element
   String _getTimeGreeting(String lang) {
     final hour = DateTime.now().hour;
     if (hour < 12) {
@@ -717,7 +713,7 @@ class _HomeScreenState extends State<HomeScreen>
     }).toList();
 
     // Features already accessible via Quick-Actions or Smart-Card
-    const _quickAccessIds = {
+    const quickAccessIds = {
       'kalender',
       'ki_elternberatung',
       'gemeinsam_satt',
@@ -726,11 +722,8 @@ class _HomeScreenState extends State<HomeScreen>
     };
     final gridActions = visibleGridActions
         .where((a) =>
-            a.featureId == null || !_quickAccessIds.contains(a.featureId))
+            a.featureId == null || !quickAccessIds.contains(a.featureId))
         .toList();
-
-    final displayName =
-        AuthService.instance.currentUser?.displayName.trim() ?? '';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -932,6 +925,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildHeroCard(
     ThemeData theme,
     String familyGreeting, {
@@ -1100,8 +1094,8 @@ class _HomeScreenState extends State<HomeScreen>
               Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.1)),
         ),
         child: Row(children: [
-          Icon(Icons.calendar_today_rounded,
-              color: const Color(0xFF2563EB), size: 20),
+          const Icon(Icons.calendar_today_rounded,
+              color: Color(0xFF2563EB), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1149,8 +1143,8 @@ class _HomeScreenState extends State<HomeScreen>
                 color: const Color(0xFF8B5CF6).withValues(alpha: 0.12)),
           ),
           child: Row(children: [
-            Icon(Icons.self_improvement_rounded,
-                color: const Color(0xFF7C3AED), size: 20),
+            const Icon(Icons.self_improvement_rounded,
+                color: Color(0xFF7C3AED), size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1200,7 +1194,7 @@ class _HomeScreenState extends State<HomeScreen>
               Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.1)),
         ),
         child: Row(children: [
-          Icon(Icons.explore_rounded, color: const Color(0xFF8B5CF6), size: 20),
+          const Icon(Icons.explore_rounded, color: Color(0xFF8B5CF6), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:parentpeak/ui/home_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
-import 'package:parentpeak/main.dart';
 
 /// Tests for the Home Screen — verifies rendering without crashes.
 void main() {
@@ -24,7 +22,7 @@ void main() {
 
     testWidgets('Quick actions have correct labels', (tester) async {
       // Verify the labels exist in the localization
-      final lang = 'de';
+      const lang = 'de';
       final calendar = AppStringsManager.getString(lang, 'calendar');
       final events = AppStringsManager.getString(lang, 'events_near_you');
 
@@ -35,7 +33,7 @@ void main() {
 
     testWidgets('Feature actions list is populated', (tester) async {
       // Verify localization keys used in home screen exist
-      final lang = 'de';
+      const lang = 'de';
       expect(AppStringsManager.getString(lang, 'tile_impulse'), isNotEmpty);
       expect(AppStringsManager.getString(lang, 'tile_calendar'), isNotEmpty);
       expect(AppStringsManager.getString(lang, 'tile_events'), isNotEmpty);

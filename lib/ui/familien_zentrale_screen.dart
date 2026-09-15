@@ -145,7 +145,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
           controller: _tabs,
           tabs: [
             Tab(
-                icon: Icon(Icons.shopping_cart_rounded, size: 20),
+                icon: const Icon(Icons.shopping_cart_rounded, size: 20),
               text: context.tr('family_hub_tab_shopping')),
             Tab(
               icon: const Icon(Icons.task_alt_rounded, size: 20),

@@ -927,7 +927,7 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(_t('family_recipe_share_success')),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Color(0xFF16A34A),
+          backgroundColor: const Color(0xFF16A34A),
         ));
       } else {
         setState(() => _saving = false);

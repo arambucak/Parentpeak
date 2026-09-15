@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/models/community_event.dart';
 
@@ -274,7 +273,7 @@ class EventSourceBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color color;
     final String label;
-    final IconData? icon;
+    final IconData icon;
 
     switch (event.source) {
       case EventSource.kiAgent:
@@ -304,8 +303,8 @@ class EventSourceBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (icon != null) Icon(icon, size: 12, color: color),
-        if (icon != null) const SizedBox(width: 3),
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 3),
         Text(label,
             style: TextStyle(
                 fontSize: 10, fontWeight: FontWeight.w700, color: color)),

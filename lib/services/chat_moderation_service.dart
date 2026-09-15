@@ -144,7 +144,9 @@ class ChatModerationService {
     if (RegExp(
             r'\b[A-ZÄÖÜ][a-zäöü]+(?:straße|str\.|weg|gasse|platz|allee)\s+\d',
             caseSensitive: false)
-        .hasMatch(text)) return true;
+        .hasMatch(text)) {
+      return true;
+    }
 
     return false;
   }

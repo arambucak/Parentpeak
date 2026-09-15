@@ -1185,7 +1185,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
         build: (context) => [
           pw.Text(
             'Parentpeak Finanzen - $month',
-            style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 12),
           pw.Text('Monatskosten: ${_currency(_provider.monthlyTotalExpenses)}'),
@@ -1194,7 +1194,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
               'Sparpotenzial: ${_currency(_provider.secondHandSavingsPotential)}'),
           pw.SizedBox(height: 10),
           pw.Text('Monatsausgleich',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              style: const pw.TextStyle(fontWeight: pw.FontWeight.bold)),
           pw.Text(
               'Mama: ${mamaNet >= 0 ? '+' : '-'} ${_currency(mamaNet.abs())}'),
           pw.Text(

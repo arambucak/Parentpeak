@@ -970,15 +970,15 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               ),
               const SizedBox(height: 20),
               Row(children: [
-                Icon(Icons.business_rounded, size: 22),
-                SizedBox(width: 10),
+                const Icon(Icons.business_rounded, size: 22),
+                const SizedBox(width: 10),
                 Text(_t('profile_imprint'),
                     style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                        const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
               Text(_t('profile_legal_info'),
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                       color: Color(0xFF6B7280))),
@@ -1058,11 +1058,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               ),
               const SizedBox(height: 20),
               Row(children: [
-                Text('\u{1F916}', style: TextStyle(fontSize: 22)),
-                SizedBox(width: 10),
+                const Text('\u{1F916}', style: TextStyle(fontSize: 22)),
+                const SizedBox(width: 10),
                 Text(_t('profile_ai_notice'),
                     style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                        const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
               const Text(
@@ -1108,10 +1108,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(_t('profile_important_info'),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13)),
-                    SizedBox(height: 6),
-                    Text(
+                    const SizedBox(height: 6),
+                    const Text(
                       '\u{2022} KI-Antworten sind keine professionelle Beratung\n'
                       '\u{2022} Keine Speicherung von Chatverläufen auf externen Servern\n'
                       '\u{2022} Keine echten Kindernamen an die KI übermitteln\n'
@@ -1279,13 +1279,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(children: [
-          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
+        content: const Row(children: [
+          Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               'Datenexport in die Zwischenablage kopiert',
-              style: const TextStyle(fontSize: 13),
+              style: TextStyle(fontSize: 13),
             ),
           ),
         ]),
@@ -1372,7 +1372,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
             ),
             const SizedBox(height: 16),
             Text(_t('profile_blocked_contacts'),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
             if (blocked.isEmpty)
               Padding(
@@ -1408,7 +1408,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         if (mounted) setState(() {});
                       },
                       child: Text(_t('profile_unblock'),
-                          style: TextStyle(fontSize: 12)),
+                          style: const TextStyle(fontSize: 12)),
                     ),
                   )),
           ]),
@@ -1550,7 +1550,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
                       borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(_t('profile_delete_final'),
-                    style: TextStyle(color: Colors.white)),
+                    style: const TextStyle(color: Colors.white)),
               ),
             ),
           ]),
