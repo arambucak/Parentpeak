@@ -99,7 +99,17 @@ class FamilyMatchProfile {
     final raw = prefs.getString('spielfreunde.profile');
     if (raw == null || raw.isEmpty) return null;
     try {
-      return FamilyMatchProfile.fromJson(jsonDecode(raw));
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return null;
+      final profile = FamilyMatchProfile.fromJson(decoded);
+      final rawChildren = decoded['children'];
+      final hasLegacyChildren = rawChildren is List &&
+          rawChildren.whereType<Map>().any((child) {
+            return DateTime.tryParse(child['birthDate']?.toString() ?? '') ==
+                null;
+          });
+      if (hasLegacyChildren) await profile.save();
+      return profile;
     } catch (_) {
       return null;
     }
@@ -141,7 +151,8 @@ class ChildEntry {
 
   static DateTime _birthDateFromAgeMonths(int months) {
     final now = DateTime.now();
-    return DateTime(now.year, now.month - months, now.day);
+    final safeMonths = months.clamp(0, 240);
+    return DateTime(now.year, now.month - safeMonths, now.day);
   }
 
   /// Menschlich-lesbare Altersanzeige

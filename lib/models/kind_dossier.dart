@@ -44,7 +44,8 @@ class KindDossier {
 
   static DateTime _birthDateFromAgeMonths(int months) {
     final now = DateTime.now();
-    return DateTime(now.year, now.month - months, now.day);
+    final safeMonths = months.clamp(0, 240);
+    return DateTime(now.year, now.month - safeMonths, now.day);
   }
 
   static int _ageMonthsFromBirthDate(DateTime date) {
@@ -176,9 +177,22 @@ class KindDossierService {
     final raw = prefs.getString(_key);
     if (raw != null && raw.isNotEmpty) {
       try {
-        _dossiers = (jsonDecode(raw) as List)
-            .map((e) => KindDossier.fromJson(e))
-            .toList();
+        final decoded = jsonDecode(raw);
+        if (decoded is! List) return;
+        var migrated = false;
+        _dossiers = decoded.whereType<Map>().map((entry) {
+          final data = Map<String, dynamic>.from(entry);
+          final birthDate =
+              DateTime.tryParse(data['birthDate']?.toString() ?? '');
+          if (birthDate == null) migrated = true;
+          return KindDossier.fromJson(data);
+        }).toList();
+        if (migrated) {
+          await prefs.setString(
+            _key,
+            jsonEncode(_dossiers.map((dossier) => dossier.toJson()).toList()),
+          );
+        }
       } catch (_) {}
     }
   }
