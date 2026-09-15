@@ -33,36 +33,41 @@ String _networkCopy(String key, String fallback) {
       'friends': 'Friends',
       'playmates': 'Playmates',
       'invite': 'Invite',
-        'invite_hero_title': 'Invite friends',
-        'invite_hero_description':
+      'invite_hero_title': 'Invite friends',
+      'invite_hero_description':
           'Share your personal link or QR code - one tap and you are connected.',
-        'share': 'Share',
-          'setup_hint': 'In 5 short steps, you will find families who are a good fit for you.',
-          'empty_title': 'Be the first family in your area',
-          'empty_description': 'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
-          'invite_playmates': 'Invite playmates',
-          'values_tip': 'Tip: Families with similar values understand each other best. Choose what matters to you.',
-          'bio_hint': 'Tell us about yourselves: What makes your family special? What are you looking for?',
-          'step_1': 'Step 1: Your family',
-          'step_2': 'Step 2: Your children',
-          'step_3': 'Step 3: Values and style',
-          'step_4': 'Step 4: What are you looking for?',
-          'step_5': 'Step 5: Languages and more',
-          'bio_title': 'Short bio',
-          'login_required': 'Please sign in to publish your playmate profile.',
-          'same_city': 'In your city',
-          'reason_nearby': 'Nearby',
-          'reason_shared_interests': 'Shared interests',
-          'reason_similar_child_age': 'Children of a similar age',
-          'reason_shared_languages': 'Shared languages',
-          'reason_shared_values': 'Similar parenting values',
-          'reason_shared_family_form': 'Similar family setup',
-          'request_sent': 'Your request was sent to {name}.',
-          'request_failed': 'Your request could not be sent. Please try again later.',
-          'no_gender': 'Prefer not to say',
-          'gender_maennlich': 'Boy',
-          'gender_weiblich': 'Girl',
-          'gender_divers': 'Diverse',
+      'share': 'Share',
+      'setup_hint':
+          'In 5 short steps, you will find families who are a good fit for you.',
+      'empty_title': 'Be the first family in your area',
+      'empty_description':
+          'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
+      'invite_playmates': 'Invite playmates',
+      'values_tip':
+          'Tip: Families with similar values understand each other best. Choose what matters to you.',
+      'bio_hint':
+          'Tell us about yourselves: What makes your family special? What are you looking for?',
+      'step_1': 'Step 1: Your family',
+      'step_2': 'Step 2: Your children',
+      'step_3': 'Step 3: Values and style',
+      'step_4': 'Step 4: What are you looking for?',
+      'step_5': 'Step 5: Languages and more',
+      'bio_title': 'Short bio',
+      'login_required': 'Please sign in to publish your playmate profile.',
+      'same_city': 'In your city',
+      'reason_nearby': 'Nearby',
+      'reason_shared_interests': 'Shared interests',
+      'reason_similar_child_age': 'Children of a similar age',
+      'reason_shared_languages': 'Shared languages',
+      'reason_shared_values': 'Similar parenting values',
+      'reason_shared_family_form': 'Similar family setup',
+      'request_sent': 'Your request was sent to {name}.',
+      'request_failed':
+          'Your request could not be sent. Please try again later.',
+      'no_gender': 'Prefer not to say',
+      'gender_maennlich': 'Boy',
+      'gender_weiblich': 'Girl',
+      'gender_divers': 'Diverse',
       'coins_until': 'Until free Premium',
       'invites_successful': 'successful invitations',
       'coin_value': '1 Coin = €1',
@@ -93,36 +98,42 @@ String _networkCopy(String key, String fallback) {
       'friends': 'Heval',
       'playmates': 'Hevalên lîstikê',
       'invite': 'Vexwendin',
-        'invite_hero_title': 'Hevalan vexwîne',
-        'invite_hero_description':
+      'invite_hero_title': 'Hevalan vexwîne',
+      'invite_hero_description':
           'Girêdana xwe ya kesane an koda QR parve bike - bi yek pêlê hûn tên girêdan.',
-        'share': 'Parve bike',
-          'setup_hint': 'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
-          'empty_title': 'Di herêma xwe de malbata yekem bibe',
-          'empty_description': 'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
-          'invite_playmates': 'Hevalên lîstikê vexwîne',
-          'values_tip': 'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
-          'bio_hint': 'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
-          'step_1': 'Gav 1: Malbata we',
-          'step_2': 'Gav 2: Zarokên we',
-          'step_3': 'Gav 3: Nirx û şêwaz',
-          'step_4': 'Gav 4: Hûn li çi digerin?',
-          'step_5': 'Gav 5: Ziman û zêdetir',
-          'bio_title': 'Bioya kurt',
-          'login_required': 'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
-          'same_city': 'Di bajarê te de',
-          'reason_nearby': 'Li nêzîkê',
-          'reason_shared_interests': 'Berjewendiyên hevpar',
-          'reason_similar_child_age': 'Zarokên bi temenê nêzîk',
-          'reason_shared_languages': 'Zimanên hevpar',
-          'reason_shared_values': 'Nirxên perwerdehiyê yên wekhev',
-          'reason_shared_family_form': 'Şêwaza malbatê ya wekhev',
-          'request_sent': 'Daxwaza te ji {name} re hat şandin.',
-          'request_failed': 'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
-          'no_gender': 'Naxwazim bibêjim',
-          'gender_maennlich': 'Kur',
-          'gender_weiblich': 'Keç',
-          'gender_divers': 'Cûda',
+      'share': 'Parve bike',
+      'setup_hint':
+          'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
+      'empty_title': 'Di herêma xwe de malbata yekem bibe',
+      'empty_description':
+          'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
+      'invite_playmates': 'Hevalên lîstikê vexwîne',
+      'values_tip':
+          'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
+      'bio_hint':
+          'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
+      'step_1': 'Gav 1: Malbata we',
+      'step_2': 'Gav 2: Zarokên we',
+      'step_3': 'Gav 3: Nirx û şêwaz',
+      'step_4': 'Gav 4: Hûn li çi digerin?',
+      'step_5': 'Gav 5: Ziman û zêdetir',
+      'bio_title': 'Bioya kurt',
+      'login_required':
+          'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
+      'same_city': 'Di bajarê te de',
+      'reason_nearby': 'Li nêzîkê',
+      'reason_shared_interests': 'Berjewendiyên hevpar',
+      'reason_similar_child_age': 'Zarokên bi temenê nêzîk',
+      'reason_shared_languages': 'Zimanên hevpar',
+      'reason_shared_values': 'Nirxên perwerdehiyê yên wekhev',
+      'reason_shared_family_form': 'Şêwaza malbatê ya wekhev',
+      'request_sent': 'Daxwaza te ji {name} re hat şandin.',
+      'request_failed':
+          'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
+      'no_gender': 'Naxwazim bibêjim',
+      'gender_maennlich': 'Kur',
+      'gender_weiblich': 'Keç',
+      'gender_divers': 'Cûda',
       'coins_until': 'Ji bo Premiuma belaş',
       'invites_successful': 'vexwendinên serkeftî',
       'coin_value': '1 Coin = €1',
@@ -153,36 +164,41 @@ String _networkCopy(String key, String fallback) {
       'friends': 'Arkadaşlar',
       'playmates': 'Oyun arkadaşları',
       'invite': 'Davet et',
-        'invite_hero_title': 'Arkadaşlarını davet et',
-        'invite_hero_description':
+      'invite_hero_title': 'Arkadaşlarını davet et',
+      'invite_hero_description':
           'Kişisel bağlantını veya QR kodunu paylaş - tek dokunuşla bağlantı kurun.',
-        'share': 'Paylaş',
-          'setup_hint': '5 kısa adımda size uygun aileleri bulun.',
-          'empty_title': 'Bölgenizdeki ilk aile siz olun',
-          'empty_description': 'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
-          'invite_playmates': 'Oyun arkadaşlarını davet et',
-          'values_tip': 'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
-          'bio_hint': 'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
-          'step_1': '1. Adım: Aileniz',
-          'step_2': '2. Adım: Çocuklarınız',
-          'step_3': '3. Adım: Değerler ve yaklaşım',
-          'step_4': '4. Adım: Ne arıyorsunuz?',
-          'step_5': '5. Adım: Diller ve daha fazlası',
-          'bio_title': 'Kısa biyografi',
-          'login_required': 'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
-          'same_city': 'Şehrinizde',
-          'reason_nearby': 'Yakınınızda',
-          'reason_shared_interests': 'Ortak ilgi alanları',
-          'reason_similar_child_age': 'Benzer yaşta çocuklar',
-          'reason_shared_languages': 'Ortak diller',
-          'reason_shared_values': 'Benzer ebeveynlik değerleri',
-          'reason_shared_family_form': 'Benzer aile yapısı',
-          'request_sent': '{name} için isteğiniz gönderildi.',
-          'request_failed': 'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
-          'no_gender': 'Belirtmek istemiyorum',
-          'gender_maennlich': 'Erkek',
-          'gender_weiblich': 'Kız',
-          'gender_divers': 'Diğer',
+      'share': 'Paylaş',
+      'setup_hint': '5 kısa adımda size uygun aileleri bulun.',
+      'empty_title': 'Bölgenizdeki ilk aile siz olun',
+      'empty_description':
+          'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
+      'invite_playmates': 'Oyun arkadaşlarını davet et',
+      'values_tip':
+          'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
+      'bio_hint':
+          'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
+      'step_1': '1. Adım: Aileniz',
+      'step_2': '2. Adım: Çocuklarınız',
+      'step_3': '3. Adım: Değerler ve yaklaşım',
+      'step_4': '4. Adım: Ne arıyorsunuz?',
+      'step_5': '5. Adım: Diller ve daha fazlası',
+      'bio_title': 'Kısa biyografi',
+      'login_required':
+          'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
+      'same_city': 'Şehrinizde',
+      'reason_nearby': 'Yakınınızda',
+      'reason_shared_interests': 'Ortak ilgi alanları',
+      'reason_similar_child_age': 'Benzer yaşta çocuklar',
+      'reason_shared_languages': 'Ortak diller',
+      'reason_shared_values': 'Benzer ebeveynlik değerleri',
+      'reason_shared_family_form': 'Benzer aile yapısı',
+      'request_sent': '{name} için isteğiniz gönderildi.',
+      'request_failed':
+          'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
+      'no_gender': 'Belirtmek istemiyorum',
+      'gender_maennlich': 'Erkek',
+      'gender_weiblich': 'Kız',
+      'gender_divers': 'Diğer',
       'coins_until': 'Ücretsiz Premium için',
       'invites_successful': 'davet başarılı',
       'coin_value': '1 Coin = €1',
@@ -782,8 +798,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Text(
-            _networkCopy(
-                'setup_hint',
+            _networkCopy('setup_hint',
                 'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.'),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant, height: 1.3),
@@ -1022,17 +1037,19 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         child: Column(children: [
           const Text('\u{1F331}', style: TextStyle(fontSize: 40)),
           const SizedBox(height: 14),
-            Text(_networkCopy(
-              'empty_title', 'Sei die erste Familie in deiner Gegend'),
+          Text(
+              _networkCopy(
+                  'empty_title', 'Sei die erste Familie in deiner Gegend'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800),
               textAlign: TextAlign.center),
           const SizedBox(height: 8),
-            Text(_networkCopy(
-              'empty_description',
-              'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
-                'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
-                'Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.'),
+          Text(
+              _networkCopy(
+                  'empty_description',
+                  'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
+                      'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
+                      'Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.'),
               style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant, height: 1.4),
               textAlign: TextAlign.center),
@@ -1042,8 +1059,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             child: FilledButton.icon(
               onPressed: () => _tabs.animateTo(2),
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                label: Text(_networkCopy(
-                  'invite_playmates', 'Spielkameraden einladen')),
+              label: Text(
+                  _networkCopy('invite_playmates', 'Spielkameraden einladen')),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1256,7 +1273,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     if (!mounted) return;
     messenger.showSnackBar(SnackBar(
       content: Text(ok
-          ? _networkCopy('request_sent', 'Deine Anfrage wurde an {name} gesendet.')
+          ? _networkCopy(
+                  'request_sent', 'Deine Anfrage wurde an {name} gesendet.')
               .replaceAll('{name}', m.profile.name)
           : _networkCopy('request_failed',
               'Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.')),
@@ -1338,8 +1356,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             Row(children: [
               Expanded(
                   child: _shareActionBtn(
-                    Icons.ios_share_rounded,
-                    _networkCopy('share', 'Teilen'), () async {
+                      Icons.ios_share_rounded, _networkCopy('share', 'Teilen'),
+                      () async {
                 final box = context.findRenderObject() as RenderBox?;
                 // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
                 final link =
@@ -1413,9 +1431,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             child: Row(children: [
               CircleAvatar(
                   backgroundColor: _avatarColor(f.name),
-                  child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w800))),
+                  backgroundImage:
+                      f.avatarUrl != null ? NetworkImage(f.avatarUrl!) : null,
+                  child: f.avatarUrl == null
+                      ? Text(
+                          f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.w800),
+                        )
+                      : null),
               const SizedBox(width: 12),
               Expanded(
                   child: Text(
@@ -1507,11 +1531,17 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         CircleAvatar(
             radius: 23,
             backgroundColor: _avatarColor(f.name),
-            child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800))),
+            backgroundImage:
+                f.avatarUrl != null ? NetworkImage(f.avatarUrl!) : null,
+            child: f.avatarUrl == null
+                ? Text(
+                    f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800),
+                  )
+                : null),
         const SizedBox(width: 12),
         Expanded(
             child: Text(f.name,
@@ -2265,8 +2295,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             })),
       ),
       // Step label
-        Text(
-          _stepLabel(_step),
+      Text(_stepLabel(_step),
           style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6))),
       const SizedBox(height: 16),
@@ -2577,9 +2606,8 @@ class _ProfileFormState extends State<_ProfileForm> {
               const SizedBox(width: 10),
               Expanded(
                   child: Text(
-                    _networkCopy(
-                      'values_tip',
-                      'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.'),
+                      _networkCopy('values_tip',
+                          'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF16A34A),
                           fontWeight: FontWeight.w500,
@@ -2775,17 +2803,16 @@ class _ProfileFormState extends State<_ProfileForm> {
                       ))
                   .toList()),
           const SizedBox(height: 22),
-            _sectionTitle(theme,
-              '\u{1F4AC} ${_networkCopy('bio_title', 'Kurze Bio')}'),
+          _sectionTitle(
+              theme, '\u{1F4AC} ${_networkCopy('bio_title', 'Kurze Bio')}'),
           const SizedBox(height: 6),
           TextField(
               controller: _bioCtrl,
               maxLength: 200,
               maxLines: 3,
               decoration: InputDecoration(
-                  hintText: _networkCopy(
-                    'bio_hint',
-                    'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?'),
+                  hintText: _networkCopy('bio_hint',
+                      'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?'),
                   hintStyle:
                       TextStyle(fontSize: 13, color: theme.colorScheme.outline),
                   border: OutlineInputBorder(
