@@ -21,6 +21,8 @@ import 'package:parentpeak/logic/error_reporting_service.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:parentpeak/services/image_upload_service.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
@@ -72,12 +74,89 @@ class ProfileSafetyScreen extends StatefulWidget {
 class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   List<_ChildInfo> _children = [];
   String _appVersion = '';
+  String? _avatarUrl;
+  bool _avatarBusy = false;
 
   @override
   void initState() {
     super.initState();
     _loadChildren();
     _loadAppVersion();
+    _loadAvatar();
+  }
+
+  Future<void> _loadAvatar() async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return;
+    final url = await UserProfileService.instance.avatarUrlFor(uid);
+    if (mounted) setState(() => _avatarUrl = url);
+  }
+
+  Future<void> _chooseAvatarSource() async {
+    if (_avatarBusy) return;
+    final action = await showModalBottomSheet<Object?>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Foto aus der Galerie wählen'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Neues Foto aufnehmen'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            if (_avatarUrl != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Profilfoto entfernen'),
+                onTap: () => Navigator.pop(sheetContext, 'remove'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'remove' && _avatarUrl != null) {
+      final removed = await UserProfileService.instance.setAvatarUrl(null);
+      if (removed && mounted) setState(() => _avatarUrl = null);
+      return;
+    }
+    if (action is! ImageSource) return;
+    setState(() => _avatarBusy = true);
+    final file = await ImagePicker().pickImage(
+      source: action,
+      maxWidth: 900,
+      maxHeight: 900,
+      imageQuality: 85,
+    );
+    if (file == null) {
+      if (mounted) setState(() => _avatarBusy = false);
+      return;
+    }
+    final url = await ImageUploadService.instance.uploadImage(
+      file,
+      folder: 'profiles',
+    );
+    final saved =
+        url != null && await UserProfileService.instance.setAvatarUrl(url);
+    if (!mounted) return;
+    setState(() {
+      _avatarBusy = false;
+      if (saved) _avatarUrl = url;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(saved
+            ? 'Profilfoto gespeichert.'
+            : 'Profilfoto konnte nicht gespeichert werden.'),
+      ),
+    );
   }
 
   Future<void> _loadAppVersion() async {
@@ -220,37 +299,70 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               Center(
                 child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary,
-                            theme.colorScheme.tertiary,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.25),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                theme.colorScheme.primary,
+                                theme.colorScheme.tertiary,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.25),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(30),
+                            child: _avatarBusy
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : _avatarUrl != null
+                                    ? Image.network(_avatarUrl!,
+                                        fit: BoxFit.cover)
+                                    : Center(
+                                        child: Text(
+                                          initials,
+                                          style: theme.textTheme.headlineMedium
+                                              ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
                           ),
                         ),
-                      ),
+                        Positioned(
+                          right: -5,
+                          bottom: -5,
+                          child: Material(
+                            color: theme.colorScheme.primary,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              onTap: _chooseAvatarSource,
+                              customBorder: const CircleBorder(),
+                              child: const Padding(
+                                padding: EdgeInsets.all(9),
+                                child: Icon(Icons.camera_alt_rounded,
+                                    color: Colors.white, size: 18),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 14),
                     GestureDetector(

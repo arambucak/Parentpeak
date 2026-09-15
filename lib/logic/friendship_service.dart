@@ -7,14 +7,23 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 class Friend {
   final String uid;
   final String name;
+  final String? avatarUrl;
   final String roomId;
-  const Friend({required this.uid, required this.name, required this.roomId});
+  const Friend({
+    required this.uid,
+    required this.name,
+    this.avatarUrl,
+    required this.roomId,
+  });
 
   factory Friend.fromJson(Map<String, dynamic> j) => Friend(
         uid: j['uid'] as String? ?? '',
         name: (j['name'] as String?)?.trim().isNotEmpty == true
             ? (j['name'] as String).trim()
             : 'Familie',
+        avatarUrl: (j['avatarUrl'] as String?)?.trim().isNotEmpty == true
+            ? (j['avatarUrl'] as String).trim()
+            : null,
         roomId: j['roomId'] as String? ?? '',
       );
 }

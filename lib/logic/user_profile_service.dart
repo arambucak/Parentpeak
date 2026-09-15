@@ -31,6 +31,37 @@ class UserProfileService {
     }
   }
 
+  Future<String?> avatarUrlFor(String uid) async {
+    final api = _api;
+    if (api == null || uid.isEmpty) return null;
+    try {
+      final data = await api.getJson('/api/profile/$uid');
+      if (data is Map<String, dynamic> && data['exists'] == true) {
+        final url = data['avatarUrl']?.toString().trim();
+        return url == null || url.isEmpty ? null : url;
+      }
+    } catch (e) {
+      debugPrint('UserProfileService.avatarUrlFor failed: $e');
+    }
+    return null;
+  }
+
+  Future<bool> setAvatarUrl(String? avatarUrl) async {
+    final api = _api;
+    final uid = _uid;
+    if (api == null || uid == null || uid.isEmpty) return false;
+    try {
+      await api.postJsonAny('/api/profile', {
+        'userId': uid,
+        'avatarUrl': avatarUrl ?? '',
+      });
+      return true;
+    } catch (e) {
+      debugPrint('UserProfileService.setAvatarUrl failed: $e');
+      return false;
+    }
+  }
+
   /// Anzeigename einer beliebigen UID laden (z.B. fuer Anzeige). Leer wenn
   /// unbekannt.
   Future<String> displayNameFor(String uid) async {
@@ -50,7 +81,8 @@ class UserProfileService {
   /// Sichtbarkeit/Suchbarkeit setzen (Schritt 2). searchable=true macht das
   /// Profil ueber die Namenssuche auffindbar; isPrivate steuert, ob Anfragen
   /// bestaetigt werden muessen.
-  Future<void> setVisibility({bool? searchable, bool? isPrivate, String? username}) async {
+  Future<void> setVisibility(
+      {bool? searchable, bool? isPrivate, String? username}) async {
     final api = _api;
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty) return;
