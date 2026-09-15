@@ -3269,6 +3269,32 @@ async function ensureSocialSchemaReady() {
     );
   `);
   await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "ParentChatGroup" (
+      "id" TEXT PRIMARY KEY,
+      "ownerUserId" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS "ParentChatGroupMember" (
+      "groupId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "role" TEXT NOT NULL DEFAULT 'member',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("groupId", "userId")
+    );
+    CREATE TABLE IF NOT EXISTS "ParentChatGroupMessage" (
+      "id" TEXT PRIMARY KEY,
+      "groupId" TEXT NOT NULL,
+      "authorUserId" TEXT NOT NULL,
+      "authorName" TEXT NOT NULL,
+      "content" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS "idx_parentchat_member_user" ON "ParentChatGroupMember"("userId");
+    CREATE INDEX IF NOT EXISTS "idx_parentchat_message_group" ON "ParentChatGroupMessage"("groupId", "createdAt");
+  `);
+  await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "PendingReferral" (
       "id" TEXT PRIMARY KEY,
       "referralCode" TEXT NOT NULL,
@@ -7676,6 +7702,11 @@ app.delete('/api/account/:userId', async (req, res) => {
     await run('recipes', `DELETE FROM "Recipe" WHERE "authorUserId" = $1`, userId);
     // UID-basierte Chat-Raeume (roomId enthaelt die UID)
     await run('chatRoomsUid', `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${userId}%`);
+    // Private Elterngruppen: eigene Nachrichten, Mitgliedschaften und Gruppen
+    // des Nutzers müssen ebenfalls vollständig entfernt werden.
+    await run('parentGroupMessages', `DELETE FROM "ParentChatGroupMessage" WHERE "authorUserId" = $1 OR "groupId" IN (SELECT "id" FROM "ParentChatGroup" WHERE "ownerUserId" = $1)`, userId);
+    await run('parentGroupMemberships', `DELETE FROM "ParentChatGroupMember" WHERE "userId" = $1 OR "groupId" IN (SELECT "id" FROM "ParentChatGroup" WHERE "ownerUserId" = $1)`, userId);
+    await run('parentGroups', `DELETE FROM "ParentChatGroup" WHERE "ownerUserId" = $1`, userId);
     // Freundschafts-Registry + Kanten (per userId-Code)
     await run('friendEdges', `DELETE FROM "FriendEdge" WHERE "ownerCode" = ANY($1::text[]) OR "friendCode" = ANY($1::text[])`, idList);
     await run('friendRegistry', `DELETE FROM "FriendRegistry" WHERE "userId" = $1 OR "code" = ANY($2::text[])`, userId, idList);
@@ -8236,6 +8267,119 @@ app.post('/friend-chat/messages', async (req, res) => {
     friendChatMessages.get(roomId).push(item);
     await pushToRecipient();
     return res.status(201).json({ item });
+  }
+});
+
+// Private friend groups: only confirmed friends can be invited or message.
+app.get('/api/chat/groups', async (req, res) => {
+  const userId = String(req.query.userId || '').trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+  try {
+    await ensureSocialSchemaReady();
+    const groups = await prisma.$queryRawUnsafe(
+      `SELECT g."id", g."name", g."ownerUserId", g."createdAt",
+              COUNT(m2."userId")::int AS "memberCount"
+       FROM "ParentChatGroup" g
+       JOIN "ParentChatGroupMember" m ON m."groupId" = g."id" AND m."userId" = $1
+       JOIN "ParentChatGroupMember" m2 ON m2."groupId" = g."id"
+       GROUP BY g."id" ORDER BY g."updatedAt" DESC`,
+      userId
+    );
+    return res.json({ groups });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/chat/groups', error)) return;
+    return res.json({ groups: [] });
+  }
+});
+
+app.post('/api/chat/groups', async (req, res) => {
+  const userId = String(req.body.userId || '').trim();
+  const name = String(req.body.name || '').trim().slice(0, 80);
+  const requestedMembers = Array.isArray(req.body.memberIds)
+    ? req.body.memberIds.map(value => String(value).trim()).filter(Boolean)
+    : [];
+  if (!userId || !name) {
+    return res.status(400).json({ error: 'userId und name erforderlich' });
+  }
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+  const memberIds = [...new Set([userId, ...requestedMembers])];
+  if (memberIds.length > 30) {
+    return res.status(400).json({ error: 'Eine Gruppe kann maximal 30 Mitglieder haben' });
+  }
+  for (const memberId of memberIds) {
+    if (memberId !== userId && !(await areFriends(userId, memberId))) {
+      return res.status(403).json({ error: 'Nur bestätigte Freunde können eingeladen werden' });
+    }
+  }
+  try {
+    await ensureSocialSchemaReady();
+    const groupId = generateId('pg');
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "ParentChatGroup" ("id", "ownerUserId", "name") VALUES ($1, $2, $3)`,
+      groupId, userId, name
+    );
+    for (const memberId of memberIds) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "ParentChatGroupMember" ("groupId", "userId", "role") VALUES ($1, $2, $3)`,
+        groupId, memberId, memberId === userId ? 'owner' : 'member'
+      );
+    }
+    return res.status(201).json({ group: { id: groupId, name, ownerUserId: userId, memberCount: memberIds.length } });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/chat/groups', error)) return;
+    return res.status(500).json({ error: 'Gruppe konnte nicht erstellt werden' });
+  }
+});
+
+app.get('/api/chat/groups/:groupId/messages', async (req, res) => {
+  const groupId = String(req.params.groupId || '').trim();
+  const userId = String(req.query.userId || '').trim();
+  if (!groupId || !userId) return res.status(400).json({ error: 'groupId und userId erforderlich' });
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+  try {
+    await ensureSocialSchemaReady();
+    const member = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "ParentChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2`,
+      groupId, userId
+    );
+    if (member.length === 0) return res.status(403).json({ error: 'Keine Gruppenmitgliedschaft' });
+    const messages = await prisma.$queryRawUnsafe(
+      `SELECT "id", "groupId", "authorUserId", "authorName", "content", "createdAt"
+       FROM "ParentChatGroupMessage" WHERE "groupId" = $1 ORDER BY "createdAt" ASC LIMIT 500`,
+      groupId
+    );
+    return res.json({ messages });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/chat/groups/messages', error)) return;
+    return res.json({ messages: [] });
+  }
+});
+
+app.post('/api/chat/groups/:groupId/messages', async (req, res) => {
+  const groupId = String(req.params.groupId || '').trim();
+  const userId = String(req.body.userId || '').trim();
+  const userName = String(req.body.userName || 'Elternteil').trim().slice(0, 100);
+  const content = String(req.body.content || '').trim().slice(0, 2000);
+  if (!groupId || !userId || !content) return res.status(400).json({ error: 'groupId, userId und content erforderlich' });
+  if (!(await authorizeAccountOwner(req, res, userId))) return;
+  if (await isUserSuspended(userId)) return respondSuspended(res);
+  try {
+    await ensureSocialSchemaReady();
+    const member = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "ParentChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2`,
+      groupId, userId
+    );
+    if (member.length === 0) return res.status(403).json({ error: 'Keine Gruppenmitgliedschaft' });
+    const item = { id: generateId('pgm'), groupId, authorUserId: userId, authorName: userName, content, createdAt: new Date().toISOString() };
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "ParentChatGroupMessage" ("id", "groupId", "authorUserId", "authorName", "content") VALUES ($1, $2, $3, $4, $5)`,
+      item.id, groupId, userId, userName, content
+    );
+    return res.status(201).json({ item });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/chat/groups/messages', error)) return;
+    return res.status(500).json({ error: 'Nachricht konnte nicht gesendet werden' });
   }
 });
 

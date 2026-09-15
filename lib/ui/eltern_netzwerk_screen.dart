@@ -21,6 +21,7 @@ import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
+import 'package:parentpeak/ui/parent_group_chat_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
@@ -64,6 +65,7 @@ String _networkCopy(String key, String fallback) {
           'gender_weiblich': 'Girl',
           'gender_divers': 'Diverse',
       'coins_until': 'Until free Premium',
+      'unlimited_invites': 'Invite unlimited friends',
       'invites_successful': 'successful invitations',
       'coin_value': '1 Coin = €1',
       'invite_share': 'Share invitation',
@@ -124,6 +126,7 @@ String _networkCopy(String key, String fallback) {
           'gender_weiblich': 'Keç',
           'gender_divers': 'Cûda',
       'coins_until': 'Ji bo Premiuma belaş',
+      'unlimited_invites': 'Bê sînor hevalan vexwîne',
       'invites_successful': 'vexwendinên serkeftî',
       'coin_value': '1 Coin = €1',
       'invite_share': 'Vexwendinê parve bike',
@@ -184,6 +187,7 @@ String _networkCopy(String key, String fallback) {
           'gender_weiblich': 'Kız',
           'gender_divers': 'Diğer',
       'coins_until': 'Ücretsiz Premium için',
+      'unlimited_invites': 'Sınırsız arkadaş davet et',
       'invites_successful': 'davet başarılı',
       'coin_value': '1 Coin = €1',
       'invite_share': 'Daveti paylaş',
@@ -597,6 +601,33 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFFF97316).withValues(alpha: 0.7))),
             ]),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.all_inclusive_rounded,
+                    size: 15, color: const Color(0xFF0F766E)),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    _networkCopy(
+                        'unlimited_invites', 'Unbegrenzt Freunde einladen'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F766E),
+                    ),
+                  ),
+                ),
+                Text(
+                  '5 = 1 Monat Premium',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F766E).withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
             if (coins.balance >= ParentCoinService.coinsForFreePremium) ...[
               const SizedBox(height: 14),
               // Prio 5: Einloesen ist noch nicht scharf geschaltet. Statt einer
@@ -1384,6 +1415,51 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
         _suggestedParentsSection(theme),
         const SizedBox(height: 32),
+
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+            ),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: theme.colorScheme.primary,
+                child: const Icon(Icons.forum_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Private Elterngruppen',
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 3),
+                    Text(
+                        'Kleine Räume für Kita, Nachbarschaft oder Spielplatz.',
+                        style: theme.textTheme.bodySmall),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Gruppen öffnen',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ParentGroupChatScreen()),
+                ),
+                icon: const Icon(Icons.arrow_forward_rounded),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
 
         // NEUES UID-Fundament: offene Anfragen + Freundesliste vom Server.
         _friendRequestsSection(theme),
