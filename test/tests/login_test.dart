@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/ui/auth/login_screen.dart';
 import '../pages/login_page.dart';
@@ -18,6 +19,11 @@ Widget localizedTestApp(Widget child) => MaterialApp(
       ],
       home: child,
     );
+
+String translatedLoginText(WidgetTester tester, String key) {
+  final context = tester.element(find.byType(LoginScreen));
+  return context.tr(key);
+}
 
 void main() {
   group('Anmeldung', () {
@@ -52,7 +58,10 @@ void main() {
       await loginPage.tapLogin();
       await tester.pumpAndSettle();
 
-      expect(find.text('E-Mail ist erforderlich.'), findsOneWidget);
+      expect(
+        find.text(translatedLoginText(tester, 'auth_email_required')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Leeres Passwort zeigt Fehlermeldung', (tester) async {
@@ -64,7 +73,10 @@ void main() {
       await loginPage.tapLogin();
       await tester.pumpAndSettle();
 
-      expect(find.text('Passwort ist erforderlich.'), findsOneWidget);
+      expect(
+        find.text(translatedLoginText(tester, 'auth_password_required')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Ungültige E-Mail-Adresse zeigt Fehlermeldung', (tester) async {
@@ -77,7 +89,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Bitte gib eine gültige E-Mail-Adresse ein.'),
+        find.text(translatedLoginText(tester, 'auth_email_invalid')),
         findsOneWidget,
       );
     });
