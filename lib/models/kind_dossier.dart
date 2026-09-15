@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// NUR LOKAL gespeichert (sensible Daten verlassen nie das Geraet).
 class KindDossier {
   final String childName;
-  final int ageMonths;
+  final DateTime birthDate;
   final String? clothingSize;
   final String? shoeSize;
   final List<String> allergies;
@@ -14,15 +14,16 @@ class KindDossier {
   final String? bloodType;
   final String? emergencyContact;
   final String? emergencyPhone;
-  final String? kitaSchool;        // Name der Einrichtung
-  final String? kitaGroup;         // Gruppe/Klasse
-  final String? kitaTeacher;       // Erzieherin/Lehrerin
+  final String? kitaSchool; // Name der Einrichtung
+  final String? kitaGroup; // Gruppe/Klasse
+  final String? kitaTeacher; // Erzieherin/Lehrerin
   final List<UExamination> uExams;
   final String? notes;
 
-  const KindDossier({
+  KindDossier({
     required this.childName,
-    required this.ageMonths,
+    DateTime? birthDate,
+    int? ageMonths,
     this.clothingSize,
     this.shoeSize,
     this.allergies = const [],
@@ -36,11 +37,28 @@ class KindDossier {
     this.kitaTeacher,
     this.uExams = const [],
     this.notes,
-  });
+  }) : birthDate = birthDate ?? _birthDateFromAgeMonths(ageMonths ?? 0);
+
+  int get ageMonths => _ageMonthsFromBirthDate(birthDate);
+  int get ageYears => (ageMonths / 12).floor();
+
+  static DateTime _birthDateFromAgeMonths(int months) {
+    final now = DateTime.now();
+    final safeMonths = months.clamp(0, 240);
+    return DateTime(now.year, now.month - safeMonths, now.day);
+  }
+
+  static int _ageMonthsFromBirthDate(DateTime date) {
+    final now = DateTime.now();
+    var months = (now.year - date.year) * 12 + now.month - date.month;
+    if (now.day < date.day) months--;
+    return months.clamp(0, 240);
+  }
 
   Map<String, dynamic> toJson() => {
         'childName': childName,
         'ageMonths': ageMonths,
+        'birthDate': birthDate.toIso8601String(),
         'clothingSize': clothingSize,
         'shoeSize': shoeSize,
         'allergies': allergies,
@@ -58,7 +76,8 @@ class KindDossier {
 
   factory KindDossier.fromJson(Map<String, dynamic> j) => KindDossier(
         childName: j['childName'] as String? ?? '',
-        ageMonths: j['ageMonths'] as int? ?? 0,
+        birthDate: DateTime.tryParse(j['birthDate']?.toString() ?? ''),
+        ageMonths: (j['ageMonths'] as num?)?.round() ?? 0,
         clothingSize: j['clothingSize'] as String?,
         shoeSize: j['shoeSize'] as String?,
         allergies: List<String>.from(j['allergies'] ?? []),
@@ -79,8 +98,8 @@ class KindDossier {
 
 /// U-Untersuchung (Vorsorge) mit automatischer Faelligkeit.
 class UExamination {
-  final String id;       // "u1", "u2", ..., "u9", "j1", "j2"
-  final String label;    // "U1 (direkt nach Geburt)"
+  final String id; // "u1", "u2", ..., "u9", "j1", "j2"
+  final String label; // "U1 (direkt nach Geburt)"
   final int dueAtMonths; // Faellig ab diesem Alter (Monate)
   final bool isDone;
   final String? doneDate; // Wann gemacht (optional)
@@ -112,7 +131,8 @@ class UExamination {
 
 /// Deutsche U-Untersuchungen (automatisch generiert nach Kind-Alter).
 class UExaminationData {
-  static List<UExamination> generateForChild(int ageMonths, {List<UExamination> existing = const []}) {
+  static List<UExamination> generateForChild(int ageMonths,
+      {List<UExamination> existing = const []}) {
     final all = _allExams.map((e) {
       final done = existing.where((ex) => ex.id == e.id).firstOrNull;
       return UExamination(
@@ -157,9 +177,22 @@ class KindDossierService {
     final raw = prefs.getString(_key);
     if (raw != null && raw.isNotEmpty) {
       try {
-        _dossiers = (jsonDecode(raw) as List)
-            .map((e) => KindDossier.fromJson(e))
-            .toList();
+        final decoded = jsonDecode(raw);
+        if (decoded is! List) return;
+        var migrated = false;
+        _dossiers = decoded.whereType<Map>().map((entry) {
+          final data = Map<String, dynamic>.from(entry);
+          final birthDate =
+              DateTime.tryParse(data['birthDate']?.toString() ?? '');
+          if (birthDate == null) migrated = true;
+          return KindDossier.fromJson(data);
+        }).toList();
+        if (migrated) {
+          await prefs.setString(
+            _key,
+            jsonEncode(_dossiers.map((dossier) => dossier.toJson()).toList()),
+          );
+        }
       } catch (_) {}
     }
   }
@@ -167,7 +200,8 @@ class KindDossierService {
   Future<void> save(List<KindDossier> dossiers) async {
     _dossiers = dossiers;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(_dossiers.map((d) => d.toJson()).toList()));
+    await prefs.setString(
+        _key, jsonEncode(_dossiers.map((d) => d.toJson()).toList()));
   }
 
   Future<void> addOrUpdate(KindDossier dossier) async {
