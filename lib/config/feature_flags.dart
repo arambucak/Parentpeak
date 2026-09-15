@@ -98,6 +98,12 @@ class FeatureFlagService extends ChangeNotifier {
       availableInFreeTier: true,
     ),
     FeatureDefinition(
+      id: 'ritual_ruhe',
+      label: 'Ritual & Ruhe',
+      phase: LaunchPhase.phase1,
+      availableInFreeTier: true,
+    ),
+    FeatureDefinition(
       id: 'eltern_match',
       label: 'Eltern-Netzwerk',
       phase: LaunchPhase.phase1,

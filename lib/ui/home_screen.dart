@@ -31,6 +31,7 @@ import 'package:parentpeak/ui/widgets/home/quick_actions_row.dart';
 import 'package:parentpeak/ui/widgets/home/events_carousel_widget.dart';
 import 'package:parentpeak/services/mood_history_service.dart';
 import 'package:parentpeak/ui/wochenrueckblick_screen.dart';
+import 'package:parentpeak/ui/ritual_ruhe_screen.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 
 class _FeatureAction {
@@ -674,6 +675,20 @@ class _HomeScreenState extends State<HomeScreen>
         color: const Color(0xFF2563EB),
         builder: (_) => const FamilienZentraleScreen(),
         featureId: 'organisation',
+      ),
+      _FeatureAction(
+        id: 'ritual_ruhe',
+        label: l10n.t('ritualRuheTitle', fallback: 'Ritual & Ruhe'),
+        description: l10n.t(
+          'ritualRuheTileSubtitle',
+          fallback: 'Ein ruhiger Moment für euren Familienalltag',
+        ),
+        icon: DateTime.now().hour >= 18 || DateTime.now().hour < 6
+            ? Icons.nightlight_round
+            : Icons.wb_sunny_rounded,
+        color: const Color(0xFF7C5CBA),
+        builder: (_) => const RitualRuheScreen(),
+        featureId: 'ritual_ruhe',
       ),
       _FeatureAction(
         id: 'gemeinsam_satt',

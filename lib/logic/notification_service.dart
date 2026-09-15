@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 
 typedef NotificationTapHandler = void Function(Map<String, dynamic> data);
@@ -173,6 +174,8 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     const androidDetails = AndroidNotificationDetails(
       'parentpeak_events',
       'Terminerinnerungen',
@@ -191,6 +194,8 @@ class NotificationService {
 
   Future<void> scheduleReminder(
       DateTime when, String title, String body) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     final now = DateTime.now();
     if (when.isBefore(now)) return; // keine Vergangenheit planen
     final tzWhen = tz.TZDateTime.from(when, tz.local);
@@ -225,6 +230,8 @@ class NotificationService {
     required String body,
     required String reminderKey,
   }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     final now = DateTime.now();
     if (when.isBefore(now)) return;
 
