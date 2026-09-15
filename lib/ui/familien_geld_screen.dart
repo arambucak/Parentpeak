@@ -372,7 +372,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 color: const Color(0xFF16A34A).withValues(alpha: 0.2)),
           ),
           child: Column(children: [
-            Text('\u{1F4B0}', style: const TextStyle(fontSize: 28)),
+            const Text('\u{1F4B0}', style: TextStyle(fontSize: 28)),
             const SizedBox(height: 8),
             Text(
                 AppStringsManager.getString(
@@ -975,7 +975,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
         ),
         child: Row(children: [
-          Text('\u{1F4B0}', style: const TextStyle(fontSize: 18)),
+          const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

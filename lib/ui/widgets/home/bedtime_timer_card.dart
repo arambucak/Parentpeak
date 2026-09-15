@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -138,8 +137,6 @@ class _BedtimeTimerCardState extends State<BedtimeTimerCard>
     }
     return _steps.length - 1;
   }
-
-  _RoutineStep get _currentStep => _steps[_currentStepIndex];
 
   void _startTimer() {
     HapticFeedback.mediumImpact();
@@ -997,7 +994,6 @@ class _RoutineStep {
   final int minutesBefore;
   final String title;
   final String subtitle;
-  final IconData? icon;
   final String emoji;
   final String feedbackPositive;
   final String feedbackQuestion;
@@ -1007,7 +1003,6 @@ class _RoutineStep {
     required this.minutesBefore,
     required this.title,
     required this.subtitle,
-    this.icon,
     required this.emoji,
     required this.feedbackPositive,
     required this.feedbackQuestion,

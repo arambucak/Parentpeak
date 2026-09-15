@@ -365,7 +365,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           const SizedBox(width: 12),
           Expanded(
             child: Text(_t('location'),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           ),
         ]),
         content: Column(
@@ -374,7 +374,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           children: [
             Text(
               _t('location_onboarding_explanation'),
-              style: TextStyle(
+              style: const TextStyle(
                   fontSize: 13, height: 1.5, color: Color(0xFF6B7280)),
             ),
             const SizedBox(height: 8),
@@ -391,7 +391,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 Expanded(
                   child: Text(
                     _t('location_onboarding_privacy'),
-                    style: TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
                   ),
                 ),
               ]),
@@ -402,7 +402,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'skip'),
             child: Text(_t('location_onboarding_skip'),
-                style: TextStyle(color: Color(0xFF9CA3AF))),
+                style: const TextStyle(color: Color(0xFF9CA3AF))),
           ),
           FilledButton.icon(
             onPressed: () => Navigator.pop(ctx, 'gps'),

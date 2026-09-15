@@ -34,7 +34,7 @@ class DevelopmentPdfService {
           // Datum
           pw.Text(
             'Erstellt am ${_formatDate(DateTime.now())}',
-            style: pw.TextStyle(
+            style: const pw.TextStyle(
               fontSize: 10,
               color: PdfColors.grey600,
             ),
@@ -59,7 +59,7 @@ class DevelopmentPdfService {
                 children: [
                   pw.Text(
                     'KI-Entwicklungsbericht',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
                     ),
@@ -140,7 +140,7 @@ class DevelopmentPdfService {
             children: [
               pw.Text(
                 childName,
-                style: pw.TextStyle(
+                style: const pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
                 ),
@@ -192,7 +192,7 @@ class DevelopmentPdfService {
       children: [
         pw.Text(
           'Entwicklungs-Verlauf',
-          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+          style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
         ),
         if (hasPrevious && previousDate != null)
           pw.Text(
@@ -232,7 +232,7 @@ class DevelopmentPdfService {
           pw.Row(children: [
             pw.Expanded(
               child: pw.Text(label,
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                       fontSize: 10, fontWeight: pw.FontWeight.bold)),
             ),
             pw.Text('$percent% $trend',

@@ -220,27 +220,27 @@ class _PremiumUpgradeOverlay extends StatelessWidget {
               style: TextStyle(color: theme.colorScheme.outline),
             ),
             const SizedBox(height: 28),
-            _PremiumFeatureRow(
+            const _PremiumFeatureRow(
               icon: Icons.event_available_rounded,
               label: 'Unbegrenzte Events & Aktivitäten',
             ),
-            _PremiumFeatureRow(
+            const _PremiumFeatureRow(
               icon: Icons.notifications_active_rounded,
               label: 'Push-Alert bei neuen Events in der Nähe',
             ),
-            _PremiumFeatureRow(
+            const _PremiumFeatureRow(
               icon: Icons.auto_awesome_rounded,
               label: 'KI-Beratung ohne Limit',
             ),
-            _PremiumFeatureRow(
+            const _PremiumFeatureRow(
               icon: Icons.restaurant_rounded,
               label: 'Unbegrenzte Rezepte + Wochen-Mealplan',
             ),
-            _PremiumFeatureRow(
+            const _PremiumFeatureRow(
               icon: Icons.calendar_month_rounded,
               label: 'Events → Apple/Google Kalender Sync',
             ),
-            _PremiumFeatureRow(
+            const _PremiumFeatureRow(
               icon: Icons.block_rounded,
               label: 'Komplett werbefrei',
             ),

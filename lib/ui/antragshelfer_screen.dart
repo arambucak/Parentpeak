@@ -299,7 +299,7 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(_t('antrag_optional'),
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFFF59E0B))),

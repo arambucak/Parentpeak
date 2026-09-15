@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,10 +43,12 @@ class FridgeRecipeService {
   }
 
   String _ageText() {
-    if (_childAgeYears < 1)
+    if (_childAgeYears < 1) {
       return 'Baby (6-12 Monate, Brei/Fingerfood, BLW-geeignet)';
-    if (_childAgeYears < 3)
+    }
+    if (_childAgeYears < 3) {
       return 'Kleinkind ($_childAgeYears Jahre, weich, kleine Stücke)';
+    }
     if (_childAgeYears < 6) return 'Kita-Kind ($_childAgeYears Jahre, normal)';
     return 'Schulkind ($_childAgeYears Jahre, alles)';
   }

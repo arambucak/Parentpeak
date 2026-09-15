@@ -227,11 +227,12 @@ class _CalendarScreenState extends State<CalendarScreen>
           }
         } catch (_) {}
       } else {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _events.clear();
             _syncError = syncError;
           });
+        }
       }
       await _scheduleRemindersFor(_events);
       return;
@@ -711,11 +712,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   value: '__add__',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.add_circle_outline_rounded,
+                                      const Icon(Icons.add_circle_outline_rounded,
                                           size: 16, color: Color(0xFF4CAF50)),
-                                      SizedBox(width: 6),
+                                      const SizedBox(width: 6),
                                       Text(_t('calendar_new_person'),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                               color: Color(0xFF4CAF50),
                                               fontWeight: FontWeight.w600)),
                                     ],
@@ -868,12 +869,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       value: p, child: Text(p)))
                                   .toList(),
                               onChanged: (v) {
-                                if (v != null)
+                                if (v != null) {
                                   setSheetState(() {
                                     endMode = v;
                                     if (endMode == '5 Termine') endCount = 5;
                                     if (endMode == '10 Termine') endCount = 10;
                                   });
+                                }
                               },
                             ),
                             if (endMode == 'Datum w\u00e4hlen') ...[
@@ -1106,11 +1108,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_rounded,
+                          const Icon(Icons.add_rounded,
                               size: 13, color: Color(0xFF4CAF50)),
-                          SizedBox(width: 3),
+                          const SizedBox(width: 3),
                           Text(_t('calendar_person'),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 11,
                                   color: Color(0xFF4CAF50),
                                   fontWeight: FontWeight.w600)),
@@ -1406,7 +1408,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFDC2626))),
                   Text(_t('calendar_public_holiday'),
-                      style: TextStyle(fontSize: 11, color: Color(0xFFEF4444))),
+                      style: const TextStyle(fontSize: 11, color: Color(0xFFEF4444))),
                 ],
               ),
             ),
@@ -1485,14 +1487,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                 const SizedBox(height: 16),
                 Text(_t('calendar_holidays_title'),
                     style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                        const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
                 Text(_t('calendar_choose_region'),
                     style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                 const SizedBox(height: 20),
                 Text(_t('calendar_country'),
                     style:
-                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -1547,7 +1549,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 const SizedBox(height: 20),
                 Text(_t('calendar_region'),
                     style:
-                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
@@ -1601,7 +1603,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(_t('finance_save'),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 ),
@@ -1913,8 +1915,9 @@ class _MonthGrid extends StatelessWidget {
 
               Color textColor = const Color(0xFF2D3748);
               if (!isCurrentMonth) textColor = Colors.grey[350]!;
-              if (isHoliday && isCurrentMonth)
+              if (isHoliday && isCurrentMonth) {
                 textColor = const Color(0xFFDC2626);
+              }
               if (isToday && !isSelected) textColor = Colors.white;
               if (isSelected) textColor = const Color(0xFF8B5CF6);
 
@@ -2552,6 +2555,7 @@ class _TimeButtonState extends State<_TimeButton> {
 // ═══════════════════════════════════════════════════════════════════════════
 // FEATURE 1: Wochenstreifen — 7-Tage Quick-Selector
 // ═══════════════════════════════════════════════════════════════════════════
+// ignore: unused_element
 class _WeekStrip extends StatelessWidget {
   const _WeekStrip({
     required this.selectedDay,

@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
-import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -117,7 +115,7 @@ class _CreateCommunityEventScreenState
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
           Text(_t('community_event_scan_flyer'),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(_t('community_event_ai_recognizes'),
               style: TextStyle(fontSize: 12, color: Colors.grey[600])),
@@ -171,15 +169,17 @@ class _CreateCommunityEventScreenState
         if (mounted) {
           setState(() {
             if (data['title'] != null) _titleCtrl.text = data['title'];
-            if (data['description'] != null)
+            if (data['description'] != null) {
               _descCtrl.text = data['description'];
+            }
             if (data['location'] != null) _locationCtrl.text = data['location'];
             if (data['price'] != null && data['price'] != 'kostenlos') {
               _isFree = false;
               _priceCtrl.text = data['price'];
             }
-            if (data['organizer'] != null)
+            if (data['organizer'] != null) {
               _organizerCtrl.text = data['organizer'];
+            }
             if (data['date'] != null) {
               final parsed = DateTime.tryParse(data['date']);
               if (parsed != null) _eventDate = parsed;
@@ -197,7 +197,7 @@ class _CreateCommunityEventScreenState
           });
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(_t('community_flyer_detected')),
-            backgroundColor: Color(0xFF16A34A),
+            backgroundColor: const Color(0xFF16A34A),
           ));
         }
       } else {
@@ -266,8 +266,12 @@ class _CreateCommunityEventScreenState
     final m = a.length;
     final n = b.length;
     final d = List.generate(m + 1, (_) => List.filled(n + 1, 0));
-    for (var i = 0; i <= m; i++) d[i][0] = i;
-    for (var j = 0; j <= n; j++) d[0][j] = j;
+    for (var i = 0; i <= m; i++) {
+      d[i][0] = i;
+    }
+    for (var j = 0; j <= n; j++) {
+      d[0][j] = j;
+    }
     for (var i = 1; i <= m; i++) {
       for (var j = 1; j <= n; j++) {
         final cost = a[i - 1] == b[j - 1] ? 0 : 1;

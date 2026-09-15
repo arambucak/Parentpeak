@@ -286,8 +286,9 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
     final openBrackets = '['.allMatches(jsonChunk).length;
     final closeBrackets = ']'.allMatches(jsonChunk).length;
-    if (openBrackets > closeBrackets)
+    if (openBrackets > closeBrackets) {
       jsonChunk += ']' * (openBrackets - closeBrackets);
+    }
 
     return jsonChunk.trim();
   }
@@ -296,12 +297,15 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
   String? _validateUrl(String? url) {
     if (url == null || url.trim().isEmpty) return null;
     final trimmed = url.trim();
-    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://'))
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
       return null;
+    }
     // Platzhalter ablehnen
     if (trimmed == 'https://...' ||
         trimmed == 'http://...' ||
-        trimmed.endsWith('/...')) return null;
+        trimmed.endsWith('/...')) {
+      return null;
+    }
     final uri = Uri.tryParse(trimmed);
     if (uri == null || !uri.hasAuthority || uri.host.isEmpty) return null;
     return trimmed;
@@ -335,12 +339,15 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
   }
 
   String _getSaison(int month) {
-    if (month >= 3 && month <= 5)
+    if (month >= 3 && month <= 5) {
       return 'Frühling (Ostermärkte, Stadtfeste, Fahrrad-Touren)';
-    if (month >= 6 && month <= 8)
+    }
+    if (month >= 6 && month <= 8) {
       return 'Sommer (Freibäder, Freilichtbühnen, Stadtfeste, Ferienprogramme)';
-    if (month >= 9 && month <= 11)
+    }
+    if (month >= 9 && month <= 11) {
       return 'Herbst (Erntedank, Halloween-Specials, Indoor-Angebote)';
+    }
     return 'Winter (Weihnachtsmärkte, Eislaufen, Winterferienprogramme)';
   }
 

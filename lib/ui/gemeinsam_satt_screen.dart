@@ -3907,12 +3907,12 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             const SizedBox(height: 4),
             Center(
                 child: Text(_t('satt_share_hint'),
-                    style: TextStyle(color: Color(0xFF8A9AB0), fontSize: 13))),
+                    style: const TextStyle(color: Color(0xFF8A9AB0), fontSize: 13))),
             const SizedBox(height: 20),
 
             // Emoji picker
             Text(_t('satt_choose_emoji'),
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2A3A))),
@@ -4231,7 +4231,7 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                   }
                 },
                 child: Text(_t('satt_share_recipe'),
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: Colors.white)),

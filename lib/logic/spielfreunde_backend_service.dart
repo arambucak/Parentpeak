@@ -46,9 +46,10 @@ class SpielfreundeBackendService {
 
   /// Warteliste-Counter für einen Stadtteil abrufen.
   Future<WaitlistStatus> getWaitlistCount(String? district) async {
-    if (_api == null)
-      return WaitlistStatus(
+    if (_api == null) {
+      return const WaitlistStatus(
           total: 0, threshold: 20, remaining: 20, progress: 0);
+    }
     try {
       final path = district != null && district.isNotEmpty
           ? '/api/spielfreunde/waitlist-count?district=$district'
@@ -65,7 +66,7 @@ class SpielfreundeBackendService {
     } catch (e) {
       debugPrint('SpielfreundeBackendService.getWaitlistCount failed: $e');
     }
-    return WaitlistStatus(total: 0, threshold: 20, remaining: 20, progress: 0);
+    return const WaitlistStatus(total: 0, threshold: 20, remaining: 20, progress: 0);
   }
 
   /// Andere Familien-Profile abrufen (gefiltert).

@@ -536,7 +536,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             ),
             const SizedBox(height: 16),
             Text(_t('convo_report_user'),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
             Text(_t('conversation_report_reason')
               .replaceAll('{name}', widget.profileName),
@@ -745,24 +745,24 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
               PopupMenuItem(
                   value: 'refresh',
                   child: Row(children: [
-                    Icon(Icons.refresh_rounded, size: 18),
-                    SizedBox(width: 8),
+                    const Icon(Icons.refresh_rounded, size: 18),
+                    const SizedBox(width: 8),
                     Text(_t('convo_refresh')),
                   ])),
               PopupMenuItem(
                   value: 'report',
                   child: Row(children: [
-                    Icon(Icons.flag_rounded,
+                    const Icon(Icons.flag_rounded,
                         size: 18, color: Color(0xFFEA580C)),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(_t('chat_report')),
                   ])),
               PopupMenuItem(
                   value: 'block',
                   child: Row(children: [
-                    Icon(Icons.block_rounded,
+                    const Icon(Icons.block_rounded,
                         size: 18, color: Color(0xFFDC2626)),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(_t('convo_block')),
                   ])),
             ],

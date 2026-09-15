@@ -122,21 +122,23 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       final impulse = await _impulseService.fetchWeeklyImpulse(
         viewerUserId: AuthService.instance.currentUser?.uid ?? 'guest',
       );
-      if (mounted)
+      if (mounted) {
         setState(() {
           _impulse = impulse;
           _isLoading = false;
           _error = null;
         });
+      }
     } catch (e) {
       final fallback = _buildLocalFallbackImpulse();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _impulse = fallback;
           _error = null;
           _isLoading = false;
           _isUsingFallbackImpulse = true;
         });
+      }
     }
   }
 
@@ -263,12 +265,13 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     }
     // Impuls erledigt heute?
     final completed = prefs.getBool('impulse.completed.$today') ?? false;
-    if (mounted)
+    if (mounted) {
       setState(() {
         _todayMood = savedMood;
         _streak = streak;
         _impulseCompleted = completed;
       });
+    }
   }
 
   Future<void> _saveMood(int mood) async {
@@ -1108,18 +1111,20 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       await prefs.setStringList('dev.report_history', historyRaw);
       // Report-Limit tracken
       await DevelopmentReportLimitService.instance.recordReportCreated();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _aiReport = text;
           _generatingReport = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _aiReport =
               _t('development_report_error').replaceAll('{error}', '$e');
           _generatingReport = false;
         });
+      }
     }
   }
 
@@ -1337,11 +1342,11 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                                 borderRadius: BorderRadius.circular(14)))))),
           if (_generatingReport)
             Padding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 child: Center(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 12),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 12),
                   Text(_t('generating_report'))
                 ]))),
           if (_aiReport != null) ...[
@@ -1491,7 +1496,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                     dense: true,
                     activeColor: const Color(0xFF8B5CF6),
                     title: Text(_t('development_special_needs'),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 14, fontWeight: FontWeight.w600)),
                     subtitle: Text(
                       _t('development_special_needs_hint'),
@@ -1506,7 +1511,9 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                   child: FilledButton(
                       onPressed: () {
                         if (nameCtrl.text.trim().isEmpty ||
-                            selectedDate == null) return;
+                            selectedDate == null) {
+                          return;
+                        }
                         _saveChildProfile(
                             nameCtrl.text.trim(), selectedDate!, selectedCare,
                             hasSpecialNeeds: hasSpecialNeeds);

@@ -1503,7 +1503,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         title: Text(
             AppStringsManager.getString(
                 languageService.currentLanguage, 'logout_question'),
-            style: TextStyle(fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         content: const Text(
             'Ihr werdet von diesem Gerät abgemeldet. Eure Familiendaten bleiben gespeichert.'),
         actions: [

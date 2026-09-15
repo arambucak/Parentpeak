@@ -156,7 +156,7 @@ void main() {
   final arabicScriptPattern = RegExp(r'[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff]');
 
   test('audited localization invariants hold', () {
-    final strings = AppStringsManager.allStrings;
+    const strings = AppStringsManager.allStrings;
     final referenceKeys = strings['de']!.keys.toSet();
 
     expect(auditedCopiedEnglishKeys, hasLength(148));

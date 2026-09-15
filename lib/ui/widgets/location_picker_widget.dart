@@ -168,7 +168,6 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
   final _searchCtrl = TextEditingController();
   final _mapCtrl = MapController();
   List<LocationSuggestion> _suggestions = [];
-  bool _searching = false;
   bool _gpsLoading = false;
   Timer? _debounce;
 
@@ -438,14 +437,13 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
     }
     _debounce = Timer(const Duration(milliseconds: 400), () async {
       if (!mounted) return;
-      setState(() => _searching = true);
       final results = await LocationAutocompleteService.instance
           .searchImmediate(text.trim());
-      if (mounted)
+      if (mounted) {
         setState(() {
           _suggestions = results;
-          _searching = false;
         });
+      }
     });
   }
 
@@ -490,11 +488,11 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
       }
 
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: LocationSettings(
+        locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.medium,
             timeLimit: kIsWeb
-                ? const Duration(seconds: 20)
-                : const Duration(seconds: 10)),
+                ? Duration(seconds: 20)
+                : Duration(seconds: 10)),
       );
 
       final pos = LatLng(position.latitude, position.longitude);

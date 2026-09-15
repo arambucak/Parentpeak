@@ -809,7 +809,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_t('matching_request_sent')),
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -1691,13 +1691,13 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
               ),
               const SizedBox(height: 12),
               ListTile(
-                leading: Icon(Icons.flag_outlined),
+                leading: const Icon(Icons.flag_outlined),
                 title: Text(_t('matching_report_profiles')),
-                subtitle: Text(
+                subtitle: const Text(
                     'Unpassende Inhalte können jederzeit gemeldet werden.'),
               ),
               ListTile(
-                leading: Icon(Icons.block_rounded),
+                leading: const Icon(Icons.block_rounded),
                 title: Text(_t('matching_block_profiles')),
                 subtitle:
                     Text(_t('matching_blocked_info')),
@@ -1799,7 +1799,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                               AppStringsManager.getString(
                                   languageService.currentLanguage,
                                   'matching_filter'),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 18)),
                           const Spacer(),
                           TextButton(
@@ -1960,7 +1960,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                               AppStringsManager.getString(
                                   languageService.currentLanguage,
                                   'matching_profile'),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 18)),
                           const Spacer(),
                           TextButton(

@@ -65,11 +65,12 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     final recipe = await _service.generateRecipe(
       languageCode: languageService.currentLanguage,
     );
-    if (mounted)
+    if (mounted) {
       setState(() {
         _currentRecipe = recipe;
         _loading = false;
       });
+    }
   }
 
   Future<void> _saveRecipe() async {
@@ -345,13 +346,13 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [Color(0xFFFFF7ED), Color(0xFFFEF3C7)],
             ),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
           ),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -420,8 +421,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                       Container(
                           width: 5,
                           height: 5,
-                          decoration: BoxDecoration(
-                              color: const Color(0xFFF97316),
+                          decoration: const BoxDecoration(
+                              color: Color(0xFFF97316),
                               shape: BoxShape.circle)),
                       const SizedBox(width: 8),
                       Expanded(
@@ -546,16 +547,16 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(children: [
-                Text('\u{1F36D}', style: const TextStyle(fontSize: 16)),
+                const Text('\u{1F36D}', style: TextStyle(fontSize: 16)),
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(
                         AppStringsManager.getString(
                             languageService.currentLanguage, 'did_it_taste'),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF9A3412)))),
+                            color: Color(0xFF9A3412)))),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => _rateRecipe(true),
@@ -568,7 +569,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                     child: Text(
                         AppStringsManager.getString(
                             languageService.currentLanguage, 'yes_tasty'),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF16A34A))),
@@ -587,7 +588,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                     child: Text(
                         AppStringsManager.getString(
                             languageService.currentLanguage, 'no_tasty'),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFFDC2626))),
@@ -1002,8 +1003,8 @@ class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 subtitle: sel.alreadyOnList
                     ? Text(context.tr('already_on_list'),
-                        style: TextStyle(
-                            fontSize: 10, color: const Color(0xFF16A34A)))
+                        style: const TextStyle(
+                            fontSize: 10, color: Color(0xFF16A34A)))
                     : sel.isBasic
                         ? Text(context.tr('probably_at_home'),
                             style: TextStyle(

@@ -2997,7 +2997,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 pw.SizedBox(height: 14),
                 pw.Text(
                   'Parentpeak',
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                       fontSize: 24, fontWeight: pw.FontWeight.bold),
                 ),
                 pw.SizedBox(height: 6),
@@ -3026,7 +3026,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           pw.SizedBox(height: 10),
           pw.Text(
             'Statusverteilung',
-            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 6),
           pw.Wrap(
@@ -3054,7 +3054,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               children: [
                 pw.Text(
                   category.name,
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                       fontSize: 13, fontWeight: pw.FontWeight.bold),
                 ),
                 pw.SizedBox(height: 4),
@@ -3074,7 +3074,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           if (_history.isNotEmpty) ...[
             pw.Text(
               'Letzte Änderungen',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             ..._history.take(5).map((event) {
@@ -3154,7 +3154,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     children: [
                       pw.Text(
                         'Monatskarte',
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 24,
                           fontWeight: pw.FontWeight.bold,
                         ),
@@ -3176,7 +3176,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   ),
                   child: pw.Text(
                     '${(snapshot.progress * 100).round()}%',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
                       color: pdf.PdfColors.white,
@@ -3199,7 +3199,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 children: [
                   pw.Text(
                     'Kurzüberblick',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                         fontSize: 13, fontWeight: pw.FontWeight.bold),
                   ),
                   pw.SizedBox(height: 8),
@@ -3213,7 +3213,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             pw.SizedBox(height: 16),
             pw.Text(
               'Verbessert',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             ...improvements.map(
@@ -3225,7 +3225,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             pw.SizedBox(height: 12),
             pw.Text(
               'Braucht noch Begleitung',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             ...supportItems.map(
@@ -3237,7 +3237,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             pw.SizedBox(height: 16),
             pw.Text(
               'Eltern-Nächste Schritte',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             pw.Text('• kleine Fortschritte einmal pro Woche anschauen'),
@@ -3256,14 +3256,14 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           children: [
             pw.Text(
               'Eltern-Selbstcheck Monatsvergleich',
-              style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             pw.Text('$childLabel • ${phase.ageRange}'),
             pw.SizedBox(height: 14),
             pw.Text(
               'Vergleich zum letzten gespeicherten Selbstcheck:',
-              style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
             ),
             if (!isComparable) ...[
               pw.SizedBox(height: 6),
@@ -3293,7 +3293,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     pw.Expanded(
                       child: pw.Text(
                         domain.title,
-                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        style: const pw.TextStyle(fontWeight: pw.FontWeight.bold),
                       ),
                     ),
                     pw.Text('${current.round()}%'),
@@ -3316,7 +3316,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             pw.SizedBox(height: 12),
             pw.Text(
               'Interpretation für Eltern',
-              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             pw.Text(
@@ -3495,7 +3495,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           children: [
             pw.Text('Monatsvergleich',
                 style:
-                    pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold)),
+                    const pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 8),
             pw.Text('${_selectedChildLabel()} • ${phase.ageRange}'),
             pw.SizedBox(height: 14),
