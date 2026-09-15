@@ -721,8 +721,8 @@ class _HomeScreenState extends State<HomeScreen>
       'events_aktivitaeten'
     };
     final gridActions = visibleGridActions
-        .where((a) =>
-            a.featureId == null || !quickAccessIds.contains(a.featureId))
+        .where(
+            (a) => a.featureId == null || !quickAccessIds.contains(a.featureId))
         .toList();
 
     return Scaffold(

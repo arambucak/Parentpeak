@@ -12,7 +12,10 @@ import 'package:parentpeak/logic/event_discovery_agent.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/models/event_invitation.dart';
 import 'package:parentpeak/models/discovered_event.dart';
+import 'package:parentpeak/models/family_place.dart';
+import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/meetup_event.dart';
+import 'package:parentpeak/services/family_place_service.dart';
 import 'package:parentpeak/ui/create_event_screen.dart';
 import 'package:parentpeak/ui/event_detail_screen.dart';
 import 'package:parentpeak/ui/event_detail_page.dart';
@@ -43,6 +46,8 @@ enum _FeedSource { ai, community }
 
 enum _TimeWindowFilter { all, today, weekend }
 
+enum _ScreenTab { events, places }
+
 class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   late final EventDiscoveryAgent _agent;
   late final EventService _eventService;
@@ -70,6 +75,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     _FeedSource.ai,
     _FeedSource.community,
   };
+  _ScreenTab _activeTab = _ScreenTab.events;
+  List<FamilyPlace> _places = const [];
+  bool _placesLoading = false;
+  String? _placesError;
+  bool _placeOpenOnly = false;
+  bool _placeIndoorOnly = false;
   int _radiusKm = 20;
   bool _onlyFree = false;
   bool _onlyNearbyQuick = false;
@@ -146,6 +157,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
+      if (!mounted) return;
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
         // Fallback: use central LocationService if available
@@ -193,6 +205,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
+      if (!mounted) return;
       // When Nominatim fails, use coordinates as search city so Gemini can locate events
       final coordCity =
           '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
@@ -258,6 +271,44 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
     } catch (_) {}
     return null;
+  }
+
+  Future<void> _refreshPlaces() async {
+    final coords = _originCoords;
+    setState(() {
+      _placesLoading = true;
+      _placesError = null;
+    });
+    try {
+      final childAgeMonths = await _currentChildAgeMonths;
+      final places = await FamilyPlaceService.loadNearbyPlaces(
+        lat: coords.$1,
+        lng: coords.$2,
+        radiusKm: _radiusKm,
+        includeIndoorOnly: _placeIndoorOnly,
+        includeOpenOnly: _placeOpenOnly,
+        childAgeMonths: childAgeMonths,
+      );
+      if (!mounted) return;
+      setState(() {
+        _places = places;
+        _placesLoading = false;
+      });
+    } catch (e) {
+      debugPrint('EventsActivitiesScreen: family places unavailable: $e');
+      if (!mounted) return;
+      setState(() {
+        _places = const <FamilyPlace>[];
+        _placesLoading = false;
+        _placesError = 'Orte konnten nicht geladen werden. Bitte später erneut versuchen.';
+      });
+    }
+  }
+
+  Future<int?> get _currentChildAgeMonths async {
+    final profile = await FamilyMatchProfile.load();
+    if (profile == null || profile.children.isEmpty) return null;
+    return profile.children.first.ageMonths;
   }
 
   Future<void> _refreshFeed() async {
@@ -330,6 +381,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         _lastFeedSyncAt = DateTime.now();
         _errorMessage = null;
       });
+      if (_activeTab == _ScreenTab.places) {
+        await _refreshPlaces();
+      }
     } catch (e) {
       debugPrint('EventsActivitiesScreen._refreshFeed(): failed: $e');
       if (!mounted) return;
@@ -621,7 +675,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (NativeAdSlot.shouldInsertAt(i)) {
         widgets.add(const Padding(
           padding: EdgeInsets.only(bottom: 10),
-          child: NativeAdSlot(context_hint: 'events'),
+          child: NativeAdSlot(contextHint: 'events'),
         ));
       }
 
@@ -804,14 +858,15 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         ),
         child: Column(
           children: [
-            // Sticky: Location + Quellfilter
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Column(
                 children: [
                   _buildLocationSearch(theme),
                   const SizedBox(height: 10),
-                  _buildSourceFilters(theme),
+                  _buildTabSwitch(theme),
+                  const SizedBox(height: 10),
+                  if (_activeTab == _ScreenTab.events) _buildSourceFilters(theme),
                 ],
               ),
             ),
@@ -822,12 +877,15 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   _buildHeaderCard(theme),
                   const SizedBox(height: 10),
                   _buildPinnedActionBar(theme),
-                  if (showInvitationsSection) ...[
+                  if (_activeTab == _ScreenTab.events && showInvitationsSection) ...[
                     const SizedBox(height: 10),
                     _buildInvitationsSection(theme),
                   ],
                   const SizedBox(height: 10),
-                  _buildAdvancedFilters(theme),
+                  if (_activeTab == _ScreenTab.events)
+                    _buildAdvancedFilters(theme)
+                  else
+                    _buildPlacesFilters(theme),
                   const SizedBox(height: 14),
                   if (_lastFeedSyncAt != null) ...[
                     Container(
@@ -865,90 +923,127 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                     ),
                     const SizedBox(height: 8),
                   ],
-                  Text(
-                    context.tr('events_nearby_for_you'),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_isLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_errorMessage != null)
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF4F1),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFFFD1C3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _errorMessage!,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF8C3E28),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          FilledButton.tonalIcon(
-                            onPressed: _refreshFeed,
-                            icon: const Icon(Icons.refresh_rounded),
-                            label: Text(AppStringsManager.getString(
-                                languageService.currentLanguage, 'reload_btn')),
-                          ),
-                        ],
-                      ),
-                    )
-                  else if (feed.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 32, horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Column(
-                        children: [
-                          const Text('\u{1F50D}',
-                              style: TextStyle(fontSize: 40)),
-                          const SizedBox(height: 12),
-                          Text(
-                            AppStringsManager.getString(
-                                languageService.currentLanguage,
-                                'events_empty_title'),
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            AppStringsManager.getString(
-                                languageService.currentLanguage,
-                                'events_empty_subtitle'),
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.outline, height: 1.4),
-                          ),
-                          const SizedBox(height: 20),
-                          FilledButton.icon(
-                            onPressed: _refreshFeed,
-                            icon: const Icon(Icons.refresh_rounded, size: 18),
-                            label: Text(AppStringsManager.getString(
-                                languageService.currentLanguage, 'reload_btn')),
-                          ),
-                        ],
+                  if (_activeTab == _ScreenTab.events)
+                    Text(
+                      context.tr('events_nearby_for_you'),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
                     )
                   else
-                    ..._buildFeedWithAds(feed, coords),
+                    Text(
+                      'Familienfreundliche Orte in der Nähe',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  if (_activeTab == _ScreenTab.events)
+                    if (_isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_errorMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF4F1),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFFFD1C3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _errorMessage!,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: const Color(0xFF8C3E28),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            FilledButton.tonalIcon(
+                              onPressed: _refreshFeed,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: Text(AppStringsManager.getString(
+                                  languageService.currentLanguage, 'reload_btn')),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (feed.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 32, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text('\u{1F50D}',
+                                style: TextStyle(fontSize: 40)),
+                            const SizedBox(height: 12),
+                            Text(
+                              AppStringsManager.getString(
+                                  languageService.currentLanguage,
+                                  'events_empty_title'),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              AppStringsManager.getString(
+                                  languageService.currentLanguage,
+                                  'events_empty_subtitle'),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.outline, height: 1.4),
+                            ),
+                            const SizedBox(height: 20),
+                            FilledButton.icon(
+                              onPressed: _refreshFeed,
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: Text(AppStringsManager.getString(
+                                  languageService.currentLanguage, 'reload_btn')),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ..._buildFeedWithAds(feed, coords)
+                  else
+                    if (_placesLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_placesError != null)
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF4F1),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFFFD1C3)),
+                        ),
+                        child: Text(_placesError!),
+                      )
+                    else if (_places.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Text('Keine passenden Orte in diesem Radius gefunden.'),
+                      )
+                    else ..._buildFamilyPlaceList(theme, coords),
                 ],
               ),
             ),
@@ -1124,6 +1219,22 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     );
   }
 
+  Widget _buildTabSwitch(ThemeData theme) {
+    return SegmentedButton<_ScreenTab>(
+      segments: const [
+        ButtonSegment(value: _ScreenTab.events, label: Text('Events')),
+        ButtonSegment(value: _ScreenTab.places, label: Text('Orte')),
+      ],
+      selected: {_activeTab},
+      onSelectionChanged: (value) {
+        setState(() => _activeTab = value.first);
+        if (_activeTab == _ScreenTab.places) {
+          _refreshPlaces();
+        }
+      },
+    );
+  }
+
   Widget _buildSourceFilters(ThemeData theme) {
     return Wrap(
       spacing: 8,
@@ -1168,6 +1279,176 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildPlacesFilters(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Filter für Orte',
+            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilterChip(
+                label: const Text('Jetzt geöffnet'),
+                selected: _placeOpenOnly,
+                onSelected: (value) {
+                  setState(() => _placeOpenOnly = value);
+                  _refreshPlaces();
+                },
+              ),
+              FilterChip(
+                label: const Text('Indoor'),
+                selected: _placeIndoorOnly,
+                onSelected: (value) {
+                  setState(() => _placeIndoorOnly = value);
+                  _refreshPlaces();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [5, 10, 20, 50]
+                .map(
+                  (radius) => ChoiceChip(
+                    label: Text('$radius km'),
+                    selected: _radiusKm == radius,
+                    onSelected: (_) {
+                      if (_radiusKm == radius) return;
+                      setState(() => _radiusKm = radius);
+                      _refreshPlaces();
+                    },
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildFamilyPlaceList(ThemeData theme, (double, double) coords) {
+    final places = FamilyPlaceService.sortPlaces(_places, coords.$1, coords.$2).take(20).toList();
+    return [
+      for (final place in places)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: familyPlaceCard(
+            place: place,
+            distanceKm: _distanceKm(coords.$1, coords.$2, place.lat, place.lng),
+            onTap: () {},
+          ),
+        ),
+    ];
+  }
+
+  Widget familyPlaceCard({
+    required FamilyPlace place,
+    required double distanceKm,
+    required VoidCallback onTap,
+  }) {
+    final isOpen = place.isOpenNow;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      place.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      isOpen ? 'Jetzt geöffnet' : 'Öffnungszeiten prüfen',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isOpen ? const Color(0xFF166534) : const Color(0xFF374151),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                place.categoryLabel,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF4B5563),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${distanceKm.toStringAsFixed(distanceKm >= 10 ? 1 : 2)} km entfernt',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+              if (place.tags.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: place.tags.take(3).map((tag) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      tag,
+                      style: const TextStyle(fontSize: 10, color: Color(0xFF374151)),
+                    ),
+                  )).toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 

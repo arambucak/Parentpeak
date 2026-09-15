@@ -843,7 +843,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                                 size: 18),
                             onPressed: () async {
                               await _service.removeRecipe(r.id);
+                              if (!ctx.mounted) return;
                               Navigator.pop(ctx);
+                              if (!mounted) return;
                               setState(() {});
                             },
                           ),
@@ -901,17 +903,18 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             await shopping.load();
             await shopping.addItemsFromRecipe(selected);
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(
                 content: Text(
-                    context.tr('kitchen_ingredients_added', values: {
+                    this.context.tr('kitchen_ingredients_added', values: {
                       'count': selected.length,
                     })),
               ));
             }
           } catch (e) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(context.tr('kitchen_error', values: {'error': e})),
+              ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(
+                content: Text(
+                    this.context.tr('kitchen_error', values: {'error': e})),
               ));
             }
           }

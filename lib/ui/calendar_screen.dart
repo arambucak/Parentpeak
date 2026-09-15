@@ -701,7 +701,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
                               key: ValueKey(person),
-                              value: person,
+                              initialValue: person,
                               decoration: const InputDecoration(
                                   labelText: 'F\u00fcr wen?'),
                               isExpanded: true,
@@ -765,7 +765,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    value: bringer.isEmpty ? '' : bringer,
+                                    initialValue:
+                                        bringer.isEmpty ? '' : bringer,
                                     decoration: const InputDecoration(
                                         labelText: '\u{1F697} Bringt'),
                                     isExpanded: true,
@@ -788,7 +789,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    value: abholer.isEmpty ? '' : abholer,
+                                    initialValue:
+                                        abholer.isEmpty ? '' : abholer,
                                     decoration: const InputDecoration(
                                         labelText: '\u{1F3E0} Holt'),
                                     isExpanded: true,
@@ -823,7 +825,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
-                              value: recurrence,
+                              initialValue: recurrence,
                               decoration: const InputDecoration(
                                   labelText: 'Wiederholung'),
                               isExpanded: true,
@@ -837,7 +839,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<int>(
-                              value: reminder,
+                              initialValue: reminder,
                               decoration: const InputDecoration(
                                   labelText: 'Erinnerung'),
                               isExpanded: true,
@@ -860,7 +862,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
-                              value: endMode,
+                              initialValue: endMode,
                               decoration:
                                   const InputDecoration(labelText: 'Endet'),
                               isExpanded: true,

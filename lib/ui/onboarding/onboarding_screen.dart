@@ -365,7 +365,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           const SizedBox(width: 12),
           Expanded(
             child: Text(_t('location'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           ),
         ]),
         content: Column(
@@ -391,7 +392,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 Expanded(
                   child: Text(
                     _t('location_onboarding_privacy'),
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                    style:
+                        const TextStyle(fontSize: 11, color: Color(0xFF166534)),
                   ),
                 ),
               ]),

@@ -74,18 +74,21 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
     if (ok != true) return;
     final success = await _service.suspendUser(g.reportedUserId,
         reason: 'Moderation: ${g.lastReason}');
+    if (!mounted) return;
     _afterAction(success,
       context.tr(success ? 'admin_suspended' : 'admin_suspend_failed'));
   }
 
   Future<void> _unsuspend(ReportGroup g) async {
     final success = await _service.unsuspendUser(g.reportedUserId);
+    if (!mounted) return;
     _afterAction(success,
       context.tr(success ? 'admin_unsuspended' : 'admin_action_failed'));
   }
 
   Future<void> _ignore(ReportGroup g) async {
     final success = await _service.resolveReportsForUser(g.reportedUserId);
+    if (!mounted) return;
     _afterAction(success,
       context.tr(success ? 'admin_reports_resolved' : 'admin_action_failed'));
   }

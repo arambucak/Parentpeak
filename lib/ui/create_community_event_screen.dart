@@ -567,27 +567,36 @@ class _CreateCommunityEventScreenState
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
-        ...CreatorType.values.map((t) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: RadioListTile<CreatorType>(
+        RadioGroup<CreatorType>(
+          groupValue: _creatorType,
+          onChanged: (value) {
+          if (value != null) setState(() => _creatorType = value);
+          },
+          child: Column(
+          children: CreatorType.values
+            .map((t) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: RadioListTile<CreatorType>(
                 value: t,
-                groupValue: _creatorType,
-                onChanged: (v) => setState(() => _creatorType = v!),
                 title: Text(_creatorTypeLabel(t),
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                  style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
                 subtitle: Text(_creatorTypeHint(t),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline)),
+                  style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14)),
                 tileColor: _creatorType == t
-                    ? const Color(0xFF8B5CF6).withValues(alpha: 0.06)
-                    : null,
+                  ? const Color(0xFF8B5CF6)
+                    .withValues(alpha: 0.06)
+                  : null,
                 activeColor: const Color(0xFF8B5CF6),
                 dense: true,
-              ),
-            )),
+                ),
+              ))
+            .toList(),
+          ),
+        ),
         const SizedBox(height: 16),
         TextField(
           controller: _organizerCtrl,

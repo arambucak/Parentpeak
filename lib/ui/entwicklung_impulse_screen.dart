@@ -1455,7 +1455,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                               borderRadius: BorderRadius.circular(14))))),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                  value: selectedCare,
+                  initialValue: selectedCare,
                   isExpanded: true,
                   decoration: InputDecoration(
                       labelText: _t('care_type'),

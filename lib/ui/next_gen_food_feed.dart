@@ -1017,8 +1017,8 @@ class _NextGenFoodFeedScreenState extends State<NextGenFoodFeedScreen> {
     }
 
     try {
-      await _audioPlayer.setAudioSource(
-        ConcatenatingAudioSource(children: playable),
+      await _audioPlayer.setAudioSources(
+        playable,
         initialIndex: _activeAudioIndex % playable.length,
       );
       if (autoplay) {

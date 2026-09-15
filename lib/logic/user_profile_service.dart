@@ -50,7 +50,8 @@ class UserProfileService {
   /// Sichtbarkeit/Suchbarkeit setzen (Schritt 2). searchable=true macht das
   /// Profil ueber die Namenssuche auffindbar; isPrivate steuert, ob Anfragen
   /// bestaetigt werden muessen.
-  Future<void> setVisibility({bool? searchable, bool? isPrivate, String? username}) async {
+  Future<void> setVisibility(
+      {bool? searchable, bool? isPrivate, String? username}) async {
     final api = _api;
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty) return;

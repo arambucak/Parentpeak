@@ -123,27 +123,33 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
         const SizedBox(height: 16),
-        ..._reasons.map((r) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: RadioListTile<String>(
+        RadioGroup<String>(
+          groupValue: _selectedReason,
+          onChanged: (value) => setState(() => _selectedReason = value),
+          child: Column(
+          children: _reasons
+            .map((r) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: RadioListTile<String>(
                 value: r['id']!,
-                groupValue: _selectedReason,
-                onChanged: (v) => setState(() => _selectedReason = v),
                 title: Text(r['label']!,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                  style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
                 subtitle: Text(r['desc']!,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline)),
+                  style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12)),
                 tileColor: _selectedReason == r['id']
-                    ? theme.colorScheme.error.withValues(alpha: 0.05)
-                    : null,
+                  ? theme.colorScheme.error.withValues(alpha: 0.05)
+                  : null,
                 activeColor: theme.colorScheme.error,
                 dense: true,
-              ),
-            )),
+                ),
+              ))
+            .toList(),
+          ),
+        ),
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,

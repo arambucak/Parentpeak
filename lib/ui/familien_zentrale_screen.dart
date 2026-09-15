@@ -875,7 +875,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                     uExams: dossier.uExams,
                   );
                   await _dossierService.addOrUpdate(updated);
-                  if (mounted) {
+                  if (mounted && ctx.mounted) {
                     Navigator.pop(ctx);
                     setState(() {});
                   }
