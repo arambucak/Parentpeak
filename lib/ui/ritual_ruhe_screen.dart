@@ -210,7 +210,7 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
     setState(() => _storyLoading = true);
     try {
       final story = await GeminiAIService().generateText(
-        'Schreibe eine kurze Gute-Nacht-Geschichte für ${child.childName}, etwa $_ageYears Jahre alt. Thema: Mut, Geborgenheit und ein kleiner freundlicher Moment. 350 bis 500 Wörter.',
+        'Schreibe eine kurze Gute-Nacht-Geschichte für ein Kind, etwa $_ageYears Jahre alt. Thema: Mut, Geborgenheit und ein kleiner freundlicher Moment. 350 bis 500 Wörter. Verwende keine Namen und keine persönlichen Daten.',
         systemInstruction:
             'Du bist eine ruhige, inklusive Kinderbuchautorin. Schreibe warm, beruhigend und altersgerecht auf Deutsch. Keine Angst, Gewalt, Diagnosen oder Leistungsdruck. Gib nur die Geschichte zurück, ohne Überschrift oder Erklärung.',
         appLanguage: 'de',
