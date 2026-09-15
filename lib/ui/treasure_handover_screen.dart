@@ -47,6 +47,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   Set<String> _blockedListingIds = <String>{};
   Set<String> _reportedListingIds = <String>{};
   Set<String> _reservedListingIds = <String>{};
+  Set<String> _ownedListingIds = <String>{};
   String _discoveryScope = '10km';
   bool _showDiscoveryInviteBanner = false;
   bool _globalDigitalMode = false;
@@ -60,6 +61,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   Future<void> _initializeScreen() async {
     await _restoreSafetyState();
     await _loadListings();
+    await _loadOwnedListingIds();
     if (!mounted) return;
     if (widget.openMyListings) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1141,6 +1143,14 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     }
   }
 
+  Future<void> _loadOwnedListingIds() async {
+    final overview = await _listingService.loadMine();
+    if (!mounted || overview == null) return;
+    setState(() {
+      _ownedListingIds = overview.offers.map((offer) => offer.id).toSet();
+    });
+  }
+
   Widget _buildDiscoveryInviteBanner(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1199,6 +1209,9 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
       );
       return;
     }
+    setState(() {
+      _ownedListingIds = overview.offers.map((offer) => offer.id).toSet();
+    });
 
     await showModalBottomSheet<void>(
       context: context,
@@ -1227,6 +1240,10 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                 TreasureMineOfferCard(
                   offer: offer,
                   l10n: l10n,
+                  onDelete: () {
+                    Navigator.of(sheetContext).pop();
+                    _deleteMineListing(offer.id, offer.title);
+                  },
                   onConfirm: (handover) {
                     Navigator.of(sheetContext).pop();
                     _updateOwnerHandover(offer.id, handover.id,
@@ -1298,6 +1315,59 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
       SnackBar(
         content: Text(l10n.t(
           updated ? 'treasureHandoverUpdated' : 'treasureHandoverUpdateFailed',
+        )),
+      ),
+    );
+  }
+
+  Future<void> _deleteMineListing(String listingId, String title) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          l10n.t('treasureDeleteTitle', fallback: 'Anzeige löschen?'),
+        ),
+        content: Text(l10n.t(
+          'treasureDeleteText',
+          fallback:
+              'Die Anzeige wird dauerhaft entfernt. Bestehende Reservierungen werden aufgehoben.',
+        )),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.t('cancel', fallback: 'Abbrechen')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              l10n.t('treasureDeleteAction', fallback: 'Anzeige löschen'),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final deleted = await _listingService.deleteListing(listingId: listingId);
+    if (!mounted) return;
+
+    if (deleted) {
+      setState(() {
+        _listings.removeWhere((listing) => listing.id == listingId);
+        _ownedListingIds.remove(listingId);
+        if (_selectedListing?.id == listingId) _selectedListing = null;
+      });
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.t(
+          deleted ? 'treasureDeleteSuccess' : 'treasureDeleteFailed',
+          fallback: deleted
+              ? '"$title" wurde gelöscht.'
+              : 'Die Anzeige konnte nicht gelöscht werden.',
         )),
       ),
     );
@@ -2069,8 +2139,9 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                               ),
                             ),
                           ),
-                          if (listing.ownerUserId ==
-                              AuthService.instance.currentUser?.uid)
+                            if (listing.ownerUserId ==
+                                AuthService.instance.currentUser?.uid ||
+                              _ownedListingIds.contains(listing.id))
                             SizedBox(
                               width: narrowActions
                                   ? constraints.maxWidth

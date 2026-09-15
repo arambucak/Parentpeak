@@ -9,12 +9,14 @@ class TreasureMineOfferCard extends StatelessWidget {
     required this.l10n,
     required this.onConfirm,
     required this.onComplete,
+    required this.onDelete,
   });
 
   final TreasureOfferSummary offer;
   final AppLocalizations l10n;
   final ValueChanged<TreasureHandoverSummary> onConfirm;
   final ValueChanged<TreasureHandoverSummary> onComplete;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +80,20 @@ class TreasureMineOfferCard extends StatelessWidget {
                 label: Text(l10n.t('treasureConfirmHandover')),
               ),
           ],
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onDelete,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red.shade700,
+              ),
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+              label: Text(
+                l10n.t('treasureDeleteAction', fallback: 'Anzeige löschen'),
+              ),
+            ),
+          ),
         ],
       ),
     );
