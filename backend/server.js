@@ -2267,7 +2267,11 @@ async function verifyFirebaseIdToken(req) {
   const idToken = authHeader.slice(7);
   try {
     const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
-    return { uid: decoded.uid, verified: true };
+    return {
+      uid: decoded.uid,
+      email: decoded.email || null,
+      verified: true,
+    };
   } catch (_) {
     return { uid: null, verified: false };
   }
@@ -2297,13 +2301,14 @@ async function authorizeAccountOwner(req, res, userId) {
     return true;
   }
 
-  const { uid, verified } = await verifyFirebaseIdToken(req);
+  const { uid, email, verified } = await verifyFirebaseIdToken(req);
   if (verified) {
     if (uid !== userId) {
       res.status(403).json({ error: 'Konto-Loeschung nur fuer das eigene Konto erlaubt' });
       return false;
     }
     req.firebaseUid = uid;
+    req.firebaseEmail = email;
     return true;
   }
 
@@ -2313,6 +2318,29 @@ async function authorizeAccountOwner(req, res, userId) {
 
   res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
   return false;
+}
+
+async function ensureFirebaseUserRecord(req) {
+  if (!req.firebaseUid) return false;
+
+  const userId = String(req.firebaseUid).trim();
+  const email = String(req.firebaseEmail || `${userId}@firebase.local`)
+    .trim()
+    .toLowerCase();
+  const localPart = email.split('@')[0] || userId;
+
+  await prisma.user.upsert({
+    where: { id: userId },
+    update: { email },
+    create: {
+      id: userId,
+      email,
+      passwordHash: 'firebase-managed',
+      passwordSalt: 'firebase-managed',
+      firstName: localPart.slice(0, 100),
+    },
+  });
+  return true;
 }
 
 // Middleware: if FIREBASE_REQUIRE_AUTH=1 AND Firebase Admin is configured,
@@ -2341,19 +2369,23 @@ async function firebaseAuthMiddleware(req, res, next) {
   // userId-basierte Social-Endpoints: Token optional (best-effort verifizieren),
   // aber nie hart ablehnen — sonst gehen Profil/Freundschaft auf Web verloren.
   if (isNoTokenWritePath(req.path)) {
-    const { uid, verified } = await verifyFirebaseIdToken(req);
-    if (verified) req.firebaseUid = uid;
+    const { uid, email, verified } = await verifyFirebaseIdToken(req);
+    if (verified) {
+      req.firebaseUid = uid;
+      req.firebaseEmail = email;
+    }
     return next();
   }
   const authHeader = req.headers.authorization || '';
   if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
     return next();
   }
-  const { uid, verified } = await verifyFirebaseIdToken(req);
+  const { uid, email, verified } = await verifyFirebaseIdToken(req);
   if (!verified) {
     return res.status(401).json({ error: 'Gültiger Firebase ID-Token erforderlich' });
   }
   req.firebaseUid = uid;
+  req.firebaseEmail = email;
   return next();
 }
 
@@ -2516,8 +2548,11 @@ app.use(async (req, res, next) => {
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
-      const { uid, verified } = await verifyFirebaseIdToken(req);
-      if (verified) req.firebaseUid = uid;
+      const { uid, email, verified } = await verifyFirebaseIdToken(req);
+      if (verified) {
+        req.firebaseUid = uid;
+        req.firebaseEmail = email;
+      }
     }
     // Always continue — userId in body identifies the owner
     next();
@@ -2533,9 +2568,10 @@ app.use(async (req, res, next) => {
   }
 
   if (hasBearer && firebaseAdmin) {
-    const { uid, verified } = await verifyFirebaseIdToken(req);
+    const { uid, email, verified } = await verifyFirebaseIdToken(req);
     if (verified) {
       req.firebaseUid = uid;
+      req.firebaseEmail = email;
       next();
       return;
     }
@@ -12855,12 +12891,16 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
       return res.status(400).json({ error: 'Du kannst dein eigenes Angebot nicht reservieren' });
     }
 
-    const requester = await prisma.user.findUnique({
-      where: { id: String(requesterUserId) },
-      select: { id: true },
-    });
-    if (!requester) {
-      return res.status(404).json({ error: 'Interessent nicht als Benutzer registriert' });
+    if (req.firebaseUid) {
+      await ensureFirebaseUserRecord(req);
+    } else {
+      const requester = await prisma.user.findUnique({
+        where: { id: String(requesterUserId) },
+        select: { id: true },
+      });
+      if (!requester) {
+        return res.status(404).json({ error: 'Interessent nicht als Benutzer registriert' });
+      }
     }
 
     // Doppelte Reservierung desselben Nutzers vermeiden
