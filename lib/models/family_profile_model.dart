@@ -113,18 +113,36 @@ class FamilyMatchProfile {
 
 class ChildEntry {
   final String name;
-  final int ageMonths; // Alter in Monaten für Babys, in Jahren * 12 für Größere
+  DateTime birthDate;
   final String? gender; // maennlich, weiblich, divers, null = keine Angabe
   final List<String> interests;
   final String? interestsCustom;
 
-  const ChildEntry({
+  ChildEntry({
     required this.name,
-    required this.ageMonths,
+    DateTime? birthDate,
+    int? ageMonths,
     this.gender,
     this.interests = const [],
     this.interestsCustom,
-  });
+  }) : birthDate = birthDate ?? _birthDateFromAgeMonths(ageMonths ?? 0);
+
+  int get ageMonths {
+    final now = DateTime.now();
+    var months = (now.year - birthDate.year) * 12 + now.month - birthDate.month;
+    if (now.day < birthDate.day) months--;
+    return months.clamp(0, 240);
+  }
+
+  set ageMonths(int value) {
+    final now = DateTime.now();
+    birthDate = DateTime(now.year, now.month - value.clamp(0, 240), now.day);
+  }
+
+  static DateTime _birthDateFromAgeMonths(int months) {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month - months, now.day);
+  }
 
   /// Menschlich-lesbare Altersanzeige
   String get ageDisplay {
@@ -137,10 +155,12 @@ class ChildEntry {
 
   // Legacy: age in years (rounded)
   int get age => (ageMonths / 12).round().clamp(0, 18);
+  int get ageYears => (ageMonths / 12).floor().clamp(0, 20);
 
   Map<String, dynamic> toJson() => {
         'name': name,
         'ageMonths': ageMonths,
+        'birthDate': birthDate.toIso8601String(),
         'gender': gender,
         'interests': interests,
         'interestsCustom': interestsCustom,
@@ -148,7 +168,9 @@ class ChildEntry {
 
   factory ChildEntry.fromJson(Map<String, dynamic> j) => ChildEntry(
         name: j['name'] ?? '',
-        ageMonths: j['ageMonths'] ?? ((j['age'] ?? 0) * 12),
+        birthDate: DateTime.tryParse(j['birthDate']?.toString() ?? ''),
+        ageMonths: (j['ageMonths'] as num?)?.round() ??
+            ((j['age'] as num?)?.round() ?? 0) * 12,
         gender: j['gender'],
         interests: List<String>.from(j['interests'] ?? []),
         interestsCustom: j['interestsCustom'],
