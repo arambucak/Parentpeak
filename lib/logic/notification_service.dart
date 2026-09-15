@@ -174,6 +174,7 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    if (kIsWeb) return;
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     const androidDetails = AndroidNotificationDetails(
@@ -194,6 +195,7 @@ class NotificationService {
 
   Future<void> scheduleReminder(
       DateTime when, String title, String body) async {
+    if (kIsWeb) return;
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     final now = DateTime.now();
@@ -230,6 +232,7 @@ class NotificationService {
     required String body,
     required String reminderKey,
   }) async {
+    if (kIsWeb) return;
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     final now = DateTime.now();
