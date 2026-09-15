@@ -20,6 +20,7 @@ import 'package:parentpeak/ui/admin_moderation_screen.dart';
 import 'package:parentpeak/logic/error_reporting_service.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 String _t(String key) =>
@@ -102,6 +103,38 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       }
     }
     if (mounted) setState(() => _children = children);
+    await _syncChildrenToDossierService(children);
+  }
+
+  /// Keeps the shared `KindDossierService` (used e.g. by "Gute Nacht") in
+  /// sync with the children managed here, so both screens show the same data.
+  Future<void> _syncChildrenToDossierService(List<_ChildInfo> children) async {
+    await KindDossierService.instance.load();
+    for (final child in children) {
+      final existing = KindDossierService.instance.dossiers
+          .where((d) => d.childName == child.name);
+      if (existing.isNotEmpty) continue;
+      await KindDossierService.instance.addOrUpdate(
+        KindDossier(
+          childName: child.name,
+          ageMonths: _parseAgeMonths(child.age),
+        ),
+      );
+    }
+    final currentNames = children.map((c) => c.name).toSet();
+    for (final dossier in KindDossierService.instance.dossiers.toList()) {
+      if (!currentNames.contains(dossier.childName)) {
+        await KindDossierService.instance.remove(dossier.childName);
+      }
+    }
+  }
+
+  int? _parseAgeMonths(String age) {
+    final match = RegExp(r'\d+').firstMatch(age);
+    if (match == null) return null;
+    final years = int.tryParse(match.group(0)!);
+    if (years == null) return null;
+    return years * 12;
   }
 
   Future<void> _addChild() async {
@@ -111,6 +144,45 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final saved = prefs.getStringList('profile.children') ?? [];
     saved.add('${result.name}|${result.age}');
     await prefs.setStringList('profile.children', saved);
+    await KindDossierService.instance.addOrUpdate(
+      KindDossier(
+        childName: result.name,
+        ageMonths: _parseAgeMonths(result.age),
+      ),
+    );
+    await _loadChildren();
+  }
+
+  Future<void> _removeChild(_ChildInfo child) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Kind wirklich löschen?'),
+        content: Text(
+            '${child.name} wird dauerhaft aus eurem Familienprofil entfernt.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(_t('cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('profile.children') ?? [];
+    saved.removeWhere((raw) => raw.split('|').first == child.name);
+    await prefs.setStringList('profile.children', saved);
+    await KindDossierService.instance.remove(child.name);
     await _loadChildren();
   }
 
@@ -384,44 +456,56 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: _children.map((child) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant
-                              .withValues(alpha: 0.5),
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onLongPress: () => _removeChild(child),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant
+                                .withValues(alpha: 0.5),
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('\u{1F9D2}',
-                              style: TextStyle(fontSize: 18)),
-                          const SizedBox(width: 8),
-                          Text(child.name,
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700)),
-                          if (child.age.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('\u{1F9D2}',
+                                style: TextStyle(fontSize: 18)),
+                            const SizedBox(width: 8),
+                            Text(child.name,
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700)),
+                            if (child.age.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(child.age,
+                                    style:
+                                        theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                    )),
                               ),
-                              child: Text(child.age,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  )),
+                            ],
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => _removeChild(child),
+                              child: Icon(Icons.close_rounded,
+                                  size: 16,
+                                  color: theme.colorScheme.onSurfaceVariant),
                             ),
                           ],
-                        ],
+                        ),
                       ),
                     );
                   }).toList(),
@@ -973,8 +1057,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 const Icon(Icons.business_rounded, size: 22),
                 const SizedBox(width: 10),
                 Text(_t('profile_imprint'),
-                    style:
-                        const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
               Text(_t('profile_legal_info'),
@@ -1061,8 +1145,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 const Text('\u{1F916}', style: TextStyle(fontSize: 22)),
                 const SizedBox(width: 10),
                 Text(_t('profile_ai_notice'),
-                    style:
-                        const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
               const Text(
@@ -1180,6 +1264,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       ),
     );
     if (newName == null || newName.isEmpty || newName == current) return;
+    if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     // Firebase displayName + serverseitiges UserProfile aktualisieren.
     try {
@@ -1372,7 +1457,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
             ),
             const SizedBox(height: 16),
             Text(_t('profile_blocked_contacts'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
             if (blocked.isEmpty)
               Padding(

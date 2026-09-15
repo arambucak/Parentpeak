@@ -213,4 +213,9 @@ class KindDossierService {
     }
     await save(_dossiers);
   }
+
+  Future<void> remove(String childName) async {
+    _dossiers.removeWhere((d) => d.childName == childName);
+    await save(_dossiers);
+  }
 }

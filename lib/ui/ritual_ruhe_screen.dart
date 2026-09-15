@@ -91,6 +91,25 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
               .toList() ??
           const [];
     }
+    if (children.isEmpty) {
+      // Legacy fallback: children added via the "Eure Kinder" profile section
+      // before it synced with `KindDossierService` may only exist here.
+      final saved = prefs.getStringList('profile.children') ?? [];
+      children = saved
+          .map((raw) => raw.split('|'))
+          .where((parts) => parts.length >= 2 && parts[0].trim().isNotEmpty)
+          .map((parts) {
+            final years = int.tryParse(RegExp(r'\d+')
+                    .firstMatch(parts[1])
+                    ?.group(0) ??
+                '');
+            return KindDossier(
+              childName: parts[0],
+              ageMonths: years != null ? years * 12 : null,
+            );
+          })
+          .toList();
+    }
     if (!mounted) return;
     setState(() {
       _children = children;
