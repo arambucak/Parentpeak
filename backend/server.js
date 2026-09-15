@@ -2273,6 +2273,24 @@ async function verifyFirebaseIdToken(req) {
   }
 }
 
+function resolveVerifiedUserId(req, fallbackUserId) {
+  if (req.firebaseUid && req.firebaseUid.trim()) {
+    return String(req.firebaseUid).trim();
+  }
+  const normalizedFallback = typeof fallbackUserId === 'string'
+    ? fallbackUserId.trim()
+    : String(fallbackUserId ?? '').trim();
+  return normalizedFallback || null;
+}
+
+function hasExplicitUserMismatch(req, requestedUserId) {
+  if (!req.firebaseUid) return false;
+  if (requestedUserId === undefined || requestedUserId === null) return false;
+  const normalized = String(requestedUserId).trim();
+  if (!normalized) return false;
+  return normalized !== req.firebaseUid;
+}
+
 async function authorizeAccountOwner(req, res, userId) {
   const authHeader = req.headers.authorization || '';
   if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
@@ -12304,7 +12322,7 @@ app.post('/api/treasures', async (req, res) => {
     userId: requestedUserId, title, description, location, latitude, longitude,
     category, condition, isFree, price, visibility, shareRadiusKm, photoUrl, photoUrls
   } = req.body;
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
 
   // Validate required fields
   if (!userId || !title || !location || latitude === undefined || longitude === undefined) {
@@ -12312,7 +12330,7 @@ app.post('/api/treasures', async (req, res) => {
       error: 'userId, title, location, latitude, longitude erforderlich'
     });
   }
-  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Anzeige kann nur fuer das eigene Konto erstellt werden' });
   }
   // Echter Bann: gesperrte Nutzer koennen nichts mehr im Verschenkmarkt einstellen.
@@ -12435,6 +12453,7 @@ app.get('/api/treasures', async (req, res) => {
     const formattedTreasures = treasures.map(t => ({
       id: t.id,
       userId: t.userId,
+      ownerUserId: t.userId,
       title: t.title,
       description: t.description,
       location: t.location,
@@ -12811,12 +12830,12 @@ app.post('/api/treasures/:id/report', async (req, res) => {
 app.post('/api/treasures/:id/reserve', async (req, res) => {
   const { id } = req.params;
   const { requesterUserId: requestedRequesterUserId, preferredSlot, handoverMode, message } = req.body;
-  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
+  const requesterUserId = resolveVerifiedUserId(req, requestedRequesterUserId);
 
   if (!requesterUserId) {
     return res.status(400).json({ error: 'requesterUserId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedRequesterUserId)) {
     return res.status(403).json({ error: 'Reservierung nur fuer das eigene Konto erlaubt' });
   }
 
@@ -12915,11 +12934,11 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
 app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
   const { id } = req.params;
   const { requesterUserId: requestedRequesterUserId } = req.body;
-  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
+  const requesterUserId = resolveVerifiedUserId(req, requestedRequesterUserId);
   if (!requesterUserId) {
     return res.status(400).json({ error: 'requesterUserId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedRequesterUserId)) {
     return res.status(403).json({ error: 'Stornierung nur fuer das eigene Konto erlaubt' });
   }
   try {
@@ -12955,11 +12974,11 @@ app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
 app.post('/api/treasures/:id/handovers/:handoverId/confirm', async (req, res) => {
   const { id, handoverId } = req.params;
   const requestedUserId = req.body.userId;
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Bestaetigung nur fuer das eigene Konto erlaubt' });
   }
 
@@ -13013,11 +13032,11 @@ app.post('/api/treasures/:id/handovers/:handoverId/confirm', async (req, res) =>
 app.post('/api/treasures/:id/handovers/:handoverId/complete', async (req, res) => {
   const { id, handoverId } = req.params;
   const requestedUserId = req.body.userId;
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Abschluss nur fuer das eigene Konto erlaubt' });
   }
 
@@ -13268,12 +13287,12 @@ app.get('/api/treasures/:id', async (req, res) => {
 app.put('/api/treasures/:id', async (req, res) => {
   const { id } = req.params;
   const { userId: requestedUserId, title, description, location, latitude, longitude, condition, status } = req.body;
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Bearbeitung nur fuer das eigene Konto erlaubt' });
   }
 
@@ -13327,12 +13346,12 @@ app.delete('/api/treasures/:id', async (req, res) => {
   const requestedUserId = typeof req.query.userId === 'string'
     ? req.query.userId
     : '';
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
-  if (req.firebaseUid && requestedUserId !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Loeschung nur fuer das eigene Konto erlaubt' });
   }
 
