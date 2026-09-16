@@ -11,6 +11,29 @@ void main() {
   });
 
   group('HomeScreen Widget Tests', () {
+    test('Giveaway-market tile is directly translated for launch locales', () {
+      const expectedTitles = {
+        'de': 'Verschenkmarkt',
+        'en': 'Giveaway market',
+        'tr': 'Paylaşım pazarı',
+        'ku': 'Bazara parvekirinê',
+        'ar': 'سوق العطاء والتبادل',
+        'ru': 'Ярмарка подарков',
+        'uk': 'Ярмарок подарунків',
+        'es': 'Mercado de regalos',
+        'fr': 'Marché du don',
+        'it': 'Mercato del dono',
+        'pt': 'Feira de doações',
+      };
+
+      for (final entry in expectedTitles.entries) {
+        expect(AppStringsManager.treasureTileString(entry.key, 'title'),
+            entry.value);
+        expect(AppStringsManager.treasureTileString(entry.key, 'subtitle'),
+            isNotEmpty);
+      }
+    });
+
     testWidgets('Home screen renders without crash', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(

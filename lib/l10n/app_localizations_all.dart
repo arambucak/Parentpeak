@@ -3,6 +3,57 @@ import 'package:parentpeak/l10n/supported_languages.dart';
 // Vollständige Localization Struktur mit 28 Sprachen inkl. RTL
 
 class AppStringsManager {
+    static const Map<String, Map<String, String>> _treasureTileStrings = {
+        'de': {
+            'title': 'Verschenkmarkt',
+            'subtitle': 'Verschenken, austauschen, Eltern verbinden',
+        },
+        'en': {
+            'title': 'Giveaway market',
+            'subtitle': 'Give, swap and connect with other parents',
+        },
+        'tr': {
+            'title': 'Paylaşım pazarı',
+            'subtitle': 'Verin, takas edin, ebeveynlerle bağ kurun',
+        },
+        'ku': {
+            'title': 'Bazara parvekirinê',
+            'subtitle': 'Bide, biguhezîne û bi dêûbavên din re were girêdan',
+        },
+        'ar': {
+            'title': 'سوق العطاء والتبادل',
+            'subtitle': 'قدّموا وتبادلوا وتواصلوا مع الأهالي الآخرين',
+        },
+        'ru': {
+            'title': 'Ярмарка подарков',
+            'subtitle': 'Отдавайте, обменивайтесь и общайтесь с другими родителями',
+        },
+        'uk': {
+            'title': 'Ярмарок подарунків',
+            'subtitle': 'Віддавайте, обмінюйтеся та спілкуйтеся з іншими батьками',
+        },
+        'es': {
+            'title': 'Mercado de regalos',
+            'subtitle': 'Regala, intercambia y conecta con otras familias',
+        },
+        'fr': {
+            'title': 'Marché du don',
+            'subtitle': 'Donnez, échangez et créez du lien entre parents',
+        },
+        'it': {
+            'title': 'Mercato del dono',
+            'subtitle': 'Regala, scambia e connettiti con altri genitori',
+        },
+        'pt': {
+            'title': 'Feira de doações',
+            'subtitle': 'Ofereça, troque e conecte-se com outras famílias',
+        },
+    };
+
+    static String treasureTileString(String languageCode, String key) =>
+            _treasureTileStrings[languageCode]?[key] ??
+            _treasureTileStrings['en']![key]!;
+
   static const Map<String, Map<String, String>> _baseCoreStrings = {
     'de': {
       'family_default': 'diese Familie',
