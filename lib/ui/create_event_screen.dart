@@ -158,8 +158,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     final currentUserId = AuthService.instance.currentUser?.uid;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(_t('event_login_required'))),
+        SnackBar(content: Text(_t('event_login_required'))),
       );
       return;
     }
@@ -167,8 +166,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedAgeGroups.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(_t('event_select_age_group'))),
+        SnackBar(content: Text(_t('event_select_age_group'))),
       );
       return;
     }
@@ -259,13 +257,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   ],
                   if (expiresAt != null)
                     Text(
-                      'Gültig bis: ${expiresAt.day.toString().padLeft(2, '0')}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.year}',
+                      _t('package3_valid_until').replaceAll(
+                        '{date}',
+                        '${expiresAt.day.toString().padLeft(2, '0')}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.year}',
+                      ),
                     ),
                   if (expiresAt != null) const SizedBox(height: 8),
                   if (expiresAt != null)
-                    const Text(
-                      'Bereits akzeptierte Einladungen bleiben aktiv.',
-                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                    Text(
+                      _t('package3_accepted_invites_remain_active'),
+                      style: const TextStyle(fontSize: 12, color: Colors.black54),
                     ),
                 ],
               ),
@@ -307,7 +308,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       setState(() => _isSubmitting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Konnte nicht speichern: $e')),
+          SnackBar(
+              content:
+                  Text(_t('package3_save_failed').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -350,7 +353,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                   child: Text(
-                    'Erstelle ein Event in wenigen Schritten und entscheide, ob es privat oder öffentlich geteilt wird.',
+                    _t('package3_event_create_intro'),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       height: 1.35,
@@ -360,7 +363,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 16),
                 // Titel
                 Text(
-                  'Grundinformationen',
+                  _t('package3_basic_information'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -369,14 +372,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 TextFormField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Event-Titel',
-                    hintText: 'z. B. Spielplatz-Treffen',
+                  decoration: InputDecoration(
+                    labelText: _t('package3_event_title'),
+                    hintText: _t('package3_event_title_hint'),
                     prefixIcon: Icon(Icons.title),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Bitte einen Titel eingeben';
+                      return _t('package3_title_required');
                     }
                     return null;
                   },
@@ -385,15 +388,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Beschreibung',
-                    hintText: 'Was macht euer Event besonders?',
+                  decoration: InputDecoration(
+                    labelText: _t('package3_description'),
+                    hintText: _t('package3_event_description_hint'),
                     prefixIcon: Icon(Icons.description),
                   ),
                   maxLines: 4,
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Bitte eine Beschreibung eingeben';
+                      return _t('package3_description_required');
                     }
                     return null;
                   },
@@ -402,7 +405,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 // Sichtbarkeit & Standortverteilung
                 Text(
-                  'Sichtbarkeit',
+                  _t('package3_visibility'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -410,8 +413,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 8),
                 _VisibilityOptionTile(
                   title: _t('event_visibility_public'),
-                  subtitle:
-                      'Andere Eltern sehen dein Event im Standort-Radius.',
+                    subtitle: _t('package3_visibility_public_description'),
                   selected: _visibility == EventVisibility.publicNearby,
                   onTap: () => setState(
                     () => _visibility = EventVisibility.publicNearby,
@@ -420,25 +422,23 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 if (FeatureFlags.enableFamilyCircle)
                   _VisibilityOptionTile(
                     title: _t('event_visibility_circle'),
-                    subtitle:
-                        'Nur verbundene Eltern aus deinem Familienkreis sehen das Event.',
+                    subtitle: _t('package3_visibility_circle_description'),
                     selected: _visibility == EventVisibility.familyCircle,
                     onTap: () => setState(
                       () => _visibility = EventVisibility.familyCircle,
                     ),
                   ),
                 _VisibilityOptionTile(
-                  title: 'Nur eingeladen (individuelle Einladungen)',
-                  subtitle:
-                      'Nur ausgewählte Kontakte sehen und erhalten die Einladung.',
+                    title: _t('package3_visibility_invite_only'),
+                    subtitle: _t('package3_visibility_invite_only_description'),
                   selected: _visibility == EventVisibility.inviteOnly,
                   onTap: () => setState(
                     () => _visibility = EventVisibility.inviteOnly,
                   ),
                 ),
                 _VisibilityOptionTile(
-                  title: 'Nur ich (nicht geteilt)',
-                  subtitle: 'Das Event bleibt nur in deinem Bereich sichtbar.',
+                  title: _t('package3_visibility_private_only'),
+                  subtitle: _t('package3_visibility_private_only_description'),
                   selected: _visibility == EventVisibility.privateOnly,
                   onTap: () => setState(
                     () => _visibility = EventVisibility.privateOnly,
@@ -451,7 +451,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Öffentlich teilen im Umkreis',
+                        _t('package3_share_publicly_within_radius'),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       Text(
@@ -468,7 +468,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     min: 5,
                     max: 100,
                     divisions: 19,
-                    label: '${_shareRadiusKm.toStringAsFixed(0)} km',
+                    label: _t('package3_radius')
+                      .replaceAll('{count}', _shareRadiusKm.toStringAsFixed(0)),
                     onChanged: (v) => setState(() => _shareRadiusKm = v),
                   ),
                 ],
@@ -476,16 +477,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 if (_visibility == EventVisibility.inviteOnly) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Kontakte auswählen',
+                    _t('package3_select_contacts'),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                   ),
                   const SizedBox(height: 8),
                   if (_familyContacts.isEmpty)
-                    const Text(
-                      'Noch keine Kontakte verfügbar. Diese Funktion wird bald wieder freigeschaltet.',
-                    )
+                    Text(_t('package3_no_contacts_available'))
                   else
                     ..._familyContacts.map(
                       (contact) => CheckboxListTile(
@@ -501,16 +500,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
                     initialValue: _inviteCodeExpiryDays,
-                    decoration: const InputDecoration(
-                      labelText: 'Einladungscode gültig für',
+                    decoration: InputDecoration(
+                      labelText: _t('package3_invite_expiry'),
                       prefixIcon: Icon(Icons.timelapse_rounded),
                     ),
                     isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(value: 3, child: Text('3 Tage')),
-                      DropdownMenuItem(value: 7, child: Text('7 Tage')),
-                      DropdownMenuItem(value: 14, child: Text('14 Tage')),
-                      DropdownMenuItem(value: 30, child: Text('30 Tage')),
+                    items: [
+                      for (final days in [3, 7, 14, 30])
+                        DropdownMenuItem(
+                          value: days,
+                          child: Text(_t('package3_days')
+                              .replaceAll('{count}', '$days')),
+                        ),
                     ],
                     onChanged: (value) {
                       if (value == null) return;
@@ -524,8 +525,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 // Kategorie
                 DropdownButtonFormField<EventCategory>(
                   initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategorie',
+                  decoration: InputDecoration(
+                    labelText: _t('package3_category'),
                     prefixIcon: Icon(Icons.category),
                   ),
                   isExpanded: true,
@@ -547,7 +548,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 // Altersgruppen
                 Text(
-                  'Zielgruppe (Altersgruppen)',
+                  _t('package3_age_groups'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -570,7 +571,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 // Datum & Zeit
                 Text(
-                  'Termin',
+                  _t('package3_date_time'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -603,14 +604,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 // Ort
                 TextFormField(
                   controller: _locationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Treffpunkt',
+                  decoration: InputDecoration(
+                    labelText: _t('package3_meeting_point'),
                     prefixIcon: Icon(Icons.location_on),
-                    hintText: 'z.B. Zentralpark, Berlin',
+                    hintText: _t('package3_meeting_point_hint'),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Bitte einen Ort eingeben';
+                      return _t('package3_location_required');
                     }
                     return null;
                   },
@@ -620,18 +621,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 // Max Teilnehmer
                 TextFormField(
                   controller: _maxParticipantsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Maximale Teilnehmerzahl',
+                  decoration: InputDecoration(
+                    labelText: _t('package3_max_participants'),
                     prefixIcon: Icon(Icons.people),
                     hintText: '10',
                   ),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Bitte eine Zahl eingeben';
+                      return _t('package3_number_required');
                     }
                     if (int.tryParse(value!) == null) {
-                      return 'Bitte nur Zahlen eingeben';
+                      return _t('package3_number_required');
                     }
                     return null;
                   },
@@ -639,7 +640,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 24),
 
                 Text(
-                  'Event-Foto (optional)',
+                  _t('package3_event_photo_optional'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -650,8 +651,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   icon: const Icon(Icons.photo_library_outlined),
                   label: Text(
                     _selectedPhotoFile == null
-                        ? 'Foto auswählen'
-                        : 'Foto ändern',
+                        ? _t('package3_select_photo')
+                        : _t('package3_change_photo'),
                   ),
                 ),
                 if (_selectedPhotoFile != null) ...[
@@ -671,8 +672,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       Expanded(
                         child: Text(
                           _uploadedPhotoUrl == null
-                              ? 'Das Foto wird beim Veröffentlichen hochgeladen.'
-                              : 'Foto bereits hochgeladen.',
+                              ? _t('package3_photo_upload_on_publish')
+                              : _t('package3_photo_already_uploaded'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -701,14 +702,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFA7F3D0)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(Icons.verified_rounded, color: Color(0xFF047857)),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Event-Veröffentlichung ist in deinem App-Abo enthalten.',
-                          style: TextStyle(color: Color(0xFF047857)),
+                          _t('package3_event_included_in_subscription'),
+                          style: const TextStyle(color: Color(0xFF047857)),
                         ),
                       ),
                     ],
