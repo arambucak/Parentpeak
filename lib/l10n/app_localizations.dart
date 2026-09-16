@@ -47,9 +47,9 @@ class AppLocalizations {
   }
 
   static String _toCamelCase(String key) => key.replaceAllMapped(
-    RegExp(r'_([a-z])'),
-    (match) => match.group(1)!.toUpperCase(),
-  );
+        RegExp(r'_([a-z])'),
+        (match) => match.group(1)!.toUpperCase(),
+      );
 
   String get appTitle => _stringsForLocale()['appTitle'] ?? 'Parentpeak';
   String get trustedDevicesTitle =>
@@ -94,6 +94,34 @@ class AppLocalizations {
       value = value.replaceAll('{$name}', replacement);
     });
     return value;
+  }
+
+  String get treasureListingLifecycleNotice {
+    const notices = {
+      'de':
+          'Deine Anzeige ist 30 Tage sichtbar. Danach wird sie archiviert und 60 Tage später gelöscht. Laufende Übergaben bleiben geschützt.',
+      'en':
+          'Your listing stays visible for 30 days. It is then archived and deleted 60 days later. Active handovers remain protected.',
+      'tr':
+          'İlanınız 30 gün görünür kalır. Ardından arşivlenir ve 60 gün sonra silinir. Devam eden teslimatlar korunur.',
+      'ku':
+          'Belavkirina te 30 roj xuya dibe. Piştî wê tê arşîvkirin û 60 roj şûnde tê jêbirin. Radestkirinên çalak parastî dimînin.',
+      'ar':
+          'يبقى إعلانكم ظاهرًا لمدة 30 يومًا، ثم يُؤرشف ويُحذف بعد 60 يومًا. تظل عمليات التسليم الجارية محمية.',
+      'ru':
+          'Ваше объявление видно 30 дней. Затем оно архивируется и удаляется через 60 дней. Активные передачи остаются защищены.',
+      'uk':
+          'Ваше оголошення видно 30 днів. Потім його буде заархівовано й видалено через 60 днів. Активні передачі залишаються захищеними.',
+      'es':
+          'Tu anuncio será visible durante 30 días. Después se archivará y se eliminará 60 días más tarde. Las entregas activas seguirán protegidas.',
+      'fr':
+          'Votre annonce reste visible pendant 30 jours. Elle est ensuite archivée puis supprimée 60 jours plus tard. Les remises en cours restent protégées.',
+      'it':
+          'Il tuo annuncio resta visibile per 30 giorni. Poi viene archiviato ed eliminato 60 giorni dopo. Le consegne in corso restano protette.',
+      'pt':
+          'O seu anúncio fica visível durante 30 dias. Depois é arquivado e eliminado 60 dias mais tarde. As entregas em curso continuam protegidas.',
+    };
+    return notices[locale.languageCode] ?? notices['en']!;
   }
 
   // New MVP strings

@@ -164,6 +164,32 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
               const SizedBox(height: 16),
               _buildPreviewCard(l10n, currentCondition),
               const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF1FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline_rounded,
+                        color: Color(0xFF1E5CD7), size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        l10n.treasureListingLifecycleNotice,
+                        style: const TextStyle(
+                          color: Color(0xFF31506F),
+                          fontSize: 13,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),

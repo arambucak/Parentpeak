@@ -1233,6 +1233,14 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                       fontWeight: FontWeight.w800,
                     ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.treasureListingLifecycleNotice,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+              ),
               const SizedBox(height: 14),
               if (overview.offers.isEmpty && overview.reservedByMe.isEmpty)
                 Text(l10n.t('treasureMyListingsEmpty')),
