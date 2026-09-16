@@ -12422,7 +12422,7 @@ app.post('/api/treasures', async (req, res) => {
   try {
     // Calculate expiry: 30 days from now
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    expiresAt.setDate(expiresAt.getDate() + treasureArchiveAfterDays);
     const severeContent = isTreasureContentSevere({ title, description });
 
     const treasure = await prisma.treasureItem.create({
@@ -12472,6 +12472,36 @@ app.post('/api/treasures', async (req, res) => {
  * GET /api/treasures
  * List/discover treasures with filtering and pagination
  */
+const treasureArchiveAfterDays = 30;
+const treasurePurgeAfterArchiveDays = 60;
+const activeTreasureHandoverStatuses = ['pending', 'reserved', 'confirmed'];
+
+async function runTreasureLifecycleCleanup() {
+  const now = new Date();
+  const purgeBefore = new Date(
+    now.getTime() - treasurePurgeAfterArchiveDays * 24 * 60 * 60 * 1000,
+  );
+
+  const archived = await prisma.treasureItem.updateMany({
+    where: {
+      status: 'available',
+      expiresAt: { lte: now },
+    },
+    data: { status: 'archived' },
+  });
+  const deleted = await prisma.treasureItem.deleteMany({
+    where: {
+      status: 'archived',
+      expiresAt: { lte: purgeBefore },
+      handovers: {
+        none: { status: { in: activeTreasureHandoverStatuses } },
+      },
+    },
+  });
+
+  return { archived: archived.count, deleted: deleted.count };
+}
+
 app.get('/api/treasures', async (req, res) => {
   const {
     status = 'available',
@@ -12486,6 +12516,7 @@ app.get('/api/treasures', async (req, res) => {
   } = req.query;
 
   try {
+    await runTreasureLifecycleCleanup();
     let treasures = await prisma.treasureItem.findMany({
       where: {
         status: status,
@@ -13165,6 +13196,7 @@ app.get('/api/treasures/mine', async (req, res) => {
   if (!(await authorizeAccountOwner(req, res, userId))) return;
 
   try {
+    await runTreasureLifecycleCleanup();
     // Eigene Angebote + wer sie reserviert hat
     const myOffers = await prisma.treasureItem.findMany({
       where: { userId },
@@ -13450,6 +13482,12 @@ app.delete('/api/treasures/:id', async (req, res) => {
 // Server starten mit Prisma Initialization
 (async () => {
   await initializePrisma();
+  // Marketplace reads also invoke this, covering idle Render wake-ups.
+  setInterval(() => {
+    runTreasureLifecycleCleanup().catch((error) => {
+      console.error('Treasure lifecycle cleanup failed:', error.message);
+    });
+  }, 6 * 60 * 60 * 1000).unref();
   app.listen(PORT, '0.0.0.0', () => {
     if (allowedOrigins.length > 0) {
       console.log(`🌐 CORS allowlist aktiv (${allowedOrigins.length} Origin(s))`);
