@@ -375,7 +375,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   decoration: InputDecoration(
                     labelText: _t('package3_event_title'),
                     hintText: _t('package3_event_title_hint'),
-                    prefixIcon: Icon(Icons.title),
+                    prefixIcon: const Icon(Icons.title),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
@@ -391,7 +391,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   decoration: InputDecoration(
                     labelText: _t('package3_description'),
                     hintText: _t('package3_event_description_hint'),
-                    prefixIcon: Icon(Icons.description),
+                    prefixIcon: const Icon(Icons.description),
                   ),
                   maxLines: 4,
                   validator: (value) {
@@ -502,7 +502,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     initialValue: _inviteCodeExpiryDays,
                     decoration: InputDecoration(
                       labelText: _t('package3_invite_expiry'),
-                      prefixIcon: Icon(Icons.timelapse_rounded),
+                      prefixIcon: const Icon(Icons.timelapse_rounded),
                     ),
                     isExpanded: true,
                     items: [
@@ -527,7 +527,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   initialValue: _selectedCategory,
                   decoration: InputDecoration(
                     labelText: _t('package3_category'),
-                    prefixIcon: Icon(Icons.category),
+                    prefixIcon: const Icon(Icons.category),
                   ),
                   isExpanded: true,
                   items: EventCategory.values
@@ -606,7 +606,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   controller: _locationController,
                   decoration: InputDecoration(
                     labelText: _t('package3_meeting_point'),
-                    prefixIcon: Icon(Icons.location_on),
+                    prefixIcon: const Icon(Icons.location_on),
                     hintText: _t('package3_meeting_point_hint'),
                   ),
                   validator: (value) {
@@ -623,7 +623,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   controller: _maxParticipantsController,
                   decoration: InputDecoration(
                     labelText: _t('package3_max_participants'),
-                    prefixIcon: Icon(Icons.people),
+                    prefixIcon: const Icon(Icons.people),
                     hintText: '10',
                   ),
                   keyboardType: TextInputType.number,
@@ -704,8 +704,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.verified_rounded, color: Color(0xFF047857)),
-                      SizedBox(width: 12),
+                      const Icon(Icons.verified_rounded, color: Color(0xFF047857)),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           _t('package3_event_included_in_subscription'),

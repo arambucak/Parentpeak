@@ -274,7 +274,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                           children: [
                             Text(
                               _t('package3_code'),
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                              style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 8),
                             Row(
