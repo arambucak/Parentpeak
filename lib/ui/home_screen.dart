@@ -274,8 +274,9 @@ class _HomeScreenState extends State<HomeScreen>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              '"${action.label}" ${AppStringsManager.getString(languageService.currentLanguage, 'tile_moved_up')}'),
+            content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'core_tile_moved_up')
+              .replaceAll('{label}', action.label)),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -515,7 +516,9 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 10),
             Text(
-              '${action.label} ${AppStringsManager.getString(languageService.currentLanguage, 'premium_feature_desc')}',
+              AppStringsManager.getString(languageService.currentLanguage,
+                      'core_premium_feature_template')
+                  .replaceAll('{label}', action.label),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.4,
@@ -1377,7 +1380,10 @@ class _HomeScreenState extends State<HomeScreen>
                       size: 11, color: Colors.white),
                   const SizedBox(width: 3),
                   Text(
-                    'PRO',
+                    AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'core_premium_badge',
+                    ),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,

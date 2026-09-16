@@ -27,207 +27,7 @@ import 'package:parentpeak/main.dart';
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
-String _networkCopy(String key, String fallback) {
-  const copies = {
-    'en': {
-      'friends': 'Friends',
-      'playmates': 'Playmates',
-      'invite': 'Invite',
-      'invite_hero_title': 'Invite friends',
-      'invite_hero_description':
-          'Share your personal link or QR code - one tap and you are connected.',
-      'share': 'Share',
-      'setup_hint':
-          'In 5 short steps, you will find families who are a good fit for you.',
-      'empty_title': 'Be the first family in your area',
-      'empty_description':
-          'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
-      'invite_playmates': 'Invite playmates',
-      'values_tip':
-          'Tip: Families with similar values understand each other best. Choose what matters to you.',
-      'bio_hint':
-          'Tell us about yourselves: What makes your family special? What are you looking for?',
-      'step_1': 'Step 1: Your family',
-      'step_2': 'Step 2: Your children',
-      'step_3': 'Step 3: Values and style',
-      'step_4': 'Step 4: What are you looking for?',
-      'step_5': 'Step 5: Languages and more',
-      'bio_title': 'Short bio',
-      'login_required': 'Please sign in to publish your playmate profile.',
-      'same_city': 'In your city',
-      'reason_nearby': 'Nearby',
-      'reason_shared_interests': 'Shared interests',
-      'reason_similar_child_age': 'Children of a similar age',
-      'reason_shared_languages': 'Shared languages',
-      'reason_shared_values': 'Similar parenting values',
-      'reason_shared_family_form': 'Similar family setup',
-      'request_sent': 'Your request was sent to {name}.',
-      'request_failed':
-          'Your request could not be sent. Please try again later.',
-      'no_gender': 'Prefer not to say',
-      'gender_maennlich': 'Boy',
-      'gender_weiblich': 'Girl',
-      'gender_divers': 'Diverse',
-      'coins_until': 'Until free Premium',
-      'invites_successful': 'successful invitations',
-      'coin_value': '1 Coin = €1',
-      'invite_share': 'Share invitation',
-      'invite_share_hint': 'WhatsApp, SMS, email',
-      'qr_show': 'Show QR code',
-      'qr_hint': 'Scan at the playground',
-      'link_copy': 'Copy link',
-      'check_coins': 'Check coins now',
-      'check_coins_hint': 'Credit new invitations',
-      'coins_secured':
-          'Your coins are safe. Soon you can use them to unlock features. 🎁',
-      'connect': 'Connect?',
-      'cancel': 'Cancel',
-      'connect_button': 'Connect',
-      'save': 'Save...',
-      'create_profile': 'Create profile',
-      'step_family': 'Step 1: Your family',
-      'name_hint': 'Your first name / nickname',
-      'name_example': 'e.g. Sarah, The Muellers',
-      'location_hint': 'Choose your district / ZIP code',
-      'family_form': 'Family type',
-      'custom': 'Custom',
-      'custom_family': 'Your family type',
-      'custom_example': 'e.g. chosen family, multigenerational...',
-    },
-    'ku': {
-      'friends': 'Heval',
-      'playmates': 'Hevalên lîstikê',
-      'invite': 'Vexwendin',
-      'invite_hero_title': 'Hevalan vexwîne',
-      'invite_hero_description':
-          'Girêdana xwe ya kesane an koda QR parve bike - bi yek pêlê hûn tên girêdan.',
-      'share': 'Parve bike',
-      'setup_hint':
-          'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
-      'empty_title': 'Di herêma xwe de malbata yekem bibe',
-      'empty_description':
-          'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
-      'invite_playmates': 'Hevalên lîstikê vexwîne',
-      'values_tip':
-          'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
-      'bio_hint':
-          'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
-      'step_1': 'Gav 1: Malbata we',
-      'step_2': 'Gav 2: Zarokên we',
-      'step_3': 'Gav 3: Nirx û şêwaz',
-      'step_4': 'Gav 4: Hûn li çi digerin?',
-      'step_5': 'Gav 5: Ziman û zêdetir',
-      'bio_title': 'Bioya kurt',
-      'login_required':
-          'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
-      'same_city': 'Di bajarê te de',
-      'reason_nearby': 'Li nêzîkê',
-      'reason_shared_interests': 'Berjewendiyên hevpar',
-      'reason_similar_child_age': 'Zarokên bi temenê nêzîk',
-      'reason_shared_languages': 'Zimanên hevpar',
-      'reason_shared_values': 'Nirxên perwerdehiyê yên wekhev',
-      'reason_shared_family_form': 'Şêwaza malbatê ya wekhev',
-      'request_sent': 'Daxwaza te ji {name} re hat şandin.',
-      'request_failed':
-          'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
-      'no_gender': 'Naxwazim bibêjim',
-      'gender_maennlich': 'Kur',
-      'gender_weiblich': 'Keç',
-      'gender_divers': 'Cûda',
-      'coins_until': 'Ji bo Premiuma belaş',
-      'invites_successful': 'vexwendinên serkeftî',
-      'coin_value': '1 Coin = €1',
-      'invite_share': 'Vexwendinê parve bike',
-      'invite_share_hint': 'WhatsApp, SMS, e-name',
-      'qr_show': 'Koda QR nîşan bide',
-      'qr_hint': 'Li parka lîstikê bixwîne',
-      'link_copy': 'Girêdanê kopî bike',
-      'check_coins': 'Coinan niha kontrol bike',
-      'check_coins_hint': 'Vexwendinên nû tomar bike',
-      'coins_secured':
-          'Coinên te ewle ne. Nêzîk de dikarî wan ji bo taybetmendiyan bikar bînî. 🎁',
-      'connect': 'Girêdan?',
-      'cancel': 'Betal bike',
-      'connect_button': 'Girêde',
-      'save': 'Tê tomarkirin...',
-      'create_profile': 'Profîlê çêbike',
-      'step_family': 'Gav 1: Malbata we',
-      'name_hint': 'Navê te / navê kurt',
-      'name_example': 'mînak: Sarah, Müller',
-      'location_hint': 'Navçeya / koda postê hilbijêre',
-      'family_form': 'Şêwaza malbatê',
-      'custom': 'Taybet',
-      'custom_family': 'Şêwaza malbata we',
-      'custom_example': 'mînak: malbata hilbijartî, çend-neslî...',
-    },
-    'tr': {
-      'friends': 'Arkadaşlar',
-      'playmates': 'Oyun arkadaşları',
-      'invite': 'Davet et',
-      'invite_hero_title': 'Arkadaşlarını davet et',
-      'invite_hero_description':
-          'Kişisel bağlantını veya QR kodunu paylaş - tek dokunuşla bağlantı kurun.',
-      'share': 'Paylaş',
-      'setup_hint': '5 kısa adımda size uygun aileleri bulun.',
-      'empty_title': 'Bölgenizdeki ilk aile siz olun',
-      'empty_description':
-          'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
-      'invite_playmates': 'Oyun arkadaşlarını davet et',
-      'values_tip':
-          'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
-      'bio_hint':
-          'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
-      'step_1': '1. Adım: Aileniz',
-      'step_2': '2. Adım: Çocuklarınız',
-      'step_3': '3. Adım: Değerler ve yaklaşım',
-      'step_4': '4. Adım: Ne arıyorsunuz?',
-      'step_5': '5. Adım: Diller ve daha fazlası',
-      'bio_title': 'Kısa biyografi',
-      'login_required':
-          'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
-      'same_city': 'Şehrinizde',
-      'reason_nearby': 'Yakınınızda',
-      'reason_shared_interests': 'Ortak ilgi alanları',
-      'reason_similar_child_age': 'Benzer yaşta çocuklar',
-      'reason_shared_languages': 'Ortak diller',
-      'reason_shared_values': 'Benzer ebeveynlik değerleri',
-      'reason_shared_family_form': 'Benzer aile yapısı',
-      'request_sent': '{name} için isteğiniz gönderildi.',
-      'request_failed':
-          'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
-      'no_gender': 'Belirtmek istemiyorum',
-      'gender_maennlich': 'Erkek',
-      'gender_weiblich': 'Kız',
-      'gender_divers': 'Diğer',
-      'coins_until': 'Ücretsiz Premium için',
-      'invites_successful': 'davet başarılı',
-      'coin_value': '1 Coin = €1',
-      'invite_share': 'Daveti paylaş',
-      'invite_share_hint': 'WhatsApp, SMS, e-posta',
-      'qr_show': 'QR kodunu göster',
-      'qr_hint': 'Parkta okut',
-      'link_copy': 'Bağlantıyı kopyala',
-      'check_coins': 'Coinleri şimdi kontrol et',
-      'check_coins_hint': 'Yeni davetleri ekle',
-      'coins_secured':
-          'Coinlerin güvende. Yakında özelliklerin kilidini açabilirsin. 🎁',
-      'connect': 'Bağlan?',
-      'cancel': 'İptal',
-      'connect_button': 'Bağlan',
-      'save': 'Kaydediliyor...',
-      'create_profile': 'Profil oluştur',
-      'step_family': '1. Adım: Aileniz',
-      'name_hint': 'Adınız / takma adınız',
-      'name_example': 'örn. Sarah, Müller ailesi',
-      'location_hint': 'Mahallenizi / posta kodunuzu seçin',
-      'family_form': 'Aile biçimi',
-      'custom': 'Özel',
-      'custom_family': 'Aile biçiminiz',
-      'custom_example': 'örn. seçilmiş aile, çok kuşaklı aile...',
-    },
-  };
-  return copies[languageService.currentLanguage]?[key] ?? fallback;
-}
+String _networkCopy(String key) => _t('network_$key');
 
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
@@ -306,20 +106,20 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     }
     final name = resolved['name']?.isNotEmpty == true
         ? resolved['name']!
-        : 'diese Familie';
+        : _t('core_family_default');
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_networkCopy('connect', 'Verbinden?')),
+        title: Text(_networkCopy('connect')),
         content: Text(_t('network_connect_confirm').replaceAll('{name}', name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(_networkCopy('cancel', 'Abbrechen'))),
+              child: Text(_networkCopy('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(_networkCopy('connect_button', 'Verbinden'))),
+              child: Text(_networkCopy('connect_button'))),
         ],
       ),
     );
@@ -327,9 +127,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(sent
-          ? 'Anfrage an $name gesendet. 👋'
-          : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+        content: Text((sent ? _networkCopy('request_sent') : _networkCopy('request_failed'))
+          .replaceAll('{name}', name)),
       behavior: SnackBarBehavior.floating,
       backgroundColor: sent ? const Color(0xFF16A34A) : null,
     ));
@@ -342,30 +141,28 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final resolved = await FriendshipService.instance.resolveCode(code);
     if (!mounted) return;
     if (resolved == null || (resolved['uid'] ?? '').isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-            'Dieser Link ist nicht mehr aktiv. Bitte nutze den Einladungslink '
-            'der anderen Familie.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_t('core_invite_expired')),
         behavior: SnackBarBehavior.floating,
       ));
       return;
     }
     final name = resolved['name']?.isNotEmpty == true
         ? resolved['name']!
-        : 'diese Familie';
+        : _t('core_family_default');
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_networkCopy('connect', 'Verbinden?')),
+        title: Text(_networkCopy('connect')),
         content: Text(_t('network_connect_confirm').replaceAll('{name}', name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(_networkCopy('cancel', 'Abbrechen'))),
+              child: Text(_networkCopy('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(_networkCopy('connect_button', 'Verbinden'))),
+              child: Text(_networkCopy('connect_button'))),
         ],
       ),
     );
@@ -373,9 +170,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(sent
-          ? 'Anfrage an $name gesendet. 👋'
-          : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+        content: Text((sent ? _networkCopy('request_sent') : _networkCopy('request_failed'))
+          .replaceAll('{name}', name)),
       behavior: SnackBarBehavior.floating,
       backgroundColor: sent ? const Color(0xFF16A34A) : null,
     ));
@@ -457,9 +253,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         bottom: TabBar(
           controller: _tabs,
           tabs: [
-            Tab(text: _networkCopy('friends', 'Freunde')),
-            Tab(text: _networkCopy('playmates', 'Spielfreunde')),
-            Tab(text: _networkCopy('invite', 'Einladen')),
+            Tab(text: _networkCopy('friends')),
+            Tab(text: _networkCopy('playmates')),
+            Tab(text: _networkCopy('invite')),
           ],
         ),
       ),
@@ -550,7 +346,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     ]),
                     const SizedBox(height: 2),
                     Text(
-                        '${coins.coinsUntilFreePremium} ${_networkCopy('coins_until', 'bis Gratis-Premium')} \u{1F381}',
+                        '${coins.coinsUntilFreePremium} ${_networkCopy('coins_until')} \u{1F381}',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -601,13 +397,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             const SizedBox(height: 10),
             Row(children: [
               Text(
-                  '${coins.successfulInvites} ${_networkCopy('invites_successful', 'Einladungen erfolgreich')}',
+                  '${coins.successfulInvites} ${_networkCopy('invites_successful')}',
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF9A3412).withValues(alpha: 0.6))),
               const Spacer(),
-              Text(_networkCopy('coin_value', '1 Coin = 1\u{20AC}'),
+              Text(_networkCopy('coin_value'),
                   style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -643,8 +439,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                                   color: Colors.white)),
                           const SizedBox(height: 2),
                           Text(
-                              _networkCopy('coins_secured',
-                                  'Deine Coins sind gesichert. Bald kannst du damit Features freischalten. 🎁'),
+                                _networkCopy('coins_secured'),
                               style: const TextStyle(
                                   fontSize: 11,
                                   color: Colors.white,
@@ -671,8 +466,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             theme,
             Icons.share_rounded,
             const Color(0xFF0EA5A4),
-            _networkCopy('invite_share', 'Einladung teilen'),
-            _networkCopy('invite_share_hint', 'WhatsApp, SMS, E-Mail'),
+            _networkCopy('invite_share'),
+            _networkCopy('invite_share_hint'),
             () async {
           try {
             final box = context.findRenderObject() as RenderBox?;
@@ -685,7 +480,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Teilen fehlgeschlagen: $e')),
+                SnackBar(content: Text(_t('core_share_failed').replaceAll('{error}', '$e'))),
               );
             }
           }
@@ -695,15 +490,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             theme,
             Icons.qr_code_rounded,
             const Color(0xFF8B5CF6),
-            _networkCopy('qr_show', 'QR-Code zeigen'),
-            _networkCopy('qr_hint', 'Am Spielplatz scannen'),
+            _networkCopy('qr_show'),
+            _networkCopy('qr_hint'),
             () => _showQR(theme, coins)),
         const SizedBox(height: 10),
         _inviteRow(
             theme,
             Icons.link_rounded,
             const Color(0xFF2563EB),
-            _networkCopy('link_copy', 'Link kopieren'),
+            _networkCopy('link_copy'),
             coins.getInviteLink(), () {
           Clipboard.setData(ClipboardData(text: coins.getInviteLink()));
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -715,8 +510,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             theme,
             Icons.refresh_rounded,
             const Color(0xFF16A34A),
-            _networkCopy('check_coins', 'Coins jetzt prüfen'),
-            _networkCopy('check_coins_hint', 'Neue Einladungen gutschreiben'),
+            _networkCopy('check_coins'),
+            _networkCopy('check_coins_hint'),
             () => ParentCoinService.instance.claimPendingReferrals(context)),
         if (coins.history.isNotEmpty) ...[
           const SizedBox(height: 24),
@@ -798,8 +593,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Text(
-            _networkCopy('setup_hint',
-                'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.'),
+            _networkCopy('setup_hint'),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant, height: 1.3),
             textAlign: TextAlign.center),
@@ -810,10 +604,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         if (uid == null || uid.isEmpty) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(_networkCopy(
-                'login_required',
-                'Bitte melde dich an, um dein Spielfreunde-Profil zu veröffentlichen.',
-              )),
+              content: Text(_networkCopy('login_required')),
             ));
           }
           return;
@@ -931,13 +722,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text('Familie ${_profile!.displayName}',
+                      Text(_t('core_family_name').replaceAll('{name}', _profile!.displayName),
                           style: theme.textTheme.bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w700)),
                       Text(
                           _profile!.bio.isNotEmpty
                               ? _profile!.bio
-                              : 'Profil aktiv \u{2714}',
+                              : '${_t('core_profile_active')} \u{2714}',
                           style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant),
                           maxLines: 1,
@@ -997,12 +788,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             const SizedBox(height: 4),
             Text(
                 _matchScope == '10km'
-                    ? 'Im Umkreis von ~10 km'
+                    ? _t('core_scope_10km')
                     : _matchScope == '50km'
-                        ? 'Im Umkreis von ~50 km'
+                        ? _t('core_scope_50km')
                         : _matchScope == '100km'
-                            ? 'Im Umkreis von ~100 km'
-                            : 'Deutschlandweit',
+                            ? _t('core_scope_100km')
+                            : _t('core_scope_all'),
                 style: theme.textTheme.labelSmall
                     ?.copyWith(color: theme.colorScheme.outline)),
           ],
@@ -1038,18 +829,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           const Text('\u{1F331}', style: TextStyle(fontSize: 40)),
           const SizedBox(height: 14),
           Text(
-              _networkCopy(
-                  'empty_title', 'Sei die erste Familie in deiner Gegend'),
+                _networkCopy('empty_title'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800),
               textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Text(
-              _networkCopy(
-                  'empty_description',
-                  'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
-                      'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
-                      'Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.'),
+                _networkCopy('empty_description'),
               style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant, height: 1.4),
               textAlign: TextAlign.center),
@@ -1060,7 +846,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               onPressed: () => _tabs.animateTo(2),
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
               label: Text(
-                  _networkCopy('invite_playmates', 'Spielkameraden einladen')),
+                  _networkCopy('invite_playmates')),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1098,7 +884,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final meta = <String>[
       if (distanceKm != null) '\u{1F4CD} $distanceKm km',
       if (distanceKm == null && m.breakdown['locationLabel'] == 'same_city')
-        _networkCopy('same_city', 'In deiner Stadt'),
+        _networkCopy('same_city'),
       if (p.languages.isNotEmpty) p.languages.take(3).join(', '),
     ].join('  \u{2022}  ');
     final tags = <String>[
@@ -1149,7 +935,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   decoration: BoxDecoration(
                       color: const Color(0xFF16A34A).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8)),
-                  child: Text('${m.score}% Match',
+                  child: Text(_t('core_match_score').replaceAll('{score}', '${m.score}'),
                       style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -1170,20 +956,20 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   _blockMatch(m);
                 }
               },
-              itemBuilder: (_) => const [
+              itemBuilder: (_) => [
                 PopupMenuItem(
                     value: 'report',
                     child: Row(children: [
-                      Icon(Icons.flag_outlined, size: 18),
-                      SizedBox(width: 10),
-                      Text('Melden'),
+                      const Icon(Icons.flag_outlined, size: 18),
+                      const SizedBox(width: 10),
+                      Text(_t('core_report')),
                     ])),
                 PopupMenuItem(
                     value: 'block',
                     child: Row(children: [
-                      Icon(Icons.block_rounded, size: 18),
-                      SizedBox(width: 10),
-                      Text('Blockieren'),
+                      const Icon(Icons.block_rounded, size: 18),
+                      const SizedBox(width: 10),
+                      Text(_t('core_block')),
                     ])),
               ],
             ),
@@ -1229,7 +1015,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               runSpacing: 6,
               children: reasonCodes
                   .map((code) => Text(
-                        _networkCopy('reason_$code', code),
+                        _networkCopy('reason_$code'),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: const Color(0xFF0E7F77),
                           fontWeight: FontWeight.w700,
@@ -1250,7 +1036,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             child: OutlinedButton.icon(
               onPressed: () => _connectWithMatch(m),
               icon: const Icon(Icons.waving_hand_rounded, size: 16),
-              label: const Text('Hallo sagen'),
+              label: Text(_t('core_hello')),
               style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF7C3AED),
                   side: const BorderSide(color: Color(0xFF8B5CF6)),
@@ -1273,11 +1059,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     if (!mounted) return;
     messenger.showSnackBar(SnackBar(
       content: Text(ok
-          ? _networkCopy(
-                  'request_sent', 'Deine Anfrage wurde an {name} gesendet.')
+            ? _networkCopy('request_sent')
               .replaceAll('{name}', m.profile.name)
-          : _networkCopy('request_failed',
-              'Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.')),
+            : _networkCopy('request_failed')),
       behavior: SnackBarBehavior.floating,
       backgroundColor: ok ? const Color(0xFF16A34A) : errorColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1296,7 +1080,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           .toList();
     });
     messenger.showSnackBar(SnackBar(
-      content: Text('${m.profile.name} wurde blockiert.'),
+      content: Text(_t('core_blocked_name').replaceAll('{name}', m.profile.name)),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ));
@@ -1333,7 +1117,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             const Icon(Icons.group_add_rounded, color: Colors.white, size: 34),
             const SizedBox(height: 12),
             Text(
-              _networkCopy('invite_hero_title', 'Freunde einladen'),
+              _networkCopy('invite_hero_title'),
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 17,
@@ -1341,11 +1125,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             ),
             const SizedBox(height: 6),
             Text(
-              _networkCopy(
-                'invite_hero_description',
-                'Teile deinen persönlichen Link oder QR-Code - ein Tap und '
-                    'ihr seid verbunden.',
-              ),
+              _networkCopy('invite_hero_description'),
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.85),
@@ -1356,7 +1136,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             Row(children: [
               Expanded(
                   child: _shareActionBtn(
-                      Icons.ios_share_rounded, _networkCopy('share', 'Teilen'),
+                      Icons.ios_share_rounded, _networkCopy('share'),
                       () async {
                 final box = context.findRenderObject() as RenderBox?;
                 // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
@@ -1364,31 +1144,29 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     await FriendshipService.instance.createInviteLink();
                 if (link == null) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text(
-                          'Link konnte nicht erstellt werden — bitte später erneut.'),
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(_t('core_link_create_failed')),
                       behavior: SnackBarBehavior.floating,
                     ));
                   }
                   return;
                 }
                 await Share.share(
-                    'Hey! 👋 Verbinde dich mit mir auf ParentPeak:\n$link',
+                  _t('core_share_message').replaceAll('{link}', link),
                     sharePositionOrigin: box != null
                         ? box.localToGlobal(Offset.zero) & box.size
                         : null);
               })),
               const SizedBox(width: 8),
               Expanded(
-                  child: _shareActionBtn(Icons.qr_code_2_rounded, 'QR-Code',
+                  child: _shareActionBtn(Icons.qr_code_2_rounded, _t('core_qr_code'),
                       () async {
                 final link =
                     await FriendshipService.instance.createInviteLink();
                 if (!mounted) return;
                 if (link == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text(
-                        'QR-Code konnte nicht erstellt werden — bitte später erneut.'),
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(_t('core_qr_create_failed')),
                     behavior: SnackBarBehavior.floating,
                   ));
                   return;
@@ -1415,7 +1193,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final incoming = FriendshipService.instance.incoming;
     if (incoming.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Anfragen (${incoming.length})',
+      Text(_t('core_request_count').replaceAll('{count}', '${incoming.length}'),
           style: theme.textTheme.titleSmall
               ?.copyWith(fontWeight: FontWeight.w800)),
       const SizedBox(height: 12),
@@ -1475,7 +1253,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         if (friends.isNotEmpty)
-          Text('${friends.length} verbunden',
+          Text(_t('core_friends_connected').replaceAll('{count}', '${friends.length}'),
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: const Color(0xFF7C3AED))),
       ]),
@@ -1486,7 +1264,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ...friends.map((f) => _uidFriendCard(theme, f)),
       if (outgoing.isNotEmpty) ...[
         const SizedBox(height: 16),
-        Text('Gesendete Anfragen',
+        Text(_t('core_outgoing_requests'),
             style: theme.textTheme.labelMedium
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 8),
@@ -1570,7 +1348,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               await FriendshipService.instance.remove(f.uid);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('${f.name} wurde blockiert.'),
+                  content: Text(_t('core_blocked_name').replaceAll('{name}', f.name)),
                   behavior: SnackBarBehavior.floating,
                 ));
               }
@@ -1579,10 +1357,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   userId: f.uid, userName: f.name, contentType: 'profile');
             }
           },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'report', child: Text('Melden')),
-            PopupMenuItem(value: 'block', child: Text('Blockieren')),
-            PopupMenuItem(value: 'remove', child: Text('Entfernen')),
+          itemBuilder: (_) => [
+            PopupMenuItem(value: 'report', child: Text(_t('core_report'))),
+            PopupMenuItem(value: 'block', child: Text(_t('core_block'))),
+            PopupMenuItem(value: 'remove', child: Text(_t('core_remove'))),
           ],
         ),
       ]),
@@ -1770,9 +1548,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     _suggestedProfiles.removeWhere((x) => x.id == s.id);
                   });
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(ok
-                        ? 'Anfrage an ${s.name} gesendet. 👋'
-                        : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
+                    content: Text((ok ? _networkCopy('request_sent') : _networkCopy('request_failed'))
+                      .replaceAll('{name}', s.name)),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: ok ? const Color(0xFF16A34A) : null,
                   ));
@@ -1880,7 +1657,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 QrImageView(data: qrData, version: QrVersions.auto, size: 200),
           ),
           const SizedBox(height: 16),
-          Text('Scannen & mit einem Tap verbinden',
+          Text(_t('network_scan_to_connect'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline)),
           const SizedBox(height: 24),
@@ -2183,11 +1960,11 @@ class _ProfileFormState extends State<_ProfileForm> {
   Future<void> _submit() async {
     // Validierung mit Feedback
     if (_nameCtrl.text.trim().isEmpty) {
-      _showValidationError('Bitte gib euren Namen ein (Schritt 1)');
+      _showValidationError(_t('core_validation_name'));
       return;
     }
     if (_districtCtrl.text.trim().isEmpty) {
-      _showValidationError('Bitte gib euren Stadtteil ein (Schritt 1)');
+      _showValidationError(_t('core_validation_district'));
       return;
     }
     setState(() => _saving = true);
@@ -2237,7 +2014,7 @@ class _ProfileFormState extends State<_ProfileForm> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Speichern: $e')),
+          SnackBar(content: Text(_t('core_save_failed').replaceAll('{error}', '$e'))),
         );
       }
     } finally {
@@ -2335,8 +2112,8 @@ class _ProfileFormState extends State<_ProfileForm> {
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.check_rounded, size: 18),
               label: Text(_saving
-                  ? _networkCopy('save', 'Speichern...')
-                  : _networkCopy('create_profile', 'Profil erstellen')),
+                  ? _networkCopy('save')
+                  : _networkCopy('create_profile')),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),
                   shape: RoundedRectangleBorder(
@@ -2347,16 +2124,7 @@ class _ProfileFormState extends State<_ProfileForm> {
     ]);
   }
 
-  static const _stepLabels = [
-    'Schritt 1: Eure Familie',
-    'Schritt 2: Eure Kinder',
-    'Schritt 3: Werte & Stil',
-    'Schritt 4: Was sucht ihr?',
-    'Schritt 5: Sprachen & Mehr',
-  ];
-
-  String _stepLabel(int step) =>
-      _networkCopy('step_${step + 1}', _stepLabels[step]);
+  String _stepLabel(int step) => _networkCopy('step_${step + 1}');
 
   // ─── SCHRITT 1: Grundinfos ─────────────────────────────────────────────────
   Widget _step1(ThemeData theme) {
@@ -2366,19 +2134,19 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 8),
           _inputField(
               _nameCtrl,
-              _networkCopy('name_hint', 'Euer Vorname / Spitzname'),
-              _networkCopy('name_example', 'z.B. Sarah, Die Muellers'),
+              _networkCopy('name_hint'),
+              _networkCopy('name_example'),
               Icons.person_rounded),
           const SizedBox(height: 14),
           LocationPickerWidget(
-            hint: _networkCopy('location_hint', 'Euer Stadtteil / PLZ wählen'),
+            hint: _networkCopy('location_hint'),
             onLocationPicked: (loc) {
               _districtCtrl.text = loc.displayName;
             },
           ),
           const SizedBox(height: 20),
           _sectionTitle(theme,
-              '\u{1F46A} ${_networkCopy('family_form', 'Familienform')}'),
+              '\u{1F46A} ${_networkCopy('family_form')}'),
           const SizedBox(height: 8),
           Text(_t('network_wizard_choose'),
               style: theme.textTheme.bodySmall
@@ -2395,7 +2163,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                       borderRadius: BorderRadius.circular(20)),
                 )),
             ActionChip(
-              label: Text('\u{2795} ${_networkCopy('custom', 'Eigene')}',
+              label: Text('\u{2795} ${_networkCopy('custom')}',
                   style: const TextStyle(fontSize: 12)),
               onPressed: () => setState(() => _familyForm = 'custom'),
               shape: RoundedRectangleBorder(
@@ -2407,9 +2175,8 @@ class _ProfileFormState extends State<_ProfileForm> {
             const SizedBox(height: 10),
             _inputField(
                 _familyFormCustomCtrl,
-                _networkCopy('custom_family', 'Eure Familienform'),
-                _networkCopy(
-                    'custom_example', 'z.B. Wahlfamilie, Mehrgenerationen...'),
+                _networkCopy('custom_family'),
+                _networkCopy('custom_example'),
                 Icons.edit_rounded),
           ],
         ]));
@@ -2452,7 +2219,7 @@ class _ProfileFormState extends State<_ProfileForm> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text('\u{1F476} Kind ${index + 1}',
+          Text('\u{1F476} ${_t('core_child_title').replaceAll('{count}', '${index + 1}')}',
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const Spacer(),
@@ -2469,8 +2236,8 @@ class _ProfileFormState extends State<_ProfileForm> {
         TextField(
             controller: child.nameCtrl,
             decoration: InputDecoration(
-                labelText: 'Name / Spitzname',
-                hintText: 'z.B. Mia',
+                labelText: _t('core_child_name_label'),
+                hintText: _t('core_child_name_hint'),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 isDense: true)),
@@ -2517,11 +2284,8 @@ class _ProfileFormState extends State<_ProfileForm> {
                 .map((g) => ChoiceChip(
                       label: Text(
                           g == null
-                              ? _networkCopy('no_gender', 'Keine Angabe')
-                              : _networkCopy(
-                                  'gender_$g',
-                                  MatchOptions.genderLabels[g]!,
-                                ),
+                              ? _networkCopy('no_gender')
+                              : _networkCopy('gender_$g'),
                           style: const TextStyle(fontSize: 11)),
                       selected: child.gender == g,
                       onSelected: (_) => setState(() => child.gender = g),
@@ -2549,10 +2313,10 @@ class _ProfileFormState extends State<_ProfileForm> {
                 visualDensity: VisualDensity.compact,
               )),
           ActionChip(
-            label:
-                const Text('\u{2795} Eigenes', style: TextStyle(fontSize: 10)),
+            label: Text('\u{2795} ${_networkCopy('custom')}',
+                style: const TextStyle(fontSize: 10)),
             onPressed: () => _showCustomInput(
-                child.interestsCustomCtrl, 'Was mag dein Kind noch?'),
+                child.interestsCustomCtrl, _t('core_custom_interest_hint')),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             side: const BorderSide(color: Color(0xFF8B5CF6)),
@@ -2572,10 +2336,12 @@ class _ProfileFormState extends State<_ProfileForm> {
   }
 
   String _ageLabel(int months) {
-    if (months < 12) return '$months Mon.';
+    if (months < 12) return _t('core_age_months').replaceAll('{months}', '$months');
     final y = months ~/ 12;
     final m = months % 12;
-    return m == 0 ? '$y Jahre' : '$y J. $m M.';
+    return m == 0
+      ? _t('core_age_years').replaceAll('{years}', '$y')
+      : _t('core_age_years_months').replaceAll('{years}', '$y').replaceAll('{months}', '$m');
   }
 
   // ─── SCHRITT 3: Werte & Erziehungsstil ─────────────────────────────────────
@@ -2596,8 +2362,7 @@ class _ProfileFormState extends State<_ProfileForm> {
               const SizedBox(width: 10),
               Expanded(
                   child: Text(
-                      _networkCopy('values_tip',
-                          'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.'),
+                        _networkCopy('values_tip'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF16A34A),
                           fontWeight: FontWeight.w500,
@@ -2605,7 +2370,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             ]),
           ),
           const SizedBox(height: 16),
-          _sectionTitle(theme, '\u{2728} Was lebt ihr?'),
+          _sectionTitle(theme, '\u{2728} ${_t('core_values_title')}'),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             ...MatchOptions.valueOptions.map((v) => FilterChip(
@@ -2627,7 +2392,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                       languageService.currentLanguage, 'custom_value'),
                   style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
-                  _valuesCustomCtrl, 'Was ist euch noch wichtig?'),
+                  _valuesCustomCtrl, _t('core_values_hint')),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               side: const BorderSide(color: Color(0xFF8B5CF6)),
@@ -2654,7 +2419,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SizedBox(height: 8),
-          _sectionTitle(theme, '\u{1F3AF} Was sucht ihr?'),
+          _sectionTitle(theme, '\u{1F3AF} ${_t('core_looking_for_title')}'),
           const SizedBox(height: 6),
           Text(_t('network_wizard_activities'),
               style: theme.textTheme.bodySmall
@@ -2676,7 +2441,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                       languageService.currentLanguage, 'custom_idea'),
                   style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
-                  _lookingForCustomCtrl, 'Was wünscht ihr euch noch?'),
+                  _lookingForCustomCtrl, _t('core_looking_for_hint')),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               side: const BorderSide(color: Color(0xFF8B5CF6)),
@@ -2695,7 +2460,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                         style: TextStyle(
                             fontSize: 12, color: theme.colorScheme.primary)))),
           const SizedBox(height: 22),
-          _sectionTitle(theme, '\u{1F4C5} Wann habt ihr Zeit?'),
+          _sectionTitle(theme, '\u{1F4C5} ${_t('core_availability_title')}'),
           const SizedBox(height: 10),
           Text(
               AppStringsManager.getString(
@@ -2742,7 +2507,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                       languageService.currentLanguage, 'other_time'),
                   style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(
-                  _availCustomCtrl, 'z.B. Nur in Ferien, Nur Feiertage...'),
+                  _availCustomCtrl, _t('core_availability_hint')),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               side: const BorderSide(color: Color(0xFF8B5CF6)),
@@ -2769,7 +2534,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SizedBox(height: 8),
-          _sectionTitle(theme, '\u{1F30D} Welche Sprachen sprecht ihr?'),
+          _sectionTitle(theme, '\u{1F30D} ${_t('core_languages_title')}'),
           const SizedBox(height: 6),
           Text(_t('network_wizard_languages'),
               style: theme.textTheme.bodySmall
@@ -2794,15 +2559,14 @@ class _ProfileFormState extends State<_ProfileForm> {
                   .toList()),
           const SizedBox(height: 22),
           _sectionTitle(
-              theme, '\u{1F4AC} ${_networkCopy('bio_title', 'Kurze Bio')}'),
+              theme, '\u{1F4AC} ${_networkCopy('bio_title')}'),
           const SizedBox(height: 6),
           TextField(
               controller: _bioCtrl,
               maxLength: 200,
               maxLines: 3,
               decoration: InputDecoration(
-                  hintText: _networkCopy('bio_hint',
-                      'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?'),
+                    hintText: _networkCopy('bio_hint'),
                   hintStyle:
                       TextStyle(fontSize: 13, color: theme.colorScheme.outline),
                   border: OutlineInputBorder(
@@ -2812,7 +2576,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                       borderSide: const BorderSide(
                           color: Color(0xFF8B5CF6), width: 1.5)))),
           const SizedBox(height: 22),
-          _sectionTitle(theme, '\u{1F49C} Besonderheiten (optional)'),
+          _sectionTitle(theme, '\u{1F49C} ${_t('core_specials_title')}'),
           const SizedBox(height: 6),
           Text(_t('network_wizard_location'),
               style: theme.textTheme.bodySmall
@@ -2834,7 +2598,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                       languageService.currentLanguage, 'custom_entry'),
                   style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(_specialsCustomCtrl,
-                  'Was sollten andere Familien noch wissen?'),
+                  _t('core_specials_hint')),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               side: const BorderSide(color: Color(0xFF8B5CF6)),
@@ -3007,8 +2771,8 @@ class _LocationAutocompleteFieldState
       TextField(
         controller: widget.controller,
         decoration: InputDecoration(
-          labelText: 'Stadtteil oder PLZ',
-          hintText: 'Tippe z.B. Kreuzberg, 10997...',
+          labelText: _t('location'),
+          hintText: _networkCopy('location_hint'),
           prefixIcon: const Icon(Icons.location_on_rounded, size: 20),
           suffixIcon: _isLoading
               ? const Padding(

@@ -26,33 +26,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
-String _profileCopy(String key, String fallback) {
-  const copies = {
-    'en': {
-      'active': 'Active',
-      'gdpr_compliant': 'GDPR compliant',
-      'terms_subtitle': 'Terms & use',
-      'licenses_subtitle': 'Packages used',
-      'blocked_count': '{count} blocked',
-    },
-    'ku': {
-      'active': 'Çalak',
-      'gdpr_compliant': 'Li gorî GDPR',
-      'terms_subtitle': 'Merc û bikaranîn',
-      'licenses_subtitle': 'Pakêtên hatine bikaranîn',
-      'blocked_count': '{count} hatine blokekirin',
-    },
-    'tr': {
-      'active': 'Aktif',
-      'gdpr_compliant': 'KVKK/GDPR uyumlu',
-      'terms_subtitle': 'Koşullar ve kullanım',
-      'licenses_subtitle': 'Kullanılan paketler',
-      'blocked_count': '{count} engellendi',
-    },
-  };
-  return copies[languageService.currentLanguage]?[key] ?? fallback;
-}
-
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
 class ProfileSafetyScreen extends StatefulWidget {
   const ProfileSafetyScreen({
@@ -602,7 +575,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               _buildTile(theme,
                   icon: Icons.notifications_rounded,
                   title: _t('notifications'),
-                  value: _profileCopy('active', 'Aktiv'),
+                  value: _t('core_active'),
                   onTap: () {}),
               const SizedBox(height: 28),
 
@@ -619,13 +592,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _buildCompactTile(theme,
                       icon: Icons.shield_rounded,
                       title: _t('privacy'),
-                      subtitle: _profileCopy('gdpr_compliant', 'DSGVO-konform'),
+                      subtitle: _t('core_gdpr_compliant'),
                       onTap: () => _openUrl(APIConfig.getPrivacyPolicyUrl())),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.gavel_rounded,
                       title: _t('terms'),
-                      subtitle: _profileCopy('terms_subtitle', 'AGB & Nutzung'),
+                      subtitle: _t('core_terms_subtitle'),
                       onTap: () => _openUrl(APIConfig.getTermsOfServiceUrl())),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
@@ -649,8 +622,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _buildCompactTile(theme,
                       icon: Icons.code_rounded,
                       title: _t('open_source_licenses'),
-                      subtitle: _profileCopy(
-                          'licenses_subtitle', 'Verwendete Packages'),
+                        subtitle: _t('core_licenses_subtitle'),
                       onTap: () => showLicensePage(
                             context: context,
                             applicationName: 'Parentpeak',
@@ -663,7 +635,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       icon: Icons.block_rounded,
                       title: _t('profile_blocked_contacts'),
                       subtitle:
-                          _profileCopy('blocked_count', '{count} blockiert')
+                          _t('core_blocked_count')
                               .replaceAll(
                         '{count}',
                         '${BlockReportService.instance.blockedUsers.length}',
@@ -676,8 +648,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     _thinDivider(theme),
                     _buildCompactTile(theme,
                         icon: Icons.shield_rounded,
-                        title: 'Moderation',
-                        subtitle: 'Meldungen prüfen & Accounts sperren',
+                        title: _t('core_moderation'),
+                        subtitle: _t('core_moderation_subtitle'),
                         onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -687,15 +659,15 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     // Nur fuer Admin: Crashlytics-Nachweis im Release-Build.
                     _buildCompactTile(theme,
                         icon: Icons.bug_report_rounded,
-                        title: 'Crashlytics-Test',
-                        subtitle: 'Test-Fehlerbericht an Firebase senden',
+                        title: _t('core_crashlytics_test'),
+                        subtitle: _t('core_crashlytics_subtitle'),
                         onTap: _sendCrashlyticsTest),
                   ],
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.mail_rounded,
                       title: _t('contact_support'),
-                      subtitle: APIConfig.getContactEmail() ?? 'E-Mail',
+                      subtitle: APIConfig.getContactEmail() ?? _t('core_contact_email'),
                       onTap: () => _openUrl(APIConfig.getContactSupportUrl())),
                 ]),
               ),
@@ -841,7 +813,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
             Text(
-              'Du kannst dich jederzeit wieder anmelden.',
+              _t('core_logout_message'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
@@ -1066,12 +1038,12 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       fontSize: 13,
                       color: Color(0xFF6B7280))),
               const SizedBox(height: 14),
-              _impressumRow('Anbieter', 'Fatih Bucak – Parentpeak'),
-              _impressumRow('Inhaber', 'Fatih Bucak'),
-              _impressumRow('Adresse', 'Alexandrinenstraße 93, 10969 Berlin'),
-              _impressumRow('E-Mail',
+                _impressumRow(_t('core_imprint_provider'), 'Fatih Bucak – Parentpeak'),
+                _impressumRow(_t('core_imprint_owner'), 'Fatih Bucak'),
+                _impressumRow(_t('core_imprint_address'), 'Alexandrinenstraße 93, 10969 Berlin'),
+                _impressumRow(_t('core_imprint_email'),
                   APIConfig.getContactEmail() ?? 'support@parentpeak.com'),
-              _impressumRow('Verantwortlich für Inhalte', 'Fatih Bucak'),
+                _impressumRow(_t('core_imprint_content_owner'), 'Fatih Bucak'),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -1079,9 +1051,9 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   color: const Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  'Hinweis: Parentpeak befindet sich in der Beta-Phase.',
-                  style: TextStyle(
+                child: Text(
+                  _t('core_beta_notice'),
+                    style: const TextStyle(
                       fontSize: 12, color: Color(0xFF6B7280), height: 1.4),
                 ),
               ),
@@ -1148,35 +1120,24 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
-              const Text(
-                'Parentpeak nutzt Künstliche Intelligenz (Google Gemini) in folgenden Bereichen:',
-                style: TextStyle(fontSize: 14, height: 1.5),
+              Text(
+                _t('core_ai_intro'),
+                style: const TextStyle(fontSize: 14, height: 1.5),
               ),
               const SizedBox(height: 14),
-              _aiFeatureItem('\u{1F4AC}', 'KI-Elternberatung',
-                  'Integrativer pädagogischer Ansatz'),
-              _aiFeatureItem('\u{1F372}', 'Rezept-Generator',
-                  'Altersgerechte Familienrezepte'),
-              _aiFeatureItem('\u{1F4C5}', 'Events-Suche',
-                  'Lokale Aktivitäten in deiner Nähe'),
-              _aiFeatureItem('\u{1F4DC}', 'Wochenrückblick-Feedback',
-                  'Empathische Rückmeldung'),
+                _aiFeatureItem('\u{1F4AC}', _t('core_ai_parenting_title'), _t('core_ai_parenting_desc')),
+                _aiFeatureItem('\u{1F372}', _t('core_ai_recipe_title'), _t('core_ai_recipe_desc')),
+                _aiFeatureItem('\u{1F4C5}', _t('core_ai_events_title'), _t('core_ai_events_desc')),
+                _aiFeatureItem('\u{1F4DC}', _t('core_ai_review_title'), _t('core_ai_review_desc')),
               const SizedBox(height: 14),
-              const Text(
-                'Pädagogische Basis:',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              Text(
+                _t('core_ai_basis'),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
-              const Text(
-                '\u{2022} Gewaltfreie Kommunikation (Rosenberg)\n'
-                '\u{2022} Neurobiologie (Gerald Hüther)\n'
-                '\u{2022} Montessori — "Hilf mir, es selbst zu tun"\n'
-                '\u{2022} Reggio — Das Kind hat 100 Sprachen\n'
-                '\u{2022} Freinet — Lernen am realen Leben\n'
-                '\u{2022} Fröbel — Spielen ist die höchste Form des Lernens\n'
-                '\u{2022} Situationsansatz\n'
-                '\u{2022} Jesper Juul — Beziehung vor Erziehung',
-                style: TextStyle(
+              Text(
+                _t('core_ai_basis_items'),
+                style: const TextStyle(
                     fontSize: 12, height: 1.6, color: Color(0xFF4B5563)),
               ),
               const SizedBox(height: 16),
@@ -1194,12 +1155,9 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13)),
                     const SizedBox(height: 6),
-                    const Text(
-                      '\u{2022} KI-Antworten sind keine professionelle Beratung\n'
-                      '\u{2022} Keine Speicherung von Chatverläufen auf externen Servern\n'
-                      '\u{2022} Keine echten Kindernamen an die KI übermitteln\n'
-                      '\u{2022} Bei Notfällen immer professionelle Hilfe suchen',
-                      style: TextStyle(
+                    Text(
+                      _t('core_ai_warning_items'),
+                        style: const TextStyle(
                           fontSize: 12, height: 1.6, color: Color(0xFF92400E)),
                     ),
                   ],
@@ -1361,13 +1319,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(children: [
-          Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-          SizedBox(width: 8),
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Datenexport in die Zwischenablage kopiert',
-              style: TextStyle(fontSize: 13),
+              _t('core_export_copied'),
+              style: const TextStyle(fontSize: 13),
             ),
           ),
         ]),
