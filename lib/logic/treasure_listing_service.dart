@@ -218,8 +218,9 @@ class TreasureListingService {
       if (!deleted) return false;
     }
 
-    final listings = await loadListings();
-    _cache = listings.where((item) => item.id != listingId).toList();
+    _cache = (_cache ?? const <TreasureListing>[])
+        .where((item) => item.id != listingId)
+        .toList();
     await _persist();
     return true;
   }

@@ -1682,6 +1682,8 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   }
 
   Future<void> _openListingDetail(TreasureListing listing) async {
+    await _loadOwnedListingIds();
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     final conditionMeta = _conditionMeta(l10n, listing.conditionKey);
     final listedTimeLabel =
@@ -1697,6 +1699,9 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final compactSheet = MediaQuery.sizeOf(context).width < 390;
+        final isOwnedByCurrentUser =
+            listing.ownerUserId == AuthService.instance.currentUser?.uid ||
+                _ownedListingIds.contains(listing.id);
         return DraggableScrollableSheet(
           initialChildSize: 0.82,
           minChildSize: 0.55,
@@ -2097,51 +2102,51 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          SizedBox(
-                            width: narrowActions
-                                ? constraints.maxWidth
-                                : (constraints.maxWidth - 8) / 2,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _reportListing(listing);
-                              },
-                              icon: Icon(
-                                Icons.flag_outlined,
-                                size: narrowActions ? 17 : 18,
-                              ),
-                              label: Text(
-                                l10n.t('treasureReportAction',
-                                    fallback: 'Melden'),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: narrowActions
-                                ? constraints.maxWidth
-                                : (constraints.maxWidth - 8) / 2,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _blockListing(listing);
-                              },
-                              icon: Icon(
-                                Icons.block_rounded,
-                                size: narrowActions ? 17 : 18,
-                              ),
-                              label: Text(
-                                l10n.t('treasureBlockAction',
-                                    fallback: 'Ausblenden'),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
+                          if (!isOwnedByCurrentUser) ...[
+                            SizedBox(
+                              width: narrowActions
+                                  ? constraints.maxWidth
+                                  : (constraints.maxWidth - 8) / 2,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _reportListing(listing);
+                                },
+                                icon: Icon(
+                                  Icons.flag_outlined,
+                                  size: narrowActions ? 17 : 18,
+                                ),
+                                label: Text(
+                                  l10n.t('treasureReportAction',
+                                      fallback: 'Melden'),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
                             ),
-                          ),
-                            if (listing.ownerUserId ==
-                                AuthService.instance.currentUser?.uid ||
-                              _ownedListingIds.contains(listing.id))
+                            SizedBox(
+                              width: narrowActions
+                                  ? constraints.maxWidth
+                                  : (constraints.maxWidth - 8) / 2,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _blockListing(listing);
+                                },
+                                icon: Icon(
+                                  Icons.block_rounded,
+                                  size: narrowActions ? 17 : 18,
+                                ),
+                                label: Text(
+                                  l10n.t('treasureBlockAction',
+                                      fallback: 'Ausblenden'),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (isOwnedByCurrentUser)
                             SizedBox(
                               width: narrowActions
                                   ? constraints.maxWidth
@@ -2172,47 +2177,49 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: 10),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                      backgroundColor: const Color(0xFF1E5CD7),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _selectedListing = listing;
-                      });
-                      Navigator.of(context).pop();
-                      final messenger = ScaffoldMessenger.of(this.context);
-                      messenger.hideCurrentSnackBar();
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            l10n.tFormat(
-                              'treasureSelectionConfirmed',
-                              {'title': listing.title},
-                              fallback:
-                                  '${listing.title} ist jetzt für deine Übergabe vorgemerkt.',
-                            ),
-                          ),
-                          behavior: SnackBarBehavior.fixed,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.check_circle_rounded),
-                    label: Text(
-                      l10n.t(
-                        'treasureSelectForHandover',
-                        fallback: compactSheet
-                            ? 'Für Übergabe'
-                            : 'Für Übergabe wählen',
+                  if (!isOwnedByCurrentUser) ...[
+                    const SizedBox(height: 10),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(50),
+                        backgroundColor: const Color(0xFF1E5CD7),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      onPressed: () {
+                        setState(() {
+                          _selectedListing = listing;
+                        });
+                        Navigator.of(context).pop();
+                        final messenger = ScaffoldMessenger.of(this.context);
+                        messenger.hideCurrentSnackBar();
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              l10n.tFormat(
+                                'treasureSelectionConfirmed',
+                                {'title': listing.title},
+                                fallback:
+                                    '${listing.title} ist jetzt für deine Übergabe vorgemerkt.',
+                              ),
+                            ),
+                            behavior: SnackBarBehavior.fixed,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.check_circle_rounded),
+                      label: Text(
+                        l10n.t(
+                          'treasureSelectForHandover',
+                          fallback: compactSheet
+                              ? 'Für Übergabe'
+                              : 'Für Übergabe wählen',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             );

@@ -7837,6 +7837,79 @@ async function requireAdmin(req, res, next) {
   return next();
 }
 
+const treasureTestOwnerIds = Object.freeze([
+  'host_demo_001',
+  'user-berlin-1',
+  'user-munich-1',
+  'user-safe-check',
+]);
+
+async function findTreasureTestFixtures() {
+  return prisma.treasureItem.findMany({
+    where: { userId: { in: treasureTestOwnerIds } },
+    select: {
+      id: true,
+      userId: true,
+      title: true,
+      status: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+// Preview-only endpoint for integration-test marketplace fixtures.
+app.get('/admin/treasures/test-cleanup-preview', requireAdmin,
+    async (req, res) => {
+  try {
+    const fixtures = await findTreasureTestFixtures();
+    return res.json({
+      dryRun: true,
+      testOwnerIds: treasureTestOwnerIds,
+      count: fixtures.length,
+      fixtures,
+      note: 'Nur Vorschau. Zum Loeschen POST mit {"confirm":true} senden.',
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(
+        res, 'GET /admin/treasures/test-cleanup-preview', error)) {
+      return;
+    }
+    return res.status(500).json({error: 'Testanzeigen konnten nicht geladen werden'});
+  }
+});
+
+// Deletes only fixtures for the fixed integration-test owner allowlist.
+app.post('/admin/treasures/test-cleanup', requireAdmin, async (req, res) => {
+  try {
+    const fixtures = await findTreasureTestFixtures();
+    if (req.body?.confirm !== true) {
+      return res.json({
+        dryRun: true,
+        testOwnerIds: treasureTestOwnerIds,
+        count: fixtures.length,
+        fixtures,
+        note: 'Kein confirm:true. Es wurden keine Testanzeigen geloescht.',
+      });
+    }
+
+    const deleted = await prisma.treasureItem.deleteMany({
+      where: {userId: {in: treasureTestOwnerIds}},
+    });
+    return res.json({
+      ok: true,
+      deleted: deleted.count,
+      testOwnerIds: treasureTestOwnerIds,
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(
+        res, 'POST /admin/treasures/test-cleanup', error)) {
+      return;
+    }
+    return res.status(500).json({error: 'Testanzeigen konnten nicht geloescht werden'});
+  }
+});
+
 // Liste aller Meldungen, gruppiert pro gemeldetem User.
 app.get('/admin/reports', requireAdmin, async (req, res) => {
   const status = (req.query.status || 'pending').toString().trim();
