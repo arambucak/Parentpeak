@@ -16,6 +16,15 @@ import 'package:parentpeak/logic/gemeinsam_satt_backend_service.dart'
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
+String _p(String key, [Map<String, String> values = const {}]) {
+  var value = AppStringsManager.getString(
+      languageService.currentLanguage, 'package2_$key');
+  values.forEach((placeholder, replacement) {
+    value = value.replaceAll('{$placeholder}', replacement);
+  });
+  return value;
+}
+
 // ============================================================
 // GEMEINSAM SATT — Eltern-Essenssolidarität
 // ============================================================
@@ -45,39 +54,39 @@ class _NearbyFilterPreset {
 }
 
 const Map<String, _FoodInfoMeta> _foodInfoMetaByTag = {
-  'vegetarisch': _FoodInfoMeta('Vegetarisch', Color(0xFFDCFCE7)),
-  'vegan': _FoodInfoMeta('Vegan', Color(0xFFD1FAE5)),
-  'glutenfrei': _FoodInfoMeta('Glutenfrei', Color(0xFFDBEAFE)),
-  'nussfrei': _FoodInfoMeta('Nussfrei', Color(0xFFE0E7FF)),
-  'enthaelt_nuesse': _FoodInfoMeta('Enthält Nüsse', Color(0xFFFEE2E2)),
-  'laktosefrei': _FoodInfoMeta('Laktosefrei', Color(0xFFE0F2FE)),
-  'enthaelt_milch': _FoodInfoMeta('Enthält Milch', Color(0xFFFFEDD5)),
-  'enthaelt_ei': _FoodInfoMeta('Enthält Ei', Color(0xFFFEF3C7)),
-  'babyfreundlich': _FoodInfoMeta('Babyfreundlich', Color(0xFFFCE7F3)),
-  'kinderfreundlich': _FoodInfoMeta('Kinderfreundlich', Color(0xFFEDE9FE)),
-  'nicht_scharf': _FoodInfoMeta('Nicht scharf', Color(0xFFF3F4F6)),
-  'scharf': _FoodInfoMeta('Scharf', Color(0xFFFECACA)),
+  'vegetarisch': _FoodInfoMeta('food_vegetarian', Color(0xFFDCFCE7)),
+  'vegan': _FoodInfoMeta('food_vegan', Color(0xFFD1FAE5)),
+  'glutenfrei': _FoodInfoMeta('food_gluten_free', Color(0xFFDBEAFE)),
+  'nussfrei': _FoodInfoMeta('food_nut_free', Color(0xFFE0E7FF)),
+  'enthaelt_nuesse': _FoodInfoMeta('food_contains_nuts', Color(0xFFFEE2E2)),
+  'laktosefrei': _FoodInfoMeta('food_lactose_free', Color(0xFFE0F2FE)),
+  'enthaelt_milch': _FoodInfoMeta('food_contains_milk', Color(0xFFFFEDD5)),
+  'enthaelt_ei': _FoodInfoMeta('food_contains_egg', Color(0xFFFEF3C7)),
+  'babyfreundlich': _FoodInfoMeta('food_baby_friendly', Color(0xFFFCE7F3)),
+  'kinderfreundlich': _FoodInfoMeta('food_kid_friendly', Color(0xFFEDE9FE)),
+  'nicht_scharf': _FoodInfoMeta('food_mild', Color(0xFFF3F4F6)),
+  'scharf': _FoodInfoMeta('food_spicy', Color(0xFFFECACA)),
 };
 
 const List<_NearbyFilterPreset> _nearbyFilterPresets = [
   _NearbyFilterPreset(
     id: 'baby_mild',
-    label: 'Baby + mild',
+    label: 'filter_baby_mild',
     tags: ['babyfreundlich', 'nicht_scharf'],
   ),
   _NearbyFilterPreset(
     id: 'glutenfrei_mild',
-    label: 'Glutenfrei + mild',
+    label: 'filter_gluten_free_mild',
     tags: ['glutenfrei', 'nicht_scharf'],
   ),
   _NearbyFilterPreset(
     id: 'veggie_kids',
-    label: 'Veggie für Kinder',
+    label: 'filter_veggie_kids',
     tags: ['vegetarisch', 'kinderfreundlich'],
   ),
   _NearbyFilterPreset(
     id: 'nussfrei',
-    label: 'Nussfrei',
+    label: 'filter_nut_free',
     tags: ['nussfrei'],
   ),
 ];
@@ -141,7 +150,7 @@ Widget _buildFoodInfoChip(String tag) {
       borderRadius: BorderRadius.circular(999),
     ),
     child: Text(
-      meta.label,
+      _p(meta.label),
       style: const TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w700,
@@ -152,15 +161,15 @@ Widget _buildFoodInfoChip(String tag) {
 }
 
 String _lastSharedLabelFor(DateTime? value) {
-  if (value == null) return 'Noch keine geteilte Historie';
+  if (value == null) return _p('last_shared_none');
   final diff = DateTime.now().difference(value);
   if (diff.inHours < 24) {
-    return 'Zuletzt geteilt: heute';
+    return _p('last_shared_today');
   }
   if (diff.inDays == 1) {
-    return 'Zuletzt geteilt: gestern';
+    return _p('last_shared_yesterday');
   }
-  return 'Zuletzt geteilt: vor ${diff.inDays} Tagen';
+  return _p('last_shared_days', {'days': '${diff.inDays}'});
 }
 
 class GemeinsamSattScreen extends StatefulWidget {
@@ -213,7 +222,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
   String get _myDisplayName {
     final raw = AuthService.instance.currentUser?.displayName.trim();
     if (raw == null || raw.isEmpty) {
-      return 'Ein Elternteil';
+      return _p('parent_default');
     }
     return raw;
   }
@@ -305,7 +314,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       if (!mounted) return;
       setState(() {
         _nearbyLoadError =
-            _service.lastSyncError ?? 'Angebote konnten nicht geladen werden.';
+            _service.lastSyncError ?? _p('offers_load_error');
         _posts = [];
         _nearbyDiscoveryScope = 'global';
         _nearbyGlobalDigitalMode = true;
@@ -377,12 +386,11 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         authorName: 'Global Community',
         authorInitials: 'GC',
         authorColor: const Color(0xFF1E5CD7),
-        title: 'Globaler Food-Raum: Familienfreundliche Snacks',
-        description:
-            'Digitale Vorschlaege und Austausch für schnelle kindgerechte Snacks.',
+        title: _p('global_snacks_title'),
+        description: _p('global_snacks_description'),
         totalPortions: 1,
         remainingPortions: 1,
-        pickupWindow: 'Online jetzt',
+        pickupWindow: _p('online_now'),
         distanceKm: 0,
         createdAt: now,
         likedByUserIds: const [],
@@ -396,12 +404,11 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         authorName: 'Global Community',
         authorInitials: 'GC',
         authorColor: const Color(0xFF1E5CD7),
-        title: 'Globaler Food-Raum: Meal Prep für Familien',
-        description:
-            'Rezepte, Portionsideen und Austausch für stressfreie Wochenplanung.',
+        title: _p('global_meal_prep_title'),
+        description: _p('global_meal_prep_description'),
         totalPortions: 1,
         remainingPortions: 1,
-        pickupWindow: 'Online jetzt',
+        pickupWindow: _p('online_now'),
         distanceKm: 0,
         createdAt: now,
         likedByUserIds: const [],
@@ -419,8 +426,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     final portions = item.servings <= 0 ? 1 : item.servings;
     final minutesAgo = DateTime.now().difference(createdAt).inMinutes;
     final pickupLabel = minutesAgo <= 120
-        ? 'Abholung heute möglich'
-        : 'Abholung nach Absprache';
+        ? _p('pickup_today')
+        : _p('pickup_by_arrangement');
 
     return FoodSharePost(
       id: item.id,
@@ -431,7 +438,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       authorColor: _getColorForAuthor(authorId.isEmpty ? item.id : authorId),
       title: item.title,
       description: (item.description ?? '').trim().isEmpty
-          ? 'Frisch gekocht und zum Teilen bereit.'
+          ? _p('fresh_to_share')
           : (item.description ?? '').trim(),
       totalPortions: portions,
       remainingPortions: portions,
@@ -442,13 +449,13 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       tags: item.tags,
       comments: const [],
       imageEmoji: _getEmojiForCategory(item.category),
-      authorTrustLabel: item.authorTrust?.label ?? 'Neu im Teilen',
+      authorTrustLabel: item.authorTrust?.label ?? _p('new_to_sharing'),
       authorTrustLevel: item.authorTrust?.level ?? 'new',
       authorCompletedShares: item.authorTrust?.completedShares ?? 0,
       authorCompletionRate: item.authorTrust?.completionRate ?? 0,
       authorReliabilityLevel: item.authorTrust?.reliabilityLevel ?? 'new',
       authorReliabilityLabel:
-          item.authorTrust?.reliabilityLabel ?? 'Noch wenig Nachweise',
+          item.authorTrust?.reliabilityLabel ?? _p('few_references'),
       authorLastSharedAt: item.authorTrust?.lastSharedAt,
     );
   }
@@ -469,7 +476,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         } else {
           _weekPlan = _buildEmptyWeekPlan();
           _mealPlanLoadError =
-              'Wochenplan konnte nicht vom Backend geladen werden.';
+              _p('meal_plan_backend_error');
         }
       });
     } catch (e) {
@@ -477,7 +484,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       if (!mounted) return;
       setState(() {
         _weekPlan = _buildEmptyWeekPlan();
-        _mealPlanLoadError = 'Wochenplan konnte nicht geladen werden.';
+        _mealPlanLoadError = _p('meal_plan_load_error');
       });
     }
   }
@@ -518,7 +525,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       if (!mounted) return;
       setState(() {
         _recipeLoadError =
-            _service.lastSyncError ?? 'Rezepte konnten nicht geladen werden.';
+            _service.lastSyncError ?? _p('recipes_load_error');
         _recipes = [];
         _isLoadingRecipes = false;
       });
@@ -551,7 +558,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       likedByUserIds: data.rating > 0 ? ['seed_like'] : const [],
       ingredients: ingredients,
       steps: data.instructions,
-      authorTrustLabel: data.authorTrust?.label ?? 'Neu im Teilen',
+      authorTrustLabel: data.authorTrust?.label ?? _p('new_to_sharing'),
       authorTrustLevel: data.authorTrust?.level ?? 'new',
       authorPublishedRecipesCount: data.authorTrust?.publishedRecipesCount ?? 0,
       authorActiveOffersCount: data.authorTrust?.activeOffersCount ?? 0,
@@ -559,7 +566,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       authorCompletionRate: data.authorTrust?.completionRate ?? 0,
       authorReliabilityLevel: data.authorTrust?.reliabilityLevel ?? 'new',
       authorReliabilityLabel:
-          data.authorTrust?.reliabilityLabel ?? 'Noch wenig Nachweise',
+          data.authorTrust?.reliabilityLabel ?? _p('few_references'),
       authorLastSharedAt: data.authorTrust?.lastSharedAt,
       averageRating: data.rating,
       ratingCount: data.ratingCount,
@@ -703,7 +710,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       'kaya': 'Familie Kaya',
       'nguyen': 'Familie Nguyen',
     };
-    return names[userId] ?? 'Familie aus der Community';
+    return names[userId] ?? _p('community_family');
   }
 
   String _getInitials(String userId) {
@@ -764,25 +771,11 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
               child: const Text('🤝', style: TextStyle(fontSize: 18)),
             ),
             const SizedBox(width: 10),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'GemeinsamSatt',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                    color: Color(0xFF1A2A3A),
-                  ),
-                ),
-                Text(
-                  'Essen teilen · Zusammen satt werden',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF8A9AB0),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
+                Text(_p('title'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF1A2A3A))),
+                Text(_p('subtitle'), style: const TextStyle(fontSize: 11, color: Color(0xFF8A9AB0), fontWeight: FontWeight.w400)),
               ],
             ),
           ],
@@ -792,38 +785,20 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           indicatorColor: _brand,
           labelColor: _brand,
           unselectedLabelColor: const Color(0xFF8A9AB0),
-          labelStyle:
-              const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
           indicatorSize: TabBarIndicatorSize.tab,
           isScrollable: false,
-          tabs: const [
-            Tab(
-              icon: Icon(Icons.location_on_rounded, size: 20),
-              text: 'Nähe',
-            ),
-            Tab(
-              icon: Icon(Icons.menu_book_rounded, size: 20),
-              text: 'Rezepte',
-            ),
-            Tab(
-              icon: Icon(Icons.calendar_month_rounded, size: 20),
-              text: 'Planer',
-            ),
-            Tab(
-              icon: Icon(Icons.favorite_rounded, size: 20),
-              text: 'Angebote',
-            ),
+          tabs: [
+            Tab(icon: const Icon(Icons.location_on_rounded, size: 20), text: _p('tab_nearby')),
+            Tab(icon: const Icon(Icons.menu_book_rounded, size: 20), text: _p('tab_recipes')),
+            Tab(icon: const Icon(Icons.calendar_month_rounded, size: 20), text: _p('tab_planner')),
+            Tab(icon: const Icon(Icons.favorite_rounded, size: 20), text: _p('tab_offers')),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildNearbyFeed(),
-          _buildRecipesFeed(),
-          _buildMealPlanTab(),
-          _buildMyOffers(),
-        ],
+        children: [_buildNearbyFeed(), _buildRecipesFeed(), _buildMealPlanTab(), _buildMyOffers()],
       ),
       floatingActionButton: AnimatedBuilder(
         animation: _tabController,
@@ -834,19 +809,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           return FloatingActionButton.extended(
             backgroundColor: _brand,
             foregroundColor: Colors.white,
-            icon: Icon(isRecipeTab
-                ? Icons.menu_book_rounded
-                : isMealTab
-                    ? Icons.add_rounded
-                    : Icons.add_circle_outline_rounded),
-            label: Text(
-              isRecipeTab
-                  ? 'Rezept teilen'
-                  : isMealTab
-                      ? 'Mahlzeit hinzufügen'
-                      : 'Ich habe extra gekocht!',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+            icon: Icon(isRecipeTab ? Icons.menu_book_rounded : isMealTab ? Icons.add_rounded : Icons.add_circle_outline_rounded),
+            label: Text(isRecipeTab ? _p('share_recipe') : isMealTab ? _p('add_meal') : _p('offer_extra_food'), style: const TextStyle(fontWeight: FontWeight.w700)),
             onPressed: () {
               if (isRecipeTab) {
                 _openCreateRecipe(context);
@@ -873,7 +837,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
     if (_nearbyLoadError != null && _posts.isEmpty) {
       return _buildBackendErrorState(
-        title: 'Angebote konnten nicht geladen werden',
+        title: _p('offers_load_error'),
         subtitle: _nearbyLoadError!,
         onRetry: _loadNearbyFeed,
       );
@@ -883,8 +847,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     if (available.isEmpty) {
       return _buildEmptyState(
         emoji: '🍲',
-        title: 'Noch keine Angebote in deiner Nähe',
-        subtitle: 'Sei der Erste! Drücke unten auf „Ich habe extra gekocht!"',
+        title: _p('offers_empty_title'),
+        subtitle: _p('offers_empty_subtitle'),
       );
     }
     return Column(
@@ -907,8 +871,9 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 Expanded(
                   child: Text(
                     _nearbyGlobalDigitalMode
-                        ? '🍲 Noch keine lokalen Angebote. Stöber global & teile ab sofort selbst — kostenlos!'
-                        : '🔄 Suche in $_nearbyDiscoveryScope erweitert | Mehr Teller? Lade Eltern in deine Nähe ein.',
+                        ? _p('global_invite_banner')
+                        : _p('expanded_search_banner',
+                          {'scope': _nearbyDiscoveryScope}),
                     style: const TextStyle(
                       color: Color(0xFF74420D),
                       fontWeight: FontWeight.w700,
@@ -931,7 +896,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${available.length} passende Angebote',
+                _p('matching_offers', {'count': '${available.length}'}),
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -939,9 +904,9 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Sortiert nach Nähe, Frische, Vertrauen und deinen aktiven Hinweisen.',
-                style: TextStyle(
+              Text(
+                _p('offers_sort_hint'),
+                style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF6B778C),
                 ),
@@ -956,7 +921,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(preset.label),
+                          label: Text(_p(preset.label)),
                           selected: selected,
                           onSelected: (_) {
                             setState(() {
@@ -989,7 +954,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                             _activeNearbyFilters.clear();
                           });
                         },
-                        child: const Text('Reset'),
+                        child: Text(_p('reset')),
                       ),
                   ],
                 ),
@@ -1003,7 +968,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
-                        label: Text(entry.value.label),
+                        label: Text(_p(entry.value.label)),
                         selected: selected,
                         onSelected: (_) {
                           setState(() {
@@ -1191,7 +1156,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                   setState(() {
                     _weekPlan = _weekPlan.updateDay(dayPlan.removeMeal(type));
                   });
-                  _showSnack('Mahlzeit entfernt');
+                  _showSnack(_p('meal_removed'));
                 },
                 onTapMeal: (meal) => _showMealDetail(meal),
               );
@@ -1227,7 +1192,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           setState(() {
             _weekPlan = _weekPlan.updateDay(dayPlan.addMeal(meal));
           });
-          _showSnack('Mahlzeit hinzugefügt ✅');
+          _showSnack(_p('meal_added'));
         },
       ),
     );
@@ -1270,7 +1235,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
     if (_recipeLoadError != null && _recipes.isEmpty) {
       return _buildBackendErrorState(
-        title: 'Rezepte konnten nicht geladen werden',
+        title: _p('recipes_load_error'),
         subtitle: _recipeLoadError!,
         onRetry: _loadRecipes,
       );
@@ -1279,8 +1244,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     if (_recipes.isEmpty) {
       return _buildEmptyState(
         emoji: '📖',
-        title: 'Noch keine Rezepte geteilt',
-        subtitle: 'Teile dein Lieblingsrezept mit anderen Eltern!',
+        title: _p('recipes_empty_title'),
+        subtitle: _p('recipes_empty_subtitle'),
       );
     }
 
@@ -1298,18 +1263,18 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'So werden Rezepte gezeigt',
-                style: TextStyle(
+              Text(
+                _p('recipes_display_title'),
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF1A2A3A),
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Standard ist Für dich: kinderfreundlich, schnell, gut bewertet und aktuell.',
-                style: TextStyle(
+              Text(
+                _p('recipes_display_hint'),
+                style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF6B778C),
                 ),
@@ -1320,22 +1285,22 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 child: Row(
                   children: [
                     _buildRecipeModeChip(
-                      label: 'Für dich',
+                      label: _p('recipes_for_you'),
                       mode: _RecipeFeedMode.forYou,
                     ),
                     const SizedBox(width: 8),
                     _buildRecipeModeChip(
-                      label: 'Neueste',
+                      label: _p('recipes_newest'),
                       mode: _RecipeFeedMode.newest,
                     ),
                     const SizedBox(width: 8),
                     _buildRecipeModeChip(
-                      label: 'Top bewertet',
+                      label: _p('recipes_best_rated'),
                       mode: _RecipeFeedMode.bestRated,
                     ),
                     const SizedBox(width: 8),
                     _buildRecipeModeChip(
-                      label: 'Schnell unter 30 min',
+                      label: _p('recipes_quick'),
                       mode: _RecipeFeedMode.quickMeals,
                     ),
                   ],
@@ -1393,7 +1358,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
   Future<void> _toggleRecipeLike(SharedRecipe recipe) async {
     final alreadyLiked = recipe.likedByUserIds.contains(_myUserId);
     if (alreadyLiked) {
-      _showSnack('Du hast dieses Rezept bereits empfohlen.');
+      _showSnack(_p('recipe_already_recommended'));
       return;
     }
 
@@ -1406,7 +1371,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
     if (result == null) {
       _showSnack(_service.lastSyncError ??
-          'Empfehlung konnte nicht gespeichert werden.');
+          _p('recommendation_save_error'));
       return;
     }
 
@@ -1440,7 +1405,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     });
     await _persistSavedRecipes();
     final saved = _recipes.firstWhere((r) => r.id == recipeId).isSavedByMe;
-    _showSnack(saved ? 'Rezept gespeichert ✅' : 'Rezept entfernt');
+    _showSnack(saved ? _p('recipe_saved') : _p('recipe_unsaved'));
   }
 
   Future<void> _showRecipeDetail(SharedRecipe recipe) async {
@@ -1494,7 +1459,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           if (!mounted) return false;
           if (created == null) {
             _showSnack(_service.lastSyncError ??
-                'Rezept konnte nicht geteilt werden.');
+                _p('recipe_share_error'));
             return false;
           }
 
@@ -1508,7 +1473,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
               ),
             );
           });
-          _showSnack('Dein Rezept ist jetzt für alle sichtbar!');
+          _showSnack(_p('recipe_share_success'));
           return true;
         },
       ),
@@ -1523,8 +1488,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     if (mine.isEmpty) {
       return _buildEmptyState(
         emoji: '👩‍🍳',
-        title: 'Du hast noch nichts geteilt',
-        subtitle: 'Hast du heute extra gekocht? Teile es mit anderen Eltern!',
+        title: _p('my_offers_empty_title'),
+        subtitle: _p('my_offers_empty_subtitle'),
       );
     }
     return ListView.builder(
@@ -1684,9 +1649,9 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Deine Reservierung',
-              style: TextStyle(
+            Text(
+              _p('reservation_title'),
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF1A2A3A),
@@ -1739,7 +1704,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     );
 
     if (result == null) {
-      _showSnack(_service.lastSyncError ?? 'Reservierung fehlgeschlagen');
+      _showSnack(_service.lastSyncError ?? _p('reservation_error'));
       return;
     }
 
@@ -1764,7 +1729,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
     if (!ok) {
       _showSnack(_service.lastSyncError ??
-          'Reservierung konnte nicht aufgehoben werden');
+          _p('reservation_cancel_error'));
       return;
     }
 
@@ -1783,7 +1748,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         remainingPortions: remaining,
       );
     });
-    _showSnack('Reservierung aufgehoben');
+    _showSnack(_p('reservation_cancelled'));
   }
 
   Future<void> _completeReservation(FoodSharePost post, int index) async {
@@ -1794,7 +1759,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
     if (!ok) {
       _showSnack(
-          _service.lastSyncError ?? 'Abholung konnte nicht bestaetigt werden');
+          _service.lastSyncError ?? _p('pickup_confirm_error'));
       return;
     }
 
@@ -1805,7 +1770,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     await _persistOfferSafetyState();
 
     if (!mounted) return;
-    _showSnack('Abholung bestätigt. Danke fürs Teilen!');
+    _showSnack(_p('pickup_confirmed'));
   }
 
   Future<void> _showComments(FoodSharePost post) async {
@@ -1851,7 +1816,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
           if (created == null) {
             _showSnack(_service.lastSyncError ??
-                'Kommentar konnte nicht gespeichert werden');
+                _p('comment_save_error'));
             return false;
           }
 
@@ -1885,17 +1850,17 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
   Future<void> _reportPost(FoodSharePost post) async {
     if (post.authorId == _myUserId) {
-      _showSnack('Eigene Angebote kannst du nicht melden.');
+      _showSnack(_p('report_own_offer_error'));
       return;
     }
 
-    String selectedReason = 'Spam oder Irrefuehrung';
+    String selectedReason = _p('report_reason_spam');
     final noteController = TextEditingController();
     final reasons = <String>[
-      'Spam oder Irrefuehrung',
-      'Unpassender Inhalt',
-      'Betrug oder Unsicherheit',
-      'Andere Sorge',
+      _p('report_reason_spam'),
+      _p('report_reason_inappropriate'),
+      _p('report_reason_fraud'),
+      _p('report_reason_other'),
     ];
 
     final confirmed = await showDialog<bool>(
@@ -1909,8 +1874,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Hilf uns, den Bereich sicher und hilfreich für Eltern zu halten.',
+                  Text(
+                    _p('report_help'),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
@@ -1932,7 +1897,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                     minLines: 2,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      hintText: 'Optional: kurze Notiz für die Moderation',
+                      hintText: _p('report_note_hint'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1981,9 +1946,9 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     if (!mounted) return;
     _showSnack(
       ok
-          ? 'Danke, wir pruefen diese Meldung.'
+          ? _p('report_success')
           : (_service.lastSyncError ??
-              'Meldung konnte nicht gespeichert werden.'),
+              _p('report_save_error')),
     );
   }
 
@@ -1994,8 +1959,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(_t('satt_hide_offer')),
-        content: const Text(
-          'Dieses Angebot wird nur für dich ausgeblendet und später nicht mehr im Feed angezeigt.',
+        content: Text(
+          _p('hide_offer_hint'),
         ),
         actions: [
           TextButton(
@@ -2019,7 +1984,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     await _persistOfferSafetyState();
 
     if (!mounted) return;
-    _showSnack('Angebot wurde aus deinem Feed ausgeblendet.');
+    _showSnack(_p('offer_hidden'));
   }
 
   void _openCreatePost(BuildContext context) {
@@ -2053,7 +2018,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           if (!mounted) return false;
           if (created == null) {
             _showSnack(_service.lastSyncError ??
-                'Angebot konnte nicht veröffentlicht werden.');
+                _p('offer_publish_error'));
             return false;
           }
 
@@ -2080,7 +2045,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
           setState(() {
             _posts.insert(0, newPost);
           });
-          _showSnack('Dein Angebot ist jetzt für Eltern in der Nähe sichtbar!');
+          _showSnack(_p('offer_publish_success'));
           _tabController.animateTo(0);
           return true;
         },
@@ -2259,9 +2224,9 @@ class _PostCardState extends State<_PostCard>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      post.isAvailable
-                          ? '${post.remainingPortions} Portion${post.remainingPortions != 1 ? 'en' : ''} frei'
-                          : 'Ausgebucht',
+                        post.isAvailable
+                          ? _p('portions_available', {'count': '${post.remainingPortions}'})
+                          : _p('sold_out'),
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -2387,7 +2352,7 @@ class _PostCardState extends State<_PostCard>
                 if (post.authorCompletedShares > 0) ...[
                   const SizedBox(height: 10),
                   Text(
-                    '${post.authorCompletedShares} erfolgreiche Teilungen bisher',
+                    _p('successful_shares', {'count': '${post.authorCompletedShares}'}),
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFF64748B),
@@ -2397,7 +2362,7 @@ class _PostCardState extends State<_PostCard>
                   if (post.authorCompletionRate > 0) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '${(post.authorCompletionRate * 100).round()}% Abschlussquote',
+                      _p('completion_rate', {'count': '${(post.authorCompletionRate * 100).round()}'}),
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF64748B),
@@ -2544,10 +2509,10 @@ class _PostCardState extends State<_PostCard>
                               : null,
                           child: Text(
                             post.isReservedByMe
-                                ? '✓ Reserviert'
+                                ? _p('reserved')
                                 : post.isAvailable
-                                    ? 'Ich hole ab 🙌'
-                                    : 'Ausgebucht',
+                                  ? _p('pickup_action')
+                                  : _p('sold_out'),
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -2565,7 +2530,7 @@ class _PostCardState extends State<_PostCard>
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '${post.totalPortions - post.remainingPortions}/${post.totalPortions} vergeben',
+                          _p('portions_assigned', {'assigned': '${post.totalPortions - post.remainingPortions}', 'total': '${post.totalPortions}'}),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -2610,9 +2575,9 @@ class _PostCardState extends State<_PostCard>
 
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return 'vor ${diff.inMinutes} Min.';
-    if (diff.inHours < 24) return 'vor ${diff.inHours} Std.';
-    return 'vor ${diff.inDays} Tag(en)';
+    if (diff.inMinutes < 60) return _p('time_minutes_ago', {'count': '${diff.inMinutes}'});
+    if (diff.inHours < 24) return _p('time_hours_ago', {'count': '${diff.inHours}'});
+    return _p('time_days_ago', {'count': '${diff.inDays}'});
   }
 }
 
@@ -2663,7 +2628,7 @@ class _PickupBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'von ${post.authorName}',
+            _p('by_author', {'name': post.authorName}),
             style: const TextStyle(color: Color(0xFF8A9AB0)),
           ),
           const SizedBox(height: 16),
@@ -2681,9 +2646,9 @@ class _PickupBottomSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Abholzeit',
-                        style: TextStyle(
+                      Text(
+                        _p('pickup_time'),
+                        style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFF8A9AB0),
                         ),
@@ -2714,7 +2679,7 @@ class _PickupBottomSheet extends StatelessWidget {
                     color: Color(0xFF516072), size: 18),
                 const SizedBox(width: 10),
                 Text(
-                  '${post.distanceKm.toStringAsFixed(1)} km entfernt',
+                  _p('distance_away', {'distance': post.distanceKm.toStringAsFixed(1)}),
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF516072),
@@ -2737,9 +2702,9 @@ class _PickupBottomSheet extends StatelessWidget {
                 Navigator.pop(context);
                 onConfirm('Ich komme!');
               },
-              child: const Text(
-                'Ich hole ab! 🙌',
-                style: TextStyle(
+              child: Text(
+                _p('pickup_action'),
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -2750,9 +2715,9 @@ class _PickupBottomSheet extends StatelessWidget {
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Abbrechen',
-              style: TextStyle(color: Color(0xFF8A9AB0)),
+            child: Text(
+              _p('cancel'),
+              style: const TextStyle(color: Color(0xFF8A9AB0)),
             ),
           ),
         ],
@@ -2840,7 +2805,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Kommentare · ${widget.post.title}',
+                  _p('comments_title', {'title': widget.post.title}),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -2853,11 +2818,11 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           const Divider(height: 1),
           Expanded(
             child: _comments.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
-                      'Noch keine Kommentare.\nSei der Erste! 💬',
+                      _p('comments_empty'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Color(0xFF8A9AB0)),
+                      style: const TextStyle(color: Color(0xFF8A9AB0)),
                     ),
                   )
                 : ListView.builder(
@@ -2927,7 +2892,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   child: TextField(
                     controller: _ctrl,
                     decoration: InputDecoration(
-                      hintText: 'Kommentar schreiben...',
+                      hintText: _p('comment_hint'),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFD),
                       border: OutlineInputBorder(
@@ -3017,10 +2982,10 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            const Center(
+            Center(
               child: Text(
-                '🍲 Essen anbieten',
-                style: TextStyle(
+                _p('offer_form_title'),
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF1A2A3A),
@@ -3028,30 +2993,29 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               ),
             ),
             const SizedBox(height: 4),
-            const Center(
+            Center(
               child: Text(
-                'Was hast du heute zu viel gekocht?',
-                style: TextStyle(color: Color(0xFF8A9AB0), fontSize: 13),
+                _p('offer_form_subtitle'),
+                style: const TextStyle(color: Color(0xFF8A9AB0), fontSize: 13),
               ),
             ),
             const SizedBox(height: 20),
-            _label('Gericht'),
+            _label(_p('offer_form_dish')),
             const SizedBox(height: 6),
             TextField(
               controller: _titleCtrl,
-              decoration: _inputDeco('z. B. Selbstgemachte Lasagne 🍝'),
+              decoration: _inputDeco(_p('offer_form_dish_hint')),
             ),
             const SizedBox(height: 14),
-            _label('Beschreibung'),
+            _label(_p('offer_form_description')),
             const SizedBox(height: 6),
             TextField(
               controller: _descCtrl,
               maxLines: 3,
-              decoration: _inputDeco(
-                  'Zutaten, besondere Hinweise (vegan, glutenfrei, scharf...)'),
+                decoration: _inputDeco(_p('offer_form_description_hint')),
             ),
             const SizedBox(height: 14),
-            _label('Wie viele Portionen?'),
+            _label(_p('offer_form_portions')),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -3079,7 +3043,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               ],
             ),
             const SizedBox(height: 14),
-            _label('Hinweise für Eltern'),
+            _label(_p('offer_form_parent_notes')),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -3108,7 +3072,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               }).toList(),
             ),
             const SizedBox(height: 14),
-            _label('Abholzeit'),
+            _label(_p('offer_form_pickup_time')),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -3166,9 +3130,9 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                     Navigator.pop(context);
                   }
                 },
-                child: const Text(
-                  'Jetzt teilen 🙌',
-                  style: TextStyle(
+                child: Text(
+                  _p('offer_form_submit'),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -3516,9 +3480,9 @@ class _RecipeCardState extends State<_RecipeCard>
                           color: _brandLight,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Text(
-                          'Rezept ansehen →',
-                          style: TextStyle(
+                        child: Text(
+                          _p('view_recipe'),
+                          style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: _brand),
@@ -3598,7 +3562,7 @@ class _RecipeDetailSheet extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF1A2A3A))),
                   const SizedBox(height: 4),
-                  Text('von ${recipe.authorName}',
+                  Text(_p('by_author', {'name': recipe.authorName}),
                       style: const TextStyle(
                           color: Color(0xFF8A9AB0), fontSize: 13)),
                   const SizedBox(height: 8),
@@ -3673,7 +3637,7 @@ class _RecipeDetailSheet extends StatelessWidget {
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: Text(
-                        'Kurz für Eltern: $familySummary',
+                        _p('parent_summary', {'summary': familySummary}),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -3685,8 +3649,8 @@ class _RecipeDetailSheet extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // Ingredients
-                  const Text('🛒 Zutaten',
-                      style: TextStyle(
+                  Text(_p('ingredients_heading'),
+                      style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF1A2A3A))),
@@ -3729,8 +3693,8 @@ class _RecipeDetailSheet extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // Steps
-                  const Text('👨‍🍳 Zubereitung',
-                      style: TextStyle(
+                  Text(_p('preparation_heading'),
+                      style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF1A2A3A))),
@@ -3898,9 +3862,9 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                       borderRadius: BorderRadius.circular(4))),
             ),
             const SizedBox(height: 16),
-            const Center(
-                child: Text('📖 Rezept teilen',
-                    style: TextStyle(
+            Center(
+              child: Text(_p('share_recipe_title'),
+                    style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF1A2A3A)))),
@@ -3941,19 +3905,19 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             ),
             const SizedBox(height: 14),
 
-            const Text('Rezeptname',
-                style: TextStyle(
+            Text(_p('satt_recipe_name'),
+              style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2A3A))),
             const SizedBox(height: 6),
             TextField(
                 controller: _titleCtrl,
-                decoration: _inputDeco('z. B. Mamas Linsensuppe 🍲')),
+                decoration: _inputDeco(_p('recipe_name_hint'))),
             const SizedBox(height: 12),
 
-            const Text('Kurze Beschreibung',
-                style: TextStyle(
+            Text(_p('satt_short_description'),
+              style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2A3A))),
@@ -3961,11 +3925,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             TextField(
                 controller: _descCtrl,
                 maxLines: 2,
-                decoration: _inputDeco('Was macht dieses Rezept besonders?')),
+                decoration: _inputDeco(_p('recipe_description_hint'))),
             const SizedBox(height: 12),
 
-            const Text('Kategorie',
-                style: TextStyle(
+            Text(_p('recipe_category'),
+              style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2A3A))),
@@ -3994,12 +3958,12 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                 if (value == null) return;
                 setState(() => _category = value);
               },
-              decoration: _inputDeco('Kategorie wählen'),
+              decoration: _inputDeco(_p('recipe_category_hint')),
             ),
             const SizedBox(height: 12),
 
-            const Text('Hinweise für Eltern',
-                style: TextStyle(
+            Text(_p('satt_parent_hints'),
+              style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2A3A))),
@@ -4032,8 +3996,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             ),
             const SizedBox(height: 12),
 
-            const Text('Zutaten (eine pro Zeile)',
-                style: TextStyle(
+            Text(_p('satt_ingredients'),
+              style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2A3A))),
@@ -4041,8 +4005,7 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             TextField(
                 controller: _ingredientsCtrl,
                 maxLines: 4,
-                decoration: _inputDeco(
-                    'z. B.\n200g rote Linsen\n1 Zwiebel\n2 Karotten')),
+                decoration: _inputDeco(_p('ingredients_hint'))),
             const SizedBox(height: 12),
 
             Text(_t('satt_preparation_steps'),
@@ -4054,8 +4017,7 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             TextField(
                 controller: _stepsCtrl,
                 maxLines: 5,
-                decoration: _inputDeco(
-                    'z. B.\nZwiebeln anbraten\nLinsen hinzufügen...')),
+                decoration: _inputDeco(_p('preparation_hint'))),
             const SizedBox(height: 12),
 
             // Duration + Difficulty
@@ -4065,8 +4027,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Zeit (min)',
-                          style: TextStyle(
+                      Text(_p('satt_time_min'),
+                          style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF1A2A3A))),
@@ -4103,8 +4065,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Portionen',
-                          style: TextStyle(
+                      Text(_p('satt_servings'),
+                          style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF1A2A3A))),
@@ -4143,8 +4105,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Schwierigkeit',
-                          style: TextStyle(
+                      Text(_p('satt_difficulty'),
+                          style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF1A2A3A))),
@@ -4154,11 +4116,7 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                         isExpanded: true,
                         underline: const SizedBox(),
                         items: RecipeDifficulty.values.map((d) {
-                          final labels = [
-                            'Einfach',
-                            'Mittel',
-                            'Fortgeschritten'
-                          ];
+                          final labels = [_p('difficulty_easy'), _p('difficulty_medium'), _p('difficulty_advanced')];
                           return DropdownMenuItem(
                               value: d, child: Text(labels[d.index]));
                         }).toList(),
@@ -4351,9 +4309,9 @@ class _DayPlanCard extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
-                      'Heute',
-                      style: TextStyle(
+                    child: Text(
+                      _p('today'),
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFFE8543A),
@@ -4371,7 +4329,7 @@ class _DayPlanCard extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    '📅 Nichts geplant',
+                    _p('nothing_planned'),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -4574,9 +4532,9 @@ class _AddMealSheetState extends State<_AddMealSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Mahlzeit hinzufügen',
-                    style: TextStyle(
+                  Text(
+                    _p('add_meal'),
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1A2A3A),
@@ -4591,9 +4549,9 @@ class _AddMealSheetState extends State<_AddMealSheet> {
               ),
               const SizedBox(height: 16),
               // Meal type selector
-              const Text(
-                'Mahlzeitentyp',
-                style: TextStyle(
+              Text(
+                _p('meal_type'),
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF516072),
@@ -4627,8 +4585,8 @@ class _AddMealSheetState extends State<_AddMealSheet> {
               TextField(
                 controller: _titleController,
                 decoration: InputDecoration(
-                  labelText: 'Mahlzeitenname *',
-                  hintText: 'z.B. Spaghetti Carbonara',
+                  labelText: _p('meal_name'),
+                  hintText: _p('meal_name_hint'),
                   filled: true,
                   fillColor: const Color(0xFFF8FAFD),
                   border: OutlineInputBorder(
@@ -4647,8 +4605,8 @@ class _AddMealSheetState extends State<_AddMealSheet> {
               TextField(
                 controller: _descController,
                 decoration: InputDecoration(
-                  labelText: 'Beschreibung',
-                  hintText: 'z.B. Mit frischem Parmesan',
+                  labelText: _p('description'),
+                  hintText: _p('meal_description_hint'),
                   filled: true,
                   fillColor: const Color(0xFFF8FAFD),
                   border: OutlineInputBorder(
@@ -4669,8 +4627,8 @@ class _AddMealSheetState extends State<_AddMealSheet> {
               TextField(
                 controller: _ingredientsController,
                 decoration: InputDecoration(
-                  labelText: 'Zutaten (optional)',
-                  hintText: 'Eine pro Zeile:\nSpaghetti\nEier\nSpeck',
+                  labelText: _p('ingredients_optional'),
+                  hintText: _p('meal_ingredients_hint'),
                   filled: true,
                   fillColor: const Color(0xFFF8FAFD),
                   border: OutlineInputBorder(
@@ -4699,9 +4657,9 @@ class _AddMealSheetState extends State<_AddMealSheet> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Hinzufügen',
-                    style: TextStyle(
+                  child: Text(
+                    _p('satt_add'),
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -4783,9 +4741,9 @@ class _MealDetailSheet extends StatelessWidget {
               ],
               if (meal.ingredients.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                const Text(
-                  'Zutaten',
-                  style: TextStyle(
+                Text(
+                  _p('ingredients'),
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2A3A),

@@ -1,79 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-String _communityText(BuildContext context, String key) {
-  const values = {
-    'de': {
-      'share_title': 'Praxisimpuls teilen',
-      'share_hint':
-          'Teile eine ruhige, konkrete Idee aus deinem Familien- oder Berufsalltag.',
-      'share_parent': 'Ich teile als Elternteil',
-      'share_educator': 'Ich teile als Pädagog:in',
-      'headline': 'Überschrift',
-      'headline_hint': 'Zum Beispiel: Was uns in Wutmomenten hilft',
-      'impulse': 'Dein Impuls',
-      'impulse_hint':
-          'Beschreibe kurz, was du ausprobiert hast und warum es hilfreich war.',
-      'share_action': 'Impuls teilen',
-      'comments': 'Kommentare und Rückmeldungen',
-      'comment': 'Dein Kommentar',
-      'comment_hint': 'Teile kurz, was bei euch geholfen hat.',
-      'comment_action': 'Kommentar senden',
-    },
-    'en': {
-      'share_title': 'Share a practical insight',
-      'share_hint':
-          'Share one calm, practical idea from family or professional life.',
-      'share_parent': 'I am sharing as a parent',
-      'share_educator': 'I am sharing as an educator',
-      'headline': 'Headline',
-      'headline_hint': 'For example: What helps us in angry moments',
-      'impulse': 'Your insight',
-      'impulse_hint': 'Briefly describe what you tried and why it was helpful.',
-      'share_action': 'Share insight',
-      'comments': 'Comments and feedback',
-      'comment': 'Your comment',
-      'comment_hint': 'Briefly share what helped your family.',
-      'comment_action': 'Send comment',
-    },
-    'tr': {
-      'share_title': 'Pratik bir fikir paylaş',
-      'share_hint':
-          'Aile veya iş hayatından sakin ve somut bir fikrini paylaş.',
-      'share_parent': 'Ebeveyn olarak paylaşıyorum',
-      'share_educator': 'Eğitimci olarak paylaşıyorum',
-      'headline': 'Başlık',
-      'headline_hint': 'Örneğin: Öfke anlarında bize ne yardımcı oluyor',
-      'impulse': 'Fikrin',
-      'impulse_hint': 'Ne denediğini ve neden yardımcı olduğunu kısaca anlat.',
-      'share_action': 'Fikri paylaş',
-      'comments': 'Yorumlar ve geri bildirimler',
-      'comment': 'Yorumun',
-      'comment_hint': 'Ailene neyin yardımcı olduğunu kısaca paylaş.',
-      'comment_action': 'Yorum gönder',
-    },
-    'ku': {
-      'share_title': 'Ramaneke pratîk parve bike',
-      'share_hint':
-          'Ramana xwe ya aram û rast ji jiyana malbatê an karê xwe parve bike.',
-      'share_parent': 'Ez wek dêûbav parve dikim',
-      'share_educator': 'Ez wek perwerdekar parve dikim',
-      'headline': 'Sernav',
-      'headline_hint': 'Mînak: Di dema hêrsa de çi ji me re alîkar e',
-      'impulse': 'Ramana te',
-      'impulse_hint': 'Bi kurtî bêje tu çi ceriband û çima alîkar bû.',
-      'share_action': 'Ramanê parve bike',
-      'comments': 'Şîrove û veger',
-      'comment': 'Şîroveya te',
-      'comment_hint': 'Bi kurtî bêje çi ji malbata te re alîkar bû.',
-      'comment_action': 'Şîroveyê bişîne',
-    },
-  };
-  final language = Localizations.localeOf(context).languageCode;
-  return values[language]?[key] ?? values['en']![key]!;
-}
+String _package2Text(String key) =>
+    AppStringsManager.package2String(languageService.currentLanguage, key) ??
+    key;
 
 enum PedagogicalCategory {
   gfk,
@@ -267,6 +201,12 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   static const String _roleParent = 'Elternteil';
   static const String _roleEducator = 'Paedagog:in';
 
+  String _p(String key, [Map<String, String> values = const {}]) {
+    var text = _package2Text(key);
+    values.forEach((name, value) => text = text.replaceAll('{$name}', value));
+    return text;
+  }
+
   Set<String> _likedPostIds = <String>{};
   Set<String> _savedCompanionIds = <String>{};
   Set<String> _hiddenPostIds = <String>{};
@@ -298,13 +238,13 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   String _getCategoryName(PedagogicalCategory category) {
     switch (category) {
       case PedagogicalCategory.gfk:
-        return 'Gewaltfreie Kommunikation';
+        return _package2Text('weekly_category_gfk');
       case PedagogicalCategory.inclusion:
-        return 'Inklusion & Vielfalt';
+        return _package2Text('weekly_category_inclusion');
       case PedagogicalCategory.parentLeadership:
-        return 'Elterliche Fuehrung';
+        return _package2Text('weekly_category_parent_leadership');
       case PedagogicalCategory.milestones:
-        return 'Entwicklungsschritt';
+        return _package2Text('weekly_category_milestones');
     }
   }
 
@@ -447,48 +387,46 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     return <_CompanionImpulse>[
       _CompanionImpulse(
         id: '${widget.impulse.id}.quick',
-        title: 'Heute in 2 Minuten',
+        title: _package2Text('weekly_companion_quick_title'),
         summary: widget.impulse.practicalTip,
-        durationLabel: '2 Min',
-        formatLabel: 'Sofort-Impuls',
+        durationLabel: _package2Text('weekly_companion_quick_duration'),
+        formatLabel: _package2Text('weekly_companion_quick_format'),
         icon: Icons.flash_on_rounded,
         accentColor: accentColor,
       ),
       _CompanionImpulse(
         id: '${widget.impulse.id}.understand',
-        title: 'Kurz verstanden',
+        title: _package2Text('weekly_companion_understand_title'),
         summary: firstSentence,
-        durationLabel: '3 Min',
-        formatLabel: 'Verstehen',
+        durationLabel: _package2Text('weekly_companion_understand_duration'),
+        formatLabel: _package2Text('weekly_companion_understand_format'),
         icon: Icons.menu_book_rounded,
         accentColor: const Color(0xFF2563EB),
       ),
       _CompanionImpulse(
         id: '${widget.impulse.id}.practice',
-        title: 'Für Alltag und Kita',
-        summary:
-            'Formuliere kurz, ruhig und klar. Ein Satz zum Gefühl, ein Satz zur Grenze, dann Präsenz statt Diskussion.',
-        durationLabel: '4 Min',
-        formatLabel: 'Praxis',
+        title: _package2Text('weekly_companion_practice_title'),
+        summary: _package2Text('weekly_companion_practice_summary'),
+        durationLabel: _package2Text('weekly_companion_practice_duration'),
+        formatLabel: _package2Text('weekly_companion_practice_format'),
         icon: Icons.groups_rounded,
         accentColor: const Color(0xFF7C3AED),
       ),
       _CompanionImpulse(
         id: '${widget.impulse.id}.reflect',
-        title: 'Abend-Reflexion',
-        summary:
-            'Wann war dein Kind heute besonders suchend oder angespannt? Was hat geholfen: erklären, spiegeln oder eine klare Grenze?',
-        durationLabel: '2 Min',
-        formatLabel: 'Reflexion',
+        title: _package2Text('weekly_companion_reflect_title'),
+        summary: _package2Text('weekly_companion_reflect_summary'),
+        durationLabel: _package2Text('weekly_companion_reflect_duration'),
+        formatLabel: _package2Text('weekly_companion_reflect_format'),
         icon: Icons.self_improvement_rounded,
         accentColor: const Color(0xFFDB2777),
       ),
       _CompanionImpulse(
         id: '${widget.impulse.id}.deepdive',
-        title: 'Tieferer Blick',
+        title: _package2Text('weekly_companion_deepdive_title'),
         summary: secondSentence,
-        durationLabel: '5 Min',
-        formatLabel: 'Artikel',
+        durationLabel: _package2Text('weekly_companion_deepdive_duration'),
+        formatLabel: _package2Text('weekly_companion_deepdive_format'),
         icon: Icons.auto_stories_rounded,
         accentColor: const Color(0xFF0F766E),
       ),
@@ -573,14 +511,14 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   Future<void> _toggleLikePost(String postId) async {
     final currentlyLiked = _likedPostIds.contains(postId);
     if (widget.onToggleLikePost == null) {
-      _showActionError('Like ist aktuell nicht verfügbar.');
+      _showActionError(_p('weekly_action_unavailable', {'action': _p('weekly_like')}));
       return;
     }
 
     try {
       await widget.onToggleLikePost!(postId, currentlyLiked);
     } catch (_) {
-      _showActionError('Like konnte nicht gespeichert werden.');
+      _showActionError(_p('weekly_action_failed', {'action': _p('weekly_like')}));
     }
   }
 
@@ -598,7 +536,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     }
 
     if (widget.onAddComment == null) {
-      _showActionError('Kommentare sind aktuell nicht verfügbar.');
+      _showActionError(_p('weekly_action_unavailable', {'action': _p('weekly_comments')}));
       return false;
     }
 
@@ -606,7 +544,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       await widget.onAddComment!(postId, trimmed);
       return true;
     } catch (_) {
-      _showActionError('Kommentar konnte nicht gesendet werden.');
+      _showActionError(_p('weekly_action_failed', {'action': _p('weekly_comment')}));
       return false;
     }
   }
@@ -623,7 +561,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     }
 
     if (widget.onCreateCommunityPost == null) {
-      _showActionError('Community-Posting ist aktuell nicht verfügbar.');
+      _showActionError(_p('weekly_action_unavailable', {'action': _p('weekly_share_action')}));
       return false;
     }
 
@@ -631,7 +569,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       await widget.onCreateCommunityPost!(trimmedTitle, trimmedBody, role);
       return true;
     } catch (_) {
-      _showActionError('Beitrag konnte nicht veröffentlicht werden.');
+      _showActionError(_p('weekly_action_failed', {'action': _p('weekly_share_action')}));
       return false;
     }
   }
@@ -659,7 +597,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
     }
 
     if (widget.onReportPost == null) {
-      _showActionError('Melden ist aktuell nicht verfügbar.');
+      _showActionError(_p('weekly_action_unavailable', {'action': _p('weekly_report')}));
       return false;
     }
 
@@ -673,7 +611,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       await _persistState();
       return true;
     } catch (_) {
-      _showActionError('Beitrag konnte nicht gemeldet werden.');
+      _showActionError(_p('weekly_action_failed', {'action': _p('weekly_report')}));
       return false;
     }
   }
@@ -705,12 +643,12 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _communityText(context, 'share_title'),
+                    _package2Text('weekly_share_title'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _communityText(context, 'share_hint'),
+                    _package2Text('weekly_share_hint'),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
@@ -718,14 +656,14 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     spacing: 10,
                     children: [
                       ChoiceChip(
-                        label: Text(_communityText(context, 'share_parent')),
+                        label: Text(_package2Text('weekly_share_parent')),
                         selected: selectedRole == _roleParent,
                         onSelected: (_) {
                           setModalState(() => selectedRole = _roleParent);
                         },
                       ),
                       ChoiceChip(
-                        label: Text(_communityText(context, 'share_educator')),
+                        label: Text(_package2Text('weekly_share_educator')),
                         selected: selectedRole == _roleEducator,
                         onSelected: (_) {
                           setModalState(() => selectedRole = _roleEducator);
@@ -745,7 +683,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        'Fachbeiträge sind möglich. Ein verifiziertes Fach-Badge wird jedoch nur für geprüfte Profile vergeben.',
+                        _p('weekly_educator_note'),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -753,8 +691,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: _communityText(context, 'headline'),
-                      hintText: _communityText(context, 'headline_hint'),
+                      labelText: _package2Text('weekly_headline'),
+                      hintText: _package2Text('weekly_headline_hint'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -763,8 +701,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     minLines: 4,
                     maxLines: 6,
                     decoration: InputDecoration(
-                      labelText: _communityText(context, 'impulse'),
-                      hintText: _communityText(context, 'impulse_hint'),
+                      labelText: _package2Text('weekly_impulse'),
+                      hintText: _package2Text('weekly_impulse_hint'),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -782,13 +720,13 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         }
                         Navigator.of(this.context).pop();
                         ScaffoldMessenger.of(this.context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Dein Impuls wurde hinzugefuegt.'),
+                          SnackBar(
+                            content: Text(_p('weekly_impulse_added')),
                           ),
                         );
                       },
                       icon: const Icon(Icons.send_rounded),
-                      label: Text(_communityText(context, 'share_action')),
+                      label: Text(_package2Text('weekly_share_action')),
                     ),
                   ),
                 ],
@@ -832,7 +770,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
               Text(post.title, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 6),
               Text(
-                _communityText(context, 'comments'),
+                _package2Text('weekly_comments'),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -845,9 +783,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Text(
-                    'Noch keine Kommentare. Du kannst die erste hilfreiche Rückmeldung hinterlassen.',
-                  ),
+                  child: Text(_p('weekly_no_comments')),
                 )
               else
                 ConstrainedBox(
@@ -876,8 +812,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 minLines: 2,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  labelText: _communityText(context, 'comment'),
-                  hintText: _communityText(context, 'comment_hint'),
+                  labelText: _package2Text('weekly_comment'),
+                  hintText: _package2Text('weekly_comment_hint'),
                 ),
               ),
               const SizedBox(height: 14),
@@ -893,7 +829,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     Navigator.of(context).pop();
                   },
                   icon: const Icon(Icons.mode_comment_outlined),
-                  label: Text(_communityText(context, 'comment_action')),
+                  label: Text(_package2Text('weekly_comment_action')),
                 ),
               ),
             ],
@@ -941,7 +877,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Beitragsdetails',
+                          _p('weekly_post_details'),
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
@@ -1017,16 +953,16 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                             if (post.verifiedExpert)
                               _RoleBadge(
                                 label: post.verificationLabel.isEmpty
-                                    ? 'Verifiziert'
+                                    ? _p('weekly_verified')
                                     : post.verificationLabel,
                                 color: const Color(0xFF0F766E),
                                 icon: Icons.verified_rounded,
                               ),
                             if (!post.verifiedExpert &&
                                 post.role == _roleEducator)
-                              const _RoleBadge(
-                                label: 'Fachbeitrag ohne Badge',
-                                color: Color(0xFFB45309),
+                              _RoleBadge(
+                                label: _p('weekly_unverified_expert'),
+                                color: const Color(0xFFB45309),
                                 icon: Icons.pending_outlined,
                               ),
                           ],
@@ -1050,14 +986,14 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   const SizedBox(height: 18),
                   _buildDetailInfoCard(
                     theme,
-                    title: 'Kontext',
+                    title: _p('weekly_context'),
                     lines: [
                       post.verifiedExpert
-                          ? 'Dieser Beitrag stammt aus einer verifizierten Fachstimme.'
+                          ? _p('weekly_verified_context')
                           : post.role == _roleEducator
-                              ? 'Dieser Beitrag ist als Fachbeitrag markiert, aber aktuell nicht verifiziert.'
-                              : 'Dieser Beitrag teilt eine Erfahrung aus dem Familienalltag.',
-                      'Reaktionen: $likeCount Likes  •  $commentCount Kommentare',
+                                    ? _p('weekly_unverified_context')
+                                    : _p('weekly_parent_context'),
+                                  _p('weekly_reactions', {'likes': '$likeCount', 'comments': '$commentCount'}),
                     ],
                     accentColor: post.verifiedExpert
                         ? const Color(0xFF0F766E)
@@ -1066,10 +1002,10 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   const SizedBox(height: 12),
                   _buildDetailInfoCard(
                     theme,
-                    title: 'Sicher und hilfreich nutzen',
+                    title: _p('weekly_use_safely'),
                     lines: [
-                      'Nimm Impulse als Orientierung, nicht als starre Vorschrift.',
-                      'Wenn dir Ton oder Inhalt nicht passend erscheinen, kannst du den Beitrag melden oder ausblenden.',
+                      _p('weekly_use_safely_line_1'),
+                      _p('weekly_use_safely_line_2'),
                     ],
                     accentColor: const Color(0xFF475569),
                   ),
@@ -1100,7 +1036,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 size: compact ? 17 : 18,
                               ),
                               label: Text(
-                                isLiked ? 'Like rm.' : 'Like',
+                                isLiked ? _p('weekly_like_remove') : _p('weekly_like'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1119,8 +1055,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                   size: 17),
                               label: Text(
                                 compact
-                                    ? 'Komm. ($commentCount)'
-                                    : 'Kommentare ($commentCount)',
+                                    ? _p('weekly_comments_short', {'count': '$commentCount'})
+                                    : _p('weekly_comments_count', {'count': '$commentCount'}),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1136,8 +1072,8 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 await _showReportSheet(post);
                               },
                               icon: const Icon(Icons.flag_outlined, size: 17),
-                              label: const Text(
-                                'Melden',
+                              label: Text(
+                                _p('weekly_report'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1158,7 +1094,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
 
   Future<void> _showReportSheet(_CommunityPost post) async {
     final noteController = TextEditingController();
-    String selectedReason = 'Unpassender Ton';
+    String selectedReason = _p('weekly_report_reason_tone');
 
     await showModalBottomSheet<void>(
       context: context,
@@ -1182,12 +1118,12 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Beitrag melden',
+                    _p('weekly_report_title'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Wir blenden den Beitrag für dich aus und markieren ihn für eine spätere Pruefung.',
+                    _p('weekly_report_hint'),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
@@ -1195,10 +1131,10 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     spacing: 10,
                     runSpacing: 10,
                     children: [
-                      'Unpassender Ton',
-                      'Nicht hilfreich',
-                      'Nicht elternfreundlich',
-                      'Fachlich fragwuerdig',
+                      _p('weekly_report_reason_tone'),
+                      _p('weekly_report_reason_unhelpful'),
+                      _p('weekly_report_reason_unfriendly'),
+                      _p('weekly_report_reason_questionable'),
                     ].map((reason) {
                       return ChoiceChip(
                         label: Text(reason),
@@ -1214,10 +1150,9 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     controller: noteController,
                     minLines: 2,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Optionaler Hinweis',
-                      hintText:
-                          'Kurz erklären, was für dich problematisch war.',
+                    decoration: InputDecoration(
+                      labelText: _p('weekly_report_note'),
+                      hintText: _p('weekly_report_note_hint'),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1238,13 +1173,13 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                           return;
                         }
                         ScaffoldMessenger.of(this.context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Beitrag gemeldet und ausgeblendet.'),
+                          SnackBar(
+                            content: Text(_p('weekly_reported_hidden')),
                           ),
                         );
                       },
                       icon: const Icon(Icons.flag_rounded),
-                      label: const Text('Melden und ausblenden'),
+                      label: Text(_p('weekly_report_confirm')),
                     ),
                   ),
                 ],
@@ -1287,12 +1222,12 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Moderationsüberblick',
+                _p('weekly_moderation_title'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                'Hier siehst du Beitraege, die du ausgeblendet oder gemeldet hast. Du kannst sie bei Bedarf wieder einblenden.',
+                _p('weekly_moderation_hint'),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -1305,9 +1240,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Text(
-                    'Im Moment hast du keine Beitraege ausgeblendet oder gemeldet.',
-                  ),
+                  child: Text(_p('weekly_moderation_empty')),
                 )
               else
                 ConstrainedBox(
@@ -1344,7 +1277,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 ),
                                 _RoleBadge(
                                   label:
-                                      isReported ? 'Gemeldet' : 'Ausgeblendet',
+                                      isReported ? _p('weekly_reported') : _p('weekly_hidden'),
                                   color: isReported
                                       ? const Color(0xFFB45309)
                                       : const Color(0xFF64748B),
@@ -1363,7 +1296,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 reportReason.isNotEmpty) ...[
                               const SizedBox(height: 10),
                               Text(
-                                'Grund: $reportReason',
+                                _p('weekly_reason', {'reason': reportReason}),
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall
@@ -1384,7 +1317,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 Navigator.of(context).pop();
                               },
                               icon: const Icon(Icons.visibility_rounded),
-                              label: const Text('Wieder einblenden'),
+                              label: Text(_p('weekly_restore')),
                             ),
                           ],
                         ),
@@ -1466,14 +1399,15 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   }
 
   Widget _buildHero(ThemeData theme, Color accentColor) {
-    final weekLabel =
-        'Woche vom ${widget.impulse.publishDate.day.toString().padLeft(2, '0')}.${widget.impulse.publishDate.month.toString().padLeft(2, '0')}';
+    final weekLabel = _p('weekly_week_of', {
+      'date': '${widget.impulse.publishDate.day.toString().padLeft(2, '0')}.${widget.impulse.publishDate.month.toString().padLeft(2, '0')}',
+    });
     final companionCount = _buildCompanionImpulses(accentColor).length;
     final communityCount = _buildCommunityPosts().length;
     final heroHeadline =
-        widget.impulse.heroHeadline ?? 'Dein Themenraum für diese Woche';
+        widget.impulse.heroHeadline ?? _p('weekly_hero_headline');
     final heroDescription = widget.impulse.heroDescription ??
-        'Nicht nur ein einzelner Impuls: Du bekommst einen klaren Wochenfokus, kurze Praxisformate und Raum für hilfreiche Erfahrungen aus der Community.';
+        _p('weekly_hero_description');
 
     return Container(
       width: double.infinity,
@@ -1536,9 +1470,9 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              const _HeroStat(label: '1 Fokus', value: 'Klar'),
-              _HeroStat(label: 'Formate', value: '$companionCount'),
-              _HeroStat(label: 'Community', value: '$communityCount'),
+              _HeroStat(label: _p('weekly_stat_focus'), value: _p('weekly_stat_clear')),
+              _HeroStat(label: _p('weekly_stat_formats'), value: '$companionCount'),
+              _HeroStat(label: _p('weekly_stat_community'), value: '$communityCount'),
             ],
           ),
         ],
@@ -1568,7 +1502,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'Leitimpuls',
+                  _p('weekly_featured'),
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: accentColor,
                     fontWeight: FontWeight.w700,
@@ -1580,7 +1514,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 IconButton.filledTonal(
                   onPressed: widget.onAudioPressed,
                   icon: const Icon(Icons.volume_up_rounded),
-                  tooltip: 'Audio-Impuls anhoeren',
+                  tooltip: _p('weekly_audio_tooltip'),
                 ),
             ],
           ),
@@ -1616,7 +1550,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                     Icon(Icons.lightbulb_rounded, color: accentColor),
                     const SizedBox(width: 8),
                     Text(
-                      'Heute direkt ausprobieren',
+                      _p('weekly_try_today'),
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: accentColor,
                         fontWeight: FontWeight.w700,
@@ -1639,17 +1573,17 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
             children: [
               _buildResonanceChip(
                 theme,
-                label: 'Hilft mir gerade',
+                label: _p('weekly_resonance_helpful'),
                 icon: Icons.favorite_rounded,
               ),
               _buildResonanceChip(
                 theme,
-                label: 'Will ich ausprobieren',
+                label: _p('weekly_resonance_try'),
                 icon: Icons.play_circle_fill_rounded,
               ),
               _buildResonanceChip(
                 theme,
-                label: 'Merke ich mir',
+                label: _p('weekly_resonance_save'),
                 icon: Icons.bookmark_rounded,
               ),
             ],
@@ -1688,14 +1622,14 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Mehrere Impulse auf einmal',
+          _p('weekly_more_impulses'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 6),
         Text(
-          'Eltern können je nach Energielevel lesen, merken oder später vertiefen.',
+          _p('weekly_more_impulses_hint'),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -1759,7 +1693,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                               ? Icons.bookmark_rounded
                               : Icons.bookmark_border_rounded,
                         ),
-                        tooltip: isSaved ? 'Gemerkt' : 'Merken',
+                        tooltip: isSaved ? _p('weekly_saved') : _p('weekly_save'),
                       ),
                     ],
                   ),
@@ -1783,15 +1717,15 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       id: prompt?.id.isNotEmpty == true
           ? prompt!.id
           : '${widget.impulse.id}.discussion',
-      authorName: 'Parentpeak Runde',
-      role: 'Wochenthema',
+      authorName: _p('weekly_discussion_author'),
+      role: _p('weekly_discussion_role'),
       verifiedExpert: false,
       verificationLabel: '',
       title:
-          prompt?.title.isNotEmpty == true ? prompt!.title : 'Frage der Woche',
+          prompt?.title.isNotEmpty == true ? prompt!.title : _p('weekly_discussion_title'),
       body: prompt?.body.isNotEmpty == true
           ? prompt!.body
-          : 'Welche ruhige Formulierung hat euch in einer angespannten Situation zuletzt geholfen?',
+          : _p('weekly_discussion_body'),
       seedLikeCount: 0,
       seedComments: const <String>[],
     );
@@ -1839,7 +1773,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                       onPressed: () => _showCommentsSheet(discussionPost),
                       icon: const Icon(Icons.forum_rounded),
                       label: Text(
-                        count == 0 ? 'Antworten' : '$count Antw.',
+                        count == 0 ? _p('weekly_answers') : _p('weekly_answers_short', {'count': '$count'}),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1853,7 +1787,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                       onPressed: _showComposeSheet,
                       icon: const Icon(Icons.edit_note_rounded),
                       label: Text(
-                        compact ? 'Teilen' : 'Praxisimpuls teilen',
+                        compact ? _p('weekly_share_action') : _p('weekly_share_practical'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1882,14 +1816,14 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Praxis aus Elternhaus und Paedagogik',
+                    _p('weekly_community_title'),
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Echte Community-Reaktionen aus dem Live-Backend.',
+                    _p('weekly_community_hint'),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -1901,13 +1835,13 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
               IconButton.filledTonal(
                 onPressed: () => _showModerationSheet(posts),
                 icon: const Icon(Icons.shield_outlined),
-                tooltip: 'Moderationsüberblick',
+                tooltip: _p('weekly_moderation_tooltip'),
               ),
             const SizedBox(width: 8),
             IconButton.filledTonal(
               onPressed: _showComposeSheet,
               icon: const Icon(Icons.add_rounded),
-              tooltip: 'Neuen Impuls teilen',
+              tooltip: _p('weekly_new_impulse_tooltip'),
             ),
           ],
         ),
@@ -1927,7 +1861,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '${_hiddenPostIds.length} Beitrag/Beitraege geschuetzt ausgeblendet. Du kannst sie im Moderationsüberblick verwalten.',
+                    _p('weekly_hidden_count', {'count': '${_hiddenPostIds.length}'}),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: const Color(0xFF334155),
                     ),
@@ -1946,9 +1880,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
               color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(18),
             ),
-            child: const Text(
-              'Noch keine Community-Beitraege vorhanden. Teile den ersten Praxisimpuls.',
-            ),
+            child: Text(_p('weekly_community_empty')),
           ),
         ...posts.where((post) => !_hiddenPostIds.contains(post.id)).map((post) {
           final likeCount = post.isRemote
@@ -2021,15 +1953,15 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                                 if (post.verifiedExpert)
                                   _RoleBadge(
                                     label: post.verificationLabel.isEmpty
-                                        ? 'Verifiziert'
+                                        ? _p('weekly_verified')
                                         : post.verificationLabel,
                                     color: const Color(0xFF0F766E),
                                     icon: Icons.verified_rounded,
                                   ),
                                 if (_reportedPostIds.contains(post.id))
-                                  const _RoleBadge(
-                                    label: 'Ausgeblendet',
-                                    color: Color(0xFF64748B),
+                                  _RoleBadge(
+                                    label: _p('weekly_hidden'),
+                                    color: const Color(0xFF64748B),
                                     icon: Icons.visibility_off_rounded,
                                   ),
                               ],
@@ -2046,14 +1978,14 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                             await _showReportSheet(post);
                           }
                         },
-                        itemBuilder: (context) => const [
+                        itemBuilder: (context) => [
                           PopupMenuItem<String>(
                             value: 'hide',
-                            child: Text('Für mich ausblenden'),
+                            child: Text(_p('weekly_hide')),
                           ),
                           PopupMenuItem<String>(
                             value: 'report',
-                            child: Text('Melden'),
+                            child: Text(_p('weekly_report')),
                           ),
                         ],
                       ),
@@ -2077,7 +2009,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                       TextButton.icon(
                         onPressed: () => _showPostDetailSheet(post),
                         icon: const Icon(Icons.open_in_new_rounded),
-                        label: const Text('Details'),
+                        label: Text(_p('weekly_details')),
                       ),
                       const SizedBox(width: 6),
                       TextButton.icon(
@@ -2109,10 +2041,10 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
 
   String _roleBadgeLabel(_CommunityPost post) {
     if (post.role == _roleEducator) {
-      return 'Fachpraxis';
+      return _p('weekly_role_badge_educator');
     }
     if (post.role == _roleParent) {
-      return 'Elternalltag';
+      return _p('weekly_role_badge_parent');
     }
     return 'Community';
   }

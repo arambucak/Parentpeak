@@ -10,188 +10,91 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/product_metrics_service.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 import 'development_schema_data.dart';
 
-const Map<String, String> kMilestoneStatusLabels = {
-  'NOCH_NICHT': 'Noch nicht',
-  'ANSATZWEISE': 'Ansatzweise',
-  'WEITGEHEND': 'Weitgehend',
-  'ZUVERLAESSIG': 'Zuverlässig',
-};
+String _t(String key) => AppStringsManager.getString(
+      languageService.currentLanguage,
+      'package2_$key',
+    );
 
-const Map<int, String> kSelfCheckOptionLabels = {
-  0: 'Noch nicht',
-  1: 'Selten',
-  2: 'Oft',
-  3: 'Sicher',
-};
+String _tf(String key, Map<String, Object> values) => values.entries.fold(
+      _t(key),
+      (text, entry) => text.replaceAll('{${entry.key}}', '${entry.value}'),
+    );
+
+Map<String, String> get kMilestoneStatusLabels => {
+      'NOCH_NICHT': _t('development_status_not_yet'),
+      'ANSATZWEISE': _t('development_status_emerging'),
+      'WEITGEHEND': _t('development_status_mostly'),
+      'ZUVERLAESSIG': _t('development_status_reliable'),
+    };
+
+Map<int, String> get kSelfCheckOptionLabels => {
+      0: _t('development_self_check_not_yet'),
+      1: _t('development_self_check_rarely'),
+      2: _t('development_self_check_often'),
+      3: _t('development_self_check_confident'),
+    };
 
 class _DevelopmentDomainProfile {
   final String id;
-  final String title;
-  final String description;
   final IconData icon;
   final Color color;
-  final List<String> questions;
-  final List<String> parentActions;
 
   const _DevelopmentDomainProfile({
     required this.id,
-    required this.title,
-    required this.description,
     required this.icon,
     required this.color,
-    required this.questions,
-    required this.parentActions,
   });
+
+  String get title => _t('development_domain_${id}_title');
+  String get description => _t('development_domain_${id}_description');
+  List<String> get questions => List<String>.generate(
+        3,
+        (index) => _t('development_domain_${id}_question_${index + 1}'),
+      );
+  List<String> get parentActions => List<String>.generate(
+        2,
+        (index) => _t('development_domain_${id}_action_${index + 1}'),
+      );
 }
 
 const List<_DevelopmentDomainProfile> _kParentSelfCheckDomains = [
   _DevelopmentDomainProfile(
     id: 'motorik',
-    title: 'Motorik',
-    description: 'Bewegung, Koordination und Körpergefühl.',
     icon: Icons.directions_run_rounded,
     color: Color(0xFF0EA5E9),
-    questions: [
-      'Mein Kind bewegt sich sicher in alltäglichen Situationen.',
-      'Neue Bewegungsaufgaben probiert mein Kind mutig aus.',
-      'Feinmotorische Aufgaben (z. B. malen, greifen, schneiden) gelingen zunehmend.',
-    ],
-    parentActions: [
-      'Kurze Bewegungsparcours zuhause oder draußen aufbauen.',
-      'Alltagshandlungen gemeinsam üben (anziehen, einschenken, aufräumen).',
-    ],
   ),
   _DevelopmentDomainProfile(
     id: 'sprache',
-    title: 'Sprache',
-    description: 'Verstehen, ausdrücken und in Kontakt bleiben.',
     icon: Icons.record_voice_over_rounded,
     color: Color(0xFF16A34A),
-    questions: [
-      'Mein Kind kann Bedürfnisse verbal oder eindeutig nonverbal ausdrücken.',
-      'Mein Kind versteht alltägliche Anweisungen gut.',
-      'Mein Kind beteiligt sich aktiv an Gesprächen/Fragen im Alltag.',
-    ],
-    parentActions: [
-      'Täglich 10 Minuten dialogisch sprechen statt nur fragen.',
-      'Neue Begriffe in Alltagssituationen wiederholen und bestätigen.',
-    ],
   ),
   _DevelopmentDomainProfile(
     id: 'denken',
-    title: 'Denken & Lernen',
-    description: 'Aufmerksamkeit, Lösestrategien und Neugier.',
     icon: Icons.lightbulb_rounded,
     color: Color(0xFFF59E0B),
-    questions: [
-      'Mein Kind bleibt bei interessanten Aufgaben eine Weile dran.',
-      'Mein Kind probiert mehrere Wege, wenn etwas nicht sofort klappt.',
-      'Mein Kind stellt Fragen und will Zusammenhänge verstehen.',
-    ],
-    parentActions: [
-      'Kleine Denkspiele mit offenem Ausgang einbauen.',
-      'Nicht sofort lösen, sondern mit Leitfragen begleiten.',
-    ],
   ),
   _DevelopmentDomainProfile(
     id: 'sozial',
-    title: 'Sozial & Emotional',
-    description: 'Gefühle, Beziehungen und Selbstregulation.',
     icon: Icons.favorite_rounded,
     color: Color(0xFFEC4899),
-    questions: [
-      'Mein Kind kann Gefühle zunehmend benennen oder zeigen.',
-      'Mein Kind findet sich nach Frust mit Begleitung wieder schneller.',
-      'Mein Kind sucht und gestaltet Kontakt mit anderen Kindern/Erwachsenen.',
-    ],
-    parentActions: [
-      'Gefühle kurz spiegeln und erst dann Grenzen erklären.',
-      'Rituale für Übergänge und Beruhigung bewusst nutzen.',
-    ],
   ),
   _DevelopmentDomainProfile(
     id: 'selbst',
-    title: 'Selbstständigkeit',
-    description: 'Eigeninitiative und alltägliche Verantwortung.',
     icon: Icons.task_alt_rounded,
     color: Color(0xFF8B5CF6),
-    questions: [
-      'Mein Kind übernimmt einfache Aufgaben im Alltag mit.',
-      'Mein Kind versucht Dinge zunehmend selbst zu lösen.',
-      'Mein Kind kann einfache Abläufe mit wenig Hilfe umsetzen.',
-    ],
-    parentActions: [
-      'Feste Mini-Aufgaben mit klarer Struktur geben.',
-      'Erfolg sichtbar machen statt nur Fehler zu korrigieren.',
-    ],
   ),
 ];
 
-const Map<String, List<String>> _kSixMonthDetailedQuestions = {
-  'motorik': [
-    'Mein Kind kann Bewegungsabläufe über mehrere Schritte planen und ausführen.',
-    'Mein Kind hält bei feinmotorischen Aufgaben länger konzentriert durch.',
-    'Mein Kind reagiert bei neuen motorischen Herausforderungen flexibel.',
-    'Mein Kind kann zwischen grobmotorischen und feinmotorischen Aufgaben gut wechseln.',
-    'Mein Kind zeigt ein stabiles Gleichgewicht beim Rennen, Springen oder Klettern.',
-    'Mein Kind kann Bewegungen zunehmend genau dosieren (z. B. Kraft, Tempo, Richtung).',
-    'Mein Kind koordiniert beide Hände bei komplexeren Aufgaben sinnvoll.',
-    'Mein Kind bleibt bei körperlich anstrengenden Aufgaben altersangemessen ausdauernd.',
-    'Mein Kind erkennt eigene körperliche Grenzen und passt Verhalten darauf an.',
-    'Mein Kind überträgt bekannte Bewegungsstrategien auf neue Situationen.',
-  ],
-  'sprache': [
-    'Mein Kind kann Erlebnisse in einer nachvollziehbaren Reihenfolge erzählen.',
-    'Mein Kind versteht auch komplexere Anweisungen mit mehreren Schritten.',
-    'Mein Kind findet Worte für Gefühle, Wünsche und Konflikte.',
-    'Mein Kind kann Fragen passend beantworten und beim Thema bleiben.',
-    'Mein Kind nutzt zunehmend differenzierten Wortschatz für Alltag und Interessen.',
-    'Mein Kind versteht einfache Erklärungen zu Ursache und Wirkung.',
-    'Mein Kind kann in Gesprächen abwechselnd sprechen und zuhören.',
-    'Mein Kind kann Missverständnisse sprachlich klären oder nachfragen.',
-    'Mein Kind passt Sprache situativ an (z. B. ruhig, deutlich, freundlich).',
-    'Mein Kind kann kurze Geschichten mit Anfang, Mitte und Ende wiedergeben.',
-  ],
-  'denken': [
-    'Mein Kind erkennt Muster und nutzt sie bei neuen Aufgaben.',
-    'Mein Kind kann eine begonnene Aufgabe mit wenig Hilfe zu Ende bringen.',
-    'Mein Kind reflektiert nach Fehlern und versucht bewusst eine neue Strategie.',
-    'Mein Kind kann Prioritäten setzen und bei einer Aufgabe fokussiert bleiben.',
-    'Mein Kind verknüpft neues Wissen mit bereits bekannten Erfahrungen.',
-    'Mein Kind plant bei einfachen Problemen mehrere mögliche Lösungswege.',
-    'Mein Kind kann Wartezeiten oder Frustration in Lernsituationen besser aushalten.',
-    'Mein Kind kann Anweisungen strukturieren und schrittweise umsetzen.',
-    'Mein Kind zeigt Eigeninitiative bei Lernangeboten ohne ständige Aufforderung.',
-    'Mein Kind erkennt eigene Lernfortschritte und kann sie benennen.',
-  ],
-  'sozial': [
-    'Mein Kind kann in Konflikten zunehmend verhandeln statt nur zu reagieren.',
-    'Mein Kind zeigt Empathie und nimmt die Perspektive anderer wahr.',
-    'Mein Kind kann sich nach starker Emotion schneller selbst regulieren.',
-    'Mein Kind kann Grenzen anderer respektieren und eigene Grenzen angemessen zeigen.',
-    'Mein Kind kann in Gruppenregeln zunehmend verlässlich mitgehen.',
-    'Mein Kind sucht bei Unsicherheit konstruktiv nach Unterstützung.',
-    'Mein Kind kann Rückmeldung annehmen, ohne sofort abzublocken.',
-    'Mein Kind kann Enttäuschungen sozial angemessen ausdrücken.',
-    'Mein Kind kann in Spielsituationen kooperieren und Rollen abstimmen.',
-    'Mein Kind zeigt prosoziales Verhalten (helfen, teilen, trösten) im Alltag.',
-  ],
-  'selbst': [
-    'Mein Kind organisiert einfache Alltagsroutinen zunehmend eigenständig.',
-    'Mein Kind bittet passend um Hilfe, statt sofort aufzugeben.',
-    'Mein Kind übernimmt Verantwortung für kleine Aufgaben verlässlich.',
-    'Mein Kind kann eigene Materialien mit wenig Hilfe ordnen und pflegen.',
-    'Mein Kind beginnt Aufgaben selbstständig und bleibt dabei bis zu einem sinnvollen Ende.',
-    'Mein Kind kann zwischen Pflichtaufgaben und freien Wünschen besser ausbalancieren.',
-    'Mein Kind zeigt bei Rückschlägen zunehmende Selbstwirksamkeit.',
-    'Mein Kind kann einfache Tagesstrukturen verstehen und einhalten.',
-    'Mein Kind trifft in Alltagssituationen altersangemessene Entscheidungen.',
-    'Mein Kind kann eigene Fortschritte wahrnehmen und stolz benennen.',
-  ],
-};
+List<String> _detailedQuestionsForDomain(String domainId) =>
+    List<String>.generate(
+      10,
+      (index) => _t('development_domain_${domainId}_detailed_${index + 1}'),
+    );
 
 const double _kCoreQuestionWeight = 1.35;
 const double _kDetailedQuestionWeight = 1.0;
@@ -225,15 +128,16 @@ const Map<String, Map<String, double>> _kPhaseDomainWeights = {
 
 class _ChildProfile {
   final String id;
-  final String label;
 
-  const _ChildProfile({required this.id, required this.label});
+  const _ChildProfile({required this.id});
+
+  String get label => _t('development_child_${id.split('_').last}');
 }
 
 const List<_ChildProfile> _childProfiles = [
-  _ChildProfile(id: 'kind_1', label: 'Kind 1'),
-  _ChildProfile(id: 'kind_2', label: 'Kind 2'),
-  _ChildProfile(id: 'kind_3', label: 'Kind 3'),
+  _ChildProfile(id: 'kind_1'),
+  _ChildProfile(id: 'kind_2'),
+  _ChildProfile(id: 'kind_3'),
 ];
 
 class _PhaseTheme {
@@ -788,31 +692,29 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           return AlertDialog(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Willkommen bei Impulse & Entwicklung'),
+            title: Text(_t('development_intro_title')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'So startest du schnell und ohne Stress:',
+                  _t('development_intro_subtitle'),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text('1. Monats-Kurzcheck auswählen.'),
+                Text(_t('development_intro_step_1')),
                 const SizedBox(height: 6),
-                const Text(
-                    '2. Schnellmodus aktivieren und nur den Fokusbereich ausfüllen.'),
+                Text(_t('development_intro_step_2')),
                 const SizedBox(height: 6),
-                const Text(
-                    '3. Mit Monatskarte den Verlauf später vergleichen.'),
+                Text(_t('development_intro_step_3')),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Verstanden'),
+                child: Text(_t('development_intro_confirm')),
               ),
             ],
           );
@@ -840,7 +742,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     required bool detailed,
   }) {
     if (!detailed) return domain.questions;
-    final extra = _kSixMonthDetailedQuestions[domain.id] ?? const <String>[];
+    final extra = _detailedQuestionsForDomain(domain.id);
     return [...domain.questions, ...extra];
   }
 
@@ -1164,30 +1066,29 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                       _selfCheckQuickMode = true;
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Kurzcheck ist aktiviert. Du kannst unten direkt starten.'),
+                      SnackBar(
+                        content: Text(_t('development_quick_check_enabled')),
                       ),
                     );
                   },
                   icon: const Icon(Icons.flash_on_rounded),
-                  label: const Text('Kurzcheck starten'),
+                  label: Text(_t('development_start_quick_check')),
                 ),
                 OutlinedButton(
                   onPressed: () => _snoozeReminder(3),
-                  child: const Text('3 Tage Pause'),
+                  child: Text(_t('development_snooze_3_days')),
                 ),
                 OutlinedButton(
                   onPressed: () => _snoozeReminder(7),
-                  child: const Text('In 1 Woche erinnern'),
+                  child: Text(_t('development_snooze_1_week')),
                 ),
                 OutlinedButton(
                   onPressed: () => _snoozeReminder(14),
-                  child: const Text('In 2 Wochen erinnern'),
+                  child: Text(_t('development_snooze_2_weeks')),
                 ),
                 TextButton(
                   onPressed: () => _setReminderPaused(true),
-                  child: const Text('Erinnerungen pausieren'),
+                  child: Text(_t('development_pause_reminders')),
                 ),
               ],
             ),
@@ -1229,24 +1130,24 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   String _weightProfileLabel(String profile) {
     switch (profile) {
       case 'early':
-        return 'Frühe Entwicklungsphase';
+        return _t('development_weight_early');
       case 'late':
-        return 'Späte Entwicklungsphase';
+        return _t('development_weight_late');
       case 'middle':
       default:
-        return 'Mittlere Entwicklungsphase';
+        return _t('development_weight_middle');
     }
   }
 
   String _weightProfileHint(String profile) {
     switch (profile) {
       case 'early':
-        return 'In dieser Phase zählen Motorik und Sprache etwas stärker.';
+        return _t('development_weight_hint_early');
       case 'late':
-        return 'In dieser Phase zählen Denken und Selbstständigkeit etwas stärker.';
+        return _t('development_weight_hint_late');
       case 'middle':
       default:
-        return 'In dieser Phase zählen Sprache, Denken und Sozialverhalten etwas stärker.';
+        return _t('development_weight_hint_middle');
     }
   }
 
@@ -1255,11 +1156,11 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   String _detailedStageLabel(int stage) {
     switch (stage) {
       case 0:
-        return 'Etappe 1';
+        return _t('development_stage_1');
       case 1:
-        return 'Etappe 2';
+        return _t('development_stage_2');
       default:
-        return 'Etappe 3';
+        return _t('development_stage_3');
     }
   }
 
@@ -1288,14 +1189,14 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Start in 30 Sekunden',
+                    _t('development_quick_start_title'),
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Hinweis ausblenden',
+                  tooltip: _t('development_hide_hint'),
                   onPressed: _dismissOnboarding,
                   icon: const Icon(Icons.close_rounded),
                 ),
@@ -1303,7 +1204,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ),
             const SizedBox(height: 6),
             Text(
-              '1) Kurzcheck starten  2) 1 Fokusbereich ausfüllen  3) Alltagsempfehlung direkt nutzen.',
+              _t('development_quick_start_steps'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -1408,7 +1309,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             const SizedBox(height: 8),
             ...lines.map((line) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
-                  child: Text('• $line', style: theme.textTheme.bodyMedium),
+                  child: Text(_tf('development_bullet_line', {'line': line}), style: theme.textTheme.bodyMedium),
                 )),
           ],
         ),
@@ -1782,7 +1683,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         needsSupport.add(
           _TrendItem(
             title: item.title,
-            subtitle: 'gerade noch offen',
+            subtitle: _t('development_trend_open_now'),
             color: const Color(0xFFF97316),
             icon: Icons.flag_rounded,
             delta: -1,
@@ -1798,11 +1699,10 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     }
     if (result.isEmpty) {
       result.add(
-        const _TrendItem(
-          title: 'Noch keine Verlaufseinträge',
-          subtitle:
-              'Sobald du etwas bewertest, zeigt die Karte Entwicklungen an.',
-          color: Color(0xFF0EA5E9),
+        _TrendItem(
+            title: _t('development_no_trends_title'),
+            subtitle: _t('development_no_trends_subtitle'),
+          color: const Color(0xFF0EA5E9),
           icon: Icons.timeline_rounded,
           delta: 0,
         ),
@@ -1846,7 +1746,10 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
   }
 
   Widget _buildTrendSparkline(ThemeData theme, List<double> values) {
-    const weekLabels = ['W1', 'W2', 'W3', 'W4'];
+    final weekLabels = List<String>.generate(
+      4,
+      (index) => _tf('development_week_label', {'week': index + 1}),
+    );
     return Container(
       height: 106,
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
@@ -1900,10 +1803,10 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
 
     if (items.isEmpty) {
       items.add(
-        const _TrendItem(
-          title: 'Alles gut im Blick',
-          subtitle: 'Aktuell sind keine offenen Bereiche markiert.',
-          color: Color(0xFF16A34A),
+        _TrendItem(
+          title: _t('development_all_on_track_title'),
+          subtitle: _t('development_all_on_track_subtitle'),
+          color: const Color(0xFF16A34A),
           icon: Icons.check_circle_rounded,
           delta: 0,
         ),
@@ -1942,7 +1845,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 ),
                 FilterChip(
                   selected: _showOnlyImprovements,
-                  label: const Text('Nur verbessert'),
+                  label: Text(_t('development_only_improved')),
                   onSelected: (selected) {
                     setState(() {
                       _showOnlyImprovements = selected;
@@ -2113,7 +2016,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               ...improvements.map(
                 (item) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
-                  child: Text('• ${item.title} — ${item.subtitle}'),
+                  child: Text(_tf('development_bullet_item', {'title': item.title, 'subtitle': item.subtitle})),
                 ),
               ),
             const SizedBox(height: 10),
@@ -2134,7 +2037,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               ...supportItems.map(
                 (item) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
-                  child: Text('• ${item.title} — ${item.subtitle}'),
+                  child: Text(_tf('development_bullet_item', {'title': item.title, 'subtitle': item.subtitle})),
                 ),
               ),
           ],
@@ -2440,7 +2343,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             ...actions.map(
               (action) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Text('• $action', style: theme.textTheme.bodyMedium),
+                child: Text(_tf('development_bullet_line', {'line': action}), style: theme.textTheme.bodyMedium),
               ),
             ),
           ],
@@ -2611,7 +2514,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               children: [
                 Expanded(
                   child: Text(
-                    'Eltern-Selbstcheck',
+                    _t('development_parent_self_check'),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -2626,7 +2529,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               children: [
                 ChoiceChip(
                   selected: !_isSixMonthDetailedCheck,
-                  label: const Text('Monats-Kurzcheck'),
+                  label: Text(_t('development_monthly_quick_check')),
                   onSelected: (_) {
                     setState(() {
                       _isSixMonthDetailedCheck = false;
@@ -2637,8 +2540,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   selected: _isSixMonthDetailedCheck,
                   label: Text(
                     detailedDue
-                        ? '6-Monats-Detailcheck (empfohlen)'
-                        : '6-Monats-Detailcheck',
+                        ? _t('development_six_month_detailed_recommended')
+                        : _t('development_six_month_detailed'),
                   ),
                   onSelected: (_) {
                     setState(() {
@@ -2650,7 +2553,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 if (!_isSixMonthDetailedCheck)
                   FilterChip(
                     selected: _selfCheckQuickMode,
-                    label: const Text('Schnellmodus'),
+                    label: Text(_t('development_quick_mode')),
                     onSelected: (selected) {
                       setState(() {
                         _selfCheckQuickMode = selected;
@@ -2662,10 +2565,10 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             const SizedBox(height: 8),
             Text(
               _isSixMonthDetailedCheck
-                  ? 'Detailcheck (alle 6 Monate): umfassender Blick über alle Entwicklungsbereiche, ohne Zeitdruck.'
+                    ? _t('development_detailed_check_hint')
                   : _selfCheckQuickMode
-                      ? 'Schnellmodus: Heute nur ein Fokusbereich. Das spart Zeit und bleibt alltagstauglich.'
-                      : 'Vollansicht: Alle Bereiche sichtbar. Fragen bleiben adaptiv priorisiert.',
+                      ? _t('development_quick_mode_hint')
+                      : _t('development_full_view_hint'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -2682,7 +2585,11 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                       color: const Color(0xFF0EA5E9).withValues(alpha: 0.18)),
                 ),
                 child: Text(
-                  'Fortschritt Detailcheck: $detailedAnswered/$detailedTotal Fragen beantwortet.${_lastDetailedCheckAt == null ? '' : ' Letzter Detailcheck: ${_formatDate(_lastDetailedCheckAt!)}.'}',
+                  _tf('development_detailed_progress', {
+                    'answered': detailedAnswered,
+                    'total': detailedTotal,
+                    'lastCheck': _lastDetailedCheckAt == null ? '' : _tf('development_last_detailed_check', {'date': _formatDate(_lastDetailedCheckAt!)}),
+                  }),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -2695,7 +2602,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 children: [
                   Expanded(
                     child: Text(
-                      'Aktuelle Etappe: ${_detailedStageLabel(_detailedCheckStage)} von ${_detailedStageCount()}',
+                      _tf('development_current_stage', {'stage': _detailedStageLabel(_detailedCheckStage), 'total': _detailedStageCount()}),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: theme.colorScheme.onSurfaceVariant,
@@ -2710,7 +2617,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                               _detailedCheckStage -= 1;
                             });
                           },
-                    child: const Text('Zurück'),
+                    child: Text(_t('development_back')),
                   ),
                   const SizedBox(width: 8),
                   FilledButton.tonal(
@@ -2721,7 +2628,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                               _detailedCheckStage += 1;
                             });
                           },
-                    child: const Text('Weiter'),
+                    child: Text(_t('development_next')),
                   ),
                 ],
               ),
@@ -2730,7 +2637,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               OutlinedButton.icon(
                 onPressed: () => _setReminderPaused(false),
                 icon: const Icon(Icons.notifications_active_outlined),
-                label: const Text('Sanfte Erinnerungen wieder aktivieren'),
+                label: Text(_t('development_resume_reminders')),
               ),
             if (_isReminderSnoozed()) const SizedBox(height: 8),
             if (_isReminderSnoozed())
@@ -2750,7 +2657,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Sanfte Erinnerung pausiert bis ${_formatDate(_reminderSnoozeUntil!)}.',
+                        _tf('development_reminder_paused_until', {'date': _formatDate(_reminderSnoozeUntil!)}),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
@@ -2759,7 +2666,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     ),
                     TextButton(
                       onPressed: _clearReminderSnooze,
-                      child: const Text('Jetzt aktivieren'),
+                      child: Text(_t('development_activate_now')),
                     ),
                   ],
                 ),
@@ -2874,8 +2781,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
                           isFocusDomain
-                              ? 'Fokus heute: ${domain.title}. Bitte kurz aus dem Alltag heraus einschätzen.'
-                              : 'Dieser Bereich ist in dieser Session ausgeblendet.',
+                              ? _tf('development_focus_today', {'domain': domain.title})
+                              : _t('development_domain_hidden'),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -2935,7 +2842,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                           ? _markDetailedCheckCompleted
                           : null,
                   icon: const Icon(Icons.task_alt_rounded),
-                  label: const Text('Detailcheck als erledigt markieren'),
+                  label: Text(_t('development_complete_detailed_check')),
                 ),
               ),
           ],
@@ -2977,7 +2884,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         footer: (context) => pw.Align(
           alignment: pw.Alignment.centerRight,
           child: pw.Text(
-            'Parentpeak',
+            _t('development_brand'),
             style: const pw.TextStyle(fontSize: 9),
           ),
         ),
@@ -2996,26 +2903,26 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 ),
                 pw.SizedBox(height: 14),
                 pw.Text(
-                  'Parentpeak',
+                  _t('development_brand'),
                   style: const pw.TextStyle(
                       fontSize: 24, fontWeight: pw.FontWeight.bold),
                 ),
                 pw.SizedBox(height: 6),
                 pw.Text(
-                  'Entwicklungsschema für Eltern',
+                  _t('development_pdf_schema_title'),
                   style: const pw.TextStyle(fontSize: 13),
                 ),
                 pw.SizedBox(height: 16),
                 pw.Text(
-                  'Kind: $childLabel',
+                  _tf('development_pdf_child', {'child': childLabel}),
                   style: const pw.TextStyle(fontSize: 12),
                 ),
                 pw.Text(
-                  'Phase: ${phase.ageRange} - ${phase.title}',
+                  _tf('development_pdf_phase', {'ageRange': phase.ageRange, 'title': phase.title}),
                   style: const pw.TextStyle(fontSize: 12),
                 ),
                 pw.Text(
-                  'Fortschritt: ${(_phaseProgress(phase) * 100).round()}%',
+                  _tf('development_progress', {'progress': (_phaseProgress(phase) * 100).round()}),
                   style: const pw.TextStyle(fontSize: 12),
                 ),
               ],
@@ -3025,7 +2932,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           pw.Divider(),
           pw.SizedBox(height: 10),
           pw.Text(
-            'Statusverteilung',
+            _t('development_status_distribution'),
             style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 6),
@@ -3043,7 +2950,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                   ),
                   borderRadius: pw.BorderRadius.circular(8),
                 ),
-                child: pw.Text('$label: ${entry.value}'),
+                child: pw.Text(_tf('development_label_value', {'label': label, 'value': entry.value})),
               );
             }).toList(),
           ),
@@ -3064,7 +2971,11 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                           _statusFor(item.code);
                   return pw.Padding(
                     padding: const pw.EdgeInsets.only(bottom: 4),
-                    child: pw.Text('- ${item.code} ${item.title}: $status'),
+                    child: pw.Text(_tf('development_pdf_item', {
+                      'code': item.code,
+                      'title': item.title,
+                      'status': status,
+                    })),
                   );
                 }),
                 pw.SizedBox(height: 8),
@@ -3073,7 +2984,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           }),
           if (_history.isNotEmpty) ...[
             pw.Text(
-              'Letzte Änderungen',
+              _t('development_latest_changes'),
               style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
@@ -3083,7 +2994,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               return pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 4),
                 child: pw.Text(
-                  '- ${event.code} ${event.title}: $status • ${_formatDate(event.updatedAt)}',
+                  _tf('development_pdf_change', {'code': event.code, 'title': event.title, 'status': status, 'date': _formatDate(event.updatedAt)}),
                 ),
               );
             }),
@@ -3153,7 +3064,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'Monatskarte',
+                        _t('development_monthly_card'),
                         style: const pw.TextStyle(
                           fontSize: 24,
                           fontWeight: pw.FontWeight.bold,
@@ -3198,51 +3109,51 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
-                    'Kurzüberblick',
+                    _t('development_summary'),
                     style: const pw.TextStyle(
                         fontSize: 13, fontWeight: pw.FontWeight.bold),
                   ),
                   pw.SizedBox(height: 8),
-                  pw.Text('Fortschritt: ${(snapshot.progress * 100).round()}%'),
-                  pw.Text('Stark: ${snapshot.completed}'),
-                  pw.Text('Im Aufbau: ${snapshot.inProgress}'),
-                  pw.Text('Noch offen: ${snapshot.notStarted}'),
+                  pw.Text(_tf('development_progress', {'progress': (snapshot.progress * 100).round()})),
+                  pw.Text(_tf('development_strong_count', {'count': snapshot.completed})),
+                  pw.Text(_tf('development_building_count', {'count': snapshot.inProgress})),
+                  pw.Text(_tf('development_open_count', {'count': snapshot.notStarted})),
                 ],
               ),
             ),
             pw.SizedBox(height: 16),
             pw.Text(
-              'Verbessert',
+              _t('development_improved'),
               style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             ...improvements.map(
               (item) => pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 4),
-                child: pw.Text('• ${item.title} — ${item.subtitle}'),
+                child: pw.Text(_tf('development_bullet_item', {'title': item.title, 'subtitle': item.subtitle})),
               ),
             ),
             pw.SizedBox(height: 12),
             pw.Text(
-              'Braucht noch Begleitung',
+              _t('development_needs_support'),
               style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
             ...supportItems.map(
               (item) => pw.Padding(
                 padding: const pw.EdgeInsets.only(bottom: 4),
-                child: pw.Text('• ${item.title} — ${item.subtitle}'),
+                child: pw.Text(_tf('development_bullet_item', {'title': item.title, 'subtitle': item.subtitle})),
               ),
             ),
             pw.SizedBox(height: 16),
             pw.Text(
-              'Eltern-Nächste Schritte',
+              _t('development_parent_next_steps'),
               style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
-            pw.Text('• kleine Fortschritte einmal pro Woche anschauen'),
-            pw.Text('• einen offenen Bereich gezielt begleiten'),
-            pw.Text('• die nächste Monatskarte später zum Vergleich speichern'),
+            pw.Text(_t('development_next_step_1')),
+            pw.Text(_t('development_next_step_2')),
+            pw.Text(_t('development_next_step_3')),
           ],
         ),
       ),
@@ -3259,7 +3170,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               style: const pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 6),
-            pw.Text('$childLabel • ${phase.ageRange}'),
+            pw.Text(_tf('development_child_age_range', {'child': childLabel, 'ageRange': phase.ageRange})),
             pw.SizedBox(height: 14),
             pw.Text(
               'Vergleich zum letzten gespeicherten Selbstcheck:',
@@ -3296,7 +3207,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         style: const pw.TextStyle(fontWeight: pw.FontWeight.bold),
                       ),
                     ),
-                    pw.Text('${current.round()}%'),
+                      pw.Text(_tf('development_percent', {'value': current.round()})),
                     if (delta != null) ...[
                       pw.SizedBox(width: 8),
                       pw.Text(
@@ -3401,43 +3312,43 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
       painter.paint(canvas, Offset(x, y));
     }
 
-    drawText('Parentpeak Monatskarte', 120, 146,
+    drawText(_t('development_image_monthly_card'), 120, 146,
         size: 38, weight: FontWeight.w800);
-    drawText('${_selectedChildLabel()} • ${phase.ageRange}', 120, 198,
+    drawText(_tf('development_child_age_range', {'child': _selectedChildLabel(), 'ageRange': phase.ageRange}), 120, 198,
         size: 24, color: secondaryTextColor);
-    drawText('Fortschritt ${(snapshot.progress * 100).round()}%', 760, 178,
+    drawText(_tf('development_image_progress', {'progress': (snapshot.progress * 100).round()}), 760, 178,
         size: 34, weight: FontWeight.w800, color: accentColor, maxWidth: 220);
 
     var cursorY = 340.0;
-    drawText('Verbessert', 120, cursorY, size: 30, weight: FontWeight.w700);
+    drawText(_t('development_improved'), 120, cursorY, size: 30, weight: FontWeight.w700);
     cursorY += 52;
     for (final item in improvements.take(3)) {
-      drawText('• ${item.title} — ${item.subtitle}', 120, cursorY,
+      drawText(_tf('development_bullet_item', {'title': item.title, 'subtitle': item.subtitle}), 120, cursorY,
           size: 24, weight: FontWeight.w500, color: secondaryTextColor);
       cursorY += 42;
     }
 
     cursorY += 24;
-    drawText('Braucht noch Begleitung', 120, cursorY,
+    drawText(_t('development_needs_support'), 120, cursorY,
         size: 30, weight: FontWeight.w700);
     cursorY += 52;
     for (final item in supportItems.take(3)) {
-      drawText('• ${item.title} — ${item.subtitle}', 120, cursorY,
+      drawText(_tf('development_bullet_item', {'title': item.title, 'subtitle': item.subtitle}), 120, cursorY,
           size: 24, weight: FontWeight.w500, color: secondaryTextColor);
       cursorY += 42;
     }
 
     cursorY += 24;
-    drawText('Nächste Schritte', 120, cursorY,
+    drawText(_t('development_next_steps'), 120, cursorY,
         size: 30, weight: FontWeight.w700);
     cursorY += 52;
-    drawText('• einmal pro Woche kurz prüfen', 120, cursorY,
+    drawText(_t('development_image_next_step_1'), 120, cursorY,
         size: 24, weight: FontWeight.w500);
     cursorY += 38;
-    drawText('• einen offenen Bereich fokussieren', 120, cursorY,
+    drawText(_t('development_image_next_step_2'), 120, cursorY,
         size: 24, weight: FontWeight.w500);
     cursorY += 38;
-    drawText('• in 4 Wochen erneut vergleichen', 120, cursorY,
+    drawText(_t('development_image_next_step_3'), 120, cursorY,
         size: 24, weight: FontWeight.w500);
 
     final image =
@@ -3446,8 +3357,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     if (byteData == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Bildkarte konnte nicht erstellt werden.')),
+        SnackBar(
+            content: Text(_t('development_image_create_failed'))),
       );
       return;
     }
@@ -3461,7 +3372,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           name: 'monatskarte_${_selectedChildId}_${phase.id}.png',
         ),
       ],
-      text: 'Parentpeak Monatskarte – Entwicklungsverlauf',
+      text: _t('development_image_share_text'),
     );
     await _storeMonthlyCardMeta(snapshot);
   }
@@ -3471,8 +3382,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     if (previous == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Noch keine vorige Monatskarte vorhanden.')),
+        SnackBar(
+            content: Text(_t('development_no_previous_monthly_card'))),
       );
       return;
     }
@@ -3493,11 +3404,11 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Text('Monatsvergleich',
+            pw.Text(_t('development_monthly_comparison'),
                 style:
                     const pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 8),
-            pw.Text('${_selectedChildLabel()} • ${phase.ageRange}'),
+            pw.Text(_tf('development_child_age_range', {'child': _selectedChildLabel(), 'ageRange': phase.ageRange})),
             pw.SizedBox(height: 14),
             pw.Container(
               width: double.infinity,
@@ -3509,19 +3420,18 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text(
-                      'Vorher: ${previousProgress.round()}% ${previousDate == null ? '' : '(Stand ${_formatDate(previousDate)})'}'),
-                  pw.Text('Jetzt: ${currentProgress.round()}%'),
-                  pw.Text('Differenz: ${delta >= 0 ? '+' : ''}$delta%'),
+                    pw.Text(_tf('development_previous_progress', {'progress': previousProgress.round(), 'date': previousDate == null ? '' : _tf('development_as_of_date', {'date': _formatDate(previousDate)})})),
+                    pw.Text(_tf('development_current_progress', {'progress': currentProgress.round()})),
+                    pw.Text(_tf('development_difference', {'value': '${delta >= 0 ? '+' : ''}$delta'})),
                 ],
               ),
             ),
             pw.SizedBox(height: 16),
-            pw.Text('Aktueller Status'),
+            pw.Text(_t('development_current_status')),
             pw.SizedBox(height: 6),
-            pw.Text('Stark: ${current.completed}'),
-            pw.Text('Im Aufbau: ${current.inProgress}'),
-            pw.Text('Noch offen: ${current.notStarted}'),
+            pw.Text(_tf('development_strong_count', {'count': current.completed})),
+            pw.Text(_tf('development_building_count', {'count': current.inProgress})),
+            pw.Text(_tf('development_open_count', {'count': current.notStarted})),
           ],
         ),
       ),
@@ -3783,18 +3693,18 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
 
     if (_isLoading) {
       return Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: const Padding(
-          padding: EdgeInsets.all(20),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(24))),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2.4),
               ),
-              SizedBox(width: 12),
-              Expanded(child: Text('Entwicklung wird geladen...')),
+              const SizedBox(width: 12),
+              Expanded(child: Text(_t('development_loading'))),
             ],
           ),
         ),
@@ -3865,7 +3775,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Entwicklung auf einen Blick',
+                                _t('development_overview_title'),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
@@ -3898,7 +3808,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         _buildStatTile(
                           theme,
                           phaseTheme,
-                          'Stark',
+                          _t('development_strong'),
                           snapshot.completed.toString(),
                           Icons.trending_up_rounded,
                         ),
@@ -3906,7 +3816,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         _buildStatTile(
                           theme,
                           phaseTheme,
-                          'Im Aufbau',
+                          _t('development_building'),
                           snapshot.inProgress.toString(),
                           Icons.timelapse_rounded,
                         ),
@@ -3914,7 +3824,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         _buildStatTile(
                           theme,
                           phaseTheme,
-                          'Noch offen',
+                          _t('development_open'),
                           snapshot.notStarted.toString(),
                           Icons.hourglass_bottom_rounded,
                         ),
@@ -3947,7 +3857,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         FilledButton.icon(
                           onPressed: _shareCurrentOverview,
                           icon: const Icon(Icons.picture_as_pdf_rounded),
-                          label: const Text('Als PDF teilen'),
+                          label: Text(_t('development_share_pdf')),
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: phaseTheme.color,
@@ -3956,7 +3866,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         OutlinedButton.icon(
                           onPressed: _shareMonthlyCard,
                           icon: const Icon(Icons.auto_graph_rounded),
-                          label: const Text('Monatskarte'),
+                          label: Text(_t('development_monthly_card')),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: BorderSide(
@@ -3968,14 +3878,13 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                               ? null
                               : () {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Der Verlauf wird unten angezeigt.'),
+                                    SnackBar(
+                                        content: Text(_t('development_history_below')),
                                     ),
                                   );
                                 },
                           icon: const Icon(Icons.history_rounded),
-                          label: const Text('Verlauf ansehen'),
+                          label: Text(_t('development_view_history')),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: BorderSide(
@@ -3985,7 +3894,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         OutlinedButton.icon(
                           onPressed: _shareMonthlyImageCard,
                           icon: const Icon(Icons.image_rounded),
-                          label: const Text('Als Bild teilen'),
+                          label: Text(_t('development_share_image')),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: BorderSide(
@@ -3994,7 +3903,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                         ),
                         FilterChip(
                           selected: _monthlyCardDarkStyle,
-                          label: const Text('Bildkarte dunkel'),
+                          label: Text(_t('development_dark_image_card')),
                           onSelected: (selected) {
                             setState(() {
                               _monthlyCardDarkStyle = selected;
@@ -4014,7 +3923,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                               ? null
                               : _shareMonthlyComparisonCard,
                           icon: const Icon(Icons.compare_arrows_rounded),
-                          label: const Text('Monatsvergleich'),
+                          label: Text(_t('development_monthly_comparison')),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: BorderSide(
@@ -4026,7 +3935,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                             onPressed: _shareMonthlyCard,
                             icon: const Icon(Icons.refresh_rounded),
                             label: Text(
-                                'Erneut (${_formatDate(_lastMonthlyCardAt!)})'),
+                                _tf('development_again_date', {'date': _formatDate(_lastMonthlyCardAt!)})),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
                               side: BorderSide(
@@ -4048,8 +3957,8 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
             order: 2,
             child: _buildTrendCard(
               theme,
-              'Verlauf auf einen Blick',
-              'Hier siehst du, was sich verbessert hat und welche Bereiche noch Begleitung brauchen.',
+              _t('development_history_overview_title'),
+              _t('development_history_overview_subtitle'),
               trendItems,
               trendValues,
             ),
@@ -4101,7 +4010,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           _buildAnimatedSection(order: 11, child: _buildTrustCard(theme)),
           const SizedBox(height: 12),
           Text(
-            'Kind wählen',
+            _t('development_choose_child'),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurfaceVariant,
@@ -4130,7 +4039,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
           ),
           const SizedBox(height: 12),
           Text(
-            'Alter wählen',
+            _t('development_choose_age'),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurfaceVariant,
@@ -4191,14 +4100,14 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Was Eltern hier sehen',
+                                _t('development_parent_view_title'),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Die Kachel zeigt Entwicklung als Orientierung, nicht als Bewertung.',
+                                _t('development_parent_view_subtitle'),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -4212,7 +4121,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     LinearProgressIndicator(value: _phaseProgress(phase)),
                     const SizedBox(height: 8),
                     Text(
-                      'Fortschritt: ${(_phaseProgress(phase) * 100).round()}%',
+                      _tf('development_progress', {'progress': (_phaseProgress(phase) * 100).round()}),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: theme.colorScheme.onSurfaceVariant,
@@ -4239,39 +4148,39 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                               ),
                             ),
                           ),
-                          label: Text('$label: ${entry.value}'),
+                          label: Text(_tf('development_label_value', {'label': label, 'value': entry.value})),
                         );
                       }).toList(),
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Kurz erklärt',
+                      _t('development_explained_briefly'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Die Bewertung hilft dir, Stärken, offene Themen und nächste kleine Schritte sichtbar zu machen. So bleibt die Nutzung leicht und entlastend.',
+                      _t('development_explained_briefly_text'),
                       style: theme.textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'In der Praxis',
+                      _t('development_in_practice'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '• Fortschritt über Zeit sehen\n• Schwierige Bereiche gezielt begleiten\n• Ergebnisse als PDF teilen oder später erneut ansehen',
+                      _t('development_in_practice_text'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         height: 1.45,
                       ),
                     ),
                     if (_history.isNotEmpty) ...[
                       const SizedBox(height: 14),
-                      Text('Letzte Änderungen für $childLabel',
+                      Text(_tf('development_latest_changes_for_child', {'child': childLabel}),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           )),
@@ -4307,7 +4216,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
                     color: phaseTheme.color,
                   ),
                 ),
-                subtitle: Text('${category.items.length} Kriterien • $summary'),
+                subtitle: Text(_tf('development_category_summary', {'count': category.items.length, 'summary': summary})),
                 childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
                 children: category.items.map((item) {
                   final selectedStatus = _statusFor(item.code);
