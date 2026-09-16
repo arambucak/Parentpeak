@@ -59,6 +59,18 @@ class AppLanguages {
       flag: 'ala_rengin',
     ),
     AppLanguage(
+      code: 'ru',
+      name: 'Russisch',
+      nativeName: 'Русский',
+      flag: '\u{1F1F7}\u{1F1FA}',
+    ),
+    AppLanguage(
+      code: 'uk',
+      name: 'Ukrainisch',
+      nativeName: 'Українська',
+      flag: '\u{1F1FA}\u{1F1E6}',
+    ),
+    AppLanguage(
       code: 'fr',
       name: 'Franz\u{00F6}sisch',
       nativeName: 'Fran\u{00E7}ais',

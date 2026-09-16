@@ -18,6 +18,8 @@ void main() {
       'es',
       'it',
       'pt',
+      'ru',
+      'uk',
       'nl',
       'pl',
       'tr',
@@ -47,10 +49,11 @@ void main() {
     expect(AppLanguages.isRtl('ku'), isFalse);
   });
 
-  test('launch languages contain every source translation key', () {
+  test('target language catalogs contain every source translation key', () {
     final sourceKeys = AppStringsManager.allStrings['de']!.keys.toSet();
 
-    for (final languageCode in const ['en', 'tr', 'ku']) {
+    for (final languageCode
+        in const ['en', 'tr', 'ku', 'ar', 'ru', 'uk', 'es', 'fr', 'it', 'pt']) {
       final translatedKeys =
           AppStringsManager.allStrings[languageCode]!.keys.toSet();
       expect(
@@ -61,11 +64,12 @@ void main() {
     }
   });
 
-  test('launch translations preserve source placeholders', () {
+  test('target translations preserve source placeholders', () {
     final source = AppStringsManager.allStrings['de']!;
     final placeholderPattern = RegExp(r'\{[^}]+\}');
 
-    for (final languageCode in const ['en', 'tr', 'ku']) {
+    for (final languageCode
+      in const ['en', 'tr', 'ku', 'ar', 'ru', 'uk', 'es', 'fr', 'it', 'pt']) {
       final translated = AppStringsManager.allStrings[languageCode]!;
       for (final entry in source.entries) {
         final sourcePlaceholders = placeholderPattern

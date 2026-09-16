@@ -4,7 +4,8 @@ import 'package:parentpeak/l10n/supported_languages.dart';
 
 class AppStringsManager {
   // Supported Languages
-  static const Map<String, Map<String, String>> allStrings = {
+    static final Map<String, Map<String, String>> allStrings =
+            _completeTargetCatalogs({
     // Deutsch
     'de': {
       'greeting_morning': 'Guten Morgen',
@@ -17609,7 +17610,21 @@ class AppStringsManager {
       'event_added': 'ፍጻመ ተወሲኹ!',
       'yearly': 'ዓመታዊ',
     },
-  };
+    });
+
+    static Map<String, Map<String, String>> _completeTargetCatalogs(
+        Map<String, Map<String, String>> catalogs,
+    ) {
+        final german = catalogs['de']!;
+        final english = catalogs['en']!;
+
+        return {
+            for (final entry in catalogs.entries)
+                entry.key: entry.key == 'de'
+                        ? entry.value
+                        : {...german, ...english, ...entry.value},
+        };
+    }
 
   static String getString(String languageCode, String key) {
     return allStrings[languageCode]?[key] ?? allStrings['en']?[key] ?? key;

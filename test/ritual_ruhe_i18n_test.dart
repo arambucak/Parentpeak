@@ -16,6 +16,23 @@ void main() {
     expect(ritualRuheText('sectionAfternoon', const Locale('ku')), 'Nîvro');
   });
 
+  test('returns native ritual copy for the seven added locales', () {
+    const expectedTitles = {
+      'ar': 'طقوس وهدوء',
+      'ru': 'Ритуалы и покой',
+      'uk': 'Ритуали та спокій',
+      'es': 'Rituales y calma',
+      'fr': 'Rituels et calme',
+      'it': 'Rituali e calma',
+      'pt': 'Rituais e calma',
+    };
+
+    for (final entry in expectedTitles.entries) {
+      expect(ritualRuheText('title', Locale(entry.key)), entry.value);
+      expect(ritualRuheText('appBarNight', Locale(entry.key)), isNotEmpty);
+    }
+  });
+
   test('includes missing profile and onboarding translation keys', () {
     expect(AppStringsManager.getString('en', 'profile_edit_display_name_title'),
         'Edit display name');
