@@ -4,11 +4,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 
 String ritualRuheText(String key, Locale locale) {
-  const de = {
+  final languageCode = AppStringsManager.hasRitualRuheLanguage(locale.languageCode)
+      ? locale.languageCode
+      : 'de';
+  return AppStringsManager.ritualRuheString(languageCode, key);
+  /*
+  const localeDe = {
     'title': 'Ritual & Ruhe',
     'tileSubtitle': 'Ein ruhiger Moment für euren Familienalltag',
     'appBarNight': 'Gute Nacht',
@@ -46,7 +52,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Nichts muss perfekt sein. Nehmt, was heute passt.',
   };
 
-  const en = {
+  const localeEn = {
     'title': 'Ritual & Calm',
     'tileSubtitle': 'A calm moment for everyday family life',
     'appBarNight': 'Good night',
@@ -84,7 +90,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Nothing has to be perfect. Take what fits today.',
   };
 
-  const tr = {
+  const localeTr = {
     'title': 'Ritüel & Huzur',
     'tileSubtitle': 'Aile hayatı için sakin bir an',
     'appBarNight': 'İyi geceler',
@@ -122,7 +128,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Hiçbir şey mükemmel olmak zorunda değil. Bugün ne uygunsa onu alın.',
   };
 
-  const ku = {
+  const localeKu = {
     'title': 'Rîtuel û Aramî',
     'tileSubtitle': 'Demek aram û baş ji bo jiyana malbatê',
     'appBarNight': 'Şev baş',
@@ -160,7 +166,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Tiştek ne hewce ye ku bêkêmasî be. Ya ku îro li gorî we ye bigirin.',
   };
 
-  const ar = {
+  const localeAr = {
     'title': 'طقوس وهدوء',
     'tileSubtitle': 'لحظة هادئة في يوم عائلتكم',
     'appBarNight': 'تصبحون على خير',
@@ -186,7 +192,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'ليس كل شيء بحاجة إلى أن يكون مثالياً. اختاروا ما يناسبكم اليوم.',
   };
 
-  const ru = {
+  const localeRu = {
     'title': 'Ритуалы и покой', 'tileSubtitle': 'Спокойный момент в семейном дне',
     'appBarNight': 'Спокойной ночи', 'appBarMorning': 'Доброе утро',
     'sectionMorning': 'Утро', 'sectionAfternoon': 'День', 'sectionEvening': 'Вечер',
@@ -207,7 +213,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Не обязательно делать всё идеально. Выберите то, что подходит вам сегодня.',
   };
 
-  const uk = {
+  const localeUk = {
     'title': 'Ритуали та спокій', 'tileSubtitle': 'Тиха мить у вашому сімейному дні',
     'appBarNight': 'На добраніч', 'appBarMorning': 'Доброго ранку',
     'sectionMorning': 'Ранок', 'sectionAfternoon': 'Після обіду', 'sectionEvening': 'Вечір',
@@ -228,7 +234,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Не все має бути ідеальним. Оберіть те, що підходить вам сьогодні.',
   };
 
-  const es = {
+  const localeEs = {
     'title': 'Rituales y calma', 'tileSubtitle': 'Un momento tranquilo para el día a día en familia',
     'appBarNight': 'Buenas noches', 'appBarMorning': 'Buenos días',
     'sectionMorning': 'Mañana', 'sectionAfternoon': 'Tarde', 'sectionEvening': 'Noche',
@@ -247,7 +253,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Nada tiene que ser perfecto. Elegid lo que encaje hoy.',
   };
 
-  const fr = {
+  const localeFr = {
     'title': 'Rituels et calme', 'tileSubtitle': 'Un moment de calme dans votre quotidien familial',
     'appBarNight': 'Bonne nuit', 'appBarMorning': 'Bonjour',
     'sectionMorning': 'Matin', 'sectionAfternoon': 'Après-midi', 'sectionEvening': 'Soir',
@@ -267,7 +273,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Rien ne doit être parfait. Gardez ce qui vous convient aujourd’hui.',
   };
 
-  const it = {
+  const localeIt = {
     'title': 'Rituali e calma', 'tileSubtitle': 'Un momento di calma nella vita di famiglia',
     'appBarNight': 'Buonanotte', 'appBarMorning': 'Buongiorno',
     'sectionMorning': 'Mattina', 'sectionAfternoon': 'Pomeriggio', 'sectionEvening': 'Sera',
@@ -286,7 +292,7 @@ String ritualRuheText(String key, Locale locale) {
     'timeCardSubtitle': 'Non deve essere tutto perfetto. Scegliete ciò che va bene oggi.',
   };
 
-  const pt = {
+  const localePt = {
     'title': 'Rituais e calma', 'tileSubtitle': 'Um momento de calma no dia a dia da família',
     'appBarNight': 'Boa noite', 'appBarMorning': 'Bom dia',
     'sectionMorning': 'Manhã', 'sectionAfternoon': 'Tarde', 'sectionEvening': 'Noite',
@@ -320,6 +326,7 @@ String ritualRuheText(String key, Locale locale) {
   };
 
   return map[key] ?? de[key] ?? key;
+  */
 }
 
 class RitualRuheScreen extends StatefulWidget {
@@ -1151,6 +1158,9 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
   late List<_RitualStep> _steps;
   late Set<int> _weekdays;
 
+  String _t(String key) =>
+      AppStringsManager.phase1String(Localizations.localeOf(context).languageCode, key);
+
   @override
   void initState() {
     super.initState();
@@ -1174,32 +1184,32 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
     final added = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Schritt hinzufügen'),
+        title: Text(_t('ritual_add_step')),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: 'Titel')),
+              decoration: InputDecoration(labelText: _t('ritual_step_title'))),
           TextField(
               controller: subtitleController,
-              decoration: const InputDecoration(labelText: 'Kurzer Satz')),
+              decoration: InputDecoration(labelText: _t('ritual_step_subtitle'))),
           const SizedBox(height: 8),
           TextField(
             controller: timerController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Timer in Sekunden',
-              hintText: '0 = ohne Timer',
+            decoration: InputDecoration(
+              labelText: _t('ritual_timer_seconds'),
+              hintText: _t('ritual_timer_hint'),
             ),
           ),
         ]),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Abbrechen')),
+              child: Text(_t('ritual_cancel'))),
           FilledButton(
             onPressed: () => Navigator.pop(
                 dialogContext, titleController.text.trim().isNotEmpty),
-            child: const Text('Hinzufügen'),
+            child: Text(_t('ritual_add')),
           ),
         ],
       ),
@@ -1244,7 +1254,7 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${widget.title} bearbeiten',
+                Text(_t('ritual_edit_plan').replaceAll('{title}', widget.title),
                     style: Theme.of(context)
                         .textTheme
                         .headlineSmall
@@ -1252,12 +1262,12 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                 const SizedBox(height: 12),
                 TextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Ritualname')),
+                    decoration: InputDecoration(labelText: _t('ritual_name'))),
                 const SizedBox(height: 8),
                 TextField(
                     controller: _timeController,
-                    decoration: const InputDecoration(
-                        labelText: 'Uhrzeit', hintText: '08:00')),
+                    decoration: InputDecoration(
+                      labelText: _t('ritual_time'), hintText: '08:00')),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 6,
@@ -1265,7 +1275,7 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                     final day = index + 1;
                     return FilterChip(
                       label: Text(
-                          ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][index]),
+                          _t('ritual_days').split('|')[index]),
                       selected: _weekdays.contains(day),
                       onSelected: (selected) => setState(() => selected
                           ? _weekdays.add(day)
@@ -1292,7 +1302,7 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                         title: Text(step.title),
                         subtitle: Text(step.subtitle),
                         trailing: IconButton(
-                          tooltip: 'Schritt entfernen',
+                          tooltip: _t('ritual_remove_step'),
                           onPressed: () =>
                               setState(() => _steps.removeAt(index)),
                           icon: const Icon(Icons.remove_circle_outline_rounded),
@@ -1305,10 +1315,10 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                   OutlinedButton.icon(
                       onPressed: _addStep,
                       icon: const Icon(Icons.add_rounded),
-                      label: const Text('Schritt')),
+                      label: Text(_t('ritual_step'))),
                   const Spacer(),
                   FilledButton(
-                      onPressed: _save, child: const Text('Speichern')),
+                      onPressed: _save, child: Text(_t('ritual_save'))),
                 ]),
               ]),
         ),

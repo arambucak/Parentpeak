@@ -3,17 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/widgets/language_change_mixin.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 enum ContactCategory { emergency, family, medical, school, other }
 
 extension ContactCategoryX on ContactCategory {
-  String get label {
+  String label(String Function(String) t) {
     switch (this) {
-      case ContactCategory.emergency: return 'Notruf';
-      case ContactCategory.family:   return 'Familie';
-      case ContactCategory.medical:  return 'Medizin';
-      case ContactCategory.school:   return 'Schule';
-      case ContactCategory.other:    return 'Sonstige';
+      case ContactCategory.emergency: return t('contacts_emergency');
+      case ContactCategory.family:   return t('contacts_family');
+      case ContactCategory.medical:  return t('contacts_medical');
+      case ContactCategory.school:   return t('contacts_school');
+      case ContactCategory.other:    return t('contacts_other');
     }
   }
   IconData get icon {
@@ -80,11 +82,14 @@ class _ContactsScreenState extends State<ContactsScreen>
   List<EmergencyContact> _contacts = [];
   bool _loaded = false;
 
-  static const List<Map<String, dynamic>> _quickDial = [
-    {'label': 'Polizei',         'number': '110',        'icon': Icons.local_police_rounded,    'color': Color(0xFF1D4ED8)},
-    {'label': 'Notruf',          'number': '112',        'icon': Icons.emergency_rounded,       'color': Color(0xFFDC2626)},
-    {'label': 'Gift-Notfall',    'number': '0228 19240', 'icon': Icons.science_rounded,         'color': Color(0xFF7C3AED)},
-    {'label': 'Aerztl. Bereit.', 'number': '116 117',   'icon': Icons.medical_services_rounded,'color': Color(0xFF059669)},
+  String _t(String key) => AppStringsManager.phase1ResidualString(
+      languageService.currentLanguage, key);
+
+  List<Map<String, dynamic>> get _quickDial => [
+    {'label': _t('contacts_police'), 'number': '110', 'icon': Icons.local_police_rounded, 'color': const Color(0xFF1D4ED8)},
+    {'label': _t('contacts_emergency'), 'number': '112', 'icon': Icons.emergency_rounded, 'color': const Color(0xFFDC2626)},
+    {'label': _t('contacts_poison'), 'number': '0228 19240', 'icon': Icons.science_rounded, 'color': const Color(0xFF7C3AED)},
+    {'label': _t('contacts_on_call'), 'number': '116 117', 'icon': Icons.medical_services_rounded, 'color': const Color(0xFF059669)},
   ];
 
   @override
@@ -124,7 +129,7 @@ class _ContactsScreenState extends State<ContactsScreen>
       content: Row(children: [
         const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
         const SizedBox(width: 10),
-        Expanded(child: Text('$number kopiert - in Telefon-App einfuegen')),
+        Expanded(child: Text(_t('contacts_copied').replaceAll('{number}', number))),
       ]),
       backgroundColor: const Color(0xFF1E293B),
       behavior: SnackBarBehavior.floating,
@@ -161,7 +166,7 @@ class _ContactsScreenState extends State<ContactsScreen>
               Center(child: Container(width: 40, height: 4,
                 decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(99)))),
               const SizedBox(height: 20),
-              Text(existing == null ? 'Kontakt hinzufuegen' : 'Kontakt bearbeiten',
+              Text(existing == null ? _t('contacts_add') : _t('contacts_edit'),
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(height: 18),
               Wrap(
@@ -181,7 +186,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         Icon(c.icon, size: 14, color: sel ? Colors.white : c.color),
                         const SizedBox(width: 5),
-                        Text(c.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
+                        Text(c.label(_t), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
                           color: sel ? Colors.white : c.color)),
                       ]),
                     ),
@@ -189,11 +194,11 @@ class _ContactsScreenState extends State<ContactsScreen>
                 }).toList(),
               ),
               const SizedBox(height: 16),
-              _field(nameCtrl, 'Name', Icons.person_rounded),
+              _field(nameCtrl, _t('contacts_name'), Icons.person_rounded),
               const SizedBox(height: 10),
-              _field(phoneCtrl, 'Telefonnummer', Icons.phone_rounded, keyboard: TextInputType.phone),
+              _field(phoneCtrl, _t('contacts_phone'), Icons.phone_rounded, keyboard: TextInputType.phone),
               const SizedBox(height: 10),
-              _field(noteCtrl, 'Notiz (optional)', Icons.notes_rounded, maxLines: 2),
+              _field(noteCtrl, _t('contacts_note'), Icons.notes_rounded, maxLines: 2),
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: () => setSheet(() => pinned = !pinned),
@@ -208,7 +213,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                     Icon(pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
                       color: pinned ? const Color(0xFFD97706) : Colors.black38, size: 20),
                     const SizedBox(width: 10),
-                    Text(pinned ? 'Oben angepinnt' : 'Nicht angepinnt',
+                    Text(pinned ? _t('contacts_pinned') : _t('contacts_not_pinned'),
                       style: TextStyle(fontWeight: FontWeight.w600,
                         color: pinned ? const Color(0xFFD97706) : Colors.black45)),
                   ]),
@@ -219,7 +224,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                 if (existing != null)
                   TextButton.icon(
                     icon: const Icon(Icons.delete_rounded, color: Colors.red, size: 18),
-                    label: const Text('Löschen', style: TextStyle(color: Colors.red)),
+                    label: Text(_t('contacts_delete'), style: const TextStyle(color: Colors.red)),
                     onPressed: () {
                       Navigator.pop(ctx);
                       setState(() => _contacts.removeWhere((c) => c.id == existing.id));
@@ -227,7 +232,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                     },
                   ),
                 const Spacer(),
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Abbrechen')),
+                TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_t('contacts_cancel'))),
                 const SizedBox(width: 8),
                 FilledButton(
                   style: FilledButton.styleFrom(
@@ -255,7 +260,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                     });
                     _saveContacts();
                   },
-                  child: Text(existing == null ? 'Speichern' : 'Aktualisieren',
+                  child: Text(existing == null ? _t('contacts_save') : _t('contacts_update'),
                     style: const TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ]),
@@ -326,11 +331,11 @@ class _ContactsScreenState extends State<ContactsScreen>
                           child: const Icon(Icons.emergency_rounded, color: Colors.white, size: 22),
                         ),
                         const SizedBox(width: 12),
-                        const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Notfallkontakte',
-                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-                          Text('Im Ernstfall sofort erreichbar',
-                            style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(_t('contacts_title'),
+                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+                          Text(_t('contacts_subtitle'),
+                            style: const TextStyle(color: Colors.white70, fontSize: 13)),
                         ]),
                       ]),
                       const SizedBox(height: 12),
@@ -341,7 +346,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '${_contacts.length} Kontakte  ${pinned.length} angepinnt',
+                          _t('contacts_count').replaceAll('{contacts}', '${_contacts.length}').replaceAll('{pinned}', '${pinned.length}'),
                           style: const TextStyle(color: Colors.white, fontSize: 13),
                         ),
                       ),
@@ -349,8 +354,8 @@ class _ContactsScreenState extends State<ContactsScreen>
                   ),
                 ),
               ),
-              title: const Text('Notfallkontakte',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
+              title: Text(_t('contacts_title'),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
               titlePadding: const EdgeInsets.only(left: 54, bottom: 16),
             ),
             leading: IconButton(
@@ -369,7 +374,7 @@ class _ContactsScreenState extends State<ContactsScreen>
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _label('Schnellwahl Notruf'),
+                _label(_t('contacts_quick_dial')),
                 const SizedBox(height: 10),
                 GridView.count(
                   crossAxisCount: 2, shrinkWrap: true,
@@ -418,7 +423,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                 const SizedBox(height: 22),
 
                 if (pinned.isNotEmpty) ...[
-                  _label('Angepinnt'),
+                  _label(_t('contacts_pinned')),
                   const SizedBox(height: 10),
                   ...pinned.map((c) => _contactCard(c, isPinned: true)),
                   const SizedBox(height: 20),
@@ -431,7 +436,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                     Row(children: [
                       Icon(cat.icon, size: 15, color: cat.color),
                       const SizedBox(width: 6),
-                      Text(cat.label,
+                      Text(cat.label(_t),
                         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: cat.color)),
                     ]),
                     const SizedBox(height: 10),
@@ -446,16 +451,16 @@ class _ContactsScreenState extends State<ContactsScreen>
                     child: Column(children: [
                       const Icon(Icons.contacts_rounded, size: 52, color: Colors.black26),
                       const SizedBox(height: 12),
-                      const Text('Noch keine Kontakte',
-                        style: TextStyle(color: Colors.black45, fontWeight: FontWeight.w600)),
+                      Text(_t('contacts_empty_title'),
+                        style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
-                      const Text('Tippe auf + um wichtige Kontakte hinzuzufuegen.',
-                        textAlign: TextAlign.center, style: TextStyle(color: Colors.black38)),
+                      Text(_t('contacts_empty_body'),
+                        textAlign: TextAlign.center, style: const TextStyle(color: Colors.black38)),
                       const SizedBox(height: 20),
                       FilledButton.icon(
                         onPressed: _showAddOrEditDialog,
                         icon: const Icon(Icons.add_rounded),
-                        label: const Text('Kontakt hinzufuegen'),
+                        label: Text(_t('contacts_add')),
                       ),
                     ]),
                   )),
@@ -471,7 +476,7 @@ class _ContactsScreenState extends State<ContactsScreen>
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Kontakt', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: Text(_t('contacts_add'), style: const TextStyle(fontWeight: FontWeight.w700)),
             )
           : null,
     );
@@ -537,7 +542,7 @@ class _ContactsScreenState extends State<ContactsScreen>
                     child: Icon(Icons.copy_rounded, color: cat.color, size: 16),
                   ),
                   const SizedBox(height: 3),
-                  Text('kopieren',
+                  Text(_t('contacts_copy'),
                     style: TextStyle(fontSize: 9, color: cat.color, fontWeight: FontWeight.w600)),
                 ]),
               ]),

@@ -27,8 +27,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final _paymentService = PaymentService();
   final _eventService = EventService();
 
-  String _t(String key) =>
-      AppStringsManager.phase1String(languageService.currentLanguage, key);
+  String _t(String key) {
+    final language = languageService.currentLanguage;
+    if (AppStringsManager.hasDirectPhase1String(language, key)) {
+      return AppStringsManager.phase1String(language, key);
+    }
+    return AppStringsManager.getString(language, key);
+  }
 
   String _selectedPaymentMethod = 'stripe'; // stripe oder paypal
   bool _isProcessing = false;

@@ -7,6 +7,86 @@ class AppStringsManager {
         'de', 'en', 'tr', 'ku', 'ar', 'ru', 'uk', 'es', 'fr', 'it', 'pt',
     ];
 
+    static const Map<String, Map<String, String>> _phase1PaymentRuntimeStrings = {
+        'de': {
+            'payment_pay_now': 'Jetzt {amount} € zahlen',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe ist aktuell nicht konfiguriert. Bitte wähle PayPal oder kontaktiere den Support.',
+        },
+        'en': {
+            'payment_pay_now': 'Pay €{amount} now',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe is not configured right now. Please choose PayPal or contact support.',
+        },
+        'tr': {
+            'payment_pay_now': 'Şimdi {amount} € öde',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe şu anda yapılandırılmadı. Lütfen PayPal seçin veya destekle iletişime geçin.',
+        },
+        'ku': {
+            'payment_pay_now': 'Niha {amount} € bide',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe niha nehatiye sazkirin. Ji kerema xwe PayPal hilbijêre an bi piştgiriyê re têkilî dayne.',
+        },
+        'ar': {
+            'payment_pay_now': 'ادفعوا الآن {amount} €',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe غير مُعدّ حاليًا. يُرجى اختيار PayPal أو التواصل مع الدعم.',
+        },
+        'ru': {
+            'payment_pay_now': 'Оплатить сейчас {amount} €',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe сейчас не настроен. Выберите PayPal или обратитесь в поддержку.',
+        },
+        'uk': {
+            'payment_pay_now': 'Сплатити зараз {amount} €',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe зараз не налаштовано. Оберіть PayPal або зверніться до підтримки.',
+        },
+        'es': {
+            'payment_pay_now': 'Pagar ahora {amount} €',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe no está configurado ahora mismo. Elige PayPal o contacta con soporte.',
+        },
+        'fr': {
+            'payment_pay_now': 'Payer {amount} € maintenant',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe n’est pas configuré pour le moment. Choisissez PayPal ou contactez l’assistance.',
+        },
+        'it': {
+            'payment_pay_now': 'Paga ora {amount} €',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'Stripe non è configurato al momento. Scegli PayPal o contatta l’assistenza.',
+        },
+        'pt': {
+            'payment_pay_now': 'Pagar agora {amount} €',
+            'payment_stripe_name': 'Stripe',
+            'payment_paypal_name': 'PayPal',
+            'payment_stripe_unavailable':
+                'O Stripe não está configurado neste momento. Escolha PayPal ou contacte o apoio.',
+        },
+    };
+
     static const Map<String, Map<String, String>> _ritualRuheStrings = {
         'de': {
             'payment_stripe_name': 'Stripe', 'payment_paypal_name': 'PayPal',
@@ -147,7 +227,9 @@ class AppStringsManager {
 
     static String phase1String(String languageCode, String key) {
         final value = _phase1Strings[languageCode]?[key] ??
-            _package3Strings[languageCode]?[key];
+            _package3Strings[languageCode]?[key] ??
+            _phase1PaymentRuntimeStrings[languageCode]?[key] ??
+            _ritualRuheStrings[languageCode]?[key];
         if (value == null) {
             throw StateError('Missing direct Phase1 translation: $languageCode/$key');
         }
@@ -156,7 +238,10 @@ class AppStringsManager {
 
         static bool hasDirectPhase1String(String languageCode, String key) =>
             _phase1Strings[languageCode]?.containsKey(key) == true ||
-            _package3Strings[languageCode]?.containsKey(key) == true;
+                _package3Strings[languageCode]?.containsKey(key) == true ||
+                _phase1PaymentRuntimeStrings[languageCode]?.containsKey(key) ==
+                    true ||
+                _ritualRuheStrings[languageCode]?.containsKey(key) == true;
 
     static const Map<String, Map<String, String>> _phase1ResidualStrings = {
         'de': {'contacts_emergency': 'Notruf', 'contacts_family': 'Familie', 'contacts_medical': 'Medizin', 'contacts_school': 'Schule', 'contacts_other': 'Sonstige', 'contacts_police': 'Polizei', 'contacts_poison': 'Gift-Notfall', 'contacts_on_call': 'Aerztl. Bereitschaft', 'contacts_copied': '{number} kopiert - in Telefon-App einfuegen', 'contacts_add': 'Kontakt hinzufuegen', 'contacts_edit': 'Kontakt bearbeiten', 'contacts_name': 'Name', 'contacts_phone': 'Telefonnummer', 'contacts_note': 'Notiz (optional)', 'contacts_pinned': 'Oben angepinnt', 'contacts_not_pinned': 'Nicht angepinnt', 'contacts_delete': 'Löschen', 'contacts_cancel': 'Abbrechen', 'contacts_save': 'Speichern', 'contacts_update': 'Aktualisieren', 'contacts_title': 'Notfallkontakte', 'contacts_subtitle': 'Im Ernstfall sofort erreichbar', 'contacts_count': '{contacts} Kontakte  {pinned} angepinnt', 'contacts_quick_dial': 'Schnellwahl Notruf', 'contacts_empty_title': 'Noch keine Kontakte', 'contacts_empty_body': 'Tippe auf + um wichtige Kontakte hinzuzufuegen.', 'contacts_copy': 'kopieren'},

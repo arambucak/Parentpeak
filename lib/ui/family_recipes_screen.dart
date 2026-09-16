@@ -9,6 +9,7 @@ import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/logic/family_recipe_share_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shared_family_recipe.dart';
@@ -37,53 +38,8 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
 
   String _t(String key) => AppLocalizations.of(context).t(key);
 
-  String _recipeCopy(String key, String fallback) {
-    const copies = {
-      'en': {
-        'title': 'Family Recipes',
-        'share': 'Share recipe',
-        'search': 'What do you feel like today? (e.g. potato salad, pasta)',
-        'quick': 'Quick (< 20 min)',
-        'vegetarian': 'Vegetarian',
-        'blw': 'BLW / finger food',
-        'magic': 'Create instant recipe',
-        'ai_recipe': 'AI instant recipe',
-        'ingredients': 'Ingredients',
-        'preparation': 'Preparation',
-        'from_you': 'From you',
-      },
-      'ku': {
-        'title': 'Xwarinên malbatê',
-        'share': 'Parvekirina reçeteyê',
-        'search': 'Îro hûn çi dixwazin? (mînak: salata kartolê, makarna)',
-        'quick': 'Bilez (< 20 deqîqe)',
-        'vegetarian': 'Vegetarî',
-        'blw': 'BLW / xwarina destê',
-        'magic': 'Reçeteya bilez çêbike',
-        'ai_recipe': 'Reçeteya bilez a AI',
-        'ingredients': 'Malzemeler',
-        'preparation': 'Amadekirin',
-        'from_you': 'Ji te',
-      },
-      'tr': {
-        'title': 'Aile Tarifleri',
-        'share': 'Tarif paylaş',
-        'search': 'Bugün canınız ne istiyor? (örn. patates salatası, makarna)',
-        'quick': 'Hızlı (< 20 dk.)',
-        'vegetarian': 'Vejetaryen',
-        'blw': 'BLW / ek gıda',
-        'magic': 'Hızlı tarif oluştur',
-        'ai_recipe': 'YZ hızlı tarifi',
-        'ingredients': 'Malzemeler',
-        'preparation': 'Hazırlanışı',
-        'from_you': 'Senden',
-      },
-    };
-    return copies[languageService.currentLanguage]?[key] ?? fallback;
-  }
-
-  String _filterLabel(String key, String fallback) =>
-      _recipeCopy(key, fallback);
+  String _copy(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
 
   final _service = FamilyRecipeShareService.instance;
   final _aiService = FamilyRecipeService.instance;
@@ -102,9 +58,9 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
 
   // Schnell-Filter: Label -> Suchbegriff, der an die Server-Suche geht.
   Map<String, String> get _filters => {
-        _filterLabel('quick', 'Schnell (< 20 Min)'): 'schnell',
-        _filterLabel('vegetarian', 'Vegetarisch'): 'vegetarisch',
-        _filterLabel('blw', 'BLW / Beikost'): 'blw',
+        _copy('family_recipe_filter_quick'): 'schnell',
+        _copy('family_recipe_filter_vegetarian'): 'vegetarisch',
+        _copy('family_recipe_filter_blw'): 'blw',
       };
 
   @override
@@ -158,10 +114,8 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         _generatingAi = false;
       });
       if (recipe == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text('Ich konnte gerade kein Rezept erstellen. Bitte versuche es '
-                  'gleich noch einmal.'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_copy('family_recipe_ai_failed')),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -176,10 +130,8 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _generatingAi = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-            'Ich konnte gerade kein Rezept erstellen. Bitte versuche es gleich '
-            'noch einmal.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_copy('family_recipe_ai_failed')),
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -203,10 +155,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         _aiShared = created != null;
       });
       if (created != null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Rezept mit deinen Freunden geteilt. 🍳'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_copy('family_recipe_ai_shared')),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Color(0xFF16A34A),
+          backgroundColor: const Color(0xFF16A34A),
         ));
         _load();
       }
@@ -293,7 +245,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_recipeCopy('title', 'Familien-Rezepte')),
+        title: Text(_copy('family_recipe_title')),
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -301,7 +253,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         backgroundColor: _accent,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: Text(_recipeCopy('share', 'Rezept teilen')),
+        label: Text(_copy('family_recipe_share_title')),
       ),
       body: Column(
         children: [
@@ -337,8 +289,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
             onChanged: _onSearchChanged,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: _recipeCopy('search',
-                  'Wonach ist euch heute? (z. B. Kartoffelsalat, Nudeln)'),
+                hintText: _copy('family_recipe_search_hint'),
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
@@ -407,10 +358,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         const SizedBox(height: 16),
         Text(
           hasQuery
-              ? 'Noch kein Community-Rezept für „$_query“.'
+                ? _copy('family_recipe_empty_query').replaceAll('{query}', _query)
               : (_activeFilter != null
-                  ? 'Noch kein passendes Rezept gefunden.'
-                  : 'Noch keine Rezepte.'),
+                  ? _copy('family_recipe_empty_filter')
+                  : _copy('family_recipe_empty')),
           textAlign: TextAlign.center,
           style:
               theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -424,7 +375,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              'Teile dein erstes Familien-Rezept – ein Tap unten rechts genügt.',
+              _copy('family_recipe_empty_share_hint'),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -453,8 +404,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           const Text('✨🍳', style: TextStyle(fontSize: 30)),
           const SizedBox(height: 10),
           Text(
-            'Möchtest du, dass die KI dir ein kinderfreundliches '
-            'Blitz-Rezept für „$_query“ zaubert?',
+            _copy('family_recipe_ai_prompt').replaceAll('{query}', _query),
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
           ),
@@ -471,8 +421,8 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.auto_awesome_rounded),
               label: Text(_generatingAi
-                  ? _recipeCopy('magic', 'Zaubere …')
-                  : _recipeCopy('magic', 'Blitz-Rezept zaubern')),
+                  ? _copy('family_recipe_ai_generating')
+                  : _copy('family_recipe_ai_generate')),
               style: FilledButton.styleFrom(
                 backgroundColor: _accent,
                 padding: const EdgeInsets.symmetric(vertical: 13),
@@ -501,7 +451,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           Row(children: [
             const Text('✨', style: TextStyle(fontSize: 18)),
             const SizedBox(width: 6),
-            Text(_recipeCopy('ai_recipe', 'KI-Blitz-Rezept'),
+            Text(_copy('family_recipe_ai_title'),
                 style: theme.textTheme.labelMedium
                     ?.copyWith(fontWeight: FontWeight.w700, color: _accent)),
           ]),
@@ -531,7 +481,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           ]),
           if (r.ingredients.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(_recipeCopy('ingredients', 'Zutaten'),
+            Text(_copy('family_recipe_ingredients_label'),
                 style: theme.textTheme.labelMedium
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
@@ -548,7 +498,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
           ],
           if (r.steps.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(_recipeCopy('preparation', 'Zubereitung'),
+            Text(_copy('family_recipe_preparation'),
                 style: theme.textTheme.labelMedium
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
@@ -578,9 +528,9 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                   _generatingAi || _aiShared ? null : () => _shareAiRecipe(r),
               icon: Icon(
                   _aiShared ? Icons.check_rounded : Icons.bookmark_add_rounded),
-              label: Text(_aiShared
-                  ? 'In Familien-Rezepten gespeichert'
-                  : 'In Familien-Rezepten teilen'),
+                label: Text(_aiShared
+                  ? _copy('family_recipe_ai_saved')
+                  : _copy('family_recipe_ai_share')),
               style: FilledButton.styleFrom(
                 backgroundColor: _aiShared ? const Color(0xFF16A34A) : _accent,
                 disabledBackgroundColor:
@@ -662,7 +612,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                     const SizedBox(width: 6),
                     Text(
                         r.isMine
-                            ? _recipeCopy('from_you', 'Von dir')
+                            ? _copy('family_recipe_from_you')
                             : r.authorName,
                         style: theme.textTheme.labelSmall
                             ?.copyWith(color: theme.colorScheme.outline)),
@@ -671,7 +621,8 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                       Icon(Icons.schedule_rounded,
                           size: 13, color: theme.colorScheme.outline),
                       const SizedBox(width: 3),
-                      Text('${r.prepMinutes} Min',
+                        Text(_copy('family_recipe_minutes_short')
+                          .replaceAll('{minutes}', '${r.prepMinutes}'),
                           style: theme.textTheme.labelSmall
                               ?.copyWith(color: theme.colorScheme.outline)),
                     ],
@@ -684,7 +635,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                 ],
                 if (r.ingredients.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text(_recipeCopy('ingredients', 'Zutaten'),
+                  Text(_copy('family_recipe_ingredients_label'),
                       style: theme.textTheme.labelMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
@@ -707,7 +658,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                 ],
                 if (r.steps.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text(_recipeCopy('preparation', 'Zubereitung'),
+                  Text(_copy('family_recipe_preparation'),
                       style: theme.textTheme.labelMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
@@ -745,7 +696,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         _reactionButton(
           theme,
           active: r.myCook,
-          label: 'Das kochen wir nach!',
+          label: _copy('family_recipe_reaction_cook'),
           emoji: '🍳',
           count: r.cookCount,
           onTap: () => _react(r, 'cook'),
@@ -754,7 +705,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         _reactionButton(
           theme,
           active: r.myTasty,
-          label: 'Hat geschmeckt!',
+          label: _copy('family_recipe_reaction_tasty'),
           emoji: '😋',
           count: r.tastyCount,
           onTap: () => _react(r, 'tasty'),

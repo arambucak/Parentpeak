@@ -293,8 +293,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                           ),
                           const SizedBox(height: 8),
                           if (visibleExpenses.isEmpty)
-                            const _EmptyHint(
-                                text: 'Keine Belege für den gewählten Monat.')
+                            _EmptyHint(text: _t('finance_empty_receipts'))
                           else
                             ...groupedExpenses.entries.take(6).expand(
                                   (entry) => [
@@ -325,10 +324,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                           ),
                           const SizedBox(height: 8),
                           if (_provider.filteredCareActivities.isEmpty)
-                            const _EmptyHint(
-                              text:
-                                  'Keine Care-Aktivitaeten für den gewählten Monat.',
-                            )
+                            _EmptyHint(text: _t('finance_empty_care'))
                           else
                             ...groupedCareActivities.entries.expand(
                               (entry) => [
@@ -503,7 +499,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
       if (lowerLine.contains('pfand')) {
         drafts.add(
           _ReceiptDraftItem(
-            title: 'Pfand / Rueckgabe',
+            title: _t('finance_deposit_return'),
             amount: amount,
             category: ExpenseCategory.deposit,
             paidById: _mamaId,
@@ -549,7 +545,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
       if (title.length < 2) continue;
 
-      final normalizedTitle = title.isEmpty ? 'Unbekannter Posten' : title;
+      final normalizedTitle = title.isEmpty ? _t('finance_unknown_item') : title;
       final lower = normalizedTitle.toLowerCase();
 
       final isPersonal = lower.contains('rasier') ||
@@ -596,9 +592,9 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
   Future<void> _addManualExpense() async {
     final drafts = await _openSplitEditor(
-      const [
+      [
         _ReceiptDraftItem(
-          title: 'Neue Position',
+          title: _t('finance_new_item'),
           amount: 0.0,
           category: ExpenseCategory.groceries,
           paidById: _mamaId,
@@ -636,7 +632,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content:
-              Text('${expenses.length} manuelle Positionen hinzugefuegt.')),
+                Text(_t('finance_manual_items_added')
+                  .replaceAll('{count}', '${expenses.length}'))),
     );
   }
 
@@ -677,7 +674,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
     final insights = <String>[];
     final expenses = _provider.filteredExpenses;
     if (expenses.isEmpty) {
-      return const ['Noch keine Ausgaben in diesem Monat erfasst.'];
+      return [_t('finance_insight_empty')];
     }
 
     double sumByCategory(ExpenseCategory category) {
@@ -694,32 +691,32 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     if (total > 0 && babyTotal > 0 && babyTotal / total >= 0.25) {
       insights.add(
-          'Babykosten praegen diesen Monat den groessten Teil eurer Alltagsausgaben.');
+          _t('finance_insight_baby'));
     }
 
     if (_provider.monthlyCareCredits >= 40) {
       insights.add(
-          'Der Care-Bonus reduziert den Ausgleich spuerbar und macht unsichtbare Arbeit sichtbar.');
+          _t('finance_insight_care'));
     }
 
     if (_provider.secondHandSavingsPotential >= 50) {
       insights.add(
-          'Second-Hand-Treffer zeigen gerade spuerbares Sparpotenzial für diesen Monat.');
+          _t('finance_insight_savings'));
     }
 
     if (depositTotal > 0) {
       insights.add(
-          'Pfand wurde separat erkannt und verfaelscht eure Familienkosten dadurch nicht mehr so stark.');
+          _t('finance_insight_deposit'));
     }
 
     if (personalTotal > groceriesTotal && personalTotal > 0) {
       insights.add(
-          'Persönliche Ausgaben liegen aktuell über den Familien-Lebensmitteln. Ein kurzer Beleg-Check lohnt sich.');
+          _t('finance_insight_personal'));
     }
 
     if (insights.isEmpty) {
       insights.add(
-          'Familienkosten und Ausgleich wirken diesen Monat insgesamt recht ausgewogen.');
+          _t('finance_insight_balanced'));
     }
 
     return insights.take(2).toList();
@@ -751,7 +748,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Split-Korrektur vor Uebernahme',
+                            _t('finance_split_correction'),
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -773,8 +770,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                         onPressed: () {
                           setModalState(() {
                             editable.add(
-                              const _ReceiptDraftItem(
-                                title: 'Neue Position',
+                              _ReceiptDraftItem(
+                                title: _t('finance_new_item'),
                                 amount: 0.0,
                                 category: ExpenseCategory.groceries,
                                 paidById: _mamaId,
@@ -833,7 +830,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                       setModalState(() {
                                         editable[index] = item.copyWith(
                                           title: value.trim().isEmpty
-                                              ? 'Unbekannter Posten'
+                                              ? _t('finance_unknown_item')
                                               : value.trim(),
                                         );
                                       });
@@ -895,8 +892,8 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                   const SizedBox(height: 8),
                                   DropdownButtonFormField<ExpenseCategory>(
                                     initialValue: item.category,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Kategorie',
+                                    decoration: InputDecoration(
+                                      labelText: _t('finance_label_category'),
                                       isDense: true,
                                     ),
                                     items: ExpenseCategory.values
@@ -961,7 +958,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                                       ExpenseSplitType.individual) ...[
                                     const SizedBox(height: 10),
                                     Text(
-                                      'Familien-Split feinjustieren',
+                                      _t('finance_adjust_split'),
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelMedium
@@ -1144,7 +1141,9 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Sparchance gespeichert: ${created.marketplace}, Potenzial ${_currency(created.savings)}.',
+            _t('finance_saving_saved')
+              .replaceAll('{marketplace}', created.marketplace)
+              .replaceAll('{amount}', _currency(created.savings)),
         ),
       ),
     );
@@ -1184,16 +1183,15 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
         pageFormat: pdf.PdfPageFormat.a4,
         build: (context) => [
           pw.Text(
-            'Parentpeak Finanzen - $month',
+            _t('finance_pdf_title').replaceAll('{month}', month),
             style: const pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 12),
-          pw.Text('Monatskosten: ${_currency(_provider.monthlyTotalExpenses)}'),
-          pw.Text('Care-Bonus: ${_currency(_provider.monthlyCareCredits)}'),
-          pw.Text(
-              'Sparpotenzial: ${_currency(_provider.secondHandSavingsPotential)}'),
+            pw.Text(_t('finance_pdf_monthly_costs').replaceAll('{amount}', _currency(_provider.monthlyTotalExpenses))),
+            pw.Text(_t('finance_pdf_care_bonus').replaceAll('{amount}', _currency(_provider.monthlyCareCredits))),
+            pw.Text(_t('finance_pdf_savings').replaceAll('{amount}', _currency(_provider.secondHandSavingsPotential))),
           pw.SizedBox(height: 10),
-          pw.Text('Monatsausgleich',
+          pw.Text(_t('finance_pdf_settlement'),
               style: const pw.TextStyle(fontWeight: pw.FontWeight.bold)),
           pw.Text(
               'Mama: ${mamaNet >= 0 ? '+' : '-'} ${_currency(mamaNet.abs())}'),
@@ -1230,7 +1228,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
               QrImageView(data: encoded, size: 180),
               const SizedBox(height: 12),
               Text(
-                'Scan für direkten Monatsausgleich zwischen Elternteilen.',
+                _t('finance_qr_description'),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),

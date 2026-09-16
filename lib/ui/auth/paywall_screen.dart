@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/config/access_config.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 class PaywallScreen extends StatelessWidget {
   final VoidCallback? onSubscribed;
@@ -16,6 +17,11 @@ class PaywallScreen extends StatelessWidget {
     this.onSubscribed,
     this.triggerFeatureId,
   });
+
+  String _t(BuildContext context, String key) => AppStringsManager.phase1String(
+        Localizations.localeOf(context).languageCode,
+        'paywall_$key',
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -32,15 +38,15 @@ class PaywallScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 56),
-                  _buildHeader(theme, user),
+                  _buildHeader(context, theme, user),
               const SizedBox(height: 28),
-              if (triggerFeatureId != null) _buildContextBanner(theme),
+              if (triggerFeatureId != null) _buildContextBanner(context, theme),
               if (triggerFeatureId != null) const SizedBox(height: 24),
-              _buildComparisonTable(theme),
+              _buildComparisonTable(context, theme),
               const SizedBox(height: 28),
               _buildPricingCards(context, theme),
               const SizedBox(height: 20),
-              _buildMoneyBackBadge(theme),
+              _buildMoneyBackBadge(context, theme),
               const SizedBox(height: 16),
               _buildContinueFreely(context, theme),
               const SizedBox(height: 24),
@@ -61,7 +67,7 @@ class PaywallScreen extends StatelessWidget {
 );
   }
 
-  Widget _buildHeader(ThemeData theme, ParentUser? user) {
+  Widget _buildHeader(BuildContext context, ThemeData theme, ParentUser? user) {
     return Column(
       children: [
         Container(
@@ -87,7 +93,7 @@ class PaywallScreen extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Text(
-          'Parentpeak Premium',
+          _t(context, 'title'),
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -95,7 +101,7 @@ class PaywallScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          _getHeaderSubtitle(user),
+          _getHeaderSubtitle(context, user),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.4,
@@ -106,20 +112,20 @@ class PaywallScreen extends StatelessWidget {
     );
   }
 
-  String _getHeaderSubtitle(ParentUser? user) {
+  String _getHeaderSubtitle(BuildContext context, ParentUser? user) {
     if (AccessConfig.isBetaFreeAccess) {
-      return 'Aktuell kostenlos in der Beta.\n'
-          'Nach dem offiziellen Start: 1 Monat kostenlos testen.';
+      return _t(context, 'beta');
     }
-    if (user == null) return 'Schalte alle Funktionen frei.';
+    if (user == null) return _t(context, 'unlock');
     if (user.trialDaysRemaining > 0) {
-      return 'Noch ${user.trialDaysRemaining} Tage kostenlos testen.\nDanach wähle deinen Plan.';
+      return _t(context, 'trial')
+          .replaceAll('{days}', user.trialDaysRemaining.toString());
     }
-    return 'Deine Testphase ist abgelaufen.\nBehalte vollen Zugang mit Premium.';
+    return _t(context, 'expired');
   }
 
   /// Kontextueller Banner wenn der User durch ein Limit hier gelandet ist.
-  Widget _buildContextBanner(ThemeData theme) {
+  Widget _buildContextBanner(BuildContext context, ThemeData theme) {
     final label = _getTriggerFeatureLabel();
     if (label == null) return const SizedBox.shrink();
 
@@ -139,8 +145,7 @@ class PaywallScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Du hast das tägliche Limit für "$label" erreicht. '
-              'Mit Premium gibt es keine Grenzen.',
+              _t(context, 'limit').replaceAll('{feature}', label),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onTertiaryContainer,
                 height: 1.3,
@@ -159,60 +164,54 @@ class PaywallScreen extends StatelessWidget {
   }
 
   /// Vergleichstabelle: Free vs Premium
-  Widget _buildComparisonTable(ThemeData theme) {
+  Widget _buildComparisonTable(BuildContext context, ThemeData theme) {
     final features = [
-      const _CompareRow(
+      _CompareRow(
         icon: Icons.auto_awesome_rounded,
-        label: 'Wochenimpulse',
-        freeValue: 'Basis',
-        premiumValue: 'Voll',
+        label: _t(context, 'weekly'), freeValue: _t(context, 'basic'), premiumValue: _t(context, 'full'),
       ),
-      const _CompareRow(
+      _CompareRow(
         icon: Icons.chat_rounded,
-        label: 'KI-Elternberatung',
+        label: _t(context, 'ai'),
         freeValue: '3\u00D7 / Tag',
-        premiumValue: 'Unlimitiert',
+        premiumValue: _t(context, 'unlimited'),
       ),
-      const _CompareRow(
+      _CompareRow(
         icon: Icons.calendar_month_rounded,
-        label: 'Familienkalender',
-        freeValue: 'Voll',
-        premiumValue: 'Voll',
+        label: _t(context, 'calendar'), freeValue: _t(context, 'full'), premiumValue: _t(context, 'full'),
         isFreeIncluded: true,
       ),
-      const _CompareRow(
+      _CompareRow(
         icon: Icons.fact_check_rounded,
-        label: 'Organisation',
-        freeValue: 'Voll',
-        premiumValue: 'Voll',
+        label: _t(context, 'organization'), freeValue: _t(context, 'full'), premiumValue: _t(context, 'full'),
         isFreeIncluded: true,
       ),
-      const _CompareRow(
+      _CompareRow(
         icon: Icons.diversity_3_rounded,
-        label: 'Eltern Match',
+        label: _t(context, 'match'),
         freeValue: '\u2014',
-        premiumValue: 'Voll',
+        premiumValue: _t(context, 'full'),
         isPremiumOnly: true,
       ),
-      const _CompareRow(
+      _CompareRow(
         icon: Icons.celebration_rounded,
-        label: 'Events & Aktivit\u00E4ten',
+        label: _t(context, 'events'),
         freeValue: '\u2014',
-        premiumValue: 'Voll',
+        premiumValue: _t(context, 'full'),
         isPremiumOnly: true,
       ),
-      const _CompareRow(
+      _CompareRow(
         icon: Icons.inventory_2_rounded,
-        label: 'Verschenkmarkt',
+        label: _t(context, 'market'),
         freeValue: '\u2014',
-        premiumValue: 'Voll',
+        premiumValue: _t(context, 'full'),
         isPremiumOnly: true,
       ),
-      const _CompareRow(
+      _CompareRow(
         icon: Icons.favorite_rounded,
-        label: 'GemeinsamSatt',
+        label: _t(context, 'meals'),
         freeValue: '\u2014',
-        premiumValue: 'Voll',
+        premiumValue: _t(context, 'full'),
         isPremiumOnly: true,
       ),
     ];
@@ -240,7 +239,7 @@ class PaywallScreen extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: Text(
-                    'Free',
+                    _t(context, 'free'),
                     style: theme.textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: theme.colorScheme.onSurfaceVariant,
@@ -263,7 +262,7 @@ class PaywallScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'Premium',
+                      _t(context, 'premium'),
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -369,18 +368,19 @@ class PaywallScreen extends StatelessWidget {
     return Column(
       children: [
         _PricingCard(
-          label: 'Jährlich',
+          label: _t(context, 'yearly'),
           price: '29,99 \u20AC',
-          subline: '2,50 \u20AC / Monat',
-          badge: 'Beliebt \u00B7 37% Ersparnis',
+          subline: _t(context, 'year_subline'), badge: _t(context, 'badge'),
+          period: _t(context, 'per_year'),
           isPrimary: true,
           onTap: () => _activatePremium(context),
         ),
         const SizedBox(height: 12),
         _PricingCard(
-          label: 'Monatlich',
+          label: _t(context, 'monthly'),
           price: '3,99 \u20AC',
-          subline: 'monatlich k\u00FCndbar',
+          subline: _t(context, 'month_subline'),
+          period: _t(context, 'per_month'),
           onTap: () => _activatePremium(context),
         ),
       ],
@@ -393,9 +393,8 @@ class PaywallScreen extends StatelessWidget {
     if (!success) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Premium-Aktivierung fehlgeschlagen. Bitte erneut versuchen.'),
+          SnackBar(
+            content: Text(_t(context, 'activation_failed')),
           ),
         );
       }
@@ -407,7 +406,7 @@ class PaywallScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildMoneyBackBadge(ThemeData theme) {
+  Widget _buildMoneyBackBadge(BuildContext context, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -422,7 +421,7 @@ class PaywallScreen extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              '30 Tage Geld-zur\u00FCck-Garantie \u00B7 Jederzeit k\u00FCndbar',
+              _t(context, 'guarantee'),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -443,13 +442,13 @@ class PaywallScreen extends StatelessWidget {
             }
           },
           child: Text(
-            'Mit Free-Version weitermachen',
+            _t(context, 'continue'),
             style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          'Kalender, Organisation und Basis-Impulse bleiben kostenlos.',
+          _t(context, 'continue_hint'),
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.outline,
           ),
@@ -486,6 +485,7 @@ class _PricingCard extends StatelessWidget {
   final String label;
   final String price;
   final String subline;
+  final String period;
   final String? badge;
   final bool isPrimary;
   final VoidCallback onTap;
@@ -494,6 +494,7 @@ class _PricingCard extends StatelessWidget {
     required this.label,
     required this.price,
     required this.subline,
+    required this.period,
     required this.onTap,
     this.badge,
     this.isPrimary = false,
@@ -577,7 +578,7 @@ class _PricingCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  isPrimary ? '/ Jahr' : '/ Monat',
+                  period,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

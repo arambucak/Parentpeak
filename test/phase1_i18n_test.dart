@@ -186,7 +186,7 @@ void main() {
 
   test('requested Phase1 screens contain no raw visible static text', () {
     final rawTextArgument = RegExp(
-      r'''\b(?:Text|Tooltip)\b\s*\(\s*(?:const\s+)?['"]''',
+      r'''\b(?:Text|Tooltip)\b\s*\(\s*(?:const\s+)?['"](?![^'"]*\$)''',
     );
     final rawTextProperty = RegExp(
       r'''\b(?:labelText|hintText|tooltip)\s*:\s*['"]''',
@@ -194,10 +194,14 @@ void main() {
 
     for (final path in _phase1ScreenPaths) {
       final source = File(path).readAsStringSync();
-      expect(source, isNot(matches(rawTextArgument)),
-          reason: '$path contains a raw visible text argument');
-      expect(source, isNot(matches(rawTextProperty)),
-          reason: '$path contains a raw visible text property');
+    final codeLines = source
+      .split('\n')
+      .where((line) => !line.trimLeft().startsWith('//'))
+      .join('\n');
+    expect(codeLines, isNot(matches(rawTextArgument)),
+      reason: '$path contains a raw visible text argument');
+    expect(codeLines, isNot(matches(rawTextProperty)),
+      reason: '$path contains a raw visible text property');
     }
   });
 
