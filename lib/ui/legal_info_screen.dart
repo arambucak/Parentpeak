@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
+import 'package:parentpeak/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LegalInfoScreen extends StatelessWidget {
   const LegalInfoScreen({super.key});
+
+  String _t(String key) =>
+      AppStringsManager.phase1String(languageService.currentLanguage, key);
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +18,7 @@ class LegalInfoScreen extends StatelessWidget {
     const accent = Color(0xFF38BDF8);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rechtliches')),
+      appBar: AppBar(title: Text(_t('legal_title'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -30,16 +35,16 @@ class LegalInfoScreen extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
-                    SizedBox(width: 10),
+                    const Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
+                    const SizedBox(width: 10),
                     Text(
-                      'Klarheit für euren Familienraum',
-                      style: TextStyle(
+                      _t('legal_hero_title'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -47,62 +52,56 @@ class LegalInfoScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Text(
-                  'Hier geht es nicht um juristische Floskeln, sondern darum, wie Parentpeak fair, sicher und verantwortungsvoll im Familienalltag genutzt werden soll.',
-                  style: TextStyle(color: Colors.white, height: 1.4),
+                  _t('legal_hero_body'),
+                  style: const TextStyle(color: Colors.white, height: 1.4),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            'Wichtige Leitlinien',
+            _t('legal_guidelines_title'),
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 10),
-          const _LegalSection(
+          _LegalSection(
             icon: Icons.home_outlined,
-            title: 'Private Nutzung im Familienkontext',
-            body:
-                'Parentpeak ist für euren privaten Familienalltag gedacht. Inhalte, Rollen und Profile sollten nur für euren echten Vertrauenskreis gepflegt werden.',
+            title: _t('legal_private_title'),
+            body: _t('legal_private_body'),
           ),
           const SizedBox(height: 10),
-          const _LegalSection(
+          _LegalSection(
             icon: Icons.shield_outlined,
-            title: 'Sorgfalt bei Daten und Rollen',
-            body:
-                'Bitte haltet Angaben aktuell und vergebt Rollen bewusst. Vertrauensprofile, Kinderprofile und Backup-Daten sollten nur mit passenden Personen geteilt werden.',
+            title: _t('legal_data_title'),
+            body: _t('legal_data_body'),
           ),
           const SizedBox(height: 10),
-          const _LegalSection(
+          _LegalSection(
             icon: Icons.privacy_tip_outlined,
-            title: 'DSGVO & Privacy by Design',
-            body:
-                'KI-Anfragen werden datensparsam verarbeitet. Keine echten Kindernamen, Kontaktdaten oder exakten Adressen in Freitext eingeben. Der Privacy-Modus minimiert sensible Details.',
+            title: _t('legal_privacy_title'),
+            body: _t('legal_privacy_body'),
           ),
           const SizedBox(height: 10),
-          const _LegalSection(
+          _LegalSection(
             icon: Icons.emergency_outlined,
-            title: 'Schutz vor Ersatz von echten Hilfsstellen',
-            body:
-                'Sicherheits- und Notfallhinweise in Parentpeak helfen bei Orientierung, ersetzen aber keine professionelle medizinische, rechtliche oder akute Hilfe.',
+            title: _t('legal_help_title'),
+            body: _t('legal_help_body'),
           ),
           const SizedBox(height: 10),
-          const _LegalSection(
+          _LegalSection(
             icon: Icons.storefront_outlined,
-            title: 'Verschenkmarkt: Rolle von Parentpeak',
-            body:
-                'Parentpeak stellt im Verschenkmarkt nur die Plattform zur Vermittlung bereit. Verantwortung für Zustand, Sicherheit, Rechtmäßigkeit und Übergabe der Artikel liegt bei den beteiligten Nutzern.',
+            title: _t('legal_market_title'),
+            body: _t('legal_market_body'),
           ),
           const SizedBox(height: 10),
-          const _LegalSection(
+          _LegalSection(
             icon: Icons.handshake_outlined,
-            title: 'Respektvoller Familienraum',
-            body:
-                'Die App soll Zusammenarbeit erleichtern. Profile, Hinweise und Funktionen dürfen nicht genutzt werden, um Familienmitglieder zu kontrollieren oder bloßzustellen.',
+            title: _t('legal_respect_title'),
+            body: _t('legal_respect_body'),
           ),
           const SizedBox(height: 12),
           Card(
@@ -111,18 +110,18 @@ class LegalInfoScreen extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(22),
             ),
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Kurz gesagt',
+                    _t('legal_summary_title'),
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'Parentpeak soll Struktur, Schutz und Vertrauen in Familien unterstuetzen. Nutzt die App nur dort, wo sie Beziehungen staerkt und nicht ersetzt.',
+                    _t('legal_summary_body'),
                   ),
                 ],
               ),
@@ -190,6 +189,9 @@ class _LegalSection extends StatelessWidget {
 }
 
 class _ComplianceLinksSection extends StatelessWidget {
+  String _t(String key) =>
+      AppStringsManager.phase1String(languageService.currentLanguage, key);
+
   Future<void> _openUrl(BuildContext context, String value) async {
     final uri = Uri.tryParse(value);
     if (uri == null) return;
@@ -222,31 +224,31 @@ class _ComplianceLinksSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Wichtige Links & Kontakt',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            Text(
+              _t('legal_links_title'),
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
             ),
             const SizedBox(height: 12),
             if (privacyUrl != null && privacyUrl.isNotEmpty)
               _ComplianceLink(
-                label: 'Datenschutzerklärung (Privacy Policy)',
+                label: _t('legal_privacy_link'),
                 url: privacyUrl,
               )
             else
-              const Text(
-                '🔒 Privacy Policy: Nicht konfiguriert (bitte PRIVACY_POLICY_URL setzen)',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              Text(
+                _t('legal_privacy_not_configured'),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             const SizedBox(height: 8),
             if (termsUrl != null && termsUrl.isNotEmpty)
               _ComplianceLink(
-                label: 'Nutzungsbedingungen (Terms of Service)',
+                label: _t('legal_terms_link'),
                 url: termsUrl,
               )
             else
-              const Text(
-                '📋 Terms: Nicht konfiguriert (bitte TERMS_OF_SERVICE_URL setzen)',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              Text(
+                _t('legal_terms_not_configured'),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             if (contactEmail != null && contactEmail.isNotEmpty) ...[
               const SizedBox(height: 8),

@@ -28,7 +28,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final _eventService = EventService();
 
   String _t(String key) =>
-      AppStringsManager.getString(languageService.currentLanguage, key);
+      AppStringsManager.phase1String(languageService.currentLanguage, key);
 
   String _selectedPaymentMethod = 'stripe'; // stripe oder paypal
   bool _isProcessing = false;
@@ -59,11 +59,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     if (_selectedPaymentMethod == 'stripe' && !_stripeAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Stripe ist aktuell nicht konfiguriert. Bitte wähle PayPal oder kontaktiere den Support.',
-          ),
-        ),
+        SnackBar(content: Text(_t('payment_stripe_unavailable'))),
       );
       return;
     }
@@ -91,8 +87,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           : (initResponse['token']?.toString() ?? '').trim();
 
       if (providerTransactionRef.isEmpty) {
-        throw StateError(
-            'Provider-Referenz fehlt. Zahlung kann nicht fortgesetzt werden.');
+        throw StateError(_t('payment_provider_reference_missing'));
       }
 
       // Lege Zahlung als pending an und warte auf verifiziertes Provider-Ergebnis.
@@ -109,7 +104,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       if (transaction == null || transaction.status != 'completed') {
         throw StateError(
-            'Zahlung ist noch nicht abgeschlossen (Status: ${transaction?.status ?? 'unknown'}).');
+          _t('payment_not_completed').replaceAll(
+            '{status}',
+            transaction?.status ?? _t('payment_status_unknown'),
+          ),
+        );
       }
 
       // Erstelle das Event
@@ -151,7 +150,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Deine Aktivität "${widget.event.title}" ist nun live!',
+                  _t('payment_event_live').replaceAll('{title}', widget.event.title),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -164,12 +163,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   child: Column(
                     children: [
                       Text(
-                        'Transaktions-ID: ${transaction.id}',
+                        _t('payment_transaction_id').replaceAll('{id}', transaction.id),
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Betrag: ${transaction.amount.toStringAsFixed(2)} €',
+                        _t('payment_amount').replaceAll(
+                          '{amount}', transaction.amount.toStringAsFixed(2)),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ],
@@ -203,7 +203,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       setState(() => _isProcessing = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Zahlungsfehler: $e')),
+          SnackBar(content: Text(_t('payment_error').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -212,17 +212,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String _mapStripeError(StripeException e) {
     final code = e.error.code;
     if (code == FailureCode.Canceled) {
-      return 'Zahlung abgebrochen';
+      return _t('payment_canceled');
     }
     if (code == FailureCode.Failed) {
-      return 'Zahlung fehlgeschlagen. Bitte versuche es erneut.';
+      return _t('payment_failed');
     }
     if (code == FailureCode.Timeout) {
-      return 'Zeitüberschreitung bei der Zahlung. Bitte erneut versuchen.';
+      return _t('payment_timeout');
     }
     return e.error.localizedMessage?.trim().isNotEmpty == true
-        ? 'Stripe-Fehler: ${e.error.localizedMessage}'
-        : 'Stripe-Fehler. Bitte versuche es erneut.';
+        ? _t('payment_stripe_error_detail')
+          .replaceAll('{error}', e.error.localizedMessage!)
+        : _t('payment_stripe_error');
   }
 
   Future<PaymentTransaction?> _awaitFinalPaymentState(
@@ -284,9 +285,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: const Color(0xFFBFDBFE)),
                       ),
-                      child: const Text(
-                        'Prüfe deine Angaben und bestätige die Zahlungsart, um dein Event zu veröffentlichen.',
-                      ),
+                      child: Text(_t('payment_intro')),
                     ),
                     const SizedBox(height: 16),
                     // Event Summary
@@ -301,7 +300,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Bestellübersicht',
+                            _t('payment_order_summary'),
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -329,9 +328,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                     color: Colors.grey.shade200,
                                     borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: const Text(
-                                    'PRIVAT',
-                                    style: TextStyle(
+                                  child: Text(
+                                    _t('payment_visibility_private'),
+                                    style: const TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700),
                                   ),
@@ -345,9 +344,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                     color: const Color(0xFFE0E7FF),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: const Text(
-                                    'FAMILIENKREIS',
-                                    style: TextStyle(
+                                  child: Text(
+                                    _t('payment_visibility_family'),
+                                    style: const TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700),
                                   ),
@@ -362,7 +361,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
-                                    'NUR EINGELADEN (${widget.event.invitedUserIds.length})',
+                                    _t('payment_visibility_invited').replaceAll(
+                                      '{count}', '${widget.event.invitedUserIds.length}'),
                                     style: const TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700),
@@ -376,9 +376,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                     color: const Color(0xFFDBEAFE),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: const Text(
-                                    'ÖFFENTLICH',
-                                    style: TextStyle(
+                                  child: Text(
+                                    _t('payment_visibility_public'),
+                                    style: const TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700),
                                   ),
@@ -404,7 +404,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                     // Zahlungsmethode
                     Text(
-                      'Zahlungsmethode',
+                      _t('payment_method'),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -413,8 +413,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                     // Stripe Option
                     _PaymentMethodOptionTile(
-                      title: 'Stripe',
-                      subtitle: 'Visa, Mastercard, etc.',
+                      title: _t('payment_stripe_name'),
+                      subtitle: _t('payment_stripe_subtitle'),
                       icon: Icons.credit_card,
                       selected: _selectedPaymentMethod == 'stripe',
                       enabled: !_isProcessing,
@@ -425,8 +425,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                     // PayPal Option
                     _PaymentMethodOptionTile(
-                      title: 'PayPal',
-                      subtitle: 'Bezahl mit deinem PayPal-Konto',
+                      title: _t('payment_paypal_name'),
+                      subtitle: _t('payment_paypal_subtitle'),
                       icon: Icons.payment,
                       selected: _selectedPaymentMethod == 'paypal',
                       enabled: !_isProcessing,
@@ -436,7 +436,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(height: 24),
 
                     // Sicherheits-Hinweis
-                    const DecoratedBox(
+                    DecoratedBox(
                       decoration: BoxDecoration(
                         color: Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -448,13 +448,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         padding: EdgeInsets.all(12),
                         child: Row(
                           children: [
-                            Icon(Icons.lock,
+                            const Icon(Icons.lock,
                                 color: Color(0xFF1D4ED8), size: 20),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Deine Zahlungsdaten sind sicher verschlüsselt',
-                                style: TextStyle(
+                                _t('payment_security_note'),
+                                style: const TextStyle(
                                   color: Color(0xFF1D4ED8),
                                   fontSize: 12,
                                 ),
@@ -469,9 +469,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     // Terms & Conditions
                     CheckboxListTile(
                       title: Text(_t('payment_accept_agb')),
-                      subtitle: const Text(
-                        'Ich akzeptiere die AGB und Datenschutzhinweise. Zahlungen werden über Stripe/PayPal abgewickelt.',
-                      ),
+                      subtitle: Text(_t('payment_terms_subtitle')),
                       value: _agreeToTerms,
                       onChanged: _isProcessing
                           ? null
@@ -538,8 +536,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             : const Icon(Icons.payment),
                         label: Text(
                           _isProcessing
-                              ? 'Wird verarbeitet...'
-                              : 'Jetzt ${widget.amount.toStringAsFixed(2)} € zahlen',
+                                ? _t('payment_processing')
+                                : _t('payment_pay_now').replaceAll(
+                                  '{amount}', widget.amount.toStringAsFixed(2)),
                         ),
                       ),
                     ),

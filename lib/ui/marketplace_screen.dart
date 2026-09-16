@@ -15,7 +15,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
   late TabController _tabController;
 
   String _t(String key) =>
-      AppStringsManager.getString(languageService.currentLanguage, key);
+      AppStringsManager.phase1String(languageService.currentLanguage, key);
   late TabController _educationSubTabController;
   List<Provider> _allProviders = [];
   String? _selectedCategory;
@@ -72,7 +72,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
       });
     } catch (e) {
       setState(() {
-        _error = 'Fehler beim Laden: $e';
+        _error = _t('market_load_error').replaceAll('{error}', '$e');
         _isLoading = false;
       });
     }
@@ -99,24 +99,23 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'marketplace')),
+        title: Text(_t('marketplace_title')),
         elevation: 0,
         backgroundColor: Colors.blue.shade600,
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
+          tabs: [
             Tab(
               icon: Icon(Icons.school_rounded),
-              text: 'Bildung',
+              text: _t('market_tab_education'),
             ),
             Tab(
               icon: Icon(Icons.people_rounded),
-              text: 'Betreuung',
+              text: _t('market_tab_care'),
             ),
             Tab(
               icon: Icon(Icons.shopping_bag_rounded),
-              text: 'Basar',
+              text: _t('market_tab_bazaar'),
             ),
           ],
         ),
@@ -143,8 +142,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
-                        child: Text(AppStringsManager.getString(
-                            languageService.currentLanguage, 'try_again')),
+                        child: Text(_t('market_try_again')),
                       ),
                     ],
                   ),
@@ -251,7 +249,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
             controller: _searchController,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Anbieter suchen...',
+              hintText: _t('market_search_providers'),
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -284,14 +282,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                         style: Theme.of(context).textTheme.titleMedium),
                     TextButton(
                       onPressed: _resetFilters,
-                      child: Text(AppStringsManager.getString(
-                          languageService.currentLanguage, 'reset_filter')),
+                        child: Text(_t('market_reset_filter')),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 // Preis-Slider
-                Text('Max. Preis: €${_maxPrice.toStringAsFixed(0)}/Stunde'),
+                Text(_t('market_max_price').replaceAll(
+                  '{price}', _maxPrice.toStringAsFixed(0))),
                 Slider(
                   value: _maxPrice,
                   min: 0,
@@ -303,7 +301,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 ),
                 const SizedBox(height: 12),
                 // Rating Filter
-                Text('Min. Bewertung: ${_minRating.toStringAsFixed(1)} ⭐'),
+                Text(_t('market_min_rating').replaceAll(
+                  '{rating}', _minRating.toStringAsFixed(1))),
                 Slider(
                   value: _minRating,
                   min: 1,
@@ -328,13 +327,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       const Icon(Icons.search_off,
                           size: 64, color: Colors.grey),
                       const SizedBox(height: 16),
-                      Text(AppStringsManager.getString(
-                          languageService.currentLanguage, 'no_offers')),
+                        Text(_t('market_no_offers')),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: _resetFilters,
-                        child: Text(AppStringsManager.getString(
-                            languageService.currentLanguage, 'reset_filter')),
+                        child: Text(_t('market_reset_filter')),
                       ),
                     ],
                   ),
@@ -358,14 +355,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
         // Sub-Tabs für Bildung
         TabBar(
           controller: _educationSubTabController,
-          tabs: const [
+          tabs: [
             Tab(
               icon: Icon(Icons.school_rounded),
-              text: 'Nachhilfe',
+              text: _t('market_subtab_tutoring'),
             ),
             Tab(
               icon: Icon(Icons.palette_rounded),
-              text: 'Außerschulisch',
+              text: _t('market_subtab_extracurricular'),
             ),
           ],
         ),
@@ -453,7 +450,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
             controller: _searchController,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Anbieter suchen...',
+              hintText: _t('market_search_providers'),
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -485,13 +482,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       style: Theme.of(context).textTheme.titleMedium),
                   TextButton(
                     onPressed: _resetFilters,
-                    child: Text(AppStringsManager.getString(
-                        languageService.currentLanguage, 'reset_filter')),
+                    child: Text(_t('market_reset_filter')),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              Text('Max. Preis: €${_maxPrice.toStringAsFixed(0)}/Stunde'),
+                Text(_t('market_max_price').replaceAll(
+                  '{price}', _maxPrice.toStringAsFixed(0))),
               Slider(
                 value: _maxPrice,
                 min: 0,
@@ -502,7 +499,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 },
               ),
               const SizedBox(height: 12),
-              Text('Min. Bewertung: ${_minRating.toStringAsFixed(1)} ⭐'),
+                Text(_t('market_min_rating').replaceAll(
+                  '{rating}', _minRating.toStringAsFixed(1))),
               Slider(
                 value: _minRating,
                 min: 1,
@@ -527,13 +525,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       const Icon(Icons.search_off,
                           size: 64, color: Colors.grey),
                       const SizedBox(height: 16),
-                      Text(AppStringsManager.getString(
-                          languageService.currentLanguage, 'no_offers')),
+                        Text(_t('market_no_offers')),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: _resetFilters,
-                        child: Text(AppStringsManager.getString(
-                            languageService.currentLanguage, 'reset_filter')),
+                        child: Text(_t('market_reset_filter')),
                       ),
                     ],
                   ),
@@ -561,7 +557,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
             controller: _searchController,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Kategorie suchen...',
+              hintText: _t('market_search_categories'),
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -615,7 +611,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
             controller: _searchController,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Kategorie suchen...',
+              hintText: _t('market_search_categories'),
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -703,7 +699,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              '${providers.length} Anbieter',
+                _t('market_provider_count')
+                  .replaceAll('{count}', '${providers.length}'),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -765,7 +762,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                       ),
                       if (provider.age > 0)
                         Text(
-                          '${provider.age} Jahre alt',
+                            _t('market_age_years')
+                              .replaceAll('{age}', '${provider.age}'),
                           style:
                               TextStyle(fontSize: 11, color: Colors.grey[600]),
                         ),
@@ -813,7 +811,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                   label: Text(_t('market_contact')),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Kontakt zu ${provider.name}')),
+                        SnackBar(content: Text(_t('market_contacting')
+                          .replaceAll('{name}', provider.name))),
                     );
                   },
                 ),
@@ -860,7 +859,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                     ),
                     if (provider.age > 0)
                       Text(
-                        '${provider.age} Jahre, ${provider.location}',
+                        _t('market_age_location')
+                          .replaceAll('{age}', '${provider.age}')
+                          .replaceAll('{location}', provider.location),
                         style: TextStyle(color: Colors.grey[600]),
                       ),
                   ],
@@ -868,19 +869,19 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
               ),
               const SizedBox(height: 24),
               // Details
-              _detailRow('Bereich', provider.category),
-              _detailRow('Spezialisierung', provider.subcategory),
+              _detailRow(_t('market_field_area'), provider.category),
+              _detailRow(_t('market_field_specialization'), provider.subcategory),
               if (provider.price > 0)
-                _detailRow('Preis', '€${provider.price}/${provider.priceUnit}'),
+                _detailRow(_t('market_field_price'), '€${provider.price}/${provider.priceUnit}'),
               _detailRow(
-                  'Bewertung', '${provider.rating} ⭐ (${provider.reviews})'),
+                  _t('market_field_rating'), '${provider.rating} ⭐ (${provider.reviews})'),
               if (provider.languages.isNotEmpty)
-                _detailRow('Sprachen', provider.languages.join(', ')),
-              _detailRow('Erreichbarkeit', provider.availability),
+                _detailRow(_t('market_field_languages'), provider.languages.join(', ')),
+              _detailRow(_t('market_field_availability'), provider.availability),
               const SizedBox(height: 16),
-              const Text(
-                'Beschreibung',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                _t('market_field_description'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(provider.description),
@@ -889,14 +890,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.message),
-                  label: Text(AppStringsManager.getString(
-                      languageService.currentLanguage, 'contact_now')),
+                    label: Text(_t('market_contact_now')),
                   onPressed: () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                           content:
-                              Text('Nachricht an ${provider.name} gesendet!')),
+                                Text(_t('market_message_sent')
+                                  .replaceAll('{name}', provider.name))),
                     );
                   },
                 ),
