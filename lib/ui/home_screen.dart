@@ -674,11 +674,9 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       _FeatureAction(
         id: 'ritual_ruhe',
-        label: l10n.t('ritualRuheTitle', fallback: 'Ritual & Ruhe'),
-        description: l10n.t(
-          'ritualRuheTileSubtitle',
-          fallback: 'Ein ruhiger Moment für euren Familienalltag',
-        ),
+        label: AppStringsManager.getString(lang, 'ritualRuheTitle'),
+        description:
+            AppStringsManager.getString(lang, 'ritualRuheTileSubtitle'),
         icon: DateTime.now().hour >= 18 || DateTime.now().hour < 6
             ? Icons.nightlight_round
             : Icons.wb_sunny_rounded,

@@ -11,6 +11,88 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 
+String _t(String key) =>
+    AppStringsManager.getString(languageService.currentLanguage, key);
+
+String _matchingOptionLabel(String value) {
+  const translations = {
+    'en': {
+      'Bildung': 'Education',
+      'Spielplatz': 'Playground',
+      'Familienzeit': 'Family time',
+      'Gesundheit': 'Health',
+      'Sport': 'Sports',
+      'Kreativ': 'Creative',
+      'Deutsch': 'German',
+      'Englisch': 'English',
+      'Türkisch': 'Turkish',
+      'Arabisch': 'Arabic',
+      'Kurdisch': 'Kurdish',
+      'Französisch': 'French',
+      'Gewaltfrei': 'Non-violent',
+      'Respekt': 'Respect',
+      'Inklusion': 'Inclusion',
+      'Empathie': 'Empathy',
+      'Offenheit': 'Open-mindedness',
+      'Alleinerziehend': 'Single parent',
+      'Patchwork': 'Blended family',
+      'Kernfamilie': 'Nuclear family',
+      'Mehrgeneration': 'Multigenerational family',
+    },
+    'tr': {
+      'Bildung': 'Eğitim',
+      'Spielplatz': 'Oyun parkı',
+      'Familienzeit': 'Aile zamanı',
+      'Outdoor': 'Açık hava',
+      'Gesundheit': 'Sağlık',
+      'Sport': 'Spor',
+      'Kreativ': 'Yaratıcılık',
+      'Deutsch': 'Almanca',
+      'Englisch': 'İngilizce',
+      'Türkisch': 'Türkçe',
+      'Arabisch': 'Arapça',
+      'Kurdisch': 'Kürtçe',
+      'Französisch': 'Fransızca',
+      'Gewaltfrei': 'Şiddetsiz',
+      'Respekt': 'Saygı',
+      'Inklusion': 'Kapsayıcılık',
+      'Empathie': 'Empati',
+      'Tradition': 'Gelenek',
+      'Offenheit': 'Açık fikirlilik',
+      'Alleinerziehend': 'Tek ebeveyn',
+      'Patchwork': 'Karma aile',
+      'Kernfamilie': 'Çekirdek aile',
+      'Mehrgeneration': 'Çok kuşaklı aile',
+    },
+    'ku': {
+      'Bildung': 'Perwerde',
+      'Spielplatz': 'Lîstikgeh',
+      'Familienzeit': 'Dema malbatê',
+      'Outdoor': 'Li derve',
+      'Gesundheit': 'Tenduristî',
+      'Sport': 'Werziş',
+      'Kreativ': 'Afirînerî',
+      'Deutsch': 'Almanî',
+      'Englisch': 'Îngilîzî',
+      'Türkisch': 'Tirkî',
+      'Arabisch': 'Erebî',
+      'Kurdisch': 'Kurdî',
+      'Französisch': 'Fransî',
+      'Gewaltfrei': 'Bê tundî',
+      'Respekt': 'Rêz',
+      'Inklusion': 'Tevlêbûn',
+      'Empathie': 'Hevhesîn',
+      'Tradition': 'Kevneşopî',
+      'Offenheit': 'Vekirîtî',
+      'Alleinerziehend': 'Tenê dêûbav',
+      'Patchwork': 'Malbata tevlihev',
+      'Kernfamilie': 'Malbata navendî',
+      'Mehrgeneration': 'Malbata pir nifşî',
+    },
+  };
+  return translations[languageService.currentLanguage]?[value] ?? value;
+}
+
 class ParentMatchingScreen extends StatefulWidget {
   const ParentMatchingScreen({
     super.key,
@@ -103,9 +185,6 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
   }
 
   String get _effectiveUserId => _currentUserId ?? 'local-parent-user';
-
-  String _t(String key) =>
-      AppStringsManager.getString(languageService.currentLanguage, key);
 
   @override
   void initState() {
@@ -486,8 +565,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       if (announce && newlyConfirmedIds.isNotEmpty) {
         final count = newlyConfirmedIds.length;
         final text = count == 1
-            ? 'Neue bestätigte Verbindung verfügbar.'
-            : '$count neue bestätigte Verbindungen verfügbar.';
+            ? _t('matching_new_connection')
+            : _t('matching_new_connections').replaceFirst('{count}', '$count');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(text),
@@ -517,8 +596,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       if (announce && newlyConfirmedIds.isNotEmpty) {
         final count = newlyConfirmedIds.length;
         final text = count == 1
-            ? 'Neue bestätigte Verbindung verfügbar.'
-            : '$count neue bestätigte Verbindungen verfügbar.';
+            ? _t('matching_new_connection')
+            : _t('matching_new_connections').replaceFirst('{count}', '$count');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(text),
@@ -558,7 +637,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Neue bestätigte Verbindungen',
+                  _t('matching_new_connections_title'),
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
@@ -742,21 +821,24 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
         profile.valuesFocus.toSet().intersection(_myValues).toList();
 
     if (sharedInterests.isNotEmpty) {
-      reasons
-          .add('Gemeinsame Interessen: ${sharedInterests.take(2).join(', ')}');
+      reasons.add(_t('matching_reason_interests')
+          .replaceFirst('{values}', sharedInterests.take(2).join(', ')));
     }
     if (sharedLanguages.isNotEmpty) {
-      reasons.add('Sprache passt: ${sharedLanguages.take(2).join(', ')}');
+      reasons.add(_t('matching_reason_languages')
+          .replaceFirst('{values}', sharedLanguages.take(2).join(', ')));
     }
     if (sharedValues.isNotEmpty) {
-      reasons.add('Ähnliche Werte: ${sharedValues.take(2).join(', ')}');
+      reasons.add(_t('matching_reason_values')
+          .replaceFirst('{values}', sharedValues.take(2).join(', ')));
     }
     final distance = _distanceKm(profile);
     if (distance != null) {
-      reasons.add('Wohnortnähe: ${distance.toStringAsFixed(1)} km entfernt');
+      reasons.add(_t('matching_reason_distance')
+          .replaceFirst('{distance}', distance.toStringAsFixed(1)));
     }
     if (reasons.isEmpty) {
-      reasons.add('Passende Familienphase und Offenheit für Austausch');
+      reasons.add(_t('matching_reason_family_stage'));
     }
     return reasons;
   }
@@ -791,7 +873,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     if (result.connected || result.matchState == 'matched') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(_t('matching_confirmed')
+          content: Text(_t('matching_confirmed')
               .replaceAll('{name}', profile.name)
               .replaceAll('{score}', '$score')),
           duration: const Duration(seconds: 2),
@@ -837,14 +919,12 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       builder: (context) => AlertDialog(
         title: Text(_t('matching_safety_check')),
         content: Text(
-          'Das Profil ${profile.name} ist aktuell nur auf Basisniveau verifiziert. '
-          'Teile keine privaten Kontaktdaten oder genaue Kinder-Standorte im ersten Kontakt. '
-          'Möchtest du trotzdem eine Anfrage senden?',
+          _t('matching_safety_warning').replaceFirst('{name}', profile.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(_t('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -871,8 +951,9 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content:
-            Text('Profil ${profile.name} wurde gemeldet und ausgeblendet.'),
+        content: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'profile_reported_message')
+            .replaceAll('{name}', profile.name)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -898,7 +979,9 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${profile.name} wurde blockiert.'),
+        content: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'profile_blocked_message')
+            .replaceAll('{name}', profile.name)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -946,8 +1029,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _service.lastSyncError ??
-                'Matching-Profil konnte nicht gespeichert werden.',
+            _service.lastSyncError ?? _t('matching_profile_save_failed'),
           ),
         ),
       );
@@ -1002,7 +1084,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _service.lastSyncError ?? 'OTP konnte nicht angefordert werden.',
+            _service.lastSyncError ?? _t('matching_otp_request_failed'),
           ),
         ),
       );
@@ -1077,14 +1159,17 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Telefon verifizieren',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              Text(
+                AppStringsManager.getString(languageService.currentLanguage,
+                    'profile_phone_verification_title'),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Zum Schutz im Eltern-Matching wird ein OTP per SMS bestaetigt.',
-                style: TextStyle(
+              Text(
+                AppStringsManager.getString(languageService.currentLanguage,
+                    'profile_phone_verification_text'),
+                style: const TextStyle(
                   color: Color(0xFF5A6E86),
                   fontWeight: FontWeight.w600,
                 ),
@@ -1093,10 +1178,14 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
               TextField(
                 controller: _phoneNumberController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Telefonnummer',
-                  hintText: '+49 ...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'profile_phone_number_label'),
+                  hintText: AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'profile_phone_number_hint'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 10),
@@ -1104,8 +1193,13 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _isVerifyingPhone ? null : _requestPhoneOtp,
-                  child:
-                      Text(_isVerifyingPhone ? 'Senden...' : 'OTP anfordern'),
+                  child: Text(_isVerifyingPhone
+                      ? AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'profile_otp_sending')
+                      : AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'profile_otp_request')),
                 ),
               ),
               if (_otpRequested) ...[
@@ -1113,10 +1207,12 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                 TextField(
                   controller: _otpCodeController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'OTP-Code',
-                    hintText: '6-stellig',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppStringsManager.getString(
+                        languageService.currentLanguage, 'profile_otp_label'),
+                    hintText: AppStringsManager.getString(
+                        languageService.currentLanguage, 'profile_otp_hint'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 if (_otpDevHint != null && _otpDevHint!.isNotEmpty) ...[
@@ -1135,7 +1231,13 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                   child: FilledButton.tonal(
                     onPressed: _isVerifyingPhone ? null : _confirmPhoneOtp,
                     child: Text(
-                      _isVerifyingPhone ? 'Pruefen...' : 'OTP bestaetigen',
+                      _isVerifyingPhone
+                          ? AppStringsManager.getString(
+                              languageService.currentLanguage,
+                              'profile_otp_checking')
+                          : AppStringsManager.getString(
+                              languageService.currentLanguage,
+                              'profile_otp_verify'),
                     ),
                   ),
                 ),
@@ -1348,7 +1450,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _buildAnimatedFieldLabel(
-                                      label: 'Name',
+                                      label: _t('profile_name_label'),
                                       focused: _profileNameFocusNode.hasFocus,
                                     ),
                                     TextField(
@@ -1358,7 +1460,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                       onSubmitted: (_) =>
                                           _cityFocusNode.requestFocus(),
                                       decoration: InputDecoration(
-                                        hintText: 'Name',
+                                        hintText: _t('profile_name_label'),
                                         filled: true,
                                         fillColor: const Color(0xFFF4F7FC),
                                         border: OutlineInputBorder(
@@ -1391,14 +1493,15 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           _buildAnimatedFieldLabel(
-                                            label: 'Stadt',
+                                            label: _t('profile_city_label'),
                                             focused: _cityFocusNode.hasFocus,
                                           ),
                                           DropdownButtonFormField<String>(
                                             focusNode: _cityFocusNode,
                                             initialValue: _homeCity,
                                             decoration: InputDecoration(
-                                              hintText: 'Stadt',
+                                              hintText:
+                                                  _t('profile_city_label'),
                                               filled: true,
                                               fillColor:
                                                   const Color(0xFFF4F7FC),
@@ -1443,14 +1546,14 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           _buildAnimatedFieldLabel(
-                                            label: 'Alter',
+                                            label: _t('profile_age_label'),
                                             focused: _ageFocusNode.hasFocus,
                                           ),
                                           DropdownButtonFormField<int>(
                                             focusNode: _ageFocusNode,
                                             initialValue: _profileAge,
                                             decoration: InputDecoration(
-                                              hintText: 'Alter',
+                                              hintText: _t('profile_age_label'),
                                               filled: true,
                                               fillColor:
                                                   const Color(0xFFF4F7FC),
@@ -1498,14 +1601,14 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _buildAnimatedFieldLabel(
-                                      label: 'Familienform',
+                                      label: _t('matching_family_form'),
                                       focused: _familyFormFocusNode.hasFocus,
                                     ),
                                     DropdownButtonFormField<String>(
                                       focusNode: _familyFormFocusNode,
                                       initialValue: _profileFamilyForm,
                                       decoration: InputDecoration(
-                                        hintText: 'Familienform',
+                                        hintText: _t('matching_family_form'),
                                         filled: true,
                                         fillColor: const Color(0xFFF4F7FC),
                                         border: OutlineInputBorder(
@@ -1531,7 +1634,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                           .map((form) =>
                                               DropdownMenuItem<String>(
                                                 value: form,
-                                                child: Text(form),
+                                                child: Text(
+                                                    _matchingOptionLabel(form)),
                                               ))
                                           .toList(),
                                       onChanged: (value) {
@@ -1567,8 +1671,10 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                     Expanded(
                                       child: Text(
                                         _phoneVerifiedLocal
-                                            ? 'Telefon verifiziert'
-                                            : 'Verifiziere dein Telefon für mehr Sicherheit',
+                                            ? _t(
+                                                'matching_phone_verified_short')
+                                            : _t(
+                                                'matching_verify_phone_prompt'),
                                         style: const TextStyle(
                                           color: Color(0xFF24405E),
                                           fontWeight: FontWeight.w700,
@@ -1582,7 +1688,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                       child: Text(
                                         _phoneVerifiedLocal
                                             ? 'OK'
-                                            : 'Verifizieren',
+                                            : _t('matching_verify_action'),
                                       ),
                                     ),
                                   ],
@@ -1635,10 +1741,10 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                                           ),
                                     label: Text(
                                       _isSavingProfile
-                                          ? 'Speichern...'
+                                          ? _t('matching_saving')
                                           : _saveSuccessFlash
-                                              ? 'Gespeichert'
-                                              : 'Profil speichern',
+                                              ? _t('matching_saved')
+                                              : _t('matching_save_profile'),
                                     ),
                                   ),
                                 ),
@@ -1650,11 +1756,11 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       const SizedBox(height: 10),
                       staged(
                         index: 2,
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Text(
-                            'Datenschutz: Nur relevante Profilangaben werden für passende Matches genutzt.',
-                            style: TextStyle(
+                            _t('matching_privacy_note'),
+                            style: const TextStyle(
                               color: Color(0xFF62758C),
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
@@ -1683,7 +1789,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             children: [
               Text(
-                'Sicherheit im Eltern-Matching',
+                _t('matching_safety_title'),
                 style: Theme.of(context)
                     .textTheme
                     .titleLarge
@@ -1693,27 +1799,28 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
               ListTile(
                 leading: const Icon(Icons.flag_outlined),
                 title: Text(_t('matching_report_profiles')),
-                subtitle: const Text(
-                    'Unpassende Inhalte können jederzeit gemeldet werden.'),
+                subtitle: Text(_t('matching_report_info')),
               ),
               ListTile(
                 leading: const Icon(Icons.block_rounded),
                 title: Text(_t('matching_block_profiles')),
-                subtitle:
-                    Text(_t('matching_blocked_info')),
+                subtitle: Text(_t('matching_blocked_info')),
               ),
               ListTile(
                 leading: const Icon(Icons.verified_user_outlined),
                 title: Text(_t('matching_current_status')),
-                subtitle: Text(
-                    '${_matchedProfiles.length} Verbindungen, ${_blockedProfileIds.length} blockierte Profile, ${_reportedProfileIds.length} gemeldete Profile'),
+                subtitle: Text(_t('matching_status_summary')
+                    .replaceFirst('{connections}', '${_matchedProfiles.length}')
+                    .replaceFirst('{blocked}', '${_blockedProfileIds.length}')
+                    .replaceFirst(
+                        '{reported}', '${_reportedProfileIds.length}')),
               ),
               if (_reportedProfileIds.isNotEmpty)
                 ListTile(
                   leading: const Icon(Icons.inventory_2_outlined),
                   title: Text(_t('matching_safety_queue')),
-                  subtitle: Text(
-                      '${_reportedProfileIds.length} Profile in Prüfung (lokal markiert)'),
+                  subtitle: Text(_t('matching_safety_queue_count').replaceFirst(
+                      '{count}', '${_reportedProfileIds.length}')),
                 ),
             ],
           ),
@@ -1768,7 +1875,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                     children: options.map((option) {
                       final isSelected = selected.contains(option);
                       return FilterChip(
-                        label: Text(option),
+                        label: Text(_matchingOptionLabel(option)),
                         selected: isSelected,
                         onSelected: (value) {
                           setModalState(() {
@@ -1818,7 +1925,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       ),
                       const SizedBox(height: 12),
                       buildFilterGroup(
-                        title: 'Interessen',
+                        title: _t('interests'),
                         options: const [
                           'Bildung',
                           'Outdoor',
@@ -1832,7 +1939,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       ),
                       const SizedBox(height: 14),
                       buildFilterGroup(
-                        title: 'Sprache',
+                        title: _t('language'),
                         options: const [
                           'Deutsch',
                           'Englisch',
@@ -1845,7 +1952,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       ),
                       const SizedBox(height: 14),
                       buildFilterGroup(
-                        title: 'Weltanschauung und Werte',
+                        title: _t('matching_worldview_values'),
                         options: const [
                           'Gewaltfrei',
                           'Respekt',
@@ -1858,7 +1965,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       ),
                       const SizedBox(height: 14),
                       buildFilterGroup(
-                        title: 'Familienform',
+                        title: _t('matching_family_form'),
                         options: const [
                           'Alleinerziehend',
                           'Patchwork',
@@ -1869,7 +1976,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       ),
                       const SizedBox(height: 14),
                       buildFilterGroup(
-                        title: 'Kinderalter',
+                        title: _t('matching_child_ages'),
                         options: const ['0-2', '3-5', '6-9', '10-13', '14+'],
                         selected: _childAgeFilter,
                       ),
@@ -1929,7 +2036,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                     children: options.map((option) {
                       final isSelected = selected.contains(option);
                       return FilterChip(
-                        label: Text(option),
+                        label: Text(_matchingOptionLabel(option)),
                         selected: isSelected,
                         onSelected: (value) {
                           setModalState(() {
@@ -1986,9 +2093,9 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: _homeCity,
-                        decoration: const InputDecoration(
-                          labelText: 'Standort (Mittelpunkt)',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: _t('matching_location_center'),
+                          border: const OutlineInputBorder(),
                         ),
                         items: _cityCenters.keys
                             .map((city) => DropdownMenuItem<String>(
@@ -2002,7 +2109,8 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                         },
                       ),
                       const SizedBox(height: 12),
-                      Text('Radius: ${_maxDistanceKm.toStringAsFixed(0)} km'),
+                      Text(_t('matching_radius').replaceFirst(
+                          '{distance}', _maxDistanceKm.toStringAsFixed(0))),
                       Slider(
                         value: _maxDistanceKm,
                         min: 3,
@@ -2015,7 +2123,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       ),
                       const SizedBox(height: 8),
                       buildGroup(
-                        title: 'Meine Interessen',
+                        title: _t('matching_my_interests'),
                         options: const [
                           'Bildung',
                           'Outdoor',
@@ -2029,7 +2137,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       ),
                       const SizedBox(height: 14),
                       buildGroup(
-                        title: 'Meine Sprachen',
+                        title: _t('matching_my_languages'),
                         options: const [
                           'Deutsch',
                           'Englisch',
@@ -2042,7 +2150,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                       ),
                       const SizedBox(height: 14),
                       buildGroup(
-                        title: 'Meine Werte',
+                        title: _t('matching_my_values'),
                         options: const [
                           'Gewaltfrei',
                           'Respekt',
@@ -2064,7 +2172,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                             _persistState();
                             Navigator.pop(context);
                           },
-                          child: const Text('Speichern'),
+                          child: Text(_t('save')),
                         ),
                       ),
                     ],
@@ -2711,20 +2819,27 @@ class _ProfileCard extends StatelessWidget {
                               ?.copyWith(height: 1.35)),
                       const SizedBox(height: 14),
                       _TagSection(
-                          title: 'Interessen', values: profile.interests),
-                      const SizedBox(height: 10),
-                      _TagSection(title: 'Sprachen', values: profile.languages),
-                      const SizedBox(height: 10),
-                      _TagSection(title: 'Werte', values: profile.valuesFocus),
+                          title: _t('interests'), values: profile.interests),
                       const SizedBox(height: 10),
                       _TagSection(
-                          title: 'Kinderalter', values: profile.childAges),
+                          title: _t('matching_languages'),
+                          values: profile.languages),
+                      const SizedBox(height: 10),
+                      _TagSection(
+                          title: _t('matching_values'),
+                          values: profile.valuesFocus),
+                      const SizedBox(height: 10),
+                      _TagSection(
+                          title: _t('matching_child_ages'),
+                          values: profile.childAges),
                       const SizedBox(height: 10),
                       _MatchQualityRow(quality: quality),
                       const SizedBox(height: 10),
-                      _TagSection(title: 'Warum ihr passt', values: reasons),
+                      _TagSection(
+                          title: _t('matching_why_you_match'), values: reasons),
                       const SizedBox(height: 10),
-                      Text('Familienform: ${profile.familyForm}',
+                      Text(
+                          '${_t('matching_family_form')}: ${_matchingOptionLabel(profile.familyForm)}',
                           style: theme.textTheme.bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w600)),
                     ],
@@ -2766,18 +2881,18 @@ class _WelcomeMatchBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: const Color(0xFFD6E4F9)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.auto_awesome_rounded,
             size: 14,
             color: Color(0xFF1E5CD7),
           ),
-          SizedBox(width: 6),
+          const SizedBox(width: 6),
           Text(
-            'Neu für euch',
-            style: TextStyle(
+            _t('matching_new_for_you'),
+            style: const TextStyle(
               color: Color(0xFF224161),
               fontSize: 12,
               fontWeight: FontWeight.w800,
@@ -2848,7 +2963,7 @@ class _TagSection extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF2B4158),
                     ),
-                    label: Text(v),
+                    label: Text(_matchingOptionLabel(v)),
                   ))
               .toList(),
         ),
@@ -2880,7 +2995,7 @@ class _MatchQualityRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Match-Qualität',
+          _t('matching_quality'),
           style: Theme.of(context)
               .textTheme
               .bodyMedium
@@ -2891,9 +3006,9 @@ class _MatchQualityRow extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _QualityPill(label: 'Interessen', score: quality.interests),
-            _QualityPill(label: 'Sprache', score: quality.languages),
-            _QualityPill(label: 'Werte', score: quality.values),
+            _QualityPill(label: _t('interests'), score: quality.interests),
+            _QualityPill(label: _t('language'), score: quality.languages),
+            _QualityPill(label: _t('matching_values'), score: quality.values),
           ],
         ),
       ],
@@ -2954,7 +3069,7 @@ class _EmptyMatchState extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Text(
-              'Keine Profile für die aktuellen Filter.',
+              _t('matching_no_filtered_profiles'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: compact ? 16 : null,
@@ -2966,7 +3081,9 @@ class _EmptyMatchState extends StatelessWidget {
           OutlinedButton(
             onPressed: onReset,
             child: Text(
-              compact ? 'Filter zurück' : 'Filter zurücksetzen',
+              compact
+                  ? _t('matching_reset_filter_short')
+                  : _t('matching_reset_filter'),
             ),
           ),
         ],

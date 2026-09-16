@@ -157,9 +157,9 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Kind wirklich löschen?'),
-        content: Text(
-            '${child.name} wird dauerhaft aus eurem Familienprofil entfernt.'),
+        title: Text(_t('profile_delete_child_title')),
+        content: Text(_t('profile_delete_child_message')
+            .replaceFirst('{name}', child.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -171,7 +171,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Löschen'),
+            child: Text(_t('profile_delete_child_action')),
           ),
         ],
       ),
@@ -219,8 +219,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               TextField(
                 controller: nameCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'z.B. Emma',
+                  labelText: _t('profile_name_label'),
+                  hintText: _t('profile_child_name_hint'),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
@@ -230,8 +230,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               TextField(
                 controller: ageCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Alter',
-                  hintText: 'z.B. 4 Jahre',
+                  labelText: _t('profile_age_label'),
+                  hintText: _t('profile_child_age_hint'),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
@@ -490,8 +490,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(child.age,
-                                    style:
-                                        theme.textTheme.labelSmall?.copyWith(
+                                    style: theme.textTheme.labelSmall?.copyWith(
                                       color: theme.colorScheme.primary,
                                       fontWeight: FontWeight.w600,
                                     )),
@@ -1244,14 +1243,14 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Anzeigename ändern'),
+        title: Text(_t('profile_edit_display_name_title')),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Dein Anzeigename',
-            helperText: 'So sehen dich andere Eltern (app-weit).',
+          decoration: InputDecoration(
+            labelText: _t('profile_edit_display_name_label'),
+            helperText: _t('profile_edit_display_name_helper'),
           ),
         ),
         actions: [
@@ -1259,7 +1258,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: const Text('Speichern')),
+              child: Text(_t('save'))),
         ],
       ),
     );
@@ -1274,7 +1273,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (!mounted) return;
     setState(() {});
     messenger.showSnackBar(SnackBar(
-      content: Text('Anzeigename aktualisiert: $newName'),
+      content: Text(
+          _t('profile_display_name_updated').replaceFirst('{name}', newName)),
       behavior: SnackBarBehavior.floating,
       backgroundColor: const Color(0xFF16A34A),
     ));
@@ -1287,10 +1287,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final ready = ErrorReportingService.instance.isCrashlyticsReady;
     if (!ready) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text(
-            'Crashlytics ist in diesem Build nicht aktiv (z.B. Debug/Web). '
-            'Bitte im Release-Build auf Android/iOS testen.'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(_t('profile_crashlytics_unavailable')),
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -1304,17 +1302,16 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         fatal: false,
       );
       if (!mounted) return;
-      messenger.showSnackBar(const SnackBar(
-        content:
-            Text('Test-Bericht gesendet. Erscheint in ~1–2 Min in Firebase '
-                'Crashlytics (Non-fatals).'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(_t('profile_crashlytics_sent')),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF16A34A),
+        backgroundColor: const Color(0xFF16A34A),
       ));
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(
-        content: Text('Konnte Test-Bericht nicht senden: $e'),
+        content: Text(
+            _t('profile_crashlytics_failed').replaceFirst('{error}', '$e')),
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -1481,9 +1478,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     ),
                     title: Text(user.displayName.isNotEmpty
                         ? user.displayName
-                        : 'Unbekannt'),
+                        : _t('profile_unknown_user')),
                     subtitle: Text(
-                        'Blockiert am ${user.blockedAt.day}.${user.blockedAt.month}.${user.blockedAt.year}',
+                        _t('profile_blocked_on').replaceFirst('{date}',
+                            '${user.blockedAt.day}.${user.blockedAt.month}.${user.blockedAt.year}'),
                         style:
                             TextStyle(fontSize: 11, color: Colors.grey[500])),
                     trailing: TextButton(
@@ -1528,7 +1526,9 @@ class _DeleteAccountSheet extends StatefulWidget {
 
 class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
   final _ctrl = TextEditingController();
-  bool get _confirmed => _ctrl.text.trim().toUpperCase() == 'LÖSCHEN';
+  bool get _confirmed =>
+      _ctrl.text.trim().toUpperCase() ==
+      _t('profile_delete_confirmation_word').toUpperCase();
 
   @override
   void dispose() {
@@ -1581,7 +1581,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'Alle deine Daten werden unwiderruflich gelöscht.\nDiese Aktion kann nicht rückgängig gemacht werden.',
+              _t('profile_delete_account_warning'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
@@ -1598,7 +1598,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
             textCapitalization: TextCapitalization.characters,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'LÖSCHEN',
+              hintText: _t('profile_delete_confirmation_word'),
               filled: true,
               fillColor: theme.colorScheme.surfaceContainerHighest,
               border: OutlineInputBorder(
@@ -1676,7 +1676,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bitte gib dein Passwort ein, um das Konto endgültig zu löschen.',
+            _t('profile_reauth_delete_prompt'),
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -1685,7 +1685,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
             obscureText: _obscure,
             autofocus: true,
             decoration: InputDecoration(
-              labelText: 'Passwort',
+              labelText: _t('auth_password_label'),
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),

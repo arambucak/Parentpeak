@@ -201,8 +201,8 @@ class OnboardingRolePage extends StatelessWidget {
                     _RoleCard(
                       role: 'neugeboren',
                       emoji: '\u{1F476}',
-                      title: 'Schwangerschaft / Baby',
-                      subtitle: '0–12 Monate',
+                      title: _t('onboarding_stage_baby'),
+                      subtitle: _t('onboarding_stage_baby_age'),
                       isSelected: selectedRoles.contains('neugeboren'),
                       onTap: () => onRoleSelected('neugeboren'),
                     ),
@@ -210,8 +210,8 @@ class OnboardingRolePage extends StatelessWidget {
                     _RoleCard(
                       role: 'kleinkind',
                       emoji: '\u{1F9D2}',
-                      title: 'Kleinkind',
-                      subtitle: '1–5 Jahre',
+                      title: _t('onboarding_stage_toddler'),
+                      subtitle: _t('onboarding_stage_toddler_age'),
                       isSelected: selectedRoles.contains('kleinkind'),
                       onTap: () => onRoleSelected('kleinkind'),
                     ),
@@ -219,8 +219,8 @@ class OnboardingRolePage extends StatelessWidget {
                     _RoleCard(
                       role: 'schulkind',
                       emoji: '\u{1F393}',
-                      title: 'Schulkind',
-                      subtitle: '6–12 Jahre',
+                      title: _t('onboarding_stage_school_child'),
+                      subtitle: _t('onboarding_stage_school_child_age'),
                       isSelected: selectedRoles.contains('schulkind'),
                       onTap: () => onRoleSelected('schulkind'),
                     ),
@@ -228,8 +228,8 @@ class OnboardingRolePage extends StatelessWidget {
                     _RoleCard(
                       role: 'teenager',
                       emoji: '\u{1F9D1}',
-                      title: 'Teenager',
-                      subtitle: '13–18 Jahre',
+                      title: _t('onboarding_stage_teenager'),
+                      subtitle: _t('onboarding_stage_teenager_age'),
                       isSelected: selectedRoles.contains('teenager'),
                       onTap: () => onRoleSelected('teenager'),
                     ),
@@ -237,7 +237,10 @@ class OnboardingRolePage extends StatelessWidget {
                     // Diverse Familien-Rollen
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Text('Deine Rolle (optional)',
+                      child: Text(
+                          AppStringsManager.getString(
+                              languageService.currentLanguage,
+                              'onboarding_role_label'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -247,8 +250,12 @@ class OnboardingRolePage extends StatelessWidget {
                     _RoleCard(
                       role: 'alleinerziehend',
                       emoji: '\u{1F4AA}',
-                      title: 'Alleinerziehend',
-                      subtitle: 'Du machst das allein — und das ist stark',
+                      title: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_role_single_parent'),
+                      subtitle: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_role_single_parent_desc'),
                       isSelected: selectedRoles.contains('alleinerziehend'),
                       onTap: () => onRoleSelected('alleinerziehend'),
                     ),
@@ -256,8 +263,12 @@ class OnboardingRolePage extends StatelessWidget {
                     _RoleCard(
                       role: 'grosseltern',
                       emoji: '\u{1F9D3}',
-                      title: 'Großeltern / Verwandte',
-                      subtitle: 'Du betreust oder erziehst ein Enkelkind',
+                      title: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_role_grandparent'),
+                      subtitle: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_role_grandparent_desc'),
                       isSelected: selectedRoles.contains('grosseltern'),
                       onTap: () => onRoleSelected('grosseltern'),
                     ),
@@ -265,8 +276,12 @@ class OnboardingRolePage extends StatelessWidget {
                     _RoleCard(
                       role: 'pflegeeltern',
                       emoji: '\u{1F49B}',
-                      title: 'Pflege- oder Adoptiveltern',
-                      subtitle: 'Ein Kind in eurem Herzen und Zuhause',
+                      title: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_role_foster_parent'),
+                      subtitle: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_role_foster_parent_desc'),
                       isSelected: selectedRoles.contains('pflegeeltern'),
                       onTap: () => onRoleSelected('pflegeeltern'),
                     ),
@@ -274,8 +289,12 @@ class OnboardingRolePage extends StatelessWidget {
                     _RoleCard(
                       role: 'patchwork',
                       emoji: '\u{1F3E1}',
-                      title: 'Patchwork-Familie',
-                      subtitle: 'Zusammengewachsen aus verschiedenen Wegen',
+                      title: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_role_patchwork'),
+                      subtitle: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_role_patchwork_desc'),
                       isSelected: selectedRoles.contains('patchwork'),
                       onTap: () => onRoleSelected('patchwork'),
                     ),
@@ -417,7 +436,8 @@ class OnboardingPrioritiesPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Wähle alles was auf dich zutrifft. Wir ordnen\ndeine App danach.',
+                AppStringsManager.getString(languageService.currentLanguage,
+                    'onboarding_priority_prompt'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -429,9 +449,12 @@ class OnboardingPrioritiesPage extends StatelessWidget {
                     _PriorityCard(
                       id: 'tipps',
                       icon: Icons.lightbulb_rounded,
-                      title: 'Tipps & Wissen',
-                      subtitle:
-                          'Entwicklungsimpulse, KI-Beratung, Erziehungstipps',
+                      title: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_priority_tips_title'),
+                      subtitle: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_priority_tips_subtitle'),
                       color: const Color(0xFF0EA5A4),
                       isSelected: selectedPriorities.contains('tipps'),
                       onTap: () => onPriorityToggled('tipps'),
@@ -440,8 +463,12 @@ class OnboardingPrioritiesPage extends StatelessWidget {
                     _PriorityCard(
                       id: 'organisation',
                       icon: Icons.event_note_rounded,
-                      title: 'Organisation',
-                      subtitle: 'Kalender, To-Do-Listen, Einkaufslisten',
+                      title: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_priority_organisation_title'),
+                      subtitle: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_priority_organisation_subtitle'),
                       color: const Color(0xFF2563EB),
                       isSelected: selectedPriorities.contains('organisation'),
                       onTap: () => onPriorityToggled('organisation'),
@@ -450,8 +477,12 @@ class OnboardingPrioritiesPage extends StatelessWidget {
                     _PriorityCard(
                       id: 'community',
                       icon: Icons.people_rounded,
-                      title: 'Andere Eltern finden',
-                      subtitle: 'Matching, Events, Playdates',
+                      title: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_priority_community_title'),
+                      subtitle: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_priority_community_subtitle'),
                       color: const Color(0xFF8B5CF6),
                       isSelected: selectedPriorities.contains('community'),
                       onTap: () => onPriorityToggled('community'),
@@ -460,8 +491,12 @@ class OnboardingPrioritiesPage extends StatelessWidget {
                     _PriorityCard(
                       id: 'sparen',
                       icon: Icons.savings_rounded,
-                      title: 'Sparen & Teilen',
-                      subtitle: 'Verschenkmarkt, Essen teilen, Budget',
+                      title: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_priority_savings_title'),
+                      subtitle: AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'onboarding_priority_savings_subtitle'),
                       color: const Color(0xFFE8543A),
                       isSelected: selectedPriorities.contains('sparen'),
                       onTap: () => onPriorityToggled('sparen'),
@@ -600,13 +635,13 @@ class OnboardingReadyPage extends StatelessWidget {
   String _getRoleLabel() {
     switch (selectedRole) {
       case 'neugeboren':
-        return 'Baby-Phase';
+        return _t('onboarding_stage_baby_phase');
       case 'kleinkind':
-        return 'Kleinkind-Phase';
+        return _t('onboarding_stage_toddler_phase');
       case 'schulkind':
-        return 'Schulkind-Phase';
+        return _t('onboarding_stage_school_child_phase');
       case 'teenager':
-        return 'Teenager-Phase';
+        return _t('onboarding_stage_teenager_phase');
       default:
         return '';
     }
@@ -618,27 +653,34 @@ class OnboardingReadyPage extends StatelessWidget {
     if (selectedPriorities.contains('tipps')) {
       features.add((
         Icons.auto_awesome_rounded,
-        'Wochenimpulse passend zur ${_getRoleLabel()}'
+        _t('onboarding_feature_role').replaceFirst('{role}', _getRoleLabel())
       ));
-      features.add((Icons.chat_rounded, 'KI-Beratung für deine Fragen'));
+      features.add((Icons.chat_rounded, _t('onboarding_feature_ki')));
     }
     if (selectedPriorities.contains('organisation')) {
-      features.add((Icons.calendar_month_rounded, 'Familienkalender'));
-      features.add((Icons.checklist_rounded, 'To-Do & Einkaufslisten'));
+      features.add(
+          (Icons.calendar_month_rounded, _t('onboarding_feature_calendar')));
+      features.add((Icons.checklist_rounded, _t('onboarding_feature_todos')));
     }
     if (selectedPriorities.contains('community')) {
-      features.add((Icons.diversity_3_rounded, 'Eltern in deiner Nähe finden'));
-      features.add((Icons.celebration_rounded, 'Events & Aktivitäten'));
+      features.add(
+          (Icons.diversity_3_rounded, _t('onboarding_feature_nearby_parents')));
+      features
+          .add((Icons.celebration_rounded, _t('onboarding_feature_events')));
     }
     if (selectedPriorities.contains('sparen')) {
-      features.add((Icons.inventory_2_rounded, 'Verschenkmarkt'));
-      features.add((Icons.restaurant_rounded, 'Essen teilen & sparen'));
+      features
+          .add((Icons.inventory_2_rounded, _t('onboarding_feature_market')));
+      features.add(
+          (Icons.restaurant_rounded, _t('onboarding_feature_shared_food')));
     }
 
     if (features.isEmpty) {
-      features.add((Icons.auto_awesome_rounded, 'Personalisierte Impulse'));
-      features.add((Icons.chat_rounded, 'KI-Beratung'));
-      features.add((Icons.calendar_month_rounded, 'Familienkalender'));
+      features.add(
+          (Icons.auto_awesome_rounded, _t('onboarding_feature_personalized')));
+      features.add((Icons.chat_rounded, _t('onboarding_feature_ki_short')));
+      features.add(
+          (Icons.calendar_month_rounded, _t('onboarding_feature_calendar')));
     }
 
     return features.take(4).toList();
@@ -696,7 +738,8 @@ class OnboardingReadyPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Deine App ist jetzt auf dich zugeschnitten.\nHier ist, was auf dich wartet:',
+                AppStringsManager.getString(
+                    languageService.currentLanguage, 'onboarding_ready_intro'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   height: 1.4,
@@ -758,7 +801,9 @@ class OnboardingReadyPage extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Beta kostenlos · nach dem Start 1 Monat testen',
+                        AppStringsManager.getString(
+                            languageService.currentLanguage,
+                            'onboarding_beta_feature'),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: theme.colorScheme.onTertiaryContainer,
@@ -793,54 +838,59 @@ class OnboardingChildAgePage extends StatelessWidget {
   });
 
   static const _ageOptions = [
-    {'id': 'baby', 'emoji': '\u{1F476}', 'label': 'Baby', 'desc': '0–1 Jahr'},
+    {
+      'id': 'baby',
+      'emoji': '\u{1F476}',
+      'labelKey': 'onboarding_age_baby',
+      'descKey': 'onboarding_age_baby_desc'
+    },
     {
       'id': 'kleinkind',
       'emoji': '\u{1F9D2}',
-      'label': 'Kleinkind',
-      'desc': '1–3 Jahre'
+      'labelKey': 'onboarding_age_toddler',
+      'descKey': 'onboarding_age_toddler_desc'
     },
     {
       'id': 'kindergarten',
       'emoji': '\u{1F466}',
-      'label': 'Kindergarten',
-      'desc': '3–6 Jahre'
+      'labelKey': 'onboarding_age_kindergarten',
+      'descKey': 'onboarding_age_kindergarten_desc'
     },
     {
       'id': 'grundschule',
       'emoji': '\u{1F393}',
-      'label': 'Grundschule',
-      'desc': '6–10 Jahre'
+      'labelKey': 'onboarding_age_primary_school',
+      'descKey': 'onboarding_age_primary_school_desc'
     },
     {
       'id': 'teenager',
       'emoji': '\u{1F9D1}',
-      'label': 'Teenager',
-      'desc': '10+ Jahre'
+      'labelKey': 'onboarding_age_teenager',
+      'descKey': 'onboarding_age_teenager_desc'
     },
     {
       'id': 'schwanger',
       'emoji': '\u{1F930}',
-      'label': 'Schwanger',
-      'desc': 'Wir erwarten'
+      'labelKey': 'onboarding_age_expecting',
+      'descKey': 'onboarding_age_expecting_desc'
     },
     {
       'id': 'bezugsperson',
       'emoji': '\u{1F49B}',
-      'label': 'Bezugsperson',
-      'desc': 'Oma, Opa, Patenonkel, Tagesmutter'
+      'labelKey': 'onboarding_age_caregiver',
+      'descKey': 'onboarding_age_caregiver_desc'
     },
     {
       'id': 'auf_dem_weg',
       'emoji': '\u{1F331}',
-      'label': 'Noch auf dem Weg',
-      'desc': 'Adoption, Pflegefamilie, Kinderwunsch'
+      'labelKey': 'onboarding_age_on_the_way',
+      'descKey': 'onboarding_age_on_the_way_desc'
     },
     {
       'id': 'fachlich',
       'emoji': '\u{1F4DA}',
-      'label': 'Fachlich interessiert',
-      'desc': 'Pädagogik, Sozialarbeit, Fortbildung'
+      'labelKey': 'onboarding_age_professional',
+      'descKey': 'onboarding_age_professional_desc'
     },
   ];
 
@@ -910,7 +960,7 @@ class OnboardingChildAgePage extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(opt['label']!,
+                                  Text(_t(opt['labelKey']!),
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: selected
@@ -918,7 +968,7 @@ class OnboardingChildAgePage extends StatelessWidget {
                                             : FontWeight.w600,
                                         color: theme.colorScheme.onSurface,
                                       )),
-                                  Text(opt['desc']!,
+                                  Text(_t(opt['descKey']!),
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: theme
