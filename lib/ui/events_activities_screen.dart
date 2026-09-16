@@ -300,7 +300,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       setState(() {
         _places = const <FamilyPlace>[];
         _placesLoading = false;
-        _placesError = 'Orte konnten nicht geladen werden. Bitte später erneut versuchen.';
+        _placesError = context.tr('package3_places_load_failed');
       });
     }
   }
@@ -932,7 +932,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                     )
                   else
                     Text(
-                      'Familienfreundliche Orte in der Nähe',
+                      context.tr('package3_places_nearby_title'),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -1041,7 +1041,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
-                        child: const Text('Keine passenden Orte in diesem Radius gefunden.'),
+                        child: Text(context.tr('package3_no_places')),
                       )
                     else ..._buildFamilyPlaceList(theme, coords),
                 ],
@@ -1221,9 +1221,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
   Widget _buildTabSwitch(ThemeData theme) {
     return SegmentedButton<_ScreenTab>(
-      segments: const [
-        ButtonSegment(value: _ScreenTab.events, label: Text('Events')),
-        ButtonSegment(value: _ScreenTab.places, label: Text('Orte')),
+      segments: [
+        ButtonSegment(value: _ScreenTab.events, label: Text(context.tr('package3_events'))),
+        ButtonSegment(value: _ScreenTab.places, label: Text(context.tr('package3_places'))),
       ],
       selected: {_activeTab},
       onSelectionChanged: (value) {
@@ -1293,7 +1293,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Filter für Orte',
+            context.tr('package3_places_filter_title'),
             style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
@@ -1302,7 +1302,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             runSpacing: 8,
             children: [
               FilterChip(
-                label: const Text('Jetzt geöffnet'),
+                label: Text(context.tr('package3_open_now')),
                 selected: _placeOpenOnly,
                 onSelected: (value) {
                   setState(() => _placeOpenOnly = value);
@@ -1310,7 +1310,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                 },
               ),
               FilterChip(
-                label: const Text('Indoor'),
+                label: Text(context.tr('package3_indoor')),
                 selected: _placeIndoorOnly,
                 onSelected: (value) {
                   setState(() => _placeIndoorOnly = value);
@@ -1326,7 +1326,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             children: [5, 10, 20, 50]
                 .map(
                   (radius) => ChoiceChip(
-                    label: Text('$radius km'),
+                    label: Text(context.tr('package3_radius',
+                      values: {'count': '$radius'})),
                     selected: _radiusKm == radius,
                     onSelected: (_) {
                       if (_radiusKm == radius) return;
@@ -1395,7 +1396,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      isOpen ? 'Jetzt geöffnet' : 'Öffnungszeiten prüfen',
+                        context.tr(isOpen
+                          ? 'package3_open_now'
+                          : 'package3_check_opening_hours'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -1421,7 +1424,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      '${distanceKm.toStringAsFixed(distanceKm >= 10 ? 1 : 2)} km entfernt',
+                      context.tr('package3_distance_away', values: {
+                        'distance': distanceKm.toStringAsFixed(
+                            distanceKm >= 10 ? 1 : 2),
+                      }),
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),
@@ -1476,7 +1482,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             children: radiusOptions
                 .map(
                   (radius) => ChoiceChip(
-                    label: Text('$radius km'),
+                    label: Text(context.tr('package3_radius',
+                      values: {'count': '$radius'})),
                     selected: _radiusKm == radius,
                     onSelected: (_) {
                       if (_radiusKm == radius) return;

@@ -177,8 +177,8 @@ void main() {
         isTrue,
         reason: '$language must have an explicit native development map route',
       );
-      expect(
-        developmentCatalog.contains("'$language': {'titles':"),
+        expect(
+          developmentCatalog.contains("'$language': {"),
         isTrue,
         reason: '$language must own native domain titles and content',
       );

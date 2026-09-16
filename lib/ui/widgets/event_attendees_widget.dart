@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
+import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/event_attendee.dart';
 
 /// "Bekannte Gesichter" Widget für Events.
@@ -32,6 +34,9 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
   bool _joined = false;
   bool _loading = false;
   int _total = 0;
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
 
   @override
   void initState() {
@@ -79,7 +84,7 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
       ),
       const SizedBox(width: 4),
       Text(
-        '$_total dabei',
+        _t('package3_attendees_count').replaceAll('{count}', '$_total'),
         style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.outline, fontWeight: FontWeight.w600),
       ),
@@ -123,8 +128,9 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
           const SizedBox(width: 8),
           Text(
             _total == 0
-                ? 'Noch niemand dabei'
-                : '$_total ${_total == 1 ? "Familie" : "Familien"} dabei',
+                ? _t('package3_no_attendees')
+                : _t('package3_families_attending')
+                    .replaceAll('{count}', '$_total'),
             style: theme.textTheme.bodyMedium
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
@@ -137,7 +143,8 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Text(
-                '+ ${_total - 5} weitere Familien',
+                _t('package3_more_families')
+                    .replaceAll('{count}', '${_total - 5}'),
                 style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.outline,
                     fontWeight: FontWeight.w500),
@@ -158,7 +165,7 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.waving_hand_rounded, size: 18),
-              label: const Text('Ich bin auch dabei!'),
+              label: Text(_t('package3_join_event')),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF8B5CF6),
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -177,18 +184,16 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
               border: Border.all(
                   color: const Color(0xFF16A34A).withValues(alpha: 0.2)),
             ),
-            child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle_rounded,
-                      size: 18, color: Color(0xFF16A34A)),
-                  SizedBox(width: 6),
-                  Text('Du bist dabei!',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF16A34A))),
-                ]),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.check_circle_rounded,
+                size: 18, color: Color(0xFF16A34A)),
+              const SizedBox(width: 6),
+              Text(_t('package3_joined_event'),
+                style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                  color: Color(0xFF16A34A))),
+            ]),
           ),
       ]),
     );
@@ -242,8 +247,8 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
                     color: const Color(0xFFF97316).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text('\u{2B50} Netzwerk',
-                      style: TextStyle(
+                  child: Text('\u{2B50} ${AppStringsManager.getString(languageService.currentLanguage, 'home_quick_network')}',
+                      style: const TextStyle(
                           fontSize: 8,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFF97316))),
@@ -283,11 +288,11 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const Text('\u{1F44B}', style: TextStyle(fontSize: 32)),
             const SizedBox(height: 10),
-            Text('Ich bin dabei!',
+            Text(_t('package3_joined_event'),
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
-            Text('Andere Familien sehen deinen Vornamen.',
+            Text(_t('package3_attendee_privacy_hint'),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.outline)),
             const SizedBox(height: 16),
@@ -317,7 +322,7 @@ class _EventAttendeesWidgetState extends State<EventAttendeesWidget> {
                   await _joinEvent(msgCtrl.text.trim());
                 },
                 icon: const Icon(Icons.check_rounded, size: 18),
-                label: const Text('Bestaetigen'),
+                label: Text(_t('package3_confirm')),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),
                   padding: const EdgeInsets.symmetric(vertical: 13),

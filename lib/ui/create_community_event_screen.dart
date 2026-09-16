@@ -201,13 +201,14 @@ class _CreateCommunityEventScreenState
           ));
         }
       } else {
-        throw Exception('KI konnte den Flyer nicht lesen');
+        throw Exception(_t('package3_flyer_read_failed'));
       }
     } catch (e) {
       if (mounted) {
         setState(() => _scanning = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Flyer konnte nicht erkannt werden: $e'),
+            content: Text(_t('package3_flyer_recognition_failed')
+              .replaceAll('{error}', '$e')),
         ));
       }
     }
@@ -284,11 +285,11 @@ class _CreateCommunityEventScreenState
 
   Future<void> _submit() async {
     if (_titleCtrl.text.trim().isEmpty) {
-      _showError('Bitte gib einen Titel ein (Schritt 2)');
+      _showError(_t('package3_title_required'));
       return;
     }
     if (_locationCtrl.text.trim().isEmpty) {
-      _showError('Bitte gib einen Ort ein (Schritt 2)');
+      _showError(_t('package3_location_required'));
       return;
     }
 
@@ -313,9 +314,9 @@ class _CreateCommunityEventScreenState
               style: const TextStyle(height: 1.5),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Möchtest du dein Event trotzdem hinzufügen?',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            Text(
+              _t('package3_duplicate_proceed'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ]),
           actions: [
@@ -392,7 +393,7 @@ class _CreateCommunityEventScreenState
         Navigator.pop(context, true);
       } else {
         _showError(CommunityEventService.instance.error ??
-            'Event konnte nicht erstellt werden.');
+            _t('package3_community_create_failed'));
       }
     }
   }
@@ -419,7 +420,8 @@ class _CreateCommunityEventScreenState
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Chip(
-              label: Text('${service.remainingToday}/3 heute',
+                label: Text(_t('package3_remaining_today').replaceAll(
+                  '{count}', '${service.remainingToday}'),
                   style: const TextStyle(fontSize: 11)),
               avatar: const Icon(Icons.event_available_rounded, size: 16),
             ),
@@ -476,7 +478,8 @@ class _CreateCommunityEventScreenState
           ),
         ),
         Text(
-          ['Wer bist du?', 'Dein Event', 'Details & Kontakt'][_step],
+          [_t('package3_step_creator'), _t('package3_step_event'),
+            _t('package3_step_details')][_step],
           style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6)),
         ),
@@ -522,7 +525,9 @@ class _CreateCommunityEventScreenState
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.publish_rounded, size: 18),
-                label: Text(_saving ? 'Wird gesendet...' : 'Veröffentlichen'),
+                label: Text(_saving
+                  ? _t('package3_sending')
+                  : _t('package3_publish')),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),
                   shape: RoundedRectangleBorder(
@@ -554,7 +559,7 @@ class _CreateCommunityEventScreenState
             const SizedBox(width: 10),
             Expanded(
                 child: Text(
-              'Events eintragen ist kostenlos. Hilf anderen Eltern tolle Aktivitaeten zu finden!',
+              _t('package3_community_event_tip'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: const Color(0xFF6B21A8), height: 1.3),
             )),
@@ -601,10 +606,10 @@ class _CreateCommunityEventScreenState
         TextField(
           controller: _organizerCtrl,
           decoration: InputDecoration(
-            labelText: 'Name / Organisation',
+            labelText: _t('package3_organizer_name'),
             hintText: _creatorType == CreatorType.eltern
-                ? 'z.B. Sarah M.'
-                : 'z.B. Kita Sonnenschein',
+                ? _t('package3_organizer_person_hint')
+                : _t('package3_organizer_organization_hint'),
             prefixIcon: const Icon(Icons.person_rounded, size: 20),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -616,26 +621,26 @@ class _CreateCommunityEventScreenState
   String _creatorTypeLabel(CreatorType t) {
     switch (t) {
       case CreatorType.eltern:
-        return '\u{1F46A} Eltern / Privatperson';
+        return _t('package3_creator_parent');
       case CreatorType.verein:
-        return '\u{1F91D} Verein / Initiative';
+        return _t('package3_creator_club');
       case CreatorType.institution:
-        return '\u{1F3EB} Kita / Familienzentrum / Schule';
+        return _t('package3_creator_institution');
       case CreatorType.unternehmen:
-        return '\u{1F3E2} Unternehmen / Anbieter';
+        return _t('package3_creator_business');
     }
   }
 
   String _creatorTypeHint(CreatorType t) {
     switch (t) {
       case CreatorType.eltern:
-        return 'Spielplatz-Tipp, Eltern-Treff, Geheimtipp';
+        return _t('package3_creator_parent_hint');
       case CreatorType.verein:
-        return 'Vereins-Events, Elterngruppen, Sport';
+        return _t('package3_creator_club_hint');
       case CreatorType.institution:
-        return 'Offizielle Angebote, Kurse, Feste';
+        return _t('package3_creator_institution_hint');
       case CreatorType.unternehmen:
-        return 'Workshops, Kurse, Veranstaltungen';
+        return _t('package3_creator_business_hint');
     }
   }
 
@@ -657,7 +662,9 @@ class _CreateCommunityEventScreenState
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.document_scanner_rounded, size: 18),
             label: Text(
-                _scanning ? 'KI liest Flyer...' : '📷 Flyer/Poster scannen'),
+                _scanning
+                  ? _t('package3_flyer_reading')
+                  : _t('package3_scan_flyer')),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF8B5CF6),
               side: const BorderSide(color: Color(0xFF8B5CF6)),
@@ -677,8 +684,8 @@ class _CreateCommunityEventScreenState
         TextField(
           controller: _titleCtrl,
           decoration: InputDecoration(
-            labelText: 'Titel *',
-            hintText: 'z.B. Familien-Picknick im Park',
+            labelText: _t('package3_event_title'),
+            hintText: _t('package3_event_title_hint'),
             prefixIcon: const Icon(Icons.title_rounded, size: 20),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -689,8 +696,8 @@ class _CreateCommunityEventScreenState
           maxLines: 3,
           maxLength: 500,
           decoration: InputDecoration(
-            labelText: 'Beschreibung',
-            hintText: 'Was erwartet die Familien?',
+            labelText: _t('package3_description'),
+            hintText: _t('package3_community_description_hint'),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
@@ -751,7 +758,7 @@ class _CreateCommunityEventScreenState
             },
             child: InputDecorator(
               decoration: InputDecoration(
-                labelText: 'Datum *',
+                labelText: _t('package3_date_time'),
                 prefixIcon: const Icon(Icons.calendar_today_rounded, size: 18),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -772,7 +779,7 @@ class _CreateCommunityEventScreenState
                 },
                 child: InputDecorator(
                   decoration: InputDecoration(
-                    labelText: 'Uhrzeit',
+                    labelText: _t('package3_time'),
                     prefixIcon: const Icon(Icons.access_time_rounded, size: 18),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -800,7 +807,7 @@ class _CreateCommunityEventScreenState
           TextField(
             controller: _recurringCtrl,
             decoration: InputDecoration(
-              hintText: 'z.B. Jeden Samstag 10-12 Uhr',
+              hintText: _t('package3_recurring_hint'),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               isDense: true,
@@ -809,7 +816,7 @@ class _CreateCommunityEventScreenState
         const SizedBox(height: 12),
         // Ort
         LocationPickerWidget(
-          hint: 'Ort / Adresse wählen *',
+          hint: _t('package3_meeting_point'),
           onLocationPicked: (loc) {
             _locationCtrl.text = loc.displayName;
             _city = loc.city;
@@ -847,7 +854,7 @@ class _CreateCommunityEventScreenState
           TextField(
             controller: _priceCtrl,
             decoration: InputDecoration(
-              hintText: 'z.B. 5 EUR pro Kind',
+              hintText: _t('package3_price_hint'),
               prefixIcon: const Icon(Icons.euro_rounded, size: 18),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -889,8 +896,8 @@ class _CreateCommunityEventScreenState
           TextField(
             controller: _rainPlanCtrl,
             decoration: InputDecoration(
-              labelText: 'Bei Regen? (optional)',
-              hintText: 'z.B. Faellt aus / Alternative Indoor',
+              labelText: _t('package3_rain_plan'),
+              hintText: _t('package3_rain_plan_hint'),
               prefixIcon: const Icon(Icons.umbrella_rounded, size: 18),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -962,7 +969,7 @@ class _CreateCommunityEventScreenState
         TextField(
           controller: _contactNameCtrl,
           decoration: InputDecoration(
-            labelText: 'Ansprechpartner',
+            labelText: _t('package3_contact_person'),
             prefixIcon: const Icon(Icons.person_outline_rounded, size: 18),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -972,7 +979,7 @@ class _CreateCommunityEventScreenState
           controller: _contactPhoneCtrl,
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
-            labelText: 'Telefon',
+            labelText: _t('package3_phone'),
             prefixIcon: const Icon(Icons.phone_rounded, size: 18),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -982,7 +989,7 @@ class _CreateCommunityEventScreenState
           controller: _urlCtrl,
           keyboardType: TextInputType.url,
           decoration: InputDecoration(
-            labelText: 'Website / Link (optional)',
+            labelText: _t('package3_website'),
             hintText: 'https://...',
             prefixIcon: const Icon(Icons.link_rounded, size: 18),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),

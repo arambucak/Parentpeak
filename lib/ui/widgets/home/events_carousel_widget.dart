@@ -151,7 +151,9 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                event.source == EventSource.kiAgent ? 'KI' : '\u{2714}',
+                event.source == EventSource.kiAgent
+                  ? _t('package3_source_ai')
+                  : '\u{2714}',
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
