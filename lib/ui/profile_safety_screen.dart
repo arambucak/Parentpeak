@@ -8,6 +8,7 @@ import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,9 +23,38 @@ import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
+
+String _profileCopy(String key, String fallback) {
+  const copies = {
+    'en': {
+      'active': 'Active',
+      'gdpr_compliant': 'GDPR compliant',
+      'terms_subtitle': 'Terms & use',
+      'licenses_subtitle': 'Packages used',
+      'blocked_count': '{count} blocked',
+    },
+    'ku': {
+      'active': 'Çalak',
+      'gdpr_compliant': 'Li gorî GDPR',
+      'terms_subtitle': 'Merc û bikaranîn',
+      'licenses_subtitle': 'Pakêtên hatine bikaranîn',
+      'blocked_count': '{count} hatine blokekirin',
+    },
+    'tr': {
+      'active': 'Aktif',
+      'gdpr_compliant': 'KVKK/GDPR uyumlu',
+      'terms_subtitle': 'Koşullar ve kullanım',
+      'licenses_subtitle': 'Kullanılan paketler',
+      'blocked_count': '{count} engellendi',
+    },
+  };
+  return copies[languageService.currentLanguage]?[key] ?? fallback;
+}
 
 /// Profil-Screen — modern, warm, spielerisch-elternfreundlich.
 class ProfileSafetyScreen extends StatefulWidget {
@@ -46,12 +76,107 @@ class ProfileSafetyScreen extends StatefulWidget {
 class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   List<_ChildInfo> _children = [];
   String _appVersion = '';
+  String? _profilePhotoUrl;
+  bool _photoBusy = false;
 
   @override
   void initState() {
     super.initState();
+    _profilePhotoUrl = FirebaseAuth.instance.currentUser?.photoURL;
     _loadChildren();
     _loadAppVersion();
+  }
+
+  Future<void> _pickProfilePhoto() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showProfilePhotoMessage('Bitte zuerst anmelden.');
+      return;
+    }
+
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 82,
+      maxWidth: 1200,
+    );
+    if (file == null || !mounted) return;
+
+    final previousUrl = _profilePhotoUrl;
+    setState(() => _photoBusy = true);
+    try {
+      final url = await ImageUploadService.instance.uploadImage(
+        file,
+        folder: 'profiles/${user.uid}',
+      );
+      if (url == null) throw Exception('Upload fehlgeschlagen');
+      await user.updatePhotoURL(url);
+      if (previousUrl != null && previousUrl.isNotEmpty) {
+        try {
+          await FirebaseStorage.instance.refFromURL(previousUrl).delete();
+        } catch (_) {}
+      }
+      await user.reload();
+      final refreshedUser = FirebaseAuth.instance.currentUser;
+      if (mounted) {
+        setState(() => _profilePhotoUrl = refreshedUser?.photoURL ?? url);
+        _showProfilePhotoMessage('Profilbild gespeichert.');
+      }
+    } catch (_) {
+      if (mounted) {
+        _showProfilePhotoMessage('Profilbild konnte nicht gespeichert werden.');
+      }
+    } finally {
+      if (mounted) setState(() => _photoBusy = false);
+    }
+  }
+
+  Future<void> _deleteProfilePhoto() async {
+    final url = _profilePhotoUrl;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Profilbild löschen?'),
+            content: const Text('Das aktuelle Profilbild wird entfernt.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(_t('cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Löschen'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+
+    setState(() => _photoBusy = true);
+    try {
+      if (url != null && url.isNotEmpty) {
+        try {
+          await FirebaseStorage.instance.refFromURL(url).delete();
+        } catch (_) {
+          // The profile should still be cleared if the old object is gone.
+        }
+      }
+      await FirebaseAuth.instance.currentUser?.updatePhotoURL(null);
+      if (mounted) {
+        setState(() => _profilePhotoUrl = null);
+        _showProfilePhotoMessage('Profilbild gelöscht.');
+      }
+    } catch (_) {
+      if (mounted) {
+        _showProfilePhotoMessage('Profilbild konnte nicht gelöscht werden.');
+      }
+    } finally {
+      if (mounted) setState(() => _photoBusy = false);
+    }
+  }
+
+  void _showProfilePhotoMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadAppVersion() async {
@@ -130,9 +255,9 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(_t('profile_delete_child_title')),
-        content: Text(_t('profile_delete_child_message')
-            .replaceFirst('{name}', child.name)),
+        title: const Text('Kind wirklich löschen?'),
+        content: Text(
+            '${child.name} wird dauerhaft aus eurem Familienprofil entfernt.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -144,7 +269,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text(_t('profile_delete_child_action')),
+            child: const Text('Löschen'),
           ),
         ],
       ),
@@ -192,8 +317,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               TextField(
                 controller: nameCtrl,
                 decoration: InputDecoration(
-                  labelText: _t('profile_name_label'),
-                  hintText: _t('profile_child_name_hint'),
+                  labelText: 'Name',
+                  hintText: 'z.B. Emma',
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
@@ -203,8 +328,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               TextField(
                 controller: ageCtrl,
                 decoration: InputDecoration(
-                  labelText: _t('profile_age_label'),
-                  hintText: _t('profile_child_age_hint'),
+                  labelText: 'Alter',
+                  hintText: 'z.B. 4 Jahre',
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
@@ -265,37 +390,74 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               Center(
                 child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary,
-                            theme.colorScheme.tertiary,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: theme.colorScheme.primary,
+                          backgroundImage: _profilePhotoUrl == null
+                              ? null
+                              : NetworkImage(_profilePhotoUrl!),
+                          child: _profilePhotoUrl == null
+                              ? Text(
+                                  initials,
+                                  style: theme.textTheme.headlineMedium
+                                      ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                )
+                              : null,
                         ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.25),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
+                        Positioned(
+                          right: -4,
+                          bottom: -4,
+                          child: PopupMenuButton<String>(
+                            enabled: !_photoBusy,
+                            onSelected: (value) {
+                              if (value == 'upload') {
+                                _pickProfilePhoto();
+                              } else if (value == 'delete') {
+                                _deleteProfilePhoto();
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'upload',
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: Icon(Icons.photo_library_outlined),
+                                  title: Text('Bild auswählen'),
+                                ),
+                              ),
+                              if (_profilePhotoUrl != null)
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: Icon(Icons.delete_outline),
+                                    title: Text('Bild löschen'),
+                                  ),
+                                ),
+                            ],
+                            child: CircleAvatar(
+                              radius: 16,
+                              backgroundColor: theme.colorScheme.surface,
+                              child: _photoBusy
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : Icon(Icons.camera_alt_outlined,
+                                      size: 18,
+                                      color: theme.colorScheme.primary),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                     const SizedBox(height: 14),
                     GestureDetector(
@@ -575,7 +737,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               _buildTile(theme,
                   icon: Icons.notifications_rounded,
                   title: _t('notifications'),
-                  value: _t('core_active'),
+                  value: _profileCopy('active', 'Aktiv'),
                   onTap: () {}),
               const SizedBox(height: 28),
 
@@ -592,13 +754,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _buildCompactTile(theme,
                       icon: Icons.shield_rounded,
                       title: _t('privacy'),
-                      subtitle: _t('core_gdpr_compliant'),
+                      subtitle: _profileCopy('gdpr_compliant', 'DSGVO-konform'),
                       onTap: () => _openUrl(APIConfig.getPrivacyPolicyUrl())),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.gavel_rounded,
                       title: _t('terms'),
-                      subtitle: _t('core_terms_subtitle'),
+                      subtitle: _profileCopy('terms_subtitle', 'AGB & Nutzung'),
                       onTap: () => _openUrl(APIConfig.getTermsOfServiceUrl())),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
@@ -622,7 +784,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   _buildCompactTile(theme,
                       icon: Icons.code_rounded,
                       title: _t('open_source_licenses'),
-                        subtitle: _t('core_licenses_subtitle'),
+                      subtitle: _profileCopy(
+                          'licenses_subtitle', 'Verwendete Packages'),
                       onTap: () => showLicensePage(
                             context: context,
                             applicationName: 'Parentpeak',
@@ -635,7 +798,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       icon: Icons.block_rounded,
                       title: _t('profile_blocked_contacts'),
                       subtitle:
-                          _t('core_blocked_count')
+                          _profileCopy('blocked_count', '{count} blockiert')
                               .replaceAll(
                         '{count}',
                         '${BlockReportService.instance.blockedUsers.length}',
@@ -648,8 +811,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     _thinDivider(theme),
                     _buildCompactTile(theme,
                         icon: Icons.shield_rounded,
-                        title: _t('core_moderation'),
-                        subtitle: _t('core_moderation_subtitle'),
+                        title: 'Moderation',
+                        subtitle: 'Meldungen prüfen & Accounts sperren',
                         onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -659,15 +822,15 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     // Nur fuer Admin: Crashlytics-Nachweis im Release-Build.
                     _buildCompactTile(theme,
                         icon: Icons.bug_report_rounded,
-                        title: _t('core_crashlytics_test'),
-                        subtitle: _t('core_crashlytics_subtitle'),
+                        title: 'Crashlytics-Test',
+                        subtitle: 'Test-Fehlerbericht an Firebase senden',
                         onTap: _sendCrashlyticsTest),
                   ],
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.mail_rounded,
                       title: _t('contact_support'),
-                      subtitle: APIConfig.getContactEmail() ?? _t('core_contact_email'),
+                      subtitle: APIConfig.getContactEmail() ?? 'E-Mail',
                       onTap: () => _openUrl(APIConfig.getContactSupportUrl())),
                 ]),
               ),
@@ -813,7 +976,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
             Text(
-              _t('core_logout_message'),
+              'Du kannst dich jederzeit wieder anmelden.',
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
@@ -1038,12 +1201,12 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       fontSize: 13,
                       color: Color(0xFF6B7280))),
               const SizedBox(height: 14),
-                _impressumRow(_t('core_imprint_provider'), 'Fatih Bucak – Parentpeak'),
-                _impressumRow(_t('core_imprint_owner'), 'Fatih Bucak'),
-                _impressumRow(_t('core_imprint_address'), 'Alexandrinenstraße 93, 10969 Berlin'),
-                _impressumRow(_t('core_imprint_email'),
+              _impressumRow('Anbieter', 'Fatih Bucak – Parentpeak'),
+              _impressumRow('Inhaber', 'Fatih Bucak'),
+              _impressumRow('Adresse', 'Alexandrinenstraße 93, 10969 Berlin'),
+              _impressumRow('E-Mail',
                   APIConfig.getContactEmail() ?? 'support@parentpeak.com'),
-                _impressumRow(_t('core_imprint_content_owner'), 'Fatih Bucak'),
+              _impressumRow('Verantwortlich für Inhalte', 'Fatih Bucak'),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -1051,9 +1214,9 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   color: const Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text(
-                  _t('core_beta_notice'),
-                    style: const TextStyle(
+                child: const Text(
+                  'Hinweis: Parentpeak befindet sich in der Beta-Phase.',
+                  style: TextStyle(
                       fontSize: 12, color: Color(0xFF6B7280), height: 1.4),
                 ),
               ),
@@ -1120,24 +1283,35 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
-              Text(
-                _t('core_ai_intro'),
-                style: const TextStyle(fontSize: 14, height: 1.5),
+              const Text(
+                'Parentpeak nutzt Künstliche Intelligenz (Google Gemini) in folgenden Bereichen:',
+                style: TextStyle(fontSize: 14, height: 1.5),
               ),
               const SizedBox(height: 14),
-                _aiFeatureItem('\u{1F4AC}', _t('core_ai_parenting_title'), _t('core_ai_parenting_desc')),
-                _aiFeatureItem('\u{1F372}', _t('core_ai_recipe_title'), _t('core_ai_recipe_desc')),
-                _aiFeatureItem('\u{1F4C5}', _t('core_ai_events_title'), _t('core_ai_events_desc')),
-                _aiFeatureItem('\u{1F4DC}', _t('core_ai_review_title'), _t('core_ai_review_desc')),
+              _aiFeatureItem('\u{1F4AC}', 'KI-Elternberatung',
+                  'Integrativer pädagogischer Ansatz'),
+              _aiFeatureItem('\u{1F372}', 'Rezept-Generator',
+                  'Altersgerechte Familienrezepte'),
+              _aiFeatureItem('\u{1F4C5}', 'Events-Suche',
+                  'Lokale Aktivitäten in deiner Nähe'),
+              _aiFeatureItem('\u{1F4DC}', 'Wochenrückblick-Feedback',
+                  'Empathische Rückmeldung'),
               const SizedBox(height: 14),
-              Text(
-                _t('core_ai_basis'),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              const Text(
+                'Pädagogische Basis:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
-              Text(
-                _t('core_ai_basis_items'),
-                style: const TextStyle(
+              const Text(
+                '\u{2022} Gewaltfreie Kommunikation (Rosenberg)\n'
+                '\u{2022} Neurobiologie (Gerald Hüther)\n'
+                '\u{2022} Montessori — "Hilf mir, es selbst zu tun"\n'
+                '\u{2022} Reggio — Das Kind hat 100 Sprachen\n'
+                '\u{2022} Freinet — Lernen am realen Leben\n'
+                '\u{2022} Fröbel — Spielen ist die höchste Form des Lernens\n'
+                '\u{2022} Situationsansatz\n'
+                '\u{2022} Jesper Juul — Beziehung vor Erziehung',
+                style: TextStyle(
                     fontSize: 12, height: 1.6, color: Color(0xFF4B5563)),
               ),
               const SizedBox(height: 16),
@@ -1155,9 +1329,12 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13)),
                     const SizedBox(height: 6),
-                    Text(
-                      _t('core_ai_warning_items'),
-                        style: const TextStyle(
+                    const Text(
+                      '\u{2022} KI-Antworten sind keine professionelle Beratung\n'
+                      '\u{2022} Keine Speicherung von Chatverläufen auf externen Servern\n'
+                      '\u{2022} Keine echten Kindernamen an die KI übermitteln\n'
+                      '\u{2022} Bei Notfällen immer professionelle Hilfe suchen',
+                      style: TextStyle(
                           fontSize: 12, height: 1.6, color: Color(0xFF92400E)),
                     ),
                   ],
@@ -1201,14 +1378,14 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_t('profile_edit_display_name_title')),
+        title: const Text('Anzeigename ändern'),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: _t('profile_edit_display_name_label'),
-            helperText: _t('profile_edit_display_name_helper'),
+          decoration: const InputDecoration(
+            labelText: 'Dein Anzeigename',
+            helperText: 'So sehen dich andere Eltern (app-weit).',
           ),
         ),
         actions: [
@@ -1216,7 +1393,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: Text(_t('save'))),
+              child: const Text('Speichern')),
         ],
       ),
     );
@@ -1231,8 +1408,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (!mounted) return;
     setState(() {});
     messenger.showSnackBar(SnackBar(
-      content: Text(
-          _t('profile_display_name_updated').replaceFirst('{name}', newName)),
+      content: Text('Anzeigename aktualisiert: $newName'),
       behavior: SnackBarBehavior.floating,
       backgroundColor: const Color(0xFF16A34A),
     ));
@@ -1245,8 +1421,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final ready = ErrorReportingService.instance.isCrashlyticsReady;
     if (!ready) {
-      messenger.showSnackBar(SnackBar(
-        content: Text(_t('profile_crashlytics_unavailable')),
+      messenger.showSnackBar(const SnackBar(
+        content: Text(
+            'Crashlytics ist in diesem Build nicht aktiv (z.B. Debug/Web). '
+            'Bitte im Release-Build auf Android/iOS testen.'),
         behavior: SnackBarBehavior.floating,
       ));
       return;
@@ -1260,16 +1438,17 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         fatal: false,
       );
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(
-        content: Text(_t('profile_crashlytics_sent')),
+      messenger.showSnackBar(const SnackBar(
+        content:
+            Text('Test-Bericht gesendet. Erscheint in ~1–2 Min in Firebase '
+                'Crashlytics (Non-fatals).'),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF16A34A),
+        backgroundColor: Color(0xFF16A34A),
       ));
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(
-        content: Text(
-            _t('profile_crashlytics_failed').replaceFirst('{error}', '$e')),
+        content: Text('Konnte Test-Bericht nicht senden: $e'),
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -1319,13 +1498,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(children: [
-          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
+        content: const Row(children: [
+          Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
-              _t('core_export_copied'),
-              style: const TextStyle(fontSize: 13),
+              'Datenexport in die Zwischenablage kopiert',
+              style: TextStyle(fontSize: 13),
             ),
           ),
         ]),
@@ -1436,10 +1615,9 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     ),
                     title: Text(user.displayName.isNotEmpty
                         ? user.displayName
-                        : _t('profile_unknown_user')),
+                        : 'Unbekannt'),
                     subtitle: Text(
-                        _t('profile_blocked_on').replaceFirst('{date}',
-                            '${user.blockedAt.day}.${user.blockedAt.month}.${user.blockedAt.year}'),
+                        'Blockiert am ${user.blockedAt.day}.${user.blockedAt.month}.${user.blockedAt.year}',
                         style:
                             TextStyle(fontSize: 11, color: Colors.grey[500])),
                     trailing: TextButton(
@@ -1484,9 +1662,7 @@ class _DeleteAccountSheet extends StatefulWidget {
 
 class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
   final _ctrl = TextEditingController();
-  bool get _confirmed =>
-      _ctrl.text.trim().toUpperCase() ==
-      _t('profile_delete_confirmation_word').toUpperCase();
+  bool get _confirmed => _ctrl.text.trim().toUpperCase() == 'LÖSCHEN';
 
   @override
   void dispose() {
@@ -1539,7 +1715,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              _t('profile_delete_account_warning'),
+              'Alle deine Daten werden unwiderruflich gelöscht.\nDiese Aktion kann nicht rückgängig gemacht werden.',
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
@@ -1556,7 +1732,7 @@ class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
             textCapitalization: TextCapitalization.characters,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: _t('profile_delete_confirmation_word'),
+              hintText: 'LÖSCHEN',
               filled: true,
               fillColor: theme.colorScheme.surfaceContainerHighest,
               border: OutlineInputBorder(
@@ -1634,7 +1810,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _t('profile_reauth_delete_prompt'),
+            'Bitte gib dein Passwort ein, um das Konto endgültig zu löschen.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -1643,7 +1819,7 @@ class _ReauthDialogState extends State<_ReauthDialog> {
             obscureText: _obscure,
             autofocus: true,
             decoration: InputDecoration(
-              labelText: _t('auth_password_label'),
+              labelText: 'Passwort',
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
