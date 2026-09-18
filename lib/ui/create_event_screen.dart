@@ -1,5 +1,6 @@
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/models/family_contact.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/logic/auth_service.dart';
@@ -45,6 +47,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final Set<String> _selectedInvitees = {};
 
   bool _isSubmitting = false;
+  bool _scanningFlyer = false;
   File? _selectedPhotoFile;
   String? _uploadedPhotoUrl;
   final _imagePicker = ImagePicker();
@@ -154,6 +157,202 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     return _uploadedPhotoUrl!;
   }
 
+  // ─── Flyer-Scan (Kamera → KI → Auto-Fill) ──────────────────────────────────
+
+  Future<void> _scanFlyer() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 12),
+          Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Text(_t('community_event_scan_flyer'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(_t('community_event_ai_recognizes'),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          ListTile(
+            leading:
+                const Icon(Icons.camera_alt_rounded, color: Color(0xFF8B5CF6)),
+            title: Text(_t('community_event_take_photo')),
+            onTap: () => Navigator.pop(ctx, ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_rounded,
+                color: Color(0xFF8B5CF6)),
+            title: Text(_t('community_event_from_gallery')),
+            onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+          ),
+          const SizedBox(height: 16),
+        ]),
+      ),
+    );
+    if (source == null) return;
+
+    final picked = await _imagePicker.pickImage(
+      source: source,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    setState(() => _scanningFlyer = true);
+
+    try {
+      final bytes = await picked.readAsBytes();
+      final text = await GeminiAIService().generateText(
+        'Analysiere diesen Flyer/Poster für ein Familien-Event. '
+        'Extrahiere folgende Informationen als JSON:\n'
+        '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
+        '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
+        '"location":"Adresse/Ort oder null"}\n'
+        'Antworte NUR mit dem JSON, kein Markdown.',
+        imageBytes: bytes,
+      ).timeout(const Duration(seconds: 20));
+      final jsonStr = text.replaceAll(RegExp(r'^```json\s*|\s*```$'), '');
+
+      if (jsonStr.startsWith('{')) {
+        final data = _parseFlyer(jsonStr);
+        if (!mounted) return;
+        setState(() {
+          // Auch als Event-Foto übernehmen, falls noch kein Foto gewählt wurde
+          _selectedPhotoFile ??= File(picked.path);
+          _uploadedPhotoUrl = null;
+
+          if (data['title'] != null && data['title'].toString().isNotEmpty) {
+            _titleController.text = data['title'];
+          }
+          if (data['description'] != null &&
+              data['description'].toString().isNotEmpty) {
+            _descriptionController.text = data['description'];
+          }
+          if (data['location'] != null &&
+              data['location'].toString().isNotEmpty) {
+            _locationController.text = data['location'];
+          }
+          if (data['date'] != null) {
+            final parsed = DateTime.tryParse(data['date'].toString());
+            if (parsed != null) _selectedDate = parsed;
+          }
+          if (data['time'] != null) {
+            final parts = data['time'].toString().split(':');
+            if (parts.length == 2) {
+              _selectedTime = TimeOfDay(
+                hour: int.tryParse(parts[0]) ?? _selectedTime.hour,
+                minute: int.tryParse(parts[1]) ?? _selectedTime.minute,
+              );
+            }
+          }
+          _scanningFlyer = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('community_flyer_detected')),
+          backgroundColor: const Color(0xFF16A34A),
+        ));
+      } else {
+        throw Exception(_t('package3_flyer_read_failed'));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _scanningFlyer = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              _t('package3_flyer_recognition_failed').replaceAll('{error}', '$e')),
+        ));
+      }
+    }
+  }
+
+  Map<String, dynamic> _parseFlyer(String raw) {
+    try {
+      final start = raw.indexOf('{');
+      final end = raw.lastIndexOf('}');
+      if (start == -1 || end == -1) return {};
+      final chunk = raw.substring(start, end + 1);
+      final decoded = jsonDecode(chunk);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  // ─── Duplikat-Erkennung ────────────────────────────────────────────────────
+
+  Future<MeetupEvent?> _checkDuplicateEvent() async {
+    final title = _titleController.text.trim().toLowerCase();
+    if (title.isEmpty) return null;
+
+    final eventDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    try {
+      final existing = await _eventService.getEvents();
+      for (final event in existing) {
+        final existingTitle = event.title.toLowerCase();
+        final similar = existingTitle.contains(title) ||
+            title.contains(existingTitle) ||
+            _levenshteinSimilarity(title, existingTitle) > 0.7;
+        final samePeriod =
+            (event.eventDate.difference(eventDateTime).inHours).abs() <= 24;
+        final sameLocation = _locationController.text.trim().isEmpty ||
+            event.location
+                .toLowerCase()
+                .contains(_locationController.text.trim().toLowerCase()) ||
+            _locationController.text
+                .trim()
+                .toLowerCase()
+                .contains(event.location.toLowerCase());
+
+        if (similar && samePeriod && sameLocation) return event;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  double _levenshteinSimilarity(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return 0;
+    final maxLen = a.length > b.length ? a.length : b.length;
+    final dist = _levenshteinDistance(a, b);
+    return 1.0 - (dist / maxLen);
+  }
+
+  int _levenshteinDistance(String a, String b) {
+    final m = a.length;
+    final n = b.length;
+    final d = List.generate(m + 1, (_) => List.filled(n + 1, 0));
+    for (var i = 0; i <= m; i++) {
+      d[i][0] = i;
+    }
+    for (var j = 0; j <= n; j++) {
+      d[0][j] = j;
+    }
+    for (var i = 1; i <= m; i++) {
+      for (var j = 1; j <= n; j++) {
+        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
+        d[i][j] = [d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost]
+            .reduce((x, y) => x < y ? x : y);
+      }
+    }
+    return d[m][n];
+  }
+
   Future<void> _submitForm() async {
     final currentUserId = AuthService.instance.currentUser?.uid;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
@@ -179,6 +378,47 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         ),
       );
       return;
+    }
+
+    // Duplikat-Erkennung: warne vor ähnlichen Events anderer Nutzer
+    final duplicate = await _checkDuplicateEvent();
+    if (duplicate != null && mounted) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(children: [
+            const Text('⚠️', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text(_t('community_event_similar_found')),
+          ]),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              '"${duplicate.title}" – '
+              '${duplicate.eventDate.day}.${duplicate.eventDate.month}.${duplicate.eventDate.year}, '
+              '${duplicate.location}',
+              style: const TextStyle(height: 1.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _t('package3_duplicate_proceed'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ]),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(_t('cancel')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(_t('community_event_create_anyway')),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) return;
     }
 
     setState(() => _isSubmitting = true);
@@ -367,6 +607,40 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
+                ),
+                const SizedBox(height: 12),
+
+                // Flyer-Scan: Foto von Flyer/Poster aufnehmen und Felder per KI ausfüllen
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _scanningFlyer ? null : _scanFlyer,
+                    icon: _scanningFlyer
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.document_scanner_rounded, size: 18),
+                    label: Text(_scanningFlyer
+                        ? _t('package3_flyer_reading')
+                        : _t('package3_scan_flyer')),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF8B5CF6),
+                      side: const BorderSide(color: Color(0xFF8B5CF6)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(_t('community_event_ai_recognizes'),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(
+                              color: Theme.of(context).colorScheme.outline)),
                 ),
                 const SizedBox(height: 16),
 
