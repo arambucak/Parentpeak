@@ -197,6 +197,25 @@ class FriendChatService {
     return const [];
   }
 
+  /// Lädt ein Gruppen-Foto hoch (Web-kompatibel via Bytes) und gibt die
+  /// öffentliche URL zurück, oder null bei Fehler.
+  Future<String?> uploadGroupPhoto(
+    List<int> bytes, {
+    String filename = 'group.jpg',
+  }) async {
+    final api = _api;
+    if (api == null || bytes.isEmpty) return null;
+    try {
+      final res = await api.uploadImageBytes('/uploads/image', bytes,
+          filename: filename);
+      final url = res['url']?.toString();
+      return (url != null && url.isNotEmpty) ? url : null;
+    } catch (e) {
+      debugPrint('FriendChatService.uploadGroupPhoto failed: $e');
+      return null;
+    }
+  }
+
   /// Mitglieder einer Gruppe laden.
   Future<List<GroupMember>> fetchMembers(String groupId) async {
     final api = _api;

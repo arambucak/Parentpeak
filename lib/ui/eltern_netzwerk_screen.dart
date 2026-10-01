@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -322,13 +324,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     required String roomId,
     required String title,
     required bool isGroup,
+    String? photoUrl,
   }) async {
     final uid = AuthService.instance.currentUser?.uid ?? '';
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => isGroup
-            ? GroupChatScreen(roomId: roomId, groupName: title)
+            ? GroupChatScreen(
+                roomId: roomId, groupName: title, photoUrl: photoUrl)
             : MatchConversationScreen(
                 profileId: roomId,
                 profileName: title,
@@ -677,6 +681,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         roomId: c.roomId,
         title: title,
         isGroup: c.isGroup,
+        photoUrl: c.photoUrl.isNotEmpty ? c.photoUrl : null,
       ),
     );
   }
@@ -840,6 +845,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     }
     final nameCtrl = TextEditingController();
     final selected = <String>{};
+    Uint8List? photoBytes; // ausgewähltes Gruppen-Foto (Web-sicher)
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -850,6 +856,37 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       ),
       builder: (sheetCtx) {
         bool saving = false;
+
+        Future<void> pickGroupPhoto(StateSetter setSheet) async {
+          final source = await showModalBottomSheet<ImageSource>(
+            context: sheetCtx,
+            builder: (pickCtx) => SafeArea(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded),
+                  title: Text(_t('network_photo_camera')),
+                  onTap: () => Navigator.pop(pickCtx, ImageSource.camera),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.image_outlined),
+                  title: Text(_t('network_photo_gallery')),
+                  onTap: () => Navigator.pop(pickCtx, ImageSource.gallery),
+                ),
+              ]),
+            ),
+          );
+          if (source == null) return;
+          final picked = await ImagePicker().pickImage(
+            source: source,
+            maxWidth: 800,
+            maxHeight: 800,
+            imageQuality: 85,
+          );
+          if (picked == null) return;
+          final bytes = await picked.readAsBytes();
+          setSheet(() => photoBytes = bytes);
+        }
+
         return StatefulBuilder(builder: (sheetCtx, setSheet) {
           final theme = Theme.of(sheetCtx);
           return Padding(
@@ -863,6 +900,44 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               Text(_t('network_create_group'),
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 14),
+              // Gruppen-Foto (optional) — tippen zum Auswählen/Ändern.
+              Center(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: saving ? null : () => pickGroupPhoto(setSheet),
+                  child: Stack(children: [
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor:
+                          const Color(0xFF0EA5A4).withValues(alpha: 0.15),
+                      backgroundImage:
+                          photoBytes != null ? MemoryImage(photoBytes!) : null,
+                      child: photoBytes == null
+                          ? const Icon(Icons.groups_rounded,
+                              size: 32, color: Color(0xFF0EA5A4))
+                          : null,
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF0EA5A4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded,
+                            size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(_t('network_group_photo_hint'),
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               const SizedBox(height: 14),
               TextField(
                 controller: nameCtrl,
@@ -930,6 +1005,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                             nameCtrl.text.trim(),
                             selected.toList(),
                             friends,
+                            photoBytes,
                           );
                           if (sheetCtx.mounted) Navigator.pop(sheetCtx, ok);
                         },
@@ -957,8 +1033,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     if (created == true) await _loadConversations();
   }
 
-  Future<bool> _createGroup(
-      String name, List<String> memberUids, List<Friend> friends) async {
+  Future<bool> _createGroup(String name, List<String> memberUids,
+      List<Friend> friends, Uint8List? photoBytes) async {
     final uid = AuthService.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) return false;
     final ownerName =
@@ -967,12 +1043,20 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       for (final f in friends)
         if (memberUids.contains(f.uid)) f.uid: f.name,
     };
+    // Optionales Gruppen-Foto zuerst hochladen (fehlertolerant: scheitert der
+    // Upload, wird die Gruppe trotzdem ohne Foto erstellt).
+    String photoUrl = '';
+    if (photoBytes != null && photoBytes.isNotEmpty) {
+      final url = await FriendChatService.instance.uploadGroupPhoto(photoBytes);
+      if (url != null) photoUrl = url;
+    }
     final group = await FriendChatService.instance.createGroup(
       name: name,
       ownerUserId: uid,
       ownerName: ownerName,
       memberUids: memberUids,
       memberNames: memberNames,
+      photoUrl: photoUrl,
     );
     if (!mounted) return false;
     if (group == null) {
@@ -987,6 +1071,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       roomId: group.roomId,
       title: group.name,
       isGroup: true,
+      photoUrl: group.photoUrl.isNotEmpty ? group.photoUrl : null,
     );
     return true;
   }

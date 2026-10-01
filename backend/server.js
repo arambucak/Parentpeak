@@ -8256,21 +8256,34 @@ app.post('/friend-chat/messages', async (req, res) => {
     try {
       let recipientUid = null;
       if (roomId.startsWith('group_')) {
-        // Gruppen-Push: Benachrichtigung an alle Mitglieder außer dem Sender.
+        // Gruppen-Push: Benachrichtigung an ALLE Mitglieder außer dem Sender.
+        // Parallel per allSettled, damit ein langsamer/fehlerhafter Empfaenger
+        // die Zustellung an die anderen nicht blockiert (zuverlaessig + schnell).
         const groupId = roomId.substring('group_'.length);
-        const members = await prisma.$queryRawUnsafe(
-          `SELECT "userId" FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" <> $2`,
-          groupId, userId
+        const [members, groupRows] = await Promise.all([
+          prisma.$queryRawUnsafe(
+            `SELECT "userId" FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" <> $2`,
+            groupId, userId
+          ),
+          prisma.$queryRawUnsafe(
+            `SELECT "name" FROM "ChatGroup" WHERE "id" = $1 LIMIT 1`,
+            groupId
+          ),
+        ]);
+        const groupName = (groupRows[0] && groupRows[0].name) || 'Gruppe';
+        // Im Gruppen-Push den Gruppennamen + Absender zeigen ("Gruppe · Name").
+        const title = `${groupName} · ${userName || 'Neue Nachricht'}`;
+        const body =
+          content.length > 100 ? content.substring(0, 100) + '...' : content;
+        await Promise.allSettled(
+          members.map((m) =>
+            sendPushToUser(m.userId, {
+              title,
+              body,
+              data: { type: 'group_chat', roomId, groupId, senderId: userId },
+            })
+          )
         );
-        for (const m of members) {
-          try {
-            await sendPushToUser(m.userId, {
-              title: userName || 'Neue Nachricht',
-              body: content.length > 100 ? content.substring(0, 100) + '...' : content,
-              data: { type: 'group_chat', roomId, senderId: userId },
-            });
-          } catch (_) {}
-        }
         return;
       }
       if (roomId.includes('__')) {

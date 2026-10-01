@@ -24,11 +24,15 @@ class GroupChatScreen extends StatefulWidget {
     super.key,
     required this.roomId,
     required this.groupName,
+    this.photoUrl,
   });
 
   /// Format: 'group_<id>'.
   final String roomId;
   final String groupName;
+
+  /// Optionales Gruppen-Foto. Fallback: Gruppen-Icon.
+  final String? photoUrl;
 
   @override
   State<GroupChatScreen> createState() => _GroupChatScreenState();
@@ -447,8 +451,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               child: Text(_t('cancel'))),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style:
-                FilledButton.styleFrom(backgroundColor: theme.colorScheme.error),
+            style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error),
             child: Text(_t('network_leave_group')),
           ),
         ],
@@ -471,7 +475,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         title: InkWell(
           onTap: _showMembersSheet,
           child: Row(children: [
-            UserAvatar(name: widget.groupName, isGroup: true, radius: 18),
+            UserAvatar(
+              name: widget.groupName,
+              photoUrl: widget.photoUrl,
+              isGroup: true,
+              radius: 18,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -502,9 +511,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               if (v == 'leave') _confirmLeaveGroup();
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: 'members', child: Text(_t('network_members'))),
-              PopupMenuItem(value: 'add', child: Text(_t('network_add_members'))),
-              PopupMenuItem(value: 'leave', child: Text(_t('network_leave_group'))),
+              PopupMenuItem(
+                  value: 'members', child: Text(_t('network_members'))),
+              PopupMenuItem(
+                  value: 'add', child: Text(_t('network_add_members'))),
+              PopupMenuItem(
+                  value: 'leave', child: Text(_t('network_leave_group'))),
             ],
           ),
         ],
@@ -557,8 +569,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   Widget _bubble(ThemeData theme, _GroupMsg m, int index) {
     final showAuthor = _showAuthorFor(index);
     final align = m.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final bubbleColor =
-        m.isMe ? const Color(0xFF7C3AED) : theme.colorScheme.surfaceContainerHighest;
+    final bubbleColor = m.isMe
+        ? const Color(0xFF7C3AED)
+        : theme.colorScheme.surfaceContainerHighest;
     final textColor = m.isMe ? Colors.white : theme.colorScheme.onSurface;
 
     return Padding(

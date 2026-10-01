@@ -878,6 +878,9 @@ class AppStringsManager {
           'Noch keine Nachrichten. Schreib die erste und bring die Gruppe ins Gespräch!',
       'network_sending': 'Senden…',
       'network_message_hint': 'Nachricht schreiben…',
+      'network_group_photo_hint': 'Gruppenfoto hinzufügen (optional)',
+      'network_photo_camera': 'Foto aufnehmen',
+      'network_photo_gallery': 'Aus Galerie wählen',
       'network_share_code_hint':
           'Teile deinen Code – ein Tap und ihr seid verbunden!',
       'network_scan_to_connect':
@@ -3563,6 +3566,9 @@ class AppStringsManager {
           'No messages yet. Write the first one and get the group talking!',
       'network_sending': 'Sending…',
       'network_message_hint': 'Write a message…',
+      'network_group_photo_hint': 'Add a group photo (optional)',
+      'network_photo_camera': 'Take a photo',
+      'network_photo_gallery': 'Choose from gallery',
       'network_share_code_hint':
           'Share your code — one tap and you are connected!',
       'network_scan_to_connect':
@@ -7439,6 +7445,9 @@ class AppStringsManager {
           'Hêj peyam tune. Ya yekem binivîse û komê bîne axaftinê!',
       'network_sending': 'Dişîne…',
       'network_message_hint': 'Peyamekê binivîse…',
+      'network_group_photo_hint': 'Wêneyê komê lê zêde bike (bijarte)',
+      'network_photo_camera': 'Wêne bikişîne',
+      'network_photo_gallery': 'Ji galeriyê hilbijêre',
       'network_share_code_hint':
           'Koda xwe parve bike — bi yek pêlê hûn tên girêdan!',
       'network_scan_to_connect':
@@ -10900,6 +10909,9 @@ class AppStringsManager {
           'Henüz mesaj yok. İlkini yaz ve grubu sohbete başlat!',
       'network_sending': 'Gönderiliyor…',
       'network_message_hint': 'Mesaj yaz…',
+      'network_group_photo_hint': 'Grup fotoğrafı ekle (isteğe bağlı)',
+      'network_photo_camera': 'Fotoğraf çek',
+      'network_photo_gallery': 'Galeriden seç',
       'network_share_code_hint': 'Kodunu paylaş – tek dokunuşla bağlanın!',
       'network_scan_to_connect': 'Buluşmada tara – anında bağlan!',
       'network_found': 'Bulundu ✓',
