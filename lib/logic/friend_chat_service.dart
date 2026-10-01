@@ -53,8 +53,8 @@ class ConversationSummary {
       lastMessage: (j['lastMessage'] ?? '').toString(),
       lastAuthorName: (j['lastAuthorName'] ?? '').toString(),
       lastAuthorUserId: (j['lastAuthorUserId'] ?? '').toString(),
-      lastMessageAt: DateTime.tryParse(j['lastMessageAt']?.toString() ?? '')
-          ?.toLocal(),
+      lastMessageAt:
+          DateTime.tryParse(j['lastMessageAt']?.toString() ?? '')?.toLocal(),
       unreadCount: (j['unreadCount'] as num?)?.toInt() ?? 0,
     );
   }
@@ -86,6 +86,29 @@ class ChatGroupInfo {
       roomId: (j['roomId'] ?? 'group_$id').toString(),
     );
   }
+}
+
+/// Ein Mitglied einer Chat-Gruppe.
+class GroupMember {
+  const GroupMember({
+    required this.userId,
+    required this.memberName,
+    required this.role,
+  });
+
+  final String userId;
+  final String memberName;
+  final String role; // 'owner' | 'member'
+
+  bool get isOwner => role == 'owner';
+
+  factory GroupMember.fromJson(Map<String, dynamic> j) => GroupMember(
+        userId: (j['userId'] ?? '').toString(),
+        memberName: (j['memberName'] as String?)?.trim().isNotEmpty == true
+            ? (j['memberName'] as String).trim()
+            : 'Elternteil',
+        role: (j['role'] ?? 'member').toString(),
+      );
 }
 
 class FriendChatService {
@@ -170,6 +193,24 @@ class FriendChatService {
       }
     } catch (e) {
       debugPrint('FriendChatService.fetchGroups failed: $e');
+    }
+    return const [];
+  }
+
+  /// Mitglieder einer Gruppe laden.
+  Future<List<GroupMember>> fetchMembers(String groupId) async {
+    final api = _api;
+    if (api == null || groupId.isEmpty) return const [];
+    try {
+      final res = await api.getJson('/chat-groups/$groupId/members');
+      if (res is Map<String, dynamic> && res['members'] is List) {
+        return (res['members'] as List)
+            .whereType<Map<String, dynamic>>()
+            .map(GroupMember.fromJson)
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('FriendChatService.fetchMembers failed: $e');
     }
     return const [];
   }

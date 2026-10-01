@@ -860,6 +860,24 @@ class AppStringsManager {
       'network_group_select_member': 'Bitte wähle mindestens ein Mitglied aus.',
       'network_group_create_failed':
           'Gruppe konnte nicht erstellt werden – bitte später erneut.',
+      // ─── Gruppen-Chat-Screen ────────────────────────────────────────────
+      'network_members': 'Mitglieder',
+      'network_add_members': 'Mitglieder hinzufügen',
+      'network_leave_group': 'Gruppe verlassen',
+      'network_leave_group_confirm':
+          'Möchtest du diese Gruppe wirklich verlassen? Du siehst die Nachrichten dann nicht mehr.',
+      'network_you_label': 'Du',
+      'network_owner_label': 'Admin',
+      'network_all_friends_in_group':
+          'Alle deine Freunde sind bereits in dieser Gruppe.',
+      'network_members_added': 'Mitglieder hinzugefügt.',
+      'network_members_add_failed':
+          'Mitglieder konnten nicht hinzugefügt werden.',
+      'network_group_not_member': 'Du bist kein Mitglied dieser Gruppe.',
+      'network_group_chat_empty':
+          'Noch keine Nachrichten. Schreib die erste und bring die Gruppe ins Gespräch!',
+      'network_sending': 'Senden…',
+      'network_message_hint': 'Nachricht schreiben…',
       'network_share_code_hint':
           'Teile deinen Code – ein Tap und ihr seid verbunden!',
       'network_scan_to_connect':
@@ -3528,6 +3546,23 @@ class AppStringsManager {
       'network_group_select_member': 'Please select at least one member.',
       'network_group_create_failed':
           'Could not create the group — please try again later.',
+      // ─── Group chat screen ──────────────────────────────────────────────
+      'network_members': 'Members',
+      'network_add_members': 'Add members',
+      'network_leave_group': 'Leave group',
+      'network_leave_group_confirm':
+          'Do you really want to leave this group? You will no longer see its messages.',
+      'network_you_label': 'You',
+      'network_owner_label': 'Admin',
+      'network_all_friends_in_group':
+          'All your friends are already in this group.',
+      'network_members_added': 'Members added.',
+      'network_members_add_failed': 'Could not add members.',
+      'network_group_not_member': 'You are not a member of this group.',
+      'network_group_chat_empty':
+          'No messages yet. Write the first one and get the group talking!',
+      'network_sending': 'Sending…',
+      'network_message_hint': 'Write a message…',
       'network_share_code_hint':
           'Share your code — one tap and you are connected!',
       'network_scan_to_connect':
@@ -7388,6 +7423,22 @@ class AppStringsManager {
           'Ji kerema xwe bi kêmanî endamekî hilbijêre.',
       'network_group_create_failed':
           'Kom nehat çêkirin — ji kerema xwe paşê dîsa biceribîne.',
+      // ─── Ekrana chata komê ──────────────────────────────────────────────
+      'network_members': 'Endam',
+      'network_add_members': 'Endaman lê zêde bike',
+      'network_leave_group': 'Ji komê derkeve',
+      'network_leave_group_confirm':
+          'Tu bi rastî dixwazî ji vê komê derkevî? Tu êdî peyamên wê nabînî.',
+      'network_you_label': 'Tu',
+      'network_owner_label': 'Admîn',
+      'network_all_friends_in_group': 'Hemî hevalên te jixwe di vê komê de ne.',
+      'network_members_added': 'Endam hatin zêdekirin.',
+      'network_members_add_failed': 'Endam nehatin zêdekirin.',
+      'network_group_not_member': 'Tu ne endamê vê komê yî.',
+      'network_group_chat_empty':
+          'Hêj peyam tune. Ya yekem binivîse û komê bîne axaftinê!',
+      'network_sending': 'Dişîne…',
+      'network_message_hint': 'Peyamekê binivîse…',
       'network_share_code_hint':
           'Koda xwe parve bike — bi yek pêlê hûn tên girêdan!',
       'network_scan_to_connect':
@@ -10833,6 +10884,22 @@ class AppStringsManager {
       'network_group_select_member': 'Lütfen en az bir üye seç.',
       'network_group_create_failed':
           'Grup oluşturulamadı — lütfen daha sonra tekrar dene.',
+      // ─── Grup sohbeti ekranı ────────────────────────────────────────────
+      'network_members': 'Üyeler',
+      'network_add_members': 'Üye ekle',
+      'network_leave_group': 'Gruptan ayrıl',
+      'network_leave_group_confirm':
+          'Bu gruptan ayrılmak istediğine emin misin? Mesajlarını artık göremezsin.',
+      'network_you_label': 'Sen',
+      'network_owner_label': 'Yönetici',
+      'network_all_friends_in_group': 'Tüm arkadaşların zaten bu grupta.',
+      'network_members_added': 'Üyeler eklendi.',
+      'network_members_add_failed': 'Üyeler eklenemedi.',
+      'network_group_not_member': 'Bu grubun üyesi değilsin.',
+      'network_group_chat_empty':
+          'Henüz mesaj yok. İlkini yaz ve grubu sohbete başlat!',
+      'network_sending': 'Gönderiliyor…',
+      'network_message_hint': 'Mesaj yaz…',
       'network_share_code_hint': 'Kodunu paylaş – tek dokunuşla bağlanın!',
       'network_scan_to_connect': 'Buluşmada tara – anında bağlan!',
       'network_found': 'Bulundu ✓',

@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/friend_chat_service.dart';
+import 'package:parentpeak/ui/group_chat_screen.dart';
 import 'package:parentpeak/ui/widgets/user_avatar.dart';
 import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
@@ -326,11 +327,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MatchConversationScreen(
-          profileId: roomId,
-          profileName: title,
-          isFriendChat: true,
-        ),
+        builder: (_) => isGroup
+            ? GroupChatScreen(roomId: roomId, groupName: title)
+            : MatchConversationScreen(
+                profileId: roomId,
+                profileName: title,
+                isFriendChat: true,
+              ),
       ),
     );
     // Nach Rückkehr: als gelesen markieren und Übersicht aktualisieren.
