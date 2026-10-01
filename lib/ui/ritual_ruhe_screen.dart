@@ -9,9 +9,10 @@ import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 
 String ritualRuheText(String key, Locale locale) {
-  final languageCode = AppStringsManager.hasRitualRuheLanguage(locale.languageCode)
-      ? locale.languageCode
-      : 'de';
+  final languageCode =
+      AppStringsManager.hasRitualRuheLanguage(locale.languageCode)
+          ? locale.languageCode
+          : 'de';
   return AppStringsManager.ritualRuheString(languageCode, key);
   /*
   const localeDe = {
@@ -423,16 +424,13 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
           .map((raw) => raw.split('|'))
           .where((parts) => parts.length >= 2 && parts[0].trim().isNotEmpty)
           .map((parts) {
-            final years = int.tryParse(RegExp(r'\d+')
-                    .firstMatch(parts[1])
-                    ?.group(0) ??
-                '');
-            return KindDossier(
-              childName: parts[0],
-              ageMonths: years != null ? years * 12 : null,
-            );
-          })
-          .toList();
+        final years =
+            int.tryParse(RegExp(r'\d+').firstMatch(parts[1])?.group(0) ?? '');
+        return KindDossier(
+          childName: parts[0],
+          ageMonths: years != null ? years * 12 : null,
+        );
+      }).toList();
     }
     if (!mounted) return;
     setState(() {
@@ -987,15 +985,15 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
           if (_steps.every((step) => _completed.contains(step.id)))
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 14, 12, 18),
-              child: Text(
-                  ritualRuheText('allDone', _locale),
+              child: Text(ritualRuheText('allDone', _locale),
                   style: const TextStyle(
                       fontWeight: FontWeight.w700, color: Color(0xFF287F76))),
             ),
           if (_secondsRemaining > 0)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-              child: Text('${ritualRuheText('timerBanner', _locale)}  $_timerLabel',
+              child: Text(
+                  '${ritualRuheText('timerBanner', _locale)}  $_timerLabel',
                   style: const TextStyle(
                       color: Color(0xFF287F76), fontWeight: FontWeight.w800)),
             ),
@@ -1013,7 +1011,8 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
             const Icon(Icons.auto_stories_rounded, color: Color(0xFF6F5A9C)),
             const SizedBox(width: 8),
             Text(ritualRuheText('storyTitle', _locale),
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                style:
+                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
           ]),
           const SizedBox(height: 10),
           if (_story == null)
@@ -1046,7 +1045,8 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(ritualRuheText('gratitudeTitle', _locale),
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              style:
+                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
           const SizedBox(height: 6),
           Text(ritualRuheText('gratitudeHint', _locale)),
           const SizedBox(height: 10),
@@ -1158,8 +1158,8 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
   late List<_RitualStep> _steps;
   late Set<int> _weekdays;
 
-  String _t(String key) =>
-      AppStringsManager.phase1String(Localizations.localeOf(context).languageCode, key);
+  String _t(String key) => AppStringsManager.phase1String(
+      Localizations.localeOf(context).languageCode, key);
 
   @override
   void initState() {
@@ -1191,7 +1191,8 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
               decoration: InputDecoration(labelText: _t('ritual_step_title'))),
           TextField(
               controller: subtitleController,
-              decoration: InputDecoration(labelText: _t('ritual_step_subtitle'))),
+              decoration:
+                  InputDecoration(labelText: _t('ritual_step_subtitle'))),
           const SizedBox(height: 8),
           TextField(
             controller: timerController,
@@ -1267,15 +1268,14 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                 TextField(
                     controller: _timeController,
                     decoration: InputDecoration(
-                      labelText: _t('ritual_time'), hintText: '08:00')),
+                        labelText: _t('ritual_time'), hintText: '08:00')),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 6,
                   children: List.generate(7, (index) {
                     final day = index + 1;
                     return FilterChip(
-                      label: Text(
-                          _t('ritual_days').split('|')[index]),
+                      label: Text(_t('ritual_days').split('|')[index]),
                       selected: _weekdays.contains(day),
                       onSelected: (selected) => setState(() => selected
                           ? _weekdays.add(day)
@@ -1340,10 +1340,10 @@ class _EmptyChildState extends StatelessWidget {
               size: 56, color: Color(0xFF6E7BA8)),
           const SizedBox(height: 14),
           Text(ritualRuheText('emptyTitle', locale),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
-          Text(
-              ritualRuheText('emptyDescription', locale),
+          Text(ritualRuheText('emptyDescription', locale),
               textAlign: TextAlign.center),
           const SizedBox(height: 18),
           FilledButton(

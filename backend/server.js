@@ -2581,6 +2581,260 @@ function buildLanguageInstruction(language) {
   return `Respond exclusively in ${supportedAppLanguageNames.get(language)}. Do not mix languages.`;
 }
 
+const AI_MEMORY_MAX_CONTEXT_CHARS = 2800;
+const AI_MEMORY_CATEGORIES = new Set([
+  'topic',
+  'medical',
+  'medical_clarification',
+  'tried_strategy',
+  'helpful_strategy',
+  'preference',
+  'note',
+]);
+const AI_MEMORY_STATUSES = new Set(['confirmed', 'archived']);
+
+async function requireAiMemoryUser(req, res) {
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (!verified || !uid) {
+    res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
+    return null;
+  }
+  req.firebaseUid = uid;
+  return uid;
+}
+
+function parseOptionalDate(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function validateAiChildPayload(body, { partial = false } = {}) {
+  const result = {};
+  if (!partial || body.name !== undefined) {
+    const name = String(body.name || '').trim();
+    if (!name || name.length > 100) return { error: 'name ist erforderlich und darf maximal 100 Zeichen haben' };
+    result.name = name;
+  }
+  if (body.birthDate !== undefined) {
+    const birthDate = parseOptionalDate(body.birthDate);
+    if (birthDate === undefined) return { error: 'birthDate ist ungueltig' };
+    result.birthDate = birthDate;
+  }
+  if (body.gender !== undefined) {
+    const gender = String(body.gender || '').trim();
+    if (gender.length > 50) return { error: 'gender darf maximal 50 Zeichen haben' };
+    result.gender = gender || null;
+  }
+  return { data: result };
+}
+
+function validateAiMemoryPayload(body, { partial = false } = {}) {
+  const result = {};
+  if (!partial || body.category !== undefined) {
+    const category = String(body.category || '').trim();
+    if (!AI_MEMORY_CATEGORIES.has(category)) return { error: 'category ist ungueltig' };
+    result.category = category;
+  }
+  if (!partial || body.key !== undefined) {
+    const key = String(body.key || '').trim();
+    if (!key || key.length > 100) return { error: 'key ist erforderlich und darf maximal 100 Zeichen haben' };
+    result.key = key;
+  }
+  if (!partial || body.value !== undefined) {
+    const value = String(body.value || '').trim();
+    if (!value || value.length > 1000) return { error: 'value ist erforderlich und darf maximal 1000 Zeichen haben' };
+    result.value = value;
+  }
+  if (body.status !== undefined) {
+    const status = String(body.status || '').trim();
+    if (!AI_MEMORY_STATUSES.has(status)) return { error: 'status ist ungueltig' };
+    result.status = status;
+  }
+  return { data: result };
+}
+
+async function getAiMemoryContext(userId, childProfileId) {
+  const settings = await prisma.aiMemorySettings.findUnique({ where: { userId } });
+  if (!settings?.enabled) return '';
+
+  const children = await prisma.aiChildProfile.findMany({
+    where: {
+      userId,
+      ...(childProfileId ? { id: childProfileId } : {}),
+    },
+    include: {
+      memoryItems: {
+        where: { status: 'confirmed' },
+        orderBy: { updatedAt: 'desc' },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+  if (!children.length) return '';
+
+  const lines = ['BESTAETIGTER FAMILIENKONTEXT (nur passend zur Frage verwenden):'];
+  for (const child of children) {
+    const birthDate = child.birthDate
+      ? `, Geburtsdatum: ${child.birthDate.toISOString().slice(0, 10)}`
+      : '';
+    lines.push(`Kind: ${child.name}${birthDate}${child.gender ? `, Geschlecht: ${child.gender}` : ''}`);
+    for (const item of child.memoryItems) {
+      lines.push(`- ${item.category}/${item.key}: ${item.value}`);
+    }
+  }
+  lines.push('Regeln: Nichts aus diesem Kontext als Diagnose behandeln. Bei Widerspruechen nachfragen.');
+  return lines.join('\n').slice(0, AI_MEMORY_MAX_CONTEXT_CHARS);
+}
+
+app.get('/ai/settings', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const settings = await prisma.aiMemorySettings.findUnique({ where: { userId } });
+  return res.json({ enabled: settings?.enabled === true });
+});
+
+app.put('/ai/settings', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  if (typeof req.body?.enabled !== 'boolean') {
+    return res.status(400).json({ error: 'enabled muss boolean sein' });
+  }
+  const settings = await prisma.aiMemorySettings.upsert({
+    where: { userId },
+    create: { userId, enabled: req.body.enabled },
+    update: { enabled: req.body.enabled },
+  });
+  return res.json({ enabled: settings.enabled });
+});
+
+app.get('/ai/children', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const children = await prisma.aiChildProfile.findMany({
+    where: { userId },
+    include: { memoryItems: { orderBy: { updatedAt: 'desc' } } },
+    orderBy: { updatedAt: 'desc' },
+  });
+  return res.json({ items: children });
+});
+
+app.post('/ai/children', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const validated = validateAiChildPayload(req.body || {});
+  if (validated.error) return res.status(400).json({ error: validated.error });
+  const child = await prisma.aiChildProfile.create({
+    data: { userId, ...validated.data },
+  });
+  return res.status(201).json({ item: child });
+});
+
+app.put('/ai/children/:id', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const validated = validateAiChildPayload(req.body || {}, { partial: true });
+  if (validated.error) return res.status(400).json({ error: validated.error });
+  const existing = await prisma.aiChildProfile.findFirst({
+    where: { id: req.params.id, userId },
+  });
+  if (!existing) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  const child = await prisma.aiChildProfile.update({
+    where: { id: existing.id },
+    data: validated.data,
+  });
+  return res.json({ item: child });
+});
+
+app.delete('/ai/children/:id', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const result = await prisma.aiChildProfile.deleteMany({
+    where: { id: req.params.id, userId },
+  });
+  if (result.count === 0) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  return res.json({ deleted: true });
+});
+
+app.get('/ai/children/:id/memory', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const child = await prisma.aiChildProfile.findFirst({
+    where: { id: req.params.id, userId },
+    include: { memoryItems: { orderBy: { updatedAt: 'desc' } } },
+  });
+  if (!child) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  return res.json({ items: child.memoryItems });
+});
+
+app.post('/ai/children/:id/memory', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const validated = validateAiMemoryPayload(req.body || {});
+  if (validated.error) return res.status(400).json({ error: validated.error });
+  const child = await prisma.aiChildProfile.findFirst({
+    where: { id: req.params.id, userId },
+    select: { id: true },
+  });
+  if (!child) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  const item = await prisma.aiMemoryItem.upsert({
+    where: {
+      childId_category_key: {
+        childId: child.id,
+        category: validated.data.category,
+        key: validated.data.key,
+      },
+    },
+    create: {
+      childId: child.id,
+      ...validated.data,
+      userConfirmedAt: new Date(),
+    },
+    update: {
+      value: validated.data.value,
+      status: validated.data.status || 'confirmed',
+      userConfirmedAt: new Date(),
+    },
+  });
+  return res.status(201).json({ item });
+});
+
+app.put('/ai/children/:id/memory/:itemId', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const validated = validateAiMemoryPayload(req.body || {}, { partial: true });
+  if (validated.error) return res.status(400).json({ error: validated.error });
+  const item = await prisma.aiMemoryItem.findFirst({
+    where: { id: req.params.itemId, child: { id: req.params.id, userId } },
+  });
+  if (!item) return res.status(404).json({ error: 'Memory-Eintrag nicht gefunden' });
+  const updated = await prisma.aiMemoryItem.update({
+    where: { id: item.id },
+    data: {
+      ...validated.data,
+      ...(validated.data.status === 'confirmed' ? { userConfirmedAt: new Date() } : {}),
+    },
+  });
+  return res.json({ item: updated });
+});
+
+app.delete('/ai/children/:id/memory/:itemId', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const result = await prisma.aiMemoryItem.deleteMany({
+    where: { id: req.params.itemId, child: { id: req.params.id, userId } },
+  });
+  if (result.count === 0) return res.status(404).json({ error: 'Memory-Eintrag nicht gefunden' });
+  return res.json({ deleted: true });
+});
+
+app.get('/ai/context', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const context = await getAiMemoryContext(userId, String(req.query.childId || '').trim() || null);
+  return res.json({ context, characterCount: context.length });
+});
+
 /**
  * GET /ai/health
  * Öffentlicher Selbsttest: prüft ob der Gemini-Key funktioniert
@@ -2635,6 +2889,7 @@ app.post('/ai/generate', async (req, res) => {
   const systemInstruction = String(req.body?.systemInstruction || '').trim();
   const appLanguage = normalizeAppLanguage(req.body?.language);
   const useGoogleSearch = req.body?.useGoogleSearch === true;
+  const childProfileId = String(req.body?.childProfileId || '').trim();
   const imageBase64 = String(req.body?.imageBase64 || '').trim();
   const imageMimeType = String(req.body?.imageMimeType || '').trim();
   const allowedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -2655,8 +2910,17 @@ app.post('/ai/generate', async (req, res) => {
     }
   }
 
+  let aiMemoryContext = '';
+  if (childProfileId) {
+    const { uid, verified } = await verifyFirebaseIdToken(req);
+    if (verified && uid) {
+      req.firebaseUid = uid;
+      aiMemoryContext = await getAiMemoryContext(uid, childProfileId);
+    }
+  }
   const finalSystemInstruction = [
     systemInstruction,
+    aiMemoryContext,
     buildLanguageInstruction(appLanguage),
   ].filter(Boolean).join('\n\n');
 
@@ -4902,6 +5166,9 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
   ].filter(Boolean);
 
   const directlyOwnedCounts = await Promise.all([
+    prisma.aiChildProfile.count({ where: { userId } }),
+    prisma.aiMemoryItem.count({ where: { child: { userId } } }),
+    prisma.aiMemorySettings.count({ where: { userId } }),
     prisma.treasureReport.count({ where: { reporterUserId: userId } }),
     prisma.treasureItem.count({ where: { userId } }),
     prisma.parentMatchingProfile.count({ where: { ownerUserId: userId } }),
@@ -5009,6 +5276,9 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
     })).count;
   }
 
+  removed += (await prisma.aiMemorySettings.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.aiChildProfile.deleteMany({ where: { userId } })).count;
+
   removed += (await prisma.user.deleteMany({ where: { id: userId } })).count;
 
   return {
@@ -5042,6 +5312,9 @@ async function exportAccountDataByUserIdPrisma(userId) {
     communityEvents,
     communityEventFlags,
     communityEventInterests,
+    aiMemorySettings,
+    aiChildProfiles,
+    aiMemoryItems,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -5079,6 +5352,12 @@ async function exportAccountDataByUserIdPrisma(userId) {
     prisma.communityEvent.findMany({ where: { creatorId: userId } }),
     prisma.communityEventFlag.findMany({ where: { userId } }),
     prisma.communityEventInterest.findMany({ where: { userId } }),
+    prisma.aiMemorySettings.findMany({ where: { userId } }),
+    prisma.aiChildProfile.findMany({
+      where: { userId },
+      include: { memoryItems: true },
+    }),
+    prisma.aiMemoryItem.findMany({ where: { child: { userId } } }),
   ]);
 
   return {
@@ -5104,6 +5383,9 @@ async function exportAccountDataByUserIdPrisma(userId) {
     communityEvents,
     communityEventFlags,
     communityEventInterests,
+    aiMemorySettings,
+    aiChildProfiles,
+    aiMemoryItems,
   };
 }
 

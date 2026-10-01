@@ -30,6 +30,19 @@ void main() {
     expect(modelName, isNotEmpty);
   });
 
+  test('parent assistant prompt enforces practical health guidance and readable format', () {
+    const prompt = APIConfig.parentAssistantSystemPrompt;
+
+    expect(prompt, contains('**Fettdruck**'));
+    expect(prompt, contains('• Aufzählungszeichen'));
+    expect(prompt, contains('Verstopfung'));
+    expect(prompt, contains('wann ärztlicher Rat sinnvoll ist'));
+    expect(prompt, contains('Keine erzwungenen GfK-Floskeln'));
+    expect(prompt, isNot(contains('Kein Markdown')));
+    expect(prompt, isNot(contains('keine Sternchen')));
+    expect(prompt, isNot(contains('keine * oder **')));
+  });
+
   test('release build configuration does not embed backend admin token', () {
     final releaseSources = [
       File('.github/workflows/deploy-web-pages.yml').readAsStringSync(),

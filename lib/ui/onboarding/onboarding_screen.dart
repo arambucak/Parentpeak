@@ -563,7 +563,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      'Choose your language',
+                      _t('onboarding_language_title'),
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
@@ -572,7 +572,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Wähle deine Sprache • Select your language',
+                      _t('onboarding_language_subtitle'),
                       style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                       textAlign: TextAlign.center,
                     ),
@@ -610,7 +610,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Choose your language',
+                    _t('onboarding_language_title'),
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
@@ -619,7 +619,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Wähle deine Sprache • Select your language',
+                    _t('onboarding_language_subtitle'),
                     style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                     textAlign: TextAlign.center,
                   ),

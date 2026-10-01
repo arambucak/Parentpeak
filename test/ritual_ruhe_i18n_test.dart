@@ -48,6 +48,14 @@ void main() {
       'onboarding_stage_school_child',
       'onboarding_age_caregiver',
       'onboarding_age_professional_desc',
+      'onboarding_language_title',
+      'onboarding_language_subtitle',
+      'location_onboarding_explanation',
+      'location_onboarding_privacy',
+      'location_onboarding_skip',
+      'location_onboarding_detect',
+      'location_onboarding_manual_title',
+      'location_onboarding_manual_hint',
       'profile_child_age_hint',
       'profile_display_name_updated',
       'profile_delete_confirmation_word',
@@ -63,7 +71,7 @@ void main() {
       'matching_no_filtered_profiles',
     ];
 
-    for (final locale in const ['en', 'tr', 'ku']) {
+    for (final locale in const ['de', 'en', 'tr', 'ku']) {
       for (final key in keys) {
         expect(
           AppStringsManager.getString(locale, key),

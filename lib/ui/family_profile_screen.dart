@@ -15,6 +15,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/legal_info_screen.dart';
 import 'package:parentpeak/ui/privacy_settings_screen.dart';
+import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 
 class FamilyProfileScreen extends StatefulWidget {
@@ -1328,6 +1329,12 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     );
   }
 
+  void _openAiMemorySettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AiMemorySettingsScreen()),
+    );
+  }
+
   void _showEngagementInfo() {
     showDialog(
       context: context,
@@ -2551,6 +2558,14 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     ? const Color(0xFF166534)
                     : const Color(0xFF9A3412),
                 onTap: _openPrivacySettings,
+              ),
+              Divider(height: 1, color: primary.withValues(alpha: 0.1)),
+              _buildActionTile(
+                leading: const Icon(Icons.auto_awesome_rounded,
+                    color: Color(0xFFBDB2FF)),
+                title: 'KI-Gedächtnis & Kinder',
+                subtitle: 'Kinderprofile und bestätigte KI-Informationen verwalten',
+                onTap: _openAiMemorySettings,
               ),
             ],
           ),

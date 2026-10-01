@@ -176,7 +176,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
           Text(_t('community_event_scan_flyer'),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(_t('community_event_ai_recognizes'),
               style: TextStyle(fontSize: 12, color: Colors.grey[600])),
@@ -211,15 +212,17 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
     try {
       final bytes = await picked.readAsBytes();
-      final text = await GeminiAIService().generateText(
-        'Analysiere diesen Flyer/Poster für ein Familien-Event. '
-        'Extrahiere folgende Informationen als JSON:\n'
-        '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
-        '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
-        '"location":"Adresse/Ort oder null"}\n'
-        'Antworte NUR mit dem JSON, kein Markdown.',
-        imageBytes: bytes,
-      ).timeout(const Duration(seconds: 20));
+      final text = await GeminiAIService()
+          .generateText(
+            'Analysiere diesen Flyer/Poster für ein Familien-Event. '
+            'Extrahiere folgende Informationen als JSON:\n'
+            '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
+            '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
+            '"location":"Adresse/Ort oder null"}\n'
+            'Antworte NUR mit dem JSON, kein Markdown.',
+            imageBytes: bytes,
+          )
+          .timeout(const Duration(seconds: 20));
       final jsonStr = text.replaceAll(RegExp(r'^```json\s*|\s*```$'), '');
 
       if (jsonStr.startsWith('{')) {
@@ -267,8 +270,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       if (mounted) {
         setState(() => _scanningFlyer = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              _t('package3_flyer_recognition_failed').replaceAll('{error}', '$e')),
+          content: Text(_t('package3_flyer_recognition_failed')
+              .replaceAll('{error}', '$e')),
         ));
       }
     }
@@ -506,7 +509,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   if (expiresAt != null)
                     Text(
                       _t('package3_accepted_invites_remain_active'),
-                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.black54),
                     ),
                 ],
               ),
@@ -636,11 +640,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 4),
                 Center(
                   child: Text(_t('community_event_ai_recognizes'),
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(
-                              color: Theme.of(context).colorScheme.outline)),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline)),
                 ),
                 const SizedBox(height: 16),
 
@@ -687,7 +688,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 8),
                 _VisibilityOptionTile(
                   title: _t('event_visibility_public'),
-                    subtitle: _t('package3_visibility_public_description'),
+                  subtitle: _t('package3_visibility_public_description'),
                   selected: _visibility == EventVisibility.publicNearby,
                   onTap: () => setState(
                     () => _visibility = EventVisibility.publicNearby,
@@ -703,8 +704,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                 _VisibilityOptionTile(
-                    title: _t('package3_visibility_invite_only'),
-                    subtitle: _t('package3_visibility_invite_only_description'),
+                  title: _t('package3_visibility_invite_only'),
+                  subtitle: _t('package3_visibility_invite_only_description'),
                   selected: _visibility == EventVisibility.inviteOnly,
                   onTap: () => setState(
                     () => _visibility = EventVisibility.inviteOnly,
@@ -742,8 +743,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     min: 5,
                     max: 100,
                     divisions: 19,
-                    label: _t('package3_radius')
-                      .replaceAll('{count}', _shareRadiusKm.toStringAsFixed(0)),
+                    label: _t('package3_radius').replaceAll(
+                        '{count}', _shareRadiusKm.toStringAsFixed(0)),
                     onChanged: (v) => setState(() => _shareRadiusKm = v),
                   ),
                 ],
@@ -978,7 +979,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.verified_rounded, color: Color(0xFF047857)),
+                      const Icon(Icons.verified_rounded,
+                          color: Color(0xFF047857)),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(

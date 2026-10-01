@@ -175,6 +175,7 @@ class PedagogicalChatBackend {
   Stream<String> streamReply({
     required List<Map<String, dynamic>> history,
     required String userMessage,
+    String? childProfileId,
   }) async* {
     final message = userMessage.trim();
     if (message.isEmpty) {
@@ -234,7 +235,10 @@ class PedagogicalChatBackend {
     );
     preparedHistory.add({'role': 'user', 'content': coachingPrompt});
 
-    var response = await _geminiService!.chatWithHistory(preparedHistory);
+    var response = await _geminiService!.chatWithHistory(
+      preparedHistory,
+      childProfileId: childProfileId,
+    );
     if (_looksLikeProviderError(response)) {
       yield _providerUnavailableResponse(rawError: response);
       return;
@@ -248,7 +252,10 @@ class PedagogicalChatBackend {
           'content': 'Bitte antworte nicht mit einer allgemeinen Grenzformel. '
               'Antworte stattdessen konkret, empathisch und loesungsorientiert für Eltern im Alltag.',
         });
-      final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
+      final retryResponse = await _geminiService!.chatWithHistory(
+        retryHistory,
+        childProfileId: childProfileId,
+      );
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
         response = retryResponse;
@@ -262,7 +269,10 @@ class PedagogicalChatBackend {
           'role': 'user',
           'content': _contextRetentionRetryInstruction(contextAnchors),
         });
-      final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
+      final retryResponse = await _geminiService!.chatWithHistory(
+        retryHistory,
+        childProfileId: childProfileId,
+      );
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
         response = retryResponse;
@@ -273,7 +283,10 @@ class PedagogicalChatBackend {
       final retryHistory = List<Map<String, String>>.from(preparedHistory)
         ..add({'role': 'assistant', 'content': response})
         ..add({'role': 'user', 'content': _qualityRetryInstruction(topicMode)});
-      final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
+      final retryResponse = await _geminiService!.chatWithHistory(
+        retryHistory,
+        childProfileId: childProfileId,
+      );
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
         response = retryResponse;
@@ -384,13 +397,15 @@ HÜTHER-LINSE — wende sie bei jeder Antwort an:
 - Hindernisse nicht wegnehmen: Eltern ermutigen NEBEN dem Kind zu stehen statt alles zu lösen
 - Begeisterung und emotionale Beteiligung sind die neurobiologische Grundbedingung für Lernen
 
-Pflichtformat mit klaren Ueberschriften:
-  1) Immer zuerst Empathie in 1-2 Saetzen.
-     Gefühle/Bedürfnisse nur als Vermutung oder Frage formulieren, nie als absolute Behauptung.
-  2) Hüther-Diagnose in einem Satz: Ist es ein Verbundenheits- oder Autonomie-Bedürfnis?
-  3) Danach genau EIN GfK-Schritt im Fokus (Beobachtung ODER Gefühl ODER Bedürfnis ODER Bitte).
-  4) Gib 1-2 kleine alltagstaugliche Optionen in Kann-Form, nicht in Muss-Form.
-  5) Stelle genau EINE offene, behutsame Frage, passend zum gewählten GfK-Schritt.
+  Pflichtformat mit klaren Ueberschriften:
+  1) Bei körperlichen oder organischen Themen zuerst pragmatische Faktoren einordnen oder gezielt abfragen, zum Beispiel Verstopfung, Trinkmenge, Schmerzen, Fieber, Schlaf, Spiel-Fokus und Verlauf.
+  2) Danach konkrete, entlastende Alltagstipps als übersichtliche • Aufzählung geben.
+  3) Ruhig einordnen, wann ärztlicher Rat sinnvoll ist, ohne Angst zu schüren.
+  4) Erst danach die pädagogische Beziehungsebene sowie Verbundenheit und Autonomie einordnen.
+  5) Bei allen anderen Themen: zuerst konkrete Beobachtung und Entlastung, dann bindungsorientierte Einordnung.
+  6) Gefühle und Bedürfnisse nur als Vermutung oder Frage formulieren, nie als absolute Behauptung.
+  7) Gib 1-2 kleine alltagstaugliche Optionen in Kann-Form, nicht in Muss-Form.
+  8) Stelle genau EINE offene, behutsame Frage, wenn sie für den nächsten Schritt nötig ist.
   6) $followUpRule
 
 Modus-Hinweis:
@@ -405,7 +420,8 @@ Wichtig:
 - Schreibe so, dass Eltern sich verstanden, beruhigt und handlungsfaehig fühlen.
 - Keine Formulierung mit "Du musst".
 - Keine vorschnellen Erziehungsurteile.
-  - Keine Sternchen, keine dekorativen Zeichen und kein Markdown (kein * oder **).
+  - **Fettdruck** für zentrale Aussagen und • Aufzählungszeichen für konkrete Aktionen sind ausdrücklich erlaubt.
+  - Keine starren Empathie-Floskeln wie „Ich verstehe total ...“ oder „Kann es sein, dass ...“.
 - Ruhiger, professioneller Sprachstil für Eltern.
   - Antwort kurz und verdaulich: keine Textwand, kurze Absaetze (max. 3-4 Saetze pro Absatz).
   - Emojis nur dezent und sparsam (0-2 pro Antwort).

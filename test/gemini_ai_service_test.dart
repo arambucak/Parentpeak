@@ -33,11 +33,13 @@ void main() {
     final response = await service.generate(
       'Familienevent suchen',
       useGoogleSearch: true,
+      childProfileId: 'child-1',
     );
 
     expect(client.path, '/ai/generate');
     expect(client.body?['model'], 'gemini-3.5-flash');
     expect(client.body?['useGoogleSearch'], isTrue);
+    expect(client.body?['childProfileId'], 'child-1');
     expect(client.body?.containsKey('apiKey'), isFalse);
     expect(response.text, 'Sichere Antwort');
     expect(response.groundingUrls, ['https://example.com/source']);

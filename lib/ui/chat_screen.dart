@@ -8,6 +8,8 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
+import 'package:parentpeak/logic/ai_memory_service.dart';
+import 'package:parentpeak/models/ai_memory.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
@@ -104,6 +106,9 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isStreaming = false;
   String? _initError;
   String _currentResponse = '';
+  final AiMemoryService _aiMemoryService = AiMemoryService();
+  List<AiChildProfile> _aiChildren = const [];
+  String? _selectedChildProfileId;
   bool _termsAccepted = true; // wird in initState geladen
   bool _termsLoading = true;
 
@@ -113,6 +118,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadTopicInsights();
     _checkTermsAcceptance();
     _initializeGemini();
+    _loadAiChildren();
     // Wenn mit initialMessage geöffnet, automatisch senden
     if (widget.initialMessage != null &&
         widget.initialMessage!.trim().isNotEmpty) {
@@ -206,6 +212,51 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _loadAiChildren() async {
+    try {
+      final children = await _aiMemoryService.getChildren();
+      if (!mounted) return;
+      setState(() {
+        _aiChildren = children;
+        if (_selectedChildProfileId != null &&
+            !children.any((child) => child.id == _selectedChildProfileId)) {
+          _selectedChildProfileId = null;
+        }
+      });
+    } catch (_) {
+      // Chat remains usable without optional memory context.
+    }
+  }
+
+  Future<void> _selectAiChild() async {
+    if (_aiChildren.isEmpty) {
+      _showTopicInsights();
+      return;
+    }
+    final selected = await showModalBottomSheet<String?>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.chat_bubble_outline),
+            title: const Text('Ohne Kinderprofil beraten'),
+            onTap: () => Navigator.pop(context, ''),
+          ),
+          ..._aiChildren.map((child) => ListTile(
+                leading: const Icon(Icons.child_care_rounded),
+                title: Text(child.name),
+                trailing: child.id == _selectedChildProfileId
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () => Navigator.pop(context, child.id),
+              )),
+        ]),
+      ),
+    );
+    if (!mounted || selected == null) return;
+    setState(() => _selectedChildProfileId = selected.isEmpty ? null : selected);
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -260,6 +311,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final stream = _chatBackend!.streamReply(
           history: _messages,
           userMessage: smartPrompt,
+          childProfileId: _selectedChildProfileId,
         );
 
         await for (final chunk in stream) {
@@ -335,6 +387,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final stream = _chatBackend!.streamReply(
         history: _messages,
         userMessage: text,
+        childProfileId: _selectedChildProfileId,
       );
 
       await for (final chunk in stream) {
@@ -1163,6 +1216,14 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'KI-Kinderprofil auswählen',
+            onPressed: _selectAiChild,
+            icon: Icon(
+              Icons.child_care_rounded,
+              color: _selectedChildProfileId == null ? _kBrand : _kGreen,
+            ),
+          ),
           IconButton(
             tooltip: context.tr('tooltip_topic_analysis'),
             onPressed: _showTopicInsights,
