@@ -1840,9 +1840,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             child: Row(children: [
               CircleAvatar(
                   backgroundColor: _avatarColor(f.name),
-                  child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w800))),
+                  backgroundImage:
+                      f.avatarUrl != null ? NetworkImage(f.avatarUrl!) : null,
+                  child: f.avatarUrl == null
+                      ? Text(
+                          f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.w800),
+                        )
+                      : null),
               const SizedBox(width: 12),
               Expanded(
                   child: Text(
@@ -1934,11 +1940,17 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         CircleAvatar(
             radius: 23,
             backgroundColor: _avatarColor(f.name),
-            child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800))),
+            backgroundImage:
+                f.avatarUrl != null ? NetworkImage(f.avatarUrl!) : null,
+            child: f.avatarUrl == null
+                ? Text(
+                    f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800),
+                  )
+                : null),
         const SizedBox(width: 12),
         Expanded(
             child: Text(f.name,
