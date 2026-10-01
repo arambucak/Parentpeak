@@ -23195,6 +23195,22 @@ class AppStringsManager {
   }
 
   static String getString(String languageCode, String key) {
+        const profilePhotoStrings = {
+            'de': {'profile_photo_camera': 'Kamera', 'profile_photo_gallery': 'Galerie', 'profile_photo_remove': 'Profilfoto entfernen', 'profile_photo_remove_title': 'Profilfoto entfernen?', 'profile_photo_remove_message': 'Dein Profilfoto wird gelöscht.', 'profile_photo_upload_failed': 'Das Profilfoto konnte nicht gespeichert werden.'},
+            'en': {'profile_photo_camera': 'Camera', 'profile_photo_gallery': 'Gallery', 'profile_photo_remove': 'Remove profile photo', 'profile_photo_remove_title': 'Remove profile photo?', 'profile_photo_remove_message': 'Your profile photo will be removed.', 'profile_photo_upload_failed': 'The profile photo could not be saved.'},
+            'tr': {'profile_photo_camera': 'Kamera', 'profile_photo_gallery': 'Galeri', 'profile_photo_remove': 'Profil fotoğrafını kaldır', 'profile_photo_remove_title': 'Profil fotoğrafı kaldırılsın mı?', 'profile_photo_remove_message': 'Profil fotoğrafınız kaldırılacak.', 'profile_photo_upload_failed': 'Profil fotoğrafı kaydedilemedi.'},
+            'ku': {'profile_photo_camera': 'Kamera', 'profile_photo_gallery': 'Galerî', 'profile_photo_remove': 'Wêneyê profîlê rake', 'profile_photo_remove_title': 'Wêneyê profîlê rake?', 'profile_photo_remove_message': 'Wêneyê profîlê dê were rakirin.', 'profile_photo_upload_failed': 'Wêneyê profîlê nehat tomarkirin.'},
+            'ar': {'profile_photo_camera': 'الكاميرا', 'profile_photo_gallery': 'المعرض', 'profile_photo_remove': 'إزالة صورة الملف الشخصي', 'profile_photo_remove_title': 'إزالة صورة الملف الشخصي؟', 'profile_photo_remove_message': 'ستتم إزالة صورة ملفك الشخصي.', 'profile_photo_upload_failed': 'تعذر حفظ صورة الملف الشخصي.'},
+            'ru': {'profile_photo_camera': 'Камера', 'profile_photo_gallery': 'Галерея', 'profile_photo_remove': 'Удалить фото профиля', 'profile_photo_remove_title': 'Удалить фото профиля?', 'profile_photo_remove_message': 'Фото профиля будет удалено.', 'profile_photo_upload_failed': 'Не удалось сохранить фото профиля.'},
+            'uk': {'profile_photo_camera': 'Камера', 'profile_photo_gallery': 'Галерея', 'profile_photo_remove': 'Видалити фото профілю', 'profile_photo_remove_title': 'Видалити фото профілю?', 'profile_photo_remove_message': 'Фото профілю буде видалено.', 'profile_photo_upload_failed': 'Не вдалося зберегти фото профілю.'},
+            'es': {'profile_photo_camera': 'Cámara', 'profile_photo_gallery': 'Galería', 'profile_photo_remove': 'Quitar foto de perfil', 'profile_photo_remove_title': '¿Quitar la foto de perfil?', 'profile_photo_remove_message': 'Se quitará tu foto de perfil.', 'profile_photo_upload_failed': 'No se pudo guardar la foto de perfil.'},
+            'fr': {'profile_photo_camera': 'Appareil photo', 'profile_photo_gallery': 'Galerie', 'profile_photo_remove': 'Supprimer la photo de profil', 'profile_photo_remove_title': 'Supprimer la photo de profil ?', 'profile_photo_remove_message': 'Votre photo de profil sera supprimée.', 'profile_photo_upload_failed': 'Impossible d’enregistrer la photo de profil.'},
+            'it': {'profile_photo_camera': 'Fotocamera', 'profile_photo_gallery': 'Galleria', 'profile_photo_remove': 'Rimuovi foto profilo', 'profile_photo_remove_title': 'Rimuovere la foto profilo?', 'profile_photo_remove_message': 'La foto del profilo verrà rimossa.', 'profile_photo_upload_failed': 'Impossibile salvare la foto del profilo.'},
+            'pt': {'profile_photo_camera': 'Câmara', 'profile_photo_gallery': 'Galeria', 'profile_photo_remove': 'Remover foto de perfil', 'profile_photo_remove_title': 'Remover a foto de perfil?', 'profile_photo_remove_message': 'A sua foto de perfil será removida.', 'profile_photo_upload_failed': 'Não foi possível guardar a foto de perfil.'},
+        };
+        if (profilePhotoStrings[languageCode]?[key] != null) {
+            return profilePhotoStrings[languageCode]![key]!;
+        }
         if (key == 'ritualRuheTitle') {
             return ritualRuheString(languageCode, 'title');
         }

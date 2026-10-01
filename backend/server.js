@@ -3629,12 +3629,16 @@ async function ensureSocialSchemaReady() {
     CREATE TABLE IF NOT EXISTS "UserProfile" (
       "userId" TEXT PRIMARY KEY,
       "displayName" TEXT NOT NULL DEFAULT '',
+      "avatarUrl" TEXT,
       "username" TEXT,
       "searchable" BOOLEAN NOT NULL DEFAULT FALSE,
       "isPrivate" BOOLEAN NOT NULL DEFAULT TRUE,
       "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "UserProfile" ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT;`,
+  );
   await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "idx_userprofile_username" ON "UserProfile"(LOWER("username")) WHERE "username" IS NOT NULL;`);
   // Freundschaft als UID-zu-UID-Beziehung. userLow/userHigh sind die beiden
   // UIDs kanonisch sortiert (userLow < userHigh) -> genau EINE Zeile pro Paar.
@@ -5078,7 +5082,8 @@ async function getRemainingMediaReferences() {
      UNION ALL SELECT unnest("photoUrls") FROM "TreasureItem"
      UNION ALL SELECT "imageUrl" FROM "SharedRecipe" WHERE "imageUrl" IS NOT NULL
      UNION ALL SELECT "imageUrl" FROM "CommunityEvent" WHERE "imageUrl" IS NOT NULL
-     UNION ALL SELECT "avatar" FROM "User" WHERE "avatar" IS NOT NULL`,
+    UNION ALL SELECT "avatar" FROM "User" WHERE "avatar" IS NOT NULL
+    UNION ALL SELECT "avatarUrl" FROM "UserProfile" WHERE "avatarUrl" IS NOT NULL`,
   );
   return rows.map(row => row.url).filter(Boolean);
 }
@@ -5133,12 +5138,15 @@ async function deleteUnreferencedAccountMedia(mediaUrls) {
 }
 
 async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
-  const [userMedia, hostedEvents, ownedTreasures, ownedRecipes, ownedCommunityEvents] =
+  const [userMedia, profileMedia, hostedEvents, ownedTreasures, ownedRecipes, ownedCommunityEvents] =
     await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { avatar: true },
       }),
+      prisma.$queryRawUnsafe(
+        `SELECT "avatarUrl" FROM "UserProfile" WHERE "userId" = $1`, userId,
+      ),
       prisma.event.findMany({
         where: { hosterId: userId },
         select: { id: true, imageUrl: true },
@@ -5159,6 +5167,7 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
 
   const mediaUrls = [
     userMedia?.avatar,
+    ...profileMedia.map(item => item.avatarUrl),
     ...hostedEvents.map(item => item.imageUrl),
     ...ownedTreasures.flatMap(item => [item.photoUrl, ...item.photoUrls]),
     ...ownedRecipes.map(item => item.imageUrl),
@@ -5278,6 +5287,7 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
 
   removed += (await prisma.aiMemorySettings.deleteMany({ where: { userId } })).count;
   removed += (await prisma.aiChildProfile.deleteMany({ where: { userId } })).count;
+  await prisma.$executeRawUnsafe(`DELETE FROM "UserProfile" WHERE "userId" = $1`, userId);
 
   removed += (await prisma.user.deleteMany({ where: { id: userId } })).count;
 
@@ -7351,7 +7361,7 @@ app.get('/api/profile/:userId', async (req, res) => {
   try {
     await ensureSocialSchemaReady();
     const rows = await prisma.$queryRawUnsafe(
-      `SELECT "displayName", "username", "searchable", "isPrivate" FROM "UserProfile" WHERE "userId" = $1`,
+      `SELECT "displayName", "avatarUrl", "username", "searchable", "isPrivate" FROM "UserProfile" WHERE "userId" = $1`,
       userId
     );
     if (rows.length === 0) return res.json({ exists: false });
@@ -7359,6 +7369,7 @@ app.get('/api/profile/:userId', async (req, res) => {
     return res.json({
       exists: true,
       displayName: r.displayName || '',
+      avatarUrl: r.avatarUrl || null,
       username: r.username || null,
       searchable: r.searchable === true,
       isPrivate: r.isPrivate !== false,
@@ -7375,6 +7386,10 @@ app.post('/api/profile', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
   const displayName = (req.body.displayName || '').toString().trim().slice(0, 100);
+  const hasAvatarUrl = Object.prototype.hasOwnProperty.call(req.body, 'avatarUrl');
+  const avatarUrl = hasAvatarUrl
+      ? (req.body.avatarUrl || '').toString().trim().slice(0, 2000)
+      : undefined;
   const hasUsername = Object.prototype.hasOwnProperty.call(req.body, 'username');
   const username = hasUsername
       ? (req.body.username || '').toString().trim().toLowerCase().slice(0, 30)
@@ -7390,22 +7405,24 @@ app.post('/api/profile', async (req, res) => {
       // WICHTIG: username als NULLIF(...,'') einfuegen, damit leere Usernames
       // NULL sind und NICHT vom partiellen Unique-Index erfasst werden
       // (sonst kollidieren mehrere Profile mit username='' -> Fehler).
-      `INSERT INTO "UserProfile" ("userId", "displayName", "username", "searchable", "isPrivate", "updatedAt")
-       VALUES ($1, $2, NULLIF($3, ''), $4, $5, NOW())
+      `INSERT INTO "UserProfile" ("userId", "displayName", "avatarUrl", "username", "searchable", "isPrivate", "updatedAt")
+       VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), $5, $6, NOW())
        ON CONFLICT ("userId") DO UPDATE SET
          "displayName" = COALESCE(NULLIF($2, ''), "UserProfile"."displayName"),
-         "username" = ${hasUsername ? 'NULLIF($3, \'\')' : '"UserProfile"."username"'},
-         "searchable" = ${hasSearchable ? '$4' : '"UserProfile"."searchable"'},
-         "isPrivate" = ${hasPrivate ? '$5' : '"UserProfile"."isPrivate"'},
+         "avatarUrl" = ${hasAvatarUrl ? 'NULLIF($3, \'\')' : '"UserProfile"."avatarUrl"'},
+         "username" = ${hasUsername ? 'NULLIF($4, \'\')' : '"UserProfile"."username"'},
+         "searchable" = ${hasSearchable ? '$5' : '"UserProfile"."searchable"'},
+         "isPrivate" = ${hasPrivate ? '$6' : '"UserProfile"."isPrivate"'},
          "updatedAt" = NOW()`,
-      userId, displayName, username ?? '', searchable, isPrivate
+      userId, displayName, avatarUrl ?? '', username ?? '', searchable, isPrivate
     );
     return res.json({ ok: true });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /api/profile', error)) return;
-    const prev = userProfiles.get(userId) || { displayName: '', username: null, searchable: false, isPrivate: true };
+    const prev = userProfiles.get(userId) || { displayName: '', avatarUrl: null, username: null, searchable: false, isPrivate: true };
     userProfiles.set(userId, {
       displayName: displayName || prev.displayName,
+      avatarUrl: hasAvatarUrl ? (avatarUrl || null) : prev.avatarUrl,
       username: hasUsername ? (username || null) : prev.username,
       searchable: hasSearchable ? searchable : prev.searchable,
       isPrivate: hasPrivate ? isPrivate : prev.isPrivate,

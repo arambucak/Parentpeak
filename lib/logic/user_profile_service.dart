@@ -8,12 +8,19 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 /// username/searchable/isPrivate sind optional (Default: privat, nicht
 /// auffindbar) und werden erst in Schritt 2 (Suche) relevant.
 class UserProfileService {
-  UserProfileService._();
-  static final UserProfileService instance = UserProfileService._();
+  UserProfileService._(this._api, [this._testUid]);
+  static final UserProfileService instance =
+      UserProfileService._(BackendServiceFactory.createApiClient());
 
-  final BackendApiClient? _api = BackendServiceFactory.createApiClient();
+  @visibleForTesting
+    factory UserProfileService.forTesting(BackendApiClient api,
+        {String uid = 'test-user'}) =>
+      UserProfileService._(api, uid);
 
-  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+  final BackendApiClient? _api;
+    final String? _testUid;
+
+    String? get _uid => _testUid ?? FirebaseAuth.instance.currentUser?.uid;
 
   /// Anzeigename serverseitig setzen/aktualisieren (app-weit gueltig).
   Future<void> setDisplayName(String displayName) async {
@@ -29,6 +36,30 @@ class UserProfileService {
     } catch (e) {
       debugPrint('UserProfileService.setDisplayName failed: $e');
     }
+  }
+
+  Future<void> setAvatarUrl(String? avatarUrl) async {
+    final api = _api;
+    final uid = _uid;
+    if (api == null || uid == null || uid.isEmpty) return;
+    await api.postJsonAny('/api/profile', {
+      'userId': uid,
+      'avatarUrl': avatarUrl?.trim() ?? '',
+    });
+  }
+
+  Future<String?> avatarUrlFor(String uid) async {
+    if (_api == null || uid.trim().isEmpty) return null;
+    try {
+      final data = await _api!.getJson('/api/profile/${Uri.encodeComponent(uid)}');
+      if (data is Map<String, dynamic> && data['exists'] == true) {
+        final value = data['avatarUrl']?.toString().trim();
+        return value == null || value.isEmpty ? null : value;
+      }
+    } catch (e) {
+      debugPrint('UserProfileService.avatarUrlFor failed: $e');
+    }
+    return null;
   }
 
   /// Anzeigename einer beliebigen UID laden (z.B. fuer Anzeige). Leer wenn

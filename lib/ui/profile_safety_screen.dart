@@ -22,6 +22,8 @@ import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:parentpeak/ui/widgets/user_avatar.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
@@ -46,12 +48,104 @@ class ProfileSafetyScreen extends StatefulWidget {
 class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   List<_ChildInfo> _children = [];
   String _appVersion = '';
+  String? _avatarUrl;
+  bool _avatarBusy = false;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     _loadChildren();
     _loadAppVersion();
+    _loadAvatar();
+  }
+
+  Future<void> _loadAvatar() async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return;
+    final avatar = await UserProfileService.instance.avatarUrlFor(uid);
+    if (mounted) setState(() => _avatarUrl = avatar);
+  }
+
+  Future<void> _pickAvatar() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt_rounded),
+            title: Text(_t('profile_photo_camera')),
+            onTap: () => Navigator.pop(context, 'camera'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_rounded),
+            title: Text(_t('profile_photo_gallery')),
+            onTap: () => Navigator.pop(context, 'gallery'),
+          ),
+          if (_avatarUrl != null)
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded),
+              title: Text(_t('profile_photo_remove')),
+              onTap: () => Navigator.pop(context, 'remove'),
+            ),
+        ]),
+      ),
+    );
+    if (!mounted || action == null) return;
+    if (action == 'remove') {
+      final remove = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(_t('profile_photo_remove_title')),
+          content: Text(_t('profile_photo_remove_message')),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('cancel'))),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(_t('profile_photo_remove'))),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (remove == true) {
+        setState(() => _avatarBusy = true);
+        try {
+          await UserProfileService.instance.setAvatarUrl(null);
+          if (mounted) setState(() => _avatarUrl = null);
+        } finally {
+          if (mounted) setState(() => _avatarBusy = false);
+        }
+      }
+      return;
+    }
+    final source = action == 'camera' ? ImageSource.camera : ImageSource.gallery;
+    final picked = await _imagePicker.pickImage(
+      source: source,
+      maxWidth: 900,
+      maxHeight: 900,
+      imageQuality: 82,
+    );
+    if (picked == null) return;
+    setState(() => _avatarBusy = true);
+    try {
+      final api = BackendServiceFactory.createApiClient();
+      if (api == null) throw StateError('Backend unavailable');
+      final response = await api.uploadImageBytes(
+        '/uploads/image',
+        await picked.readAsBytes(),
+        filename: picked.name,
+      );
+      final url = response['url']?.toString().trim();
+      if (url == null || url.isEmpty) throw StateError('Upload failed');
+      await UserProfileService.instance.setAvatarUrl(url);
+      if (mounted) setState(() => _avatarUrl = url);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('profile_photo_upload_failed'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _avatarBusy = false);
+    }
   }
 
   Future<void> _loadAppVersion() async {
@@ -246,8 +340,6 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final isPremium = user?.isPremium ?? false;
     final trialDays = user?.trialDaysRemaining ?? 0;
     final hasAccess = user?.hasFullAccess ?? false;
-    final initials = name.isNotEmpty ? name[0].toUpperCase() : '?';
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -265,36 +357,30 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               Center(
                 child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary,
-                            theme.colorScheme.tertiary,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.25),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                    GestureDetector(
+                      onTap: _avatarBusy ? null : _pickAvatar,
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          UserAvatar(
+                            imageUrl: _avatarUrl,
+                            name: name,
+                            radius: 40,
+                            backgroundColor: theme.colorScheme.primary,
+                          ),
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: theme.colorScheme.surface,
+                            child: _avatarBusy
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Icon(Icons.camera_alt_rounded,
+                                    size: 15, color: theme.colorScheme.primary),
                           ),
                         ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
