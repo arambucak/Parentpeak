@@ -26,6 +26,7 @@ void main() {
         ),
       ),
     ));
+    expect(find.text('C'), findsOneWidget);
     await tester.pumpAndSettle();
     expect(find.text('C'), findsOneWidget);
   });

@@ -374,8 +374,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                                         fit: BoxFit.cover,
                                         width: 96,
                                         height: 96,
-                                        loadingBuilder: (context, child, progress) =>
-                                            progress == null ? child : avatarFallback,
+                                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) =>
+                                          wasSynchronouslyLoaded || frame != null
+                                            ? child
+                                            : avatarFallback,
                                         errorBuilder: (context, error, stackTrace) =>
                                             avatarFallback,
                                       )
