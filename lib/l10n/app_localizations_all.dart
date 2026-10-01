@@ -833,6 +833,54 @@ class AppStringsManager {
       // Eltern-Netzwerk Screen
       'network_coin_per_registration': 'Für jede Registrierung: 1 ParentCoin.',
       'network_code_copied': 'Code kopiert ✓!',
+      // ─── Redesign: Chats-Tab + Netzwerk + Gruppenchat ───────────────────
+      'network_tab_chats': 'Chats',
+      'network_tab_network': 'Netzwerk',
+      'network_new_chat': 'Neuer Chat',
+      'network_search_hint': 'Suchen…',
+      'network_group': 'Gruppe',
+      'network_chat': 'Chat',
+      'network_no_messages_yet': 'Noch keine Nachrichten',
+      'network_you_prefix': 'Du:',
+      'network_yesterday': 'Gestern',
+      'network_chats_empty_title': 'Noch keine Unterhaltungen',
+      'network_chats_empty_desc':
+          'Verbinde dich mit anderen Eltern und starte deinen ersten Chat – einzeln oder als Gruppe.',
+      'network_start_direct_chat': 'Freund anschreiben',
+      'network_start_direct_chat_hint':
+          'Wähle einen Freund im Netzwerk-Tab und starte den Chat.',
+      'network_create_group': 'Gruppe erstellen',
+      'network_create_group_hint': 'z. B. Kita-Gruppe oder Spielplatz-Treffen',
+      'network_group_needs_friends':
+          'Füge zuerst Freunde hinzu, um eine Gruppe zu erstellen.',
+      'network_group_name': 'Gruppenname',
+      'network_group_name_hint': 'z. B. Kita-Gruppe Sonnenschein',
+      'network_choose_members': 'Mitglieder wählen',
+      'network_group_name_required': 'Bitte gib einen Gruppennamen ein.',
+      'network_group_select_member': 'Bitte wähle mindestens ein Mitglied aus.',
+      'network_group_create_failed':
+          'Gruppe konnte nicht erstellt werden – bitte später erneut.',
+      // ─── Gruppen-Chat-Screen ────────────────────────────────────────────
+      'network_members': 'Mitglieder',
+      'network_add_members': 'Mitglieder hinzufügen',
+      'network_leave_group': 'Gruppe verlassen',
+      'network_leave_group_confirm':
+          'Möchtest du diese Gruppe wirklich verlassen? Du siehst die Nachrichten dann nicht mehr.',
+      'network_you_label': 'Du',
+      'network_owner_label': 'Admin',
+      'network_all_friends_in_group':
+          'Alle deine Freunde sind bereits in dieser Gruppe.',
+      'network_members_added': 'Mitglieder hinzugefügt.',
+      'network_members_add_failed':
+          'Mitglieder konnten nicht hinzugefügt werden.',
+      'network_group_not_member': 'Du bist kein Mitglied dieser Gruppe.',
+      'network_group_chat_empty':
+          'Noch keine Nachrichten. Schreib die erste und bring die Gruppe ins Gespräch!',
+      'network_sending': 'Senden…',
+      'network_message_hint': 'Nachricht schreiben…',
+      'network_group_photo_hint': 'Gruppenfoto hinzufügen (optional)',
+      'network_photo_camera': 'Foto aufnehmen',
+      'network_photo_gallery': 'Aus Galerie wählen',
       'network_share_code_hint':
           'Teile deinen Code – ein Tap und ihr seid verbunden!',
       'network_scan_to_connect':
@@ -3475,6 +3523,52 @@ class AppStringsManager {
       'network_coin_per_registration':
           'Earn 1 ParentCoin for every registration.',
       'network_code_copied': 'Code copied ✓!',
+      // ─── Redesign: Chats tab + network + group chat ─────────────────────
+      'network_tab_chats': 'Chats',
+      'network_tab_network': 'Network',
+      'network_new_chat': 'New chat',
+      'network_search_hint': 'Search…',
+      'network_group': 'Group',
+      'network_chat': 'Chat',
+      'network_no_messages_yet': 'No messages yet',
+      'network_you_prefix': 'You:',
+      'network_yesterday': 'Yesterday',
+      'network_chats_empty_title': 'No conversations yet',
+      'network_chats_empty_desc':
+          'Connect with other parents and start your first chat — one-on-one or as a group.',
+      'network_start_direct_chat': 'Message a friend',
+      'network_start_direct_chat_hint':
+          'Pick a friend in the Network tab and start chatting.',
+      'network_create_group': 'Create group',
+      'network_create_group_hint': 'e.g. daycare group or playground meetup',
+      'network_group_needs_friends': 'Add friends first to create a group.',
+      'network_group_name': 'Group name',
+      'network_group_name_hint': 'e.g. Sunshine Daycare Group',
+      'network_choose_members': 'Choose members',
+      'network_group_name_required': 'Please enter a group name.',
+      'network_group_select_member': 'Please select at least one member.',
+      'network_group_create_failed':
+          'Could not create the group — please try again later.',
+      // ─── Group chat screen ──────────────────────────────────────────────
+      'network_members': 'Members',
+      'network_add_members': 'Add members',
+      'network_leave_group': 'Leave group',
+      'network_leave_group_confirm':
+          'Do you really want to leave this group? You will no longer see its messages.',
+      'network_you_label': 'You',
+      'network_owner_label': 'Admin',
+      'network_all_friends_in_group':
+          'All your friends are already in this group.',
+      'network_members_added': 'Members added.',
+      'network_members_add_failed': 'Could not add members.',
+      'network_group_not_member': 'You are not a member of this group.',
+      'network_group_chat_empty':
+          'No messages yet. Write the first one and get the group talking!',
+      'network_sending': 'Sending…',
+      'network_message_hint': 'Write a message…',
+      'network_group_photo_hint': 'Add a group photo (optional)',
+      'network_photo_camera': 'Take a photo',
+      'network_photo_gallery': 'Choose from gallery',
       'network_share_code_hint':
           'Share your code — one tap and you are connected!',
       'network_scan_to_connect':
@@ -7307,6 +7401,53 @@ class AppStringsManager {
       'matching_reset': 'Ji nû ve bike',
       'network_coin_per_registration': 'Ji bo her tomarkirinê: 1 ParentCoin.',
       'network_code_copied': 'Kod hat kopîkirin ✓!',
+      // ─── Redesign: Chats + Tor + Chata komê ─────────────────────────────
+      'network_tab_chats': 'Chat',
+      'network_tab_network': 'Tor',
+      'network_new_chat': 'Chata nû',
+      'network_search_hint': 'Lêgerîn…',
+      'network_group': 'Kom',
+      'network_chat': 'Chat',
+      'network_no_messages_yet': 'Hêj peyam tune',
+      'network_you_prefix': 'Tu:',
+      'network_yesterday': 'Duh',
+      'network_chats_empty_title': 'Hêj axaftin tune',
+      'network_chats_empty_desc':
+          'Bi dêûbavên din re girêbide û chata xwe ya yekem dest pê bike — ferdî an wekî kom.',
+      'network_start_direct_chat': 'Ji hevalekî re binivîse',
+      'network_start_direct_chat_hint':
+          'Di tora de hevalekî hilbijêre û chatê dest pê bike.',
+      'network_create_group': 'Komê çêbike',
+      'network_create_group_hint': 'wek koma baxçeyê an civîna holê',
+      'network_group_needs_friends':
+          'Pêşî hevalan lê zêde bike da ku komekê çêbikî.',
+      'network_group_name': 'Navê komê',
+      'network_group_name_hint': 'wek Koma Baxçeyê Tav',
+      'network_choose_members': 'Endaman hilbijêre',
+      'network_group_name_required': 'Ji kerema xwe navekî komê binivîse.',
+      'network_group_select_member':
+          'Ji kerema xwe bi kêmanî endamekî hilbijêre.',
+      'network_group_create_failed':
+          'Kom nehat çêkirin — ji kerema xwe paşê dîsa biceribîne.',
+      // ─── Ekrana chata komê ──────────────────────────────────────────────
+      'network_members': 'Endam',
+      'network_add_members': 'Endaman lê zêde bike',
+      'network_leave_group': 'Ji komê derkeve',
+      'network_leave_group_confirm':
+          'Tu bi rastî dixwazî ji vê komê derkevî? Tu êdî peyamên wê nabînî.',
+      'network_you_label': 'Tu',
+      'network_owner_label': 'Admîn',
+      'network_all_friends_in_group': 'Hemî hevalên te jixwe di vê komê de ne.',
+      'network_members_added': 'Endam hatin zêdekirin.',
+      'network_members_add_failed': 'Endam nehatin zêdekirin.',
+      'network_group_not_member': 'Tu ne endamê vê komê yî.',
+      'network_group_chat_empty':
+          'Hêj peyam tune. Ya yekem binivîse û komê bîne axaftinê!',
+      'network_sending': 'Dişîne…',
+      'network_message_hint': 'Peyamekê binivîse…',
+      'network_group_photo_hint': 'Wêneyê komê lê zêde bike (bijarte)',
+      'network_photo_camera': 'Wêne bikişîne',
+      'network_photo_gallery': 'Ji galeriyê hilbijêre',
       'network_share_code_hint':
           'Koda xwe parve bike — bi yek pêlê hûn tên girêdan!',
       'network_scan_to_connect':
@@ -10726,6 +10867,51 @@ class AppStringsManager {
       // Eltern-Netzwerk Screen
       'network_coin_per_registration': 'Her kayıt için: 1 ParentCoin.',
       'network_code_copied': 'Kod kopyalandı ✓!',
+      // ─── Yeniden tasarım: Sohbetler + Ağ + Grup sohbeti ─────────────────
+      'network_tab_chats': 'Sohbetler',
+      'network_tab_network': 'Ağ',
+      'network_new_chat': 'Yeni sohbet',
+      'network_search_hint': 'Ara…',
+      'network_group': 'Grup',
+      'network_chat': 'Sohbet',
+      'network_no_messages_yet': 'Henüz mesaj yok',
+      'network_you_prefix': 'Sen:',
+      'network_yesterday': 'Dün',
+      'network_chats_empty_title': 'Henüz sohbet yok',
+      'network_chats_empty_desc':
+          'Diğer ebeveynlerle bağlan ve ilk sohbetini başlat — birebir ya da grup olarak.',
+      'network_start_direct_chat': 'Bir arkadaşa yaz',
+      'network_start_direct_chat_hint':
+          'Ağ sekmesinde bir arkadaş seç ve sohbete başla.',
+      'network_create_group': 'Grup oluştur',
+      'network_create_group_hint': 'örn. kreş grubu veya oyun parkı buluşması',
+      'network_group_needs_friends': 'Grup oluşturmak için önce arkadaş ekle.',
+      'network_group_name': 'Grup adı',
+      'network_group_name_hint': 'örn. Güneş Kreş Grubu',
+      'network_choose_members': 'Üyeleri seç',
+      'network_group_name_required': 'Lütfen bir grup adı gir.',
+      'network_group_select_member': 'Lütfen en az bir üye seç.',
+      'network_group_create_failed':
+          'Grup oluşturulamadı — lütfen daha sonra tekrar dene.',
+      // ─── Grup sohbeti ekranı ────────────────────────────────────────────
+      'network_members': 'Üyeler',
+      'network_add_members': 'Üye ekle',
+      'network_leave_group': 'Gruptan ayrıl',
+      'network_leave_group_confirm':
+          'Bu gruptan ayrılmak istediğine emin misin? Mesajlarını artık göremezsin.',
+      'network_you_label': 'Sen',
+      'network_owner_label': 'Yönetici',
+      'network_all_friends_in_group': 'Tüm arkadaşların zaten bu grupta.',
+      'network_members_added': 'Üyeler eklendi.',
+      'network_members_add_failed': 'Üyeler eklenemedi.',
+      'network_group_not_member': 'Bu grubun üyesi değilsin.',
+      'network_group_chat_empty':
+          'Henüz mesaj yok. İlkini yaz ve grubu sohbete başlat!',
+      'network_sending': 'Gönderiliyor…',
+      'network_message_hint': 'Mesaj yaz…',
+      'network_group_photo_hint': 'Grup fotoğrafı ekle (isteğe bağlı)',
+      'network_photo_camera': 'Fotoğraf çek',
+      'network_photo_gallery': 'Galeriden seç',
       'network_share_code_hint': 'Kodunu paylaş – tek dokunuşla bağlanın!',
       'network_scan_to_connect': 'Buluşmada tara – anında bağlan!',
       'network_found': 'Bulundu ✓',
