@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/friend_chat_service.dart';
+import 'package:parentpeak/ui/widgets/user_avatar.dart';
 import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -33,36 +33,41 @@ String _networkCopy(String key, String fallback) {
       'friends': 'Friends',
       'playmates': 'Playmates',
       'invite': 'Invite',
-        'invite_hero_title': 'Invite friends',
-        'invite_hero_description':
+      'invite_hero_title': 'Invite friends',
+      'invite_hero_description':
           'Share your personal link or QR code - one tap and you are connected.',
-        'share': 'Share',
-          'setup_hint': 'In 5 short steps, you will find families who are a good fit for you.',
-          'empty_title': 'Be the first family in your area',
-          'empty_description': 'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
-          'invite_playmates': 'Invite playmates',
-          'values_tip': 'Tip: Families with similar values understand each other best. Choose what matters to you.',
-          'bio_hint': 'Tell us about yourselves: What makes your family special? What are you looking for?',
-          'step_1': 'Step 1: Your family',
-          'step_2': 'Step 2: Your children',
-          'step_3': 'Step 3: Values and style',
-          'step_4': 'Step 4: What are you looking for?',
-          'step_5': 'Step 5: Languages and more',
-          'bio_title': 'Short bio',
-          'login_required': 'Please sign in to publish your playmate profile.',
-          'same_city': 'In your city',
-          'reason_nearby': 'Nearby',
-          'reason_shared_interests': 'Shared interests',
-          'reason_similar_child_age': 'Children of a similar age',
-          'reason_shared_languages': 'Shared languages',
-          'reason_shared_values': 'Similar parenting values',
-          'reason_shared_family_form': 'Similar family setup',
-          'request_sent': 'Your request was sent to {name}.',
-          'request_failed': 'Your request could not be sent. Please try again later.',
-          'no_gender': 'Prefer not to say',
-          'gender_maennlich': 'Boy',
-          'gender_weiblich': 'Girl',
-          'gender_divers': 'Diverse',
+      'share': 'Share',
+      'setup_hint':
+          'In 5 short steps, you will find families who are a good fit for you.',
+      'empty_title': 'Be the first family in your area',
+      'empty_description':
+          'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
+      'invite_playmates': 'Invite playmates',
+      'values_tip':
+          'Tip: Families with similar values understand each other best. Choose what matters to you.',
+      'bio_hint':
+          'Tell us about yourselves: What makes your family special? What are you looking for?',
+      'step_1': 'Step 1: Your family',
+      'step_2': 'Step 2: Your children',
+      'step_3': 'Step 3: Values and style',
+      'step_4': 'Step 4: What are you looking for?',
+      'step_5': 'Step 5: Languages and more',
+      'bio_title': 'Short bio',
+      'login_required': 'Please sign in to publish your playmate profile.',
+      'same_city': 'In your city',
+      'reason_nearby': 'Nearby',
+      'reason_shared_interests': 'Shared interests',
+      'reason_similar_child_age': 'Children of a similar age',
+      'reason_shared_languages': 'Shared languages',
+      'reason_shared_values': 'Similar parenting values',
+      'reason_shared_family_form': 'Similar family setup',
+      'request_sent': 'Your request was sent to {name}.',
+      'request_failed':
+          'Your request could not be sent. Please try again later.',
+      'no_gender': 'Prefer not to say',
+      'gender_maennlich': 'Boy',
+      'gender_weiblich': 'Girl',
+      'gender_divers': 'Diverse',
       'coins_until': 'Until free Premium',
       'invites_successful': 'successful invitations',
       'coin_value': '1 Coin = €1',
@@ -93,36 +98,42 @@ String _networkCopy(String key, String fallback) {
       'friends': 'Heval',
       'playmates': 'Hevalên lîstikê',
       'invite': 'Vexwendin',
-        'invite_hero_title': 'Hevalan vexwîne',
-        'invite_hero_description':
+      'invite_hero_title': 'Hevalan vexwîne',
+      'invite_hero_description':
           'Girêdana xwe ya kesane an koda QR parve bike - bi yek pêlê hûn tên girêdan.',
-        'share': 'Parve bike',
-          'setup_hint': 'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
-          'empty_title': 'Di herêma xwe de malbata yekem bibe',
-          'empty_description': 'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
-          'invite_playmates': 'Hevalên lîstikê vexwîne',
-          'values_tip': 'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
-          'bio_hint': 'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
-          'step_1': 'Gav 1: Malbata we',
-          'step_2': 'Gav 2: Zarokên we',
-          'step_3': 'Gav 3: Nirx û şêwaz',
-          'step_4': 'Gav 4: Hûn li çi digerin?',
-          'step_5': 'Gav 5: Ziman û zêdetir',
-          'bio_title': 'Bioya kurt',
-          'login_required': 'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
-          'same_city': 'Di bajarê te de',
-          'reason_nearby': 'Li nêzîkê',
-          'reason_shared_interests': 'Berjewendiyên hevpar',
-          'reason_similar_child_age': 'Zarokên bi temenê nêzîk',
-          'reason_shared_languages': 'Zimanên hevpar',
-          'reason_shared_values': 'Nirxên perwerdehiyê yên wekhev',
-          'reason_shared_family_form': 'Şêwaza malbatê ya wekhev',
-          'request_sent': 'Daxwaza te ji {name} re hat şandin.',
-          'request_failed': 'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
-          'no_gender': 'Naxwazim bibêjim',
-          'gender_maennlich': 'Kur',
-          'gender_weiblich': 'Keç',
-          'gender_divers': 'Cûda',
+      'share': 'Parve bike',
+      'setup_hint':
+          'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
+      'empty_title': 'Di herêma xwe de malbata yekem bibe',
+      'empty_description':
+          'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
+      'invite_playmates': 'Hevalên lîstikê vexwîne',
+      'values_tip':
+          'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
+      'bio_hint':
+          'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
+      'step_1': 'Gav 1: Malbata we',
+      'step_2': 'Gav 2: Zarokên we',
+      'step_3': 'Gav 3: Nirx û şêwaz',
+      'step_4': 'Gav 4: Hûn li çi digerin?',
+      'step_5': 'Gav 5: Ziman û zêdetir',
+      'bio_title': 'Bioya kurt',
+      'login_required':
+          'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
+      'same_city': 'Di bajarê te de',
+      'reason_nearby': 'Li nêzîkê',
+      'reason_shared_interests': 'Berjewendiyên hevpar',
+      'reason_similar_child_age': 'Zarokên bi temenê nêzîk',
+      'reason_shared_languages': 'Zimanên hevpar',
+      'reason_shared_values': 'Nirxên perwerdehiyê yên wekhev',
+      'reason_shared_family_form': 'Şêwaza malbatê ya wekhev',
+      'request_sent': 'Daxwaza te ji {name} re hat şandin.',
+      'request_failed':
+          'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
+      'no_gender': 'Naxwazim bibêjim',
+      'gender_maennlich': 'Kur',
+      'gender_weiblich': 'Keç',
+      'gender_divers': 'Cûda',
       'coins_until': 'Ji bo Premiuma belaş',
       'invites_successful': 'vexwendinên serkeftî',
       'coin_value': '1 Coin = €1',
@@ -153,36 +164,41 @@ String _networkCopy(String key, String fallback) {
       'friends': 'Arkadaşlar',
       'playmates': 'Oyun arkadaşları',
       'invite': 'Davet et',
-        'invite_hero_title': 'Arkadaşlarını davet et',
-        'invite_hero_description':
+      'invite_hero_title': 'Arkadaşlarını davet et',
+      'invite_hero_description':
           'Kişisel bağlantını veya QR kodunu paylaş - tek dokunuşla bağlantı kurun.',
-        'share': 'Paylaş',
-          'setup_hint': '5 kısa adımda size uygun aileleri bulun.',
-          'empty_title': 'Bölgenizdeki ilk aile siz olun',
-          'empty_description': 'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
-          'invite_playmates': 'Oyun arkadaşlarını davet et',
-          'values_tip': 'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
-          'bio_hint': 'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
-          'step_1': '1. Adım: Aileniz',
-          'step_2': '2. Adım: Çocuklarınız',
-          'step_3': '3. Adım: Değerler ve yaklaşım',
-          'step_4': '4. Adım: Ne arıyorsunuz?',
-          'step_5': '5. Adım: Diller ve daha fazlası',
-          'bio_title': 'Kısa biyografi',
-          'login_required': 'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
-          'same_city': 'Şehrinizde',
-          'reason_nearby': 'Yakınınızda',
-          'reason_shared_interests': 'Ortak ilgi alanları',
-          'reason_similar_child_age': 'Benzer yaşta çocuklar',
-          'reason_shared_languages': 'Ortak diller',
-          'reason_shared_values': 'Benzer ebeveynlik değerleri',
-          'reason_shared_family_form': 'Benzer aile yapısı',
-          'request_sent': '{name} için isteğiniz gönderildi.',
-          'request_failed': 'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
-          'no_gender': 'Belirtmek istemiyorum',
-          'gender_maennlich': 'Erkek',
-          'gender_weiblich': 'Kız',
-          'gender_divers': 'Diğer',
+      'share': 'Paylaş',
+      'setup_hint': '5 kısa adımda size uygun aileleri bulun.',
+      'empty_title': 'Bölgenizdeki ilk aile siz olun',
+      'empty_description':
+          'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
+      'invite_playmates': 'Oyun arkadaşlarını davet et',
+      'values_tip':
+          'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
+      'bio_hint':
+          'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
+      'step_1': '1. Adım: Aileniz',
+      'step_2': '2. Adım: Çocuklarınız',
+      'step_3': '3. Adım: Değerler ve yaklaşım',
+      'step_4': '4. Adım: Ne arıyorsunuz?',
+      'step_5': '5. Adım: Diller ve daha fazlası',
+      'bio_title': 'Kısa biyografi',
+      'login_required':
+          'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
+      'same_city': 'Şehrinizde',
+      'reason_nearby': 'Yakınınızda',
+      'reason_shared_interests': 'Ortak ilgi alanları',
+      'reason_similar_child_age': 'Benzer yaşta çocuklar',
+      'reason_shared_languages': 'Ortak diller',
+      'reason_shared_values': 'Benzer ebeveynlik değerleri',
+      'reason_shared_family_form': 'Benzer aile yapısı',
+      'request_sent': '{name} için isteğiniz gönderildi.',
+      'request_failed':
+          'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
+      'no_gender': 'Belirtmek istemiyorum',
+      'gender_maennlich': 'Erkek',
+      'gender_weiblich': 'Kız',
+      'gender_divers': 'Diğer',
       'coins_until': 'Ücretsiz Premium için',
       'invites_successful': 'davet başarılı',
       'coin_value': '1 Coin = €1',
@@ -216,7 +232,7 @@ String _networkCopy(String key, String fallback) {
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
 
-  /// 0 = Freunde, 1 = Spielfreunde, 2 = Einladen
+  /// 0 = Chats, 1 = Netzwerk, 2 = Spielfreunde
   final int initialTab;
   const ElternNetzwerkScreen(
       {super.key, this.initialFriendCode, this.initialTab = 0});
@@ -240,14 +256,22 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   bool _loadingMatches = false;
   String _matchScope = '10km';
 
+  // Chats-Tab: Messenger-Übersicht
+  List<ConversationSummary> _conversations = [];
+  bool _loadingConversations = true;
+  final _chatSearchCtrl = TextEditingController();
+  String _chatQuery = '';
+
   @override
   void initState() {
     super.initState();
     _tabs = TabController(
         length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
-    ParentCoinService.instance.initialize();
-    ParentCoinService.instance.addListener(_rebuild);
     FriendshipService.instance.addListener(_rebuild);
+    _chatSearchCtrl.addListener(() {
+      setState(() => _chatQuery = _chatSearchCtrl.text.trim().toLowerCase());
+    });
+    _loadConversations();
     _init();
     final incoming = widget.initialFriendCode;
     if (incoming != null) {
@@ -267,13 +291,53 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   @override
   void dispose() {
     _tabs.dispose();
-    ParentCoinService.instance.removeListener(_rebuild);
+    _chatSearchCtrl.dispose();
     FriendshipService.instance.removeListener(_rebuild);
     super.dispose();
   }
 
   void _rebuild() {
     if (mounted) setState(() {});
+  }
+
+  /// Lädt die Messenger-Übersicht (alle Unterhaltungen) für den Chats-Tab.
+  Future<void> _loadConversations() async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) {
+      if (mounted) setState(() => _loadingConversations = false);
+      return;
+    }
+    if (mounted) setState(() => _loadingConversations = true);
+    final list = await FriendChatService.instance.fetchOverview(uid);
+    if (!mounted) return;
+    setState(() {
+      _conversations = list;
+      _loadingConversations = false;
+    });
+  }
+
+  /// Öffnet eine Unterhaltung und markiert sie als gelesen.
+  Future<void> _openConversation({
+    required String roomId,
+    required String title,
+    required bool isGroup,
+  }) async {
+    final uid = AuthService.instance.currentUser?.uid ?? '';
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MatchConversationScreen(
+          profileId: roomId,
+          profileName: title,
+          isFriendChat: true,
+        ),
+      ),
+    );
+    // Nach Rückkehr: als gelesen markieren und Übersicht aktualisieren.
+    if (uid.isNotEmpty) {
+      await FriendChatService.instance.markRead(roomId, uid);
+    }
+    await _loadConversations();
   }
 
   /// Einladungslink (/f/<token>) verarbeiten: Einladenden auflösen und eine
@@ -441,317 +505,491 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         bottom: TabBar(
           controller: _tabs,
           tabs: [
-            Tab(text: _networkCopy('friends', 'Freunde')),
+            Tab(text: _t('network_tab_chats')),
+            Tab(text: _t('network_tab_network')),
             Tab(text: _networkCopy('playmates', 'Spielfreunde')),
-            Tab(text: _networkCopy('invite', 'Einladen')),
           ],
         ),
+      ),
+      floatingActionButton: AnimatedBuilder(
+        animation: _tabs,
+        builder: (context, _) {
+          // FAB nur im Chats-Tab: neuer Chat / neue Gruppe.
+          if (_tabs.index != 0) return const SizedBox.shrink();
+          return FloatingActionButton.extended(
+            onPressed: _showNewChatOptions,
+            backgroundColor: const Color(0xFF7C3AED),
+            icon: const Icon(Icons.add_comment_rounded, color: Colors.white),
+            label: Text(
+              _t('network_new_chat'),
+              style: const TextStyle(color: Colors.white),
+            ),
+          );
+        },
       ),
       body: TabBarView(
         controller: _tabs,
         children: [
-          _freundeTab(theme),
+          _chatsTab(theme),
+          _netzwerkTab(theme),
           _spielfreundeTab(theme),
-          _inviteTab(theme)
         ],
       ),
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TAB 1: EINLADEN & COINS
+  // TAB 1: CHATS (Messenger-Übersicht)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _inviteTab(ThemeData theme) {
-    final coins = ParentCoinService.instance;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ─── ParentCoin Card ─────────────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFFF7ED),
-                  Color(0xFFFFF1E6),
-                  Color(0xFFFFEDD5)
-                ]),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color: const Color(0xFFFDBA74).withValues(alpha: 0.4)),
-            boxShadow: [
-              BoxShadow(
-                  color: const Color(0xFFF97316).withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8))
-            ],
+  Widget _chatsTab(ThemeData theme) {
+    final filtered = _conversations.where((c) {
+      if (_chatQuery.isEmpty) return true;
+      final name = (c.name ?? c.lastAuthorName).toLowerCase();
+      return name.contains(_chatQuery) ||
+          c.lastMessage.toLowerCase().contains(_chatQuery);
+    }).toList();
+
+    return Column(children: [
+      // Suchleiste
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+        child: TextField(
+          controller: _chatSearchCtrl,
+          decoration: InputDecoration(
+            hintText: _t('network_search_hint'),
+            prefixIcon: const Icon(Icons.search_rounded),
+            isDense: true,
+            filled: true,
+            fillColor: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.4),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
           ),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              // Custom ParentCoin Icon
-              Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFF97316), Color(0xFFFB923C)]),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                            color:
-                                const Color(0xFFF97316).withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3))
-                      ]),
-                  child: const Center(
-                      child:
-                          Text('\u{1F9E1}', style: TextStyle(fontSize: 26)))),
-              const SizedBox(width: 14),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Row(children: [
-                      Text('${coins.balance}',
-                          style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFFC2410C))),
-                      const SizedBox(width: 6),
-                      Text(
-                          AppStringsManager.getString(
-                              languageService.currentLanguage, 'parent_coins'),
-                          style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFFEA580C))),
-                    ]),
-                    const SizedBox(height: 2),
-                    Text(
-                        '${coins.coinsUntilFreePremium} ${_networkCopy('coins_until', 'bis Gratis-Premium')} \u{1F381}',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: const Color(0xFF9A3412)
-                                .withValues(alpha: 0.7))),
-                  ])),
-              if (coins.hasCommunityBadge)
-                Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                            colors: [Color(0xFFF97316), Color(0xFFEAB308)]),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.star_rounded,
-                          size: 13, color: Colors.white),
-                      const SizedBox(width: 3),
-                      Text(
-                          AppStringsManager.getString(
-                              languageService.currentLanguage, 'community_tab'),
-                          style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white))
-                    ])),
-            ]),
-            const SizedBox(height: 18),
-            // Progress mit Coin-Steps
-            Row(
-                children:
-                    List.generate(ParentCoinService.coinsForFreePremium, (i) {
-              final filled = i < coins.balance;
-              return Expanded(
-                  child: Container(
-                margin: EdgeInsets.only(
-                    right:
-                        i < ParentCoinService.coinsForFreePremium - 1 ? 4 : 0),
-                height: 8,
-                decoration: BoxDecoration(
-                  color: filled
-                      ? const Color(0xFFF97316)
-                      : const Color(0xFFFDBA74).withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ));
-            })),
-            const SizedBox(height: 10),
-            Row(children: [
-              Text(
-                  '${coins.successfulInvites} ${_networkCopy('invites_successful', 'Einladungen erfolgreich')}',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF9A3412).withValues(alpha: 0.6))),
-              const Spacer(),
-              Text(_networkCopy('coin_value', '1 Coin = 1\u{20AC}'),
-                  style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFFF97316).withValues(alpha: 0.7))),
-            ]),
-            if (coins.balance >= ParentCoinService.coinsForFreePremium) ...[
-              const SizedBox(height: 14),
-              // Prio 5: Einloesen ist noch nicht scharf geschaltet. Statt einer
-              // Schein-Einloesung zeigen wir ehrlich 'Bald verfuegbar' — die
-              // gesammelten Coins bleiben natuerlich erhalten.
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.35)),
-                ),
-                child: Row(children: [
-                  const Icon(Icons.hourglass_top_rounded,
-                      size: 18, color: Colors.white),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(_t('network_coming_soon'),
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white)),
-                          const SizedBox(height: 2),
-                          Text(
-                              _networkCopy('coins_secured',
-                                  'Deine Coins sind gesichert. Bald kannst du damit Features freischalten. 🎁'),
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white,
-                                  height: 1.3)),
-                        ]),
-                  ),
-                ]),
-              ),
-            ],
-          ]),
         ),
-        const SizedBox(height: 20),
-        Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'invite_friends'),
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text(_t('network_coin_per_registration'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 14),
-        _inviteRow(
-            theme,
-            Icons.share_rounded,
-            const Color(0xFF0EA5A4),
-            _networkCopy('invite_share', 'Einladung teilen'),
-            _networkCopy('invite_share_hint', 'WhatsApp, SMS, E-Mail'),
-            () async {
-          try {
-            final box = context.findRenderObject() as RenderBox?;
-            await Share.share(
-              coins.getInviteMessage(),
-              sharePositionOrigin: box != null
-                  ? box.localToGlobal(Offset.zero) & box.size
-                  : const Rect.fromLTWH(100, 100, 200, 200),
-            );
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Teilen fehlgeschlagen: $e')),
-              );
-            }
-          }
-        }),
-        const SizedBox(height: 10),
-        _inviteRow(
-            theme,
-            Icons.qr_code_rounded,
-            const Color(0xFF8B5CF6),
-            _networkCopy('qr_show', 'QR-Code zeigen'),
-            _networkCopy('qr_hint', 'Am Spielplatz scannen'),
-            () => _showQR(theme, coins)),
-        const SizedBox(height: 10),
-        _inviteRow(
-            theme,
-            Icons.link_rounded,
-            const Color(0xFF2563EB),
-            _networkCopy('link_copy', 'Link kopieren'),
-            coins.getInviteLink(), () {
-          Clipboard.setData(ClipboardData(text: coins.getInviteLink()));
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'link_copied'))));
-        }),
-        const SizedBox(height: 10),
-        _inviteRow(
-            theme,
-            Icons.refresh_rounded,
-            const Color(0xFF16A34A),
-            _networkCopy('check_coins', 'Coins jetzt prüfen'),
-            _networkCopy('check_coins_hint', 'Neue Einladungen gutschreiben'),
-            () => ParentCoinService.instance.claimPendingReferrals(context)),
-        if (coins.history.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'history_tab'),
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          ...coins.history.take(5).map((tx) {
-            final e = tx.type != CoinTransactionType.spent;
-            return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Row(children: [
-                      Icon(
-                          e
-                              ? Icons.add_circle_rounded
-                              : Icons.remove_circle_rounded,
-                          size: 18,
-                          color: e
-                              ? const Color(0xFF16A34A)
-                              : const Color(0xFFEF4444)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                          child: Text(tx.reason,
-                              style: theme.textTheme.bodySmall
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis)),
-                      Text('${e ? "+" : "-"}${tx.amount}',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13,
-                              color: e
-                                  ? const Color(0xFF16A34A)
-                                  : const Color(0xFFEF4444)))
-                    ])));
-          })
+      ),
+      Expanded(
+        child: RefreshIndicator(
+          onRefresh: _loadConversations,
+          child: _loadingConversations
+              ? _chatsLoadingSkeleton(theme)
+              : filtered.isEmpty
+                  ? _chatsEmptyState(theme)
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 90),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        indent: 76,
+                        color: theme.colorScheme.outlineVariant
+                            .withValues(alpha: 0.3),
+                      ),
+                      itemBuilder: (_, i) =>
+                          _conversationTile(theme, filtered[i]),
+                    ),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _conversationTile(ThemeData theme, ConversationSummary c) {
+    final title = c.isGroup
+        ? (c.name ?? _t('network_group'))
+        : (c.lastAuthorName.isNotEmpty && c.lastAuthorUserId != _myUid
+            ? c.lastAuthorName
+            : (c.name ?? _t('network_chat')));
+    final preview = c.lastMessage.isEmpty
+        ? _t('network_no_messages_yet')
+        : (c.lastAuthorUserId == _myUid
+            ? '${_t('network_you_prefix')} ${c.lastMessage}'
+            : c.lastMessage);
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: UserAvatar(
+        name: c.isGroup ? (c.name ?? 'G') : title,
+        photoUrl: c.photoUrl.isNotEmpty ? c.photoUrl : null,
+        isGroup: c.isGroup,
+        radius: 26,
+      ),
+      title: Text(
+        title,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          fontWeight: c.hasUnread ? FontWeight.w800 : FontWeight.w600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        preview,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: c.hasUnread
+              ? theme.colorScheme.onSurface
+              : theme.colorScheme.onSurfaceVariant,
+          fontWeight: c.hasUnread ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (c.lastMessageAt != null)
+            Text(
+              _formatConversationTime(c.lastMessageAt!),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: c.hasUnread
+                    ? const Color(0xFF7C3AED)
+                    : theme.colorScheme.outline,
+                fontWeight: c.hasUnread ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
+          const SizedBox(height: 6),
+          if (c.hasUnread)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: const BoxDecoration(
+                color: Color(0xFF7C3AED),
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+              child: Text(
+                c.unreadCount > 99 ? '99+' : '${c.unreadCount}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800),
+              ),
+            )
+          else
+            const SizedBox(width: 20, height: 20),
         ],
-      ]),
+      ),
+      onTap: () => _openConversation(
+        roomId: c.roomId,
+        title: title,
+        isGroup: c.isGroup,
+      ),
     );
   }
 
+  Widget _chatsLoadingSkeleton(ThemeData theme) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: List.generate(
+        6,
+        (_) => Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Row(children: [
+            CircleAvatar(
+                radius: 26,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                        height: 12,
+                        width: 140,
+                        decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(6))),
+                    const SizedBox(height: 8),
+                    Container(
+                        height: 10,
+                        width: 220,
+                        decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(6))),
+                  ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _chatsEmptyState(ThemeData theme) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(32, 60, 32, 32),
+      children: [
+        Center(
+          child: Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.chat_bubble_outline_rounded,
+                size: 34, color: Color(0xFF8B5CF6)),
+          ),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          _t('network_chats_empty_title'),
+          textAlign: TextAlign.center,
+          style:
+              theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _t('network_chats_empty_desc'),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant, height: 1.4),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: FilledButton.icon(
+            onPressed: _showNewChatOptions,
+            icon: const Icon(Icons.add_comment_rounded, size: 18),
+            label: Text(_t('network_new_chat')),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7C3AED),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String get _myUid => AuthService.instance.currentUser?.uid ?? '';
+
+  /// Zeit-Label für die Chat-Liste: HH:mm (heute), "Gestern", oder TT.MM.
+  String _formatConversationTime(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) {
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+    if (diff == 1) return _t('network_yesterday');
+    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.';
+  }
+
+  // ─── Neuer Chat / Neue Gruppe ──────────────────────────────────────────────
+
+  Future<void> _showNewChatOptions() async {
+    final theme = Theme.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const CircleAvatar(
+              backgroundColor: Color(0xFF7C3AED),
+              child: Icon(Icons.person_rounded, color: Colors.white),
+            ),
+            title: Text(_t('network_start_direct_chat'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(_t('network_start_direct_chat_hint')),
+            onTap: () {
+              Navigator.pop(sheetCtx);
+              _tabs.animateTo(1); // Zum Netzwerk-Tab (dort Freunde anchatten)
+            },
+          ),
+          ListTile(
+            leading: const CircleAvatar(
+              backgroundColor: Color(0xFF0EA5A4),
+              child: Icon(Icons.groups_rounded, color: Colors.white),
+            ),
+            title: Text(_t('network_create_group'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(_t('network_create_group_hint')),
+            onTap: () {
+              Navigator.pop(sheetCtx);
+              _showCreateGroupSheet();
+            },
+          ),
+          const SizedBox(height: 12),
+        ]),
+      ),
+    );
+  }
+
+  /// Gruppe erstellen: Name eingeben + Freunde als Mitglieder wählen.
+  Future<void> _showCreateGroupSheet() async {
+    final friends = FriendshipService.instance.friends;
+    if (friends.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_t('network_group_needs_friends')),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+    final nameCtrl = TextEditingController();
+    final selected = <String>{};
+    final created = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) {
+        bool saving = false;
+        return StatefulBuilder(builder: (sheetCtx, setSheet) {
+          final theme = Theme.of(sheetCtx);
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 4,
+              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(_t('network_create_group'),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 14),
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: _t('network_group_name'),
+                  hintText: _t('network_group_name_hint'),
+                  prefixIcon: const Icon(Icons.groups_rounded),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(_t('network_choose_members'),
+                    style: theme.textTheme.labelLarge
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: friends.map((f) {
+                    final isSel = selected.contains(f.uid);
+                    return CheckboxListTile(
+                      value: isSel,
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      secondary: UserAvatar(name: f.name, radius: 20),
+                      title: Text(f.name),
+                      onChanged: (v) => setSheet(() {
+                        if (v == true) {
+                          selected.add(f.uid);
+                        } else {
+                          selected.remove(f.uid);
+                        }
+                      }),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          if (nameCtrl.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(sheetCtx)
+                                .showSnackBar(SnackBar(
+                              content: Text(_t('network_group_name_required')),
+                            ));
+                            return;
+                          }
+                          if (selected.isEmpty) {
+                            ScaffoldMessenger.of(sheetCtx)
+                                .showSnackBar(SnackBar(
+                              content: Text(_t('network_group_select_member')),
+                            ));
+                            return;
+                          }
+                          setSheet(() => saving = true);
+                          final ok = await _createGroup(
+                            nameCtrl.text.trim(),
+                            selected.toList(),
+                            friends,
+                          );
+                          if (sheetCtx.mounted) Navigator.pop(sheetCtx, ok);
+                        },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0EA5A4),
+                    minimumSize: const Size.fromHeight(50),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : Text(_t('network_create_group')),
+                ),
+              ),
+            ]),
+          );
+        });
+      },
+    );
+    nameCtrl.dispose();
+    if (created == true) await _loadConversations();
+  }
+
+  Future<bool> _createGroup(
+      String name, List<String> memberUids, List<Friend> friends) async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return false;
+    final ownerName =
+        AuthService.instance.currentUser?.displayName ?? 'Familie';
+    final memberNames = <String, String>{
+      for (final f in friends)
+        if (memberUids.contains(f.uid)) f.uid: f.name,
+    };
+    final group = await FriendChatService.instance.createGroup(
+      name: name,
+      ownerUserId: uid,
+      ownerName: ownerName,
+      memberUids: memberUids,
+      memberNames: memberNames,
+    );
+    if (!mounted) return false;
+    if (group == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_t('network_group_create_failed')),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return false;
+    }
+    // Direkt in die neue Gruppe springen.
+    await _openConversation(
+      roomId: group.roomId,
+      title: group.name,
+      isGroup: true,
+    );
+    return true;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // TAB 2: SPIELFREUNDE
+  // TAB 3: SPIELFREUNDE
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _spielfreundeTab(ThemeData theme) {
@@ -782,8 +1020,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Text(
-            _networkCopy(
-                'setup_hint',
+            _networkCopy('setup_hint',
                 'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.'),
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant, height: 1.3),
@@ -1022,17 +1259,19 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         child: Column(children: [
           const Text('\u{1F331}', style: TextStyle(fontSize: 40)),
           const SizedBox(height: 14),
-            Text(_networkCopy(
-              'empty_title', 'Sei die erste Familie in deiner Gegend'),
+          Text(
+              _networkCopy(
+                  'empty_title', 'Sei die erste Familie in deiner Gegend'),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w800),
               textAlign: TextAlign.center),
           const SizedBox(height: 8),
-            Text(_networkCopy(
-              'empty_description',
-              'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
-                'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
-                'Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.'),
+          Text(
+              _networkCopy(
+                  'empty_description',
+                  'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
+                      'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
+                      'Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.'),
               style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant, height: 1.4),
               textAlign: TextAlign.center),
@@ -1042,8 +1281,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             child: FilledButton.icon(
               onPressed: () => _tabs.animateTo(2),
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                label: Text(_networkCopy(
-                  'invite_playmates', 'Spielkameraden einladen')),
+              label: Text(
+                  _networkCopy('invite_playmates', 'Spielkameraden einladen')),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1256,7 +1495,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     if (!mounted) return;
     messenger.showSnackBar(SnackBar(
       content: Text(ok
-          ? _networkCopy('request_sent', 'Deine Anfrage wurde an {name} gesendet.')
+          ? _networkCopy(
+                  'request_sent', 'Deine Anfrage wurde an {name} gesendet.')
               .replaceAll('{name}', m.profile.name)
           : _networkCopy('request_failed',
               'Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.')),
@@ -1285,10 +1525,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TAB 3: FREUNDE & CHAT
+  // TAB 2: NETZWERK (Freunde, Anfragen, Vorschläge, Einladen)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _freundeTab(ThemeData theme) {
+  Widget _netzwerkTab(ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1338,8 +1578,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             Row(children: [
               Expanded(
                   child: _shareActionBtn(
-                    Icons.ios_share_rounded,
-                    _networkCopy('share', 'Teilen'), () async {
+                      Icons.ios_share_rounded, _networkCopy('share', 'Teilen'),
+                      () async {
                 final box = context.findRenderObject() as RenderBox?;
                 // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
                 final link =
@@ -1879,51 +2119,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               child: Text(
                   AppStringsManager.getString(
                       languageService.currentLanguage, 'done_btn'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
         ]),
       ),
     );
-  }
-
-  Widget _inviteRow(ThemeData theme, IconData icon, Color color, String title,
-      String sub, VoidCallback onTap) {
-    return Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-                color:
-                    theme.colorScheme.outlineVariant.withValues(alpha: 0.5))),
-        color: theme.colorScheme.surfaceContainerLow,
-        clipBehavior: Clip.antiAlias,
-        child: Material(
-            color: Colors.transparent,
-            child: ListTile(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  onTap();
-                },
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                leading: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Icon(icon, color: color, size: 20)),
-                title: Text(title,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-                subtitle: Text(sub,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    overflow: TextOverflow.ellipsis),
-                trailing: Icon(Icons.arrow_forward_ios_rounded,
-                    size: 14, color: theme.colorScheme.outline))));
   }
 
   Future<void> _confirmDeleteProfile(ThemeData theme) async {
@@ -1954,107 +2156,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       await _backend.deleteProfile(uid);
       if (mounted) setState(() => _profile = null);
     }
-  }
-
-  void _showQR(ThemeData theme, ParentCoinService coins) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-                color: theme.colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2)),
-          ),
-          const SizedBox(height: 20),
-          // Teal badge: visually distinct from the purple Freunde-QR
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'app_invitation'),
-                style: const TextStyle(
-                    color: Color(0xFF0D9488),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700)),
-          ),
-          const SizedBox(height: 10),
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'invite_parents'),
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'scan_download_earn'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline, height: 1.4),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: const Color(0xFF0D9488).withValues(alpha: 0.3),
-                  width: 2),
-              boxShadow: [
-                BoxShadow(
-                    color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6)),
-              ],
-            ),
-            child: QrImageView(
-                data: coins.getInviteLink(),
-                version: QrVersions.auto,
-                size: 190,
-                eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square, color: Color(0xFF0D9488)),
-                dataModuleStyle: const QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
-                    color: Color(0xFF134E4A))),
-          ),
-          const SizedBox(height: 10),
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'just_scan_no_code'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF0D9488),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(_t('done'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
-          ),
-        ]),
-      ),
-    );
   }
 }
 
@@ -2265,8 +2366,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             })),
       ),
       // Step label
-        Text(
-          _stepLabel(_step),
+      Text(_stepLabel(_step),
           style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6))),
       const SizedBox(height: 16),
@@ -2577,9 +2677,8 @@ class _ProfileFormState extends State<_ProfileForm> {
               const SizedBox(width: 10),
               Expanded(
                   child: Text(
-                    _networkCopy(
-                      'values_tip',
-                      'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.'),
+                      _networkCopy('values_tip',
+                          'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.'),
                       style: theme.textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF16A34A),
                           fontWeight: FontWeight.w500,
@@ -2775,17 +2874,16 @@ class _ProfileFormState extends State<_ProfileForm> {
                       ))
                   .toList()),
           const SizedBox(height: 22),
-            _sectionTitle(theme,
-              '\u{1F4AC} ${_networkCopy('bio_title', 'Kurze Bio')}'),
+          _sectionTitle(
+              theme, '\u{1F4AC} ${_networkCopy('bio_title', 'Kurze Bio')}'),
           const SizedBox(height: 6),
           TextField(
               controller: _bioCtrl,
               maxLength: 200,
               maxLines: 3,
               decoration: InputDecoration(
-                  hintText: _networkCopy(
-                    'bio_hint',
-                    'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?'),
+                  hintText: _networkCopy('bio_hint',
+                      'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?'),
                   hintStyle:
                       TextStyle(fontSize: 13, color: theme.colorScheme.outline),
                   border: OutlineInputBorder(

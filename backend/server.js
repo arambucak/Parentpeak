@@ -3268,6 +3268,45 @@ async function ensureSocialSchemaReady() {
       "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "idx_friendchat_room_time" ON "FriendChatMessage"("roomId", "createdAt");`
+  );
+  // Gelesen-Status pro Raum + Nutzer. Grundlage für ehrliche Ungelesen-Badges
+  // in der Chat-Übersicht: Nachrichten nach "lastReadAt" von anderen gelten
+  // als ungelesen.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "ChatRead" (
+      "roomId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "lastReadAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("roomId", "userId")
+    );
+  `);
+  // ─── Gruppenchat (Stufe 2) ────────────────────────────────────────────────
+  // Eine Gruppe (z.B. "Kita-Gruppe Sonnenschein"). roomId = 'group_<id>'.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "ChatGroup" (
+      "id" TEXT PRIMARY KEY,
+      "name" TEXT NOT NULL,
+      "ownerUserId" TEXT NOT NULL,
+      "photoUrl" TEXT NOT NULL DEFAULT '',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  // Mitglieder einer Gruppe. role: 'owner' | 'member'.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "ChatGroupMember" (
+      "groupId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "memberName" TEXT NOT NULL DEFAULT 'Elternteil',
+      "role" TEXT NOT NULL DEFAULT 'member',
+      "joinedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("groupId", "userId")
+    );
+  `);
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "idx_groupmember_user" ON "ChatGroupMember"("userId");`
+  );
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "PendingReferral" (
       "id" TEXT PRIMARY KEY,
@@ -8167,6 +8206,26 @@ app.post('/friend-chat/messages', async (req, res) => {
   // Echter Bann: gesperrte Nutzer koennen keine Nachrichten mehr senden.
   if (await isUserSuspended(userId)) return respondSuspended(res);
 
+  // Gruppen-Chat (roomId = group_<id>): Nur Mitglieder duerfen senden.
+  if (roomId.startsWith('group_')) {
+    const groupId = roomId.substring('group_'.length);
+    try {
+      await ensureSocialSchemaReady();
+      const member = await prisma.$queryRawUnsafe(
+        `SELECT 1 FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2 LIMIT 1`,
+        groupId, userId
+      );
+      if (!member || member.length === 0) {
+        return res.status(403).json({
+          error: 'Du bist kein Mitglied dieser Gruppe.',
+          code: 'not_member',
+        });
+      }
+    } catch (_) {
+      // Bei DB-Fehlern nicht blockieren (best effort, wie beim 1:1-Fallback).
+    }
+  }
+
   // Chat-Schutz (NEUES UID-Format uidA__uidB): Nur bestaetigte Freunde duerfen
   // NEUE Nachrichten senden. Nach 'Entfernen' -> keine Freundschaft mehr ->
   // gesperrt. Nach 'Blockieren' -> ebenfalls gesperrt. Der Verlauf bleibt via
@@ -8196,6 +8255,24 @@ app.post('/friend-chat/messages', async (req, res) => {
   const pushToRecipient = async () => {
     try {
       let recipientUid = null;
+      if (roomId.startsWith('group_')) {
+        // Gruppen-Push: Benachrichtigung an alle Mitglieder außer dem Sender.
+        const groupId = roomId.substring('group_'.length);
+        const members = await prisma.$queryRawUnsafe(
+          `SELECT "userId" FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" <> $2`,
+          groupId, userId
+        );
+        for (const m of members) {
+          try {
+            await sendPushToUser(m.userId, {
+              title: userName || 'Neue Nachricht',
+              body: content.length > 100 ? content.substring(0, 100) + '...' : content,
+              data: { type: 'group_chat', roomId, senderId: userId },
+            });
+          } catch (_) {}
+        }
+        return;
+      }
       if (roomId.includes('__')) {
         // NEUES Format: roomId = uidA__uidB -> Empfaenger = Haelfte != Sender.
         const parts = roomId.split('__');
@@ -8236,6 +8313,262 @@ app.post('/friend-chat/messages', async (req, res) => {
     friendChatMessages.get(roomId).push(item);
     await pushToRecipient();
     return res.status(201).json({ item });
+  }
+});
+
+// ─── Chat-Übersicht: alle Unterhaltungen eines Nutzers ──────────────────────
+// Liefert pro Raum (1:1 + Gruppen) die letzte Nachricht, Zeit und die Zahl
+// ungelesener Nachrichten (basierend auf ChatRead.lastReadAt). Grundlage für
+// die Messenger-Liste im Chats-Tab.
+app.get('/friend-chat/overview', async (req, res) => {
+  const userId = (req.query.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+
+    // 1:1-Räume: alle roomIds im neuen Format uidA__uidB, die die UID enthalten.
+    const directRooms = await prisma.$queryRawUnsafe(
+      `SELECT DISTINCT "roomId" FROM "FriendChatMessage"
+       WHERE "roomId" LIKE $1 AND "roomId" LIKE '%\\_\\_%'`,
+      `%${userId}%`
+    );
+    // Gruppen-Räume: alle Gruppen, in denen der Nutzer Mitglied ist.
+    const groupRows = await prisma.$queryRawUnsafe(
+      `SELECT g."id", g."name", g."photoUrl"
+       FROM "ChatGroup" g
+       JOIN "ChatGroupMember" m ON m."groupId" = g."id"
+       WHERE m."userId" = $1`,
+      userId
+    );
+
+    const conversations = [];
+
+    // Lese-Zeitpunkte des Nutzers für alle Räume einsammeln.
+    const reads = await prisma.$queryRawUnsafe(
+      `SELECT "roomId", "lastReadAt" FROM "ChatRead" WHERE "userId" = $1`,
+      userId
+    );
+    const lastReadByRoom = new Map();
+    for (const r of reads) lastReadByRoom.set(r.roomId, r.lastReadAt);
+
+    async function summarize(roomId, { isGroup, name, photoUrl }) {
+      const lastRows = await prisma.$queryRawUnsafe(
+        `SELECT "authorUserId", "authorName", "content", "createdAt"
+         FROM "FriendChatMessage" WHERE "roomId" = $1
+         ORDER BY "createdAt" DESC LIMIT 1`,
+        roomId
+      );
+      const last = lastRows[0] || null;
+      const lastReadAt = lastReadByRoom.get(roomId) || null;
+      // Ungelesen = Nachrichten von anderen, die nach lastReadAt kamen.
+      const unreadRows = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int AS "c" FROM "FriendChatMessage"
+         WHERE "roomId" = $1 AND "authorUserId" <> $2
+         AND ("createdAt" > $3 OR $3 IS NULL)`,
+        roomId, userId, lastReadAt
+      );
+      const unread = unreadRows[0] ? Number(unreadRows[0].c || 0) : 0;
+      return {
+        roomId,
+        isGroup: !!isGroup,
+        name: name || null,
+        photoUrl: photoUrl || '',
+        lastMessage: last ? last.content : '',
+        lastAuthorName: last ? last.authorName : '',
+        lastAuthorUserId: last ? last.authorUserId : '',
+        lastMessageAt: last ? last.createdAt : null,
+        unreadCount: unread,
+      };
+    }
+
+    for (const row of directRooms) {
+      conversations.push(await summarize(row.roomId, { isGroup: false }));
+    }
+    for (const g of groupRows) {
+      conversations.push(
+        await summarize(`group_${g.id}`, {
+          isGroup: true,
+          name: g.name,
+          photoUrl: g.photoUrl,
+        })
+      );
+    }
+
+    // Neueste Unterhaltung zuerst; Räume ohne Nachricht ans Ende.
+    conversations.sort((a, b) => {
+      const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+      return tb - ta;
+    });
+
+    return res.json({ conversations });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /friend-chat/overview', error)) return;
+    return res.json({ conversations: [] });
+  }
+});
+
+// ─── Gelesen-Status setzen ──────────────────────────────────────────────────
+// Markiert einen Raum für den Nutzer bis jetzt als gelesen (Ungelesen → 0).
+app.post('/friend-chat/read', async (req, res) => {
+  const roomId = (req.body.roomId || '').toString().trim();
+  const userId = (req.body.userId || '').toString().trim();
+  if (!roomId || !userId) {
+    return res.status(400).json({ error: 'roomId und userId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "ChatRead" ("roomId", "userId", "lastReadAt")
+       VALUES ($1, $2, NOW())
+       ON CONFLICT ("roomId", "userId")
+       DO UPDATE SET "lastReadAt" = NOW()`,
+      roomId, userId
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /friend-chat/read', error)) return;
+    return res.json({ ok: true });
+  }
+});
+
+// ─── Gruppenchat (Stufe 2) ───────────────────────────────────────────────────
+// Gruppe erstellen. Ersteller wird automatisch Owner-Mitglied.
+app.post('/chat-groups', async (req, res) => {
+  const name = (req.body.name || '').toString().trim();
+  const ownerUserId = (req.body.ownerUserId || '').toString().trim();
+  const ownerName = (req.body.ownerName || 'Elternteil').toString().trim();
+  const photoUrl = (req.body.photoUrl || '').toString().trim();
+  const memberUids = Array.isArray(req.body.memberUids) ? req.body.memberUids : [];
+  const memberNames = (req.body.memberNames && typeof req.body.memberNames === 'object')
+    ? req.body.memberNames : {};
+  if (!name || !ownerUserId) {
+    return res.status(400).json({ error: 'name und ownerUserId erforderlich' });
+  }
+  if (await isUserSuspended(ownerUserId)) return respondSuspended(res);
+  try {
+    await ensureSocialSchemaReady();
+    const id = generateId('grp');
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "ChatGroup" ("id", "name", "ownerUserId", "photoUrl") VALUES ($1, $2, $3, $4)`,
+      id, name, ownerUserId, photoUrl
+    );
+    // Owner + eingeladene Mitglieder (dedupliziert) eintragen.
+    const members = new Map();
+    members.set(ownerUserId, { name: ownerName, role: 'owner' });
+    for (const uid of memberUids) {
+      const u = (uid || '').toString().trim();
+      if (!u || members.has(u)) continue;
+      members.set(u, { name: (memberNames[u] || 'Elternteil').toString(), role: 'member' });
+    }
+    for (const [uid, info] of members) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "ChatGroupMember" ("groupId", "userId", "memberName", "role")
+         VALUES ($1, $2, $3, $4) ON CONFLICT ("groupId", "userId") DO NOTHING`,
+        id, uid, info.name, info.role
+      );
+    }
+    return res.status(201).json({
+      group: { id, name, ownerUserId, photoUrl, roomId: `group_${id}` },
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /chat-groups', error)) return;
+    return res.status(500).json({ error: 'Gruppe konnte nicht erstellt werden' });
+  }
+});
+
+// Alle Gruppen eines Nutzers (für die Chat-Übersicht / Gruppen-Liste).
+app.get('/chat-groups', async (req, res) => {
+  const userId = (req.query.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT g."id", g."name", g."ownerUserId", g."photoUrl", g."createdAt"
+       FROM "ChatGroup" g
+       JOIN "ChatGroupMember" m ON m."groupId" = g."id"
+       WHERE m."userId" = $1
+       ORDER BY g."createdAt" DESC`,
+      userId
+    );
+    const groups = rows.map(g => ({ ...g, roomId: `group_${g.id}` }));
+    return res.json({ groups });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /chat-groups', error)) return;
+    return res.json({ groups: [] });
+  }
+});
+
+// Mitglieder einer Gruppe.
+app.get('/chat-groups/:id/members', async (req, res) => {
+  const groupId = (req.params.id || '').toString().trim();
+  if (!groupId) return res.status(400).json({ error: 'id erforderlich' });
+  try {
+    await ensureSocialSchemaReady();
+    const members = await prisma.$queryRawUnsafe(
+      `SELECT "userId", "memberName", "role", "joinedAt"
+       FROM "ChatGroupMember" WHERE "groupId" = $1 ORDER BY "joinedAt" ASC`,
+      groupId
+    );
+    return res.json({ members });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /chat-groups/:id/members', error)) return;
+    return res.json({ members: [] });
+  }
+});
+
+// Mitglieder zu einer Gruppe hinzufügen (nur Mitglieder dürfen einladen).
+app.post('/chat-groups/:id/members', async (req, res) => {
+  const groupId = (req.params.id || '').toString().trim();
+  const actingUserId = (req.body.actingUserId || '').toString().trim();
+  const memberUids = Array.isArray(req.body.memberUids) ? req.body.memberUids : [];
+  const memberNames = (req.body.memberNames && typeof req.body.memberNames === 'object')
+    ? req.body.memberNames : {};
+  if (!groupId || !actingUserId) {
+    return res.status(400).json({ error: 'id und actingUserId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    const isMember = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2 LIMIT 1`,
+      groupId, actingUserId
+    );
+    if (!isMember || isMember.length === 0) {
+      return res.status(403).json({ error: 'Nur Mitglieder dürfen einladen' });
+    }
+    for (const uid of memberUids) {
+      const u = (uid || '').toString().trim();
+      if (!u) continue;
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "ChatGroupMember" ("groupId", "userId", "memberName", "role")
+         VALUES ($1, $2, $3, 'member') ON CONFLICT ("groupId", "userId") DO NOTHING`,
+        groupId, u, (memberNames[u] || 'Elternteil').toString()
+      );
+    }
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /chat-groups/:id/members', error)) return;
+    return res.status(500).json({ error: 'Mitglieder konnten nicht hinzugefügt werden' });
+  }
+});
+
+// Gruppe verlassen.
+app.delete('/chat-groups/:id/members/:userId', async (req, res) => {
+  const groupId = (req.params.id || '').toString().trim();
+  const userId = (req.params.userId || '').toString().trim();
+  if (!groupId || !userId) {
+    return res.status(400).json({ error: 'id und userId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2`,
+      groupId, userId
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /chat-groups/:id/members/:userId', error)) return;
+    return res.json({ ok: true });
   }
 });
 
