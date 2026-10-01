@@ -26,6 +26,11 @@ void main() {
         ),
       ),
     ));
+    final avatarImage = tester.widget<Image>(find.byType(Image));
+    expect(
+      (avatarImage.image as NetworkImage).webHtmlElementStrategy,
+      WebHtmlElementStrategy.prefer,
+    );
     expect(find.text('C'), findsOneWidget);
     await tester.pumpAndSettle();
     expect(find.text('C'), findsOneWidget);

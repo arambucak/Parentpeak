@@ -374,6 +374,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                                         fit: BoxFit.cover,
                                         width: 96,
                                         height: 96,
+                                      webHtmlElementStrategy:
+                                        WebHtmlElementStrategy.prefer,
                                         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) =>
                                           wasSynchronouslyLoaded || frame != null
                                             ? child
