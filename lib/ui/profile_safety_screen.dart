@@ -139,10 +139,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       if (mounted) setState(() => _avatarBusy = false);
       return;
     }
-    final url = await ImageUploadService.instance.uploadImage(
-      file,
-      folder: 'profiles',
-    );
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final url = uid == null || uid.isEmpty
+        ? null
+        : await ImageUploadService.instance.uploadImage(
+            file,
+            folder: 'profiles/$uid',
+          );
     final saved =
         url != null && await UserProfileService.instance.setAvatarUrl(url);
     if (!mounted) return;
