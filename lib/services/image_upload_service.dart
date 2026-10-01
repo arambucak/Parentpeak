@@ -10,6 +10,22 @@ class ImageUploadService {
 
   final _storage = FirebaseStorage.instance;
 
+  static String? contentTypeFor(String fileName) {
+    switch (fileName.toLowerCase().split('.').last) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      case 'gif':
+        return 'image/gif';
+      default:
+        return null;
+    }
+  }
+
   /// Upload an XFile (from image_picker) to Firebase Storage.
   /// Returns the public download URL or null on failure.
   Future<String?> uploadImage(XFile file, {String folder = 'treasures'}) async {
@@ -21,7 +37,9 @@ class ImageUploadService {
       UploadTask uploadTask;
       if (kIsWeb) {
         final bytes = await file.readAsBytes();
-        uploadTask = ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+        final contentType = contentTypeFor(file.name);
+        if (contentType == null) return null;
+        uploadTask = ref.putData(bytes, SettableMetadata(contentType: contentType));
       } else {
         uploadTask = ref.putFile(File(file.path));
       }
