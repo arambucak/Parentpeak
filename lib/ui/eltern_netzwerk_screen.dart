@@ -683,7 +683,106 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         isGroup: c.isGroup,
         photoUrl: c.photoUrl.isNotEmpty ? c.photoUrl : null,
       ),
+      onLongPress: () => _showChatActions(c, title),
     );
+  }
+
+  /// Lösch-Optionen für einen Chat (WhatsApp-Stil): Für mich / Für alle.
+  Future<void> _showChatActions(ConversationSummary c, String title) async {
+    final theme = Theme.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+            child: Row(children: [
+              UserAvatar(
+                name: c.isGroup ? (c.name ?? 'G') : title,
+                photoUrl: c.photoUrl.isNotEmpty ? c.photoUrl : null,
+                isGroup: c.isGroup,
+                radius: 18,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(title,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ]),
+          ),
+          ListTile(
+            leading: const Icon(Icons.visibility_off_rounded),
+            title: Text(_t('chat_delete_for_me')),
+            subtitle: Text(_t('chat_delete_for_me_hint')),
+            onTap: () {
+              Navigator.pop(sheetCtx);
+              _confirmChatDelete(c, title, forAll: false);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.delete_forever_rounded,
+                color: theme.colorScheme.error),
+            title: Text(_t('chat_delete_for_all'),
+                style: TextStyle(color: theme.colorScheme.error)),
+            subtitle: Text(_t('chat_delete_for_all_hint')),
+            onTap: () {
+              Navigator.pop(sheetCtx);
+              _confirmChatDelete(c, title, forAll: true);
+            },
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _confirmChatDelete(ConversationSummary c, String title,
+      {required bool forAll}) async {
+    final theme = Theme.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title:
+            Text(forAll ? _t('chat_delete_for_all') : _t('chat_delete_for_me')),
+        content: Text(forAll
+            ? _t('chat_delete_for_all_confirm')
+            : _t('chat_delete_for_me_confirm')),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(_t('cancel'))),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: forAll
+                ? FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.error)
+                : null,
+            child: Text(_t('delete')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final uid = AuthService.instance.currentUser?.uid ?? '';
+    if (uid.isEmpty) return;
+    final ok = forAll
+        ? await FriendChatService.instance.deleteForAll(c.roomId, uid)
+        : await FriendChatService.instance.clearForMe(c.roomId, uid);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? _t('chat_deleted') : _t('chat_delete_failed')),
+      behavior: SnackBarBehavior.floating,
+    ));
+    await _loadConversations();
   }
 
   Widget _chatsLoadingSkeleton(ThemeData theme) {

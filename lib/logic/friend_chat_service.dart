@@ -135,6 +135,40 @@ class FriendChatService {
     return const [];
   }
 
+  /// "Für mich löschen": blendet den bisherigen Verlauf nur für diesen Nutzer
+  /// aus. Der Verlauf der anderen Seite bleibt erhalten.
+  Future<bool> clearForMe(String roomId, String userId) async {
+    final api = _api;
+    if (api == null || roomId.isEmpty || userId.isEmpty) return false;
+    try {
+      await api.postJsonAny('/friend-chat/clear-for-me', {
+        'roomId': roomId,
+        'userId': userId,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('FriendChatService.clearForMe failed: $e');
+      return false;
+    }
+  }
+
+  /// "Für alle löschen": entfernt den Verlauf physisch für alle Teilnehmer.
+  /// Nur ein Teilnehmer/Gruppenmitglied darf das auslösen (Server prüft).
+  Future<bool> deleteForAll(String roomId, String userId) async {
+    final api = _api;
+    if (api == null || roomId.isEmpty || userId.isEmpty) return false;
+    try {
+      await api.postJsonAny('/friend-chat/delete-for-all', {
+        'roomId': roomId,
+        'userId': userId,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('FriendChatService.deleteForAll failed: $e');
+      return false;
+    }
+  }
+
   /// Markiert einen Raum für den Nutzer als gelesen (Ungelesen → 0).
   Future<void> markRead(String roomId, String userId) async {
     final api = _api;

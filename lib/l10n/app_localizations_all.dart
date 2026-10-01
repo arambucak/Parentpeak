@@ -837,6 +837,17 @@ class AppStringsManager {
       'network_tab_chats': 'Chats',
       'network_tab_network': 'Netzwerk',
       'network_new_chat': 'Neuer Chat',
+      // Chat löschen (WhatsApp-Stil)
+      'chat_delete_for_me': 'Für mich löschen',
+      'chat_delete_for_me_hint': 'Verschwindet nur bei dir',
+      'chat_delete_for_me_confirm':
+          'Dieser Chat wird nur für dich entfernt. Die andere Seite behält den Verlauf.',
+      'chat_delete_for_all': 'Für alle löschen',
+      'chat_delete_for_all_hint': 'Verlauf für alle Teilnehmer entfernen',
+      'chat_delete_for_all_confirm':
+          'Der gesamte Verlauf wird für alle Teilnehmer dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden.',
+      'chat_deleted': 'Chat gelöscht.',
+      'chat_delete_failed': 'Löschen fehlgeschlagen – bitte später erneut.',
       'network_search_hint': 'Suchen…',
       'network_group': 'Gruppe',
       'network_chat': 'Chat',
@@ -3527,6 +3538,17 @@ class AppStringsManager {
       'network_tab_chats': 'Chats',
       'network_tab_network': 'Network',
       'network_new_chat': 'New chat',
+      // Delete chat (WhatsApp style)
+      'chat_delete_for_me': 'Delete for me',
+      'chat_delete_for_me_hint': 'Removed only for you',
+      'chat_delete_for_me_confirm':
+          'This chat will be removed only for you. The other side keeps the history.',
+      'chat_delete_for_all': 'Delete for everyone',
+      'chat_delete_for_all_hint': 'Remove the history for all participants',
+      'chat_delete_for_all_confirm':
+          'The entire history will be permanently deleted for all participants. This cannot be undone.',
+      'chat_deleted': 'Chat deleted.',
+      'chat_delete_failed': 'Deletion failed — please try again later.',
       'network_search_hint': 'Search…',
       'network_group': 'Group',
       'network_chat': 'Chat',
@@ -7405,6 +7427,18 @@ class AppStringsManager {
       'network_tab_chats': 'Chat',
       'network_tab_network': 'Tor',
       'network_new_chat': 'Chata nû',
+      // Jêbirina chatê (şêwaza WhatsApp)
+      'chat_delete_for_me': 'Ji bo min jê bibe',
+      'chat_delete_for_me_hint': 'Tenê li cem te winda dibe',
+      'chat_delete_for_me_confirm':
+          'Ev chat tenê ji bo te tê rakirin. Aliyê din dîrokê diparêze.',
+      'chat_delete_for_all': 'Ji bo hemiyan jê bibe',
+      'chat_delete_for_all_hint': 'Dîrokê ji bo hemî beşdaran rake',
+      'chat_delete_for_all_confirm':
+          'Hemû dîrok ji bo hemî beşdaran bi domdarî tê jêbirin. Ev nayê vegerandin.',
+      'chat_deleted': 'Chat hat jêbirin.',
+      'chat_delete_failed':
+          'Jêbirin bi ser neket — ji kerema xwe paşê dîsa biceribîne.',
       'network_search_hint': 'Lêgerîn…',
       'network_group': 'Kom',
       'network_chat': 'Chat',
@@ -10871,6 +10905,17 @@ class AppStringsManager {
       'network_tab_chats': 'Sohbetler',
       'network_tab_network': 'Ağ',
       'network_new_chat': 'Yeni sohbet',
+      // Sohbeti sil (WhatsApp tarzı)
+      'chat_delete_for_me': 'Benden sil',
+      'chat_delete_for_me_hint': 'Sadece sende kaldırılır',
+      'chat_delete_for_me_confirm':
+          'Bu sohbet yalnızca senden kaldırılır. Karşı taraf geçmişi korur.',
+      'chat_delete_for_all': 'Herkesten sil',
+      'chat_delete_for_all_hint': 'Geçmişi tüm katılımcılardan kaldır',
+      'chat_delete_for_all_confirm':
+          'Tüm geçmiş, tüm katılımcılar için kalıcı olarak silinir. Bu geri alınamaz.',
+      'chat_deleted': 'Sohbet silindi.',
+      'chat_delete_failed': 'Silme başarısız — lütfen daha sonra tekrar dene.',
       'network_search_hint': 'Ara…',
       'network_group': 'Grup',
       'network_chat': 'Sohbet',
