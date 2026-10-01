@@ -75,7 +75,19 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   List<_ChildInfo> _children = [];
   String _appVersion = '';
   String? _avatarUrl;
+  int _avatarRevision = 0;
+  int? _avatarVersion;
   bool _avatarBusy = false;
+
+  String? get _renderedAvatarUrl {
+    final url = UserProfileService.resolveAvatarUrl(_avatarUrl);
+    if (url == null || _avatarVersion == null) return url;
+    final uri = Uri.parse(url);
+    return uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      'v': '$_avatarVersion',
+    }).toString();
+  }
 
   @override
   void initState() {
@@ -88,8 +100,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   Future<void> _loadAvatar() async {
     final uid = AuthService.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) return;
+    final revision = _avatarRevision;
     final url = await UserProfileService.instance.avatarUrlFor(uid);
-    if (mounted) setState(() => _avatarUrl = url);
+    if (mounted && revision == _avatarRevision) {
+      setState(() => _avatarUrl = url);
+    }
   }
 
   Future<void> _chooseAvatarSource() async {
@@ -124,7 +139,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (!mounted) return;
     if (action == 'remove' && _avatarUrl != null) {
       final removed = await UserProfileService.instance.setAvatarUrl(null);
-      if (removed && mounted) setState(() => _avatarUrl = null);
+      if (removed && mounted) {
+        setState(() {
+          _avatarRevision++;
+          _avatarUrl = null;
+          _avatarVersion = null;
+        });
+      }
       return;
     }
     if (action is! ImageSource) return;
@@ -151,7 +172,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (!mounted) return;
     setState(() {
       _avatarBusy = false;
-      if (saved) _avatarUrl = url;
+      if (saved) {
+        _avatarRevision++;
+        _avatarUrl = UserProfileService.resolveAvatarUrl(url);
+        _avatarVersion = DateTime.now().microsecondsSinceEpoch;
+      }
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -275,6 +300,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final avatarUrl = _renderedAvatarUrl;
     final user = AuthService.instance.currentUser;
     final name = (user?.displayName.trim().isNotEmpty ?? false)
         ? user!.displayName.trim()
@@ -284,6 +310,15 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final trialDays = user?.trialDaysRemaining ?? 0;
     final hasAccess = user?.hasFullAccess ?? false;
     final initials = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final avatarFallback = Center(
+      child: Text(
+        initials,
+        style: theme.textTheme.headlineMedium?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -333,19 +368,18 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                                 ? const Center(
                                     child: CircularProgressIndicator(),
                                   )
-                                : _avatarUrl != null
-                                    ? Image.network(_avatarUrl!,
-                                        fit: BoxFit.cover)
-                                    : Center(
-                                        child: Text(
-                                          initials,
-                                          style: theme.textTheme.headlineMedium
-                                              ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
+                                : avatarUrl != null
+                                    ? Image.network(
+                                        avatarUrl,
+                                        fit: BoxFit.cover,
+                                        width: 96,
+                                        height: 96,
+                                        loadingBuilder: (context, child, progress) =>
+                                            progress == null ? child : avatarFallback,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            avatarFallback,
+                                      )
+                                    : avatarFallback,
                           ),
                         ),
                         Positioned(

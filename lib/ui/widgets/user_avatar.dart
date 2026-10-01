@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
 
 /// Wiederverwendbarer Avatar: zeigt ein Foto, wenn vorhanden, sonst die
 /// Initiale des Namens auf einer stabil aus dem Namen abgeleiteten Farbe.
@@ -41,27 +42,31 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = photoUrl != null && photoUrl!.trim().isNotEmpty;
-
-    if (hasPhoto) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: _color,
-        backgroundImage: NetworkImage(photoUrl!.trim()),
-      );
-    }
-
+    final url = UserProfileService.resolveAvatarUrl(photoUrl);
+    final fallback = isGroup
+        ? Icon(Icons.groups_rounded, color: Colors.white, size: radius)
+        : Text(
+            _initial,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: radius * 0.8,
+              fontWeight: FontWeight.w800,
+            ),
+          );
     return CircleAvatar(
       radius: radius,
       backgroundColor: _color,
-      child: isGroup
-          ? Icon(Icons.groups_rounded, color: Colors.white, size: radius)
-          : Text(
-              _initial,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: radius * 0.8,
-                fontWeight: FontWeight.w800,
+      child: url == null
+          ? fallback
+          : ClipOval(
+              child: Image.network(
+                url,
+                width: radius * 2,
+                height: radius * 2,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) =>
+                    progress == null ? child : fallback,
+                errorBuilder: (context, error, stackTrace) => fallback,
               ),
             ),
     );

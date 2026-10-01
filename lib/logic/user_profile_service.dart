@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/config/api_config.dart';
 
 /// Die eine Identitaet: uid -> Anzeigename (app-weit). Der Name wird EINMAL
 /// bei der Registrierung gesetzt und ueberall automatisch verwendet.
@@ -14,6 +15,22 @@ class UserProfileService {
   final BackendApiClient? _api = BackendServiceFactory.createApiClient();
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+
+  static String? resolveAvatarUrl(String? photoUrl, {String? apiBaseUrl}) {
+    final value = photoUrl?.trim();
+    if (value == null || value.isEmpty) return null;
+    final uri = Uri.tryParse(value);
+    if (uri == null) return null;
+    if (uri.hasScheme) {
+      return uri.scheme == 'https' || uri.scheme == 'http' ? value : null;
+    }
+    if (!value.startsWith('/') || value.startsWith('//')) return null;
+    final base = Uri.tryParse(apiBaseUrl ??
+        APIConfig.getBackendBaseUrl() ??
+        'https://parentpeak.onrender.com');
+    if (base == null || base.scheme != 'https' || base.host.isEmpty) return null;
+    return base.resolve(value).toString();
+  }
 
   /// Anzeigename serverseitig setzen/aktualisieren (app-weit gueltig).
   Future<void> setDisplayName(String displayName) async {
@@ -37,8 +54,7 @@ class UserProfileService {
     try {
       final data = await api.getJson('/api/profile/$uid');
       if (data is Map<String, dynamic> && data['exists'] == true) {
-        final url = data['avatarUrl']?.toString().trim();
-        return url == null || url.isEmpty ? null : url;
+        return resolveAvatarUrl(data['avatarUrl']?.toString());
       }
     } catch (e) {
       debugPrint('UserProfileService.avatarUrlFor failed: $e');
