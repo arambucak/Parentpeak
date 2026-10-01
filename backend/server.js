@@ -3282,6 +3282,16 @@ async function ensureSocialSchemaReady() {
       PRIMARY KEY ("roomId", "userId")
     );
   `);
+  // "Für mich löschen" (WhatsApp-Stil): Nachrichten vor "clearedAt" werden
+  // für diesen Nutzer ausgeblendet; der Verlauf des anderen bleibt erhalten.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "ChatCleared" (
+      "roomId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "clearedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("roomId", "userId")
+    );
+  `);
   // ─── Gruppenchat (Stufe 2) ────────────────────────────────────────────────
   // Eine Gruppe (z.B. "Kita-Gruppe Sonnenschein"). roomId = 'group_<id>'.
   await prisma.$executeRawUnsafe(`
@@ -8184,9 +8194,22 @@ app.get('/friend-chat/messages', async (req, res) => {
   }
   try {
     await ensureSocialSchemaReady();
+    // "Für mich löschen": Nachrichten vor dem clearedAt dieses Nutzers
+    // ausblenden (der Verlauf des anderen bleibt unberührt).
+    let clearedAt = null;
+    if (requesterUid) {
+      const clearedRows = await prisma.$queryRawUnsafe(
+        `SELECT "clearedAt" FROM "ChatCleared" WHERE "roomId" = $1 AND "userId" = $2 LIMIT 1`,
+        roomId, requesterUid
+      );
+      clearedAt = clearedRows[0] ? clearedRows[0].clearedAt : null;
+    }
     const messages = await prisma.$queryRawUnsafe(
-      `SELECT "id", "roomId", "authorUserId", "authorName", "content", "createdAt" FROM "FriendChatMessage" WHERE "roomId" = $1 ORDER BY "createdAt" ASC`,
-      roomId
+      `SELECT "id", "roomId", "authorUserId", "authorName", "content", "createdAt"
+       FROM "FriendChatMessage"
+       WHERE "roomId" = $1 AND ("createdAt" > $2 OR $2 IS NULL)
+       ORDER BY "createdAt" ASC`,
+      roomId, clearedAt
     );
     return res.json({ messages });
   } catch (error) {
@@ -8364,21 +8387,34 @@ app.get('/friend-chat/overview', async (req, res) => {
     const lastReadByRoom = new Map();
     for (const r of reads) lastReadByRoom.set(r.roomId, r.lastReadAt);
 
+    // "Für mich gelöscht"-Zeitpunkte: Nachrichten davor zählen für diesen
+    // Nutzer nicht und blenden einen 1:1-Chat aus, solange nichts Neues kam.
+    const cleared = await prisma.$queryRawUnsafe(
+      `SELECT "roomId", "clearedAt" FROM "ChatCleared" WHERE "userId" = $1`,
+      userId
+    );
+    const clearedByRoom = new Map();
+    for (const c of cleared) clearedByRoom.set(c.roomId, c.clearedAt);
+
     async function summarize(roomId, { isGroup, name, photoUrl }) {
+      const clearedAt = clearedByRoom.get(roomId) || null;
+      // Letzte für den Nutzer SICHTBARE Nachricht (nach clearedAt).
       const lastRows = await prisma.$queryRawUnsafe(
         `SELECT "authorUserId", "authorName", "content", "createdAt"
-         FROM "FriendChatMessage" WHERE "roomId" = $1
+         FROM "FriendChatMessage"
+         WHERE "roomId" = $1 AND ("createdAt" > $2 OR $2 IS NULL)
          ORDER BY "createdAt" DESC LIMIT 1`,
-        roomId
+        roomId, clearedAt
       );
       const last = lastRows[0] || null;
       const lastReadAt = lastReadByRoom.get(roomId) || null;
-      // Ungelesen = Nachrichten von anderen, die nach lastReadAt kamen.
+      // Ungelesen = fremde Nachrichten nach lastReadAt UND nach clearedAt.
       const unreadRows = await prisma.$queryRawUnsafe(
         `SELECT COUNT(*)::int AS "c" FROM "FriendChatMessage"
          WHERE "roomId" = $1 AND "authorUserId" <> $2
-         AND ("createdAt" > $3 OR $3 IS NULL)`,
-        roomId, userId, lastReadAt
+         AND ("createdAt" > $3 OR $3 IS NULL)
+         AND ("createdAt" > $4 OR $4 IS NULL)`,
+        roomId, userId, lastReadAt, clearedAt
       );
       const unread = unreadRows[0] ? Number(unreadRows[0].c || 0) : 0;
       return {
@@ -8391,13 +8427,19 @@ app.get('/friend-chat/overview', async (req, res) => {
         lastAuthorUserId: last ? last.authorUserId : '',
         lastMessageAt: last ? last.createdAt : null,
         unreadCount: unread,
+        _hasVisibleMessage: last != null,
       };
     }
 
     for (const row of directRooms) {
-      conversations.push(await summarize(row.roomId, { isGroup: false }));
+      const summary = await summarize(row.roomId, { isGroup: false });
+      // 1:1-Chats ohne sichtbare Nachricht (komplett "für mich gelöscht")
+      // werden aus der Übersicht ausgeblendet, bis etwas Neues kommt.
+      if (summary._hasVisibleMessage) conversations.push(summary);
     }
     for (const g of groupRows) {
+      // Gruppen bleiben sichtbar, solange man Mitglied ist (auch ohne
+      // sichtbare Nachricht), damit man weiter hineinschreiben kann.
       conversations.push(
         await summarize(`group_${g.id}`, {
           isGroup: true,
@@ -8413,6 +8455,9 @@ app.get('/friend-chat/overview', async (req, res) => {
       const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
       return tb - ta;
     });
+
+    // Internes Hilfsfeld nicht nach außen geben.
+    for (const c of conversations) delete c._hasVisibleMessage;
 
     return res.json({ conversations });
   } catch (error) {
@@ -8441,6 +8486,76 @@ app.post('/friend-chat/read', async (req, res) => {
     return res.json({ ok: true });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /friend-chat/read', error)) return;
+    return res.json({ ok: true });
+  }
+});
+
+// ─── Chat löschen (WhatsApp-Stil) ────────────────────────────────────────────
+// "Für mich löschen": blendet den bisherigen Verlauf nur für diesen Nutzer aus
+// (clearedAt). Der Verlauf der anderen Seite bleibt vollständig erhalten.
+app.post('/friend-chat/clear-for-me', async (req, res) => {
+  const roomId = (req.body.roomId || '').toString().trim();
+  const userId = (req.body.userId || '').toString().trim();
+  if (!roomId || !userId) {
+    return res.status(400).json({ error: 'roomId und userId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "ChatCleared" ("roomId", "userId", "clearedAt")
+       VALUES ($1, $2, NOW())
+       ON CONFLICT ("roomId", "userId")
+       DO UPDATE SET "clearedAt" = NOW()`,
+      roomId, userId
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /friend-chat/clear-for-me', error)) return;
+    return res.json({ ok: true });
+  }
+});
+
+// "Für alle löschen": entfernt den Verlauf physisch für ALLE Teilnehmer.
+// Nur ein echter Teilnehmer (1:1) bzw. ein Gruppenmitglied darf das auslösen.
+app.post('/friend-chat/delete-for-all', async (req, res) => {
+  const roomId = (req.body.roomId || '').toString().trim();
+  const userId = (req.body.userId || '').toString().trim();
+  if (!roomId || !userId) {
+    return res.status(400).json({ error: 'roomId und userId erforderlich' });
+  }
+  try {
+    await ensureSocialSchemaReady();
+
+    // Berechtigung prüfen: Der Aufrufer muss Teil des Chats sein.
+    let allowed = false;
+    if (roomId.startsWith('group_')) {
+      const groupId = roomId.substring('group_'.length);
+      const member = await prisma.$queryRawUnsafe(
+        `SELECT 1 FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2 LIMIT 1`,
+        groupId, userId
+      );
+      allowed = member && member.length > 0;
+    } else if (roomId.includes('__')) {
+      // 1:1: Die UID muss eine der beiden Hälften der roomId sein.
+      allowed = roomId.split('__').includes(userId);
+    }
+    if (!allowed) {
+      return res.status(403).json({
+        error: 'Nur Teilnehmer dürfen diesen Chat für alle löschen.',
+        code: 'not_participant',
+      });
+    }
+
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "FriendChatMessage" WHERE "roomId" = $1`,
+      roomId
+    );
+    // Aufräumen: Lese-/Lösch-Marker dieses Raums entfernen (Verlauf ist weg).
+    await prisma.$executeRawUnsafe(`DELETE FROM "ChatRead" WHERE "roomId" = $1`, roomId);
+    await prisma.$executeRawUnsafe(`DELETE FROM "ChatCleared" WHERE "roomId" = $1`, roomId);
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /friend-chat/delete-for-all', error)) return;
     return res.json({ ok: true });
   }
 });
