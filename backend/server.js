@@ -7097,6 +7097,11 @@ app.post('/api/profile', async (req, res) => {
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
   const displayName = (req.body.displayName || '').toString().trim().slice(0, 100);
   const hasAvatarUrl = Object.prototype.hasOwnProperty.call(req.body, 'avatarUrl');
+  if (hasAvatarUrl) {
+    const { uid, verified } = await verifyFirebaseIdToken(req);
+    if (!verified) return res.status(401).json({ error: 'Firebase ID-Token erforderlich' });
+    if (uid !== userId) return res.status(403).json({ error: 'Profilfoto nur für eigenes Profil änderbar' });
+  }
   const avatarUrl = hasAvatarUrl
       ? (req.body.avatarUrl || '').toString().trim().slice(0, 500)
       : undefined;
