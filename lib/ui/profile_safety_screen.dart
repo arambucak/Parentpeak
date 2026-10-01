@@ -337,34 +337,42 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               Center(
                 child: Column(
                   children: [
-                    Stack(
-                      clipBehavior: Clip.none,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        const SizedBox(width: 50),
                         Container(
-                          width: 96,
-                          height: 96,
+                          width: 108,
+                          height: 108,
+                          padding: const EdgeInsets.all(3),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                theme.colorScheme.primary,
-                                theme.colorScheme.tertiary,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(27),
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.25),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
+                                color: theme.colorScheme.shadow
+                                    .withValues(alpha: 0.12),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
                               ),
                             ],
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(30),
-                            child: _avatarBusy
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  theme.colorScheme.primary,
+                                  theme.colorScheme.tertiary,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: _avatarBusy
                                 ? const Center(
                                     child: CircularProgressIndicator(),
                                   )
@@ -372,8 +380,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                                     ? Image.network(
                                         avatarUrl,
                                         fit: BoxFit.cover,
-                                        width: 96,
-                                        height: 96,
+                                        width: 102,
+                                        height: 102,
                                       webHtmlElementStrategy:
                                         WebHtmlElementStrategy.prefer,
                                         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) =>
@@ -384,23 +392,24 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                                             avatarFallback,
                                       )
                                     : avatarFallback,
+                            ),
                           ),
                         ),
-                        Positioned(
-                          right: -5,
-                          bottom: -5,
-                          child: Material(
-                            color: theme.colorScheme.primary,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              onTap: _chooseAvatarSource,
-                              customBorder: const CircleBorder(),
-                              child: const Padding(
-                                padding: EdgeInsets.all(9),
-                                child: Icon(Icons.camera_alt_rounded,
-                                    color: Colors.white, size: 18),
-                              ),
+                        const SizedBox(width: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: IconButton.filledTonal(
+                            tooltip: _t('edit'),
+                            onPressed: _avatarBusy ? null : _chooseAvatarSource,
+                            iconSize: 17,
+                            style: IconButton.styleFrom(
+                              backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                              foregroundColor: theme.colorScheme.primary,
+                              side: BorderSide(color: theme.colorScheme.outlineVariant),
+                              minimumSize: const Size(40, 40),
+                              padding: EdgeInsets.zero,
                             ),
+                            icon: const Icon(Icons.photo_camera_outlined),
                           ),
                         ),
                       ],
