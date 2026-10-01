@@ -52,14 +52,15 @@ const _residualPlaceholderKeys = {
 };
 
 const _ritualRuheKeys = [
-  'title', 'tileSubtitle', 'appBarNight', 'appBarMorning',
+  'title', 'tileSubtitle', 'appBarNight', 'appBarMorning', 'appBarAfternoon',
   'sectionMorning', 'sectionAfternoon', 'sectionEvening', 'your', 'with',
   'for', 'years', 'welcomeNight', 'welcomeRelaxed', 'welcomeQuestion',
   'quietMode', 'close', 'editPlan', 'suggestPlan', 'storyTitle',
   'storyHint', 'storyButtonNew', 'storyButtonGenerate', 'gratitudeTitle',
   'gratitudeHint', 'gratitudePlaceholder', 'timerStart', 'timerDone',
   'allDone', 'timerBanner', 'emptyTitle', 'emptyDescription', 'emptyAction',
-  'nightSectionTitle', 'timeCardSubtitle',
+  'nightSectionTitle', 'timeCardSubtitle', 'ageVariantYoung',
+  'ageVariantGrowing', 'ageVariantSchool', 'ageVariantOlder',
 ];
 
 const _phase1ScreenPaths = [

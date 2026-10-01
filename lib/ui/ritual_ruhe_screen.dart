@@ -369,6 +369,13 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
         _ => ritualRuheText('sectionMorning', _locale),
       };
 
+  String get _appBarTitle {
+    final hour = DateTime.now().hour;
+    if (hour >= 18 || hour < 6) return ritualRuheText('appBarNight', _locale);
+    if (hour < 12) return ritualRuheText('appBarMorning', _locale);
+    return ritualRuheText('appBarAfternoon', _locale);
+  }
+
   KindDossier? get _child => _children.isEmpty
       ? null
       : _children[_selectedChild.clamp(0, _children.length - 1)];
@@ -376,10 +383,10 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
   int get _ageMonths => _child?.ageMonths ?? 60;
   int get _ageYears => (_ageMonths / 12).floor();
   String get _ageVariantLabel {
-    if (_ageYears < 5) return '2–5 Jahre: Bild- und Bewegungskarten';
-    if (_ageYears < 8) return '5–7 Jahre: Bild + kurzer Satz';
-    if (_ageYears < 11) return '6–10 Jahre: Tagesplaner';
-    return '10–14 Jahre: Selbstplanung & Reflexion';
+    if (_ageYears < 5) return ritualRuheText('ageVariantYoung', _locale);
+    if (_ageYears < 8) return ritualRuheText('ageVariantGrowing', _locale);
+    if (_ageYears < 11) return ritualRuheText('ageVariantSchool', _locale);
+    return ritualRuheText('ageVariantOlder', _locale);
   }
 
   String get _suggestionLabel =>
@@ -735,9 +742,7 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F3EE),
       appBar: AppBar(
-        title: Text(_isEvening
-            ? ritualRuheText('appBarNight', _locale)
-            : ritualRuheText('appBarMorning', _locale)),
+        title: Text(_appBarTitle),
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(

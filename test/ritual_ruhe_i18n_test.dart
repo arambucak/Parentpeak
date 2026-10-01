@@ -5,15 +5,22 @@ import 'package:parentpeak/ui/ritual_ruhe_screen.dart';
 
 void main() {
   test('returns English text for English locale', () {
-    expect(ritualRuheText('appBarNight', const Locale('en')), 'Good night');
+    expect(ritualRuheText('appBarNight', const Locale('en')), 'Good Evening');
+    expect(ritualRuheText('appBarAfternoon', const Locale('en')), 'Good Afternoon');
   });
 
   test('returns Turkish text for Turkish locale', () {
     expect(ritualRuheText('sectionMorning', const Locale('tr')), 'Sabah');
+    expect(ritualRuheText('title', const Locale('tr')), 'Ritüel ve Dinlenme');
+    expect(ritualRuheText('appBarNight', const Locale('tr')), 'İyi Akşamlar');
+    expect(ritualRuheText('emptyAction', const Locale('tr')), 'Aile Profiline Git');
   });
 
   test('returns Kurdish text for Kurdish locale', () {
     expect(ritualRuheText('sectionAfternoon', const Locale('ku')), 'Nîvro');
+    expect(ritualRuheText('tileSubtitle', const Locale('ku')), 'Ji bo jiyana malbatê kêliyek aştîyane');
+    expect(ritualRuheText('appBarNight', const Locale('ku')), 'Êvar baş');
+    expect(ritualRuheText('emptyAction', const Locale('ku')), 'Herin Profîla Malbatê');
   });
 
   test('returns native ritual copy for the seven added locales', () {

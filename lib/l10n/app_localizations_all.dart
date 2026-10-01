@@ -145,16 +145,80 @@ class AppStringsManager {
         },
     };
 
+    static const Map<String, Map<String, String>> _ritualRuheOverrides = {
+        'de': {
+            'title': 'Ritual & Ruhe',
+            'tileSubtitle': 'Ein ruhiger Moment für euren Familienalltag',
+            'appBarAfternoon': 'Guten Tag',
+            'appBarNight': 'Guten Abend',
+            'emptyTitle': 'Noch kein Kinderprofil',
+            'emptyDescription': 'Sobald ein Kinderprofil angelegt ist, kann ParentPeak die Rituale altersgerecht begleiten.',
+            'emptyAction': 'Zum Familienprofil',
+            'ageVariantYoung': '2–5 Jahre: Bild- und Bewegungskarten',
+            'ageVariantGrowing': '5–7 Jahre: Bild + kurzer Satz',
+            'ageVariantSchool': '6–10 Jahre: Tagesplaner',
+            'ageVariantOlder': '10–14 Jahre: Selbstplanung & Reflexion',
+        },
+        'en': {
+            'title': 'Rituals & Calm',
+            'tileSubtitle': 'A peaceful moment for your family routine',
+            'appBarAfternoon': 'Good Afternoon',
+            'appBarNight': 'Good Evening',
+            'emptyTitle': 'No child profile yet',
+            'emptyDescription': 'Once a child profile is created, ParentPeak can tailor rituals to their age.',
+            'emptyAction': 'Go to Family Profile',
+            'ageVariantYoung': '2–5 years: picture and movement cards',
+            'ageVariantGrowing': '5–7 years: picture + short sentence',
+            'ageVariantSchool': '6–10 years: daily planner',
+            'ageVariantOlder': '10–14 years: self-planning & reflection',
+        },
+        'tr': {
+            'title': 'Ritüel ve Dinlenme',
+            'tileSubtitle': 'Aile hayatınız için sakin bir an',
+            'appBarAfternoon': 'Tünaydın',
+            'appBarNight': 'İyi Akşamlar',
+            'emptyTitle': 'Henüz çocuk profili yok',
+            'emptyDescription': 'Bir çocuk profili oluşturulduğunda, ParentPeak ritüelleri yaşa uygun şekilde yönlendirebilir.',
+            'emptyAction': 'Aile Profiline Git',
+            'ageVariantYoung': '2–5 yaş: resim ve hareket kartları',
+            'ageVariantGrowing': '5–7 yaş: resim + kısa cümle',
+            'ageVariantSchool': '6–10 yaş: günlük planlayıcı',
+            'ageVariantOlder': '10–14 yaş: kendi planlama ve değerlendirme',
+        },
+        'ku': {
+            'title': 'Rîtuel û Aramî',
+            'tileSubtitle': 'Ji bo jiyana malbatê kêliyek aştîyane',
+            'appBarAfternoon': 'Rojbaş',
+            'appBarNight': 'Êvar baş',
+            'emptyTitle': 'Hêj profîla zarok tune ye',
+            'emptyDescription': 'Kengî profîla zarok hate çêkirin, ParentPeak dikare rîtuelan li gorî temenê wan amade bike.',
+            'emptyAction': 'Herin Profîla Malbatê',
+            'ageVariantYoung': '2–5 sal: kartên wêne û hereketê',
+            'ageVariantGrowing': '5–7 sal: wêne + hevokeke kurt',
+            'ageVariantSchool': '6–10 sal: plana rojane',
+            'ageVariantOlder': '10–14 sal: plankirina xwe û refleksiyon',
+        },
+        'ar': {'appBarAfternoon': 'مساء الخير', 'ageVariantYoung': '2–5 سنوات: بطاقات الصور والحركة', 'ageVariantGrowing': '5–7 سنوات: صورة وجملة قصيرة', 'ageVariantSchool': '6–10 سنوات: مخطط يومي', 'ageVariantOlder': '10–14 سنة: التخطيط والتأمل الذاتي'},
+        'ru': {'appBarAfternoon': 'Добрый день', 'ageVariantYoung': '2–5 лет: карточки с картинками и движением', 'ageVariantGrowing': '5–7 лет: картинка и короткая фраза', 'ageVariantSchool': '6–10 лет: план дня', 'ageVariantOlder': '10–14 лет: самостоятельное планирование и размышление'},
+        'uk': {'appBarAfternoon': 'Добрий день', 'ageVariantYoung': '2–5 років: картки з малюнками та рухом', 'ageVariantGrowing': '5–7 років: малюнок і коротке речення', 'ageVariantSchool': '6–10 років: план дня', 'ageVariantOlder': '10–14 років: самостійне планування й роздуми'},
+        'es': {'appBarAfternoon': 'Buenas tardes', 'ageVariantYoung': '2–5 años: tarjetas de imágenes y movimiento', 'ageVariantGrowing': '5–7 años: imagen y frase corta', 'ageVariantSchool': '6–10 años: plan diario', 'ageVariantOlder': '10–14 años: planificación y reflexión personal'},
+        'fr': {'appBarAfternoon': 'Bon après-midi', 'ageVariantYoung': '2–5 ans : cartes d’images et de mouvement', 'ageVariantGrowing': '5–7 ans : image et phrase courte', 'ageVariantSchool': '6–10 ans : planning de la journée', 'ageVariantOlder': '10–14 ans : planification et réflexion personnelles'},
+        'it': {'appBarAfternoon': 'Buon pomeriggio', 'ageVariantYoung': '2–5 anni: carte con immagini e movimento', 'ageVariantGrowing': '5–7 anni: immagine e frase breve', 'ageVariantSchool': '6–10 anni: piano della giornata', 'ageVariantOlder': '10–14 anni: pianificazione e riflessione personale'},
+        'pt': {'appBarAfternoon': 'Boa tarde', 'ageVariantYoung': '2–5 anos: cartões de imagens e movimento', 'ageVariantGrowing': '5–7 anos: imagem e frase curta', 'ageVariantSchool': '6–10 anos: plano diário', 'ageVariantOlder': '10–14 anos: planeamento e reflexão pessoal'},
+    };
+
     static String ritualRuheString(String languageCode, String key) {
-        final value = _ritualRuheStrings[languageCode]?[key];
+        final value = _ritualRuheOverrides[languageCode]?[key] ??
+            _ritualRuheStrings[languageCode]?[key];
         if (value == null) {
             throw StateError('Missing direct ritual-and-calm translation: $languageCode/$key');
         }
         return value;
     }
 
-    static bool hasDirectRitualRuheString(String languageCode, String key) =>
-            _ritualRuheStrings[languageCode]?.containsKey(key) ?? false;
+        static bool hasDirectRitualRuheString(String languageCode, String key) =>
+            _ritualRuheOverrides[languageCode]?.containsKey(key) == true ||
+            _ritualRuheStrings[languageCode]?.containsKey(key) == true;
 
     static bool hasRitualRuheLanguage(String languageCode) =>
             _ritualRuheStrings.containsKey(languageCode);
@@ -23131,6 +23195,12 @@ class AppStringsManager {
   }
 
   static String getString(String languageCode, String key) {
+        if (key == 'ritualRuheTitle') {
+            return ritualRuheString(languageCode, 'title');
+        }
+        if (key == 'ritualRuheTileSubtitle') {
+            return ritualRuheString(languageCode, 'tileSubtitle');
+        }
     if (key.startsWith('core_')) {
       return coreString(languageCode, key.substring('core_'.length)) ?? key;
     }
