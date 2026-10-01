@@ -48,6 +48,28 @@ void main() {
       'onboarding_stage_school_child',
       'onboarding_age_caregiver',
       'onboarding_age_professional_desc',
+      'ai_memory_title',
+      'ai_memory_enable',
+      'ai_memory_transparency',
+      'ai_memory_children',
+      'ai_memory_add_child',
+      'ai_memory_no_children',
+      'ai_memory_no_items',
+      'ai_memory_confirmed_description',
+      'ai_memory_delete_child_title',
+      'ai_memory_name',
+      'ai_memory_gender_optional',
+      'ai_memory_cancel',
+      'ai_memory_save',
+      'ai_memory_delete',
+      'ai_memory_edit',
+      'ai_memory_add_title',
+      'ai_memory_edit_title',
+      'ai_memory_load_failed',
+      'ai_memory_request_failed',
+      'ai_memory_without_profile',
+      'ai_memory_confirmed_count',
+      'ai_memory_none_confirmed',
       'onboarding_language_title',
       'onboarding_language_subtitle',
       'location_onboarding_explanation',
@@ -71,7 +93,9 @@ void main() {
       'matching_no_filtered_profiles',
     ];
 
-    for (final locale in const ['de', 'en', 'tr', 'ku']) {
+    for (final locale in const [
+      'de', 'en', 'tr', 'ku', 'ar', 'ru', 'uk', 'es', 'fr', 'it', 'pt'
+    ]) {
       for (final key in keys) {
         expect(
           AppStringsManager.getString(locale, key),

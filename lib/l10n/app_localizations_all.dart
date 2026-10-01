@@ -23023,6 +23023,99 @@ class AppStringsManager {
     },
   });
 
+    static const Map<String, Map<String, String>> _aiMemoryStrings = {
+        'de': {
+            'ai_memory_title': 'KI-Gedächtnis & Kinder',
+            'ai_memory_enable': 'KI-Gedächtnis aktivieren',
+            'ai_memory_enable_subtitle': 'Bestätigte Familieninformationen machen die Beratung persönlicher.',
+            'ai_memory_transparency': 'Diese Daten werden ausschließlich genutzt, um die KI-Beratung für deine Familie persönlicher zu machen.',
+            'ai_memory_children': 'Kinderprofile',
+            'ai_memory_add_child': 'Kind hinzufügen',
+            'ai_memory_no_children': 'Noch kein Kinderprofil angelegt.',
+            'ai_memory_no_items': 'Noch keine gespeicherten Informationen.',
+            'ai_memory_confirmed_description': 'Bestätigte Informationen, die die KI verwenden darf.',
+            'ai_memory_delete_child_title': 'Kinderprofil löschen?',
+            'ai_memory_delete_child_message': 'Alle gespeicherten KI-Informationen zu diesem Kind werden gelöscht.',
+            'ai_memory_name': 'Name',
+            'ai_memory_gender_optional': 'Geschlecht (optional)',
+            'ai_memory_cancel': 'Abbrechen',
+            'ai_memory_save': 'Speichern',
+            'ai_memory_delete': 'Löschen',
+            'ai_memory_edit': 'Bearbeiten',
+            'ai_memory_add_title': 'Kind hinzufügen',
+            'ai_memory_edit_title': 'Kinderprofil bearbeiten',
+            'ai_memory_load_failed': 'Die KI-Gedächtnisdaten konnten nicht geladen werden.',
+            'ai_memory_request_failed': 'Die Änderung konnte nicht gespeichert werden.',
+            'ai_memory_without_profile': 'Ohne Kinderprofil beraten',
+            'ai_memory_select_profile': 'KI-Kinderprofil auswählen',
+            'ai_memory_confirmed_count': '{count} bestätigte Informationen',
+            'ai_memory_none_confirmed': 'Keine bestätigten Informationen',
+        },
+        'en': {
+            'ai_memory_title': 'AI Memory & Children', 'ai_memory_enable': 'Enable AI memory',
+            'ai_memory_enable_subtitle': 'Confirmed family information makes advice more personal.',
+            'ai_memory_transparency': 'This data is used only to make AI advice more personal for your family.',
+            'ai_memory_children': 'Children profiles', 'ai_memory_add_child': 'Add child',
+            'ai_memory_no_children': 'No child profile yet.', 'ai_memory_no_items': 'No saved information yet.',
+            'ai_memory_confirmed_description': 'Confirmed information the AI may use.', 'ai_memory_delete_child_title': 'Delete child profile?',
+            'ai_memory_delete_child_message': 'All saved AI information for this child will be deleted.', 'ai_memory_name': 'Name',
+            'ai_memory_gender_optional': 'Gender (optional)', 'ai_memory_cancel': 'Cancel', 'ai_memory_save': 'Save',
+            'ai_memory_delete': 'Delete', 'ai_memory_edit': 'Edit', 'ai_memory_add_title': 'Add child',
+            'ai_memory_edit_title': 'Edit child profile', 'ai_memory_load_failed': 'AI memory data could not be loaded.',
+            'ai_memory_request_failed': 'The change could not be saved.', 'ai_memory_without_profile': 'Advise without a child profile', 'ai_memory_select_profile': 'Select AI child profile',
+            'ai_memory_confirmed_count': '{count} confirmed items', 'ai_memory_none_confirmed': 'No confirmed information',
+        },
+        'tr': {
+            'ai_memory_title': 'YZ Hafızası ve Çocuklar', 'ai_memory_enable': 'YZ hafızasını etkinleştir',
+            'ai_memory_enable_subtitle': 'Onaylanan aile bilgileri danışmanlığı kişiselleştirir.',
+            'ai_memory_transparency': 'Bu veriler yalnızca ailen için YZ danışmanlığını kişiselleştirmek amacıyla kullanılır.',
+            'ai_memory_children': 'Çocuk profilleri', 'ai_memory_add_child': 'Çocuk ekle',
+            'ai_memory_no_children': 'Henüz çocuk profili yok.', 'ai_memory_no_items': 'Henüz kaydedilmiş bilgi yok.',
+            'ai_memory_confirmed_description': 'YZ’nin kullanmasına izin verilen onaylı bilgiler.', 'ai_memory_delete_child_title': 'Çocuk profili silinsin mi?',
+            'ai_memory_delete_child_message': 'Bu çocukla ilgili tüm kayıtlı YZ bilgileri silinecek.', 'ai_memory_name': 'Ad',
+            'ai_memory_gender_optional': 'Cinsiyet (isteğe bağlı)', 'ai_memory_cancel': 'İptal', 'ai_memory_save': 'Kaydet',
+            'ai_memory_delete': 'Sil', 'ai_memory_edit': 'Düzenle', 'ai_memory_add_title': 'Çocuk ekle',
+            'ai_memory_edit_title': 'Çocuk profilini düzenle', 'ai_memory_load_failed': 'YZ hafıza verileri yüklenemedi.',
+            'ai_memory_request_failed': 'Değişiklik kaydedilemedi.', 'ai_memory_without_profile': 'Çocuk profili olmadan danış', 'ai_memory_select_profile': 'YZ çocuk profilini seç',
+            'ai_memory_confirmed_count': '{count} onaylı bilgi', 'ai_memory_none_confirmed': 'Onaylı bilgi yok',
+        },
+        'ku': {
+            'ai_memory_title': 'Bîra AI û zarok', 'ai_memory_enable': 'Bîra AI çalak bike',
+            'ai_memory_enable_subtitle': 'Agahiyên malbatê yên pejirandî şêwirmendiyê kesane dikin.',
+            'ai_memory_transparency': 'Ev dane tenê ji bo kesanekirina şêwirmendiya AI ya malbata te tên bikaranîn.',
+            'ai_memory_children': 'Profîlên zarokan', 'ai_memory_add_child': 'Zarok zêde bike',
+            'ai_memory_no_children': 'Hîn profîla zarokekî tune.', 'ai_memory_no_items': 'Hîn agahiyên tomarkirî tune.',
+            'ai_memory_confirmed_description': 'Agahiyên pejirandî ku AI dikare bikar bîne.', 'ai_memory_delete_child_title': 'Profîla zarokê jê bibe?',
+            'ai_memory_delete_child_message': 'Hemû agahiyên AI yên tomarkirî yên vê zarokê dê bên jêbirin.', 'ai_memory_name': 'Nav',
+            'ai_memory_gender_optional': 'Zayend (bijarte)', 'ai_memory_cancel': 'Betal bike', 'ai_memory_save': 'Tomar bike',
+            'ai_memory_delete': 'Jê bibe', 'ai_memory_edit': 'Biguherîne', 'ai_memory_add_title': 'Zarok zêde bike',
+            'ai_memory_edit_title': 'Profîla zarokê biguherîne', 'ai_memory_load_failed': 'Daneyên bîra AI nehatin barkirin.',
+            'ai_memory_request_failed': 'Guhertin nehat tomarkirin.', 'ai_memory_without_profile': 'Bê profîla zarokê şîret bistîne', 'ai_memory_select_profile': 'Profîla zarokê ya AI hilbijêre',
+            'ai_memory_confirmed_count': '{count} agahiyên pejirandî', 'ai_memory_none_confirmed': 'Agahiyên pejirandî tune',
+        },
+        'ar': {
+            'ai_memory_title': 'ذاكرة الذكاء الاصطناعي والأطفال', 'ai_memory_enable': 'تفعيل ذاكرة الذكاء الاصطناعي', 'ai_memory_enable_subtitle': 'المعلومات العائلية المؤكدة تجعل الإرشاد أكثر شخصية.', 'ai_memory_transparency': 'تُستخدم هذه البيانات فقط لجعل إرشاد الذكاء الاصطناعي أكثر ملاءمة لعائلتك.', 'ai_memory_children': 'ملفات الأطفال', 'ai_memory_add_child': 'إضافة طفل', 'ai_memory_no_children': 'لا يوجد ملف طفل بعد.', 'ai_memory_no_items': 'لا توجد معلومات محفوظة بعد.', 'ai_memory_confirmed_description': 'معلومات مؤكدة يمكن للذكاء الاصطناعي استخدامها.', 'ai_memory_delete_child_title': 'حذف ملف الطفل؟', 'ai_memory_delete_child_message': 'سيتم حذف جميع معلومات الذكاء الاصطناعي المحفوظة لهذا الطفل.', 'ai_memory_name': 'الاسم', 'ai_memory_gender_optional': 'الجنس (اختياري)', 'ai_memory_cancel': 'إلغاء', 'ai_memory_save': 'حفظ', 'ai_memory_delete': 'حذف', 'ai_memory_edit': 'تعديل', 'ai_memory_add_title': 'إضافة طفل', 'ai_memory_edit_title': 'تعديل ملف الطفل', 'ai_memory_load_failed': 'تعذر تحميل بيانات ذاكرة الذكاء الاصطناعي.', 'ai_memory_request_failed': 'تعذر حفظ التغيير.', 'ai_memory_without_profile': 'تقديم المشورة دون ملف طفل', 'ai_memory_confirmed_count': '{count} معلومات مؤكدة', 'ai_memory_none_confirmed': 'لا توجد معلومات مؤكدة',
+        },
+        'ru': {
+            'ai_memory_title': 'Память ИИ и дети', 'ai_memory_enable': 'Включить память ИИ', 'ai_memory_enable_subtitle': 'Подтверждённая информация о семье делает советы более личными.', 'ai_memory_transparency': 'Эти данные используются только для персонализации советов ИИ для вашей семьи.', 'ai_memory_children': 'Профили детей', 'ai_memory_add_child': 'Добавить ребёнка', 'ai_memory_no_children': 'Профилей детей пока нет.', 'ai_memory_no_items': 'Сохранённой информации пока нет.', 'ai_memory_confirmed_description': 'Подтверждённая информация, которую может использовать ИИ.', 'ai_memory_delete_child_title': 'Удалить профиль ребёнка?', 'ai_memory_delete_child_message': 'Вся сохранённая информация ИИ об этом ребёнке будет удалена.', 'ai_memory_name': 'Имя', 'ai_memory_gender_optional': 'Пол (необязательно)', 'ai_memory_cancel': 'Отмена', 'ai_memory_save': 'Сохранить', 'ai_memory_delete': 'Удалить', 'ai_memory_edit': 'Изменить', 'ai_memory_add_title': 'Добавить ребёнка', 'ai_memory_edit_title': 'Изменить профиль ребёнка', 'ai_memory_load_failed': 'Не удалось загрузить данные памяти ИИ.', 'ai_memory_request_failed': 'Не удалось сохранить изменение.', 'ai_memory_without_profile': 'Совет без профиля ребёнка', 'ai_memory_confirmed_count': '{count} подтверждённых сведений', 'ai_memory_none_confirmed': 'Нет подтверждённых сведений',
+        },
+        'uk': {
+            'ai_memory_title': 'Пам’ять ШІ та діти', 'ai_memory_enable': 'Увімкнути пам’ять ШІ', 'ai_memory_enable_subtitle': 'Підтверджена інформація про сім’ю робить поради особистішими.', 'ai_memory_transparency': 'Ці дані використовуються лише для персоналізації порад ШІ для вашої сім’ї.', 'ai_memory_children': 'Профілі дітей', 'ai_memory_add_child': 'Додати дитину', 'ai_memory_no_children': 'Профілів дітей ще немає.', 'ai_memory_no_items': 'Збереженої інформації ще немає.', 'ai_memory_confirmed_description': 'Підтверджена інформація, яку може використовувати ШІ.', 'ai_memory_delete_child_title': 'Видалити профіль дитини?', 'ai_memory_delete_child_message': 'Усю збережену інформацію ШІ про цю дитину буде видалено.', 'ai_memory_name': 'Ім’я', 'ai_memory_gender_optional': 'Стать (необов’язково)', 'ai_memory_cancel': 'Скасувати', 'ai_memory_save': 'Зберегти', 'ai_memory_delete': 'Видалити', 'ai_memory_edit': 'Редагувати', 'ai_memory_add_title': 'Додати дитину', 'ai_memory_edit_title': 'Редагувати профіль дитини', 'ai_memory_load_failed': 'Не вдалося завантажити дані пам’яті ШІ.', 'ai_memory_request_failed': 'Не вдалося зберегти зміни.', 'ai_memory_without_profile': 'Порада без профілю дитини', 'ai_memory_confirmed_count': '{count} підтверджених відомостей', 'ai_memory_none_confirmed': 'Немає підтверджених відомостей',
+        },
+        'es': {
+            'ai_memory_title': 'Memoria de IA y niños', 'ai_memory_enable': 'Activar memoria de IA', 'ai_memory_enable_subtitle': 'La información familiar confirmada hace los consejos más personales.', 'ai_memory_transparency': 'Estos datos se usan únicamente para personalizar los consejos de IA para tu familia.', 'ai_memory_children': 'Perfiles de niños', 'ai_memory_add_child': 'Añadir niño', 'ai_memory_no_children': 'Aún no hay perfiles de niños.', 'ai_memory_no_items': 'Aún no hay información guardada.', 'ai_memory_confirmed_description': 'Información confirmada que la IA puede usar.', 'ai_memory_delete_child_title': '¿Eliminar el perfil del niño?', 'ai_memory_delete_child_message': 'Se eliminará toda la información de IA guardada sobre este niño.', 'ai_memory_name': 'Nombre', 'ai_memory_gender_optional': 'Género (opcional)', 'ai_memory_cancel': 'Cancelar', 'ai_memory_save': 'Guardar', 'ai_memory_delete': 'Eliminar', 'ai_memory_edit': 'Editar', 'ai_memory_add_title': 'Añadir niño', 'ai_memory_edit_title': 'Editar perfil del niño', 'ai_memory_load_failed': 'No se pudieron cargar los datos de memoria de IA.', 'ai_memory_request_failed': 'No se pudo guardar el cambio.', 'ai_memory_without_profile': 'Aconsejar sin perfil de niño', 'ai_memory_confirmed_count': '{count} datos confirmados', 'ai_memory_none_confirmed': 'No hay información confirmada',
+        },
+        'fr': {
+            'ai_memory_title': 'Mémoire IA et enfants', 'ai_memory_enable': 'Activer la mémoire IA', 'ai_memory_enable_subtitle': 'Les informations familiales confirmées rendent les conseils plus personnels.', 'ai_memory_transparency': 'Ces données servent uniquement à personnaliser les conseils IA pour votre famille.', 'ai_memory_children': 'Profils des enfants', 'ai_memory_add_child': 'Ajouter un enfant', 'ai_memory_no_children': 'Aucun profil d’enfant pour le moment.', 'ai_memory_no_items': 'Aucune information enregistrée.', 'ai_memory_confirmed_description': 'Informations confirmées que l’IA peut utiliser.', 'ai_memory_delete_child_title': 'Supprimer le profil de l’enfant ?', 'ai_memory_delete_child_message': 'Toutes les informations IA enregistrées pour cet enfant seront supprimées.', 'ai_memory_name': 'Nom', 'ai_memory_gender_optional': 'Genre (facultatif)', 'ai_memory_cancel': 'Annuler', 'ai_memory_save': 'Enregistrer', 'ai_memory_delete': 'Supprimer', 'ai_memory_edit': 'Modifier', 'ai_memory_add_title': 'Ajouter un enfant', 'ai_memory_edit_title': 'Modifier le profil de l’enfant', 'ai_memory_load_failed': 'Impossible de charger les données de mémoire IA.', 'ai_memory_request_failed': 'La modification n’a pas pu être enregistrée.', 'ai_memory_without_profile': 'Conseiller sans profil enfant', 'ai_memory_confirmed_count': '{count} informations confirmées', 'ai_memory_none_confirmed': 'Aucune information confirmée',
+        },
+        'it': {
+            'ai_memory_title': 'Memoria IA e bambini', 'ai_memory_enable': 'Attiva memoria IA', 'ai_memory_enable_subtitle': 'Le informazioni familiari confermate rendono i consigli più personali.', 'ai_memory_transparency': 'Questi dati servono solo a personalizzare i consigli IA per la tua famiglia.', 'ai_memory_children': 'Profili dei bambini', 'ai_memory_add_child': 'Aggiungi bambino', 'ai_memory_no_children': 'Nessun profilo bambino ancora.', 'ai_memory_no_items': 'Nessuna informazione salvata.', 'ai_memory_confirmed_description': 'Informazioni confermate che l’IA può usare.', 'ai_memory_delete_child_title': 'Eliminare il profilo del bambino?', 'ai_memory_delete_child_message': 'Tutte le informazioni IA salvate per questo bambino saranno eliminate.', 'ai_memory_name': 'Nome', 'ai_memory_gender_optional': 'Genere (facoltativo)', 'ai_memory_cancel': 'Annulla', 'ai_memory_save': 'Salva', 'ai_memory_delete': 'Elimina', 'ai_memory_edit': 'Modifica', 'ai_memory_add_title': 'Aggiungi bambino', 'ai_memory_edit_title': 'Modifica profilo bambino', 'ai_memory_load_failed': 'Impossibile caricare i dati della memoria IA.', 'ai_memory_request_failed': 'Impossibile salvare la modifica.', 'ai_memory_without_profile': 'Consiglia senza profilo bambino', 'ai_memory_confirmed_count': '{count} informazioni confermate', 'ai_memory_none_confirmed': 'Nessuna informazione confermata',
+        },
+        'pt': {
+            'ai_memory_title': 'Memória de IA e crianças', 'ai_memory_enable': 'Ativar memória de IA', 'ai_memory_enable_subtitle': 'Informações familiares confirmadas tornam as orientações mais pessoais.', 'ai_memory_transparency': 'Estes dados são usados apenas para personalizar a orientação de IA para a sua família.', 'ai_memory_children': 'Perfis das crianças', 'ai_memory_add_child': 'Adicionar criança', 'ai_memory_no_children': 'Ainda não há perfis de crianças.', 'ai_memory_no_items': 'Ainda não há informações guardadas.', 'ai_memory_confirmed_description': 'Informações confirmadas que a IA pode usar.', 'ai_memory_delete_child_title': 'Eliminar o perfil da criança?', 'ai_memory_delete_child_message': 'Todas as informações de IA guardadas para esta criança serão eliminadas.', 'ai_memory_name': 'Nome', 'ai_memory_gender_optional': 'Género (opcional)', 'ai_memory_cancel': 'Cancelar', 'ai_memory_save': 'Guardar', 'ai_memory_delete': 'Eliminar', 'ai_memory_edit': 'Editar', 'ai_memory_add_title': 'Adicionar criança', 'ai_memory_edit_title': 'Editar perfil da criança', 'ai_memory_load_failed': 'Não foi possível carregar os dados da memória de IA.', 'ai_memory_request_failed': 'Não foi possível guardar a alteração.', 'ai_memory_without_profile': 'Aconselhar sem perfil de criança', 'ai_memory_confirmed_count': '{count} informações confirmadas', 'ai_memory_none_confirmed': 'Não há informações confirmadas',
+        },
+    };
+
   static Map<String, Map<String, String>> _completeTargetCatalogs(
     Map<String, Map<String, String>> catalogs,
   ) {
@@ -23053,7 +23146,8 @@ class AppStringsManager {
       return package3String(languageCode, key.substring('package3_'.length)) ??
           key;
     }
-    return allStrings[languageCode]?[key] ?? allStrings['en']?[key] ?? key;
+    return _aiMemoryStrings[languageCode]?[key] ??
+        allStrings[languageCode]?[key] ?? allStrings['en']?[key] ?? key;
   }
 
   static bool isRtl(String languageCode) => AppLanguages.isRtl(languageCode);

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/logic/ai_memory_service.dart';
 import 'package:parentpeak/models/ai_memory.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 
 class AiMemorySettingsScreen extends StatefulWidget {
   const AiMemorySettingsScreen({
@@ -20,6 +22,9 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
   bool _enabled = false;
   List<AiChildProfile> _children = const [];
   String? _error;
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
 
   @override
   void initState() {
@@ -43,7 +48,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = '$error';
+        _error = _t('ai_memory_load_failed');
       });
     }
   }
@@ -55,7 +60,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _enabled = !value);
-      _showMessage('$error');
+      _showMessage(_t('ai_memory_request_failed'));
     }
   }
 
@@ -66,28 +71,28 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(child == null ? 'Kind hinzufügen' : 'Kinderprofil bearbeiten'),
+        title: Text(_t(child == null ? 'ai_memory_add_title' : 'ai_memory_edit_title')),
         content: Form(
           key: formKey,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             TextFormField(
               controller: nameController,
               autofocus: true,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: _t('ai_memory_name')),
               validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Bitte einen Namen eingeben.'
+                  ? _t('ai_memory_name')
                   : null,
             ),
             TextField(
               controller: genderController,
-              decoration: const InputDecoration(labelText: 'Geschlecht (optional)'),
+              decoration: InputDecoration(labelText: _t('ai_memory_gender_optional')),
             ),
           ]),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
+            child: Text(_t('ai_memory_cancel')),
           ),
           FilledButton(
             onPressed: () async {
@@ -108,10 +113,10 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                 if (context.mounted) Navigator.pop(context, true);
               } catch (error) {
                 if (context.mounted) Navigator.pop(context, false);
-                _showMessage('$error');
+                _showMessage(_t('ai_memory_request_failed'));
               }
             },
-            child: const Text('Speichern'),
+            child: Text(_t('ai_memory_save')),
           ),
         ],
       ),
@@ -125,11 +130,11 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Kinderprofil löschen?'),
-        content: Text('Alle gespeicherten KI-Informationen zu ${child.name} werden gelöscht.'),
+        title: Text(_t('ai_memory_delete_child_title')),
+        content: Text('${_t('ai_memory_delete_child_message')}\n\n${child.name}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Abbrechen')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Löschen')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('ai_memory_cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(_t('ai_memory_delete'))),
         ],
       ),
     );
@@ -138,7 +143,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
       await _service.deleteChild(child.id);
       await _load();
     } catch (error) {
-      _showMessage('$error');
+      _showMessage(_t('ai_memory_request_failed'));
     }
   }
 
@@ -154,12 +159,12 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text(child.name, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            const Text('Bestätigte Informationen, die die KI verwenden darf.'),
+            Text(_t('ai_memory_confirmed_description')),
             const SizedBox(height: 12),
             if (items.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(20),
-                child: Text('Noch keine gespeicherten Informationen.'),
+                child: Text(_t('ai_memory_no_items')),
               )
             else
               ...items.map((item) => ListTile(
@@ -167,7 +172,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                     subtitle: Text(item.value),
                     leading: const Icon(Icons.verified_user_outlined),
                     trailing: IconButton(
-                      tooltip: 'Löschen',
+                      tooltip: _t('ai_memory_delete'),
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () async {
                         await _service.deleteMemory(child.id, item.id);
@@ -190,7 +195,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('KI-Gedächtnis & Kinder')),
+      appBar: AppBar(title: Text(_t('ai_memory_title'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -202,57 +207,61 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                     Card(
                       child: ListTile(
                         leading: const Icon(Icons.error_outline),
-                        title: const Text('Daten konnten nicht geladen werden.'),
+                        title: Text(_t('ai_memory_load_failed')),
                         subtitle: Text(_error!),
                         trailing: IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
                       ),
                     ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('KI-Gedächtnis aktivieren'),
-                    subtitle: const Text('Bestätigte Familieninformationen können die Beratung persönlicher machen.'),
+                    title: Text(_t('ai_memory_enable')),
+                    subtitle: Text(_t('ai_memory_enable_subtitle')),
                     value: _enabled,
                     onChanged: _toggleEnabled,
                   ),
-                  const Card(
+                  Card(
                     child: Padding(
                       padding: EdgeInsets.all(14),
-                      child: Text('Diese Daten werden ausschließlich genutzt, um die KI-Beratung für deine Familie persönlicher zu machen.'),
+                      child: Text(_t('ai_memory_transparency')),
                     ),
                   ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Kinderprofile', style: Theme.of(context).textTheme.titleLarge),
+                      Text(_t('ai_memory_children'), style: Theme.of(context).textTheme.titleLarge),
                       IconButton(
-                        tooltip: 'Kind hinzufügen',
+                        tooltip: _t('ai_memory_add_child'),
                         onPressed: () => _editChild(),
                         icon: const Icon(Icons.add_circle_outline),
                       ),
                     ],
                   ),
                   if (_children.isEmpty)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Text('Noch kein Kinderprofil angelegt.'),
+                      child: Text(_t('ai_memory_no_children')),
                     )
                   else
                     ..._children.map((child) => Card(
                           child: ListTile(
                             title: Text(child.name),
                             subtitle: Text(child.memoryItems.isEmpty
-                                ? 'Keine bestätigten Informationen'
-                                : '${child.memoryItems.length} bestätigte Informationen'),
+                                ? _t('ai_memory_none_confirmed')
+                                : _t('ai_memory_confirmed_count').replaceFirst('{count}', '${child.memoryItems.length}')),
                             onTap: () => _showChildDetails(child),
                             trailing: PopupMenuButton<String>(
                               onSelected: (value) {
                                 if (value == 'edit') _editChild(child);
                                 if (value == 'delete') _deleteChild(child);
                               },
-                              itemBuilder: (context) => const [
-                                PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
-                                PopupMenuItem(value: 'delete', child: Text('Löschen')),
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                    value: 'edit',
+                                    child: Text(_t('ai_memory_edit'))),
+                                PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text(_t('ai_memory_delete'))),
                               ],
                             ),
                           ),

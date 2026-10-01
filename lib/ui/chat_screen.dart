@@ -239,7 +239,8 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
             leading: const Icon(Icons.chat_bubble_outline),
-            title: const Text('Ohne Kinderprofil beraten'),
+            title: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'ai_memory_without_profile')),
             onTap: () => Navigator.pop(context, ''),
           ),
           ..._aiChildren.map((child) => ListTile(
@@ -1217,7 +1218,8 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'KI-Kinderprofil auswählen',
+            tooltip: AppStringsManager.getString(
+              languageService.currentLanguage, 'ai_memory_title'),
             onPressed: _selectAiChild,
             icon: Icon(
               Icons.child_care_rounded,
