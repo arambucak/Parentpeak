@@ -112,7 +112,7 @@ class EventBackendService {
         'location': event.location,
         'latitude': event.latitude,
         'longitude': event.longitude,
-        'startDate': event.eventDate.toIso8601String(),
+        'startDate': event.eventDate.toUtc().toIso8601String(),
         'eventType': event.category.name,
         'visibility': event.visibility.name,
         'maxParticipants': event.maxParticipants,

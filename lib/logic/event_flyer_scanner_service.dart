@@ -115,7 +115,7 @@ class EventFlyerScannerService {
 
     return '''
 $source Extrahiere die Angaben für ein Familien-Event.
-Heutiges Datum: $today. Wenn nur "Samstag" o.ä. steht, wähle das nächste passende zukünftige Datum.
+Heutiges Datum: $today. Nur ausdrücklich bestätigte konkrete Veranstaltungstermine übernehmen.
 
 Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, keine Erklärung):
 {
@@ -132,7 +132,10 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, keine Erklärung):
 
 Regeln:
 - Erfinde KEINE Fakten. Was nicht erkennbar ist, ist null (bzw. leeres Array).
-- recurringNote nur setzen, wenn eine Wiederholung ausdrücklich genannt ist; kein Enddatum erfinden.
+- date=null bei Zeiträumen, Laufzeiten und Enddaten wie "bis 14.01.2027", wenn kein konkreter Veranstaltungstag bestätigt ist. Ein Enddatum ist kein Veranstaltungstermin.
+- Kein Datum aus Wiederholungen oder alleinstehenden Wochentagen ableiten; nicht den nächsten Termin berechnen.
+- time nur aus einer ausdrücklich genannten Uhrzeit übernehmen; sonst null, keine Standardzeit.
+- recurringNote nur setzen, wenn eine Wiederholung ausdrücklich genannt ist. Zeiträume und "bis"-Enddaten sind keine Wiederholung; kein Enddatum erfinden.
 - category: sports=Sport/Bewegung, outdoor=Natur/draußen, education=Kurs/Lernen/Vorlesen,
   arts=Basteln/Musik/Theater/Museum, socialGathering=Treffen/Fest/Spielplatz, other=Rest.
 - ageGroups: infant=0-1, toddler=1-3, preschool=3-5, elementary=6-12, teenager=13+, mixed=altersgemischt.
@@ -191,9 +194,11 @@ Regeln:
 
   DateTime? _parseDate(dynamic value) {
     final s = _str(value);
-    if (s == null) return null;
+    if (s == null || !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(s)) return null;
     try {
-      return DateTime.parse(s);
+      final parsed = DateTime.parse(s);
+      if (parsed.toIso8601String().substring(0, 10) != s) return null;
+      return parsed;
     } catch (_) {
       return null;
     }
@@ -202,7 +207,7 @@ Regeln:
   TimeOfDayLite? _parseTime(dynamic value) {
     final s = _str(value);
     if (s == null) return null;
-    final match = RegExp(r'(\d{1,2})[:.](\d{2})').firstMatch(s);
+    final match = RegExp(r'^(\d{1,2})[:.](\d{2})$').firstMatch(s);
     if (match == null) return null;
     final hour = int.tryParse(match.group(1)!);
     final minute = int.tryParse(match.group(2)!);

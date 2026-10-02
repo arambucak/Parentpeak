@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
+import 'package:parentpeak/logic/event_date_selection.dart';
 import 'package:parentpeak/logic/event_flyer_scanner_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
@@ -14,7 +15,15 @@ import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 
 class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen({super.key});
+  const CreateEventScreen(
+      {super.key,
+      this.flyerScanner,
+      this.eventService,
+      this.eventBackendService});
+
+  final EventFlyerScannerService? flyerScanner;
+  final EventService? eventService;
+  final EventBackendService? eventBackendService;
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -22,7 +31,7 @@ class CreateEventScreen extends StatefulWidget {
 
 class _CreateEventScreenState extends State<CreateEventScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _eventService = EventService();
+  late final _eventService = widget.eventService ?? EventService();
 
   String _t(String key) =>
       AppStringsManager.getString(languageService.currentLanguage, key);
@@ -36,8 +45,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   EventCategory _selectedCategory = EventCategory.socialGathering;
   final List<AgeGroup> _selectedAgeGroups = [];
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _selectedTime = TimeOfDay.now();
+  final _dateSelection = EventDateSelection(
+    date: DateTime.now().add(const Duration(days: 1)),
+    time: TimeOfDayLite(DateTime.now().hour, DateTime.now().minute),
+  );
   final double _latitude = 52.5200;
   final double _longitude = 13.4050;
   EventVisibility _visibility = EventVisibility.publicNearby;
@@ -50,10 +61,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   File? _selectedPhotoFile;
   String? _uploadedPhotoUrl;
   final _imagePicker = ImagePicker();
-  final _eventBackendService = EventBackendService();
+  late final _eventBackendService =
+      widget.eventBackendService ?? EventBackendService();
 
   // Flyer-/Foto-Scan ("Magisch ausfüllen")
-  final _flyerScanner = EventFlyerScannerService();
+  late final _flyerScanner = widget.flyerScanner ?? EventFlyerScannerService();
   bool _isScanning = false;
   String? _priceHint;
   bool _showRecurringNote = false;
@@ -102,24 +114,27 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _selectDate() async {
+    final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: _dateSelection.pickerInitialDate(now),
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 1, now.month, now.day),
     );
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
+    if (picked != null && mounted) {
+      setState(() => _dateSelection.selectDate(picked));
     }
   }
 
   Future<void> _selectTime() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: _selectedTime,
+      initialTime: TimeOfDay(
+          hour: _dateSelection.time.hour, minute: _dateSelection.time.minute),
     );
-    if (picked != null) {
-      setState(() => _selectedTime = picked);
+    if (picked != null && mounted) {
+      setState(() =>
+          _dateSelection.selectTime(TimeOfDayLite(picked.hour, picked.minute)));
     }
   }
 
@@ -166,6 +181,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     final theme = Theme.of(context);
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
@@ -265,14 +281,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _scanFromTextDialog() async {
-    final controller = TextEditingController();
+    var inputText = '';
     final text = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(_t('event_scan_text')),
           content: TextField(
-            controller: controller,
+            onChanged: (value) => inputText = value,
             autofocus: true,
             maxLines: 6,
             minLines: 4,
@@ -288,14 +304,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ),
             FilledButton(
               onPressed: () =>
-                  Navigator.of(dialogContext).pop(controller.text.trim()),
+                  Navigator.of(dialogContext).pop(inputText.trim()),
               child: Text(_t('event_scan_analyze')),
             ),
           ],
         );
       },
     );
-    controller.dispose();
     if (text == null || text.isEmpty) return;
     if (!mounted) return;
     setState(() => _isScanning = true);
@@ -333,13 +348,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       _locationController.text = draft.location!;
       filled.add(_t('event_scan_field_location'));
     }
+    _dateSelection.applyScan(draft, DateTime.now());
     if (draft.date != null) {
-      _selectedDate = draft.date!;
       filled.add(_t('event_scan_field_date'));
     }
     if (draft.time != null) {
-      _selectedTime =
-          TimeOfDay(hour: draft.time!.hour, minute: draft.time!.minute);
       filled.add(_t('event_scan_field_time'));
     }
     if (draft.category != null) {
@@ -394,6 +407,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (_isScanning || _isSubmitting) return;
+    if (!_dateSelection.canSubmit(DateTime.now())) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_t('event_scan_datetime_required'))),
+      );
+      return;
+    }
     final currentUserId = AuthService.instance.currentUser?.uid;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -424,13 +445,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
     try {
       // Erstelle Event-Objekt
-      final eventDateTime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
+      final eventDateTime = _dateSelection.localDateTime;
 
       final photoUrl = await _ensurePhotoUploaded();
 
@@ -439,9 +454,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         hosterId: currentUserId,
         title: _titleController.text,
         description: _includeRecurringNote &&
-            _recurringNoteController.text.trim().isNotEmpty
-          ? '${_descriptionController.text.trim()}\n\n${_t('recurring_event')}: ${_recurringNoteController.text.trim()}'
-          : _descriptionController.text,
+                _recurringNoteController.text.trim().isNotEmpty
+            ? '${_descriptionController.text.trim()}\n\n${_t('recurring_event')}: ${_recurringNoteController.text.trim()}'
+            : _descriptionController.text,
         category: _selectedCategory,
         ageGroups: _selectedAgeGroups,
         location: _locationController.text,
@@ -851,19 +866,31 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   children: [
                     Expanded(
                       child: ListTile(
+                        key: const ValueKey('event-date-picker'),
                         leading: const Icon(Icons.calendar_today),
                         title: Text(
-                          '${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}',
+                          _dateSelection.hasConcreteDate
+                              ? '${_dateSelection.date.day}.${_dateSelection.date.month}.${_dateSelection.date.year}'
+                              : _t('event_scan_choose_date'),
                         ),
+                        subtitle: _dateSelection.hasScan &&
+                                !_dateSelection.dateConfirmed
+                            ? Text(_t('event_scan_date_required'))
+                            : null,
                         onTap: _selectDate,
                       ),
                     ),
                     Expanded(
                       child: ListTile(
+                        key: const ValueKey('event-time-picker'),
                         leading: const Icon(Icons.schedule),
                         title: Text(
-                          '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+                          '${_dateSelection.time.hour.toString().padLeft(2, '0')}:${_dateSelection.time.minute.toString().padLeft(2, '0')}',
                         ),
+                        subtitle: _dateSelection.hasScan &&
+                                !_dateSelection.timeConfirmed
+                            ? Text(_t('event_scan_time_required'))
+                            : null,
                         onTap: _selectTime,
                       ),
                     ),
@@ -872,6 +899,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 16),
 
                 // Ort
+                if (_dateSelection.hasScan &&
+                    !_dateSelection.canSubmit(DateTime.now())) ...[
+                  Text(
+                    _t('event_scan_datetime_required'),
+                    key: const ValueKey('event-scan-date-error'),
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 TextFormField(
                   controller: _locationController,
                   decoration: const InputDecoration(
@@ -1022,7 +1058,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: _isSubmitting ? null : _submitForm,
+                    onPressed:
+                        _isSubmitting || _isScanning ? null : _submitForm,
                     icon: _isSubmitting
                         ? const SizedBox(
                             width: 16,
