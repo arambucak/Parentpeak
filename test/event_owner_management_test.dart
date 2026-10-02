@@ -441,11 +441,45 @@ void main() {
     expect(find.text('Änderungen speichern'), findsOneWidget);
   });
 
-  test('new labels fall back to English for other supported locales', () {
+  test('owner labels are translated for launch locales with intact placeholders', () {
+    final english = AppStringsManager.allStrings['en']!;
+    final ownerKeys = english.keys.where(
+      (key) => key.startsWith('event_owner_'),
+    ).toSet();
+    final placeholderPattern = RegExp(r'\{[^{}]+\}');
+    expect(ownerKeys, hasLength(17));
+    for (final code in const ['de', 'tr', 'ku']) {
+      final translations = AppStringsManager.allStrings[code]!;
+      expect(
+        translations.keys.where((key) => key.startsWith('event_owner_')).toSet(),
+        ownerKeys,
+        reason: '$code must explicitly translate every owner label',
+      );
+      for (final key in ownerKeys) {
+        final translated = translations[key]!;
+        expect(translated.trim(), isNotEmpty, reason: '$code:$key');
+        expect(translated, isNot(key), reason: '$code:$key');
+        expect(translated, isNot(english[key]), reason: '$code:$key');
+        expect(AppStringsManager.getString(code, key), translated);
+        final expectedPlaceholders = placeholderPattern
+            .allMatches(english[key]!)
+            .map((match) => match.group(0))
+            .toList()
+          ..sort();
+        final actualPlaceholders = placeholderPattern
+            .allMatches(translated)
+            .map((match) => match.group(0))
+            .toList()
+          ..sort();
+        expect(actualPlaceholders, expectedPlaceholders, reason: '$code:$key');
+      }
+    }
+  });
+
+  test('owner labels retain English fallback for untranslated French', () {
     for (final key in AppStringsManager.allStrings['en']!.keys.where(
       (key) => key.startsWith('event_owner_'),
     )) {
-      expect(AppStringsManager.getString('de', key), isNot(key));
       expect(
         AppStringsManager.getString('fr', key),
         AppStringsManager.getString('en', key),
