@@ -12508,6 +12508,10 @@ app.put('/api/events/:id', async (req, res) => {
   const { id } = req.params;
   const { hosterId, title, description, location, latitude, longitude, startDate, endDate, maxParticipants } = req.body;
 
+  if (req.firebaseUid && req.firebaseUid !== String(hosterId)) {
+    return res.status(403).json({ error: 'Nur der Ersteller kann das Event bearbeiten' });
+  }
+
   if (!hosterId) {
     return res.status(400).json({ error: 'hosterId erforderlich' });
   }
@@ -12563,6 +12567,10 @@ app.put('/api/events/:id', async (req, res) => {
 app.delete('/api/events/:id', async (req, res) => {
   const { id } = req.params;
   const { hosterId } = req.query;
+
+  if (req.firebaseUid && req.firebaseUid !== String(hosterId)) {
+    return res.status(403).json({ error: 'Nur der Ersteller kann das Event löschen' });
+  }
 
   if (!hosterId) {
     return res.status(400).json({ error: 'hosterId erforderlich' });

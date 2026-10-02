@@ -10,8 +10,11 @@ import 'package:parentpeak/models/meetup_event.dart';
 
 http.Client _mockClient(int statusCode, Map<String, dynamic> body) {
   return MockClient((_) async {
-    return http.Response(jsonEncode(body), statusCode,
-        headers: {'content-type': 'application/json'});
+    return http.Response(
+      jsonEncode(body),
+      statusCode,
+      headers: {'content-type': 'application/json'},
+    );
   });
 }
 
@@ -24,6 +27,163 @@ BackendApiClient _client(http.Client httpClient) {
 }
 
 void main() {
+  test(
+    'parses an acknowledged participation request from the server',
+    () async {
+      final service = EventBackendService(
+        apiClient: _client(
+          MockClient((request) async {
+            expect(request.method, 'POST');
+            expect(request.url.path, '/events/participations');
+            expect(jsonDecode(request.body), {
+              'eventId': 'ev1',
+              'userId': 'user1',
+            });
+            return http.Response(
+              jsonEncode({
+                'item': {
+                  'id': 'part1',
+                  'eventId': 'ev1',
+                  'userId': 'user1',
+                  'requestedAt': '2026-10-02T18:00:00Z',
+                  'status': 'pending',
+                },
+              }),
+              201,
+            );
+          }),
+        ),
+      );
+
+      final participation = await service.requestParticipation(
+        eventId: 'ev1',
+        userId: 'user1',
+      );
+
+      expect(participation?.id, 'part1');
+      expect(participation?.status, ParticipationStatus.pending);
+      expect(service.lastSyncError, isNull);
+    },
+  );
+
+  test('owner update keeps API image and participant capacity count', () async {
+    final service = EventBackendService(
+      apiClient: _client(
+        _mockClient(200, {
+          'event': {
+            'id': 'ev1',
+            'hosterId': 'owner',
+            'imageUrl': 'https://example.test/event.jpg',
+            'participants': [
+              {'status': 'approved'},
+              {'status': 'pending'},
+              {'status': 'declined'},
+            ],
+          },
+        }),
+      ),
+    );
+    final updated = await service.updateEvent('ev1', {
+      'title': 'Updated',
+    }, requestingUserId: 'owner');
+    expect(updated?.currentParticipants, 2);
+    expect(updated?.photoUrl, 'https://example.test/event.jpg');
+  });
+
+  test('update sends the acting owner in the API hosterId field', () async {
+    final service = EventBackendService(
+      apiClient: _client(
+        MockClient((request) async {
+          expect(request.method, 'PUT');
+          expect(request.url.path, '/api/events/ev1');
+          expect(jsonDecode(request.body), {
+            'title': 'Updated',
+            'startDate': '2026-10-10T10:00:00Z',
+            'maxParticipants': 8,
+            'hosterId': 'owner',
+          });
+          return http.Response(
+            jsonEncode({
+              'event': {
+                'id': 'ev1',
+                'hosterId': 'owner',
+                'title': 'Updated',
+                'startDate': '2026-10-10T10:00:00Z',
+                'maxParticipants': 8,
+              },
+            }),
+            200,
+          );
+        }),
+      ),
+    );
+    final updated = await service.updateEvent('ev1', {
+      'title': 'Updated',
+      'startDate': '2026-10-10T10:00:00Z',
+      'maxParticipants': 8,
+    }, requestingUserId: 'owner');
+    expect(updated?.title, 'Updated');
+    expect(updated?.maxParticipants, 8);
+  });
+
+  test(
+    'preserves the API startDate instead of using the current time',
+    () async {
+      final service = EventBackendService(
+        apiClient: _client(
+          _mockClient(200, {
+            'event': {
+              'id': 'ev-date',
+              'startDate': '2026-10-03T10:00:00Z',
+              'status': 'upcoming',
+            },
+          }),
+        ),
+      );
+
+      final event = await service.fetchEventById('ev-date');
+
+      expect(event?.eventDate, DateTime.utc(2026, 10, 3, 10));
+    },
+  );
+
+  test(
+    'uses registered server routes for all participation operations',
+    () async {
+      final paths = <String>[];
+      final service = EventBackendService(
+        apiClient: _client(
+          MockClient((request) async {
+            paths.add('${request.method} ${request.url.path}');
+            return http.Response('{}', 404);
+          }),
+        ),
+      );
+
+      await service.fetchUserParticipations('user1');
+      await service.fetchPendingRequestsForHost('host1');
+      await service.requestParticipation(eventId: 'ev1', userId: 'user1');
+      await service.respondToParticipation(
+        participationId: 'part1',
+        accept: true,
+      );
+      await service.fetchParticipationByUserAndEvent(
+        userId: 'user1',
+        eventId: 'ev1',
+      );
+      await service.fetchApprovedParticipantsForEvent('ev1');
+
+      expect(paths, [
+        'GET /events/participations',
+        'GET /events/participations/pending',
+        'POST /events/participations',
+        'PUT /events/participations/part1/respond',
+        'GET /events/participations',
+        'GET /events/ev1/participations/approved',
+      ]);
+    },
+  );
+
   group('EventBackendService backend statuses', () {
     for (final entry in {
       'upcoming': EventStatus.active,
@@ -49,9 +209,11 @@ void main() {
           photoUrl: '',
         );
         final service = EventBackendService(
-          apiClient: _client(_mockClient(201, {
-            'event': {...event.toJson(), 'status': entry.key},
-          })),
+          apiClient: _client(
+            _mockClient(201, {
+              'event': {...event.toJson(), 'status': entry.key},
+            }),
+          ),
         );
 
         final created = await service.createEvent(event);
@@ -104,8 +266,9 @@ void main() {
             'description': '',
             'status': 'active',
             'eventType': 'other',
-            'startDate':
-                DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+            'startDate': DateTime.now()
+                .add(const Duration(days: 1))
+                .toIso8601String(),
             'location': 'Berlin',
             'latitude': 52.52,
             'longitude': 13.4,
@@ -116,7 +279,7 @@ void main() {
             'updatedAt': DateTime.now().toIso8601String(),
             'visibility': 'publicNearby',
             'shareRadiusKm': 25,
-          }
+          },
         ],
         'limit': 50,
         'offset': 0,
@@ -144,10 +307,15 @@ void main() {
       final mockHttp = MockClient((request) async {
         captured = request;
         return http.Response(
-            jsonEncode(
-                {'items': [], 'limit': 10, 'offset': 20, 'hasMore': false}),
-            200,
-            headers: {'content-type': 'application/json'});
+          jsonEncode({
+            'items': [],
+            'limit': 10,
+            'offset': 20,
+            'hasMore': false,
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
       });
 
       final svc = EventBackendService(apiClient: _client(mockHttp));
@@ -164,10 +332,10 @@ void main() {
       final mockHttp = MockClient((request) async {
         captured = request;
         return http.Response(
-            jsonEncode(
-                {'items': [], 'limit': 25, 'offset': 0, 'hasMore': false}),
-            200,
-            headers: {'content-type': 'application/json'});
+          jsonEncode({'items': [], 'limit': 25, 'offset': 0, 'hasMore': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
       });
 
       final svc = EventBackendService(apiClient: _client(mockHttp));
@@ -197,8 +365,9 @@ void main() {
               'description': '',
               'status': 'active',
               'eventType': 'other',
-              'startDate':
-                  DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+              'startDate': DateTime.now()
+                  .add(const Duration(days: 1))
+                  .toIso8601String(),
               'location': 'Hamburg',
               'latitude': 53.57,
               'longitude': 10.02,
@@ -209,7 +378,7 @@ void main() {
               'updatedAt': DateTime.now().toIso8601String(),
               'visibility': 'publicNearby',
               'shareRadiusKm': 25,
-            }
+            },
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -217,23 +386,27 @@ void main() {
       });
 
       final svc = EventBackendService(apiClient: _client(mockHttp));
-      final updated = await svc.updateEvent(
-        'ev1',
-        {'title': 'Updated Title', 'location': 'Hamburg'},
-        requestingUserId: 'user1',
-      );
+      final updated = await svc.updateEvent('ev1', {
+        'title': 'Updated Title',
+        'location': 'Hamburg',
+      }, requestingUserId: 'user1');
 
       expect(captured!.method, 'PUT');
       expect(captured!.url.path, contains('ev1'));
       final sentBody = jsonDecode(captured!.body) as Map<String, dynamic>;
       expect(sentBody['title'], 'Updated Title');
-      expect(sentBody['requestingUserId'], 'user1');
+      expect(sentBody['hosterId'], 'user1');
       expect(updated?.title, 'Updated Title');
     });
 
     test('returns null on error', () async {
-      final errorClient = MockClient((_) async => http.Response('{}', 403,
-          headers: {'content-type': 'application/json'}));
+      final errorClient = MockClient(
+        (_) async => http.Response(
+          '{}',
+          403,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
       final svc = EventBackendService(apiClient: _client(errorClient));
       final result = await svc.updateEvent('ev1', {'title': 'x'});
       expect(result, isNull);
@@ -255,9 +428,13 @@ void main() {
     });
 
     test('returns false on 403', () async {
-      final mockHttp = MockClient((_) async => http.Response(
-          '{"error":"forbidden"}', 403,
-          headers: {'content-type': 'application/json'}));
+      final mockHttp = MockClient(
+        (_) async => http.Response(
+          '{"error":"forbidden"}',
+          403,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
       final svc = EventBackendService(apiClient: _client(mockHttp));
       final ok = await svc.deleteEvent('ev1', hosterId: 'host1');
       expect(ok, isFalse);

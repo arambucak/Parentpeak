@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
 import 'package:parentpeak/models/event_invitation.dart';
@@ -6,8 +7,11 @@ import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/models/event_participation.dart';
 
 class EventService {
+  EventService({EventBackendService? backend})
+    : _backend = backend ?? EventBackendService();
+
   final _familyCircleService = FamilyCircleService.instance;
-  final EventBackendService _backend = EventBackendService();
+  final EventBackendService _backend;
 
   static final List<MeetupEvent> _cachedEvents = [];
 
@@ -18,21 +22,26 @@ class EventService {
 
   Never _throwBackendRequired(String action) {
     throw StateError(
-      _backend.lastSyncError ?? '$action ist aktuell nicht mit dem Backend verbunden.',
+      _backend.lastSyncError ??
+          '$action ist aktuell nicht mit dem Backend verbunden.',
     );
   }
 
   // Hole alle Events
   Future<List<MeetupEvent>> getEvents() async {
     if (_backend.isEnabled) {
-      final remote = await _backend.fetchEvents(status: EventStatus.active.name);
+      final remote = await _backend.fetchEvents(
+        status: EventStatus.active.name,
+      );
       if (remote.isNotEmpty) {
         _syncFromRemoteEvents(remote);
         return remote;
       }
     }
 
-    await Future.delayed(const Duration(milliseconds: 500)); // Simuliere API-Latenz
+    await Future.delayed(
+      const Duration(milliseconds: 500),
+    ); // Simuliere API-Latenz
     return _cachedEvents.where((e) => e.status == EventStatus.active).toList();
   }
 
@@ -70,8 +79,9 @@ class EventService {
       if (!canSee) return false;
 
       if (ageGroups != null && ageGroups.isNotEmpty) {
-        final hasMatchingAgeGroup =
-            event.ageGroups.any((eg) => ageGroups.contains(eg));
+        final hasMatchingAgeGroup = event.ageGroups.any(
+          (eg) => ageGroups.contains(eg),
+        );
         if (!hasMatchingAgeGroup) return false;
       }
 
@@ -122,7 +132,8 @@ class EventService {
     return 'parentpeak://invite?code=$encoded';
   }
 
-  DateTime? getInviteExpiryForEvent(String eventId) => _eventInviteExpiresAt[eventId];
+  DateTime? getInviteExpiryForEvent(String eventId) =>
+      _eventInviteExpiresAt[eventId];
 
   bool isInviteCodeExpired(String eventId) {
     final expiry = _eventInviteExpiresAt[eventId];
@@ -193,8 +204,9 @@ class EventService {
       if (distance > shareRadius) return false;
 
       if (ageGroups != null && ageGroups.isNotEmpty) {
-        final hasMatchingAgeGroup =
-            event.ageGroups.any((eg) => ageGroups.contains(eg));
+        final hasMatchingAgeGroup = event.ageGroups.any(
+          (eg) => ageGroups.contains(eg),
+        );
         if (!hasMatchingAgeGroup) return false;
       }
 
@@ -223,10 +235,12 @@ class EventService {
     }
 
     if (event.visibility == EventVisibility.inviteOnly) {
-        final invite = _cachedInvitations.where((i) =>
-          i.eventId == event.id &&
-          i.invitedUserId == viewerUserId &&
-          i.status == EventInvitationStatus.accepted);
+      final invite = _cachedInvitations.where(
+        (i) =>
+            i.eventId == event.id &&
+            i.invitedUserId == viewerUserId &&
+            i.status == EventInvitationStatus.accepted,
+      );
       return invite.isNotEmpty;
     }
 
@@ -278,20 +292,37 @@ class EventService {
   }
 
   // Lösche ein Event
-  Future<bool> deleteEvent(String eventId) async {
+  Future<MeetupEvent> updateEvent(
+    String eventId,
+    Map<String, dynamic> fields, {
+    required String requestingUserId,
+  }) async {
+    if (!_backend.isEnabled) _throwBackendRequired('Event bearbeiten');
+    final updated = await _backend.updateEvent(
+      eventId,
+      fields,
+      requestingUserId: requestingUserId,
+    );
+    if (updated == null ||
+        updated.id != eventId ||
+        updated.hosterId != requestingUserId) {
+      _throwBackendRequired('Event bearbeiten');
+    }
+    _mergeRemoteEvent(updated);
+    return updated;
+  }
+
+  Future<bool> deleteEvent(String eventId, {String? requestingUserId}) async {
     if (!_backend.isEnabled) {
       _throwBackendRequired('Event löschen');
     }
 
-    // Get hosterId from cached event
-    MeetupEvent? cachedEvent;
-    try {
-      cachedEvent = _cachedEvents.firstWhere((e) => e.id == eventId);
-    } catch (e) {
-      _throwBackendRequired('Event nicht gefunden');
+    final actingUserId =
+        requestingUserId ?? AuthService.instance.currentUser?.uid;
+    if (actingUserId == null || actingUserId.trim().isEmpty) {
+      _throwBackendRequired('Event löschen');
     }
-
-    final removed = await _backend.deleteEvent(eventId, hosterId: cachedEvent.hosterId);
+    final removed = await _backend.deleteEvent(eventId, hosterId: actingUserId);
     if (!removed) {
       _throwBackendRequired('Event löschen');
     }
@@ -320,7 +351,8 @@ class EventService {
 
   // Hole ausstehende Anfragen für einen Host
   Future<List<EventParticipation>> getPendingRequestsForHost(
-      String hosterId) async {
+    String hosterId,
+  ) async {
     if (_backend.isEnabled) {
       final remote = await _backend.fetchPendingRequestsForHost(hosterId);
       if (remote.isNotEmpty) {
@@ -331,23 +363,34 @@ class EventService {
 
     await Future.delayed(const Duration(milliseconds: 300));
 
-    final hostEvents = _cachedEvents.where((e) => e.hosterId == hosterId).toList();
+    final hostEvents = _cachedEvents
+        .where((e) => e.hosterId == hosterId)
+        .toList();
     final hostEventIds = hostEvents.map((e) => e.id).toList();
 
     return _cachedParticipations
-        .where((p) =>
-            hostEventIds.contains(p.eventId) && p.status == ParticipationStatus.pending)
+        .where(
+          (p) =>
+              hostEventIds.contains(p.eventId) &&
+              p.status == ParticipationStatus.pending,
+        )
         .toList();
   }
 
   // Entfernung berechnen (in km)
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     const p = 0.017453292519943295; // math.pi / 180
-    final a = 0.5 -
-      math.cos((lat2 - lat1) * p) / 2 +
-      math.cos(lat1 * p) *
-        math.cos(lat2 * p) *
-        (1 - math.cos((lon2 - lon1) * p)) /
+    final a =
+        0.5 -
+        math.cos((lat2 - lat1) * p) / 2 +
+        math.cos(lat1 * p) *
+            math.cos(lat2 * p) *
+            (1 - math.cos((lon2 - lon1) * p)) /
             2;
     return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
   }
@@ -375,14 +418,18 @@ class EventService {
 
     await Future.delayed(const Duration(milliseconds: 220));
     return _cachedEvents
-        .where((e) =>
-            e.hosterId == hostUserId &&
-            e.status == EventStatus.active &&
-            e.visibility == EventVisibility.inviteOnly)
+        .where(
+          (e) =>
+              e.hosterId == hostUserId &&
+              e.status == EventStatus.active &&
+              e.visibility == EventVisibility.inviteOnly,
+        )
         .toList();
   }
 
-  Future<List<EventInvitation>> getAcceptedInvitationsForEvent(String eventId) async {
+  Future<List<EventInvitation>> getAcceptedInvitationsForEvent(
+    String eventId,
+  ) async {
     if (_backend.isEnabled) {
       final remote = await _backend.fetchAcceptedInvitationsForEvent(eventId);
       if (remote.isNotEmpty) {
@@ -393,8 +440,11 @@ class EventService {
 
     await Future.delayed(const Duration(milliseconds: 220));
     return _cachedInvitations
-        .where((i) =>
-            i.eventId == eventId && i.status == EventInvitationStatus.accepted)
+        .where(
+          (i) =>
+              i.eventId == eventId &&
+              i.status == EventInvitationStatus.accepted,
+        )
         .toList();
   }
 
@@ -430,7 +480,9 @@ class EventService {
 
   void _syncFromRemoteParticipations(List<EventParticipation> participations) {
     for (final participation in participations) {
-      final index = _cachedParticipations.indexWhere((p) => p.id == participation.id);
+      final index = _cachedParticipations.indexWhere(
+        (p) => p.id == participation.id,
+      );
       if (index == -1) {
         _cachedParticipations.add(participation);
       } else {

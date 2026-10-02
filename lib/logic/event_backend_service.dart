@@ -13,7 +13,7 @@ import 'backend_service_factory.dart';
 
 class EventBackendService {
   EventBackendService({BackendApiClient? apiClient})
-      : _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
+    : _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
 
   final BackendApiClient? _apiClient;
   String? lastSyncError;
@@ -37,8 +37,9 @@ class EventBackendService {
         'limit': limit.toString(),
         'offset': offset.toString(),
       };
-      final payload =
-          await _apiClient!.getJson(_appendQuery(_eventsPath, query));
+      final payload = await _apiClient!.getJson(
+        _appendQuery(_eventsPath, query),
+      );
       if (payload is Map<String, dynamic> && payload.containsKey('events')) {
         return _parseEventList(payload['events']);
       }
@@ -70,8 +71,9 @@ class EventBackendService {
         'visibility': 'publicNearby',
       };
 
-      final payload =
-          await _apiClient!.getJson(_appendQuery(_eventsPath, query));
+      final payload = await _apiClient!.getJson(
+        _appendQuery(_eventsPath, query),
+      );
       if (payload is Map<String, dynamic> && payload.containsKey('events')) {
         return _parseEventList(payload['events']);
       }
@@ -129,7 +131,9 @@ class EventBackendService {
   Future<bool> deleteEvent(String id, {required String hosterId}) async {
     if (_apiClient == null) return false;
     try {
-      await _apiClient!.delete('$_eventsPath/$id?hosterId=$hosterId');
+      await _apiClient!.delete(
+        _appendQuery('$_eventsPath/$id', {'hosterId': hosterId}),
+      );
       return true;
     } catch (e) {
       lastSyncError = 'Event konnte nicht gelöscht werden: $e';
@@ -146,7 +150,7 @@ class EventBackendService {
     try {
       final body = <String, dynamic>{
         ...fields,
-        if (requestingUserId != null) 'requestingUserId': requestingUserId,
+        if (requestingUserId != null) 'hosterId': requestingUserId,
       };
       final payload = await _apiClient!.putJson('$_eventsPath/$id', body);
       if (payload is Map<String, dynamic> && payload.containsKey('event')) {
@@ -163,8 +167,10 @@ class EventBackendService {
   Future<String?> uploadImage(File imageFile) async {
     if (_apiClient == null) return null;
     try {
-      final response =
-          await _apiClient!.uploadImageFile('/uploads/image', imageFile);
+      final response = await _apiClient!.uploadImageFile(
+        '/uploads/image',
+        imageFile,
+      );
       return response['url']?.toString();
     } catch (e) {
       lastSyncError = 'Bild-Upload fehlgeschlagen: $e';
@@ -175,8 +181,9 @@ class EventBackendService {
   Future<List<EventInvitation>> fetchInvitationsForUser(String userId) async {
     if (_apiClient == null) return [];
     try {
-      final payload = await _apiClient!
-          .getJson(_appendQuery(_invitationsPath, {'userId': userId}));
+      final payload = await _apiClient!.getJson(
+        _appendQuery(_invitationsPath, {'userId': userId}),
+      );
       return _parseInvitationList(payload);
     } catch (e) {
       lastSyncError = 'Einladungen konnten nicht geladen werden: $e';
@@ -219,12 +226,14 @@ class EventBackendService {
   }
 
   Future<List<MeetupEvent>> fetchHostedInviteOnlyEvents(
-      String hostUserId) async {
+    String hostUserId,
+  ) async {
     if (_apiClient == null) return [];
     try {
       final path = APIConfig.getBackendHostedInviteOnlyEventsPath();
-      final payload = await _apiClient!
-          .getJson(_appendQuery(path, {'hostUserId': hostUserId}));
+      final payload = await _apiClient!.getJson(
+        _appendQuery(path, {'hostUserId': hostUserId}),
+      );
       return _parseEventList(payload);
     } catch (e) {
       lastSyncError = 'Host-Events konnten nicht geladen werden: $e';
@@ -233,11 +242,13 @@ class EventBackendService {
   }
 
   Future<List<EventInvitation>> fetchAcceptedInvitationsForEvent(
-      String eventId) async {
+    String eventId,
+  ) async {
     if (_apiClient == null) return [];
     try {
-      final payload = await _apiClient!
-          .getJson('$_eventsPath/$eventId/invitations/accepted');
+      final payload = await _apiClient!.getJson(
+        '$_eventsPath/$eventId/invitations/accepted',
+      );
       return _parseInvitationList(payload);
     } catch (e) {
       lastSyncError =
@@ -247,11 +258,13 @@ class EventBackendService {
   }
 
   Future<List<EventParticipation>> fetchUserParticipations(
-      String userId) async {
+    String userId,
+  ) async {
     if (_apiClient == null) return [];
     try {
       final payload = await _apiClient!.getJson(
-          _appendQuery('$_eventsPath/participations', {'userId': userId}));
+        _appendQuery('/events/participations', {'userId': userId}),
+      );
       return _parseParticipationList(payload);
     } catch (e) {
       lastSyncError = 'Teilnahmen konnten nicht geladen werden: $e';
@@ -260,12 +273,14 @@ class EventBackendService {
   }
 
   Future<List<EventParticipation>> fetchPendingRequestsForHost(
-      String hostUserId) async {
+    String hostUserId,
+  ) async {
     if (_apiClient == null) return [];
     try {
       final payload = await _apiClient!.getJson(
-        _appendQuery(
-            '$_eventsPath/participations/pending', {'hostUserId': hostUserId}),
+        _appendQuery('/events/participations/pending', {
+          'hostUserId': hostUserId,
+        }),
       );
       return _parseParticipationList(payload);
     } catch (e) {
@@ -280,10 +295,10 @@ class EventBackendService {
   }) async {
     if (_apiClient == null) return null;
     try {
-      final payload = await _apiClient!.postJsonAny(
-        '$_eventsPath/participations',
-        {'eventId': eventId, 'userId': userId},
-      );
+      final payload = await _apiClient!.postJsonAny('/events/participations', {
+        'eventId': eventId,
+        'userId': userId,
+      });
       return _parseSingleParticipation(payload);
     } catch (e) {
       lastSyncError = 'Teilnahmeanfrage konnte nicht gesendet werden: $e';
@@ -298,7 +313,7 @@ class EventBackendService {
     if (_apiClient == null) return null;
     try {
       final payload = await _apiClient!.putJson(
-        '$_eventsPath/participations/$participationId/respond',
+        '/events/participations/$participationId/respond',
         {'accept': accept},
       );
       return _parseSingleParticipation(payload);
@@ -315,10 +330,10 @@ class EventBackendService {
     if (_apiClient == null) return null;
     try {
       final payload = await _apiClient!.getJson(
-        _appendQuery(
-          '$_eventsPath/participations',
-          {'userId': userId, 'eventId': eventId},
-        ),
+        _appendQuery('/events/participations', {
+          'userId': userId,
+          'eventId': eventId,
+        }),
       );
       final items = _parseParticipationList(payload);
       if (items.isEmpty) return null;
@@ -335,8 +350,9 @@ class EventBackendService {
   ) async {
     if (_apiClient == null) return [];
     try {
-      final payload = await _apiClient!
-          .getJson('$_eventsPath/$eventId/participations/approved');
+      final payload = await _apiClient!.getJson(
+        '/events/$eventId/participations/approved',
+      );
       return _parseParticipationList(payload);
     } catch (e) {
       lastSyncError = 'Teilnehmer konnten nicht geladen werden: $e';
@@ -345,8 +361,12 @@ class EventBackendService {
   }
 
   List<MeetupEvent> _parseEventList(dynamic payload) {
-    final list =
-        _extractList(payload, const ['items', 'events', 'data', 'results']);
+    final list = _extractList(payload, const [
+      'items',
+      'events',
+      'data',
+      'results',
+    ]);
     return list
         .whereType<Map>()
         .map((raw) => _normalizeEventMap(Map<String, dynamic>.from(raw)))
@@ -361,8 +381,12 @@ class EventBackendService {
   }
 
   List<EventInvitation> _parseInvitationList(dynamic payload) {
-    final list = _extractList(
-        payload, const ['items', 'invitations', 'data', 'results']);
+    final list = _extractList(payload, const [
+      'items',
+      'invitations',
+      'data',
+      'results',
+    ]);
     return list
         .whereType<Map>()
         .map((raw) => EventInvitation.fromJson(Map<String, dynamic>.from(raw)))
@@ -370,26 +394,39 @@ class EventBackendService {
   }
 
   EventInvitation? _parseSingleInvitation(dynamic payload) {
-    final map =
-        _extractMap(payload, const ['item', 'invitation', 'data', 'result']);
+    final map = _extractMap(payload, const [
+      'item',
+      'invitation',
+      'data',
+      'result',
+    ]);
     if (map == null) return null;
     return EventInvitation.fromJson(map);
   }
 
   EventParticipation? _parseSingleParticipation(dynamic payload) {
-    final map =
-        _extractMap(payload, const ['item', 'participation', 'data', 'result']);
+    final map = _extractMap(payload, const [
+      'item',
+      'participation',
+      'data',
+      'result',
+    ]);
     if (map == null) return null;
     return EventParticipation.fromJson(map);
   }
 
   List<EventParticipation> _parseParticipationList(dynamic payload) {
-    final list = _extractList(
-        payload, const ['items', 'participations', 'data', 'results']);
+    final list = _extractList(payload, const [
+      'items',
+      'participations',
+      'data',
+      'results',
+    ]);
     return list
         .whereType<Map>()
-        .map((raw) =>
-            EventParticipation.fromJson(Map<String, dynamic>.from(raw)))
+        .map(
+          (raw) => EventParticipation.fromJson(Map<String, dynamic>.from(raw)),
+        )
         .toList();
   }
 
@@ -413,19 +450,31 @@ class EventBackendService {
       'category': (raw['category'] ?? 'other').toString(),
       'ageGroups': (raw['ageGroups'] is List)
           ? List<String>.from(
-              (raw['ageGroups'] as List).map((e) => e.toString()))
+              (raw['ageGroups'] as List).map((e) => e.toString()),
+            )
           : <String>[],
       'location': (raw['location'] ?? '').toString(),
       'latitude': parseDouble(raw['latitude'], 0),
       'longitude': parseDouble(raw['longitude'], 0),
       'eventDate':
-          (raw['eventDate'] ?? DateTime.now().toIso8601String()).toString(),
-      'createdAt':
-          (raw['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
+          (raw['eventDate'] ??
+                  raw['startDate'] ??
+                  DateTime.now().toIso8601String())
+              .toString(),
+      'createdAt': (raw['createdAt'] ?? DateTime.now().toIso8601String())
+          .toString(),
       'paymentDate': raw['paymentDate']?.toString(),
       'maxParticipants': parseInt(raw['maxParticipants'], 20),
-      'currentParticipants': parseInt(raw['currentParticipants'], 0),
-      'photoUrl': (raw['photoUrl'] ?? '').toString(),
+      'currentParticipants': parseInt(
+        raw['currentParticipants'],
+        raw['participants'] is List
+            ? (raw['participants'] as List)
+                  .whereType<Map>()
+                  .where((participant) => participant['status'] != 'declined')
+                  .length
+            : 0,
+      ),
+      'photoUrl': (raw['photoUrl'] ?? raw['imageUrl'] ?? '').toString(),
       'status': switch (raw['status']?.toString()) {
         'upcoming' || 'ongoing' => EventStatus.active.name,
         final status => status ?? EventStatus.active.name,
@@ -437,7 +486,8 @@ class EventBackendService {
       'shareRadiusKm': parseDouble(raw['shareRadiusKm'], 25),
       'invitedUserIds': (raw['invitedUserIds'] is List)
           ? List<String>.from(
-              (raw['invitedUserIds'] as List).map((e) => e.toString()))
+              (raw['invitedUserIds'] as List).map((e) => e.toString()),
+            )
           : <String>[],
       'inviteCodeExpiresAt': raw['inviteCodeExpiresAt']?.toString(),
       'seriesId': raw['seriesId']?.toString(),
@@ -453,10 +503,9 @@ class EventBackendService {
   }) async {
     if (_apiClient == null || seriesId.isEmpty || userId.isEmpty) return false;
     try {
-      await _apiClient!.postJsonAny(
-        '$_eventsPath/series/$seriesId/follow',
-        {'userId': userId},
-      );
+      await _apiClient!.postJsonAny('$_eventsPath/series/$seriesId/follow', {
+        'userId': userId,
+      });
       return true;
     } catch (e) {
       lastSyncError = 'Angebot folgen fehlgeschlagen: $e';
@@ -471,8 +520,9 @@ class EventBackendService {
   }) async {
     if (_apiClient == null || seriesId.isEmpty || userId.isEmpty) return false;
     try {
-      await _apiClient!
-          .delete('$_eventsPath/series/$seriesId/follow?userId=$userId');
+      await _apiClient!.delete(
+        '$_eventsPath/series/$seriesId/follow?userId=$userId',
+      );
       return true;
     } catch (e) {
       lastSyncError = 'Entfolgen fehlgeschlagen: $e';
@@ -487,8 +537,9 @@ class EventBackendService {
   }) async {
     if (_apiClient == null || seriesId.isEmpty) return null;
     try {
-      final payload = await _apiClient!
-          .getJson('$_eventsPath/series/$seriesId/follow?userId=$userId');
+      final payload = await _apiClient!.getJson(
+        '$_eventsPath/series/$seriesId/follow?userId=$userId',
+      );
       if (payload is Map<String, dynamic>) {
         return payload['following'] == true;
       }
