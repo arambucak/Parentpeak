@@ -115,7 +115,7 @@ void main() {
     final updated = await service.updateEvent('ev1', {
       'title': 'Updated',
     }, requestingUserId: 'owner');
-    expect(updated?.currentParticipants, 2);
+    expect(updated?.currentParticipants, 1);
     expect(updated?.photoUrl, 'https://example.test/event.jpg');
   });
 
@@ -196,11 +196,12 @@ void main() {
         participationId: 'part1',
         accept: true,
       );
-      await service.fetchParticipationByUserAndEvent(
+      await expectLater(service.fetchParticipationByUserAndEvent(
         userId: 'user1',
         eventId: 'ev1',
-      );
-      await service.fetchApprovedParticipantsForEvent('ev1');
+      ), throwsA(isA<Exception>()));
+        await expectLater(service.fetchApprovedParticipantsForEvent('ev1'),
+          throwsA(isA<Exception>()));
 
       expect(paths, [
         'GET /events/participations',

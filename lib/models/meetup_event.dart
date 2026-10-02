@@ -2,7 +2,9 @@ enum EventCategory { sports, outdoor, education, arts, socialGathering, other }
 
 enum AgeGroup { infant, toddler, preschool, elementary, teenager, mixed }
 
-enum ParticipationStatus { pending, approved, declined, cancelled }
+enum ParticipationStatus { pending, approved, declined, cancelled, interested }
+
+enum ParticipationMode { legacyApproval, direct, interest }
 
 enum EventStatus { active, completed, cancelled }
 
@@ -34,6 +36,8 @@ class MeetupEvent {
   /// Serien-ID eines wiederkehrenden Angebots. Mehrere Termine mit derselben
   /// seriesId gehören zusammen; Eltern können der Serie folgen (Issue #47).
   final String? seriesId;
+    final ParticipationMode participationMode;
+    final String? externalUrl;
 
   MeetupEvent({
     required this.id,
@@ -58,11 +62,21 @@ class MeetupEvent {
     this.invitedUserIds = const [],
     this.inviteCodeExpiresAt,
     this.seriesId,
+        this.participationMode = ParticipationMode.legacyApproval,
+        this.externalUrl,
   });
 
-  bool get isFull => currentParticipants >= maxParticipants;
+    bool get isSharedOffer => participationMode == ParticipationMode.interest;
+    bool get hasCapacity => !isSharedOffer && maxParticipants > 0;
+    bool get isFull => hasCapacity && currentParticipants >= maxParticipants;
   bool get isPaid => paymentDate != null;
-  int get spotsAvailable => maxParticipants - currentParticipants;
+    int get spotsAvailable => (maxParticipants - currentParticipants).clamp(0, maxParticipants);
+
+    Uri? get organizerUri {
+        final uri = Uri.tryParse(externalUrl ?? '');
+        return uri != null && ['http', 'https'].contains(uri.scheme) &&
+                uri.host.isNotEmpty && uri.userInfo.isEmpty ? uri : null;
+    }
 
   factory MeetupEvent.fromJson(Map<String, dynamic> json) => MeetupEvent(
         id: json['id'] as String,
@@ -96,6 +110,9 @@ class MeetupEvent {
             ? DateTime.parse(json['inviteCodeExpiresAt'] as String)
             : null,
         seriesId: json['seriesId'] as String?,
+        participationMode: ParticipationMode.values.byName(
+            json['participationMode'] as String? ?? 'legacyApproval'),
+        externalUrl: json['externalUrl'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -121,5 +138,7 @@ class MeetupEvent {
         'invitedUserIds': invitedUserIds,
         'inviteCodeExpiresAt': inviteCodeExpiresAt?.toIso8601String(),
         'seriesId': seriesId,
+        'participationMode': participationMode.name,
+        'externalUrl': externalUrl,
       };
 }

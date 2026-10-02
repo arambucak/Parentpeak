@@ -114,8 +114,13 @@ class EventBackendService {
         'longitude': event.longitude,
         'startDate': event.eventDate.toUtc().toIso8601String(),
         'eventType': event.category.name,
+        'participationMode': event.participationMode.name,
+        'externalUrl': event.externalUrl,
         'visibility': event.visibility.name,
-        'maxParticipants': event.maxParticipants,
+        'shareRadiusKm': event.shareRadiusKm,
+        'invitedUserIds': event.invitedUserIds,
+        'inviteCodeExpiresAt': event.inviteCodeExpiresAt?.toUtc().toIso8601String(),
+        'maxParticipants': event.isSharedOffer ? null : event.maxParticipants,
         'imageUrl': event.photoUrl,
         if (event.seriesId != null && event.seriesId!.isNotEmpty)
           'seriesId': event.seriesId,
@@ -329,11 +334,21 @@ class EventBackendService {
     }
   }
 
+  Future<void> withdrawParticipation({required String eventId, required String userId}) async {
+    if (_apiClient == null) throw StateError('Backend unavailable');
+    final payload = await _apiClient!.putJson('/events/participations/withdraw', {
+      'eventId': eventId, 'userId': userId,
+    });
+    if (payload is! Map || payload['success'] != true) {
+      throw StateError('Withdrawal not acknowledged');
+    }
+  }
+
   Future<EventParticipation?> fetchParticipationByUserAndEvent({
     required String userId,
     required String eventId,
   }) async {
-    if (_apiClient == null) return null;
+    if (_apiClient == null) throw StateError('Backend unavailable');
     try {
       final payload = await _apiClient!.getJson(
         _appendQuery('/events/participations', {
@@ -347,7 +362,7 @@ class EventBackendService {
       return items.first;
     } catch (e) {
       lastSyncError = 'Teilnahme konnte nicht geladen werden: $e';
-      return null;
+      rethrow;
     }
   }
 
@@ -362,7 +377,7 @@ class EventBackendService {
       return _parseParticipationList(payload);
     } catch (e) {
       lastSyncError = 'Teilnehmer konnten nicht geladen werden: $e';
-      return [];
+      rethrow;
     }
   }
 
@@ -453,7 +468,8 @@ class EventBackendService {
           .toString(),
       'title': (raw['title'] ?? '').toString(),
       'description': (raw['description'] ?? '').toString(),
-      'category': (raw['category'] ?? 'other').toString(),
+        'category': EventCategory.values.any((category) => category.name == (raw['category'] ?? raw['eventType']))
+          ? (raw['category'] ?? raw['eventType']).toString() : 'other',
       'ageGroups': (raw['ageGroups'] is List)
           ? List<String>.from(
               (raw['ageGroups'] as List).map((e) => e.toString()),
@@ -470,13 +486,13 @@ class EventBackendService {
       'createdAt': (raw['createdAt'] ?? DateTime.now().toIso8601String())
           .toString(),
       'paymentDate': raw['paymentDate']?.toString(),
-      'maxParticipants': parseInt(raw['maxParticipants'], 20),
+      'maxParticipants': parseInt(raw['maxParticipants'], 0),
       'currentParticipants': parseInt(
         raw['currentParticipants'],
         raw['participants'] is List
             ? (raw['participants'] as List)
                   .whereType<Map>()
-                  .where((participant) => participant['status'] != 'declined')
+                  .where((participant) => ['approved', 'accepted', 'attended'].contains(participant['status']))
                   .length
             : 0,
       ),
@@ -497,6 +513,8 @@ class EventBackendService {
           : <String>[],
       'inviteCodeExpiresAt': raw['inviteCodeExpiresAt']?.toString(),
       'seriesId': raw['seriesId']?.toString(),
+      'participationMode': raw['participationMode'] ?? 'legacyApproval',
+      'externalUrl': raw['externalUrl'],
     };
   }
 

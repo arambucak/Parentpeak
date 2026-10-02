@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
+const { changeParticipation } = require('../../event_participation_policy');
 
 const source = fs.readFileSync(path.join(__dirname, '../../server.js'), 'utf8');
 function block(startMarker, endMarker) {
@@ -24,6 +25,8 @@ function fixture(options = {}) {
   let handler;
   const context = vm.createContext({
     crypto,
+    changeParticipation,
+    authorizeEventParticipation: async () => {},
     console: { error() {} },
     allowDemoBootstrap: false,
     disableInMemoryFallbacks: true,
@@ -86,8 +89,17 @@ function fixture(options = {}) {
     block('async function firebaseAuthMiddleware(', '\n// Middleware'),
     block('function respondWithStrictPersistenceError(', '\nfunction getWeeklyImpulseCommunityEntry('),
     block('async function ensureBackendUser(', '\nasync function ensurePaymentContext('),
-    block("app.post('/events/participations',", "\napp.put('/events/participations/:id/respond'"),
+    block("app.post('/events/participations',", "\nasync function authorizeEventParticipation("),
   ].join('\n'), context);
+  context.prisma.$transaction = async operation => operation({
+    $queryRaw: async () => [],
+    event: { findUnique: async () => ({ id: 'event1', startDate: '2099-01-01', participationMode: 'legacyApproval' }) },
+    eventParticipation: {
+      ...context.prisma.eventParticipation,
+      findUnique: async ({ where }) => participations.get(`${where.eventId_userId.eventId}/${where.eventId_userId.userId}`) || null,
+      count: async () => 0,
+    },
+  });
   async function request({ userId = 'firebase-owner', token = 'verified-token', body = {} } = {}) {
     let status = 200;
     let response;
@@ -150,10 +162,10 @@ for (const token of ['', 'forged-token']) {
   });
 }
 
-test('server-token without verified UID retains strict legacy missing-user semantics', async () => {
+test('server-token without verified UID cannot create participation', async () => {
   const route = fixture();
-  assert.equal((await route.request({ token: 'server-token', body: { firebaseUid: 'firebase-owner' } })).status, 503);
-  assert.deepEqual(route.calls.map(call => call[0]), ['event.findUnique', 'user.findUnique']);
+  assert.equal((await route.request({ token: 'server-token', body: { firebaseUid: 'firebase-owner' } })).status, 401);
+  assert.deepEqual(route.calls, []);
   assert.equal(route.users.size, 0);
 });
 

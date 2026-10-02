@@ -7,12 +7,15 @@ import 'package:parentpeak/logic/participation_service.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/meetup_chat_screen.dart';
 import 'package:parentpeak/ui/event_edit_sheet.dart';
+import 'package:parentpeak/models/event_participation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final MeetupEvent event;
   final EventService? eventService;
   final EventBackendService? backendService;
   final ParticipationService? participationService;
+  final Future<bool> Function(Uri)? openOrganizerUrl;
 
   const EventDetailScreen({
     super.key,
@@ -20,6 +23,7 @@ class EventDetailScreen extends StatefulWidget {
     this.eventService,
     this.backendService,
     this.participationService,
+    this.openOrganizerUrl,
   });
 
   @override
@@ -37,6 +41,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   bool _isDeclined = false;
   bool _isLoading = false;
   bool _requiresSignIn = false;
+  bool _isInterested = false;
+  bool _statusLoading = true;
+  bool _statusFailed = false;
 
   // Serie folgen (Issue #47) — nur relevant, wenn das Event zu einer Serie
   // gehört (event.seriesId != null).
@@ -56,9 +63,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     super.initState();
     _event = widget.event;
     _eventService = widget.eventService ?? EventService();
-    _participationService =
-        widget.participationService ?? ParticipationService();
     _eventBackendService = widget.backendService ?? EventBackendService();
+    _participationService = widget.participationService ??
+      ParticipationService(backendService: _eventBackendService);
     _checkParticipationStatus();
     _loadFollowStatus();
   }
@@ -115,16 +122,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Future<void> _checkParticipationStatus() async {
-    if (_isOwner) return;
+    if (_isOwner) { _statusLoading = false; return; }
     final currentUserId = _currentUserId;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       if (!mounted) return;
       setState(() {
         _requiresSignIn = true;
+        _statusLoading = false;
       });
       return;
     }
 
+    setState(() { _statusLoading = true; _statusFailed = false; });
+    try {
     final participation = await _participationService
         .getParticipationByUserAndEvent(
           userId: currentUserId,
@@ -132,14 +142,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         );
 
     if (!mounted) return;
-    setState(() {
-      _isApproved = participation?.status == ParticipationStatus.approved;
-      _isDeclined = participation?.status == ParticipationStatus.declined;
-      _hasRequested =
-          participation?.status == ParticipationStatus.pending ||
-          participation?.status == ParticipationStatus.approved;
-      _requiresSignIn = false;
-    });
+    setState(() { _applyParticipation(participation); _statusLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() { _statusFailed = true; _statusLoading = false; });
+    }
+  }
+
+  void _applyParticipation(EventParticipation? participation) {
+    _isApproved = participation?.status == ParticipationStatus.approved;
+    _isDeclined = participation?.status == ParticipationStatus.declined;
+    _hasRequested = participation?.status == ParticipationStatus.pending;
+    _isInterested = participation?.status == ParticipationStatus.interested;
+    _requiresSignIn = false;
   }
 
   Future<void> _requestParticipation() async {
@@ -157,20 +171,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _participationService.requestParticipation(
+      final participation = await _participationService.requestParticipation(
         eventId: _event.id,
         userId: currentUserId,
       );
 
       if (!mounted) return;
       setState(() {
-        _hasRequested = true;
-        _isDeclined = false;
+        _applyParticipation(participation);
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('event_detail_request_sent'))),
+        SnackBar(content: Text(context.tr(
+          _isInterested ? 'event_interest_saved' : _isApproved
+              ? 'event_detail_registered' : 'event_legacy_pending'))),
       );
+      await _refreshEvent();
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -180,6 +196,103 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _refreshEvent() async {
+    final updated = await _eventBackendService.fetchEventById(_event.id);
+    if (mounted && updated != null) setState(() => _event = updated);
+  }
+
+  Future<void> _withdraw() async {
+    final uid = _currentUserId;
+    if (uid == null || _isLoading || _isOwner) return;
+    setState(() => _isLoading = true);
+    try {
+      await _participationService.withdrawParticipation(eventId: _event.id, userId: uid);
+      if (!mounted) return;
+      setState(() { _applyParticipation(null); _isLoading = false; });
+      await _refreshEvent();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('event_action_failed'))));
+    }
+  }
+
+  Future<void> _openOrganizer() async {
+    final uri = _event.organizerUri;
+    if (uri == null) return;
+    try {
+      final opened = await (widget.openOrganizerUrl?.call(uri) ?? launchUrl(uri, mode: LaunchMode.externalApplication));
+      if (opened || !mounted) return;
+    } catch (_) { if (!mounted) return; }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('event_action_failed'))));
+    }
+  }
+
+  Widget _buildParticipationControls() {
+    final closed = _event.status != EventStatus.active || !_event.eventDate.isAfter(DateTime.now());
+    final active = _isApproved || _isInterested || _hasRequested;
+    const progress = SizedBox(width: 18, height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_event.isSharedOffer) ...[
+          Text(context.tr('event_interest_not_booking')),
+          const SizedBox(height: 12),
+          if (_event.organizerUri != null) OutlinedButton.icon(
+            key: const Key('event-organizer-link'),
+            onPressed: _openOrganizer,
+            icon: const Icon(Icons.open_in_new),
+            label: Text(context.tr('event_open_organizer')),
+          ),
+        ],
+        if (!_isOwner && _statusLoading)
+          const Center(child: progress)
+        else if (!_isOwner && _statusFailed) ...[
+          Text(context.tr('event_status_failed')),
+          TextButton.icon(key: const Key('event-status-retry'),
+            onPressed: _checkParticipationStatus,
+            icon: const Icon(Icons.refresh), label: Text(context.tr('event_retry'))),
+        ] else if (!_isOwner) ...[
+          if (_hasRequested)
+            _buildStatusBanner(icon: Icons.schedule,
+              text: context.tr('event_legacy_pending'),
+              bgColor: const Color(0xFFFFF3CD), textColor: const Color(0xFF735C0F)),
+          if (_isInterested || (_isApproved && _event.isSharedOffer))
+            Text(context.tr('event_interest_saved')),
+          if (_isApproved && !_event.isSharedOffer) ...[
+            _buildStatusBanner(icon: Icons.check_circle_outline,
+              text: context.tr('event_detail_registered'),
+              bgColor: const Color(0xFFDCFCE7), textColor: const Color(0xFF166534)),
+            TextButton.icon(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => MeetupChatScreen(event: _event))),
+              icon: const Icon(Icons.chat_outlined), label: Text(context.tr('event_detail_open_chat'))),
+          ],
+          if (_isDeclined) Text(context.tr('event_detail_request_declined')),
+          if (active) OutlinedButton.icon(
+            key: const Key('event-withdraw'),
+            onPressed: _isLoading ? null : _withdraw,
+            icon: _isLoading ? progress : const Icon(Icons.undo),
+            label: Text(context.tr(_event.isSharedOffer ? 'event_interest_withdraw' : 'event_withdraw')),
+          ) else FilledButton.icon(
+            key: const Key('event-join'),
+            onPressed: closed || _event.isFull || _isLoading || _requiresSignIn ? null : _requestParticipation,
+            icon: _isLoading ? progress : Icon(_event.isSharedOffer ? Icons.favorite_border : Icons.person_add_alt_1),
+            label: Text(context.tr(closed ? 'event_closed' : _event.isFull ? 'status_full' :
+              switch (_event.participationMode) {
+                ParticipationMode.direct => 'event_join_direct',
+                ParticipationMode.interest => 'event_show_interest',
+                ParticipationMode.legacyApproval => 'event_detail_request_participation',
+              })),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -261,29 +374,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
+                  SizedBox(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.45,
-                        ),
-                      ),
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           _event.title,
-                          style: theme.textTheme.headlineSmall?.copyWith(
+                          style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Row(
+                        if (!_event.isSharedOffer && _event.hasCapacity) Row(
                           children: [
                             Expanded(
                               child: _MetaPill(
@@ -330,7 +433,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         '${_event.latitude.toStringAsFixed(3)}, ${_event.longitude.toStringAsFixed(3)}',
                   ),
                   const SizedBox(height: 8),
-                  _buildInfoTile(
+                  if (!_event.isSharedOffer && _event.hasCapacity) _buildInfoTile(
                     icon: Icons.people,
                     title: context.tr(
                       'event_detail_participants',
@@ -349,18 +452,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   const SizedBox(height: 12),
                   _buildAgeGroupChips(),
                   const SizedBox(height: 16),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.6,
-                        ),
-                      ),
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -383,72 +476,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     _buildSeriesFollowCard(theme),
                     const SizedBox(height: 16),
                   ],
-                  if (_isOwner)
-                    const SizedBox.shrink()
-                  else if (_isApproved)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildStatusBanner(
-                          icon: Icons.check_circle,
-                          text: context.tr('event_detail_registered'),
-                          bgColor: const Color(0xFFDCFCE7),
-                          textColor: const Color(0xFF166534),
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      MeetupChatScreen(event: _event),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.chat),
-                            label: Text(context.tr('event_detail_open_chat')),
-                          ),
-                        ),
-                      ],
-                    )
-                  else if (_hasRequested)
-                    _buildStatusBanner(
-                      icon: Icons.schedule,
-                      text: context.tr('event_detail_request_pending'),
-                      bgColor: const Color(0xFFFEF3C7),
-                      textColor: const Color(0xFF92400E),
-                    )
-                  else if (_isDeclined)
-                    _buildStatusBanner(
-                      icon: Icons.info_outline_rounded,
-                      text: context.tr('event_detail_request_declined'),
-                      bgColor: const Color(0xFFFEE2E2),
-                      textColor: const Color(0xFF991B1B),
-                    )
-                  else
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _event.isFull || _isLoading
-                            ? null
-                            : _requestParticipation,
-                        icon: _isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.person_add),
-                        label: Text(
-                          context.tr('event_detail_request_participation'),
-                        ),
-                      ),
-                    ),
+                  _buildParticipationControls(),
                 ],
               ),
             ),
@@ -466,7 +494,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.tr('event_owner_yours'),
+            context.tr(_event.isSharedOffer ? 'event_shared_by_you' : 'event_owner_yours'),
             style: theme.textTheme.titleSmall,
           ),
           Row(
@@ -794,9 +822,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         children: [
           Icon(icon, color: textColor, size: 20),
           const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(color: textColor, fontWeight: FontWeight.w700),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(color: textColor, fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),

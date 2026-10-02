@@ -1,10 +1,11 @@
 import 'package:parentpeak/models/event_participation.dart';
-import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
 
 class ParticipationService {
   static final List<EventParticipation> _participations = [];
-  final EventBackendService _backend = EventBackendService();
+  final EventBackendService _backend;
+  ParticipationService({EventBackendService? backendService})
+      : _backend = backendService ?? EventBackendService();
 
   Never _throwBackendRequired(String action) {
     throw StateError(
@@ -94,52 +95,24 @@ class ParticipationService {
     required String userId,
     required String eventId,
   }) async {
-    if (_backend.isEnabled) {
-      final remote = await _backend.fetchParticipationByUserAndEvent(
+    if (!_backend.isEnabled) _throwBackendRequired('Teilnahme laden');
+    final remote = await _backend.fetchParticipationByUserAndEvent(
         userId: userId,
         eventId: eventId,
       );
-      if (remote != null) {
-        _storeLocal(remote);
-        return remote;
-      }
-    }
+    if (remote != null) _storeLocal(remote);
+    return remote;
+  }
 
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    try {
-      final matches = _participations.where((p) =>
-          p.userId == userId &&
-          p.eventId == eventId &&
-          p.status != ParticipationStatus.cancelled);
-      if (matches.isEmpty) return null;
-      final list = matches.toList()
-        ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
-      return list.first;
-    } catch (e) {
-      return null;
-    }
+  Future<void> withdrawParticipation({required String eventId, required String userId}) async {
+    await _backend.withdrawParticipation(eventId: eventId, userId: userId);
+    _participations.removeWhere((item) => item.eventId == eventId && item.userId == userId);
   }
 
   // Hole alle genehmigten Teilnehmer eines Events
   Future<List<EventParticipation>> getApprovedParticipantsForEvent(
       String eventId) async {
-    if (_backend.isEnabled) {
-      final remote = await _backend.fetchApprovedParticipantsForEvent(eventId);
-      if (remote.isNotEmpty) {
-        for (final item in remote) {
-          _storeLocal(item);
-        }
-        return remote;
-      }
-    }
-
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    return _participations
-        .where((p) =>
-            p.eventId == eventId &&
-            p.status == ParticipationStatus.approved)
-        .toList();
+    if (!_backend.isEnabled) _throwBackendRequired('Teilnehmer laden');
+    return _backend.fetchApprovedParticipantsForEvent(eventId);
   }
 }
