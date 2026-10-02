@@ -27,6 +27,35 @@ BackendApiClient _client(http.Client httpClient) {
 }
 
 void main() {
+  test('create preserves the selected local time across the server round trip', () async {
+    final selected = DateTime(2026, 10, 3, 10);
+    final event = MeetupEvent(
+      id: 'timezone-event', hosterId: 'owner', title: 'Timezone test',
+      description: '', category: EventCategory.other,
+      ageGroups: const [], location: 'Berlin', latitude: 52.52,
+      longitude: 13.405, eventDate: selected, createdAt: selected,
+      maxParticipants: 10, photoUrl: '',
+    );
+    final service = EventBackendService(apiClient: _client(MockClient((request) async {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      final startDate = body['startDate'] as String;
+      expect(startDate, endsWith('Z'));
+      expect(startDate, selected.toUtc().toIso8601String());
+      return http.Response(jsonEncode({'event': {
+        ...event.toJson(),
+        'eventDate': null,
+        'startDate': startDate,
+        'status': 'upcoming',
+      }}), 201);
+    })));
+
+    final created = await service.createEvent(event);
+
+    expect(created, isNotNull);
+    expect(created!.eventDate.toLocal(), selected);
+    expect(created.eventDate.toLocal().hour, 10);
+  });
+
   test(
     'parses an acknowledged participation request from the server',
     () async {

@@ -826,6 +826,11 @@ class AppStringsManager {
       'event_scan_field_time': 'Uhrzeit',
       'event_scan_field_category': 'Kategorie',
       'event_scan_field_age': 'Altersgruppe',
+      'event_scan_choose_date': 'Datum wählen',
+      'event_scan_date_required': 'Datum bestätigen (Pflicht)',
+      'event_scan_time_required': 'Uhrzeit bestätigen (Pflicht)',
+      'event_scan_datetime_required':
+          'Bitte einen konkreten zukünftigen Termin mit Datum und Uhrzeit bestätigen.',
       'event_scan_recurring_confirm': 'Wiederholung für andere Eltern anzeigen',
       'event_scan_recurring_explanation':
           'Bitte prüfe die Angabe vom Flyer. Sie erscheint in der Beschreibung; weitere Termine oder Benachrichtigungen werden nicht automatisch erstellt.',
@@ -3669,6 +3674,11 @@ class AppStringsManager {
       'event_scan_field_time': 'Time',
       'event_scan_field_category': 'Category',
       'event_scan_field_age': 'Age group',
+      'event_scan_choose_date': 'Choose date',
+      'event_scan_date_required': 'Confirm date (required)',
+      'event_scan_time_required': 'Confirm time (required)',
+      'event_scan_datetime_required':
+          'Please confirm a specific future occurrence with a date and time.',
       'event_scan_recurring_confirm':
           'Show the repeat schedule to other parents',
       'event_scan_recurring_explanation':
@@ -7662,6 +7672,11 @@ class AppStringsManager {
       'event_scan_field_time': 'Dem',
       'event_scan_field_category': 'Kategorî',
       'event_scan_field_age': 'Koma temen',
+      'event_scan_choose_date': 'Dîrokê hilbijêre',
+      'event_scan_date_required': 'Dîrokê piştrast bike (pêwîst)',
+      'event_scan_time_required': 'Saetê piştrast bike (pêwîst)',
+      'event_scan_datetime_required':
+          'Ji kerema xwe re bûyereke di pêşerojê de bi dîrok û saeteke diyarkirî piştrast bike.',
       'event_scan_recurring_confirm':
           'Dubarebûnê ji dêûbavên din re nîşan bide',
       'event_scan_recurring_explanation':
@@ -11256,6 +11271,11 @@ class AppStringsManager {
       'event_scan_field_time': 'Saat',
       'event_scan_field_category': 'Kategori',
       'event_scan_field_age': 'Yaş grubu',
+      'event_scan_choose_date': 'Tarih seçin',
+      'event_scan_date_required': 'Tarihi onaylayın (zorunlu)',
+      'event_scan_time_required': 'Saati onaylayın (zorunlu)',
+      'event_scan_datetime_required':
+          'Lütfen gelecekteki belirli bir etkinliğin tarihini ve saatini onaylayın.',
       'event_scan_recurring_confirm':
           'Tekrar bilgisini diğer ebeveynlere göster',
       'event_scan_recurring_explanation':
