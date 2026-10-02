@@ -8,7 +8,9 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/calendar_backend_service.dart';
+import 'package:parentpeak/logic/calendar_logic.dart';
 import 'package:parentpeak/logic/notification_service.dart';
+import 'package:parentpeak/ui/widgets/user_avatar.dart';
 import 'package:parentpeak/services/holiday_service.dart';
 import 'package:parentpeak/widgets/language_change_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -55,6 +57,97 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   String _t(String key) =>
       AppStringsManager.getString(languageService.currentLanguage, key);
+
+  /// `intl`-Locale-Tag für die aktuell gewählte App-Sprache.
+  String get _localeTag =>
+      CalendarLogic.localeTag(languageService.currentLanguage);
+
+  static const List<String> _dropOffOptions = [
+    '',
+    'Mama',
+    'Papa',
+    'Oma',
+    'Opa',
+    'Andere',
+  ];
+
+  String _dropOffLabel(String value) {
+    switch (value) {
+      case 'Mama':
+        return _t('calendar_person_mum');
+      case 'Papa':
+        return _t('calendar_person_dad');
+      case 'Oma':
+        return _t('calendar_person_grandma');
+      case 'Opa':
+        return _t('calendar_person_grandpa');
+      case 'Andere':
+        return _t('calendar_person_other');
+      default:
+        return value;
+    }
+  }
+
+  String _recurrenceLabel(String value) {
+    switch (value) {
+      case 'Einmalig':
+        return _t('calendar_recurrence_once');
+      case 'Täglich':
+        return _t('calendar_recurrence_daily');
+      case 'Wöchentlich':
+        return _t('calendar_recurrence_weekly');
+      case 'Monatlich':
+        return _t('calendar_recurrence_monthly');
+      case 'Jährlich':
+        return _t('calendar_recurrence_yearly');
+      default:
+        return value;
+    }
+  }
+
+  String _recurrenceEndLabel(String value) {
+    switch (value) {
+      case 'Kein Ende':
+        return _t('calendar_end_never');
+      case '5 Termine':
+        return _t('calendar_end_count').replaceAll('{n}', '5');
+      case '10 Termine':
+        return _t('calendar_end_count').replaceAll('{n}', '10');
+      case 'Datum wählen':
+        return _t('calendar_end_pick_date');
+      default:
+        return value;
+    }
+  }
+
+  String _reminderLabel(int minutes) {
+    if (minutes == _smartReminderValue) return _t('calendar_reminder_smart');
+    if (minutes == 0) return _t('calendar_reminder_none');
+    return _t('calendar_reminder_before').replaceAll('{n}', '$minutes');
+  }
+
+  /// Entfernt ein Event samt expandierter Serien-Instanzen aus lokaler Liste,
+  /// Persistenz und Backend. Wird vor dem Speichern eines bearbeiteten Events
+  /// genutzt, damit keine Duplikate entstehen.
+  Future<void> _removeEventEverywhere(_CalendarEvent event) async {
+    final baseId = event.id;
+    final toRemove = _events
+        .where((e) => e.id == baseId || e.id.startsWith('${baseId}_'))
+        .map((e) => e.id)
+        .toList();
+    setState(() {
+      _events.removeWhere((e) => toRemove.contains(e.id));
+    });
+    await _persistEvents();
+    for (final id in toRemove) {
+      try {
+        await _calendarService.deleteEvent(id);
+      } catch (_) {
+        // Lokal entfernt reicht als Fallback.
+      }
+    }
+  }
+
   final CalendarBackendService _calendarService =
       BackendServiceFactory.createCalendarService();
   final TextEditingController _titleController = TextEditingController();
@@ -165,8 +258,8 @@ class _CalendarScreenState extends State<CalendarScreen>
           controller: ctrl,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            hintText: 'z.B. Lena, Oma, Sportverein',
+          decoration: InputDecoration(
+            hintText: _t('calendar_person_hint'),
           ),
           onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
         ),
@@ -260,58 +353,30 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   List<_CalendarEvent> _expandRecurrence(_CalendarEvent base) {
-    final List<_CalendarEvent> list = [base];
-    Duration step;
-    int occurrences = base.recurrenceCount ?? 3; // default fallback
-    switch (base.recurrence) {
-      case 'Täglich':
-        step = const Duration(days: 1);
-        break;
-      case 'Wöchentlich':
-        step = const Duration(days: 7);
-        break;
-      case 'Monatlich':
-        // approximate by 30 days for demo
-        step = const Duration(days: 30);
-        break;
-      case 'Jährlich':
-        step = const Duration(days: 365);
-        break;
-      default:
-        return list;
-    }
+    final duration = base.end.difference(base.start);
+    final starts = CalendarLogic.expandRecurrenceStarts(
+      start: base.start,
+      recurrence: base.recurrence,
+      endMode: base.recurrenceEndMode,
+      endDate: base.recurrenceEndDate,
+      count: base.recurrenceCount,
+      openEndedLimit: 5,
+    );
+    if (starts.length <= 1) return [base];
 
-    int added = 0;
-    DateTime nextStart = base.start.add(step);
-    DateTime nextEnd = base.end.add(step);
-
-    bool useCount = base.recurrenceEndMode.contains('Termine');
-    bool useDate = base.recurrenceEndMode == 'Datum wählen';
-    final endDate = base.recurrenceEndDate;
-
-    while (true) {
-      if (useCount && added >= (occurrences - 1)) break;
-      if (useDate && endDate != null && nextStart.isAfter(endDate)) break;
-      list.add(
-        base.copyWith(
-          id: '${base.id}_$added',
-          start: nextStart,
-          end: nextEnd,
-        ),
-      );
-      added++;
-      nextStart = nextStart.add(step);
-      nextEnd = nextEnd.add(step);
-
-      // falls weder Datum noch Count explizit: wenige Events erzeugen
-      if (!useCount && !useDate && added >= 4) break;
+    final list = <_CalendarEvent>[base];
+    for (var i = 1; i < starts.length; i++) {
+      final start = starts[i];
+      list.add(base.copyWith(
+        id: '${base.id}_$i',
+        start: start,
+        end: start.add(duration),
+      ));
     }
     return list;
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
+  bool _isSameDay(DateTime a, DateTime b) => CalendarLogic.isSameDay(a, b);
 
   List<_CalendarEvent> get _eventsForSelectedDay {
     return _events
@@ -414,13 +479,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Future<void> _editEvent(_CalendarEvent event) async {
-    setState(() {
-      _events.removeWhere((e) => e.id == event.id);
-      _titleController.text = event.title;
-      _filterPerson = event.person;
-    });
-    await _persistEvents();
-    _openAddSheet(prefillTitle: event.title);
+    // Kein vorzeitiges Löschen: Das bestehende Event bleibt erhalten und wird
+    // erst beim tatsächlichen Speichern ersetzt. So geht beim Abbrechen nichts
+    // verloren.
+    await _openAddSheet(editing: event);
   }
 
   Future<void> _persistEvents() async {
@@ -434,11 +496,29 @@ class _CalendarScreenState extends State<CalendarScreen>
   // Quick-Add: Natural Language Parsing
   // ═══════════════════════════════════════════════════════════════════════
   void _handleQuickAdd(String input) {
-    if (input.trim().isEmpty) return;
+    final parsed = CalendarLogic.parseQuickInput(
+      input,
+      selectedDay: _selectedDay,
+      now: DateTime.now(),
+    );
 
-    final parsed = _parseQuickInput(input.trim());
+    if (!parsed.isValid) {
+      // Leere Eingabe stillschweigend ignorieren, sonst sauberes Feedback.
+      if (parsed.errorCode == 'empty') return;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_quickAddErrorMessage(parsed.errorCode)),
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+      return;
+    }
+
     final now = DateTime.now();
-
     final event = _CalendarEvent(
       id: 'event_${now.millisecondsSinceEpoch}',
       title: parsed.title,
@@ -458,6 +538,10 @@ class _CalendarScreenState extends State<CalendarScreen>
       _focusedDay = DateTime(parsed.dateTime.year, parsed.dateTime.month, 1);
     });
     _persistEvents();
+    // Backend-Sync im Hintergrund (Fehler werden still toleriert, lokal bleibt
+    // der Termin erhalten).
+    _syncQuickAddToBackend(event);
+    _scheduleRemindersFor([event]);
     _quickAddController.clear();
 
     if (mounted) {
@@ -473,125 +557,62 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
-  _QuickAddResult _parseQuickInput(String input) {
-    String title = input;
-    DateTime dateTime = DateTime(
-        _selectedDay.year, _selectedDay.month, _selectedDay.day, 10, 0);
-    String? person;
-    bool isBirthday = false;
-
-    // Check for birthday keywords
-    final birthdayPatterns = ['geburtstag', 'birthday', 'bday'];
-    for (final bp in birthdayPatterns) {
-      if (input.toLowerCase().contains(bp)) {
-        isBirthday = true;
-        person = '\u{1F382} Geburtstag';
-        break;
+  Future<void> _syncQuickAddToBackend(_CalendarEvent event) async {
+    try {
+      await _calendarService.addEvent(event.toJson());
+    } catch (_) {
+      if (mounted) {
+        setState(() => _syncError = _calendarService.lastSyncError);
       }
     }
-
-    // Parse time: "10:00" or "10 Uhr" or "14:30"
-    final timeRegex = RegExp(r'(\d{1,2}):(\d{2})');
-    final timeUhrRegex = RegExp(r'(\d{1,2})\s*[Uu]hr');
-    final timeMatch = timeRegex.firstMatch(input);
-    final timeUhrMatch = timeUhrRegex.firstMatch(input);
-
-    int hour = 10;
-    int minute = 0;
-
-    if (timeMatch != null) {
-      hour = int.parse(timeMatch.group(1)!);
-      minute = int.parse(timeMatch.group(2)!);
-      title = title.replaceFirst(timeMatch.group(0)!, '').trim();
-    } else if (timeUhrMatch != null) {
-      hour = int.parse(timeUhrMatch.group(1)!);
-      title = title.replaceFirst(timeUhrMatch.group(0)!, '').trim();
-    }
-
-    // Parse day name: Mo, Di, Mi, Do, Fr, Sa, So (or full names)
-    final dayMap = {
-      'mo': 1,
-      'montag': 1,
-      'di': 2,
-      'dienstag': 2,
-      'mi': 3,
-      'mittwoch': 3,
-      'do': 4,
-      'donnerstag': 4,
-      'fr': 5,
-      'freitag': 5,
-      'sa': 6,
-      'samstag': 6,
-      'so': 7,
-      'sonntag': 7,
-      'mon': 1,
-      'tue': 2,
-      'wed': 3,
-      'thu': 4,
-      'fri': 5,
-      'sat': 6,
-      'sun': 7,
-    };
-
-    DateTime targetDate = _selectedDay;
-    final now = DateTime.now();
-
-    for (final entry in dayMap.entries) {
-      final pattern = RegExp('\\b${entry.key}\\b', caseSensitive: false);
-      if (pattern.hasMatch(input)) {
-        // Find next occurrence of this weekday
-        final targetWeekday = entry.value;
-        int daysAhead = targetWeekday - now.weekday;
-        if (daysAhead <= 0) daysAhead += 7;
-        targetDate = DateTime(now.year, now.month, now.day + daysAhead);
-        title = title.replaceFirst(pattern, '').trim();
-        break;
-      }
-    }
-
-    // Parse date: "25.12." or "25.12.2026"
-    final dateRegex = RegExp(r'(\d{1,2})\.(\d{1,2})\.(\d{4})?');
-    final dateMatch = dateRegex.firstMatch(input);
-    if (dateMatch != null) {
-      final day = int.parse(dateMatch.group(1)!);
-      final month = int.parse(dateMatch.group(2)!);
-      final year = dateMatch.group(3) != null
-          ? int.parse(dateMatch.group(3)!)
-          : now.year;
-      targetDate = DateTime(year, month, day);
-      title = title.replaceFirst(dateMatch.group(0)!, '').trim();
-    }
-
-    // Clean up title
-    title = title.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (title.isEmpty) title = input.split(' ').first;
-
-    dateTime = DateTime(
-        targetDate.year, targetDate.month, targetDate.day, hour, minute);
-
-    return _QuickAddResult(
-      title: title,
-      dateTime: dateTime,
-      person: person,
-      isBirthday: isBirthday,
-    );
   }
 
-  Future<void> _openAddSheet({String? prefillTitle}) async {
-    if (prefillTitle == null) _titleController.clear();
-    String person = _filterPerson != 'Alle' ? _filterPerson : 'Eltern';
-    TimeOfDay start = const TimeOfDay(hour: 10, minute: 0);
-    TimeOfDay end = const TimeOfDay(hour: 11, minute: 0);
-    String recurrence = 'Einmalig';
-    int reminder = _smartReminderValue;
-    String endMode = _recurrenceEndMode;
-    DateTime? recurrenceEndDate =
-        _recurrenceEndDate ?? _selectedDay.add(const Duration(days: 30));
-    int endCount = _recurrenceCount;
-    String packReminderText = '';
-    String bringer = '';
-    String abholer = '';
-    final packReminderCtrl = TextEditingController();
+  String _quickAddErrorMessage(String? code) {
+    switch (code) {
+      case 'time_out_of_range':
+        return _t('calendar_quick_add_bad_time');
+      case 'date_invalid':
+        return _t('calendar_quick_add_bad_date');
+      default:
+        return _t('calendar_quick_add_failed');
+    }
+  }
+
+  Future<void> _openAddSheet({_CalendarEvent? editing}) async {
+    final isEditing = editing != null;
+    _titleController.text = editing?.title ?? '';
+    // Beim Editieren den Tag auf den des Events setzen, damit Start/Ende korrekt
+    // berechnet werden.
+    if (isEditing) {
+      _selectedDay =
+          DateTime(editing.start.year, editing.start.month, editing.start.day);
+    }
+    String person = isEditing
+        ? editing.person
+        : (_filterPerson != 'Alle' ? _filterPerson : 'Eltern');
+    TimeOfDay start = isEditing
+        ? TimeOfDay(hour: editing.start.hour, minute: editing.start.minute)
+        : const TimeOfDay(hour: 10, minute: 0);
+    TimeOfDay end = isEditing
+        ? TimeOfDay(hour: editing.end.hour, minute: editing.end.minute)
+        : const TimeOfDay(hour: 11, minute: 0);
+    String recurrence = isEditing ? editing.recurrence : 'Einmalig';
+    int reminder = isEditing ? editing.reminderMinutes : _smartReminderValue;
+    String endMode = isEditing ? editing.recurrenceEndMode : _recurrenceEndMode;
+    DateTime? recurrenceEndDate = isEditing
+        ? (editing.recurrenceEndDate ??
+            _selectedDay.add(const Duration(days: 30)))
+        : (_recurrenceEndDate ?? _selectedDay.add(const Duration(days: 30)));
+    int endCount = isEditing
+        ? (editing.recurrenceCount ?? _recurrenceCount)
+        : _recurrenceCount;
+    String packReminderText = editing?.packReminder ?? '';
+    String bringer = editing?.bringer ?? '';
+    String abholer = editing?.abholer ?? '';
+    bool titleError = false;
+    bool isSaving = false;
+    final packReminderCtrl =
+        TextEditingController(text: editing?.packReminder ?? '');
 
     await showModalBottomSheet(
       context: context,
@@ -617,8 +638,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                     Row(
                       children: [
                         Text(
-                          AppStringsManager.getString(
-                              languageService.currentLanguage, 'new_event'),
+                          isEditing
+                              ? _t('calendar_edit_event')
+                              : AppStringsManager.getString(
+                                  languageService.currentLanguage, 'new_event'),
                           style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w700),
                         ),
@@ -693,27 +716,40 @@ class _CalendarScreenState extends State<CalendarScreen>
                           children: [
                             TextField(
                               controller: _titleController,
-                              decoration: const InputDecoration(
-                                labelText: 'Titel',
-                                hintText: 'z.B. Elternabend',
+                              decoration: InputDecoration(
+                                labelText: _t('calendar_field_title'),
+                                hintText: _t('calendar_field_title_hint'),
+                                errorText: titleError
+                                    ? _t('calendar_title_required')
+                                    : null,
                               ),
+                              onChanged: (_) {
+                                if (titleError) {
+                                  setSheetState(() => titleError = false);
+                                }
+                              },
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
-                              key: ValueKey(person),
-                              value: person,
-                              decoration: const InputDecoration(
-                                  labelText: 'F\u00fcr wen?'),
+                              key: ValueKey('person_$person'),
+                              initialValue: person,
+                              decoration: InputDecoration(
+                                  labelText: _t('calendar_field_for_whom')),
                               isExpanded: true,
                               items: [
                                 ..._personColors.keys.map((p) =>
-                                    DropdownMenuItem(value: p, child: Text(_displayCalendarPersonLabel(p, context)))),
+                                    DropdownMenuItem(
+                                        value: p,
+                                        child: Text(_displayCalendarPersonLabel(
+                                            p, context)))),
                                 DropdownMenuItem(
                                   value: '__add__',
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.add_circle_outline_rounded,
-                                          size: 16, color: Color(0xFF4CAF50)),
+                                      const Icon(
+                                          Icons.add_circle_outline_rounded,
+                                          size: 16,
+                                          color: Color(0xFF4CAF50)),
                                       const SizedBox(width: 6),
                                       Text(_t('calendar_new_person'),
                                           style: const TextStyle(
@@ -744,7 +780,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                               children: [
                                 Expanded(
                                   child: _TimeButton(
-                                    label: 'Start',
+                                    label: _t('calendar_field_start'),
                                     initial: start,
                                     onPicked: (t) => start = t,
                                   ),
@@ -752,7 +788,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: _TimeButton(
-                                    label: 'Ende',
+                                    label: _t('calendar_field_end'),
                                     initial: end,
                                     onPicked: (t) => end = t,
                                   ),
@@ -765,47 +801,43 @@ class _CalendarScreenState extends State<CalendarScreen>
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    value: bringer.isEmpty ? '' : bringer,
-                                    decoration: const InputDecoration(
-                                        labelText: '\u{1F697} Bringt'),
+                                    key: ValueKey('bringer_$bringer'),
+                                    initialValue:
+                                        bringer.isEmpty ? '' : bringer,
+                                    decoration: InputDecoration(
+                                        labelText:
+                                            '\u{1F697} ${_t('calendar_field_brings')}'),
                                     isExpanded: true,
-                                    items: [
-                                      '',
-                                      'Mama',
-                                      'Papa',
-                                      'Oma',
-                                      'Opa',
-                                      'Andere'
-                                    ]
+                                    items: _dropOffOptions
                                         .map((p) => DropdownMenuItem(
                                             value: p,
-                                            child: Text(
-                                                p.isEmpty ? 'Niemand' : p)))
+                                            child: Text(p.isEmpty
+                                                ? _t('calendar_person_nobody')
+                                                : _dropOffLabel(p))))
                                         .toList(),
-                                    onChanged: (v) => bringer = v ?? '',
+                                    onChanged: (v) =>
+                                        setSheetState(() => bringer = v ?? ''),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    value: abholer.isEmpty ? '' : abholer,
-                                    decoration: const InputDecoration(
-                                        labelText: '\u{1F3E0} Holt'),
+                                    key: ValueKey('abholer_$abholer'),
+                                    initialValue:
+                                        abholer.isEmpty ? '' : abholer,
+                                    decoration: InputDecoration(
+                                        labelText:
+                                            '\u{1F3E0} ${_t('calendar_field_picks_up')}'),
                                     isExpanded: true,
-                                    items: [
-                                      '',
-                                      'Mama',
-                                      'Papa',
-                                      'Oma',
-                                      'Opa',
-                                      'Andere'
-                                    ]
+                                    items: _dropOffOptions
                                         .map((p) => DropdownMenuItem(
                                             value: p,
-                                            child: Text(
-                                                p.isEmpty ? 'Niemand' : p)))
+                                            child: Text(p.isEmpty
+                                                ? _t('calendar_person_nobody')
+                                                : _dropOffLabel(p))))
                                         .toList(),
-                                    onChanged: (v) => abholer = v ?? '',
+                                    onChanged: (v) =>
+                                        setSheetState(() => abholer = v ?? ''),
                                   ),
                                 ),
                               ],
@@ -814,59 +846,64 @@ class _CalendarScreenState extends State<CalendarScreen>
                             // Feature 2: Pack-Reminder
                             TextField(
                               controller: packReminderCtrl,
-                              decoration: const InputDecoration(
-                                labelText: '\u{1F392} Vorbereitung (optional)',
-                                hintText:
-                                    'z.B. Schwimmsachen, Turnzeug einpacken',
+                              decoration: InputDecoration(
+                                labelText:
+                                    '\u{1F392} ${_t('calendar_field_prep')}',
+                                hintText: _t('calendar_field_prep_hint'),
                               ),
                               onChanged: (v) => packReminderText = v,
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
-                              value: recurrence,
-                              decoration: const InputDecoration(
-                                  labelText: 'Wiederholung'),
+                              key: ValueKey('recurrence_$recurrence'),
+                              initialValue: recurrence,
+                              decoration: InputDecoration(
+                                  labelText: _t('calendar_field_recurrence')),
                               isExpanded: true,
                               items: _recurrenceOptions
                                   .map((p) => DropdownMenuItem(
-                                      value: p, child: Text(p)))
+                                      value: p,
+                                      child: Text(_recurrenceLabel(p))))
                                   .toList(),
                               onChanged: (v) {
-                                if (v != null) recurrence = v;
+                                if (v != null) {
+                                  setSheetState(() => recurrence = v);
+                                }
                               },
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<int>(
-                              value: reminder,
-                              decoration: const InputDecoration(
-                                  labelText: 'Erinnerung'),
+                              key: ValueKey('reminder_$reminder'),
+                              initialValue: reminder,
+                              decoration: InputDecoration(
+                                  labelText: _t('calendar_field_reminder')),
                               isExpanded: true,
                               items: _reminderOptions
                                   .map((m) => DropdownMenuItem(
                                         value: m,
                                         child: Text(
-                                          m == _smartReminderValue
-                                              ? 'Smart (1W, 1T, am Tag)'
-                                              : m == 0
-                                                  ? 'Keine'
-                                                  : '$m Min vorher',
+                                          _reminderLabel(m),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ))
                                   .toList(),
                               onChanged: (v) {
-                                if (v != null) reminder = v;
+                                if (v != null) {
+                                  setSheetState(() => reminder = v);
+                                }
                               },
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
-                              value: endMode,
-                              decoration:
-                                  const InputDecoration(labelText: 'Endet'),
+                              key: ValueKey('endmode_$endMode'),
+                              initialValue: endMode,
+                              decoration: InputDecoration(
+                                  labelText: _t('calendar_field_ends')),
                               isExpanded: true,
                               items: _recurrenceEndOptions
                                   .map((p) => DropdownMenuItem(
-                                      value: p, child: Text(p)))
+                                      value: p,
+                                      child: Text(_recurrenceEndLabel(p))))
                                   .toList(),
                               onChanged: (v) {
                                 if (v != null) {
@@ -898,8 +935,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 },
                                 icon: const Icon(Icons.event_available_rounded),
                                 label: Text(recurrenceEndDate == null
-                                    ? 'Enddatum w\u00e4hlen'
-                                    : 'Endet am ${DateFormat.yMMMd('de').format(recurrenceEndDate!)}'),
+                                    ? _t('calendar_pick_end_date')
+                                    : '${_t('calendar_ends_on')} ${DateFormat.yMMMd(_localeTag).format(recurrenceEndDate!)}'),
                               ),
                             ],
                             const SizedBox(height: 20),
@@ -911,79 +948,106 @@ class _CalendarScreenState extends State<CalendarScreen>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.check_rounded),
+                        icon: isSaving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.check_rounded),
                         label: Text(AppStringsManager.getString(
                             languageService.currentLanguage, 'save_btn')),
-                        onPressed: () async {
-                          if (_titleController.text.trim().isEmpty) return;
-                          final startDate = DateTime(
-                            _selectedDay.year,
-                            _selectedDay.month,
-                            _selectedDay.day,
-                            start.hour,
-                            start.minute,
-                          );
-                          final endDateTime = DateTime(
-                            _selectedDay.year,
-                            _selectedDay.month,
-                            _selectedDay.day,
-                            end.hour,
-                            end.minute,
-                          );
-                          final base = _CalendarEvent(
-                            id: 'event_${DateTime.now().millisecondsSinceEpoch}',
-                            title: _titleController.text.trim(),
-                            start: startDate,
-                            end: endDateTime.isAfter(startDate)
-                                ? endDateTime
-                                : startDate.add(const Duration(hours: 1)),
-                            person: person,
-                            location: 'Familienkalender',
-                            recurrence: recurrence,
-                            reminderMinutes: reminder,
-                            recurrenceEndMode: endMode,
-                            recurrenceEndDate: endMode == 'Datum w\u00e4hlen'
-                                ? recurrenceEndDate
-                                : null,
-                            recurrenceCount:
-                                endMode.contains('Termine') ? endCount : null,
-                            packReminder: packReminderText.trim().isEmpty
-                                ? null
-                                : packReminderText.trim(),
-                            bringer: bringer.isEmpty ? null : bringer,
-                            abholer: abholer.isEmpty ? null : abholer,
-                          );
-                          final expanded = _expandRecurrence(base);
-                          try {
-                            for (final e in expanded) {
-                              await _calendarService.addEvent(e.toJson());
-                            }
-                          } catch (_) {
-                            if (!mounted) return;
-                            setState(() {
-                              _syncError = _calendarService.lastSyncError;
-                            });
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  _syncError ??
-                                      'Termin konnte nicht gespeichert werden.',
-                                ),
-                              ),
-                            );
-                            packReminderCtrl.dispose();
-                            return;
-                          }
-                          setState(() {
-                            _events.addAll(expanded);
-                            _syncError = _calendarService.lastSyncError;
-                          });
-                          _scheduleRemindersFor(expanded);
-                          packReminderCtrl.dispose();
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                        },
+                        // Disable während des Speicherns → verhindert Doppel-Submit.
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                                // Validierung erst beim Absenden.
+                                if (_titleController.text.trim().isEmpty) {
+                                  setSheetState(() => titleError = true);
+                                  return;
+                                }
+                                setSheetState(() => isSaving = true);
+
+                                final startDate = DateTime(
+                                  _selectedDay.year,
+                                  _selectedDay.month,
+                                  _selectedDay.day,
+                                  start.hour,
+                                  start.minute,
+                                );
+                                final endDateTime = DateTime(
+                                  _selectedDay.year,
+                                  _selectedDay.month,
+                                  _selectedDay.day,
+                                  end.hour,
+                                  end.minute,
+                                );
+                                final base = _CalendarEvent(
+                                  id: editing?.id ??
+                                      'event_${DateTime.now().millisecondsSinceEpoch}',
+                                  title: _titleController.text.trim(),
+                                  start: startDate,
+                                  end: endDateTime.isAfter(startDate)
+                                      ? endDateTime
+                                      : startDate.add(const Duration(hours: 1)),
+                                  person: person,
+                                  location: 'Familienkalender',
+                                  recurrence: recurrence,
+                                  reminderMinutes: reminder,
+                                  recurrenceEndMode: endMode,
+                                  recurrenceEndDate:
+                                      endMode == 'Datum w\u00e4hlen'
+                                          ? recurrenceEndDate
+                                          : null,
+                                  recurrenceCount: endMode.contains('Termine')
+                                      ? endCount
+                                      : null,
+                                  packReminder: packReminderText.trim().isEmpty
+                                      ? null
+                                      : packReminderText.trim(),
+                                  bringer: bringer.isEmpty ? null : bringer,
+                                  abholer: abholer.isEmpty ? null : abholer,
+                                );
+
+                                // Beim Editieren: altes Event (inkl. evtl.
+                                // expandierter Serie) zuerst entfernen.
+                                if (isEditing) {
+                                  await _removeEventEverywhere(editing);
+                                }
+
+                                final expanded = _expandRecurrence(base);
+                                try {
+                                  for (final e in expanded) {
+                                    await _calendarService.addEvent(e.toJson());
+                                  }
+                                } catch (_) {
+                                  // Backend-Fehler: Event trotzdem lokal halten
+                                  // (Offline-First), aber Sync-Hinweis zeigen.
+                                  if (!mounted) {
+                                    packReminderCtrl.dispose();
+                                    return;
+                                  }
+                                  setState(() {
+                                    _events.addAll(expanded);
+                                    _syncError = _calendarService.lastSyncError;
+                                  });
+                                  await _persistEvents();
+                                  _scheduleRemindersFor(expanded);
+                                  packReminderCtrl.dispose();
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  return;
+                                }
+                                setState(() {
+                                  _events.addAll(expanded);
+                                  _syncError = _calendarService.lastSyncError;
+                                });
+                                await _persistEvents();
+                                _scheduleRemindersFor(expanded);
+                                packReminderCtrl.dispose();
+                                if (!ctx.mounted) return;
+                                Navigator.pop(ctx);
+                              },
                       ),
                     ),
                   ],
@@ -999,7 +1063,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final monthTitle = DateFormat.yMMMM('de').format(_focusedDay);
+    final monthTitle = DateFormat.yMMMM(_localeTag).format(_focusedDay);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -1013,12 +1077,12 @@ class _CalendarScreenState extends State<CalendarScreen>
           IconButton(
             icon: const Icon(Icons.tune_rounded, size: 20),
             onPressed: _showHolidaySettings,
-            tooltip: 'Feiertage & Region',
+            tooltip: _t('calendar_holidays_title'),
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
             onPressed: _loadEvents,
-            tooltip: 'Sync',
+            tooltip: _t('sync_btn'),
           ),
         ],
       ),
@@ -1043,7 +1107,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Offline-Modus — Termine werden lokal gespeichert',
+                            _t('calendar_offline_mode'),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -1262,7 +1326,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             Row(
               children: [
                 Text(
-                  DateFormat.EEEE('de').add_d().format(_selectedDay),
+                  DateFormat.EEEE(_localeTag).add_d().format(_selectedDay),
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -1272,8 +1336,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                 const Spacer(),
                 Text(
                   _eventsForSelectedDay.isEmpty
-                      ? 'Keine Termine'
-                      : '${_eventsForSelectedDay.length} Termine',
+                      ? _t('calendar_no_events_count')
+                      : _t('calendar_events_count')
+                          .replaceAll('{n}', '${_eventsForSelectedDay.length}'),
                   style:
                       const TextStyle(color: Color(0xFF718096), fontSize: 13),
                 ),
@@ -1327,7 +1392,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Tippe hier um einen Termin hinzuzufügen',
+                        _t('calendar_tap_to_add'),
                         style: TextStyle(
                           color: theme.colorScheme.onSurfaceVariant,
                           fontSize: 13,
@@ -1408,7 +1473,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFDC2626))),
                   Text(_t('calendar_public_holiday'),
-                      style: const TextStyle(fontSize: 11, color: Color(0xFFEF4444))),
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFFEF4444))),
                 ],
               ),
             ),
@@ -1441,7 +1507,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFEA580C))),
-                  Text('${schoolHoliday.region} • Schulferien',
+                  Text(
+                      '${schoolHoliday.region} • ${_t('calendar_school_holiday')}',
                       style: const TextStyle(
                           fontSize: 11, color: Color(0xFFF97316))),
                 ],
@@ -1486,15 +1553,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(_t('calendar_holidays_title'),
-                    style:
-                        const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
                 Text(_t('calendar_choose_region'),
                     style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                 const SizedBox(height: 20),
                 Text(_t('calendar_country'),
-                    style:
-                        const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -1548,8 +1615,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
                 const SizedBox(height: 20),
                 Text(_t('calendar_region'),
-                    style:
-                        const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
@@ -1669,7 +1736,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Neuer Name'),
+          decoration: InputDecoration(hintText: _t('calendar_new_name_hint')),
         ),
         actions: [
           TextButton(
@@ -1709,9 +1776,9 @@ class _CalendarScreenState extends State<CalendarScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('"$name" löschen?'),
-        content: const Text(
-            'Die Person wird aus dem Kalender entfernt. Zugehörige Termine werden zu "Eltern" verschoben.'),
+        title:
+            Text(_t('calendar_delete_person_title').replaceAll('{name}', name)),
+        content: Text(_t('calendar_delete_person_body')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -1800,27 +1867,11 @@ class _MonthGrid extends StatelessWidget {
   final void Function(DateTime day) onSelectDay;
   final int Function(DateTime day) eventCounter;
 
-  List<DateTime> _daysInMonth(DateTime month) {
-    final first = DateTime(month.year, month.month, 1);
-    final daysBefore = first.weekday % 7; // Monday = 1
-    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
-    final List<DateTime> days = [];
-    for (int i = 0; i < daysBefore; i++) {
-      days.add(first.subtract(Duration(days: daysBefore - i)));
-    }
-    for (int i = 0; i < daysInMonth; i++) {
-      days.add(DateTime(month.year, month.month, i + 1));
-    }
-    return days;
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
+  bool _isSameDay(DateTime a, DateTime b) => CalendarLogic.isSameDay(a, b);
 
   @override
   Widget build(BuildContext context) {
-    final days = _daysInMonth(focusedDay);
+    final days = CalendarLogic.daysInMonthGrid(focusedDay);
     final now = DateTime.now();
 
     return Container(
@@ -2004,7 +2055,27 @@ class _EventCard extends StatelessWidget {
   final VoidCallback? onEdit;
 
   String _fmt(DateTime dt) {
-    return DateFormat.Hm('de').format(dt);
+    return DateFormat.Hm(
+            CalendarLogic.localeTag(languageService.currentLanguage))
+        .format(dt);
+  }
+
+  String _s(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
+
+  String _recurrenceLabel(String value) {
+    switch (value) {
+      case 'Täglich':
+        return _s('calendar_recurrence_daily');
+      case 'Wöchentlich':
+        return _s('calendar_recurrence_weekly');
+      case 'Monatlich':
+        return _s('calendar_recurrence_monthly');
+      case 'Jährlich':
+        return _s('calendar_recurrence_yearly');
+      default:
+        return value;
+    }
   }
 
   bool get _isBirthday => event.person == '\u{1F382} Geburtstag';
@@ -2063,6 +2134,12 @@ class _EventCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
+                            UserAvatar(
+                              name: _displayCalendarPersonLabel(
+                                  event.person, context),
+                              radius: 10,
+                            ),
+                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
@@ -2071,7 +2148,8 @@ class _EventCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                _displayCalendarPersonLabel(event.person, context),
+                                _displayCalendarPersonLabel(
+                                    event.person, context),
                                 style: TextStyle(
                                   color: color,
                                   fontWeight: FontWeight.w700,
@@ -2121,28 +2199,31 @@ class _EventCard extends StatelessWidget {
                           children: [
                             if (event.recurrence != 'Einmalig')
                               _Badge(
-                                label: event.recurrence,
+                                label: _recurrenceLabel(event.recurrence),
                                 color: color,
                                 icon: Icons.loop_rounded,
                               ),
                             if (event.reminderMinutes ==
                                 _CalendarScreenState._smartReminderValue)
-                              const _Badge(
-                                label: 'Smart: 1W • 1T • Heute',
-                                color: Color(0xFF5B7FFF),
+                              _Badge(
+                                label: _s('calendar_reminder_smart_short'),
+                                color: const Color(0xFF5B7FFF),
                                 icon: Icons.auto_awesome_rounded,
                               ),
                             if (event.reminderMinutes > 0)
                               _Badge(
-                                label: '${event.reminderMinutes} Min vorher',
+                                label: _s('calendar_reminder_before')
+                                    .replaceAll(
+                                        '{n}', '${event.reminderMinutes}'),
                                 color: const Color(0xFF718096),
                                 icon: Icons.alarm_rounded,
                               ),
                             if (event.recurrenceEndMode.contains('Termine') &&
                                 event.recurrenceCount != null)
                               _Badge(
-                                label:
-                                    'Endet nach ${event.recurrenceCount} Terminen',
+                                label: _s('calendar_ends_after_count')
+                                    .replaceAll(
+                                        '{n}', '${event.recurrenceCount}'),
                                 color: const Color(0xFF718096),
                                 icon: Icons.flag_rounded,
                               ),
@@ -2150,7 +2231,7 @@ class _EventCard extends StatelessWidget {
                                 event.recurrenceEndDate != null)
                               _Badge(
                                 label:
-                                    'Endet ${DateFormat.yMMMd('de').format(event.recurrenceEndDate!)}',
+                                    '${_s('calendar_ends_on')} ${DateFormat.yMMMd(CalendarLogic.localeTag(languageService.currentLanguage)).format(event.recurrenceEndDate!)}',
                                 color: const Color(0xFF718096),
                                 icon: Icons.event_available_rounded,
                               ),
@@ -2189,14 +2270,16 @@ class _EventCard extends StatelessWidget {
                               if (event.bringer != null &&
                                   event.bringer!.isNotEmpty)
                                 _Badge(
-                                  label: '${event.bringer!} bringt',
+                                  label: _s('calendar_badge_brings')
+                                      .replaceAll('{name}', event.bringer!),
                                   color: const Color(0xFF4A90E2),
                                   icon: Icons.directions_car_rounded,
                                 ),
                               if (event.abholer != null &&
                                   event.abholer!.isNotEmpty)
                                 _Badge(
-                                  label: '${event.abholer!} holt',
+                                  label: _s('calendar_badge_picks_up')
+                                      .replaceAll('{name}', event.abholer!),
                                   color: const Color(0xFF7B68EE),
                                   icon: Icons.home_rounded,
                                 ),
@@ -2437,7 +2520,7 @@ extension on _CalendarScreenState {
   Future<void> _scheduleRemindersFor(List<_CalendarEvent> events) async {
     for (final event in events) {
       final body =
-          '${event.person}: ${DateFormat.Hm('de').format(event.start)}';
+          '${event.person}: ${DateFormat.Hm(CalendarLogic.localeTag(languageService.currentLanguage)).format(event.start)}';
 
       if (event.reminderMinutes == _CalendarScreenState._smartReminderValue) {
         await NotificationService.instance.scheduleStandardCalendarReminders(
@@ -2473,8 +2556,12 @@ extension on _CalendarScreenState {
           await NotificationService.instance.scheduleEventReminder(
             eventId: '${event.id}_pack',
             when: evening,
-            title: 'Morgen: ${event.title}',
-            body: 'Nicht vergessen: ${event.packReminder}',
+            title: AppStringsManager.getString(
+                    languageService.currentLanguage, 'calendar_pack_tomorrow')
+                .replaceAll('{title}', event.title),
+            body: AppStringsManager.getString(languageService.currentLanguage,
+                    'calendar_pack_dont_forget')
+                .replaceAll('{note}', event.packReminder!),
             reminderKey: 'pack_reminder',
           );
         }
@@ -2690,9 +2777,10 @@ class _WeekPreview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        const Text(
-          'Diese Woche',
-          style: TextStyle(
+        Text(
+          AppStringsManager.getString(
+              languageService.currentLanguage, 'calendar_this_week'),
+          style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
             color: Color(0xFF718096),
@@ -2711,8 +2799,12 @@ class _WeekPreview extends StatelessWidget {
               final isToday = e.start.year == today.year &&
                   e.start.month == today.month &&
                   e.start.day == today.day;
-              final dayLabel =
-                  isToday ? 'Heute' : DateFormat.E('de').format(e.start);
+              final dayLabel = isToday
+                  ? AppStringsManager.getString(
+                      languageService.currentLanguage, 'today_button')
+                  : DateFormat.E(CalendarLogic.localeTag(
+                          languageService.currentLanguage))
+                      .format(e.start);
 
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -2799,7 +2891,7 @@ class _WeekPreview extends StatelessWidget {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              '$dayLabel ${DateFormat.Hm('de').format(e.start)}',
+                              '$dayLabel ${DateFormat.Hm(CalendarLogic.localeTag(languageService.currentLanguage)).format(e.start)}',
                               style: TextStyle(
                                 fontSize: 9,
                                 color: color,
@@ -2896,21 +2988,4 @@ class _WeekPreview extends StatelessWidget {
       ],
     );
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Quick-Add Result Model
-// ═══════════════════════════════════════════════════════════════════════════
-class _QuickAddResult {
-  final String title;
-  final DateTime dateTime;
-  final String? person;
-  final bool isBirthday;
-
-  const _QuickAddResult({
-    required this.title,
-    required this.dateTime,
-    this.person,
-    this.isBirthday = false,
-  });
 }
