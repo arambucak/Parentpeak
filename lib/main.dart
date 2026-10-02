@@ -35,6 +35,7 @@ import 'package:parentpeak/services/provider_package_service.dart';
 import 'package:parentpeak/services/development_report_limit_service.dart';
 import 'package:parentpeak/logic/theme_service.dart';
 import 'package:parentpeak/logic/language_service.dart';
+import 'package:parentpeak/logic/calendar_logic.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 
@@ -111,6 +112,8 @@ void main() {
 
 Future<void> _startApp() async {
   final startupInviteInput = _extractStartupInviteInput();
+  // intl-Locale-Daten für lokalisierte Datums-/Zeitformate (Kalender u.a.).
+  await CalendarLogic.ensureDateFormattingInitialized();
   await APIConfig.ensureRuntimeEnvLoaded();
   final hasDotEnv = await _loadOptionalDotEnv();
   await APIConfig.ensureRuntimeEnvLoaded();
