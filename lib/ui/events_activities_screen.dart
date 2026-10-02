@@ -1864,7 +1864,7 @@ class _UnifiedEventCard extends StatelessWidget {
   }
 
   String _formatCardDate(_UnifiedFeedItem item) {
-    final d = item.eventDate!;
+    final d = item.eventDate!.toLocal();
     final dd = d.day.toString().padLeft(2, '0');
     final mm = d.month.toString().padLeft(2, '0');
     final dateStr = '$dd.$mm.${d.year}';
