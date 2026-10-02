@@ -18,6 +18,8 @@ class _EventEditSheetState extends State<EventEditSheet> {
   late final TextEditingController _location;
   late final TextEditingController _capacity;
   late DateTime _date;
+  late ParticipationMode _mode;
+  late final TextEditingController _externalUrl;
   bool _busy = false;
   String? _error;
 
@@ -29,6 +31,8 @@ class _EventEditSheetState extends State<EventEditSheet> {
     _location = TextEditingController(text: widget.event.location);
     _capacity = TextEditingController(text: '${widget.event.maxParticipants}');
     _date = widget.event.eventDate.toLocal();
+    _mode = widget.event.participationMode;
+    _externalUrl = TextEditingController(text: widget.event.externalUrl ?? '');
   }
 
   @override
@@ -37,6 +41,7 @@ class _EventEditSheetState extends State<EventEditSheet> {
     _description.dispose();
     _location.dispose();
     _capacity.dispose();
+    _externalUrl.dispose();
     super.dispose();
   }
 
@@ -104,7 +109,9 @@ class _EventEditSheetState extends State<EventEditSheet> {
         'description': _description.text.trim(),
         'location': _location.text.trim(),
         'startDate': _date.toUtc().toIso8601String(),
-        'maxParticipants': int.parse(_capacity.text.trim()),
+        'maxParticipants': _mode == ParticipationMode.interest ? null : int.parse(_capacity.text.trim()),
+        'participationMode': _mode.name,
+        'externalUrl': _mode == ParticipationMode.interest ? _externalUrl.text.trim() : null,
       });
       if (mounted) Navigator.pop(context, updated);
     } catch (_) {
@@ -239,6 +246,37 @@ class _EventEditSheetState extends State<EventEditSheet> {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    if (widget.event.participationMode == ParticipationMode.legacyApproval) ...[
+                      DropdownButtonFormField<ParticipationMode>(
+                        key: const Key('event-edit-mode'),
+                        initialValue: _mode,
+                        isExpanded: true,
+                        decoration: InputDecoration(labelText: context.tr('event_mode_label')),
+                        items: ParticipationMode.values.where((mode) =>
+                          mode != ParticipationMode.interest ||
+                          (widget.event.currentParticipants == 0 && widget.event.visibility == EventVisibility.publicNearby))
+                            .map((mode) => DropdownMenuItem(value: mode,
+                              child: Text(context.tr('event_mode_${mode.name}')))).toList(),
+                        onChanged: _busy ? null : (mode) => setState(() => _mode = mode!),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(context.tr('event_pending_preserved')),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_mode == ParticipationMode.interest) TextFormField(
+                      key: const Key('event-edit-url'),
+                      controller: _externalUrl,
+                      enabled: !_busy,
+                      keyboardType: TextInputType.url,
+                      decoration: InputDecoration(labelText: context.tr('event_organizer_url'), border: fieldBorder),
+                      validator: (value) {
+                        final uri = Uri.tryParse(value?.trim() ?? '');
+                        return uri != null && ['http', 'https'].contains(uri.scheme) &&
+                            uri.host.isNotEmpty && uri.userInfo.isEmpty
+                            ? null : context.tr('event_invalid_url');
+                      },
+                    ),
+                    if (_mode != ParticipationMode.interest)
                     TextFormField(
                       key: const Key('event-edit-capacity'),
                       controller: _capacity,

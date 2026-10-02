@@ -11,6 +11,7 @@ const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
+const { changeParticipation, updateOwnedEvent, validateEventMode, CONFIRMED } = require('./event_participation_policy');
 
 // Firebase Admin — initialised lazily so the server starts without credentials
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
@@ -101,8 +102,8 @@ let prisma = null;
 async function initializePrisma() {
   try {
     const prismaAdapter = new PrismaPg(prismaPool);
-    prisma = new PrismaClient({ 
-      adapter: prismaAdapter, 
+    prisma = new PrismaClient({
+      adapter: prismaAdapter,
       log: ['error'],
       errorFormat: 'pretty',
     });
@@ -4286,6 +4287,8 @@ function mapEventRecordToApiItem(record, options = {}) {
     hosterId: record.hosterId,
     title: record.title,
     description: record.description || '',
+    participationMode: record.participationMode || 'legacyApproval',
+    externalUrl: record.externalUrl || null,
     category: record.eventType || memoryEvent?.category || 'other',
     ageGroups: Array.isArray(memoryEvent?.ageGroups) ? memoryEvent.ageGroups : [],
     location: record.location || '',
@@ -4316,7 +4319,7 @@ function mapInvitationRecordToApiItem(record) {
     invitedUserId: record.userId,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
-    status: record.status === 'invited' ? 'pending' : record.status,
+    status: record.status === 'invited' ? 'pending' : CONFIRMED.includes(record.status) ? 'accepted' : record.status,
   };
 }
 
@@ -4332,7 +4335,7 @@ function mapParticipationRecordToApiItem(record) {
     approvedAt,
     declinedAt,
     cancelledAt,
-    status: record.status,
+    status: CONFIRMED.includes(record.status) ? 'approved' : record.status,
   };
 }
 
@@ -5844,29 +5847,29 @@ app.get('/api/providers/:id', async (req, res) => {
   const { id } = req.params;
   const providers = await getProvidersWithReviewStats();
   const provider = providers.find(p => p.id === id);
-  
+
   if (!provider) {
     return res.status(404).json({ error: 'Anbieter nicht gefunden' });
   }
-  
+
   res.json(provider);
 });
 
 // 4. Suche nach Name
 app.get('/api/search', async (req, res) => {
   const { q } = req.query;
-  
+
   if (!q) {
     return res.status(400).json({ error: 'Suchtext erforderlich' });
   }
-  
+
   const providers = await getProvidersWithReviewStats();
-  const filtered = providers.filter(p => 
+  const filtered = providers.filter(p =>
     p.name.toLowerCase().includes(q.toLowerCase()) ||
     p.category.toLowerCase().includes(q.toLowerCase()) ||
     p.description.toLowerCase().includes(q.toLowerCase())
   );
-  
+
   res.json(filtered);
 });
 
@@ -5881,14 +5884,14 @@ app.get('/api/categories', async (req, res) => {
 app.post('/api/providers/:id/review', async (req, res) => {
   const { id } = req.params;
   const { rating, comment, parentName } = req.body;
-  
+
   if (!rating || rating < 1 || rating > 5) {
     return res.status(400).json({ error: 'Bewertung muss zwischen 1 und 5 liegen' });
   }
-  
+
   const providers = getProviders();
   const provider = providers.find(p => p.id === id);
-  
+
   if (!provider) {
     return res.status(404).json({ error: 'Anbieter nicht gefunden' });
   }
@@ -5925,7 +5928,7 @@ app.post('/api/providers/:id/review', async (req, res) => {
   if (!saved) {
     return res.status(500).json({ error: 'Bewertung konnte nicht gespeichert werden' });
   }
-  
+
   res.json({
     message: 'Bewertung hinzugefügt',
     persistedToDatabase,
@@ -5936,21 +5939,21 @@ app.post('/api/providers/:id/review', async (req, res) => {
 // 7. Filter nach Kriterien
 app.post('/api/providers/filter', async (req, res) => {
   const { categories, maxPrice, minRating } = req.body;
-  
+
   let providers = await getProvidersWithReviewStats();
-  
+
   if (categories && categories.length > 0) {
     providers = providers.filter(p => categories.includes(p.category));
   }
-  
+
   if (maxPrice) {
     providers = providers.filter(p => p.price <= maxPrice);
   }
-  
+
   if (minRating) {
     providers = providers.filter(p => p.rating >= minRating);
   }
-  
+
   res.json(providers);
 });
 
@@ -9021,6 +9024,17 @@ app.delete('/family/requests/:id', async (req, res) => {
 });
 
 // 14. Events (Prisma-first with in-memory fallback)
+async function eventIdentityMiddleware(req, res, next) {
+  if (req.firebaseUid) return next();
+  if (!req.headers.authorization) return next();
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (!verified) return res.status(401).json({ error: 'Valid Firebase token required for events' });
+  req.firebaseUid = uid;
+  return next();
+}
+
+app.use(['/events', '/api/events'], eventIdentityMiddleware);
+
 app.get('/events', async (req, res) => {
   const MAX_LIMIT = 100;
   const limit = Math.min(Math.max(Number.parseInt(req.query.limit || '50', 10) || 50, 1), MAX_LIMIT);
@@ -9035,8 +9049,19 @@ app.get('/events', async (req, res) => {
       take: limit,
     });
 
+    const visibleRecords = [];
+    for (const record of records) {
+      try {
+        const current = req.firebaseUid ? await prisma.eventParticipation.findUnique({
+          where: { eventId_userId: { eventId: record.id, userId: req.firebaseUid } },
+        }) : null;
+        await authorizeEventParticipation(prisma, record, req.firebaseUid, current);
+        visibleRecords.push(record);
+      } catch (error) { if (error.httpStatus !== 403) throw error; }
+    }
+
     const countMap = await buildParticipantCountMap(records.map(item => item.id));
-    let items = records.map(item =>
+    let items = visibleRecords.map(item =>
       mapEventRecordToApiItem(item, { currentParticipants: countMap.get(item.id) || 0 }),
     );
 
@@ -9063,7 +9088,7 @@ app.get('/events', async (req, res) => {
 });
 
 app.get('/events/discover', async (req, res) => {
-  const viewerUserId = (req.query.viewerUserId || 'guest_user').toString();
+  const viewerUserId = req.firebaseUid || 'guest_user';
 
   try {
     const acceptedInvites = await prisma.eventParticipation.findMany({
@@ -9183,6 +9208,7 @@ app.get('/events/discover', async (req, res) => {
 
 app.put('/events/item/:id', async (req, res) => {
   const body = req.body || {};
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
   const requestingUserId = (body.requestingUserId || '').toString().trim();
 
   const updatableFields = {
@@ -9217,10 +9243,7 @@ app.put('/events/item/:id', async (req, res) => {
       return res.status(403).json({ error: 'Nur der Hoster darf dieses Event bearbeiten' });
     }
 
-    const updated = await prisma.event.update({
-      where: { id: req.params.id },
-      data: updatableFields,
-    });
+    const updated = await updateOwnedEvent(prisma, req.params.id, req.firebaseUid, updatableFields);
 
     const countMap = await buildParticipantCountMap([updated.id]);
     const item = mapEventRecordToApiItem(updated, {
@@ -9234,34 +9257,7 @@ app.put('/events/item/:id', async (req, res) => {
 
     return res.json({ item });
   } catch (error) {
-    if (error?.code === 'P2025') {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-    if (respondWithStrictPersistenceError(res, 'PUT /events/item/:id', error)) {
-      return;
-    }
-    const idx = events.findIndex(ev => ev.id === req.params.id);
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-    const entry = events[idx];
-    if (requestingUserId && requestingUserId !== entry.hosterId) {
-      return res.status(403).json({ error: 'Nur der Hoster darf dieses Event bearbeiten' });
-    }
-    const merged = {
-      ...entry,
-      ...(body.title !== undefined && { title: body.title }),
-      ...(body.description !== undefined && { description: body.description }),
-      ...(body.location !== undefined && { location: body.location }),
-      ...(body.eventDate !== undefined && { eventDate: body.eventDate }),
-      ...(body.maxParticipants !== undefined && { maxParticipants: Number(body.maxParticipants) }),
-      ...(body.photoUrl !== undefined && { photoUrl: body.photoUrl }),
-      ...(body.status !== undefined && { status: body.status }),
-      ...(body.visibility !== undefined && { visibility: body.visibility }),
-      ...(body.price !== undefined && { price: body.price }),
-    };
-    events[idx] = merged;
-    return res.json({ item: merged });
+    return res.status(error.httpStatus || 503).json({ error: error.message });
   }
 });
 
@@ -9272,6 +9268,11 @@ app.get('/events/item/:id', async (req, res) => {
       return res.status(404).json({ error: 'Event nicht gefunden' });
     }
 
+    const current = req.firebaseUid ? await prisma.eventParticipation.findUnique({
+      where: { eventId_userId: { eventId: record.id, userId: req.firebaseUid } },
+    }) : null;
+    await authorizeEventParticipation(prisma, record, req.firebaseUid, current);
+
     const countMap = await buildParticipantCountMap([record.id]);
     const item = mapEventRecordToApiItem(record, {
       currentParticipants: countMap.get(record.id) || 0,
@@ -9280,6 +9281,7 @@ app.get('/events/item/:id', async (req, res) => {
     const inviteCodeExpiresAt = eventInviteExpiresAt[item.id] || item.inviteCodeExpiresAt || null;
     return res.json({ item: { ...item, inviteCode, inviteCodeExpiresAt } });
   } catch (error) {
+    if (error.httpStatus) return res.status(error.httpStatus).json({ error: error.message });
     if (respondWithStrictPersistenceError(res, 'GET /events/item/:id', error)) {
       return;
     }
@@ -9295,6 +9297,9 @@ app.get('/events/item/:id', async (req, res) => {
 
 app.post('/events', async (req, res) => {
   const body = req.body || {};
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
+  if (req.firebaseUid !== body.hosterId) return res.status(403).json({ error: 'Own account only' });
+  if (body.participationMode || body.externalUrl) return res.status(400).json({ error: 'Use /api/events for explicit modes' });
   // Echter Bann: gesperrte Nutzer koennen keine Events mehr erstellen.
   if (body.hosterId && await isUserSuspended(body.hosterId.toString().trim())) {
     return respondSuspended(res);
@@ -9486,6 +9491,8 @@ app.delete('/events/item/:id', async (req, res) => {
 
 // 15. Event invitations (Prisma-first with in-memory fallback)
 app.get('/events/invitations', async (req, res) => {
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
+  if (req.query.userId !== req.firebaseUid) return res.status(403).json({ error: 'Own invitations only' });
   try {
     let statusFilter = null;
     if (req.query.status) {
@@ -9503,7 +9510,7 @@ app.get('/events/invitations', async (req, res) => {
     });
 
     const invitationItems = items
-      .filter(item => ['invited', 'accepted', 'declined'].includes(item.status))
+      .filter(item => ['invited', 'accepted', 'approved', 'attended', 'declined'].includes(item.status))
       .map(mapInvitationRecordToApiItem);
 
     return res.json({ items: invitationItems });
@@ -9526,44 +9533,36 @@ app.get('/events/invitations', async (req, res) => {
 });
 
 app.put('/events/invitations/:id/respond', async (req, res) => {
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
   try {
     const current = await prisma.eventParticipation.findUnique({ where: { id: req.params.id } });
-    if (!current || !['invited', 'accepted', 'declined'].includes(current.status)) {
+    if (!current || !['invited', 'accepted', 'approved', 'attended', 'declined'].includes(current.status)) {
       return res.status(404).json({ error: 'Einladung nicht gefunden' });
     }
+    if (current.userId !== req.firebaseUid) return res.status(403).json({ error: 'Own invitation only' });
 
     const accept = Boolean(req.body.accept);
-    const nextStatus = accept ? 'accepted' : 'declined';
-    const updated = await prisma.eventParticipation.update({
-      where: { id: req.params.id },
-      data: { status: nextStatus },
+    const updated = await changeParticipation(prisma, {
+      eventId: current.eventId, userId: req.firebaseUid,
+      action: accept ? 'acceptInvite' : 'declineInvite',
+      authorize: async (transaction, event, invitation) => {
+        if (!invitation) { const error = new Error('Invitation not found'); error.httpStatus = 404; throw error; }
+        await authorizeEventParticipation(transaction, event, req.firebaseUid, invitation);
+      },
     });
 
     return res.json({ item: mapInvitationRecordToApiItem(updated) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'PUT /events/invitations/:id/respond', error)) {
-      return;
-    }
-    const index = eventInvitations.findIndex(item => item.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Einladung nicht gefunden' });
-    }
-
-    const accept = Boolean(req.body.accept);
-    const nextStatus = accept ? 'accepted' : 'declined';
-    eventInvitations[index] = {
-      ...eventInvitations[index],
-      status: nextStatus,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return res.json({ item: eventInvitations[index] });
+    return res.status(error.httpStatus || 503).json({ error: error.message });
   }
 });
 
 app.post('/events/invitations/join', async (req, res) => {
   const codeInput = (req.body.code || '').toString().trim().toUpperCase();
   const userId = (req.body.userId || '').toString().trim();
+
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
+  if (req.firebaseUid !== userId) return res.status(403).json({ error: 'Own account only' });
 
   if (!codeInput || !userId) {
     return res.status(400).json({ error: 'Code und UserId sind erforderlich' });
@@ -9585,61 +9584,19 @@ app.post('/events/invitations/join', async (req, res) => {
       return res.status(404).json({ error: 'Code ungültig oder abgelaufen' });
     }
 
-    const event = await ensureEventContext(eventByCode.id, eventByCode.hosterId || DEMO_USER_ID);
-    const safeUserId = await ensureBackendUser(userId, userId);
-    const invitation = await prisma.eventParticipation.upsert({
-      where: {
-        eventId_userId: {
-          eventId: event.id,
-          userId: safeUserId,
-        },
-      },
-      update: { status: 'accepted' },
-      create: {
-        eventId: event.id,
-        userId: safeUserId,
-        status: 'accepted',
+    const safeUserId = await ensureAuthenticatedEventUser(req, userId);
+    const invitation = await changeParticipation(prisma, {
+      eventId: eventByCode.id, userId: safeUserId, action: 'acceptInvite',
+      authorize: async (_transaction, event) => {
+        if (event.inviteCode !== codeInput || isInviteExpiredAt(event.inviteCodeExpiresAt)) {
+          const error = new Error('Invalid or expired invitation'); error.httpStatus = 404; throw error;
+        }
       },
     });
 
     return res.status(201).json({ item: mapInvitationRecordToApiItem(invitation) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /events/invitations/join', error)) {
-      return;
-    }
-    const eventId = Object.keys(eventInviteCodes).find(
-      id => (eventInviteCodes[id] || '').toUpperCase() === codeInput,
-    );
-
-    if (!eventId || isInviteExpired(eventId)) {
-      return res.status(404).json({ error: 'Code ungültig oder abgelaufen' });
-    }
-
-    const event = events.find(item => item.id === eventId);
-    if (!event) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-
-    let invitation = eventInvitations.find(
-      item => item.eventId === eventId && item.invitedUserId === userId,
-    );
-
-    if (!invitation) {
-      invitation = {
-        id: `inv_${eventId}_${userId}`,
-        eventId,
-        hostUserId: event.hosterId,
-        invitedUserId: userId,
-        createdAt: new Date().toISOString(),
-        status: 'accepted',
-      };
-      eventInvitations.push(invitation);
-    } else {
-      invitation.status = 'accepted';
-      invitation.updatedAt = new Date().toISOString();
-    }
-
-    return res.status(201).json({ item: invitation });
+    return res.status(error.httpStatus || 503).json({ error: error.message });
   }
 });
 
@@ -9695,6 +9652,8 @@ app.get('/events/:id/invitations/accepted', async (req, res) => {
 
 // 16. Event participations (Prisma-first with in-memory fallback)
 app.get('/events/participations', async (req, res) => {
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
+  if (req.query.userId !== req.firebaseUid) return res.status(403).json({ error: 'Own account only' });
   try {
     const items = await prisma.eventParticipation.findMany({
       where: {
@@ -9721,6 +9680,8 @@ app.get('/events/participations', async (req, res) => {
 
 app.get('/events/participations/pending', async (req, res) => {
   const hostUserId = (req.query.hostUserId || '').toString();
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
+  if (hostUserId !== req.firebaseUid) return res.status(403).json({ error: 'Host account only' });
 
   try {
     const hostEvents = await prisma.event.findMany({
@@ -9754,6 +9715,7 @@ app.post('/events/participations', async (req, res) => {
   const eventId = (req.body.eventId || '').toString();
   const userId = (req.body.userId || '').toString();
 
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
   if (req.firebaseUid && req.firebaseUid !== userId) {
     return res.status(403).json({ error: 'Teilnahme nur fuer das eigene Konto erlaubt' });
   }
@@ -9769,109 +9731,88 @@ app.post('/events/participations', async (req, res) => {
     }
 
     const safeUserId = await ensureAuthenticatedEventUser(req, userId);
-    const item = await prisma.eventParticipation.upsert({
-      where: {
-        eventId_userId: {
-          eventId,
-          userId: safeUserId,
-        },
-      },
-      update: {
-        status: 'pending',
-      },
-      create: {
-        eventId,
-        userId: safeUserId,
-        status: 'pending',
+    const item = await changeParticipation(prisma, {
+      eventId, userId: safeUserId,
+      authorize: async (transaction, lockedEvent, current) => {
+        await authorizeEventParticipation(transaction, lockedEvent, safeUserId, current);
       },
     });
     return res.status(201).json({ item: mapParticipationRecordToApiItem(item) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /events/participations', error)) {
-      return;
-    }
-    const event = events.find(item => item.id === eventId);
-    if (!event) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
+    return res.status(error.httpStatus || 503).json({ error: error.message, route: 'POST /events/participations' });
+  }
+});
 
-    const existing = eventParticipations.find(
-      item => item.eventId === eventId && item.userId === userId && item.status !== 'cancelled',
-    );
-    if (existing) {
-      return res.status(200).json({ item: existing });
-    }
+async function authorizeEventParticipation(transaction, event, userId, current) {
+  if (userId && event.hosterId === userId) return;
+  let allowed = event.visibility == null || event.visibility === 'publicNearby' || event.hosterId === userId;
+  if (event.visibility === 'inviteOnly') allowed = event.hosterId === userId || current != null;
+  if (event.visibility === 'familyCircle') {
+    allowed = Boolean(await transaction.familyRequest.findFirst({ where: {
+      status: 'accepted', OR: [
+        { fromUserId: userId, toUserId: event.hosterId },
+        { fromUserId: event.hosterId, toUserId: userId },
+      ],
+    } }));
+  }
+  if (!allowed) {
+    const error = new Error('Event is not accessible'); error.httpStatus = 403; throw error;
+  }
+}
 
-    const item = {
-      id: generateId('participation'),
-      eventId,
-      userId,
-      requestedAt: new Date().toISOString(),
-      approvedAt: null,
-      declinedAt: null,
-      cancelledAt: null,
-      status: 'pending',
-    };
-
-    eventParticipations.unshift(item);
-    return res.status(201).json({ item });
+app.put('/events/participations/withdraw', async (req, res) => {
+  const { eventId, userId } = req.body || {};
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
+  if (req.firebaseUid !== userId) return res.status(403).json({ error: 'Own account only' });
+  if (!eventId) return res.status(400).json({ error: 'eventId required' });
+  try {
+    const item = await changeParticipation(prisma, { eventId, userId, action: 'withdraw' });
+    return res.json({ item: item ? mapParticipationRecordToApiItem(item) : null, success: true });
+  } catch (error) {
+    return res.status(error.httpStatus || 503).json({ error: error.message });
   }
 });
 
 app.put('/events/participations/:id/respond', async (req, res) => {
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
+  if (typeof req.body.accept !== 'boolean') return res.status(400).json({ error: 'accept must be boolean' });
   try {
     const current = await prisma.eventParticipation.findUnique({ where: { id: req.params.id } });
     if (!current) {
       return res.status(404).json({ error: 'Teilnahme nicht gefunden' });
     }
 
-    const accept = Boolean(req.body.accept);
-    const nextStatus = accept ? 'approved' : 'declined';
-    const updated = await prisma.eventParticipation.update({
-      where: { id: req.params.id },
-      data: { status: nextStatus },
+    const updated = await changeParticipation(prisma, {
+      eventId: current.eventId, userId: current.userId,
+      action: req.body.accept ? 'approve' : 'decline',
+      authorize: async (_transaction, event) => {
+        if (event.hosterId !== req.firebaseUid) {
+          const error = new Error('Host only'); error.httpStatus = 403; throw error;
+        }
+      },
     });
     return res.json({ item: mapParticipationRecordToApiItem(updated) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'PUT /events/participations/:id/respond', error)) {
-      return;
-    }
-    const index = eventParticipations.findIndex(item => item.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Teilnahme nicht gefunden' });
-    }
-
-    const accept = Boolean(req.body.accept);
-    const current = eventParticipations[index];
-    const eventIndex = events.findIndex(event => event.id === current.eventId);
-    const nextItem = {
-      ...current,
-      status: accept ? 'approved' : 'declined',
-      approvedAt: accept ? new Date().toISOString() : null,
-      declinedAt: accept ? null : new Date().toISOString(),
-    };
-
-    eventParticipations[index] = nextItem;
-
-    if (accept && eventIndex !== -1) {
-      events[eventIndex] = {
-        ...events[eventIndex],
-        currentParticipants: Number(events[eventIndex].currentParticipants || 0) + 1,
-      };
-    }
-
-    return res.json({ item: nextItem });
+    return res.status(error.httpStatus || 503).json({ error: error.message });
   }
 });
 
 app.get('/events/:id/participations/approved', async (req, res) => {
   try {
+    const event = await prisma.event.findUnique({ where: { id: req.params.id } });
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    const current = req.firebaseUid ? await prisma.eventParticipation.findUnique({
+      where: { eventId_userId: { eventId: event.id, userId: req.firebaseUid } },
+    }) : null;
+    await authorizeEventParticipation(prisma, event, req.firebaseUid, current);
+    if (event.participationMode === 'interest') return res.json({ items: [] });
     const items = await prisma.eventParticipation.findMany({
-      where: { eventId: req.params.id, status: 'approved' },
+      where: { eventId: req.params.id, status: { in: CONFIRMED } },
       orderBy: { createdAt: 'desc' },
     });
     return res.json({ items: items.map(mapParticipationRecordToApiItem) });
   } catch (error) {
+    if (error.httpStatus) return res.status(error.httpStatus).json({ error: error.message });
     if (respondWithStrictPersistenceError(res, 'GET /events/:id/participations/approved', error)) {
       return;
     }
@@ -10698,7 +10639,7 @@ app.post('/admin/migrate-db', async (req, res) => {
       CREATE INDEX IF NOT EXISTS "FoodOfferReservation_recipeId_idx" ON "FoodOfferReservation"("recipeId");
       CREATE INDEX IF NOT EXISTS "FoodOfferReservation_userId_idx" ON "FoodOfferReservation"("userId");
     `);
-    
+
     res.json({ success: true, message: 'Database migrated successfully (Events + Treasures + Reports + Food Offers)' });
   } catch (err) {
     console.error('Migration error:', err.message);
@@ -12299,7 +12240,7 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
@@ -12315,9 +12256,30 @@ app.post('/api/events', async (req, res) => {
   const {
     hosterId, title, description, location, latitude, longitude,
     startDate, endDate, eventType, visibility, shareRadiusKm, maxParticipants,
-    costPerPerson, imageUrl, ageGroups, seriesId
+    costPerPerson, imageUrl, ageGroups, seriesId, participationMode = 'legacyApproval', externalUrl,
+    invitedUserIds = [], inviteCodeExpiresAt
   } = req.body;
 
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
+  if (req.firebaseUid !== hosterId) return res.status(403).json({ error: 'Own account only' });
+  try {
+    validateEventMode(participationMode, externalUrl);
+    if (!startDate || !Number.isFinite(new Date(startDate).getTime()) || new Date(startDate) <= new Date()) {
+      return res.status(400).json({ error: 'Future startDate required' });
+    }
+    if (participationMode !== 'interest' && (!Number.isInteger(maxParticipants) || maxParticipants < 1)) {
+      return res.status(400).json({ error: 'Positive capacity required' });
+    }
+    if (participationMode === 'interest' && visibility && visibility !== 'publicNearby') {
+      return res.status(400).json({ error: 'Shared offers must be public' });
+    }
+    if (!Array.isArray(invitedUserIds) || invitedUserIds.some(userId => typeof userId !== 'string' || !userId.trim() || userId === hosterId)) {
+      return res.status(400).json({ error: 'Invalid invitees' });
+    }
+    if (inviteCodeExpiresAt && (!Number.isFinite(new Date(inviteCodeExpiresAt).getTime()) || new Date(inviteCodeExpiresAt) <= new Date())) {
+      return res.status(400).json({ error: 'Invalid invitation expiration' });
+    }
+  } catch (error) { return res.status(error.httpStatus || 400).json({ error: error.message }); }
   // Validate required fields
   if (!hosterId || !title || !location || latitude === undefined || longitude === undefined) {
     return res.status(400).json({
@@ -12349,9 +12311,16 @@ app.post('/api/events', async (req, res) => {
         startDate: startDate ? new Date(startDate) : new Date(),
         endDate: endDate ? new Date(endDate) : null,
         eventType: eventType ? String(eventType).slice(0, 50) : 'generic',
+        participationMode,
+        externalUrl: externalUrl || null,
         visibility: visibility ? String(visibility).slice(0, 50) : 'publicNearby',
+        inviteCode: visibility === 'inviteOnly' ? crypto.randomBytes(12).toString('hex').toUpperCase() : null,
+        inviteCodeExpiresAt: visibility === 'inviteOnly' ? new Date(inviteCodeExpiresAt || Date.now() + 14 * 24 * 60 * 60 * 1000) : null,
+        ...(visibility === 'inviteOnly' && invitedUserIds.length > 0 && {
+          participants: { create: [...new Set(invitedUserIds)].map(userId => ({ userId, status: 'invited' })) },
+        }),
         shareRadiusKm: shareRadiusKm ? parseFloat(shareRadiusKm) : 25,
-        maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
+        maxParticipants: participationMode === 'interest' ? null : maxParticipants,
         costPerPerson: costPerPerson ? parseFloat(costPerPerson) : null,
         imageUrl: imageUrl ? String(imageUrl).slice(0, 500) : null,
         seriesId: seriesId ? String(seriesId).slice(0, 100) : null,
@@ -12438,7 +12407,7 @@ app.get('/api/events', async (req, res) => {
 
   try {
     const where = {
-      status: String(status),
+      status: status === 'active' ? 'upcoming' : String(status),
       visibility: String(visibility),
       ...(eventType && { eventType: String(eventType) }),
       ...(hosterId && { hosterId: String(hosterId) }),
@@ -12453,6 +12422,16 @@ app.get('/api/events', async (req, res) => {
         participants: { select: { userId: true, status: true } }
       }
     });
+
+    const visible = [];
+    for (const event of events) {
+      try {
+        const current = req.firebaseUid ? event.participants.find(item => item.userId === req.firebaseUid) : null;
+        await authorizeEventParticipation(prisma, event, req.firebaseUid, current);
+        visible.push(event);
+      } catch (error) { if (error.httpStatus !== 403) throw error; }
+    }
+    events = visible;
 
     // Filter by geographic proximity if coordinates provided
     if (latitude !== undefined && longitude !== undefined) {
@@ -12481,10 +12460,13 @@ app.get('/api/events', async (req, res) => {
       startDate: e.startDate,
       endDate: e.endDate,
       eventType: e.eventType,
+      participationMode: e.participationMode || 'legacyApproval',
+      externalUrl: e.externalUrl,
+      seriesId: e.seriesId,
       visibility: e.visibility,
       shareRadiusKm: e.shareRadiusKm,
       maxParticipants: e.maxParticipants,
-      currentParticipants: e.participants.filter(p => p.status !== 'declined').length,
+      currentParticipants: e.participationMode === 'interest' ? 0 : e.participants.filter(p => CONFIRMED.includes(p.status)).length,
       costPerPerson: e.costPerPerson,
       imageUrl: e.imageUrl,
       status: e.status,
@@ -12521,21 +12503,24 @@ app.get('/api/events/:id', async (req, res) => {
       return res.status(404).json({ error: 'Event nicht gefunden' });
     }
 
+    const current = req.firebaseUid ? event.participants.find(item => item.userId === req.firebaseUid) : null;
+    await authorizeEventParticipation(prisma, event, req.firebaseUid, current);
+
     const formattedEvent = {
       ...event,
-      currentParticipants: event.participants.filter(p => p.status !== 'declined').length,
-      isFull: event.maxParticipants ? 
-        event.participants.filter(p => p.status !== 'declined').length >= event.maxParticipants : 
+      currentParticipants: event.participationMode === 'interest' ? 0 : event.participants.filter(p => CONFIRMED.includes(p.status)).length,
+      isFull: event.maxParticipants ?
+        event.participants.filter(p => CONFIRMED.includes(p.status)).length >= event.maxParticipants :
         false,
-      spotsAvailable: event.maxParticipants ? 
-        Math.max(0, event.maxParticipants - event.participants.filter(p => p.status !== 'declined').length) : 
+      spotsAvailable: event.maxParticipants ?
+        Math.max(0, event.maxParticipants - event.participants.filter(p => CONFIRMED.includes(p.status)).length) :
         null,
     };
 
     res.json({ event: formattedEvent });
   } catch (err) {
     console.error('❌ Event detail error:', err.message);
-    res.status(500).json({ error: `Failed to get event: ${err.message}` });
+    res.status(err.httpStatus || 503).json({ error: `Failed to get event: ${err.message}` });
   }
 });
 
@@ -12546,6 +12531,8 @@ app.get('/api/events/:id', async (req, res) => {
 app.put('/api/events/:id', async (req, res) => {
   const { id } = req.params;
   const { hosterId, title, description, location, latitude, longitude, startDate, endDate, maxParticipants } = req.body;
+
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
 
   if (req.firebaseUid && req.firebaseUid !== String(hosterId)) {
     return res.status(403).json({ error: 'Nur der Ersteller kann das Event bearbeiten' });
@@ -12575,9 +12562,7 @@ app.put('/api/events/:id', async (req, res) => {
       }
     }
 
-    const updatedEvent = await prisma.event.update({
-      where: { id },
-      data: {
+    const updatedEvent = await updateOwnedEvent(prisma, id, req.firebaseUid || String(hosterId), {
         ...(title && { title: String(title).slice(0, 200) }),
         ...(description && { description: String(description).slice(0, 2000) }),
         ...(location && { location: String(location).slice(0, 200) }),
@@ -12585,16 +12570,16 @@ app.put('/api/events/:id', async (req, res) => {
         ...(longitude !== undefined && { longitude: parseFloat(longitude) }),
         ...(startDate && { startDate: new Date(startDate) }),
         ...(endDate && { endDate: new Date(endDate) }),
-        ...(maxParticipants !== undefined && { maxParticipants: parseInt(maxParticipants, 10) }),
+        ...(maxParticipants !== undefined && { maxParticipants }),
+        ...(req.body.participationMode !== undefined && { participationMode: req.body.participationMode }),
+        ...(req.body.externalUrl !== undefined && { externalUrl: req.body.externalUrl }),
         updatedAt: new Date(),
-      },
-      include: { participants: true }
     });
 
     res.json({ event: updatedEvent });
   } catch (err) {
     console.error('❌ Event update error:', err.message);
-    res.status(500).json({ error: `Failed to update event: ${err.message}` });
+    res.status(err.httpStatus || 503).json({ error: `Failed to update event: ${err.message}` });
   }
 });
 
@@ -12606,6 +12591,8 @@ app.put('/api/events/:id', async (req, res) => {
 app.delete('/api/events/:id', async (req, res) => {
   const { id } = req.params;
   const { hosterId } = req.query;
+
+  if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
 
   if (req.firebaseUid && req.firebaseUid !== String(hosterId)) {
     return res.status(403).json({ error: 'Nur der Ersteller kann das Event löschen' });

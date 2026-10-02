@@ -228,6 +228,8 @@ void main() {
         'location': 'Lake park',
         'startDate': fixture.event.eventDate.toUtc().toIso8601String(),
         'maxParticipants': 5,
+        'participationMode': 'legacyApproval',
+        'externalUrl': null,
         'hosterId': 'debug_demo_user',
       });
       expect(

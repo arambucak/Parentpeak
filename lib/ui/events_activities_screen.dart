@@ -1779,6 +1779,8 @@ class _UnifiedFeedItem {
     this.priceLabel,
     this.isFree = false,
     this.eventId,
+    this.participationMode,
+    this.confirmedParticipants = 0,
   });
 
   final _FeedSource source;
@@ -1794,6 +1796,8 @@ class _UnifiedFeedItem {
   final String? priceLabel;
   final bool isFree;
   final String? eventId;
+  final ParticipationMode? participationMode;
+  final int confirmedParticipants;
 
   factory _UnifiedFeedItem.fromAi(DiscoveredEvent event) {
     final price = event.price?.trim();
@@ -1820,8 +1824,9 @@ class _UnifiedFeedItem {
   }
 
   factory _UnifiedFeedItem.fromCommunity(MeetupEvent event) {
-    final isFree = event.price == null || event.price == 0;
-    final priceLabel = isFree ? null : '${event.price!.toStringAsFixed(0)} €';
+    final isFree = !event.isSharedOffer && (event.price == null || event.price == 0);
+    final priceLabel = event.price == null || event.price == 0
+        ? null : '${event.price!.toStringAsFixed(0)} €';
 
     return _UnifiedFeedItem(
       source: _FeedSource.community,
@@ -1830,6 +1835,8 @@ class _UnifiedFeedItem {
       location: event.location,
       ageLabel: null,
       communityAgeGroups: event.ageGroups,
+      participationMode: event.participationMode,
+      confirmedParticipants: event.currentParticipants,
       eventDate: event.eventDate,
       latitude: event.latitude,
       longitude: event.longitude,
@@ -1888,12 +1895,12 @@ class _UnifiedEventCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         child: Ink(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: color.withValues(alpha: 0.25)),
           ),
           child: Column(
@@ -1911,7 +1918,7 @@ class _UnifiedEventCard extends StatelessWidget {
                     child: Text(
                         isAi
                           ? context.tr('events_source_ai')
-                          : context.tr('events_source_community'),
+                          : context.tr('event_mode_${item.participationMode?.name ?? 'legacyApproval'}'),
                       style: TextStyle(
                         color: color,
                         fontSize: 11,
@@ -1931,6 +1938,13 @@ class _UnifiedEventCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
+              if (!isAi) ...[
+                Text(context.tr(item.participationMode == ParticipationMode.interest
+                    ? 'event_interest_not_booking' : 'event_confirmed_count',
+                  values: {'count': item.confirmedParticipants}),
+                  style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 8),
+              ],
               Text(
                 item.title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(

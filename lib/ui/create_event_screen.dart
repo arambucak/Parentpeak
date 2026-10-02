@@ -42,6 +42,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   late TextEditingController _recurringNoteController;
   late TextEditingController _locationController;
   late TextEditingController _maxParticipantsController;
+  final _externalUrlController = TextEditingController();
+  ParticipationMode _participationMode = ParticipationMode.direct;
 
   EventCategory _selectedCategory = EventCategory.socialGathering;
   final List<AgeGroup> _selectedAgeGroups = [];
@@ -110,6 +112,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     _recurringNoteController.dispose();
     _locationController.dispose();
     _maxParticipantsController.dispose();
+    _externalUrlController.dispose();
     super.dispose();
   }
 
@@ -464,7 +467,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         longitude: _longitude,
         eventDate: eventDateTime,
         createdAt: DateTime.now(),
-        maxParticipants: int.parse(_maxParticipantsController.text),
+        maxParticipants: _participationMode == ParticipationMode.interest
+          ? 0 : int.parse(_maxParticipantsController.text),
+        participationMode: _participationMode,
+        externalUrl: _participationMode == ParticipationMode.interest
+          ? _externalUrlController.text.trim() : null,
         photoUrl: photoUrl,
         status: EventStatus.active,
         price: null,
@@ -593,25 +600,41 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    'Erstelle ein Event in wenigen Schritten und entscheide, ob es privat oder öffentlich geteilt wird.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.35,
-                    ),
-                  ),
+                SegmentedButton<ParticipationMode>(
+                  key: const Key('event-create-mode'),
+                  segments: [
+                    ButtonSegment(value: ParticipationMode.direct,
+                      icon: const Icon(Icons.groups_outlined), label: Text(_t('event_mode_direct'))),
+                    ButtonSegment(value: ParticipationMode.interest,
+                      icon: const Icon(Icons.open_in_new), label: Text(_t('event_mode_interest'))),
+                  ],
+                  selected: {_participationMode},
+                  onSelectionChanged: _isSubmitting ? null : (selection) => setState(() {
+                    _participationMode = selection.single;
+                    if (_participationMode == ParticipationMode.interest) {
+                      _visibility = EventVisibility.publicNearby;
+                    }
+                  }),
                 ),
+                const SizedBox(height: 8),
+                Text(_t(_participationMode == ParticipationMode.interest
+                    ? 'event_interest_not_booking' : 'event_direct_confirmation')),
+                if (_participationMode == ParticipationMode.interest) ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    key: const Key('event-create-url'),
+                    controller: _externalUrlController,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(labelText: _t('event_organizer_url'),
+                      prefixIcon: const Icon(Icons.link)),
+                    validator: (value) {
+                      final uri = Uri.tryParse(value?.trim() ?? '');
+                      return uri != null && ['http', 'https'].contains(uri.scheme) &&
+                          uri.host.isNotEmpty && uri.userInfo.isEmpty
+                          ? null : _t('event_invalid_url');
+                    },
+                  ),
+                ],
                 const SizedBox(height: 16),
                 // Magisch ausfüllen (Flyer-/Foto-/Text-Scan)
                 _MagicFillCard(
@@ -703,7 +726,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     () => _visibility = EventVisibility.publicNearby,
                   ),
                 ),
-                if (FeatureFlags.enableFamilyCircle)
+                if (FeatureFlags.enableFamilyCircle && _participationMode != ParticipationMode.interest)
                   _VisibilityOptionTile(
                     title: _t('event_visibility_circle'),
                     subtitle:
@@ -713,7 +736,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       () => _visibility = EventVisibility.familyCircle,
                     ),
                   ),
-                _VisibilityOptionTile(
+                if (_participationMode != ParticipationMode.interest) _VisibilityOptionTile(
                   title: 'Nur eingeladen (individuelle Einladungen)',
                   subtitle:
                       'Nur ausgewählte Kontakte sehen und erhalten die Einladung.',
@@ -722,7 +745,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     () => _visibility = EventVisibility.inviteOnly,
                   ),
                 ),
-                _VisibilityOptionTile(
+                if (_participationMode != ParticipationMode.interest) _VisibilityOptionTile(
                   title: 'Nur ich (nicht geteilt)',
                   subtitle: 'Das Event bleibt nur in deinem Bereich sichtbar.',
                   selected: _visibility == EventVisibility.privateOnly,
@@ -925,7 +948,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 16),
 
                 // Max Teilnehmer
-                TextFormField(
+                if (_participationMode != ParticipationMode.interest) TextFormField(
                   controller: _maxParticipantsController,
                   decoration: const InputDecoration(
                     labelText: 'Maximale Teilnehmerzahl',
@@ -937,7 +960,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     if (value?.isEmpty ?? true) {
                       return 'Bitte eine Zahl eingeben';
                     }
-                    if (int.tryParse(value!) == null) {
+                    if ((int.tryParse(value!) ?? 0) < 1) {
                       return 'Bitte nur Zahlen eingeben';
                     }
                     return null;

@@ -40,7 +40,9 @@ class EventParticipation {
         cancelledAt: json['cancelledAt'] != null
             ? DateTime.parse(json['cancelledAt'] as String)
             : null,
-        status: ParticipationStatus.values.byName(json['status'] as String),
+        status: ParticipationStatus.values.byName(
+          ['accepted', 'attended'].contains(json['status'])
+            ? 'approved' : json['status'] as String),
       );
 
   Map<String, dynamic> toJson() => {
