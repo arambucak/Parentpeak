@@ -132,48 +132,7 @@ Future<void> _startApp() async {
     debugPrint('Konfigurationshinweis: ${releaseConfigIssues.join('; ')}');
   }
 
-  await ErrorReportingService.instance.initialize();
-
-  await BackgroundSyncManager.initialize();
-  if (!kIsWeb) {
-    await NotificationService.instance.initialize();
-  }
   await AuthService.instance.initialize();
-  await FeatureFlagService.instance.initialize();
-  await EntitlementService.instance.initialize();
-  await BlockReportService.instance.initialize();
-  await LocationService.instance.initialize();
-  await PremiumService.instance.initialize();
-  await EventsLimitService.instance.initialize();
-  await ProviderPackageService.instance.initialize();
-  await DevelopmentReportLimitService.instance.initialize();
-
-  // Stripe publishable key (from .env or compile-time dart-define).
-  final stripeKey = APIConfig.getStripePublishableKey()?.trim();
-  final stripeSupported = APIConfig.isStripePaymentSheetSupportedPlatform();
-  if (!kIsWeb &&
-      stripeSupported &&
-      APIConfig.isStripePublishableKeyConfigured()) {
-    try {
-      Stripe.publishableKey = stripeKey!;
-      await Stripe.instance.applySettings();
-    } catch (e) {
-      debugPrint('Warnung: Stripe konnte nicht initialisiert werden: $e');
-    }
-  }
-
-  // Wire FCM push notifications for the already-authenticated user.
-  final currentUser = AuthService.instance.currentUser;
-  if (currentUser != null) {
-    final apiClient = BackendServiceFactory.createApiClient();
-    unawaited(
-      NotificationService.instance.initFcm(
-        apiClient: apiClient,
-        userId: currentUser.uid,
-        onNotificationTap: _handleNotificationTap,
-      ),
-    );
-  }
 
   runApp(DemoApp(
     key: demoAppKey,
@@ -181,6 +140,53 @@ Future<void> _startApp() async {
     startupFriendCode: _extractStartupFriendCode(),
     startupReferralCode: _extractStartupReferralCode(),
   ));
+
+  // The first frame should not wait for optional services, location, payments,
+  // or push registration. Those services can become ready behind the shell.
+  unawaited(_initializeBackgroundServices());
+}
+
+Future<void> _initializeBackgroundServices() async {
+  try {
+    await ErrorReportingService.instance.initialize();
+    await BackgroundSyncManager.initialize();
+    if (!kIsWeb) {
+      await NotificationService.instance.initialize();
+    }
+    await FeatureFlagService.instance.initialize();
+    await EntitlementService.instance.initialize();
+    await BlockReportService.instance.initialize();
+    await LocationService.instance.initialize();
+    await PremiumService.instance.initialize();
+    await EventsLimitService.instance.initialize();
+    await ProviderPackageService.instance.initialize();
+    await DevelopmentReportLimitService.instance.initialize();
+
+    final stripeKey = APIConfig.getStripePublishableKey()?.trim();
+    final stripeSupported = APIConfig.isStripePaymentSheetSupportedPlatform();
+    if (!kIsWeb &&
+        stripeSupported &&
+        APIConfig.isStripePublishableKeyConfigured()) {
+      try {
+        Stripe.publishableKey = stripeKey!;
+        await Stripe.instance.applySettings();
+      } catch (e) {
+        debugPrint('Warnung: Stripe konnte nicht initialisiert werden: $e');
+      }
+    }
+
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser != null) {
+      final apiClient = BackendServiceFactory.createApiClient();
+      await NotificationService.instance.initFcm(
+        apiClient: apiClient,
+        userId: currentUser.uid,
+        onNotificationTap: _handleNotificationTap,
+      );
+    }
+  } catch (error, stackTrace) {
+    _reportAppError('background startup', error, stackTrace);
+  }
 }
 
 Future<bool> _loadOptionalDotEnv() async {
