@@ -5,7 +5,7 @@
 ///   - Findet ECHTE Events von berlin.de, Familienzentren, Kinos, Theatern usw.
 ///   - Standort-präzise: Kreuzberg ≠ Mitte ≠ München.
 ///   - Saisonal + aktuell (heutiges Datum im Prompt).
-///   - Fallback auf einen Proxy-Aufruf ohne Grounding.
+///   - Fehler bleiben Fehler; keine synthetischen Ersatz-Events.
 ///
 /// Sicherheit:
 ///   - Kein API-Key im Client; das Backend verwaltet den Schlüssel.
@@ -20,7 +20,10 @@ import 'package:parentpeak/logic/privacy_sanitizer.dart';
 class EventDiscoveryAgent {
   static final EventDiscoveryAgent instance = EventDiscoveryAgent();
 
-  EventDiscoveryAgent();
+  EventDiscoveryAgent({GeminiAIService? aiService})
+      : _aiService = aiService ?? GeminiAIService(modelName: _groundingModel);
+
+  final GeminiAIService _aiService;
 
   // ─── Haupt-Methode ─────────────────────────────────────────────────────────
 
@@ -75,90 +78,7 @@ Antworte NUR als JSON-Array (kein Markdown). Trage bei "url" die ECHTE URL aus d
 Erstelle genau 10 echte Events. Bei "url" MUSS eine echte Webseite stehen (z.B. berlin.de, eventbrite.de, Veranstalter-Website).
 ''';
 
-    // Ausführlicher Prompt für Package-Fallback (ohne Web-Suche)
-    final prompt = '''
-Heute ist $today. $gpsHint
-
-Erstelle 10 typische Familien-Events ${isCoordCity ? 'in der Nähe von' : 'in'} "$locationDesc" ($cleanRadius), $saison.
-Zielgruppe: $agesText. Realistische Orte, Preise 0–15€.
-
-Antworte NUR mit einem gültigen JSON-Array:
-[{"id":"ev1","title":"...","description":"2-3 Sätze","category":"theater","ageLabels":["3–6 Jahre"],"location":"Adresse, Stadtteil","cityHint":"$locationDesc","eventDate":"${now.year}-${now.month.toString().padLeft(2, '0')}-${(now.day + 2).toString().padLeft(2, '0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"5 €","url":"https://...","organizer":"Veranstalter"}]
-Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges) und Stadtteile.
-''';
-
-    // Primär: Backend-Proxy mit Google Search Grounding
-    try {
-      final events = await _callWithGrounding(groundingPrompt, city);
-      if (events.isNotEmpty) return events;
-      debugPrint(
-          'EventDiscoveryAgent: Grounding leer — versuche ohne Grounding.');
-    } catch (e) {
-      debugPrint('EventDiscoveryAgent: Grounding-Aufruf fehlgeschlagen: $e');
-    }
-
-    // Fallback 1: Proxy-Aufruf ohne Grounding (KI generiert realistische Events)
-    try {
-      final events = await _callWithoutGrounding(prompt, city);
-      if (events.isNotEmpty) return events;
-      debugPrint('EventDiscoveryAgent: Auch Fallback leer.');
-    } catch (e) {
-      debugPrint('EventDiscoveryAgent: Fallback-Aufruf fehlgeschlagen: $e');
-    }
-
-    // Fallback 2: Lokale, ehrliche Vorschläge — damit der Nutzer NIE
-    // einen komplett leeren Screen sieht (wichtig für Launch-Stabilität).
-    return _localSuggestions(locationDesc, latitude, longitude);
-  }
-
-  /// Ehrliche lokale Vorschläge als letzte Rettung (klar als KI-Idee markiert).
-  /// Verhindert einen leeren "Keine Events"-Screen wenn die KI nicht antwortet.
-  List<DiscoveredEvent> _localSuggestions(
-      String city, double? lat, double? lon) {
-    final now = DateTime.now();
-    final base = DateTime(now.year, now.month, now.day);
-    final ideas = <Map<String, dynamic>>[
-      {
-        'title': 'Spielplatz-Treff im Kiez',
-        'desc':
-            'Trefft euch mit anderen Familien auf einem Spielplatz in eurer Nähe. Kinder spielen, Eltern kommen ins Gespräch.',
-        'cat': DiscoveredEventCategory.spielplatz,
-        'days': 1,
-      },
-      {
-        'title': 'Bibliotheks-Besuch',
-        'desc':
-            'Die Stadtbibliothek bietet oft kostenlose Vorlesestunden und eine Kinderecke. Ein ruhiger Ausflug bei jedem Wetter.',
-        'cat': DiscoveredEventCategory.museum,
-        'days': 2,
-      },
-      {
-        'title': 'Waldspaziergang mit Naturspielen',
-        'desc':
-            'Ab in den nächsten Park oder Wald: Blätter sammeln, Verstecken, Balancieren. Bewegung und frische Luft für alle.',
-        'cat': DiscoveredEventCategory.natur,
-        'days': 3,
-      },
-    ];
-    return ideas
-        .map((idea) => DiscoveredEvent(
-              id: _generateId(),
-              title: idea['title'] as String,
-              description: idea['desc'] as String,
-              category: idea['cat'] as DiscoveredEventCategory,
-              ageLabels: const ['Alle Altersgruppen'],
-              location: city,
-              cityHint: city,
-              latitude: lat,
-              longitude: lon,
-              eventDate:
-                  base.add(Duration(days: idea['days'] as int, hours: 10)),
-              price: 'kostenlos',
-              organizer: 'Parentpeak Idee',
-              source: DiscoveredEventSource.kiAgent,
-              discoveredAt: now,
-            ))
-        .toList();
+    return _callWithGrounding(groundingPrompt, city);
   }
 
   // ─── Backend-Proxy mit Google Search Grounding ─────────────────────────────
@@ -169,7 +89,7 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
 
   Future<List<DiscoveredEvent>> _callWithGrounding(
       String prompt, String city) async {
-    final response = await GeminiAIService(modelName: _groundingModel)
+    final response = await _aiService
         .generate(prompt, useGoogleSearch: true)
         .timeout(const Duration(seconds: 35));
     return _parseAgentResponse(
@@ -179,16 +99,6 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
     );
   }
 
-  // ─── Fallback: Proxy-Aufruf ohne Grounding ─────────────────────────────────
-
-  Future<List<DiscoveredEvent>> _callWithoutGrounding(
-      String prompt, String city) async {
-    final text = await GeminiAIService(modelName: _groundingModel)
-        .generateText(prompt)
-        .timeout(const Duration(seconds: 35));
-    return _parseAgentResponse(text, city);
-  }
-
   // ─── Parser ────────────────────────────────────────────────────────────────
 
   List<DiscoveredEvent> _parseAgentResponse(String raw, String city,
@@ -196,8 +106,7 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
     try {
       final repairedJson = _extractAndRepairJsonArray(raw);
       if (repairedJson == null || repairedJson.isEmpty) {
-        debugPrint('EventDiscoveryAgent: Kein gültiges JSON-Array gefunden.');
-        return <DiscoveredEvent>[];
+        throw const FormatException('No event JSON array in AI response');
       }
 
       final list = jsonDecode(repairedJson) as List<dynamic>;
@@ -261,7 +170,7 @@ Genau 10 Events, verschiedene Kategorien (theater,kino,sport,musik,natur,basteln
       return results;
     } catch (e) {
       debugPrint('EventDiscoveryAgent: JSON-Parsing fehlgeschlagen: $e');
-      return <DiscoveredEvent>[];
+      rethrow;
     }
   }
 
