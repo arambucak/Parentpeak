@@ -12276,7 +12276,7 @@ app.post('/api/events', async (req, res) => {
   const {
     hosterId, title, description, location, latitude, longitude,
     startDate, endDate, eventType, visibility, shareRadiusKm, maxParticipants,
-    costPerPerson, imageUrl, ageGroups
+    costPerPerson, imageUrl, ageGroups, seriesId
   } = req.body;
 
   // Validate required fields
@@ -12315,10 +12315,21 @@ app.post('/api/events', async (req, res) => {
         maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
         costPerPerson: costPerPerson ? parseFloat(costPerPerson) : null,
         imageUrl: imageUrl ? String(imageUrl).slice(0, 500) : null,
+        seriesId: seriesId ? String(seriesId).slice(0, 100) : null,
         status: 'upcoming',
       },
       include: { participants: true }
     });
+
+    // Issue #47: Ist dies ein neuer konkreter Termin einer Serie, der ein
+    // Veranstalter veröffentlicht, benachrichtigen wir GEZIELT nur die Eltern,
+    // die dieser Serie aktiv folgen (nicht alle in der Nähe, nicht aus einer
+    // KI-Erkennung). Der Ersteller selbst wird ausgenommen. Best effort.
+    if (event.seriesId) {
+      notifyFollowersOfNewSeriesEvent(event).catch((e) =>
+        console.error('notifyFollowersOfNewSeriesEvent failed:', e?.message || e)
+      );
+    }
 
     res.status(201).json({ event });
   } catch (err) {
@@ -12326,6 +12337,47 @@ app.post('/api/events', async (req, res) => {
     res.status(500).json({ error: `Event creation failed: ${err.message}` });
   }
 });
+
+// Gezielte Benachrichtigung an die Follower einer Event-Serie, wenn ein neuer
+// konkreter Termin veröffentlicht wurde. Nur aktive Opt-in-Follower, nie der
+// Ersteller selbst. Nutzt dasselbe Push-Muster wie der Gruppen-Chat.
+async function notifyFollowersOfNewSeriesEvent(event) {
+  if (!event || !event.seriesId) return;
+  const followers = await prisma.eventSeriesFollower.findMany({
+    where: { seriesId: event.seriesId, userId: { not: event.hosterId } },
+    select: { userId: true },
+  });
+  if (followers.length === 0) return;
+
+  const whenLocal = (() => {
+    try {
+      const d = new Date(event.startDate);
+      return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}.`;
+    } catch (_) {
+      return '';
+    }
+  })();
+  const title = 'Neuer Termin für ein Angebot, dem du folgst';
+  const body = whenLocal
+    ? `${event.title} — neuer Termin am ${whenLocal}`
+    : `${event.title} — neuer Termin verfügbar`;
+
+  await Promise.allSettled(
+    followers.map((f) =>
+      sendPushToUser(f.userId, {
+        title,
+        body,
+        data: {
+          type: 'event_series_new_date',
+          seriesId: event.seriesId,
+          eventId: event.id,
+        },
+      })
+    )
+  );
+}
 
 /**
  * GET /api/events
@@ -12532,6 +12584,84 @@ app.delete('/api/events/:id', async (req, res) => {
   } catch (err) {
     console.error('❌ Event delete error:', err.message);
     res.status(500).json({ error: `Failed to delete event: ${err.message}` });
+  }
+});
+
+// ============================================================================
+// EVENT SERIES FOLLOW (Issue #47)
+// Eltern folgen/entfolgen einem wiederkehrenden Angebot (seriesId). Nur
+// Follower werden über neue konkrete Termine der Serie benachrichtigt.
+// Bewusst getrennt von EventParticipation (Teilnahme ≠ Abo).
+// ============================================================================
+
+/**
+ * POST /api/events/series/:seriesId/follow
+ * Opt-in: dieser Nutzer folgt der Serie. Body: { userId }
+ */
+app.post('/api/events/series/:seriesId/follow', async (req, res) => {
+  const seriesId = (req.params.seriesId || '').toString().trim();
+  const userId = (req.body.userId || '').toString().trim();
+  if (!seriesId || !userId) {
+    return res.status(400).json({ error: 'seriesId und userId erforderlich' });
+  }
+  if (await isUserSuspended(userId)) return respondSuspended(res);
+  try {
+    await prisma.eventSeriesFollower.upsert({
+      where: { seriesId_userId: { seriesId, userId } },
+      update: {},
+      create: { seriesId, userId },
+    });
+    const count = await prisma.eventSeriesFollower.count({ where: { seriesId } });
+    return res.status(201).json({ following: true, seriesId, followerCount: count });
+  } catch (err) {
+    console.error('❌ Series follow error:', err.message);
+    return res.status(500).json({ error: `Follow failed: ${err.message}` });
+  }
+});
+
+/**
+ * DELETE /api/events/series/:seriesId/follow?userId=...
+ * Opt-out: dieser Nutzer folgt der Serie nicht mehr.
+ */
+app.delete('/api/events/series/:seriesId/follow', async (req, res) => {
+  const seriesId = (req.params.seriesId || '').toString().trim();
+  const userId = (req.query.userId || '').toString().trim();
+  if (!seriesId || !userId) {
+    return res.status(400).json({ error: 'seriesId und userId erforderlich' });
+  }
+  try {
+    await prisma.eventSeriesFollower.deleteMany({ where: { seriesId, userId } });
+    const count = await prisma.eventSeriesFollower.count({ where: { seriesId } });
+    return res.json({ following: false, seriesId, followerCount: count });
+  } catch (err) {
+    console.error('❌ Series unfollow error:', err.message);
+    return res.status(500).json({ error: `Unfollow failed: ${err.message}` });
+  }
+});
+
+/**
+ * GET /api/events/series/:seriesId/follow?userId=...
+ * Status: folgt dieser Nutzer der Serie? + Follower-Anzahl.
+ */
+app.get('/api/events/series/:seriesId/follow', async (req, res) => {
+  const seriesId = (req.params.seriesId || '').toString().trim();
+  const userId = (req.query.userId || '').toString().trim();
+  if (!seriesId) {
+    return res.status(400).json({ error: 'seriesId erforderlich' });
+  }
+  try {
+    const [mine, count] = await Promise.all([
+      userId
+        ? prisma.eventSeriesFollower.findUnique({
+            where: { seriesId_userId: { seriesId, userId } },
+          })
+        : Promise.resolve(null),
+      prisma.eventSeriesFollower.count({ where: { seriesId } }),
+    ]);
+    return res.json({ following: !!mine, seriesId, followerCount: count });
+  } catch (err) {
+    console.error('❌ Series follow status error:', err.message);
+    return res.status(500).json({ error: `Status failed: ${err.message}` });
   }
 });
 

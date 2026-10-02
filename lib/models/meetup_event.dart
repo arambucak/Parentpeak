@@ -31,6 +31,10 @@ class MeetupEvent {
   final List<String> invitedUserIds;
   final DateTime? inviteCodeExpiresAt;
 
+  /// Serien-ID eines wiederkehrenden Angebots. Mehrere Termine mit derselben
+  /// seriesId gehören zusammen; Eltern können der Serie folgen (Issue #47).
+  final String? seriesId;
+
   MeetupEvent({
     required this.id,
     required this.hosterId,
@@ -53,6 +57,7 @@ class MeetupEvent {
     this.shareRadiusKm = 25,
     this.invitedUserIds = const [],
     this.inviteCodeExpiresAt,
+    this.seriesId,
   });
 
   bool get isFull => currentParticipants >= maxParticipants;
@@ -85,11 +90,12 @@ class MeetupEvent {
             json['visibility'] as String? ?? EventVisibility.publicNearby.name),
         shareRadiusKm: (json['shareRadiusKm'] as num?)?.toDouble(),
         invitedUserIds: (json['invitedUserIds'] as List<dynamic>? ?? const [])
-          .map((e) => e.toString())
-          .toList(),
+            .map((e) => e.toString())
+            .toList(),
         inviteCodeExpiresAt: json['inviteCodeExpiresAt'] != null
-          ? DateTime.parse(json['inviteCodeExpiresAt'] as String)
-          : null,
+            ? DateTime.parse(json['inviteCodeExpiresAt'] as String)
+            : null,
+        seriesId: json['seriesId'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -114,5 +120,6 @@ class MeetupEvent {
         'shareRadiusKm': shareRadiusKm,
         'invitedUserIds': invitedUserIds,
         'inviteCodeExpiresAt': inviteCodeExpiresAt?.toIso8601String(),
+        'seriesId': seriesId,
       };
 }
