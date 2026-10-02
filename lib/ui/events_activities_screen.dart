@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
+import 'package:parentpeak/logic/event_feed_session_cache.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/models/event_invitation.dart';
 import 'package:parentpeak/models/discovered_event.dart';
@@ -28,11 +29,17 @@ import 'package:parentpeak/main.dart';
 class EventsActivitiesScreen extends StatefulWidget {
   final EventDiscoveryAgent? agent;
   final EventService? eventService;
+  final PickedLocation? initialLocation;
+  final Future<PickedLocation?> Function()? locationLoader;
+  final String? Function()? viewerUserId;
 
   const EventsActivitiesScreen({
     super.key,
     this.agent,
     this.eventService,
+    this.initialLocation,
+    this.locationLoader,
+    this.viewerUserId,
   });
 
   @override
@@ -43,9 +50,34 @@ enum _FeedSource { ai, community }
 
 enum _TimeWindowFilter { all, today, weekend }
 
+class _FeedSession {
+  final ai = EventFeedSessionCache<List<DiscoveredEvent>>(
+    ttl: const Duration(minutes: 10),
+  );
+  final community = EventFeedSessionCache<List<MeetupEvent>>(
+    ttl: const Duration(minutes: 1),
+  );
+  final invitations = EventFeedSessionCache<List<EventInvitation>>(
+    ttl: const Duration(minutes: 1),
+  );
+  final locations = <String, (PickedLocation, bool)>{};
+}
+
 class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
+  static final _defaultEventService = EventService();
+  static final _sessions = Expando<Expando<_FeedSession>>();
   late final EventDiscoveryAgent _agent;
   late final EventService _eventService;
+  late final _FeedSession _session;
+  int _requestGeneration = 0;
+  String? _displayedQuery;
+  String? _pendingQuery;
+  Future<void>? _pendingRefresh;
+  String? _feedUserId;
+
+  String? get _viewerUserId => widget.viewerUserId != null
+      ? widget.viewerUserId!()
+      : AuthService.instance.currentUser?.uid;
 
   // Single source of truth for location.
   // null = no location selected yet (bar shows "Standort wählen").
@@ -83,12 +115,53 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   void initState() {
     super.initState();
     _agent = widget.agent ?? EventDiscoveryAgent.instance;
-    _eventService = widget.eventService ?? EventService();
+    _eventService = widget.eventService ?? _defaultEventService;
+    final services = _sessions[_agent] ??= Expando<_FeedSession>();
+    _session = services[_eventService] ??= _FeedSession();
+    _feedUserId = _viewerUserId;
+    final remembered = _session.locations[_viewerUserId ?? 'guest'];
+    _activeLocation = widget.initialLocation ?? remembered?.$1;
+    _userLockedLocation = widget.initialLocation == null &&
+      (remembered?.$2 ?? false);
+    if (_activeLocation != null) {
+      _hasRealLocation = true;
+      _fallbackCity = _activeLocation!.city;
+    }
+    if (widget.viewerUserId == null) {
+      AuthService.instance.addListener(_onAccountChanged);
+    }
+    languageService.addListener(_onLanguageChanged);
     _loadSavedCityThenDetect();
   }
 
+  void _onAccountChanged() {
+    if (!mounted || _feedUserId == _viewerUserId) return;
+    _feedUserId = _viewerUserId;
+    _displayedQuery = null;
+    _pendingQuery = null;
+    _requestGeneration++;
+    setState(() {
+      _aiEvents = const [];
+      _communityEvents = const [];
+      _invitations = const [];
+      _eventTitlesById = const {};
+      _lastFeedSyncAt = null;
+    });
+    if (_hasRealLocation) _refreshFeed();
+  }
+
+  void _onLanguageChanged() {
+    if (mounted && _hasRealLocation) _refreshFeed();
+  }
+
   Future<void> _loadSavedCityThenDetect() async {
+    if (_hasRealLocation) {
+      _refreshFeed();
+      _detectGpsAndRefresh();
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final saved = prefs.getString(_savedCityKey);
     if (saved != null && saved.isNotEmpty && mounted) {
       setState(() {
@@ -107,6 +180,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
   @override
   void dispose() {
+    _requestGeneration++;
+    if (widget.viewerUserId == null) {
+      AuthService.instance.removeListener(_onAccountChanged);
+    }
+    languageService.removeListener(_onLanguageChanged);
     super.dispose();
   }
 
@@ -115,7 +193,27 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   /// [forceOverride] true wenn Nutzer den GPS-Button manuell drueckt —
   /// dann wird die Stadt immer aktualisiert und gespeichert.
   Future<void> _detectGpsAndRefresh({bool forceOverride = false}) async {
+    if (!mounted || _gpsDetecting) return;
     setState(() => _gpsDetecting = true);
+    var startingLocation = _activeLocation;
+    if (widget.locationLoader != null) {
+      try {
+        final location = await widget.locationLoader!();
+        if (!mounted) return;
+        if (location != null && (forceOverride || !_userLockedLocation) &&
+            identical(startingLocation, _activeLocation)) {
+          setState(() {
+            _activeLocation = location;
+            _fallbackCity = location.city;
+            _hasRealLocation = true;
+          });
+          _refreshFeed();
+        }
+      } finally {
+        if (mounted) setState(() => _gpsDetecting = false);
+      }
+      return;
+    }
 
     // First: use central LocationService if it already has a location (e.g. from onboarding)
     if (!forceOverride &&
@@ -139,17 +237,21 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
       _refreshFeed();
       // Still try GPS silently to get a fresher position
+      startingLocation = _activeLocation;
     }
 
     try {
       var permission = await Geolocator.checkPermission();
+      if (!mounted) return;
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
+        if (!mounted) return;
       }
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
         // Fallback: use central LocationService if available
-        if (LocationService.instance.hasLocation) {
+        if (LocationService.instance.hasLocation && !_hasRealLocation &&
+          !_userLockedLocation) {
           final loc = LocationService.instance;
           final newLocation = PickedLocation(
             displayName: loc.city ?? context.tr('events_my_location'),
@@ -193,6 +295,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
+      if (!mounted) return;
       // When Nominatim fails, use coordinates as search city so Gemini can locate events
       final coordCity =
           '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
@@ -210,15 +313,18 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         lon: pos.longitude,
       );
       if (mounted) {
-        final shouldUpdate = forceOverride || !_userLockedLocation;
+        final shouldUpdate = (forceOverride || !_userLockedLocation) &&
+            identical(startingLocation, _activeLocation);
         if (shouldUpdate) {
           final prefs = await SharedPreferences.getInstance();
           if (district != null) await prefs.setString(_savedCityKey, district);
         }
+        if (!mounted) return;
         setState(() {
-          _activeLocation = newLocation;
-          _hasRealLocation = true;
-          if (shouldUpdate) {
+          if (shouldUpdate && (forceOverride || !_userLockedLocation) &&
+              identical(startingLocation, _activeLocation)) {
+            _activeLocation = newLocation;
+            _hasRealLocation = true;
             _fallbackCity = city;
             _userLockedLocation = false;
           }
@@ -260,89 +366,155 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     return null;
   }
 
-  Future<void> _refreshFeed() async {
+  Future<void> _refreshFeed({
+    bool force = false,
+    bool communityChanged = false,
+    bool invitationsOnly = false,
+  }) {
+    if (!mounted) return Future.value();
     final city = _searchCity;
-
+    final viewerUserId = _viewerUserId;
+    final coords = _originCoords;
+    final ages = _selectedAgeGroups.toList()
+      ..sort((first, second) => first.index.compareTo(second.index));
+    final radius = _radiusKm;
+    final key = jsonEncode([
+      viewerUserId,
+      languageService.currentLanguage,
+      city.trim().toLowerCase(),
+      coords.$1.toStringAsFixed(4),
+      coords.$2.toStringAsFixed(4),
+      radius,
+      ages.map((age) => age.name).toList(),
+    ]);
+    if (communityChanged) {
+      _session.community.clear();
+      _session.invitations.clear();
+    }
+    if (!force &&
+      !communityChanged &&
+      !invitationsOnly &&
+      _pendingQuery == key &&
+      _pendingRefresh != null) {
+      return _pendingRefresh!;
+    }
+    if (_activeLocation != null) {
+      _session.locations[viewerUserId ?? 'guest'] =
+          (_activeLocation!, _userLockedLocation);
+      if (_session.locations.length > 32) {
+        _session.locations.remove(_session.locations.keys.first);
+      }
+    }
+    final generation = ++_requestGeneration;
+    bool isCurrent() => mounted &&
+      generation == _requestGeneration &&
+        viewerUserId == _viewerUserId;
+    final sameQuery = _displayedQuery == key;
+    final aiCached = _session.ai.peek(key);
+    final communityCached = _session.community.peek(key);
+    final invitationCached = _session.invitations.peek(key);
     setState(() {
+      _displayedQuery = key;
+      _aiEvents = aiCached?.data ?? (sameQuery ? _aiEvents : const []);
+      _communityEvents = communityCached?.data ??
+          (sameQuery && !communityChanged ? _communityEvents : const []);
+      _invitations = invitationCached?.data ??
+          (sameQuery && !communityChanged ? _invitations : const []);
+      if (!sameQuery || communityChanged) _eventTitlesById = const {};
+      if (!sameQuery || communityChanged) _lastFeedSyncAt = null;
       _isLoading = true;
       _errorMessage = null;
     });
-
-    try {
-      final viewerUserId = AuthService.instance.currentUser?.uid ?? 'guest';
-      final coords =
-          _originCoords; // GPS/picked coords for accurate community event radius
-      List<DiscoveredEvent> aiEvents;
+    final ageLabels = ages.map(_ageGroupLabel).toList();
+    Future<void> loadAi() async {
       try {
-        aiEvents = await _agent.discoverEvents(
-          city: city,
-          radiusHint: '$_radiusKm km Umkreis',
-          childAges: _selectedAgeGroups.map(_ageGroupLabel).toList(),
-          latitude: _activeLocation?.lat,
-          longitude: _activeLocation?.lon,
-        );
+        final pendingAi = _session.ai.pending(key);
+        if ((communityChanged || invitationsOnly) && pendingAi == null) return;
+        final request = communityChanged || invitationsOnly
+            ? pendingAi!
+            : _session.ai.load(
+                key,
+                () => _agent.discoverEvents(
+                  city: city,
+                  radiusHint: '$radius km Umkreis',
+                  childAges: ageLabels,
+                  latitude: coords.$1,
+                  longitude: coords.$2,
+                ),
+                force: force,
+              );
+        final value = await request;
+        if (isCurrent()) setState(() => _aiEvents = value.data);
       } catch (e) {
         debugPrint('EventsActivitiesScreen: AI feed unavailable: $e');
-        aiEvents = const <DiscoveredEvent>[];
       }
-
-      List<MeetupEvent> communityEvents;
+    }
+    Future<void> loadCommunity() async {
+      if (invitationsOnly) return;
       try {
-        communityEvents = await _loadCommunityEventsForCity(coords);
+        final value = await _session.community.load(
+          key,
+          () => _loadCommunityEventsForCity(coords, viewerUserId, radius, ages),
+          force: force || communityChanged,
+        );
+        if (isCurrent()) {
+          setState(() {
+            _communityEvents = value.data;
+            _eventTitlesById = {
+              ..._eventTitlesById,
+              for (final event in value.data) event.id: event.title,
+            };
+          });
+        }
       } catch (e) {
         debugPrint('EventsActivitiesScreen: community feed unavailable: $e');
-        communityEvents = const <MeetupEvent>[];
       }
-
-      List<EventInvitation> invitations;
+    }
+    Future<void> loadInvitations() async {
       try {
-        invitations = await _eventService.getInvitationsForUser(viewerUserId);
+        final value = await _session.invitations.load(
+          key,
+          () => _eventService.getInvitationsForUser(viewerUserId ?? 'guest'),
+          force: force || communityChanged || invitationsOnly,
+        );
+        if (!isCurrent()) return;
+        setState(() => _invitations = value.data);
+        await Future.wait(value.data.map((invitation) => invitation.eventId)
+            .where((id) => id.isNotEmpty && !_eventTitlesById.containsKey(id))
+            .toSet().map((eventId) async {
+          try {
+            final event = await _eventService.getEventById(eventId);
+            if (event != null && isCurrent()) {
+              setState(() => _eventTitlesById = {
+                ..._eventTitlesById, eventId: event.title,
+              });
+            }
+          } catch (e) {
+            debugPrint('EventsActivitiesScreen: invitation title unavailable: $e');
+          }
+        }));
       } catch (e) {
         debugPrint('EventsActivitiesScreen: invitations load skipped: $e');
-        invitations = const <EventInvitation>[];
       }
-
-      final titleMap = <String, String>{
-        for (final event in communityEvents) event.id: event.title,
-      };
-      final missingEventIds = invitations
-          .map((inv) => inv.eventId)
-          .where((id) => id.isNotEmpty && !titleMap.containsKey(id))
-          .toSet();
-
-      for (final eventId in missingEventIds) {
-        final event = await _eventService.getEventById(eventId);
-        if (event != null) {
-          titleMap[eventId] = event.title;
-        }
-      }
-
-      // Keine erfundenen Fallback-Events mehr: Wenn AI und Community leer sind,
-      // zeigen wir einen ehrlichen Leer-Zustand statt Platzhalter-Events.
-
-      if (!mounted) return;
-      setState(() {
-        _aiEvents = aiEvents;
-        _communityEvents = communityEvents;
-        _invitations = invitations;
-        _eventTitlesById = titleMap;
-        _isLoading = false;
-        _lastFeedSyncAt = DateTime.now();
-        _errorMessage = null;
-      });
-    } catch (e) {
-      debugPrint('EventsActivitiesScreen._refreshFeed(): failed: $e');
-      if (!mounted) return;
-      setState(() {
-        _aiEvents = const <DiscoveredEvent>[];
-        _communityEvents = const <MeetupEvent>[];
-        _invitations = const <EventInvitation>[];
-        _eventTitlesById = const {};
-        _errorMessage = null;
-        _isLoading = false;
-        _lastFeedSyncAt = DateTime.now();
-      });
     }
+    _pendingQuery = key;
+    final pending = Future.wait([loadAi(), loadCommunity(), loadInvitations()])
+        .then((_) {
+      if (!isCurrent()) return;
+      final ai = _session.ai.peek(key);
+      final community = _session.community.peek(key);
+      setState(() {
+        _isLoading = false;
+        _lastFeedSyncAt = ai != null && community != null
+            ? (ai.loadedAt.isBefore(community.loadedAt)
+                ? ai.loadedAt : community.loadedAt)
+            : null;
+      });
+      _pendingQuery = null;
+      _pendingRefresh = null;
+    });
+    _pendingRefresh = pending;
+    return pending;
   }
 
   String _formatLastSyncLabel(DateTime value) {
@@ -356,8 +528,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   Future<List<MeetupEvent>> _loadCommunityEventsForCity(
-      (double, double) coords) async {
-    final viewerUserId = AuthService.instance.currentUser?.uid;
+      (double, double) coords, String? viewerUserId, int radius,
+      List<AgeGroup> ages) async {
     if (viewerUserId == null || viewerUserId.trim().isEmpty) {
       final publicEvents = await _eventService.getEvents();
       return publicEvents.where((event) {
@@ -366,11 +538,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
         final distance =
             _distanceKm(coords.$1, coords.$2, event.latitude, event.longitude);
-        final visibleRadius = event.shareRadiusKm ?? _radiusKm.toDouble();
-        if (distance > visibleRadius || distance > _radiusKm) return false;
+        final visibleRadius = event.shareRadiusKm ?? radius.toDouble();
+        if (distance > visibleRadius || distance > radius) return false;
 
-        if (_selectedAgeGroups.isNotEmpty &&
-            !event.ageGroups.any(_selectedAgeGroups.contains)) {
+        if (ages.isNotEmpty && !event.ageGroups.any(ages.contains)) {
           return false;
         }
 
@@ -383,7 +554,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       viewerLatitude: coords.$1,
       viewerLongitude: coords.$2,
       ageGroups:
-          _selectedAgeGroups.isEmpty ? null : _selectedAgeGroups.toList(),
+          ages.isEmpty ? null : ages,
     );
   }
 
@@ -641,10 +812,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => EventDetailScreen(event: event),
+                  builder: (_) => EventDetailScreen(
+                    event: event,
+                    eventService: _eventService,
+                  ),
                 ),
               ).then((_) {
-                if (mounted) _refreshFeed();
+                if (mounted) _refreshFeed(communityChanged: true);
               });
               return;
             }
@@ -768,7 +942,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           duration: const Duration(seconds: 2),
         ),
       );
-      await _refreshFeed();
+      await _refreshFeed(invitationsOnly: true);
     } catch (e) {
       debugPrint('EventsActivitiesScreen._respondInvitation(): failed: $e');
       if (!mounted) return;
@@ -795,7 +969,16 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     return Scaffold(
         appBar: AppBar(
           title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'events_activities_title'))),
+            languageService.currentLanguage, 'events_activities_title')),
+          actions: [
+            IconButton(
+              key: const Key('event-feed-refresh'),
+              tooltip: context.tr('reload_btn'),
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () => _refreshFeed(force: true),
+            ),
+          ],
+        ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -856,6 +1039,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                                   'time': _formatLastSyncLabel(_lastFeedSyncAt!),
                                 },
                               ),
+                              key: const Key('event-feed-last-sync'),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: const Color(0xFF155E75),
                                 fontWeight: FontWeight.w700,
@@ -874,7 +1058,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (_isLoading)
+                  if (_isLoading && feed.isNotEmpty)
+                    const LinearProgressIndicator(),
+                  if (_isLoading && feed.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: Center(child: CircularProgressIndicator()),
@@ -899,7 +1085,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                           ),
                           const SizedBox(height: 8),
                           FilledButton.tonalIcon(
-                            onPressed: _refreshFeed,
+                            onPressed: () => _refreshFeed(force: true),
                             icon: const Icon(Icons.refresh_rounded),
                             label: Text(AppStringsManager.getString(
                                 languageService.currentLanguage, 'reload_btn')),
@@ -941,7 +1127,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                           ),
                           const SizedBox(height: 20),
                           FilledButton.icon(
-                            onPressed: _refreshFeed,
+                            onPressed: () => _refreshFeed(force: true),
                             icon: const Icon(Icons.refresh_rounded, size: 18),
                             label: Text(AppStringsManager.getString(
                                 languageService.currentLanguage, 'reload_btn')),
@@ -1033,7 +1219,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const CreateEventScreen()),
-              ).then((_) => _refreshFeed());
+              ).then((_) => _refreshFeed(communityChanged: true));
             },
           ),
         ),
@@ -1050,7 +1236,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                 MaterialPageRoute(
                   builder: (_) => const EventInvitationsScreen(),
                 ),
-              ).then((_) => _refreshFeed());
+              ).then((_) => _refreshFeed(invitationsOnly: true));
             },
           ),
         ),
@@ -1069,6 +1255,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString(_savedCityKey,
                   loc.city.isNotEmpty ? loc.city : loc.displayName);
+              if (!mounted) return;
               setState(() {
                 _activeLocation = loc;
                 _fallbackCity =
@@ -1215,6 +1402,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             children: AgeGroup.values
                 .map(
                   (group) => FilterChip(
+                    key: ValueKey('event-feed-age-${group.name}'),
                     label: Text(_ageGroupLabel(group)),
                     selected: _selectedAgeGroups.contains(group),
                     onSelected: (value) {

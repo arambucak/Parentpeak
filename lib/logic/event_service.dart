@@ -32,11 +32,10 @@ class EventService {
     if (_backend.isEnabled) {
       final remote = await _backend.fetchEvents(
         status: EventStatus.active.name,
+        throwOnFailure: true,
       );
-      if (remote.isNotEmpty) {
-        _syncFromRemoteEvents(remote);
-        return remote;
-      }
+      _syncFromRemoteEvents(remote);
+      return remote;
     }
 
     await Future.delayed(
@@ -58,11 +57,10 @@ class EventService {
         viewerLatitude: viewerLatitude,
         viewerLongitude: viewerLongitude,
         ageGroups: ageGroups,
+        throwOnFailure: true,
       );
-      if (remote.isNotEmpty) {
-        _syncFromRemoteEvents(remote);
-        return remote;
-      }
+      _syncFromRemoteEvents(remote);
+      return remote;
     }
 
     await Future.delayed(const Duration(milliseconds: 500));
@@ -93,11 +91,10 @@ class EventService {
 
   Future<List<EventInvitation>> getInvitationsForUser(String userId) async {
     if (_backend.isEnabled) {
-      final remote = await _backend.fetchInvitationsForUser(userId);
-      if (remote.isNotEmpty) {
-        _syncFromRemoteInvitations(remote);
-        return remote;
-      }
+      final remote = await _backend.fetchInvitationsForUser(userId,
+          throwOnFailure: true);
+      _syncFromRemoteInvitations(remote);
+      return remote;
     }
 
     await Future.delayed(const Duration(milliseconds: 220));

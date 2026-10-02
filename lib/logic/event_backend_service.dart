@@ -28,6 +28,7 @@ class EventBackendService {
     String? hostUserId,
     int limit = 50,
     int offset = 0,
+    bool throwOnFailure = false,
   }) async {
     if (_apiClient == null) return [];
     try {
@@ -46,6 +47,7 @@ class EventBackendService {
       return _parseEventList(payload);
     } catch (e) {
       lastSyncError = 'Events konnten nicht geladen werden: $e';
+      if (throwOnFailure) rethrow;
       return [];
     }
   }
@@ -57,6 +59,7 @@ class EventBackendService {
     List<AgeGroup>? ageGroups,
     int limit = 50,
     int offset = 0,
+    bool throwOnFailure = false,
   }) async {
     if (_apiClient == null) return [];
     try {
@@ -80,6 +83,7 @@ class EventBackendService {
       return _parseEventList(payload);
     } catch (e) {
       lastSyncError = 'Event-Discovery fehlgeschlagen: $e';
+      if (throwOnFailure) rethrow;
       return [];
     }
   }
@@ -178,7 +182,8 @@ class EventBackendService {
     }
   }
 
-  Future<List<EventInvitation>> fetchInvitationsForUser(String userId) async {
+  Future<List<EventInvitation>> fetchInvitationsForUser(String userId,
+      {bool throwOnFailure = false}) async {
     if (_apiClient == null) return [];
     try {
       final payload = await _apiClient!.getJson(
@@ -187,6 +192,7 @@ class EventBackendService {
       return _parseInvitationList(payload);
     } catch (e) {
       lastSyncError = 'Einladungen konnten nicht geladen werden: $e';
+      if (throwOnFailure) rethrow;
       return [];
     }
   }
