@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
+import 'package:parentpeak/logic/event_flyer_scanner_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
 import 'package:parentpeak/models/family_contact.dart';
@@ -29,6 +30,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _recurringNoteController;
   late TextEditingController _locationController;
   late TextEditingController _maxParticipantsController;
 
@@ -50,11 +52,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _imagePicker = ImagePicker();
   final _eventBackendService = EventBackendService();
 
+  // Flyer-/Foto-Scan ("Magisch ausfüllen")
+  final _flyerScanner = EventFlyerScannerService();
+  bool _isScanning = false;
+  String? _priceHint;
+  bool _showRecurringNote = false;
+  bool _includeRecurringNote = false;
+
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
+    _recurringNoteController = TextEditingController();
     _locationController = TextEditingController(text: 'Berlin, Deutschland');
     _maxParticipantsController = TextEditingController(text: '10');
     _loadFamilyContacts();
@@ -85,6 +95,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _recurringNoteController.dispose();
     _locationController.dispose();
     _maxParticipantsController.dispose();
     super.dispose();
@@ -146,6 +157,234 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     });
   }
 
+  // ─── Flyer-/Foto-Scan: "Magisch ausfüllen" ────────────────────────────────
+
+  /// Zeigt ein Bottom-Sheet mit den drei Scan-Quellen.
+  Future<void> _showScanOptions() async {
+    if (_isScanning || _isSubmitting) return;
+    FocusScope.of(context).unfocus();
+    final theme = Theme.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _t('event_scan_sheet_title'),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _t('event_scan_sheet_subtitle'),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _ScanOptionTile(
+                  icon: Icons.photo_camera_rounded,
+                  title: _t('event_scan_camera'),
+                  subtitle: _t('event_scan_camera_hint'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _scanFromCamera();
+                  },
+                ),
+                const SizedBox(height: 10),
+                _ScanOptionTile(
+                  icon: Icons.image_outlined,
+                  title: _t('event_scan_gallery'),
+                  subtitle: _t('event_scan_gallery_hint'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _scanFromGallery();
+                  },
+                ),
+                const SizedBox(height: 10),
+                _ScanOptionTile(
+                  icon: Icons.notes_rounded,
+                  title: _t('event_scan_text'),
+                  subtitle: _t('event_scan_text_hint'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _scanFromTextDialog();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _scanFromCamera() => _scanFromPickedImage(ImageSource.camera);
+
+  Future<void> _scanFromGallery() => _scanFromPickedImage(ImageSource.gallery);
+
+  Future<void> _scanFromPickedImage(ImageSource source) async {
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() => _isScanning = true);
+      final fileName = picked.name.toLowerCase();
+      final imageMimeType = picked.mimeType ??
+          (fileName.endsWith('.png')
+              ? 'image/png'
+              : fileName.endsWith('.webp')
+                  ? 'image/webp'
+                  : 'image/jpeg');
+      final draft = await _flyerScanner.scanFromImage(
+        bytes,
+        imageMimeType: imageMimeType,
+      );
+      _applyScanResult(draft);
+    } catch (e) {
+      if (mounted) _showScanError();
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
+
+  Future<void> _scanFromTextDialog() async {
+    final controller = TextEditingController();
+    final text = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(_t('event_scan_text')),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: 6,
+            minLines: 4,
+            decoration: InputDecoration(
+              hintText: _t('event_scan_text_placeholder'),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(_t('cancel')),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(controller.text.trim()),
+              child: Text(_t('event_scan_analyze')),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (text == null || text.isEmpty) return;
+    if (!mounted) return;
+    setState(() => _isScanning = true);
+    try {
+      final draft = await _flyerScanner.scanFromText(text);
+      _applyScanResult(draft);
+    } catch (e) {
+      if (mounted) _showScanError();
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
+
+  /// Übernimmt erkannte Felder ins Formular. Vorhandene Nutzereingaben in
+  /// Titel/Beschreibung werden nicht überschrieben.
+  void _applyScanResult(ScannedEventDraft? draft) {
+    if (!mounted) return;
+    if (draft == null || !draft.hasContent) {
+      _showScanError();
+      return;
+    }
+
+    final filled = <String>[];
+
+    if (draft.title != null && _titleController.text.trim().isEmpty) {
+      _titleController.text = draft.title!;
+      filled.add(_t('event_scan_field_title'));
+    }
+    if (draft.description != null &&
+        _descriptionController.text.trim().isEmpty) {
+      _descriptionController.text = draft.description!;
+      filled.add(_t('event_scan_field_description'));
+    }
+    if (draft.location != null) {
+      _locationController.text = draft.location!;
+      filled.add(_t('event_scan_field_location'));
+    }
+    if (draft.date != null) {
+      _selectedDate = draft.date!;
+      filled.add(_t('event_scan_field_date'));
+    }
+    if (draft.time != null) {
+      _selectedTime =
+          TimeOfDay(hour: draft.time!.hour, minute: draft.time!.minute);
+      filled.add(_t('event_scan_field_time'));
+    }
+    if (draft.category != null) {
+      _selectedCategory = draft.category!;
+      filled.add(_t('event_scan_field_category'));
+    }
+    if (draft.ageGroups.isNotEmpty) {
+      _selectedAgeGroups
+        ..clear()
+        ..addAll(draft.ageGroups);
+      filled.add(_t('event_scan_field_age'));
+    }
+    _priceHint = draft.priceNote;
+    if (draft.recurringNote != null && !_showRecurringNote) {
+      _recurringNoteController.text = draft.recurringNote!;
+      _showRecurringNote = true;
+      _includeRecurringNote = true;
+      filled.add(_t('recurring_event'));
+    }
+
+    setState(() {});
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    if (filled.isEmpty) {
+      _showScanError();
+      return;
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('${_t('event_scan_filled')} ${filled.join(', ')}.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showScanError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_t('event_scan_failed')),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<String> _ensurePhotoUploaded() async {
     if (_selectedPhotoFile == null) return '';
     if (_uploadedPhotoUrl != null) return _uploadedPhotoUrl!;
@@ -158,8 +397,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     final currentUserId = AuthService.instance.currentUser?.uid;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(_t('event_login_required'))),
+        SnackBar(content: Text(_t('event_login_required'))),
       );
       return;
     }
@@ -167,8 +405,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedAgeGroups.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(_t('event_select_age_group'))),
+        SnackBar(content: Text(_t('event_select_age_group'))),
       );
       return;
     }
@@ -201,7 +438,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         id: 'event_${DateTime.now().millisecondsSinceEpoch}',
         hosterId: currentUserId,
         title: _titleController.text,
-        description: _descriptionController.text,
+        description: _includeRecurringNote &&
+            _recurringNoteController.text.trim().isNotEmpty
+          ? '${_descriptionController.text.trim()}\n\n${_t('recurring_event')}: ${_recurringNoteController.text.trim()}'
+          : _descriptionController.text,
         category: _selectedCategory,
         ageGroups: _selectedAgeGroups,
         location: _locationController.text,
@@ -358,6 +598,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Magisch ausfüllen (Flyer-/Foto-/Text-Scan)
+                _MagicFillCard(
+                  title: _t('event_scan_title'),
+                  subtitle: _t('event_scan_subtitle'),
+                  buttonLabel: _t('event_scan_button'),
+                  isScanning: _isScanning,
+                  onTap: _showScanOptions,
+                ),
+                const SizedBox(height: 20),
                 // Titel
                 Text(
                   'Grundinformationen',
@@ -399,6 +648,28 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+
+                if (_showRecurringNote) ...[
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_t('event_scan_recurring_confirm')),
+                    subtitle: Text(_t('event_scan_recurring_explanation')),
+                    value: _includeRecurringNote,
+                    onChanged: (value) =>
+                        setState(() => _includeRecurringNote = value),
+                  ),
+                  if (_includeRecurringNote) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _recurringNoteController,
+                      decoration: InputDecoration(
+                        labelText: _t('recurring_event'),
+                        prefixIcon: const Icon(Icons.repeat_rounded),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                ],
 
                 // Sichtbarkeit & Standortverteilung
                 Text(
@@ -693,6 +964,31 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ],
                 const SizedBox(height: 24),
 
+                if (_priceHint != null && _priceHint!.trim().isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFED7AA)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.local_offer_rounded,
+                            color: Color(0xFFB45309), size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            '${_t('event_scan_price_hint')} $_priceHint',
+                            style: const TextStyle(color: Color(0xFFB45309)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 // Kostenhinweis
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -837,6 +1133,174 @@ class _VisibilityOptionTile extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hervorgehobene Karte oben im Formular: "Magisch ausfüllen" per Flyer-Foto
+/// oder Text. Warm, einladend und klar als optionaler Shortcut gestaltet.
+class _MagicFillCard extends StatelessWidget {
+  const _MagicFillCard({
+    required this.title,
+    required this.subtitle,
+    required this.buttonLabel,
+    required this.isScanning,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final bool isScanning;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE0F2F1), Color(0xFFEDE7F6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFB2DFDB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.auto_awesome_rounded,
+                    color: Color(0xFF00897B)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF00695C),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF37474F),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF00897B),
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: isScanning ? null : onTap,
+              icon: isScanning
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.photo_camera_rounded, size: 20),
+              label: Text(isScanning ? '…' : buttonLabel),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Eine Zeile im Scan-Quellen-Bottom-Sheet (Kamera / Galerie / Text).
+class _ScanOptionTile extends StatelessWidget {
+  const _ScanOptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: theme.colorScheme.onPrimaryContainer),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
             ],
           ),
         ),
