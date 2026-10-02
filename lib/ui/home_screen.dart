@@ -26,7 +26,6 @@ import 'package:parentpeak/ui/widgets/home/context_home_card.dart';
 import 'package:parentpeak/services/mood_history_service.dart';
 import 'package:parentpeak/ui/wochenrueckblick_screen.dart';
 import 'package:parentpeak/ui/ritual_ruhe_screen.dart';
-import 'package:parentpeak/l10n/app_localizations.dart';
 
 class _FeatureAction {
   final String id;
@@ -586,7 +585,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final contentMaxWidth = viewportWidth >= 1400
         ? 1260.0
@@ -637,9 +635,8 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       _FeatureAction(
         id: 'verschenkmarkt',
-        label: l10n.t('treasureTileTitle', fallback: 'Verschenkmarkt'),
-        description: l10n.t('treasureTileSubtitle',
-            fallback: 'Verschenken, austauschen, Eltern verbinden'),
+        label: AppStringsManager.getString(lang, 'treasureTileTitle'),
+        description: AppStringsManager.getString(lang, 'treasureTileSubtitle'),
         icon: Icons.inventory_2_rounded,
         color: const Color(0xFF1E5CD7),
         builder: (_) => const TreasureHandoverScreen(),
@@ -674,11 +671,9 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       _FeatureAction(
         id: 'ritual_ruhe',
-        label: l10n.t('ritualRuheTitle', fallback: 'Ritual & Ruhe'),
-        description: l10n.t(
-          'ritualRuheTileSubtitle',
-          fallback: 'Ein ruhiger Moment für euren Familienalltag',
-        ),
+        label: AppStringsManager.getString(lang, 'ritualRuheTitle'),
+        description:
+            AppStringsManager.getString(lang, 'ritualRuheTileSubtitle'),
         icon: DateTime.now().hour >= 18 || DateTime.now().hour < 6
             ? Icons.nightlight_round
             : Icons.wb_sunny_rounded,
