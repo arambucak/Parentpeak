@@ -2,22 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
+import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/participation_service.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/meetup_chat_screen.dart';
+import 'package:parentpeak/ui/event_edit_sheet.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final MeetupEvent event;
+  final EventService? eventService;
+  final EventBackendService? backendService;
+  final ParticipationService? participationService;
 
-  const EventDetailScreen({super.key, required this.event});
+  const EventDetailScreen({
+    super.key,
+    required this.event,
+    this.eventService,
+    this.backendService,
+    this.participationService,
+  });
 
   @override
   State<EventDetailScreen> createState() => _EventDetailScreenState();
 }
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
-  final _participationService = ParticipationService();
-  final _eventBackendService = EventBackendService();
+  late final ParticipationService _participationService;
+  late final EventBackendService _eventBackendService;
+  late final EventService _eventService;
+  late MeetupEvent _event;
+  bool _ownerBusy = false;
   bool _hasRequested = false;
   bool _isApproved = false;
   bool _isDeclined = false;
@@ -30,23 +44,31 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   bool _followBusy = false;
 
   String? get _currentUserId => AuthService.instance.currentUser?.uid;
+  bool get _isOwner =>
+      _currentUserId != null &&
+      _currentUserId!.trim().isNotEmpty &&
+      _currentUserId == _event.hosterId;
 
-  bool get _hasSeries =>
-      widget.event.seriesId != null && widget.event.seriesId!.isNotEmpty;
+  bool get _hasSeries => _event.seriesId != null && _event.seriesId!.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
+    _event = widget.event;
+    _eventService = widget.eventService ?? EventService();
+    _participationService =
+        widget.participationService ?? ParticipationService();
+    _eventBackendService = widget.backendService ?? EventBackendService();
     _checkParticipationStatus();
     _loadFollowStatus();
   }
 
   Future<void> _loadFollowStatus() async {
-    if (!_hasSeries) return;
+    if (!_hasSeries || _isOwner) return;
     final uid = _currentUserId;
     if (uid == null || uid.trim().isEmpty) return;
     final following = await _eventBackendService.isFollowingSeries(
-      seriesId: widget.event.seriesId!,
+      seriesId: _event.seriesId!,
       userId: uid,
     );
     if (!mounted || following == null) return;
@@ -61,30 +83,39 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       );
       return;
     }
-    if (!_hasSeries || _followBusy) return;
+    if (!_hasSeries || _followBusy || _isOwner) return;
     setState(() => _followBusy = true);
     final wasFollowing = _isFollowingSeries;
     final ok = wasFollowing
         ? await _eventBackendService.unfollowSeries(
-            seriesId: widget.event.seriesId!, userId: uid)
+            seriesId: _event.seriesId!,
+            userId: uid,
+          )
         : await _eventBackendService.followSeries(
-            seriesId: widget.event.seriesId!, userId: uid);
+            seriesId: _event.seriesId!,
+            userId: uid,
+          );
     if (!mounted) return;
     setState(() {
       _followBusy = false;
       if (ok) _isFollowingSeries = !wasFollowing;
     });
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_isFollowingSeries
-            ? context.tr('event_series_followed')
-            : context.tr('event_series_unfollowed')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isFollowingSeries
+                ? context.tr('event_series_followed')
+                : context.tr('event_series_unfollowed'),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   Future<void> _checkParticipationStatus() async {
+    if (_isOwner) return;
     final currentUserId = _currentUserId;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       if (!mounted) return;
@@ -94,23 +125,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       return;
     }
 
-    final participation =
-        await _participationService.getParticipationByUserAndEvent(
-      userId: currentUserId,
-      eventId: widget.event.id,
-    );
+    final participation = await _participationService
+        .getParticipationByUserAndEvent(
+          userId: currentUserId,
+          eventId: _event.id,
+        );
 
     if (!mounted) return;
     setState(() {
       _isApproved = participation?.status == ParticipationStatus.approved;
       _isDeclined = participation?.status == ParticipationStatus.declined;
-      _hasRequested = participation?.status == ParticipationStatus.pending ||
+      _hasRequested =
+          participation?.status == ParticipationStatus.pending ||
           participation?.status == ParticipationStatus.approved;
       _requiresSignIn = false;
     });
   }
 
   Future<void> _requestParticipation() async {
+    if (_isOwner || _isLoading) return;
     final currentUserId = _currentUserId;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -125,7 +158,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     try {
       await _participationService.requestParticipation(
-        eventId: widget.event.id,
+        eventId: _event.id,
         userId: currentUserId,
       );
 
@@ -143,9 +176,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            context.tr('event_detail_error', values: {'error': e}),
-          ),
+          content: Text(context.tr('event_detail_error', values: {'error': e})),
         ),
       );
     }
@@ -176,23 +207,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               width: double.infinity,
               height: 220,
               decoration: BoxDecoration(
-                gradient: widget.event.photoUrl.isEmpty
+                gradient: _event.photoUrl.isEmpty
                     ? const LinearGradient(
                         colors: [Color(0xFFDBEAFE), Color(0xFFE0F2FE)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
                     : null,
-                image: widget.event.photoUrl.isEmpty
+                image: _event.photoUrl.isEmpty
                     ? null
                     : DecorationImage(
-                        image: NetworkImage(widget.event.photoUrl),
+                        image: NetworkImage(_event.photoUrl),
                         fit: BoxFit.cover,
                       ),
               ),
               child: Stack(
                 children: [
-                  if (widget.event.photoUrl.isEmpty)
+                  if (_event.photoUrl.isEmpty)
                     const Center(
                       child: Icon(
                         Icons.celebration_rounded,
@@ -205,13 +236,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     right: 16,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.95),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        _getCategoryLabel(widget.event.category),
+                        _getCategoryLabel(_event.category),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
@@ -222,6 +255,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 ],
               ),
             ),
+            if (_isOwner) _buildOwnerToolbar(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
               child: Column(
@@ -234,15 +268,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       color: Colors.white.withValues(alpha: 0.92),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.45),
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.45,
+                        ),
                       ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.event.title,
+                          _event.title,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
@@ -255,7 +290,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 icon: Icons.people_outline_rounded,
                                 label: context.tr('event_places'),
                                 value:
-                                    '${widget.event.currentParticipants}/${widget.event.maxParticipants}',
+                                    '${_event.currentParticipants}/${_event.maxParticipants}',
                                 color: const Color(0xFF2563EB),
                               ),
                             ),
@@ -264,10 +299,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               child: _MetaPill(
                                 icon: Icons.schedule_rounded,
                                 label: context.tr('common_status'),
-                                value: context.tr(widget.event.isFull
-                                    ? 'status_full'
-                                    : 'status_open'),
-                                color: widget.event.isFull
+                                value: context.tr(
+                                  _event.isFull ? 'status_full' : 'status_open',
+                                ),
+                                color: _event.isFull
                                     ? const Color(0xFFDC2626)
                                     : const Color(0xFF16A34A),
                               ),
@@ -280,17 +315,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   const SizedBox(height: 14),
                   _buildInfoTile(
                     icon: Icons.calendar_today,
-                    title:
-                        '${widget.event.eventDate.day}.${widget.event.eventDate.month}.${widget.event.eventDate.year}',
-                    subtitle:
-                        '${widget.event.eventDate.hour.toString().padLeft(2, '0')}:${widget.event.eventDate.minute.toString().padLeft(2, '0')} Uhr',
+                    title: MaterialLocalizations.of(
+                      context,
+                    ).formatMediumDate(_event.eventDate.toLocal()),
+                    subtitle: TimeOfDay.fromDateTime(
+                      _event.eventDate.toLocal(),
+                    ).format(context),
                   ),
                   const SizedBox(height: 8),
                   _buildInfoTile(
                     icon: Icons.location_on,
-                    title: widget.event.location,
+                    title: _event.location,
                     subtitle:
-                        '${widget.event.latitude.toStringAsFixed(3)}, ${widget.event.longitude.toStringAsFixed(3)}',
+                        '${_event.latitude.toStringAsFixed(3)}, ${_event.longitude.toStringAsFixed(3)}',
                   ),
                   const SizedBox(height: 8),
                   _buildInfoTile(
@@ -298,14 +335,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     title: context.tr(
                       'event_detail_participants',
                       values: {
-                        'current': widget.event.currentParticipants,
-                        'maximum': widget.event.maxParticipants,
+                        'current': _event.currentParticipants,
+                        'maximum': _event.maxParticipants,
                       },
                     ),
-                    subtitle: widget.event.spotsAvailable > 0
+                    subtitle: _event.spotsAvailable > 0
                         ? context.tr(
                             'event_detail_spots_available',
-                            values: {'count': widget.event.spotsAvailable},
+                            values: {'count': _event.spotsAvailable},
                           )
                         : context.tr('event_detail_fully_booked'),
                   ),
@@ -319,8 +356,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.6),
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                     child: Column(
@@ -334,18 +372,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          widget.event.description,
+                          _event.description,
                           style: theme.textTheme.bodyMedium,
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (_hasSeries) ...[
+                  if (_hasSeries && !_isOwner) ...[
                     _buildSeriesFollowCard(theme),
                     const SizedBox(height: 16),
                   ],
-                  if (_isApproved)
+                  if (_isOwner)
+                    const SizedBox.shrink()
+                  else if (_isApproved)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -363,9 +403,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => MeetupChatScreen(
-                                    event: widget.event,
-                                  ),
+                                  builder: (context) =>
+                                      MeetupChatScreen(event: _event),
                                 ),
                               );
                             },
@@ -393,14 +432,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed:
-                            widget.event.isFull ? null : _requestParticipation,
+                        onPressed: _event.isFull || _isLoading
+                            ? null
+                            : _requestParticipation,
                         icon: _isLoading
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.person_add),
                         label: Text(
@@ -415,6 +456,191 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildOwnerToolbar() {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('event_owner_yours'),
+            style: theme.textTheme.titleSmall,
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton.icon(
+                  key: const Key('event-owner-edit'),
+                  onPressed: _ownerBusy ? null : _editEvent,
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(context.tr('event_owner_edit')),
+                ),
+              ),
+              PopupMenuButton<String>(
+                key: const Key('event-owner-menu'),
+                enabled: !_ownerBusy,
+                tooltip: context.tr('event_owner_actions'),
+                icon: const Icon(Icons.more_vert),
+                onSelected: (_) => _deleteEvent(),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          color: theme.colorScheme.error,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(context.tr('event_owner_delete')),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editEvent() async {
+    if (!_isOwner || _ownerBusy) return;
+    setState(() => _ownerBusy = true);
+    final updated = await showModalBottomSheet<MeetupEvent>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      useSafeArea: true,
+      constraints: const BoxConstraints(maxWidth: 640),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+      ),
+      builder: (_) => EventEditSheet(
+        event: _event,
+        onSave: (fields) async {
+          if (!_isOwner) throw StateError('Owner session changed');
+          return _eventService.updateEvent(
+            _event.id,
+            fields,
+            requestingUserId: _currentUserId!,
+          );
+        },
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _ownerBusy = false;
+      if (updated != null) _event = updated;
+    });
+    if (updated != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr('event_owner_saved'))));
+    }
+  }
+
+  Future<void> _deleteEvent() async {
+    if (!_isOwner || _ownerBusy) return;
+    setState(() => _ownerBusy = true);
+    var busy = false;
+    String? error;
+    final deleted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, updateDialog) => PopScope(
+          canPop: !busy,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            title: Text(context.tr('event_owner_delete_title')),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  context.tr(
+                    'event_owner_delete_message',
+                    values: {'title': _event.title},
+                  ),
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 12),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: busy
+                    ? null
+                    : () => Navigator.pop(dialogContext, false),
+                child: Text(context.tr('common_cancel')),
+              ),
+              TextButton.icon(
+                key: const Key('event-delete-confirm'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: busy
+                    ? null
+                    : () async {
+                        if (!_isOwner) return;
+                        updateDialog(() {
+                          busy = true;
+                          error = null;
+                        });
+                        try {
+                          final removed = await _eventService.deleteEvent(
+                            _event.id,
+                            requestingUserId: _currentUserId!,
+                          );
+                          if (!removed) {
+                            throw StateError('Delete not acknowledged');
+                          }
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext, true);
+                          }
+                        } catch (_) {
+                          if (dialogContext.mounted) {
+                            updateDialog(() {
+                              busy = false;
+                              error = context.tr('event_owner_delete_failed');
+                            });
+                          }
+                        }
+                      },
+                icon: busy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.delete_outline),
+                label: Text(context.tr('event_owner_delete')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _ownerBusy = false);
+    if (deleted == true) Navigator.pop(context, true);
   }
 
   /// Karte für wiederkehrende Angebote: Eltern können der Serie folgen und
@@ -441,8 +667,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Expanded(
                 child: Text(
                   context.tr('event_series_title'),
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -469,8 +696,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.notifications_active_rounded,
-                            size: 18),
+                        : const Icon(
+                            Icons.notifications_active_rounded,
+                            size: 18,
+                          ),
                     label: Text(context.tr('event_series_unfollow')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF7C3AED),
@@ -484,10 +713,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
-                        : const Icon(Icons.notifications_none_rounded,
-                            size: 18),
+                        : const Icon(
+                            Icons.notifications_none_rounded,
+                            size: 18,
+                          ),
                     label: Text(context.tr('event_series_follow')),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF7C3AED),
@@ -563,10 +796,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           const SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(
-              color: textColor,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(color: textColor, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -588,12 +818,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: widget.event.ageGroups
+          children: _event.ageGroups
               .map(
                 (ageGroup) => Chip(
                   label: Text(_getAgeGroupLabel(ageGroup)),
-                  backgroundColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.1,
+                  ),
                 ),
               )
               .toList(),

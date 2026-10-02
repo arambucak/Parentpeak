@@ -643,7 +643,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                 MaterialPageRoute(
                   builder: (_) => EventDetailScreen(event: event),
                 ),
-              );
+              ).then((_) {
+                if (mounted) _refreshFeed();
+              });
               return;
             }
             _showAiDetails(item);

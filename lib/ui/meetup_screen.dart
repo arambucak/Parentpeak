@@ -354,7 +354,9 @@ class _MeetupScreenState extends State<MeetupScreen> {
           MaterialPageRoute(
             builder: (context) => EventDetailScreen(event: event),
           ),
-        );
+        ).then((_) {
+          if (mounted) _loadEvents();
+        });
       },
       child: Card(
         child: Column(
@@ -541,7 +543,9 @@ class _MeetupScreenState extends State<MeetupScreen> {
           MaterialPageRoute(
             builder: (context) => EventDetailScreen(event: event),
           ),
-        );
+        ).then((_) {
+          if (mounted) _loadEvents();
+        });
       },
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
