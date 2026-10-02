@@ -27,6 +27,68 @@ import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
+String networkWizardOptionLabel(String language, String group, String key, String fallback) {
+  if (language != 'ku') return fallback;
+  const options = <String, Map<String, String>>{
+    'family': {
+      'kernfamilie': 'Malbata biçûk', 'alleinerziehend': 'Tenê dêûbav',
+      'patchwork': 'Malbata tevlihev', 'regenbogen': 'Malbata rengîn',
+      'grossfamilie': 'Malbata mezin', 'co_parenting': 'Dêûbaviya hevpar',
+      'pflegefamilie': 'Malbata xwedîkirinê', 'grosseltern': 'Malbata dapîr û bapîr',
+      'wg_familie': 'Malbata bi hev re dijîn',
+    },
+    'gender': {'maennlich': 'Kur', 'weiblich': 'Keç', 'divers': 'Cihêreng'},
+    'child': {
+      'spielplatz': 'Lîstikgeh', 'basteln': 'Destkariyê', 'malen': 'Wênekirin',
+      'natur': 'Keşifkirina xwezayê', 'sport': 'Werziş', 'musik': 'Muzîk',
+      'tanzen': 'Govd', 'tiere': 'Heywan', 'bücher': 'Pirtûk',
+      'bauen': 'Avakirin', 'rollenspiel': 'Lîstika rolan',
+      'kochen_backen': 'Xwarin çêkirin û nanpêjî', 'wasser': 'Lîstina bi avê',
+      'fahrrad': 'Bisîklet û skuter', 'theater': 'Şano û cilguhertin',
+      'experimente': 'Ceribandin',
+    },
+    'values': {
+      'gfk': 'Axaftina bê tundî', 'bedürfnisorientiert': 'Li gorî hewcedariyan',
+      'attachment_parenting': 'Dêûbaviya bi girêdanê', 'unerzogen': 'Perwerdehiya azad',
+      'montessori': 'Montessori', 'waldorf': 'Waldorf', 'freilernend': 'Fêrbûna azad',
+      'pikler': 'Pikler', 'respektvoll': 'Bi rêz', 'strukturiert': 'Bi rêk û pêk',
+      'demokratisch': 'Demokratîk', 'religioes': 'Olî / ruhanî',
+      'interkulturell': 'Pirçandî', 'feministisch': 'Femînîst',
+      'naturverbunden': 'Girêdayî xwezayê', 'offen': 'Ji her tiştî re vekirî',
+    },
+    'looking': {
+      'spielplatz': 'Hevdîtina lîstikgehê', 'natur': 'Daristan û xweza',
+      'sport': 'Werziş û hereket', 'kreativ': 'Hevdîtina afirîner',
+      'kochen': 'Bi hev re xwarin çêkirin', 'musik': 'Muzîk û stran',
+      'vorlesen': 'Xwendin û çîrok', 'eltern_austausch': 'Axaftina dêûbavan',
+      'babysitting_tausch': 'Alîkariya hevpar a lênihêrînê',
+      'kita_fahrgemeinschaft': 'Rêwîtiya hevpar a dibistanê',
+      'kindergeburtstage': 'Rojbûnên zarokan', 'ausflug': 'Ger û rêwîtî',
+      'indoor_treffen': 'Hevdîtina hundir', 'regelmaessig': 'Koma birêkûpêk',
+      'spontan': 'Hevdîtina bêplan', 'online_austausch': 'Axaftina serhêl',
+    },
+    'days': {'montag': 'Du', 'dienstag': 'Sê', 'mittwoch': 'Çar',
+      'donnerstag': 'Pênc', 'freitag': 'În', 'samstag': 'Şem', 'sonntag': 'Yek'},
+    'times': {'morgens': 'Sibe (6–9)', 'vormittags': 'Berî nîvro (9–12)',
+      'nachmittags': 'Piştî nîvro (12–17)', 'abends': 'Êvar (17–21)',
+      'nach_kita': 'Piştî baxçeyê zarokan / dibistanê', 'flexibel': 'Guhêrbar'},
+    'specials': {'behinderung': 'Zarokê bi astengiyê',
+      'neurodivergent': 'Cihêrengiya mejî (ADHD/otîzm)',
+      'hochsensibel': 'Pir hestiyar', 'fruehchen': 'Dêûbavên zarokên zûdayikbûyî',
+      'mehrlinge': 'Cêwî an zarokên pirjimar',
+      'chronisch_krank': 'Nexweşiya demdirêj', 'allergien': 'Alerjî',
+      'schreibaby': 'Pitikê pir digirî', 'pflegekind': 'Zarokê xwedîkirî'},
+    'language': {'de': 'Almanî', 'en': 'Îngilîzî', 'tr': 'Tirkî',
+      'ku': 'Kurdî', 'ar': 'Erebî', 'fr': 'Fransî', 'es': 'Spanî',
+      'ru': 'Rûsî', 'pl': 'Polonî', 'it': 'Îtalî', 'pt': 'Portekîzî',
+      'nl': 'Holendî', 'uk': 'Ukraynî', 'ro': 'Romenî', 'bg': 'Bulgarî',
+      'sr': 'Sirbî', 'hr': 'Xirwatî', 'bs': 'Bosnayî', 'sq': 'Albanî',
+      'el': 'Yewnanî', 'fa': 'Farisî', 'hi': 'Hindî', 'zh': 'Çînî',
+      'ja': 'Japonî', 'ko': 'Koreyî', 'vi': 'Viyetnamî', 'sw': 'Swahilî'},
+  };
+  return options[group]?[key] ?? fallback;
+}
+
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
@@ -1508,11 +1570,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       if (distanceKm != null) '\u{1F4CD} $distanceKm km',
       if (distanceKm == null && m.breakdown['locationLabel'] == 'same_city')
         _networkCopy('same_city', 'In deiner Stadt'),
-      if (p.languages.isNotEmpty) p.languages.take(3).join(', '),
+        if (p.languages.isNotEmpty) p.languages.take(3)
+          .map((code) => networkWizardOptionLabel(languageService.currentLanguage,
+            'language', code, code)).join(', '),
     ].join('  \u{2022}  ');
     final tags = <String>[
-      ...p.valuesFocus.take(2),
-      ...p.interests.take(2),
+        ...p.valuesFocus.take(2).map((code) => networkWizardOptionLabel(
+          languageService.currentLanguage, 'values', code, code)),
+        ...p.interests.take(2).map((code) => networkWizardOptionLabel(
+          languageService.currentLanguage, 'looking', code, code)),
     ];
 
     return Container(
@@ -2666,7 +2732,8 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             ...MatchOptions.familyForms.map((f) => ChoiceChip(
-                  label: Text(MatchOptions.familyFormLabels[f] ?? f,
+                label: Text(networkWizardOptionLabel(languageService.currentLanguage,
+                  'family', f, MatchOptions.familyFormLabels[f] ?? f),
                       style: const TextStyle(fontSize: 12)),
                   selected: _familyForm == f,
                   onSelected: (_) => setState(() => _familyForm = f),
@@ -2819,7 +2886,8 @@ class _ProfileFormState extends State<_ProfileForm> {
         const SizedBox(height: 6),
         Wrap(spacing: 6, runSpacing: 6, children: [
           ...MatchOptions.childInterests.map((i) => FilterChip(
-                label: Text(MatchOptions.childInterestLabels[i] ?? i,
+                label: Text(networkWizardOptionLabel(languageService.currentLanguage,
+                  'child', i, MatchOptions.childInterestLabels[i] ?? i),
                     style: const TextStyle(fontSize: 10)),
                 selected: child.interests.contains(i),
                 onSelected: (s) => setState(() =>
@@ -2889,7 +2957,8 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             ...MatchOptions.valueOptions.map((v) => FilterChip(
-                  label: Text(MatchOptions.valueLabels[v] ?? v,
+                    label: Text(networkWizardOptionLabel(languageService.currentLanguage,
+                      'values', v, MatchOptions.valueLabels[v] ?? v),
                       style: const TextStyle(fontSize: 11)),
                   selected: _values.contains(v),
                   onSelected: (s) =>
@@ -2942,7 +3011,8 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             ...MatchOptions.lookingForOptions.map((l) => FilterChip(
-                  label: Text(MatchOptions.lookingForLabels[l] ?? l,
+                    label: Text(networkWizardOptionLabel(languageService.currentLanguage,
+                      'looking', l, MatchOptions.lookingForLabels[l] ?? l),
                       style: const TextStyle(fontSize: 11)),
                   selected: _lookingFor.contains(l),
                   onSelected: (s) => setState(
@@ -2988,7 +3058,8 @@ class _ProfileFormState extends State<_ProfileForm> {
               runSpacing: 8,
               children: MatchOptions.dayOptions
                   .map((d) => FilterChip(
-                        label: Text(MatchOptions.dayLabels[d] ?? d,
+                        label: Text(networkWizardOptionLabel(languageService.currentLanguage,
+                          'days', d, MatchOptions.dayLabels[d] ?? d),
                             style: const TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.w600)),
                         selected: _availDays.contains(d),
@@ -3008,7 +3079,8 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 6),
           Wrap(spacing: 8, runSpacing: 8, children: [
             ...MatchOptions.timeOptions.map((t) => FilterChip(
-                  label: Text(MatchOptions.timeLabels[t] ?? t,
+                    label: Text(networkWizardOptionLabel(languageService.currentLanguage,
+                      'times', t, MatchOptions.timeLabels[t] ?? t),
                       style: const TextStyle(fontSize: 11)),
                   selected: _availTimes.contains(t),
                   onSelected: (s) => setState(
@@ -3060,8 +3132,8 @@ class _ProfileFormState extends State<_ProfileForm> {
               runSpacing: 8,
               children: MatchOptions.languageLabels.entries
                   .map((e) => FilterChip(
-                        label:
-                            Text(e.value, style: const TextStyle(fontSize: 11)),
+                        label: Text(networkWizardOptionLabel(languageService.currentLanguage,
+                          'language', e.key, e.value), style: const TextStyle(fontSize: 11)),
                         selected: _langs.contains(e.key),
                         onSelected: (s) => setState(
                             () => s ? _langs.add(e.key) : _langs.remove(e.key)),
@@ -3100,7 +3172,8 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             ...MatchOptions.specialOptions.map((s) => FilterChip(
-                  label: Text(MatchOptions.specialLabels[s] ?? s,
+                    label: Text(networkWizardOptionLabel(languageService.currentLanguage,
+                      'specials', s, MatchOptions.specialLabels[s] ?? s),
                       style: const TextStyle(fontSize: 11)),
                   selected: _specials.contains(s),
                   onSelected: (sel) => setState(
