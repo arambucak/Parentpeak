@@ -111,6 +111,8 @@ class EventBackendService {
         'visibility': event.visibility.name,
         'maxParticipants': event.maxParticipants,
         'imageUrl': event.photoUrl,
+        if (event.seriesId != null && event.seriesId!.isNotEmpty)
+          'seriesId': event.seriesId,
       };
 
       final payload = await _apiClient!.postJsonAny(_eventsPath, eventData);
@@ -435,7 +437,62 @@ class EventBackendService {
               (raw['invitedUserIds'] as List).map((e) => e.toString()))
           : <String>[],
       'inviteCodeExpiresAt': raw['inviteCodeExpiresAt']?.toString(),
+      'seriesId': raw['seriesId']?.toString(),
     };
+  }
+
+  // ─── Event-Serie folgen/entfolgen (Issue #47) ──────────────────────────────
+
+  /// Opt-in: Dem wiederkehrenden Angebot [seriesId] folgen.
+  Future<bool> followSeries({
+    required String seriesId,
+    required String userId,
+  }) async {
+    if (_apiClient == null || seriesId.isEmpty || userId.isEmpty) return false;
+    try {
+      await _apiClient!.postJsonAny(
+        '$_eventsPath/series/$seriesId/follow',
+        {'userId': userId},
+      );
+      return true;
+    } catch (e) {
+      lastSyncError = 'Angebot folgen fehlgeschlagen: $e';
+      return false;
+    }
+  }
+
+  /// Opt-out: Dem Angebot [seriesId] nicht mehr folgen.
+  Future<bool> unfollowSeries({
+    required String seriesId,
+    required String userId,
+  }) async {
+    if (_apiClient == null || seriesId.isEmpty || userId.isEmpty) return false;
+    try {
+      await _apiClient!
+          .delete('$_eventsPath/series/$seriesId/follow?userId=$userId');
+      return true;
+    } catch (e) {
+      lastSyncError = 'Entfolgen fehlgeschlagen: $e';
+      return false;
+    }
+  }
+
+  /// Status: Folgt [userId] der Serie [seriesId]? Gibt null bei Fehler.
+  Future<bool?> isFollowingSeries({
+    required String seriesId,
+    required String userId,
+  }) async {
+    if (_apiClient == null || seriesId.isEmpty) return null;
+    try {
+      final payload = await _apiClient!
+          .getJson('$_eventsPath/series/$seriesId/follow?userId=$userId');
+      if (payload is Map<String, dynamic>) {
+        return payload['following'] == true;
+      }
+    } catch (e) {
+      lastSyncError = 'Folge-Status fehlgeschlagen: $e';
+    }
+    return null;
   }
 
   List<dynamic> _extractList(dynamic payload, List<String> keys) {

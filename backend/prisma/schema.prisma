@@ -111,6 +111,10 @@ model Event {
   shareRadiusKm         Float    @default(25)
   inviteCode            String?  @unique
   inviteCodeExpiresAt   DateTime?
+
+  // Wiederkehrendes Angebot: verknüpft mehrere konkrete Termine derselben
+  // Serie. Eltern können einer seriesId folgen (EventSeriesFollower).
+  seriesId              String?
   
   // Pricing (optional)
   costPerPerson         Decimal? @db.Decimal(10, 2)
@@ -132,6 +136,23 @@ model Event {
   @@index([status])
   @@index([visibility])
   @@index([createdAt])
+  @@index([seriesId])
+}
+
+// Eltern folgen einem wiederkehrenden Angebot (seriesId) aktiv. Bewusst
+// GETRENNT von EventParticipation: Teilnahme an einem Einzelevent ist KEIN
+// Abo. Nur Follower erhalten eine Benachrichtigung über neue Serien-Termine.
+model EventSeriesFollower {
+  id                    String   @id @default(cuid())
+
+  seriesId              String
+  userId                String
+
+  createdAt             DateTime @default(now())
+
+  @@unique([seriesId, userId])
+  @@index([seriesId])
+  @@index([userId])
 }
 
 model EventParticipation {
