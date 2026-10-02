@@ -8,6 +8,8 @@ import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/meetup_chat_screen.dart';
 import 'package:parentpeak/ui/event_edit_sheet.dart';
 import 'package:parentpeak/models/event_participation.dart';
+import 'package:parentpeak/ui/widgets/event_photo.dart';
+import 'package:parentpeak/ui/widgets/event_host_identity.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class EventDetailScreen extends StatefulWidget {
@@ -64,8 +66,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     _event = widget.event;
     _eventService = widget.eventService ?? EventService();
     _eventBackendService = widget.backendService ?? EventBackendService();
-    _participationService = widget.participationService ??
-      ParticipationService(backendService: _eventBackendService);
+    _participationService =
+        widget.participationService ??
+        ParticipationService(backendService: _eventBackendService);
     _checkParticipationStatus();
     _loadFollowStatus();
   }
@@ -93,15 +96,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (!_hasSeries || _followBusy || _isOwner) return;
     setState(() => _followBusy = true);
     final wasFollowing = _isFollowingSeries;
-    final ok = wasFollowing
-        ? await _eventBackendService.unfollowSeries(
-            seriesId: _event.seriesId!,
-            userId: uid,
-          )
-        : await _eventBackendService.followSeries(
-            seriesId: _event.seriesId!,
-            userId: uid,
-          );
+    var ok = false;
+    try {
+      ok = wasFollowing
+          ? await _eventBackendService.unfollowSeries(
+              seriesId: _event.seriesId!,
+              userId: uid,
+            )
+          : await _eventBackendService.followSeries(
+              seriesId: _event.seriesId!,
+              userId: uid,
+            );
+    } catch (_) {
+      ok = false;
+    }
     if (!mounted) return;
     setState(() {
       _followBusy = false;
@@ -118,11 +126,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('event_action_failed'))),
+      );
     }
   }
 
   Future<void> _checkParticipationStatus() async {
-    if (_isOwner) { _statusLoading = false; return; }
+    if (_isOwner) {
+      _statusLoading = false;
+      return;
+    }
     final currentUserId = _currentUserId;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       if (!mounted) return;
@@ -133,18 +148,29 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       return;
     }
 
-    setState(() { _statusLoading = true; _statusFailed = false; });
+    setState(() {
+      _statusLoading = true;
+      _statusFailed = false;
+    });
     try {
-    final participation = await _participationService
-        .getParticipationByUserAndEvent(
-          userId: currentUserId,
-          eventId: _event.id,
-        );
+      final participation = await _participationService
+          .getParticipationByUserAndEvent(
+            userId: currentUserId,
+            eventId: _event.id,
+          );
 
-    if (!mounted) return;
-    setState(() { _applyParticipation(participation); _statusLoading = false; });
+      if (!mounted) return;
+      setState(() {
+        _applyParticipation(participation);
+        _statusLoading = false;
+      });
     } catch (_) {
-      if (mounted) setState(() { _statusFailed = true; _statusLoading = false; });
+      if (mounted) {
+        setState(() {
+          _statusFailed = true;
+          _statusLoading = false;
+        });
+      }
     }
   }
 
@@ -182,18 +208,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr(
-          _isInterested ? 'event_interest_saved' : _isApproved
-              ? 'event_detail_registered' : 'event_legacy_pending'))),
+        SnackBar(
+          content: Text(
+            context.tr(
+              _isInterested
+                  ? 'event_interest_saved'
+                  : _isApproved
+                  ? 'event_detail_registered'
+                  : 'event_legacy_pending',
+            ),
+          ),
+        ),
       );
       await _refreshEvent();
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr('event_detail_error', values: {'error': e})),
-        ),
+        SnackBar(content: Text(context.tr('event_action_failed'))),
       );
     }
   }
@@ -208,14 +240,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (uid == null || _isLoading || _isOwner) return;
     setState(() => _isLoading = true);
     try {
-      await _participationService.withdrawParticipation(eventId: _event.id, userId: uid);
+      await _participationService.withdrawParticipation(
+        eventId: _event.id,
+        userId: uid,
+      );
       if (!mounted) return;
-      setState(() { _applyParticipation(null); _isLoading = false; });
+      setState(() {
+        _applyParticipation(null);
+        _isLoading = false;
+      });
       await _refreshEvent();
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('event_action_failed'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('event_action_failed'))),
+      );
     }
   }
 
@@ -223,73 +263,125 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     final uri = _event.organizerUri;
     if (uri == null) return;
     try {
-      final opened = await (widget.openOrganizerUrl?.call(uri) ?? launchUrl(uri, mode: LaunchMode.externalApplication));
+      final opened =
+          await (widget.openOrganizerUrl?.call(uri) ??
+              launchUrl(uri, mode: LaunchMode.externalApplication));
       if (opened || !mounted) return;
-    } catch (_) { if (!mounted) return; }
+    } catch (_) {
+      if (!mounted) return;
+    }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('event_action_failed'))));
+        SnackBar(content: Text(context.tr('event_action_failed'))),
+      );
     }
   }
 
   Widget _buildParticipationControls() {
-    final closed = _event.status != EventStatus.active || !_event.eventDate.isAfter(DateTime.now());
+    final closed =
+        _event.status != EventStatus.active ||
+        !_event.eventDate.isAfter(DateTime.now());
     final active = _isApproved || _isInterested || _hasRequested;
-    const progress = SizedBox(width: 18, height: 18,
-        child: CircularProgressIndicator(strokeWidth: 2));
+    const progress = SizedBox(
+      width: 18,
+      height: 18,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_event.isSharedOffer) ...[
           Text(context.tr('event_interest_not_booking')),
           const SizedBox(height: 12),
-          if (_event.organizerUri != null) OutlinedButton.icon(
-            key: const Key('event-organizer-link'),
-            onPressed: _openOrganizer,
-            icon: const Icon(Icons.open_in_new),
-            label: Text(context.tr('event_open_organizer')),
-          ),
+          if (_event.organizerUri != null)
+            OutlinedButton.icon(
+              key: const Key('event-organizer-link'),
+              onPressed: _openOrganizer,
+              icon: const Icon(Icons.open_in_new),
+              label: Text(context.tr('event_open_organizer')),
+            ),
         ],
         if (!_isOwner && _statusLoading)
           const Center(child: progress)
         else if (!_isOwner && _statusFailed) ...[
           Text(context.tr('event_status_failed')),
-          TextButton.icon(key: const Key('event-status-retry'),
+          TextButton.icon(
+            key: const Key('event-status-retry'),
             onPressed: _checkParticipationStatus,
-            icon: const Icon(Icons.refresh), label: Text(context.tr('event_retry'))),
+            icon: const Icon(Icons.refresh),
+            label: Text(context.tr('event_retry')),
+          ),
         ] else if (!_isOwner) ...[
           if (_hasRequested)
-            _buildStatusBanner(icon: Icons.schedule,
+            _buildStatusBanner(
+              icon: Icons.schedule,
               text: context.tr('event_legacy_pending'),
-              bgColor: const Color(0xFFFFF3CD), textColor: const Color(0xFF735C0F)),
+              bgColor: const Color(0xFFFFF3CD),
+              textColor: const Color(0xFF735C0F),
+            ),
           if (_isInterested || (_isApproved && _event.isSharedOffer))
             Text(context.tr('event_interest_saved')),
           if (_isApproved && !_event.isSharedOffer) ...[
-            _buildStatusBanner(icon: Icons.check_circle_outline,
+            _buildStatusBanner(
+              icon: Icons.check_circle_outline,
               text: context.tr('event_detail_registered'),
-              bgColor: const Color(0xFFDCFCE7), textColor: const Color(0xFF166534)),
+              bgColor: const Color(0xFFDCFCE7),
+              textColor: const Color(0xFF166534),
+            ),
             TextButton.icon(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => MeetupChatScreen(event: _event))),
-              icon: const Icon(Icons.chat_outlined), label: Text(context.tr('event_detail_open_chat'))),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MeetupChatScreen(event: _event),
+                ),
+              ),
+              icon: const Icon(Icons.chat_outlined),
+              label: Text(context.tr('event_detail_open_chat')),
+            ),
           ],
           if (_isDeclined) Text(context.tr('event_detail_request_declined')),
-          if (active) OutlinedButton.icon(
-            key: const Key('event-withdraw'),
-            onPressed: _isLoading ? null : _withdraw,
-            icon: _isLoading ? progress : const Icon(Icons.undo),
-            label: Text(context.tr(_event.isSharedOffer ? 'event_interest_withdraw' : 'event_withdraw')),
-          ) else FilledButton.icon(
-            key: const Key('event-join'),
-            onPressed: closed || _event.isFull || _isLoading || _requiresSignIn ? null : _requestParticipation,
-            icon: _isLoading ? progress : Icon(_event.isSharedOffer ? Icons.favorite_border : Icons.person_add_alt_1),
-            label: Text(context.tr(closed ? 'event_closed' : _event.isFull ? 'status_full' :
-              switch (_event.participationMode) {
-                ParticipationMode.direct => 'event_join_direct',
-                ParticipationMode.interest => 'event_show_interest',
-                ParticipationMode.legacyApproval => 'event_detail_request_participation',
-              })),
-          ),
+          if (active)
+            OutlinedButton.icon(
+              key: const Key('event-withdraw'),
+              onPressed: _isLoading ? null : _withdraw,
+              icon: _isLoading ? progress : const Icon(Icons.undo),
+              label: Text(
+                context.tr(
+                  _event.isSharedOffer
+                      ? 'event_interest_withdraw'
+                      : 'event_withdraw',
+                ),
+              ),
+            )
+          else
+            FilledButton.icon(
+              key: const Key('event-join'),
+              onPressed:
+                  closed || _event.isFull || _isLoading || _requiresSignIn
+                  ? null
+                  : _requestParticipation,
+              icon: _isLoading
+                  ? progress
+                  : Icon(
+                      _event.isSharedOffer
+                          ? Icons.favorite_border
+                          : Icons.person_add_alt_1,
+                    ),
+              label: Text(
+                context.tr(
+                  closed
+                      ? 'event_closed'
+                      : _event.isFull
+                      ? 'status_full'
+                      : switch (_event.participationMode) {
+                          ParticipationMode.direct => 'event_join_direct',
+                          ParticipationMode.interest => 'event_show_interest',
+                          ParticipationMode.legacyApproval =>
+                            'event_detail_request_participation',
+                        },
+                ),
+              ),
+            ),
         ],
       ],
     );
@@ -316,56 +408,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
               ),
-            Container(
-              width: double.infinity,
-              height: 220,
-              decoration: BoxDecoration(
-                gradient: _event.photoUrl.isEmpty
-                    ? const LinearGradient(
-                        colors: [Color(0xFFDBEAFE), Color(0xFFE0F2FE)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                image: _event.photoUrl.isEmpty
-                    ? null
-                    : DecorationImage(
-                        image: NetworkImage(_event.photoUrl),
-                        fit: BoxFit.cover,
-                      ),
-              ),
-              child: Stack(
-                children: [
-                  if (_event.photoUrl.isEmpty)
-                    const Center(
-                      child: Icon(
-                        Icons.celebration_rounded,
-                        size: 56,
-                        color: Color(0xFF2563EB),
-                      ),
-                    ),
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _getCategoryLabel(_event.category),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+            EventPhoto(photoUrl: _event.photoUrl),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Text(
+                _getCategoryLabel(_event.category),
+                style: theme.textTheme.labelLarge,
               ),
             ),
             if (_isOwner) _buildOwnerToolbar(),
@@ -386,34 +434,42 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        if (!_event.isSharedOffer && _event.hasCapacity) Row(
-                          children: [
-                            Expanded(
-                              child: _MetaPill(
-                                icon: Icons.people_outline_rounded,
-                                label: context.tr('event_places'),
-                                value:
-                                    '${_event.currentParticipants}/${_event.maxParticipants}',
-                                color: const Color(0xFF2563EB),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _MetaPill(
-                                icon: Icons.schedule_rounded,
-                                label: context.tr('common_status'),
-                                value: context.tr(
-                                  _event.isFull ? 'status_full' : 'status_open',
+                        if (!_event.isSharedOffer && _event.hasCapacity)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _MetaPill(
+                                  icon: Icons.people_outline_rounded,
+                                  label: context.tr('event_places'),
+                                  value:
+                                      '${_event.currentParticipants}/${_event.maxParticipants}',
+                                  color: const Color(0xFF2563EB),
                                 ),
-                                color: _event.isFull
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF16A34A),
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _MetaPill(
+                                  icon: Icons.schedule_rounded,
+                                  label: context.tr('common_status'),
+                                  value: context.tr(
+                                    _event.isFull
+                                        ? 'status_full'
+                                        : 'status_open',
+                                  ),
+                                  color: _event.isFull
+                                      ? const Color(0xFFDC2626)
+                                      : const Color(0xFF16A34A),
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 14),
+                  EventHostIdentity(
+                    userId: _event.hosterId,
+                    isSharedOffer: _event.isSharedOffer,
                   ),
                   const SizedBox(height: 14),
                   _buildInfoTile(
@@ -429,26 +485,28 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   _buildInfoTile(
                     icon: Icons.location_on,
                     title: _event.location,
-                    subtitle:
-                        '${_event.latitude.toStringAsFixed(3)}, ${_event.longitude.toStringAsFixed(3)}',
+                    subtitle: _event.hasReliableCoordinates
+                        ? '${_event.latitude.toStringAsFixed(3)}, ${_event.longitude.toStringAsFixed(3)}'
+                        : null,
                   ),
                   const SizedBox(height: 8),
-                  if (!_event.isSharedOffer && _event.hasCapacity) _buildInfoTile(
-                    icon: Icons.people,
-                    title: context.tr(
-                      'event_detail_participants',
-                      values: {
-                        'current': _event.currentParticipants,
-                        'maximum': _event.maxParticipants,
-                      },
+                  if (!_event.isSharedOffer && _event.hasCapacity)
+                    _buildInfoTile(
+                      icon: Icons.people,
+                      title: context.tr(
+                        'event_detail_participants',
+                        values: {
+                          'current': _event.currentParticipants,
+                          'maximum': _event.maxParticipants,
+                        },
+                      ),
+                      subtitle: _event.spotsAvailable > 0
+                          ? context.tr(
+                              'event_detail_spots_available',
+                              values: {'count': _event.spotsAvailable},
+                            )
+                          : context.tr('event_detail_fully_booked'),
                     ),
-                    subtitle: _event.spotsAvailable > 0
-                        ? context.tr(
-                            'event_detail_spots_available',
-                            values: {'count': _event.spotsAvailable},
-                          )
-                        : context.tr('event_detail_fully_booked'),
-                  ),
                   const SizedBox(height: 12),
                   _buildAgeGroupChips(),
                   const SizedBox(height: 16),
@@ -494,7 +552,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.tr(_event.isSharedOffer ? 'event_shared_by_you' : 'event_owner_yours'),
+            context.tr(
+              _event.isSharedOffer
+                  ? 'event_shared_by_you'
+                  : 'event_owner_yours',
+            ),
             style: theme.textTheme.titleSmall,
           ),
           Row(
@@ -763,7 +825,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   Widget _buildInfoTile({
     required IconData icon,
     required String title,
-    required String subtitle,
+    String? subtitle,
   }) {
     final theme = Theme.of(context);
     return Container(
@@ -791,12 +853,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

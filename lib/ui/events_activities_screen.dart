@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
 import 'package:parentpeak/logic/event_feed_session_cache.dart';
+import 'package:parentpeak/logic/event_geocoder.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/models/event_invitation.dart';
 import 'package:parentpeak/models/discovered_event.dart';
@@ -20,6 +19,7 @@ import 'package:parentpeak/ui/event_detail_page.dart';
 import 'package:parentpeak/ui/event_invitations_screen.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/ui/widgets/native_ad_slot.dart';
+import 'package:parentpeak/ui/widgets/event_host_identity.dart';
 import 'package:parentpeak/services/events_limit_service.dart';
 import 'package:parentpeak/ui/widgets/premium_gate.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -32,6 +32,7 @@ class EventsActivitiesScreen extends StatefulWidget {
   final PickedLocation? initialLocation;
   final Future<PickedLocation?> Function()? locationLoader;
   final String? Function()? viewerUserId;
+  final EventGeocoder? geocoder;
 
   const EventsActivitiesScreen({
     super.key,
@@ -40,6 +41,7 @@ class EventsActivitiesScreen extends StatefulWidget {
     this.initialLocation,
     this.locationLoader,
     this.viewerUserId,
+    this.geocoder,
   });
 
   @override
@@ -83,7 +85,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   // null = no location selected yet (bar shows "Standort wählen").
   PickedLocation? _activeLocation;
   // Fallback city for search when no active location (from saved prefs).
-  String _fallbackCity = 'Berlin';
+  String _fallbackCity = '';
   // True once the user explicitly picked a location — GPS won't auto-override.
   bool _userLockedLocation = false;
   // True once we have a real location (from GPS or manual pick) — not just the Berlin default.
@@ -121,8 +123,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     _feedUserId = _viewerUserId;
     final remembered = _session.locations[_viewerUserId ?? 'guest'];
     _activeLocation = widget.initialLocation ?? remembered?.$1;
-    _userLockedLocation = widget.initialLocation == null &&
-      (remembered?.$2 ?? false);
+    _userLockedLocation =
+        widget.initialLocation == null && (remembered?.$2 ?? false);
     if (_activeLocation != null) {
       _hasRealLocation = true;
       _fallbackCity = _activeLocation!.city;
@@ -168,7 +170,23 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         _fallbackCity = saved;
         _hasRealLocation = true; // saved city = previously confirmed location
       });
-      _refreshFeed(); // load immediately only when we have a real saved city
+      _refreshFeed();
+      final coords = await (widget.geocoder ?? EventGeocoder.instance).resolve(
+        saved,
+      );
+      if (!mounted) return;
+      if (_activeLocation == null && _fallbackCity == saved && coords != null) {
+        setState(
+          () => _activeLocation = PickedLocation(
+            displayName: saved,
+            city: saved,
+            postcode: '',
+            lat: coords.$1,
+            lon: coords.$2,
+          ),
+        );
+        _refreshFeed();
+      }
     }
     _detectGpsAndRefresh();
   }
@@ -200,7 +218,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       try {
         final location = await widget.locationLoader!();
         if (!mounted) return;
-        if (location != null && (forceOverride || !_userLockedLocation) &&
+        if (location != null &&
+            (forceOverride || !_userLockedLocation) &&
             identical(startingLocation, _activeLocation)) {
           setState(() {
             _activeLocation = location;
@@ -212,6 +231,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       } finally {
         if (mounted) setState(() => _gpsDetecting = false);
       }
+      if (mounted) _refreshFeed();
       return;
     }
 
@@ -250,8 +270,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
         // Fallback: use central LocationService if available
-        if (LocationService.instance.hasLocation && !_hasRealLocation &&
-          !_userLockedLocation) {
+        if (LocationService.instance.hasLocation &&
+            !_hasRealLocation &&
+            !_userLockedLocation) {
           final loc = LocationService.instance;
           final newLocation = PickedLocation(
             displayName: loc.city ?? context.tr('events_my_location'),
@@ -274,24 +295,25 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           if (!_hasRealLocation) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content:
-                    Text(AppStringsManager.getString(
-                      languageService.currentLanguage,
-                      'events_gps_unavailable')),
+                content: Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'events_gps_unavailable',
+                  ),
+                ),
                 duration: const Duration(seconds: 4),
               ),
             );
           }
         }
-        if (_hasRealLocation) _refreshFeed();
+        _refreshFeed();
         return;
       }
       // Web needs more time: browser uses WiFi/IP geolocation
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
-          timeLimit:
-              kIsWeb ? Duration(seconds: 20) : Duration(seconds: 6),
+          timeLimit: kIsWeb ? Duration(seconds: 20) : Duration(seconds: 6),
         ),
       );
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
@@ -302,8 +324,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       final cityLabel = district ?? context.tr('events_current_location');
       final city = district != null
           ? (district.contains(',')
-              ? district.split(',').last.trim()
-              : district)
+                ? district.split(',').last.trim()
+                : district)
           : coordCity; // pass raw coords to agent when city name unknown
       final newLocation = PickedLocation(
         displayName: cityLabel,
@@ -313,7 +335,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         lon: pos.longitude,
       );
       if (mounted) {
-        final shouldUpdate = (forceOverride || !_userLockedLocation) &&
+        final shouldUpdate =
+            (forceOverride || !_userLockedLocation) &&
             identical(startingLocation, _activeLocation);
         if (shouldUpdate) {
           final prefs = await SharedPreferences.getInstance();
@@ -321,7 +344,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         }
         if (!mounted) return;
         setState(() {
-          if (shouldUpdate && (forceOverride || !_userLockedLocation) &&
+          if (shouldUpdate &&
+              (forceOverride || !_userLockedLocation) &&
               identical(startingLocation, _activeLocation)) {
             _activeLocation = newLocation;
             _hasRealLocation = true;
@@ -353,10 +377,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         final address = data['address'] as Map<String, dynamic>?;
-        final suburb = address?['suburb'] as String? ??
+        final suburb =
+            address?['suburb'] as String? ??
             address?['quarter'] as String? ??
             address?['neighbourhood'] as String?;
-        final cityName = address?['city'] as String? ??
+        final cityName =
+            address?['city'] as String? ??
             address?['town'] as String? ??
             address?['village'] as String?;
         if (suburb != null && cityName != null) return '$suburb, $cityName';
@@ -378,7 +404,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     final ages = _selectedAgeGroups.toList()
       ..sort((first, second) => first.index.compareTo(second.index));
     final radius = _radiusKm;
-    final key = jsonEncode([
+    final onlyFree = _onlyFree;
+    final nearbyOnly = _onlyNearbyQuick;
+    final timeWindow = _timeWindowFilter.name;
+    final aiKey = jsonEncode([
       viewerUserId,
       languageService.currentLanguage,
       city.trim().toLowerCase(),
@@ -387,38 +416,44 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       radius,
       ages.map((age) => age.name).toList(),
     ]);
+    final key = jsonEncode([aiKey, onlyFree, nearbyOnly, timeWindow]);
     if (communityChanged) {
       _session.community.clear();
       _session.invitations.clear();
     }
     if (!force &&
-      !communityChanged &&
-      !invitationsOnly &&
-      _pendingQuery == key &&
-      _pendingRefresh != null) {
+        !communityChanged &&
+        !invitationsOnly &&
+        _pendingQuery == key &&
+        _pendingRefresh != null) {
       return _pendingRefresh!;
     }
     if (_activeLocation != null) {
-      _session.locations[viewerUserId ?? 'guest'] =
-          (_activeLocation!, _userLockedLocation);
+      _session.locations[viewerUserId ?? 'guest'] = (
+        _activeLocation!,
+        _userLockedLocation,
+      );
       if (_session.locations.length > 32) {
         _session.locations.remove(_session.locations.keys.first);
       }
     }
     final generation = ++_requestGeneration;
-    bool isCurrent() => mounted &&
-      generation == _requestGeneration &&
+    bool isCurrent() =>
+        mounted &&
+        generation == _requestGeneration &&
         viewerUserId == _viewerUserId;
     final sameQuery = _displayedQuery == key;
-    final aiCached = _session.ai.peek(key);
+    final aiCached = _session.ai.peek(aiKey);
     final communityCached = _session.community.peek(key);
     final invitationCached = _session.invitations.peek(key);
     setState(() {
       _displayedQuery = key;
       _aiEvents = aiCached?.data ?? (sameQuery ? _aiEvents : const []);
-      _communityEvents = communityCached?.data ??
+      _communityEvents =
+          communityCached?.data ??
           (sameQuery && !communityChanged ? _communityEvents : const []);
-      _invitations = invitationCached?.data ??
+      _invitations =
+          invitationCached?.data ??
           (sameQuery && !communityChanged ? _invitations : const []);
       if (!sameQuery || communityChanged) _eventTitlesById = const {};
       if (!sameQuery || communityChanged) _lastFeedSyncAt = null;
@@ -427,19 +462,24 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     });
     final ageLabels = ages.map(_ageGroupLabel).toList();
     Future<void> loadAi() async {
+      if (city.trim().isEmpty) return;
       try {
-        final pendingAi = _session.ai.pending(key);
+        final pendingAi = _session.ai.pending(aiKey);
         if ((communityChanged || invitationsOnly) && pendingAi == null) return;
         final request = communityChanged || invitationsOnly
             ? pendingAi!
             : _session.ai.load(
-                key,
+                aiKey,
                 () => _agent.discoverEvents(
                   city: city,
                   radiusHint: '$radius km Umkreis',
                   childAges: ageLabels,
-                  latitude: coords.$1,
-                  longitude: coords.$2,
+                  latitude: validCoordinates(coords.$1, coords.$2)
+                      ? coords.$1
+                      : null,
+                  longitude: validCoordinates(coords.$1, coords.$2)
+                      ? coords.$2
+                      : null,
                 ),
                 force: force,
               );
@@ -449,12 +489,21 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         debugPrint('EventsActivitiesScreen: AI feed unavailable: $e');
       }
     }
+
     Future<void> loadCommunity() async {
       if (invitationsOnly) return;
       try {
         final value = await _session.community.load(
           key,
-          () => _loadCommunityEventsForCity(coords, viewerUserId, radius, ages),
+          () => _loadCommunityEventsForCity(
+            coords,
+            viewerUserId,
+            radius,
+            ages,
+            onlyFree: onlyFree,
+            nearbyOnly: nearbyOnly,
+            timeWindow: timeWindow,
+          ),
           force: force || communityChanged,
         );
         if (isCurrent()) {
@@ -470,6 +519,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         debugPrint('EventsActivitiesScreen: community feed unavailable: $e');
       }
     }
+
     Future<void> loadInvitations() async {
       try {
         final value = await _session.invitations.load(
@@ -479,40 +529,51 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         );
         if (!isCurrent()) return;
         setState(() => _invitations = value.data);
-        await Future.wait(value.data.map((invitation) => invitation.eventId)
-            .where((id) => id.isNotEmpty && !_eventTitlesById.containsKey(id))
-            .toSet().map((eventId) async {
-          try {
-            final event = await _eventService.getEventById(eventId);
-            if (event != null && isCurrent()) {
-              setState(() => _eventTitlesById = {
-                ..._eventTitlesById, eventId: event.title,
-              });
-            }
-          } catch (e) {
-            debugPrint('EventsActivitiesScreen: invitation title unavailable: $e');
-          }
-        }));
+        await Future.wait(
+          value.data
+              .map((invitation) => invitation.eventId)
+              .where((id) => id.isNotEmpty && !_eventTitlesById.containsKey(id))
+              .toSet()
+              .map((eventId) async {
+                try {
+                  final event = await _eventService.getEventById(eventId);
+                  if (event != null && isCurrent()) {
+                    setState(
+                      () => _eventTitlesById = {
+                        ..._eventTitlesById,
+                        eventId: event.title,
+                      },
+                    );
+                  }
+                } catch (e) {
+                  debugPrint(
+                    'EventsActivitiesScreen: invitation title unavailable: $e',
+                  );
+                }
+              }),
+        );
       } catch (e) {
         debugPrint('EventsActivitiesScreen: invitations load skipped: $e');
       }
     }
+
     _pendingQuery = key;
     final pending = Future.wait([loadAi(), loadCommunity(), loadInvitations()])
         .then((_) {
-      if (!isCurrent()) return;
-      final ai = _session.ai.peek(key);
-      final community = _session.community.peek(key);
-      setState(() {
-        _isLoading = false;
-        _lastFeedSyncAt = ai != null && community != null
-            ? (ai.loadedAt.isBefore(community.loadedAt)
-                ? ai.loadedAt : community.loadedAt)
-            : null;
-      });
-      _pendingQuery = null;
-      _pendingRefresh = null;
-    });
+          if (!isCurrent()) return;
+          final ai = _session.ai.peek(aiKey);
+          final community = _session.community.peek(key);
+          setState(() {
+            _isLoading = false;
+            _lastFeedSyncAt = ai != null && community != null
+                ? (ai.loadedAt.isBefore(community.loadedAt)
+                      ? ai.loadedAt
+                      : community.loadedAt)
+                : null;
+          });
+          _pendingQuery = null;
+          _pendingRefresh = null;
+        });
     _pendingRefresh = pending;
     return pending;
   }
@@ -528,53 +589,32 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   Future<List<MeetupEvent>> _loadCommunityEventsForCity(
-      (double, double) coords, String? viewerUserId, int radius,
-      List<AgeGroup> ages) async {
-    if (viewerUserId == null || viewerUserId.trim().isEmpty) {
-      final publicEvents = await _eventService.getEvents();
-      return publicEvents.where((event) {
-        if (event.status != EventStatus.active) return false;
-        if (event.visibility != EventVisibility.publicNearby) return false;
-
-        final distance =
-            _distanceKm(coords.$1, coords.$2, event.latitude, event.longitude);
-        final visibleRadius = event.shareRadiusKm ?? radius.toDouble();
-        if (distance > visibleRadius || distance > radius) return false;
-
-        if (ages.isNotEmpty && !event.ageGroups.any(ages.contains)) {
-          return false;
-        }
-
-        return true;
-      }).toList();
-    }
-
-    return _eventService.getDiscoverableEventsForUser(
-      viewerUserId: viewerUserId,
+    (double, double) coords,
+    String? viewerUserId,
+    int radius,
+    List<AgeGroup> ages, {
+    required bool onlyFree,
+    required bool nearbyOnly,
+    required String timeWindow,
+  }) async {
+    return _eventService.getFilteredDiscoverableEventsForUser(
+      viewerUserId: viewerUserId ?? 'guest',
       viewerLatitude: coords.$1,
       viewerLongitude: coords.$2,
-      ageGroups:
-          ages.isEmpty ? null : ages,
+      ageGroups: ages.isEmpty ? null : ages,
+      radiusKm: radius.toDouble(),
+      onlyFree: onlyFree,
+      nearbyOnly: nearbyOnly,
+      timeWindow: timeWindow,
     );
-  }
-
-  (double, double) _coordsForCity(String city) {
-    final normalized = city.toLowerCase();
-    if (normalized.contains('hamburg')) return (53.5511, 9.9937);
-    if (normalized.contains('münchen') || normalized.contains('munchen')) {
-      return (48.1351, 11.5820);
-    }
-    if (normalized.contains('köln') || normalized.contains('koeln')) {
-      return (50.9375, 6.9603);
-    }
-    if (normalized.contains('frankfurt')) return (50.1109, 8.6821);
-    return (52.5200, 13.4050);
   }
 
   (double, double) get _originCoords {
     final loc = _activeLocation;
-    if (loc != null && loc.lat != 0) return (loc.lat, loc.lon);
-    return _coordsForCity(_searchCity);
+    if (loc != null && validCoordinates(loc.lat, loc.lon)) {
+      return (loc.lat, loc.lon);
+    }
+    return (double.nan, double.nan);
   }
 
   List<_UnifiedFeedItem> get _combinedFeed {
@@ -596,10 +636,14 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         .where(_matchesTimeWindow)
         .toList();
 
+    final now = DateTime.now();
     filtered.sort((a, b) {
-      final aScore = _rankingScore(a, coords.$1, coords.$2);
-      final bScore = _rankingScore(b, coords.$1, coords.$2);
-      return bScore.compareTo(aScore);
+      final aScore = _rankingScore(a, coords.$1, coords.$2, now);
+      final bScore = _rankingScore(b, coords.$1, coords.$2, now);
+      final comparison = bScore.compareTo(aScore);
+      return comparison != 0
+          ? comparison
+          : (a.eventId ?? a.title).compareTo(b.eventId ?? b.title);
     });
 
     return filtered;
@@ -621,7 +665,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         .where((item) => _matchesSelectedAges(item))
         .where(_matchesPriceFilter)
         .where(_matchesTimeWindow)
-        .where((item) => _matchesNearbyQuickFilter(item, coords.$1, coords.$2))
+        .where((item) {
+          final distance = _distanceKmForDisplay(item, coords.$1, coords.$2);
+          return distance != null && distance <= 10;
+        })
         .length;
   }
 
@@ -631,23 +678,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   bool _matchesTimeWindow(_UnifiedFeedItem item) {
-    if (_timeWindowFilter == _TimeWindowFilter.all) return true;
-    if (item.eventDate == null) return false;
-
-    final date = item.eventDate!;
-    final now = DateTime.now();
-    final isToday =
-        date.year == now.year && date.month == now.month && date.day == now.day;
-
-    if (_timeWindowFilter == _TimeWindowFilter.today) {
-      return isToday;
-    }
-
-    final withinNext7Days = date.isBefore(now.add(const Duration(days: 7))) &&
-        date.isAfter(now.subtract(const Duration(days: 1)));
-    final isWeekend =
-        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
-    return withinNext7Days && isWeekend;
+    return eventMatchesTime(
+      item.eventDate,
+      _timeWindowFilter.name,
+      DateTime.now(),
+    );
   }
 
   bool _withinRadius(
@@ -656,10 +691,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     double originLon,
     int radiusKm,
   ) {
-    if (item.latitude == null || item.longitude == null) return true;
-    final distance =
-        _distanceKm(originLat, originLon, item.latitude!, item.longitude!);
-    return distance <= radiusKm;
+    final distance = _distanceKmForDisplay(item, originLat, originLon);
+    return distance == null || distance <= radiusKm;
   }
 
   bool _matchesNearbyQuickFilter(
@@ -668,114 +701,40 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     double originLon,
   ) {
     if (!_onlyNearbyQuick) return true;
-    if (item.latitude == null || item.longitude == null) return false;
-    final distance =
-        _distanceKm(originLat, originLon, item.latitude!, item.longitude!);
-    return distance <= 10;
+    final distance = _distanceKmForDisplay(item, originLat, originLon);
+    return distance != null && distance <= 10;
   }
 
   bool _matchesSelectedAges(_UnifiedFeedItem item) {
-    if (_selectedAgeGroups.isEmpty) return true;
-
-    if (item.source == _FeedSource.community) {
-      return item.communityAgeGroups.any(_selectedAgeGroups.contains);
-    }
-
-    final text = (item.ageLabel ?? '').toLowerCase();
-    if (text.isEmpty) return false;
-
-    bool matches(AgeGroup group) {
-      switch (group) {
-        case AgeGroup.infant:
-          return text.contains('0') ||
-              text.contains('baby') ||
-              text.contains('säug');
-        case AgeGroup.toddler:
-          return text.contains('1') ||
-              text.contains('2') ||
-              text.contains('3') ||
-              text.contains('kleinkind');
-        case AgeGroup.preschool:
-          return text.contains('4') ||
-              text.contains('5') ||
-              text.contains('6') ||
-              text.contains('vorschule');
-        case AgeGroup.elementary:
-          return text.contains('6') ||
-              text.contains('7') ||
-              text.contains('8') ||
-              text.contains('9') ||
-              text.contains('10') ||
-              text.contains('grundschule');
-        case AgeGroup.teenager:
-          return text.contains('11') ||
-              text.contains('12') ||
-              text.contains('13') ||
-              text.contains('14') ||
-              text.contains('15') ||
-              text.contains('16') ||
-              text.contains('teen');
-        case AgeGroup.mixed:
-          return text.contains('alle') ||
-              text.contains('familie') ||
-              text.contains('mixed');
-      }
-    }
-
-    return _selectedAgeGroups.any(matches);
+    return eventMatchesAges(_itemAges(item), _selectedAgeGroups);
   }
+
+  List<AgeGroup> _itemAges(_UnifiedFeedItem item) =>
+      item.source == _FeedSource.community
+      ? item.communityAgeGroups
+      : eventAgesFromLabel(item.ageLabel ?? '');
 
   double _rankingScore(
-      _UnifiedFeedItem item, double originLat, double originLon) {
-    double score = 0;
-
-    if (item.eventDate != null) {
-      final days = item.eventDate!.difference(DateTime.now()).inDays;
-      final urgency = (30 - days).clamp(0, 30).toDouble();
-      score += urgency * 2;
-    }
-
-    if (item.latitude != null && item.longitude != null) {
-      final distance =
-          _distanceKm(originLat, originLon, item.latitude!, item.longitude!);
-      score += (50 - distance).clamp(0, 50);
-    } else {
-      score += 8;
-    }
-
-    if (_selectedAgeGroups.isEmpty || _matchesSelectedAges(item)) {
-      score += 20;
-    }
-
-    if (item.source == _FeedSource.community) {
-      score += 4;
-    }
-
-    return score;
+    _UnifiedFeedItem item,
+    double originLat,
+    double originLon,
+    DateTime now,
+  ) {
+    return eventRankingScore(
+      distance: _distanceKmForDisplay(item, originLat, originLon),
+      date: item.eventDate,
+      ages: _itemAges(item),
+      selected: _selectedAgeGroups,
+      now: now,
+    );
   }
-
-  double _distanceKm(double lat1, double lon1, double lat2, double lon2) {
-    const earthRadiusKm = 6371.0;
-    final dLat = _degToRad(lat2 - lat1);
-    final dLon = _degToRad(lon2 - lon1);
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_degToRad(lat1)) *
-            math.cos(_degToRad(lat2)) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2);
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return earthRadiusKm * c;
-  }
-
-  double _degToRad(double deg) => deg * (math.pi / 180.0);
 
   double? _distanceKmForDisplay(
     _UnifiedFeedItem item,
     double originLat,
     double originLon,
   ) {
-    if (item.latitude == null || item.longitude == null) return null;
-    return _distanceKm(originLat, originLon, item.latitude!, item.longitude!);
+    return eventDistanceKm(originLat, originLon, item.latitude, item.longitude);
   }
 
   String _ageGroupLabel(AgeGroup ageGroup) {
@@ -785,47 +744,54 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   // ─── Feed mit Ads ──────────────────────────────────────────────────────────
 
   List<Widget> _buildFeedWithAds(
-      List<_UnifiedFeedItem> feed, (double, double) coords) {
+    List<_UnifiedFeedItem> feed,
+    (double, double) coords,
+  ) {
     final widgets = <Widget>[];
     for (var i = 0; i < feed.length; i++) {
       // Ad-Slot einfügen (1 pro 5 Items, ab Position 3)
       if (NativeAdSlot.shouldInsertAt(i)) {
-        widgets.add(const Padding(
-          padding: EdgeInsets.only(bottom: 10),
-          child: NativeAdSlot(context_hint: 'events'),
-        ));
+        widgets.add(
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: NativeAdSlot(contextHint: 'events'),
+          ),
+        );
       }
 
       final item = feed[i];
-      widgets.add(Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: _UnifiedEventCard(
-          item: item,
-          distanceKm: _distanceKmForDisplay(item, coords.$1, coords.$2),
-          onTap: () {
-            if (item.source == _FeedSource.community && item.eventId != null) {
-              final event = _findCommunityEventById(item.eventId!);
-              if (event == null) {
-                _showAiDetails(item);
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _UnifiedEventCard(
+            item: item,
+            distanceKm: _distanceKmForDisplay(item, coords.$1, coords.$2),
+            onTap: () {
+              if (item.source == _FeedSource.community &&
+                  item.eventId != null) {
+                final event = _findCommunityEventById(item.eventId!);
+                if (event == null) {
+                  _showAiDetails(item);
+                  return;
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EventDetailScreen(
+                      event: event,
+                      eventService: _eventService,
+                    ),
+                  ),
+                ).then((_) {
+                  if (mounted) _refreshFeed(communityChanged: true);
+                });
                 return;
               }
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => EventDetailScreen(
-                    event: event,
-                    eventService: _eventService,
-                  ),
-                ),
-              ).then((_) {
-                if (mounted) _refreshFeed(communityChanged: true);
-              });
-              return;
-            }
-            _showAiDetails(item);
-          },
+              _showAiDetails(item);
+            },
+          ),
         ),
-      ));
+      );
     }
     return widgets;
   }
@@ -846,8 +812,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   List<EventInvitation> get _sortedInvitations {
     final sorted = List<EventInvitation>.from(_invitations);
     sorted.sort((a, b) {
-      final rankCompare =
-          _statusRank(a.status).compareTo(_statusRank(b.status));
+      final rankCompare = _statusRank(
+        a.status,
+      ).compareTo(_statusRank(b.status));
       if (rankCompare != 0) return rankCompare;
       return b.createdAt.compareTo(a.createdAt);
     });
@@ -924,7 +891,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   Future<void> _respondInvitation(
-      EventInvitation invitation, bool accept) async {
+    EventInvitation invitation,
+    bool accept,
+  ) async {
     setState(() => _updatingInvitationIds.add(invitation.id));
 
     try {
@@ -936,9 +905,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(context.tr(accept
-              ? 'events_invitation_accept_success'
-              : 'events_invitation_decline_success')),
+          content: Text(
+            context.tr(
+              accept
+                  ? 'events_invitation_accept_success'
+                  : 'events_invitation_decline_success',
+            ),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -948,8 +921,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'action_save_error')),
+          content: Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'action_save_error',
+            ),
+          ),
         ),
       );
     } finally {
@@ -967,18 +944,22 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     final showInvitationsSection = _invitations.isNotEmpty;
 
     return Scaffold(
-        appBar: AppBar(
-          title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'events_activities_title')),
-          actions: [
-            IconButton(
-              key: const Key('event-feed-refresh'),
-              tooltip: context.tr('reload_btn'),
-              icon: const Icon(Icons.refresh_rounded),
-              onPressed: () => _refreshFeed(force: true),
-            ),
-          ],
+      appBar: AppBar(
+        title: Text(
+          AppStringsManager.getString(
+            languageService.currentLanguage,
+            'events_activities_title',
+          ),
         ),
+        actions: [
+          IconButton(
+            key: const Key('event-feed-refresh'),
+            tooltip: context.tr('reload_btn'),
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () => _refreshFeed(force: true),
+          ),
+        ],
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -1017,7 +998,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   if (_lastFeedSyncAt != null) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEAF5FF),
                         borderRadius: BorderRadius.circular(12),
@@ -1036,7 +1019,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                               context.tr(
                                 'events_last_sync',
                                 values: {
-                                  'time': _formatLastSyncLabel(_lastFeedSyncAt!),
+                                  'time': _formatLastSyncLabel(
+                                    _lastFeedSyncAt!,
+                                  ),
                                 },
                               ),
                               key: const Key('event-feed-last-sync'),
@@ -1087,8 +1072,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                           FilledButton.tonalIcon(
                             onPressed: () => _refreshFeed(force: true),
                             icon: const Icon(Icons.refresh_rounded),
-                            label: Text(AppStringsManager.getString(
-                                languageService.currentLanguage, 'reload_btn')),
+                            label: Text(
+                              AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'reload_btn',
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -1097,7 +1086,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
-                          vertical: 32, horizontal: 20),
+                        vertical: 32,
+                        horizontal: 20,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
@@ -1105,32 +1096,43 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                       ),
                       child: Column(
                         children: [
-                          const Text('\u{1F50D}',
-                              style: TextStyle(fontSize: 40)),
+                          const Text(
+                            '\u{1F50D}',
+                            style: TextStyle(fontSize: 40),
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             AppStringsManager.getString(
-                                languageService.currentLanguage,
-                                'events_empty_title'),
+                              languageService.currentLanguage,
+                              'events_empty_title',
+                            ),
                             textAlign: TextAlign.center,
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             AppStringsManager.getString(
-                                languageService.currentLanguage,
-                                'events_empty_subtitle'),
+                              languageService.currentLanguage,
+                              'events_empty_subtitle',
+                            ),
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.outline, height: 1.4),
+                              color: theme.colorScheme.outline,
+                              height: 1.4,
+                            ),
                           ),
                           const SizedBox(height: 20),
                           FilledButton.icon(
                             onPressed: () => _refreshFeed(force: true),
                             icon: const Icon(Icons.refresh_rounded, size: 18),
-                            label: Text(AppStringsManager.getString(
-                                languageService.currentLanguage, 'reload_btn')),
+                            label: Text(
+                              AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'reload_btn',
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -1151,16 +1153,18 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
     return Container(
       color: const Color(0xFFEFF3F8),
-      padding:
-          EdgeInsets.fromLTRB(16, isCompact ? 6 : 8, 16, isCompact ? 6 : 8),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        isCompact ? 6 : 8,
+        16,
+        isCompact ? 6 : 8,
+      ),
       child: Container(
         padding: EdgeInsets.all(isCompact ? 6 : 8),
         decoration: BoxDecoration(
           color: const Color(0xFFF4F8FF),
           borderRadius: BorderRadius.circular(isCompact ? 14 : 16),
-          border: Border.all(
-            color: const Color(0xFFCAD9EE),
-          ),
+          border: Border.all(color: const Color(0xFFCAD9EE)),
           boxShadow: const [
             BoxShadow(
               color: Color(0x1A1E3A5F),
@@ -1253,13 +1257,16 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             initialLocation: _activeLocation,
             onLocationPicked: (loc) async {
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setString(_savedCityKey,
-                  loc.city.isNotEmpty ? loc.city : loc.displayName);
+              await prefs.setString(
+                _savedCityKey,
+                loc.city.isNotEmpty ? loc.city : loc.displayName,
+              );
               if (!mounted) return;
               setState(() {
                 _activeLocation = loc;
-                _fallbackCity =
-                    loc.city.isNotEmpty ? loc.city : loc.displayName;
+                _fallbackCity = loc.city.isNotEmpty
+                    ? loc.city
+                    : loc.displayName;
                 _userLockedLocation = true;
                 _hasRealLocation = true;
               });
@@ -1319,8 +1326,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       runSpacing: 8,
       children: [
         FilterChip(
-          label: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'ki_finds')),
+          label: Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'ki_finds',
+            ),
+          ),
           selected: _activeSources.contains(_FeedSource.ai),
           onSelected: (value) {
             setState(() {
@@ -1333,8 +1344,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           },
         ),
         FilterChip(
-          label: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'community_offers')),
+          label: Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'community_offers',
+            ),
+          ),
           selected: _activeSources.contains(_FeedSource.community),
           onSelected: (value) {
             setState(() {
@@ -1347,13 +1362,16 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           },
         ),
         FilterChip(
-          label: Text(context.tr(
-            'events_nearby_only',
-            values: {'count': '$_nearbyQuickCount'},
-          )),
+          label: Text(
+            context.tr(
+              'events_nearby_only',
+              values: {'count': '$_nearbyQuickCount'},
+            ),
+          ),
           selected: _onlyNearbyQuick,
           onSelected: (value) {
             setState(() => _onlyNearbyQuick = value);
+            _refreshFeed();
           },
         ),
       ],
@@ -1374,8 +1392,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         children: [
           Text(
             context.tr('events_filter_title'),
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w800),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -1425,35 +1444,56 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
             runSpacing: 8,
             children: [
               FilterChip(
-                label: Text(AppStringsManager.getString(
-                    languageService.currentLanguage, 'only_free')),
+                key: const ValueKey('event-feed-only-free'),
+                label: Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'only_free',
+                  ),
+                ),
                 selected: _onlyFree,
                 onSelected: (value) {
                   setState(() => _onlyFree = value);
+                  _refreshFeed();
                 },
               ),
               ChoiceChip(
-                label: Text(AppStringsManager.getString(
-                    languageService.currentLanguage, 'all_dates')),
+                label: Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'all_dates',
+                  ),
+                ),
                 selected: _timeWindowFilter == _TimeWindowFilter.all,
                 onSelected: (_) {
                   setState(() => _timeWindowFilter = _TimeWindowFilter.all);
+                  _refreshFeed();
                 },
               ),
               ChoiceChip(
-                label: Text(AppStringsManager.getString(
-                    languageService.currentLanguage, 'today_label')),
+                label: Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'today_label',
+                  ),
+                ),
                 selected: _timeWindowFilter == _TimeWindowFilter.today,
                 onSelected: (_) {
                   setState(() => _timeWindowFilter = _TimeWindowFilter.today);
+                  _refreshFeed();
                 },
               ),
               ChoiceChip(
-                label: Text(AppStringsManager.getString(
-                    languageService.currentLanguage, 'this_weekend')),
+                label: Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'this_weekend',
+                  ),
+                ),
                 selected: _timeWindowFilter == _TimeWindowFilter.weekend,
                 onSelected: (_) {
                   setState(() => _timeWindowFilter = _TimeWindowFilter.weekend);
+                  _refreshFeed();
                 },
               ),
             ],
@@ -1567,7 +1607,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(999),
@@ -1606,12 +1648,15 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                                   onPressed: isBusy
                                       ? null
                                       : () => _respondInvitation(
-                                            invitation,
-                                            false,
-                                          ),
-                                  child: Text(AppStringsManager.getString(
+                                          invitation,
+                                          false,
+                                        ),
+                                  child: Text(
+                                    AppStringsManager.getString(
                                       languageService.currentLanguage,
-                                      'decline_btn')),
+                                      'decline_btn',
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -1620,12 +1665,16 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                                   onPressed: isBusy
                                       ? null
                                       : () => _respondInvitation(
-                                            invitation,
-                                            true,
+                                          invitation,
+                                          true,
+                                        ),
+                                  child: Text(
+                                    isBusy
+                                        ? '...'
+                                        : context.tr(
+                                            'events_accept_invitation',
                                           ),
-                                    child: Text(isBusy
-                                      ? '...'
-                                      : context.tr('events_accept_invitation')),
+                                  ),
                                 ),
                               ),
                             ],
@@ -1649,9 +1698,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         MaterialPageRoute(
           builder: (_) => Scaffold(
             appBar: AppBar(
-              title: Text(AppStringsManager.getString(
-                languageService.currentLanguage,
-                'events_activities_title'))),
+              title: Text(
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'events_activities_title',
+                ),
+              ),
+            ),
             body: PremiumGate(
               featureLabel: context.tr('events_activities_title'),
               gateType: PremiumGateType.events,
@@ -1666,8 +1719,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     EventsLimitService.instance.recordEventView();
 
     // Finde das originale DiscoveredEvent
-    final discoveredEvent =
-        _aiEvents.where((e) => e.id == item.eventId).firstOrNull;
+    final discoveredEvent = _aiEvents
+        .where((e) => e.id == item.eventId)
+        .firstOrNull;
     if (discoveredEvent != null) {
       Navigator.push(
         context,
@@ -1682,12 +1736,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         MaterialPageRoute(
           builder: (_) => EventDetailPage(
             event: DiscoveredEvent(
-              id: item.eventId ??
+              id:
+                  item.eventId ??
                   'temp_${DateTime.now().millisecondsSinceEpoch}',
               title: item.title,
               description: item.description,
               category: DiscoveredEventCategory.sonstiges,
-                ageLabels: item.ageLabel != null
+              ageLabels: item.ageLabel != null
                   ? [item.ageLabel!]
                   : [context.tr('filter_all')],
               location: item.location,
@@ -1750,10 +1805,10 @@ class _CompactActionButton extends StatelessWidget {
                   label,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        fontSize: compact ? 13 : null,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    fontSize: compact ? 13 : null,
+                  ),
                 ),
               ),
             ],
@@ -1779,6 +1834,7 @@ class _UnifiedFeedItem {
     this.priceLabel,
     this.isFree = false,
     this.eventId,
+    this.hosterId,
     this.participationMode,
     this.confirmedParticipants = 0,
   });
@@ -1796,13 +1852,15 @@ class _UnifiedFeedItem {
   final String? priceLabel;
   final bool isFree;
   final String? eventId;
+  final String? hosterId;
   final ParticipationMode? participationMode;
   final int confirmedParticipants;
 
   factory _UnifiedFeedItem.fromAi(DiscoveredEvent event) {
     final price = event.price?.trim();
     final normalized = (price ?? '').toLowerCase();
-    final isFree = normalized.contains('kostenlos') ||
+    final isFree =
+        normalized.contains('kostenlos') ||
         normalized.contains('free') ||
         normalized == '0 €' ||
         normalized == '0€';
@@ -1824,12 +1882,14 @@ class _UnifiedFeedItem {
   }
 
   factory _UnifiedFeedItem.fromCommunity(MeetupEvent event) {
-    final isFree = !event.isSharedOffer && (event.price == null || event.price == 0);
+    final isFree = event.price == 0;
     final priceLabel = event.price == null || event.price == 0
-        ? null : '${event.price!.toStringAsFixed(0)} €';
+        ? null
+        : '${event.price!.toStringAsFixed(2)} €';
 
     return _UnifiedFeedItem(
       source: _FeedSource.community,
+      hosterId: event.hosterId,
       title: event.title,
       description: event.description,
       location: event.location,
@@ -1909,16 +1969,20 @@ class _UnifiedEventCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                        isAi
+                      isAi
                           ? context.tr('events_source_ai')
-                          : context.tr('event_mode_${item.participationMode?.name ?? 'legacyApproval'}'),
+                          : context.tr(
+                              'event_mode_${item.participationMode?.name ?? 'legacyApproval'}',
+                            ),
                       style: TextStyle(
                         color: color,
                         fontSize: 11,
@@ -1931,25 +1995,37 @@ class _UnifiedEventCard extends StatelessWidget {
                     Text(
                       _formatCardDate(item),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF374151),
-                          ),
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF374151),
+                      ),
                     ),
                 ],
               ),
               const SizedBox(height: 8),
               if (!isAi) ...[
-                Text(context.tr(item.participationMode == ParticipationMode.interest
-                    ? 'event_interest_not_booking' : 'event_confirmed_count',
-                  values: {'count': item.confirmedParticipants}),
-                  style: Theme.of(context).textTheme.bodySmall),
+                if (item.hosterId?.isNotEmpty == true) ...[
+                  EventHostIdentity(
+                    userId: item.hosterId!,
+                    isSharedOffer: item.participationMode == ParticipationMode.interest,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                Text(
+                  context.tr(
+                    item.participationMode == ParticipationMode.interest
+                        ? 'event_interest_not_booking'
+                        : 'event_confirmed_count',
+                    values: {'count': item.confirmedParticipants},
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: 8),
               ],
               Text(
                 item.title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 5),
               Text(
@@ -1979,8 +2055,9 @@ class _UnifiedEventCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            _distanceColor(distanceKm!).withValues(alpha: 0.15),
+                        color: _distanceColor(
+                          distanceKm!,
+                        ).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Row(
@@ -1994,9 +2071,7 @@ class _UnifiedEventCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             '${distanceKm!.toStringAsFixed(1)} km · ${_distanceHint(context, distanceKm!)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   color: _distanceColor(distanceKm!),
                                   fontWeight: FontWeight.w800,
@@ -2021,8 +2096,8 @@ class _UnifiedEventCard extends StatelessWidget {
                     },
                   ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
               if ((item.ageLabel != null && item.ageLabel!.isNotEmpty) ||
@@ -2034,14 +2109,14 @@ class _UnifiedEventCard extends StatelessWidget {
                     values: {
                       'age': item.communityAgeGroups.isNotEmpty
                           ? item.communityAgeGroups
-                              .map((group) => context.tr(_ageGroupKey(group)))
-                              .join(', ')
+                                .map((group) => context.tr(_ageGroupKey(group)))
+                                .join(', ')
                           : item.ageLabel!,
                     },
                   ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ],

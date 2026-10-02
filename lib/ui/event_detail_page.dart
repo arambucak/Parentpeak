@@ -3,8 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/models/discovered_event.dart';
 import 'package:parentpeak/ui/widgets/event_attendees_widget.dart';
 import 'package:parentpeak/ui/widgets/event_safety_widgets.dart';
-import 'package:parentpeak/l10n/app_localizations_all.dart';
-import 'package:parentpeak/main.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
+import 'package:parentpeak/ui/widgets/event_photo.dart';
 
 /// Event-Detail Seite — zeigt alle Infos zu einem Event.
 class EventDetailPage extends StatelessWidget {
@@ -18,12 +18,16 @@ class EventDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(languageService.currentLanguage, 'event_details_title')),
+        title: Text(context.tr('event_details_title')),
         elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (event.imageUrl?.trim().isNotEmpty == true) ...[
+            EventPhoto(photoUrl: event.imageUrl),
+            const SizedBox(height: 12),
+          ],
           // Kategorie-Badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -31,7 +35,11 @@ class EventDetailPage extends StatelessWidget {
               color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(event.categoryLabel,
+            child: Text(context.tr(switch (event.category) {
+              DiscoveredEventCategory.sport => 'event_category_sports',
+              DiscoveredEventCategory.sonstiges => 'event_category_other',
+              _ => 'event_community_category_${event.category.name}',
+            }),
                 style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -49,19 +57,19 @@ class EventDetailPage extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
           const SizedBox(height: 20),
           // Info-Karten
-          if (_formatWann(event) case final wann when wann.isNotEmpty) ...[  
-            _infoCard(theme, '\u{1F4C5}', 'Wann', wann),
+          if (_formatWann(context, event) case final wann when wann.isNotEmpty) ...[
+            _infoCard(theme, '\u{1F4C5}', context.tr('event_scan_field_date'), wann),
             const SizedBox(height: 10),
           ],
-          _infoCard(theme, '\u{1F4CD}', 'Wo', event.location),
+          _infoCard(theme, '\u{1F4CD}', context.tr('event_owner_location'), event.location),
           const SizedBox(height: 10),
-          _infoCard(theme, '\u{1F476}', 'Für wen', event.ageLabels.join(', ')),
+          _infoCard(theme, '\u{1F476}', context.tr('event_detail_age_groups'), event.ageLabels.join(', ')),
           const SizedBox(height: 10),
           _infoCard(
-              theme, '\u{1F4B0}', 'Preis', event.price ?? 'Nicht angegeben'),
+              theme, '\u{1F4B0}', context.tr('event_price'), event.price ?? context.tr('event_not_specified')),
           if (event.organizer != null && event.organizer!.isNotEmpty) ...[
             const SizedBox(height: 10),
-            _infoCard(theme, '\u{1F3E2}', 'Veranstalter', event.organizer!),
+            _infoCard(theme, '\u{1F3E2}', context.tr('event_create_organizer'), event.organizer!),
           ],
           const SizedBox(height: 20),
           // In Maps oeffnen
@@ -70,7 +78,7 @@ class EventDetailPage extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _openInMaps(event.location),
               icon: const Icon(Icons.map_rounded, size: 18),
-              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'open_in_maps')),
+              label: Text(context.tr('open_in_maps')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF2563EB),
                 side: BorderSide(
@@ -89,8 +97,7 @@ class EventDetailPage extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () => _openUrl(event.url!),
                 icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                label: Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'event_open_website')),
+                label: Text(context.tr('event_open_website')),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF0EA5A4),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -114,7 +121,7 @@ class EventDetailPage extends StatelessWidget {
                   _openUrl('https://www.google.com/search?q=${Uri.encodeComponent(parts.join(' '))}');
                 },
                 icon: const Icon(Icons.search_rounded, size: 18),
-                label: Text(AppStringsManager.getString(languageService.currentLanguage, 'search_event_online')),
+                label: Text(context.tr('search_event_online')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF0EA5A4),
                   side: BorderSide(color: const Color(0xFF0EA5A4).withValues(alpha: 0.5)),
@@ -147,8 +154,7 @@ class EventDetailPage extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(
-                  'Dieses Angebot wurde von unserer KI vorgeschlagen. '
-                  'Bitte bestaetige Termine und Verfügbarkeit direkt beim Veranstalter.',
+                  context.tr('event_ai_verify_hint'),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
                 )),
@@ -161,7 +167,7 @@ class EventDetailPage extends StatelessWidget {
               onPressed: () => _showReport(context),
               icon: Icon(Icons.flag_rounded,
                   size: 16, color: theme.colorScheme.outline),
-              label: Text(AppStringsManager.getString(languageService.currentLanguage, 'report_event'),
+              label: Text(context.tr('event_report_title'),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.outline)),
             ),
@@ -199,28 +205,24 @@ class EventDetailPage extends StatelessWidget {
   }
 
   /// Formatiert den Wann-Text mit Datum + Uhrzeit + Zeitraum.
-  String _formatWann(DiscoveredEvent event) {
+  String _formatWann(BuildContext context, DiscoveredEvent event) {
     if (event.isRecurring) {
-      return event.recurringNote ?? 'Regelmaessig';
+      return event.recurringNote ?? context.tr('recurring_event');
     }
     if (event.eventDate == null && event.eventTimeRange == null) {
       return '';
     }
     final parts = <String>[];
     if (event.eventDate != null) {
-      final d = event.eventDate!;
-      final weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-      final wd = weekdays[d.weekday - 1];
-      parts.add('$wd, ${d.day}.${d.month}.${d.year}');
+      final d = event.eventDate!.toLocal();
+      parts.add(MaterialLocalizations.of(context).formatFullDate(d));
     }
     if (event.eventTimeRange != null && event.eventTimeRange!.isNotEmpty) {
       parts.add(event.eventTimeRange!);
     } else if (event.eventDate != null) {
-      final d = event.eventDate!;
+      final d = event.eventDate!.toLocal();
       if (d.hour != 0 || d.minute != 0) {
-        final h = d.hour.toString().padLeft(2, '0');
-        final m = d.minute.toString().padLeft(2, '0');
-        parts.add('$h:$m Uhr');
+        parts.add(MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(d)));
       }
     }
     return parts.join(' · ');

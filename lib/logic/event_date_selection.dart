@@ -6,7 +6,8 @@ class EventDateSelection {
   DateTime date;
   TimeOfDayLite time;
   bool hasScan = false;
-  bool hasConcreteDate = true;
+  bool hasConcreteDate = false;
+  bool hasConcreteTime = false;
   bool dateConfirmed = false;
   bool timeConfirmed = false;
   bool _manualDate = false;
@@ -17,9 +18,11 @@ class EventDateSelection {
     dateConfirmed = false;
     timeConfirmed = false;
     if (!_manualDate && draft.date != null) date = draft.date!;
-    hasConcreteDate = (_manualDate || draft.date != null) &&
+    hasConcreteDate =
+        (_manualDate || draft.date != null) &&
         !date.isBefore(DateTime(now.year, now.month, now.day));
     if (!_manualTime && draft.time != null) time = draft.time!;
+    hasConcreteTime = _manualTime || draft.time != null;
   }
 
   void selectDate(DateTime value) {
@@ -32,15 +35,16 @@ class EventDateSelection {
   void selectTime(TimeOfDayLite value) {
     time = value;
     _manualTime = true;
+    hasConcreteTime = true;
     timeConfirmed = true;
   }
 
   bool canSubmit(DateTime now) =>
-      !hasScan ||
-      (hasConcreteDate &&
-          dateConfirmed &&
-          timeConfirmed &&
-          !localDateTime.isBefore(now));
+      localDateTime.isAfter(now) &&
+      hasConcreteDate &&
+      hasConcreteTime &&
+      dateConfirmed &&
+      timeConfirmed;
 
   DateTime get localDateTime =>
       DateTime(date.year, date.month, date.day, time.hour, time.minute);

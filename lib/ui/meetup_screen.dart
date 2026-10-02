@@ -6,6 +6,8 @@ import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/create_event_screen.dart';
 import 'package:parentpeak/ui/event_detail_screen.dart';
+import 'package:parentpeak/ui/widgets/event_host_identity.dart';
+import 'package:parentpeak/ui/widgets/event_photo.dart';
 
 class MeetupScreen extends StatefulWidget {
   const MeetupScreen({super.key});
@@ -64,7 +66,7 @@ class _MeetupScreenState extends State<MeetupScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler beim Laden: $e')),
+        SnackBar(content: Text(context.tr('event_action_failed'))),
       );
     }
   }
@@ -264,7 +266,7 @@ class _MeetupScreenState extends State<MeetupScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Ansicht',
+                        context.tr('events_view'),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
@@ -304,14 +306,14 @@ class _MeetupScreenState extends State<MeetupScreen> {
                               Icon(Icons.event_note, size: 64, color: Colors.grey[300]),
                               const SizedBox(height: 16),
                               Text(
-                                'Keine Aktivitäten gefunden',
+                                context.tr('events_empty_title'),
                                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       color: Colors.grey[600],
                                     ),
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Passe die Altersgruppe an oder erstelle ein neues Event.',
+                                context.tr('events_empty_subtitle'),
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Colors.grey[500],
                                     ),
@@ -323,11 +325,11 @@ class _MeetupScreenState extends State<MeetupScreen> {
                       : _isGridView
                           ? GridView.builder(
                               gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: MediaQuery.sizeOf(context).width < 500 ? 1 : 2,
                                 mainAxisSpacing: 12,
                                 crossAxisSpacing: 12,
-                                childAspectRatio: 0.82,
+                                mainAxisExtent: 360 + (MediaQuery.textScalerOf(context).scale(16) - 16) * 6,
                               ),
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                               itemCount: _filteredEvents.length,
@@ -374,23 +376,15 @@ class _MeetupScreenState extends State<MeetupScreen> {
                           end: Alignment.bottomRight,
                         )
                       : null,
-                  image: event.photoUrl.isEmpty
-                      ? null
-                      : DecorationImage(
-                          image: NetworkImage(event.photoUrl),
-                          fit: BoxFit.cover,
-                        ),
                 ),
                 child: Stack(
                   children: [
-                    if (event.photoUrl.isEmpty)
-                      const Center(
-                        child: Icon(
-                          Icons.celebration_rounded,
-                          size: 40,
-                          color: Color(0xFF2563EB),
-                        ),
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        child: EventPhoto(photoUrl: event.photoUrl),
                       ),
+                    ),
                     Positioned(
                       top: 8,
                       right: 8,
@@ -416,9 +410,9 @@ class _MeetupScreenState extends State<MeetupScreen> {
                             color: Colors.red[400],
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            'VOLL',
-                            style: TextStyle(
+                          child: Text(
+                            context.tr('event_detail_fully_booked'),
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
@@ -463,6 +457,11 @@ class _MeetupScreenState extends State<MeetupScreen> {
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
+                  ),
+                  const SizedBox(height: 4),
+                  EventHostIdentity(
+                    userId: event.hosterId,
+                    isSharedOffer: event.participationMode == ParticipationMode.interest,
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -550,30 +549,23 @@ class _MeetupScreenState extends State<MeetupScreen> {
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
         child: ListTile(
-          leading: Container(
+          leading: SizedBox(
             width: 80,
             height: 80,
-            decoration: BoxDecoration(
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              color: event.photoUrl.isEmpty ? const Color(0xFFE0F2FE) : null,
-              image: event.photoUrl.isEmpty
-                  ? null
-                  : DecorationImage(
-                      image: NetworkImage(event.photoUrl),
-                      fit: BoxFit.cover,
-                    ),
+              child: EventPhoto(photoUrl: event.photoUrl),
             ),
-            child: event.photoUrl.isEmpty
-                ? const Icon(
-                    Icons.celebration_rounded,
-                    color: Color(0xFF2563EB),
-                  )
-                : null,
           ),
           title: Text(event.title),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 4),
+              EventHostIdentity(
+                userId: event.hosterId,
+                isSharedOffer: event.participationMode == ParticipationMode.interest,
+              ),
               const SizedBox(height: 4),
               if (event.visibility != EventVisibility.publicNearby)
                 Padding(
@@ -610,7 +602,7 @@ class _MeetupScreenState extends State<MeetupScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'VOLL',
+                    context.tr('event_detail_fully_booked'),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -629,37 +621,23 @@ class _MeetupScreenState extends State<MeetupScreen> {
   }
 
   String _getCategoryLabel(EventCategory category) {
-    const labels = {
-      EventCategory.sports: 'Sport',
-      EventCategory.outdoor: 'Outdoor',
-      EventCategory.education: 'Bildung',
-      EventCategory.arts: 'Kunst',
-      EventCategory.socialGathering: 'Treffen',
-      EventCategory.other: 'Sonstiges',
-    };
-    return labels[category] ?? 'Sonstiges';
+    return context.tr(category == EventCategory.socialGathering
+        ? 'event_category_social'
+        : 'event_category_${category.name}');
   }
 
   String _getAgeGroupLabel(AgeGroup ageGroup) {
-    const labels = {
-      AgeGroup.infant: 'Baby (0-1)',
-      AgeGroup.toddler: 'Kleinkind (1-3)',
-      AgeGroup.preschool: 'Vorschule (3-5)',
-      AgeGroup.elementary: 'Grundschule (6-12)',
-      AgeGroup.teenager: 'Teenager (13+)',
-      AgeGroup.mixed: 'Altersgemischt',
-    };
-    return labels[ageGroup] ?? '';
+    return context.tr('event_age_${ageGroup.name}');
   }
 
   String _getVisibilityBadge(MeetupEvent event) {
     switch (event.visibility) {
       case EventVisibility.privateOnly:
-        return 'PRIVAT';
+        return context.tr('events_visibility_private');
       case EventVisibility.familyCircle:
-        return 'KREIS';
+        return context.tr('event_visibility_circle');
       case EventVisibility.inviteOnly:
-        return 'EINGELADEN';
+        return context.tr('events_visibility_invited');
       case EventVisibility.publicNearby:
         return '';
     }
@@ -668,11 +646,11 @@ class _MeetupScreenState extends State<MeetupScreen> {
   String _getVisibilityDescription(MeetupEvent event) {
     switch (event.visibility) {
       case EventVisibility.privateOnly:
-        return 'Privat · nur für den Host sichtbar';
+        return context.tr('events_visibility_private');
       case EventVisibility.familyCircle:
-        return 'Familienkreis · nur verbundene Kontakte';
+        return context.tr('event_visibility_circle');
       case EventVisibility.inviteOnly:
-        return 'Nur eingeladen · individuelle Einladung';
+        return context.tr('events_visibility_invited');
       case EventVisibility.publicNearby:
         return '';
     }

@@ -1,10 +1,109 @@
 import 'dart:math' as math;
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
+import 'package:parentpeak/logic/event_geocoder.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
 import 'package:parentpeak/models/event_invitation.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/models/event_participation.dart';
+
+double? eventDistanceKm(
+  double? lat1,
+  double? lon1,
+  double? lat2,
+  double? lon2,
+) {
+  if (!validCoordinates(lat1, lon1) || !validCoordinates(lat2, lon2)) {
+    return null;
+  }
+  final latitudeDelta = (lat2! - lat1!) * math.pi / 180;
+  final longitudeDelta = (lon2! - lon1!) * math.pi / 180;
+  final haversine =
+      math.pow(math.sin(latitudeDelta / 2), 2) +
+      math.cos(lat1 * math.pi / 180) *
+          math.cos(lat2 * math.pi / 180) *
+          math.pow(math.sin(longitudeDelta / 2), 2);
+  return 12742 * math.asin(math.sqrt(haversine.clamp(0, 1)));
+}
+
+bool eventMatchesAges(Iterable<AgeGroup> known, Iterable<AgeGroup> selected) =>
+    selected.isEmpty ||
+    known.isEmpty ||
+    known.contains(AgeGroup.mixed) ||
+    selected.contains(AgeGroup.mixed) ||
+    known.any(selected.contains);
+
+List<AgeGroup> eventAgesFromLabel(String label) {
+  final text = label.toLowerCase();
+  if (RegExp(r'alle|famil|mixed|all ages').hasMatch(text)) {
+    return [AgeGroup.mixed];
+  }
+  final groups = <AgeGroup>{};
+  if (RegExp(r'baby|infant|säug').hasMatch(text)) groups.add(AgeGroup.infant);
+  if (RegExp(r'kleinkind|toddler').hasMatch(text)) groups.add(AgeGroup.toddler);
+  if (RegExp(r'vorschul|preschool').hasMatch(text)) {
+    groups.add(AgeGroup.preschool);
+  }
+  if (RegExp(r'grundschul|elementary').hasMatch(text)) {
+    groups.add(AgeGroup.elementary);
+  }
+  if (RegExp(r'teen|jugend').hasMatch(text)) groups.add(AgeGroup.teenager);
+  final range = RegExp(r'(\d{1,2})\s*[-–]\s*(\d{1,2})').firstMatch(text);
+  final numbers = RegExp(
+    r'\b\d{1,2}\b',
+  ).allMatches(text).map((match) => int.parse(match.group(0)!)).toList();
+  final minimum = range != null
+      ? int.parse(range.group(1)!)
+      : (numbers.isEmpty ? null : numbers.first);
+  final maximum = range != null ? int.parse(range.group(2)!) : minimum;
+  if (minimum != null && maximum != null && maximum >= minimum) {
+    const bounds = [(0, 1), (1, 3), (4, 6), (6, 10), (11, 18)];
+    for (var index = 0; index < bounds.length; index++) {
+      if (minimum <= bounds[index].$2 && maximum >= bounds[index].$1) {
+        groups.add(AgeGroup.values[index]);
+      }
+    }
+  }
+  return groups.toList();
+}
+
+bool eventMatchesTime(DateTime? date, String window, DateTime now) {
+  if (date == null) return window == 'all';
+  if (date.isBefore(now)) return false;
+  final local = date.toLocal();
+  final today = now.toLocal();
+  if (window == 'today') {
+    return local.year == today.year &&
+        local.month == today.month &&
+        local.day == today.day;
+  }
+  if (window == 'weekend') {
+    return date.isBefore(now.add(const Duration(days: 7))) &&
+        (local.weekday == DateTime.saturday ||
+            local.weekday == DateTime.sunday);
+  }
+  return true;
+}
+
+double eventRankingScore({
+  required double? distance,
+  required DateTime? date,
+  required Iterable<AgeGroup> ages,
+  required Iterable<AgeGroup> selected,
+  required DateTime now,
+}) {
+  final timeScore = date == null
+      ? 0.0
+      : (30 - date.difference(now).inMilliseconds / Duration.millisecondsPerDay)
+                .clamp(0, 30) *
+            2;
+  final proximityScore = distance == null ? 0.0 : (50 - distance).clamp(0, 50);
+  final ageScore =
+      selected.isNotEmpty && ages.isNotEmpty && eventMatchesAges(ages, selected)
+      ? 20
+      : 0;
+  return (timeScore + proximityScore + ageScore).toDouble();
+}
 
 class EventService {
   EventService({EventBackendService? backend})
@@ -76,23 +175,92 @@ class EventService {
       );
       if (!canSee) return false;
 
-      if (ageGroups != null && ageGroups.isNotEmpty) {
-        final hasMatchingAgeGroup = event.ageGroups.any(
-          (eg) => ageGroups.contains(eg),
-        );
-        if (!hasMatchingAgeGroup) return false;
-      }
-
-      return true;
+      return eventMatchesAges(event.ageGroups, ageGroups ?? const []) &&
+          eventMatchesTime(event.eventDate, 'all', DateTime.now());
     }).toList();
 
     return visible;
   }
 
+  Future<List<MeetupEvent>> getFilteredDiscoverableEventsForUser({
+    required String viewerUserId,
+    required double viewerLatitude,
+    required double viewerLongitude,
+    List<AgeGroup>? ageGroups,
+    double radiusKm = 25,
+    bool nearbyOnly = false,
+    bool onlyFree = false,
+    String timeWindow = 'all',
+  }) async {
+    final remote = _backend.isEnabled
+        ? await _backend.discoverEventsForUser(
+            viewerUserId: viewerUserId,
+            viewerLatitude: viewerLatitude,
+            viewerLongitude: viewerLongitude,
+            ageGroups: ageGroups,
+            radiusKm: radiusKm,
+            nearbyOnly: nearbyOnly,
+            onlyFree: onlyFree,
+            timeWindow: timeWindow,
+            throwOnFailure: true,
+          )
+        : await getDiscoverableEventsForUser(
+            viewerUserId: viewerUserId,
+            viewerLatitude: viewerLatitude,
+            viewerLongitude: viewerLongitude,
+            ageGroups: ageGroups,
+          );
+    if (_backend.isEnabled) _syncFromRemoteEvents(remote);
+    final now = DateTime.now();
+    final selected = ageGroups ?? const <AgeGroup>[];
+    double? distance(MeetupEvent event) => eventDistanceKm(
+      viewerLatitude,
+      viewerLongitude,
+      event.latitude,
+      event.longitude,
+    );
+    final filtered = remote.where((event) {
+      final km = distance(event);
+      return event.status == EventStatus.active &&
+          eventMatchesTime(event.eventDate, timeWindow, now) &&
+          eventMatchesAges(event.ageGroups, selected) &&
+          (!onlyFree || event.price == 0) &&
+          (km == null
+              ? !nearbyOnly
+              : km <= radiusKm &&
+                    (!nearbyOnly || km <= 10) &&
+                    (event.visibility != EventVisibility.publicNearby ||
+                        event.hosterId == viewerUserId ||
+                        km <= (event.shareRadiusKm ?? 25)));
+    }).toList();
+    filtered.sort((first, second) {
+      final comparison =
+          eventRankingScore(
+            distance: distance(second),
+            date: second.eventDate,
+            ages: second.ageGroups,
+            selected: selected,
+            now: now,
+          ).compareTo(
+            eventRankingScore(
+              distance: distance(first),
+              date: first.eventDate,
+              ages: first.ageGroups,
+              selected: selected,
+              now: now,
+            ),
+          );
+      return comparison != 0 ? comparison : first.id.compareTo(second.id);
+    });
+    return filtered;
+  }
+
   Future<List<EventInvitation>> getInvitationsForUser(String userId) async {
     if (_backend.isEnabled) {
-      final remote = await _backend.fetchInvitationsForUser(userId,
-          throwOnFailure: true);
+      final remote = await _backend.fetchInvitationsForUser(
+        userId,
+        throwOnFailure: true,
+      );
       _syncFromRemoteInvitations(remote);
       return remote;
     }
@@ -181,6 +349,10 @@ class EventService {
     await Future.delayed(const Duration(milliseconds: 500));
 
     return _cachedEvents.where((event) {
+      if (!event.hasReliableCoordinates ||
+          !validCoordinates(latitude, longitude)) {
+        return false;
+      }
       // Berechne Entfernung (vereinfachte Haversine-Formel)
       final distance = _calculateDistance(
         latitude,
@@ -200,14 +372,9 @@ class EventService {
       final shareRadius = event.shareRadiusKm ?? radiusKm;
       if (distance > shareRadius) return false;
 
-      if (ageGroups != null && ageGroups.isNotEmpty) {
-        final hasMatchingAgeGroup = event.ageGroups.any(
-          (eg) => ageGroups.contains(eg),
-        );
-        if (!hasMatchingAgeGroup) return false;
-      }
-
-      return event.status == EventStatus.active;
+      return eventMatchesAges(event.ageGroups, ageGroups ?? const []) &&
+          event.status == EventStatus.active &&
+          eventMatchesTime(event.eventDate, 'all', DateTime.now());
     }).toList();
   }
 
@@ -242,6 +409,10 @@ class EventService {
     }
 
     // Öffentlich: nur im definierten Radius teilen.
+    if (!event.hasReliableCoordinates ||
+        !validCoordinates(viewerLatitude, viewerLongitude)) {
+      return true;
+    }
     final distance = _calculateDistance(
       viewerLatitude,
       viewerLongitude,
@@ -381,15 +552,7 @@ class EventService {
     double lat2,
     double lon2,
   ) {
-    const p = 0.017453292519943295; // math.pi / 180
-    final a =
-        0.5 -
-        math.cos((lat2 - lat1) * p) / 2 +
-        math.cos(lat1 * p) *
-            math.cos(lat2 * p) *
-            (1 - math.cos((lon2 - lon1) * p)) /
-            2;
-    return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
+    return eventDistanceKm(lat1, lon1, lat2, lon2) ?? double.nan;
   }
 
   String _extractCodeFromInput(String input) {

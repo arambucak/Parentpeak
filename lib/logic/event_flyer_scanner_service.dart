@@ -42,6 +42,28 @@ class ScannedEventDraft {
   final String? priceNote;
   final String? recurringNote;
 
+  double? get priceAmount => parsePriceAmount(priceNote);
+
+  static double? parsePriceAmount(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    if (const [
+      'kostenlos',
+      'gratis',
+      'free',
+      'free entry',
+      'eintritt frei',
+    ].contains(normalized)) {
+      return 0;
+    }
+    final match = RegExp(
+      r'^(?:(?:eur|€)\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:eur|€)?$',
+    ).firstMatch(normalized);
+    if (match == null) return null;
+    final amount = double.tryParse(match.group(1)!.replaceAll(',', '.'));
+    return amount != null && amount.isFinite ? amount : null;
+  }
+
   /// True, wenn mindestens ein nützliches Feld erkannt wurde.
   bool get hasContent =>
       (title != null && title!.trim().isNotEmpty) ||
@@ -51,6 +73,7 @@ class ScannedEventDraft {
       (location != null && location!.trim().isNotEmpty) ||
       category != null ||
       ageGroups.isNotEmpty ||
+      (priceNote != null && priceNote!.trim().isNotEmpty) ||
       recurringNote != null;
 }
 
@@ -64,7 +87,7 @@ class TimeOfDayLite {
 
 class EventFlyerScannerService {
   EventFlyerScannerService({GeminiAIService? gemini})
-      : _gemini = gemini ?? GeminiAIService();
+    : _gemini = gemini ?? GeminiAIService();
 
   final GeminiAIService _gemini;
 
@@ -107,7 +130,8 @@ class EventFlyerScannerService {
 
   String _prompt({required bool hasImage}) {
     final now = DateTime.now();
-    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+    final today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}';
     final source = hasImage
         ? 'Analysiere das Foto eines Veranstaltungs-Flyers/Plakats.'
@@ -135,6 +159,7 @@ Regeln:
 - date=null bei Zeiträumen, Laufzeiten und Enddaten wie "bis 14.01.2027", wenn kein konkreter Veranstaltungstag bestätigt ist. Ein Enddatum ist kein Veranstaltungstermin.
 - Kein Datum aus Wiederholungen oder alleinstehenden Wochentagen ableiten; nicht den nächsten Termin berechnen.
 - time nur aus einer ausdrücklich genannten Uhrzeit übernehmen; sonst null, keine Standardzeit.
+- price nur als erkannten Eintrittspreis übernehmen, z.B. "9,40 €". Kostenlos nur bei ausdrücklich kostenlosem Eintritt oder 0; unbekannt ist null. Preisbereiche und unterschiedliche Erwachsenen-/Kinderpreise im Wortlaut erhalten, nicht einen Betrag auswählen. App-Abo und Veröffentlichungskosten sind kein Eintrittspreis.
 - recurringNote nur setzen, wenn eine Wiederholung ausdrücklich genannt ist. Zeiträume und "bis"-Enddaten sind keine Wiederholung; kein Enddatum erfinden.
 - category: sports=Sport/Bewegung, outdoor=Natur/draußen, education=Kurs/Lernen/Vorlesen,
   arts=Basteln/Musik/Theater/Museum, socialGathering=Treffen/Fest/Spielplatz, other=Rest.

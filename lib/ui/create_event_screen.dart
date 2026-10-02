@@ -15,11 +15,12 @@ import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 
 class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen(
-      {super.key,
-      this.flyerScanner,
-      this.eventService,
-      this.eventBackendService});
+  const CreateEventScreen({
+    super.key,
+    this.flyerScanner,
+    this.eventService,
+    this.eventBackendService,
+  });
 
   final EventFlyerScannerService? flyerScanner;
   final EventService? eventService;
@@ -27,6 +28,66 @@ class CreateEventScreen extends StatefulWidget {
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
+}
+
+class _EventDateTimeControl extends StatelessWidget {
+  const _EventDateTimeControl({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.confirmed,
+    required this.onPressed,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool confirmed;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        selected: confirmed,
+        child: OutlinedButton(
+          onPressed: onPressed,
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: theme.textTheme.labelSmall),
+                    const SizedBox(height: 4),
+                    Text(value, style: theme.textTheme.bodyMedium, maxLines: 2),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 18,
+                child: confirmed
+                    ? const Icon(Icons.check_circle_outline, size: 18)
+                    : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _CreateEventScreenState extends State<CreateEventScreen> {
@@ -43,6 +104,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   late TextEditingController _locationController;
   late TextEditingController _maxParticipantsController;
   final _externalUrlController = TextEditingController();
+  final _priceController = TextEditingController();
+  bool _priceConfirmed = false;
   ParticipationMode _participationMode = ParticipationMode.direct;
 
   EventCategory _selectedCategory = EventCategory.socialGathering;
@@ -51,8 +114,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     date: DateTime.now().add(const Duration(days: 1)),
     time: TimeOfDayLite(DateTime.now().hour, DateTime.now().minute),
   );
-  final double _latitude = 52.5200;
-  final double _longitude = 13.4050;
   EventVisibility _visibility = EventVisibility.publicNearby;
   double _shareRadiusKm = 25;
   int _inviteCodeExpiryDays = 14;
@@ -60,6 +121,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final Set<String> _selectedInvitees = {};
 
   bool _isSubmitting = false;
+  bool _showDateError = false;
   File? _selectedPhotoFile;
   String? _uploadedPhotoUrl;
   final _imagePicker = ImagePicker();
@@ -79,7 +141,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
     _recurringNoteController = TextEditingController();
-    _locationController = TextEditingController(text: 'Berlin, Deutschland');
+    _locationController = TextEditingController();
     _maxParticipantsController = TextEditingController(text: '10');
     _loadFamilyContacts();
     if (!FeatureFlags.enableFamilyCircle &&
@@ -97,8 +159,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       });
       return;
     }
-    final contacts =
-        await _familyCircleService.getConnectedContacts(userId: userId);
+    final contacts = await _familyCircleService.getConnectedContacts(
+      userId: userId,
+    );
     if (!mounted) return;
     setState(() {
       _familyContacts = contacts;
@@ -113,10 +176,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     _locationController.dispose();
     _maxParticipantsController.dispose();
     _externalUrlController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
   Future<void> _selectDate() async {
+    if (_isScanning || _isSubmitting) return;
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
@@ -126,18 +191,33 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
     if (picked != null && mounted) {
       setState(() => _dateSelection.selectDate(picked));
+      _clearDateError();
     }
   }
 
   Future<void> _selectTime() async {
+    if (_isScanning || _isSubmitting) return;
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(
-          hour: _dateSelection.time.hour, minute: _dateSelection.time.minute),
+        hour: _dateSelection.time.hour,
+        minute: _dateSelection.time.minute,
+      ),
     );
     if (picked != null && mounted) {
-      setState(() =>
-          _dateSelection.selectTime(TimeOfDayLite(picked.hour, picked.minute)));
+      setState(
+        () => _dateSelection.selectTime(
+          TimeOfDayLite(picked.hour, picked.minute),
+        ),
+      );
+      _clearDateError();
+    }
+  }
+
+  void _clearDateError() {
+    if (_showDateError && _dateSelection.canSubmit(DateTime.now())) {
+      setState(() => _showDateError = false);
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
   }
 
@@ -168,7 +248,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       maxHeight: 1080,
       imageQuality: 85,
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     setState(() {
       _selectedPhotoFile = File(picked.path);
       _uploadedPhotoUrl = null;
@@ -200,8 +280,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               children: [
                 Text(
                   _t('event_scan_sheet_title'),
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -253,6 +334,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   Future<void> _scanFromGallery() => _scanFromPickedImage(ImageSource.gallery);
 
   Future<void> _scanFromPickedImage(ImageSource source) async {
+    if (!mounted || _isScanning || _isSubmitting) return;
+    setState(() => _isScanning = true);
     try {
       final picked = await _imagePicker.pickImage(
         source: source,
@@ -260,17 +343,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         maxHeight: 1600,
         imageQuality: 85,
       );
-      if (picked == null) return;
+      if (picked == null || !mounted) return;
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
       setState(() => _isScanning = true);
       final fileName = picked.name.toLowerCase();
-      final imageMimeType = picked.mimeType ??
+      final imageMimeType =
+          picked.mimeType ??
           (fileName.endsWith('.png')
               ? 'image/png'
               : fileName.endsWith('.webp')
-                  ? 'image/webp'
-                  : 'image/jpeg');
+              ? 'image/webp'
+              : 'image/jpeg');
       final draft = await _flyerScanner.scanFromImage(
         bytes,
         imageMimeType: imageMimeType,
@@ -347,7 +431,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       _descriptionController.text = draft.description!;
       filled.add(_t('event_scan_field_description'));
     }
-    if (draft.location != null) {
+    if (draft.location != null && _locationController.text.trim().isEmpty) {
       _locationController.text = draft.location!;
       filled.add(_t('event_scan_field_location'));
     }
@@ -369,10 +453,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       filled.add(_t('event_scan_field_age'));
     }
     _priceHint = draft.priceNote;
+    if (!_priceConfirmed) {
+      _priceController.text = draft.priceAmount?.toStringAsFixed(2) ?? '';
+    }
+    if (_priceHint != null) filled.add(_t('event_scan_price_hint'));
     if (draft.recurringNote != null && !_showRecurringNote) {
       _recurringNoteController.text = draft.recurringNote!;
       _showRecurringNote = true;
-      _includeRecurringNote = true;
+      _includeRecurringNote = false;
       filled.add(_t('recurring_event'));
     }
 
@@ -412,7 +500,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   Future<void> _submitForm() async {
     if (_isScanning || _isSubmitting) return;
     if (!_dateSelection.canSubmit(DateTime.now())) {
-      setState(() {});
+      setState(() => _showDateError = true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_t('event_scan_datetime_required'))),
       );
@@ -420,30 +508,29 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
     final currentUserId = AuthService.instance.currentUser?.uid;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_t('event_login_required'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('event_login_required'))));
       return;
     }
 
     if (!_formKey.currentState!.validate()) return;
     if (_selectedAgeGroups.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_t('event_select_age_group'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('event_select_age_group'))));
       return;
     }
 
     if (_visibility == EventVisibility.inviteOnly &&
         _selectedInvitees.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_t('event_invite_contact')),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('event_invite_contact'))));
       return;
     }
 
+    FocusScope.of(context).unfocus();
     setState(() => _isSubmitting = true);
 
     try {
@@ -451,33 +538,40 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       final eventDateTime = _dateSelection.localDateTime;
 
       final photoUrl = await _ensurePhotoUploaded();
+      if (!mounted) return;
 
       final event = MeetupEvent(
         id: 'event_${DateTime.now().millisecondsSinceEpoch}',
         hosterId: currentUserId,
         title: _titleController.text,
-        description: _includeRecurringNote &&
+        description:
+            _includeRecurringNote &&
                 _recurringNoteController.text.trim().isNotEmpty
             ? '${_descriptionController.text.trim()}\n\n${_t('recurring_event')}: ${_recurringNoteController.text.trim()}'
             : _descriptionController.text,
         category: _selectedCategory,
         ageGroups: _selectedAgeGroups,
         location: _locationController.text,
-        latitude: _latitude,
-        longitude: _longitude,
+        latitude: 0,
+        longitude: 0,
         eventDate: eventDateTime,
         createdAt: DateTime.now(),
         maxParticipants: _participationMode == ParticipationMode.interest
-          ? 0 : int.parse(_maxParticipantsController.text),
+            ? 0
+            : int.parse(_maxParticipantsController.text),
         participationMode: _participationMode,
         externalUrl: _participationMode == ParticipationMode.interest
-          ? _externalUrlController.text.trim() : null,
+            ? _externalUrlController.text.trim()
+            : null,
         photoUrl: photoUrl,
         status: EventStatus.active,
-        price: null,
+        price: _priceConfirmed
+            ? ScannedEventDraft.parsePriceAmount(_priceController.text)
+            : null,
         visibility: _visibility,
-        shareRadiusKm:
-            _visibility == EventVisibility.publicNearby ? _shareRadiusKm : null,
+        shareRadiusKm: _visibility == EventVisibility.publicNearby
+            ? _shareRadiusKm
+            : null,
         invitedUserIds: _visibility == EventVisibility.inviteOnly
             ? _selectedInvitees.toList()
             : const [],
@@ -486,18 +580,24 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             : null,
       );
 
-      await _eventService.createEvent(event);
+      final savedEvent = await _eventService.createEvent(event);
 
       if (mounted) {
         if (_visibility == EventVisibility.inviteOnly) {
-          final code = _eventService.getInviteCodeForEvent(event.id);
-          final link = _eventService.getInviteLinkForEvent(event.id);
-          final expiresAt = _eventService.getInviteExpiryForEvent(event.id);
+          final code = _eventService.getInviteCodeForEvent(savedEvent.id);
+          final link = _eventService.getInviteLinkForEvent(savedEvent.id);
+          final expiresAt = _eventService.getInviteExpiryForEvent(
+            savedEvent.id,
+          );
           await showDialog<void>(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'event_ready')),
+              title: Text(
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'event_ready',
+                ),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,8 +638,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       Clipboard.setData(ClipboardData(text: code));
                       Navigator.of(context).pop();
                     },
-                    child: Text(AppStringsManager.getString(
-                        languageService.currentLanguage, 'copy_code_close')),
+                    child: Text(
+                      AppStringsManager.getString(
+                        languageService.currentLanguage,
+                        'copy_code_close',
+                      ),
+                    ),
                   ),
                 if (link != null)
                   TextButton(
@@ -547,8 +651,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       Clipboard.setData(ClipboardData(text: link));
                       Navigator.of(context).pop();
                     },
-                    child: Text(AppStringsManager.getString(
-                        languageService.currentLanguage, 'copy_link_close')),
+                    child: Text(
+                      AppStringsManager.getString(
+                        languageService.currentLanguage,
+                        'copy_link_close',
+                      ),
+                    ),
                   ),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -558,19 +666,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_t('event_is_live'))),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(_t('event_is_live'))));
         }
 
         if (mounted) Navigator.of(context).pop();
       }
     } catch (e) {
-      setState(() => _isSubmitting = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Konnte nicht speichern: $e')),
-        );
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Konnte nicht speichern: $e')));
       }
     }
   }
@@ -581,8 +689,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'create_event')),
+        title: Text(
+          AppStringsManager.getString(
+            languageService.currentLanguage,
+            'create_event',
+          ),
+        ),
         elevation: 0,
       ),
       body: Container(
@@ -595,506 +707,591 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SegmentedButton<ParticipationMode>(
-                  key: const Key('event-create-mode'),
-                  segments: [
-                    ButtonSegment(value: ParticipationMode.direct,
-                      icon: const Icon(Icons.groups_outlined), label: Text(_t('event_mode_direct'))),
-                    ButtonSegment(value: ParticipationMode.interest,
-                      icon: const Icon(Icons.open_in_new), label: Text(_t('event_mode_interest'))),
-                  ],
-                  selected: {_participationMode},
-                  onSelectionChanged: _isSubmitting ? null : (selection) => setState(() {
-                    _participationMode = selection.single;
-                    if (_participationMode == ParticipationMode.interest) {
-                      _visibility = EventVisibility.publicNearby;
-                    }
-                  }),
-                ),
-                const SizedBox(height: 8),
-                Text(_t(_participationMode == ParticipationMode.interest
-                    ? 'event_interest_not_booking' : 'event_direct_confirmation')),
-                if (_participationMode == ParticipationMode.interest) ...[
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    key: const Key('event-create-url'),
-                    controller: _externalUrlController,
-                    keyboardType: TextInputType.url,
-                    decoration: InputDecoration(labelText: _t('event_organizer_url'),
-                      prefixIcon: const Icon(Icons.link)),
-                    validator: (value) {
-                      final uri = Uri.tryParse(value?.trim() ?? '');
-                      return uri != null && ['http', 'https'].contains(uri.scheme) &&
-                          uri.host.isNotEmpty && uri.userInfo.isEmpty
-                          ? null : _t('event_invalid_url');
-                    },
-                  ),
-                ],
-                const SizedBox(height: 16),
-                // Magisch ausfüllen (Flyer-/Foto-/Text-Scan)
-                _MagicFillCard(
-                  title: _t('event_scan_title'),
-                  subtitle: _t('event_scan_subtitle'),
-                  buttonLabel: _t('event_scan_button'),
-                  isScanning: _isScanning,
-                  onTap: _showScanOptions,
-                ),
-                const SizedBox(height: 20),
-                // Titel
-                Text(
-                  'Grundinformationen',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+          child: AbsorbPointer(
+            absorbing: _isScanning || _isSubmitting,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SegmentedButton<ParticipationMode>(
+                    key: const Key('event-create-mode'),
+                    segments: [
+                      ButtonSegment(
+                        value: ParticipationMode.direct,
+                        icon: const Icon(Icons.groups_outlined),
+                        label: Text(_t('event_mode_direct')),
                       ),
-                ),
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Event-Titel',
-                    hintText: 'z. B. Spielplatz-Treffen',
-                    prefixIcon: Icon(Icons.title),
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Bitte einen Titel eingeben';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Beschreibung',
-                    hintText: 'Was macht euer Event besonders?',
-                    prefixIcon: Icon(Icons.description),
-                  ),
-                  maxLines: 4,
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Bitte eine Beschreibung eingeben';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                if (_showRecurringNote) ...[
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(_t('event_scan_recurring_confirm')),
-                    subtitle: Text(_t('event_scan_recurring_explanation')),
-                    value: _includeRecurringNote,
-                    onChanged: (value) =>
-                        setState(() => _includeRecurringNote = value),
-                  ),
-                  if (_includeRecurringNote) ...[
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _recurringNoteController,
-                      decoration: InputDecoration(
-                        labelText: _t('recurring_event'),
-                        prefixIcon: const Icon(Icons.repeat_rounded),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                ],
-
-                // Sichtbarkeit & Standortverteilung
-                Text(
-                  'Sichtbarkeit',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                _VisibilityOptionTile(
-                  title: _t('event_visibility_public'),
-                  subtitle:
-                      'Andere Eltern sehen dein Event im Standort-Radius.',
-                  selected: _visibility == EventVisibility.publicNearby,
-                  onTap: () => setState(
-                    () => _visibility = EventVisibility.publicNearby,
-                  ),
-                ),
-                if (FeatureFlags.enableFamilyCircle && _participationMode != ParticipationMode.interest)
-                  _VisibilityOptionTile(
-                    title: _t('event_visibility_circle'),
-                    subtitle:
-                        'Nur verbundene Eltern aus deinem Familienkreis sehen das Event.',
-                    selected: _visibility == EventVisibility.familyCircle,
-                    onTap: () => setState(
-                      () => _visibility = EventVisibility.familyCircle,
-                    ),
-                  ),
-                if (_participationMode != ParticipationMode.interest) _VisibilityOptionTile(
-                  title: 'Nur eingeladen (individuelle Einladungen)',
-                  subtitle:
-                      'Nur ausgewählte Kontakte sehen und erhalten die Einladung.',
-                  selected: _visibility == EventVisibility.inviteOnly,
-                  onTap: () => setState(
-                    () => _visibility = EventVisibility.inviteOnly,
-                  ),
-                ),
-                if (_participationMode != ParticipationMode.interest) _VisibilityOptionTile(
-                  title: 'Nur ich (nicht geteilt)',
-                  subtitle: 'Das Event bleibt nur in deinem Bereich sichtbar.',
-                  selected: _visibility == EventVisibility.privateOnly,
-                  onTap: () => setState(
-                    () => _visibility = EventVisibility.privateOnly,
-                  ),
-                ),
-
-                if (_visibility == EventVisibility.publicNearby) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Öffentlich teilen im Umkreis',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Text(
-                        '${_shareRadiusKm.toStringAsFixed(0)} km',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ButtonSegment(
+                        value: ParticipationMode.interest,
+                        icon: const Icon(Icons.open_in_new),
+                        label: Text(_t('event_mode_interest')),
                       ),
                     ],
+                    selected: {_participationMode},
+                    onSelectionChanged: _isSubmitting
+                        ? null
+                        : (selection) => setState(() {
+                            _participationMode = selection.single;
+                            if (_participationMode ==
+                                ParticipationMode.interest) {
+                              _visibility = EventVisibility.publicNearby;
+                            }
+                          }),
                   ),
-                  Slider(
-                    value: _shareRadiusKm,
-                    min: 5,
-                    max: 100,
-                    divisions: 19,
-                    label: '${_shareRadiusKm.toStringAsFixed(0)} km',
-                    onChanged: (v) => setState(() => _shareRadiusKm = v),
-                  ),
-                ],
-
-                if (_visibility == EventVisibility.inviteOnly) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Kontakte auswählen',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                    _t(
+                      _participationMode == ParticipationMode.interest
+                          ? 'event_interest_not_booking'
+                          : 'event_direct_confirmation',
+                    ),
+                  ),
+                  if (_participationMode == ParticipationMode.interest) ...[
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      key: const Key('event-create-url'),
+                      controller: _externalUrlController,
+                      keyboardType: TextInputType.url,
+                      decoration: InputDecoration(
+                        labelText: _t('event_organizer_url'),
+                        prefixIcon: const Icon(Icons.link),
+                      ),
+                      validator: (value) {
+                        final uri = Uri.tryParse(value?.trim() ?? '');
+                        return uri != null &&
+                                ['http', 'https'].contains(uri.scheme) &&
+                                uri.host.isNotEmpty &&
+                                uri.userInfo.isEmpty
+                            ? null
+                            : _t('event_invalid_url');
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  // Magisch ausfüllen (Flyer-/Foto-/Text-Scan)
+                  _MagicFillCard(
+                    title: _t('event_scan_title'),
+                    subtitle: _t('event_scan_subtitle'),
+                    buttonLabel: _t('event_scan_button'),
+                    isScanning: _isScanning,
+                    onTap: _showScanOptions,
+                  ),
+                  const SizedBox(height: 20),
+                  // Titel
+                  Text(
+                    'Grundinformationen',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Event-Titel',
+                      hintText: 'z. B. Spielplatz-Treffen',
+                      prefixIcon: Icon(Icons.title),
+                    ),
+                    validator: (value) {
+                      if (value?.trim().isEmpty ?? true) {
+                        return 'Bitte einen Titel eingeben';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Beschreibung',
+                      hintText: 'Was macht euer Event besonders?',
+                      prefixIcon: Icon(Icons.description),
+                    ),
+                    maxLines: 4,
+                    validator: (value) {
+                      if (value?.trim().isEmpty ?? true) {
+                        return 'Bitte eine Beschreibung eingeben';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (_showRecurringNote) ...[
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(_t('event_scan_recurring_confirm')),
+                      subtitle: Text(_t('event_scan_recurring_explanation')),
+                      value: _includeRecurringNote,
+                      onChanged: (value) =>
+                          setState(() => _includeRecurringNote = value),
+                    ),
+                    if (_includeRecurringNote) ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _recurringNoteController,
+                        decoration: InputDecoration(
+                          labelText: _t('recurring_event'),
+                          prefixIcon: const Icon(Icons.repeat_rounded),
                         ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Sichtbarkeit & Standortverteilung
+                  Text(
+                    'Sichtbarkeit',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  if (_familyContacts.isEmpty)
-                    const Text(
-                      'Noch keine Kontakte verfügbar. Diese Funktion wird bald wieder freigeschaltet.',
-                    )
-                  else
-                    ..._familyContacts.map(
-                      (contact) => CheckboxListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        value: _selectedInvitees.contains(contact.userId),
-                        title: Text(contact.displayName),
-                        subtitle: Text(
-                            '${contact.city} · ${contact.childrenSummary}'),
-                        onChanged: (_) => _toggleInvitee(contact.userId),
+                  _VisibilityOptionTile(
+                    title: _t('event_visibility_public'),
+                    subtitle:
+                        'Andere Eltern sehen dein Event im Standort-Radius.',
+                    selected: _visibility == EventVisibility.publicNearby,
+                    onTap: () => setState(
+                      () => _visibility = EventVisibility.publicNearby,
+                    ),
+                  ),
+                  if (FeatureFlags.enableFamilyCircle &&
+                      _participationMode != ParticipationMode.interest)
+                    _VisibilityOptionTile(
+                      title: _t('event_visibility_circle'),
+                      subtitle:
+                          'Nur verbundene Eltern aus deinem Familienkreis sehen das Event.',
+                      selected: _visibility == EventVisibility.familyCircle,
+                      onTap: () => setState(
+                        () => _visibility = EventVisibility.familyCircle,
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<int>(
-                    initialValue: _inviteCodeExpiryDays,
+                  if (_participationMode != ParticipationMode.interest)
+                    _VisibilityOptionTile(
+                      title: 'Nur eingeladen (individuelle Einladungen)',
+                      subtitle:
+                          'Nur ausgewählte Kontakte sehen und erhalten die Einladung.',
+                      selected: _visibility == EventVisibility.inviteOnly,
+                      onTap: () => setState(
+                        () => _visibility = EventVisibility.inviteOnly,
+                      ),
+                    ),
+                  if (_participationMode != ParticipationMode.interest)
+                    _VisibilityOptionTile(
+                      title: 'Nur ich (nicht geteilt)',
+                      subtitle:
+                          'Das Event bleibt nur in deinem Bereich sichtbar.',
+                      selected: _visibility == EventVisibility.privateOnly,
+                      onTap: () => setState(
+                        () => _visibility = EventVisibility.privateOnly,
+                      ),
+                    ),
+
+                  if (_visibility == EventVisibility.publicNearby) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Öffentlich teilen im Umkreis',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_shareRadiusKm.toStringAsFixed(0)} km',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: _shareRadiusKm,
+                      min: 5,
+                      max: 100,
+                      divisions: 19,
+                      label: '${_shareRadiusKm.toStringAsFixed(0)} km',
+                      onChanged: (v) => setState(() => _shareRadiusKm = v),
+                    ),
+                  ],
+
+                  if (_visibility == EventVisibility.inviteOnly) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Kontakte auswählen',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_familyContacts.isEmpty)
+                      const Text(
+                        'Noch keine Kontakte verfügbar. Diese Funktion wird bald wieder freigeschaltet.',
+                      )
+                    else
+                      ..._familyContacts.map(
+                        (contact) => CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          value: _selectedInvitees.contains(contact.userId),
+                          title: Text(contact.displayName),
+                          subtitle: Text(
+                            '${contact.city} · ${contact.childrenSummary}',
+                          ),
+                          onChanged: (_) => _toggleInvitee(contact.userId),
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<int>(
+                      initialValue: _inviteCodeExpiryDays,
+                      decoration: const InputDecoration(
+                        labelText: 'Einladungscode gültig für',
+                        prefixIcon: Icon(Icons.timelapse_rounded),
+                      ),
+                      isExpanded: true,
+                      items: const [
+                        DropdownMenuItem(value: 3, child: Text('3 Tage')),
+                        DropdownMenuItem(value: 7, child: Text('7 Tage')),
+                        DropdownMenuItem(value: 14, child: Text('14 Tage')),
+                        DropdownMenuItem(value: 30, child: Text('30 Tage')),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() => _inviteCodeExpiryDays = value);
+                      },
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
+
+                  // Kategorie
+                  DropdownButtonFormField<EventCategory>(
+                    initialValue: _selectedCategory,
                     decoration: const InputDecoration(
-                      labelText: 'Einladungscode gültig für',
-                      prefixIcon: Icon(Icons.timelapse_rounded),
+                      labelText: 'Kategorie',
+                      prefixIcon: Icon(Icons.category),
                     ),
                     isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(value: 3, child: Text('3 Tage')),
-                      DropdownMenuItem(value: 7, child: Text('7 Tage')),
-                      DropdownMenuItem(value: 14, child: Text('14 Tage')),
-                      DropdownMenuItem(value: 30, child: Text('30 Tage')),
-                    ],
+                    items: EventCategory.values
+                        .map(
+                          (category) => DropdownMenuItem(
+                            value: category,
+                            child: Text(_getCategoryLabel(category)),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (value) {
-                      if (value == null) return;
-                      setState(() => _inviteCodeExpiryDays = value);
+                      if (value != null) {
+                        setState(() => _selectedCategory = value);
+                      }
                     },
                   ),
-                ],
+                  const SizedBox(height: 20),
 
-                const SizedBox(height: 16),
-
-                // Kategorie
-                DropdownButtonFormField<EventCategory>(
-                  initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategorie',
-                    prefixIcon: Icon(Icons.category),
-                  ),
-                  isExpanded: true,
-                  items: EventCategory.values
-                      .map(
-                        (category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(_getCategoryLabel(category)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedCategory = value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Altersgruppen
-                Text(
-                  'Zielgruppe (Altersgruppen)',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: AgeGroup.values
-                      .map(
-                        (ageGroup) => FilterChip(
-                          label: Text(_getAgeGroupLabel(ageGroup)),
-                          selected: _selectedAgeGroups.contains(ageGroup),
-                          onSelected: (_) => _toggleAgeGroup(ageGroup),
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 24),
-
-                // Datum & Zeit
-                Text(
-                  'Termin',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ListTile(
-                        key: const ValueKey('event-date-picker'),
-                        leading: const Icon(Icons.calendar_today),
-                        title: Text(
-                          _dateSelection.hasConcreteDate
-                              ? '${_dateSelection.date.day}.${_dateSelection.date.month}.${_dateSelection.date.year}'
-                              : _t('event_scan_choose_date'),
-                        ),
-                        subtitle: _dateSelection.hasScan &&
-                                !_dateSelection.dateConfirmed
-                            ? Text(_t('event_scan_date_required'))
-                            : null,
-                        onTap: _selectDate,
-                      ),
-                    ),
-                    Expanded(
-                      child: ListTile(
-                        key: const ValueKey('event-time-picker'),
-                        leading: const Icon(Icons.schedule),
-                        title: Text(
-                          '${_dateSelection.time.hour.toString().padLeft(2, '0')}:${_dateSelection.time.minute.toString().padLeft(2, '0')}',
-                        ),
-                        subtitle: _dateSelection.hasScan &&
-                                !_dateSelection.timeConfirmed
-                            ? Text(_t('event_scan_time_required'))
-                            : null,
-                        onTap: _selectTime,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Ort
-                if (_dateSelection.hasScan &&
-                    !_dateSelection.canSubmit(DateTime.now())) ...[
+                  // Altersgruppen
                   Text(
-                    _t('event_scan_datetime_required'),
-                    key: const ValueKey('event-scan-date-error'),
-                    style: TextStyle(color: theme.colorScheme.error),
+                    'Zielgruppe (Altersgruppen)',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: AgeGroup.values
+                        .map(
+                          (ageGroup) => FilterChip(
+                            label: Text(_getAgeGroupLabel(ageGroup)),
+                            selected: _selectedAgeGroups.contains(ageGroup),
+                            onSelected: (_) => _toggleAgeGroup(ageGroup),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Datum & Zeit
+                  Text(
+                    'Termin',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final scale =
+                          MediaQuery.textScalerOf(context).scale(14) / 14;
+                      final stacked = constraints.maxWidth < 340 || scale > 1.4;
+                      final width = stacked
+                          ? constraints.maxWidth
+                          : (constraints.maxWidth - 12) / 2;
+                      final height = 76.0 * (scale < 1 ? 1 : scale);
+                      return Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          SizedBox(
+                            width: width,
+                            height: height,
+                            child: _EventDateTimeControl(
+                              key: const ValueKey('event-date-picker'),
+                              icon: Icons.calendar_today_outlined,
+                              label: _t('event_scan_field_date'),
+                              value: _dateSelection.hasConcreteDate
+                                  ? '${_dateSelection.date.day}.${_dateSelection.date.month}.${_dateSelection.date.year}'
+                                  : _t('event_scan_choose_date'),
+                              confirmed: _dateSelection.dateConfirmed,
+                              onPressed: _isScanning || _isSubmitting
+                                  ? null
+                                  : _selectDate,
+                            ),
+                          ),
+                          SizedBox(
+                            width: width,
+                            height: height,
+                            child: _EventDateTimeControl(
+                              key: const ValueKey('event-time-picker'),
+                              icon: Icons.schedule_outlined,
+                              label: _t('event_scan_field_time'),
+                              value: _dateSelection.hasConcreteTime
+                                  ? '${_dateSelection.time.hour.toString().padLeft(2, '0')}:${_dateSelection.time.minute.toString().padLeft(2, '0')}'
+                                  : _t('event_scan_field_time'),
+                              confirmed: _dateSelection.timeConfirmed,
+                              onPressed: _isScanning || _isSubmitting
+                                  ? null
+                                  : _selectTime,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
-                ],
-                TextFormField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Treffpunkt',
-                    prefixIcon: Icon(Icons.location_on),
-                    hintText: 'z.B. Zentralpark, Berlin',
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Bitte einen Ort eingeben';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
 
-                // Max Teilnehmer
-                if (_participationMode != ParticipationMode.interest) TextFormField(
-                  controller: _maxParticipantsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Maximale Teilnehmerzahl',
-                    prefixIcon: Icon(Icons.people),
-                    hintText: '10',
+                  // Ort
+                  if (_showDateError &&
+                      !_dateSelection.canSubmit(DateTime.now())) ...[
+                    Text(
+                      _t('event_scan_datetime_required'),
+                      key: const ValueKey('event-scan-date-error'),
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  TextFormField(
+                    controller: _locationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Treffpunkt',
+                      prefixIcon: Icon(Icons.location_on),
+                      hintText: 'z.B. Zentralpark, Berlin',
+                    ),
+                    validator: (value) {
+                      if (value?.trim().isEmpty ?? true) {
+                        return 'Bitte einen Ort eingeben';
+                      }
+                      return null;
+                    },
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Bitte eine Zahl eingeben';
-                    }
-                    if ((int.tryParse(value!) ?? 0) < 1) {
-                      return 'Bitte nur Zahlen eingeben';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                Text(
-                  'Event-Foto (optional)',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                  // Max Teilnehmer
+                  if (_participationMode != ParticipationMode.interest)
+                    TextFormField(
+                      controller: _maxParticipantsController,
+                      decoration: const InputDecoration(
+                        labelText: 'Maximale Teilnehmerzahl',
+                        prefixIcon: Icon(Icons.people),
+                        hintText: '10',
                       ),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _isSubmitting ? null : _pickPhoto,
-                  icon: const Icon(Icons.photo_library_outlined),
-                  label: Text(
-                    _selectedPhotoFile == null
-                        ? 'Foto auswählen'
-                        : 'Foto ändern',
-                  ),
-                ),
-                if (_selectedPhotoFile != null) ...[
-                  const SizedBox(height: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      _selectedPhotoFile!,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value?.isEmpty ?? true) {
+                          return 'Bitte eine Zahl eingeben';
+                        }
+                        if ((int.tryParse(value!) ?? 0) < 1) {
+                          return 'Bitte nur Zahlen eingeben';
+                        }
+                        return null;
+                      },
+                    ),
+                  const SizedBox(height: 24),
+
+                  Text(
+                    'Event-Foto (optional)',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _uploadedPhotoUrl == null
-                              ? 'Das Foto wird beim Veröffentlichen hochgeladen.'
-                              : 'Foto bereits hochgeladen.',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: _isSubmitting
-                            ? null
-                            : () {
-                                setState(() {
-                                  _selectedPhotoFile = null;
-                                  _uploadedPhotoUrl = null;
-                                });
-                              },
-                        icon: const Icon(Icons.delete_outline_rounded),
-                        label: Text(_t('circle_remove')),
-                      ),
-                    ],
+                  OutlinedButton.icon(
+                    onPressed: _isSubmitting ? null : _pickPhoto,
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: Text(
+                      _selectedPhotoFile == null
+                          ? 'Foto auswählen'
+                          : 'Foto ändern',
+                    ),
                   ),
-                ],
-                const SizedBox(height: 24),
+                  if (_selectedPhotoFile != null) ...[
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        _selectedPhotoFile!,
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _uploadedPhotoUrl == null
+                                ? 'Das Foto wird beim Veröffentlichen hochgeladen.'
+                                : 'Foto bereits hochgeladen.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _isSubmitting
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _selectedPhotoFile = null;
+                                    _uploadedPhotoUrl = null;
+                                  });
+                                },
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          label: Text(_t('circle_remove')),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 24),
 
-                if (_priceHint != null && _priceHint!.trim().isNotEmpty) ...[
+                  TextFormField(
+                    key: const ValueKey('event-price-input'),
+                    controller: _priceController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: _t('event_scan_price_hint'),
+                      prefixIcon: const Icon(Icons.local_offer_outlined),
+                      suffixText: 'EUR',
+                    ),
+                    onChanged: (_) => setState(() => _priceConfirmed = false),
+                  ),
+                  CheckboxListTile(
+                    key: const ValueKey('event-price-confirm'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      _priceController.text.isEmpty
+                          ? _t('confirm')
+                          : '${_t('confirm')}: ${_priceController.text} EUR',
+                    ),
+                    value: _priceConfirmed,
+                    onChanged:
+                        ScannedEventDraft.parsePriceAmount(
+                              _priceController.text,
+                            ) ==
+                            null
+                        ? null
+                        : (value) =>
+                              setState(() => _priceConfirmed = value ?? false),
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (_priceHint != null && _priceHint!.trim().isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFED7AA)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.local_offer_rounded,
+                            color: Color(0xFFB45309),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              '${_t('event_scan_price_hint')} $_priceHint',
+                              style: const TextStyle(color: Color(0xFFB45309)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Kostenhinweis
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF7ED),
+                      color: const Color(0xFFECFDF5),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFED7AA)),
+                      border: Border.all(color: const Color(0xFFA7F3D0)),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.local_offer_rounded,
-                            color: Color(0xFFB45309), size: 20),
-                        const SizedBox(width: 12),
+                        Icon(Icons.verified_rounded, color: Color(0xFF047857)),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '${_t('event_scan_price_hint')} $_priceHint',
-                            style: const TextStyle(color: Color(0xFFB45309)),
+                            'Event-Veröffentlichung ist in deinem App-Abo enthalten.',
+                            style: TextStyle(color: Color(0xFF047857)),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                ],
+                  const SizedBox(height: 24),
 
-                // Kostenhinweis
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.verified_rounded, color: Color(0xFF047857)),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Event-Veröffentlichung ist in deinem App-Abo enthalten.',
-                          style: TextStyle(color: Color(0xFF047857)),
+                  // Submit Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                      onPressed: _isSubmitting || _isScanning
+                          ? null
+                          : _submitForm,
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.check),
+                      label: Text(
+                        AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'publish_event',
+                        ),
                       ),
                     ),
-                    onPressed:
-                        _isSubmitting || _isScanning ? null : _submitForm,
-                    icon: _isSubmitting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.check),
-                    label: Text(AppStringsManager.getString(
-                        languageService.currentLanguage, 'publish_event')),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1245,8 +1442,10 @@ class _MagicFillCard extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.auto_awesome_rounded,
-                    color: Color(0xFF00897B)),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Color(0xFF00897B),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1347,8 +1546,9 @@ class _ScanOptionTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(

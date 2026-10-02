@@ -7,8 +7,8 @@ import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/community_event.dart';
-import 'package:parentpeak/l10n/app_localizations_all.dart';
-import 'package:parentpeak/main.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
+import 'package:parentpeak/l10n/supported_languages.dart';
 
 /// Event erstellen — moderner 3-Schritt Wizard.
 ///
@@ -28,7 +28,7 @@ class _CreateCommunityEventScreenState
   final _pageCtrl = PageController();
 
   String _t(String key) =>
-      AppStringsManager.getString(languageService.currentLanguage, key);
+      context.tr(key);
   int _step = 0;
   bool _saving = false;
   bool _scanning = false;
@@ -207,7 +207,7 @@ class _CreateCommunityEventScreenState
       if (mounted) {
         setState(() => _scanning = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Flyer konnte nicht erkannt werden: $e'),
+          content: Text(_t('event_scan_failed')),
         ));
       }
     }
@@ -284,11 +284,11 @@ class _CreateCommunityEventScreenState
 
   Future<void> _submit() async {
     if (_titleCtrl.text.trim().isEmpty) {
-      _showError('Bitte gib einen Titel ein (Schritt 2)');
+      _showError(_t('event_create_title_required'));
       return;
     }
     if (_locationCtrl.text.trim().isEmpty) {
-      _showError('Bitte gib einen Ort ein (Schritt 2)');
+      _showError(_t('event_create_location_required'));
       return;
     }
 
@@ -307,15 +307,17 @@ class _CreateCommunityEventScreenState
           ]),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             Text(
-              '"${duplicate.title}" wurde bereits am '
-              '${duplicate.createdAt.day}.${duplicate.createdAt.month}.${duplicate.createdAt.year} '
-              'von ${duplicate.organizer} geteilt.',
+              context.tr('event_create_duplicate_info', values: {
+                'title': duplicate.title,
+                'date': MaterialLocalizations.of(context).formatShortDate(duplicate.createdAt.toLocal()),
+                'organizer': duplicate.organizer,
+              }),
               style: const TextStyle(height: 1.5),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Möchtest du dein Event trotzdem hinzufügen?',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            Text(
+              _t('event_create_duplicate_question'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ]),
           actions: [
@@ -365,7 +367,7 @@ class _CreateCommunityEventScreenState
       isFree: _isFree,
       url: _urlCtrl.text.trim().isEmpty ? null : _urlCtrl.text.trim(),
       organizer: _organizerCtrl.text.trim().isEmpty
-          ? 'Eltern-Tipp'
+          ? _t('event_source_parent_tip')
           : _organizerCtrl.text.trim(),
       creatorType: _creatorType,
       contactName: _contactNameCtrl.text.trim().isEmpty
@@ -391,8 +393,7 @@ class _CreateCommunityEventScreenState
         ));
         Navigator.pop(context, true);
       } else {
-        _showError(CommunityEventService.instance.error ??
-            'Event konnte nicht erstellt werden.');
+        _showError(_t('event_action_failed'));
       }
     }
   }
@@ -412,14 +413,13 @@ class _CreateCommunityEventScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'create_event_title')),
+        title: Text(_t('create_event_title')),
         elevation: 0,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Chip(
-              label: Text('${service.remainingToday}/3 heute',
+              label: Text('${service.remainingToday}/3 ${_t('date_today')}',
                   style: const TextStyle(fontSize: 11)),
               avatar: const Icon(Icons.event_available_rounded, size: 16),
             ),
@@ -476,7 +476,7 @@ class _CreateCommunityEventScreenState
           ),
         ),
         Text(
-          ['Wer bist du?', 'Dein Event', 'Details & Kontakt'][_step],
+          [_t('i_am'), _t('create_event_title'), _t('contact_optional')][_step],
           style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6)),
         ),
@@ -505,8 +505,7 @@ class _CreateCommunityEventScreenState
               FilledButton.icon(
                 onPressed: _next,
                 icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: Text(AppStringsManager.getString(
-                    languageService.currentLanguage, 'next_btn_wizard')),
+                label: Text(_t('event_next')),
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
@@ -522,7 +521,7 @@ class _CreateCommunityEventScreenState
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.publish_rounded, size: 18),
-                label: Text(_saving ? 'Wird gesendet...' : 'Veröffentlichen'),
+                label: Text(_t(_saving ? 'loading' : 'publish_event')),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),
                   shape: RoundedRectangleBorder(
@@ -554,7 +553,7 @@ class _CreateCommunityEventScreenState
             const SizedBox(width: 10),
             Expanded(
                 child: Text(
-              'Events eintragen ist kostenlos. Hilf anderen Eltern tolle Aktivitaeten zu finden!',
+              _t('event_create_free_info'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: const Color(0xFF6B21A8), height: 1.3),
             )),
@@ -562,17 +561,19 @@ class _CreateCommunityEventScreenState
         ),
         const SizedBox(height: 20),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'i_am'),
+            _t('i_am'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
-        ...CreatorType.values.map((t) => Padding(
+        RadioGroup<CreatorType>(
+          groupValue: _creatorType,
+          onChanged: (value) {
+            if (value != null) setState(() => _creatorType = value);
+          },
+          child: Column(children: CreatorType.values.map((t) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: RadioListTile<CreatorType>(
                 value: t,
-                groupValue: _creatorType,
-                onChanged: (v) => setState(() => _creatorType = v!),
                 title: Text(_creatorTypeLabel(t),
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(fontWeight: FontWeight.w600)),
@@ -587,15 +588,16 @@ class _CreateCommunityEventScreenState
                 activeColor: const Color(0xFF8B5CF6),
                 dense: true,
               ),
-            )),
+            )).toList()),
+          ),
         const SizedBox(height: 16),
         TextField(
           controller: _organizerCtrl,
           decoration: InputDecoration(
-            labelText: 'Name / Organisation',
+            labelText: _t('event_create_organizer'),
             hintText: _creatorType == CreatorType.eltern
-                ? 'z.B. Sarah M.'
-                : 'z.B. Kita Sonnenschein',
+              ? _t('event_create_parent_example')
+              : _t('event_create_organization_example'),
             prefixIcon: const Icon(Icons.person_rounded, size: 20),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -605,29 +607,30 @@ class _CreateCommunityEventScreenState
   }
 
   String _creatorTypeLabel(CreatorType t) {
-    switch (t) {
-      case CreatorType.eltern:
-        return '\u{1F46A} Eltern / Privatperson';
-      case CreatorType.verein:
-        return '\u{1F91D} Verein / Initiative';
-      case CreatorType.institution:
-        return '\u{1F3EB} Kita / Familienzentrum / Schule';
-      case CreatorType.unternehmen:
-        return '\u{1F3E2} Unternehmen / Anbieter';
-    }
+    return _t('event_creator_${t.name}');
   }
 
   String _creatorTypeHint(CreatorType t) {
-    switch (t) {
-      case CreatorType.eltern:
-        return 'Spielplatz-Tipp, Eltern-Treff, Geheimtipp';
-      case CreatorType.verein:
-        return 'Vereins-Events, Elterngruppen, Sport';
-      case CreatorType.institution:
-        return 'Offizielle Angebote, Kurse, Feste';
-      case CreatorType.unternehmen:
-        return 'Workshops, Kurse, Veranstaltungen';
-    }
+    return _t('event_creator_hint_${t.name}');
+  }
+
+  String _categoryLabel(EventCategory category) => _t(switch (category) {
+    EventCategory.sport => 'event_category_sports',
+    EventCategory.sonstiges => 'event_category_other',
+    _ => 'event_community_category_${category.name}',
+  });
+
+  String _ageLabel(EventAgeGroup age) {
+    const ranges = {
+      EventAgeGroup.baby: '0-1',
+      EventAgeGroup.kleinkind: '1-3',
+      EventAgeGroup.kita: '3-6',
+      EventAgeGroup.grundschule: '6-10',
+      EventAgeGroup.teenie: '10-16',
+    };
+    return age == EventAgeGroup.alle
+        ? _t('event_all_ages')
+        : context.tr('age_years', values: {'count': ranges[age]});
   }
 
   // ─── SCHRITT 2: Dein Event ────────────────────────────────────────────────
@@ -648,7 +651,7 @@ class _CreateCommunityEventScreenState
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.document_scanner_rounded, size: 18),
             label: Text(
-                _scanning ? 'KI liest Flyer...' : '📷 Flyer/Poster scannen'),
+                _t(_scanning ? 'loading' : 'community_event_scan_flyer')),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF8B5CF6),
               side: const BorderSide(color: Color(0xFF8B5CF6)),
@@ -668,8 +671,8 @@ class _CreateCommunityEventScreenState
         TextField(
           controller: _titleCtrl,
           decoration: InputDecoration(
-            labelText: 'Titel *',
-            hintText: 'z.B. Familien-Picknick im Park',
+            labelText: '${_t('event_owner_title')} *',
+            hintText: _t('event_create_title_example'),
             prefixIcon: const Icon(Icons.title_rounded, size: 20),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -680,15 +683,14 @@ class _CreateCommunityEventScreenState
           maxLines: 3,
           maxLength: 500,
           decoration: InputDecoration(
-            labelText: 'Beschreibung',
-            hintText: 'Was erwartet die Familien?',
+            labelText: _t('event_detail_description'),
+            hintText: _t('event_create_description_hint'),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
         const SizedBox(height: 12),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'category_required'),
+            _t('category_required'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -698,7 +700,7 @@ class _CreateCommunityEventScreenState
             children: EventCategory.values
                 .map((c) => ChoiceChip(
                       label:
-                          Text(c.label, style: const TextStyle(fontSize: 11)),
+                          Text(_categoryLabel(c), style: const TextStyle(fontSize: 11)),
                       selected: _category == c,
                       onSelected: (_) => setState(() => _category = c),
                       shape: RoundedRectangleBorder(
@@ -707,8 +709,7 @@ class _CreateCommunityEventScreenState
                 .toList()),
         const SizedBox(height: 16),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'age_group_required'),
+            _t('age_group_required'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -718,7 +719,7 @@ class _CreateCommunityEventScreenState
             children: EventAgeGroup.values
                 .map((a) => FilterChip(
                       label:
-                          Text(a.label, style: const TextStyle(fontSize: 11)),
+                          Text(_ageLabel(a), style: const TextStyle(fontSize: 11)),
                       selected: _ageGroups.contains(a),
                       onSelected: (s) => setState(
                           () => s ? _ageGroups.add(a) : _ageGroups.remove(a)),
@@ -742,13 +743,13 @@ class _CreateCommunityEventScreenState
             },
             child: InputDecorator(
               decoration: InputDecoration(
-                labelText: 'Datum *',
+                labelText: '${_t('event_scan_field_date')} *',
                 prefixIcon: const Icon(Icons.calendar_today_rounded, size: 18),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
               child: Text(
-                  '${_eventDate.day}.${_eventDate.month}.${_eventDate.year}',
+                  MaterialLocalizations.of(context).formatShortDate(_eventDate),
                   style: theme.textTheme.bodyMedium),
             ),
           )),
@@ -763,13 +764,13 @@ class _CreateCommunityEventScreenState
                 },
                 child: InputDecorator(
                   decoration: InputDecoration(
-                    labelText: 'Uhrzeit',
+                    labelText: _t('event_scan_field_time'),
                     prefixIcon: const Icon(Icons.access_time_rounded, size: 18),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text(
-                      '${_eventTime.hour.toString().padLeft(2, '0')}:${_eventTime.minute.toString().padLeft(2, '0')}',
+                      MaterialLocalizations.of(context).formatTimeOfDay(_eventTime),
                       style: theme.textTheme.bodyMedium),
                 ),
               )),
@@ -780,8 +781,7 @@ class _CreateCommunityEventScreenState
           value: _isRecurring,
           onChanged: (v) => setState(() => _isRecurring = v),
           title: Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'recurring_event'),
+                _t('recurring_event'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           dense: true,
@@ -791,7 +791,7 @@ class _CreateCommunityEventScreenState
           TextField(
             controller: _recurringCtrl,
             decoration: InputDecoration(
-              hintText: 'z.B. Jeden Samstag 10-12 Uhr',
+              hintText: _t('event_create_recurring_example'),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               isDense: true,
@@ -800,7 +800,7 @@ class _CreateCommunityEventScreenState
         const SizedBox(height: 12),
         // Ort
         LocationPickerWidget(
-          hint: 'Ort / Adresse wählen *',
+          hint: '${_t('event_owner_location')} *',
           onLocationPicked: (loc) {
             _locationCtrl.text = loc.displayName;
             _city = loc.city;
@@ -813,8 +813,7 @@ class _CreateCommunityEventScreenState
           value: _isPrivateAddress,
           onChanged: (v) => setState(() => _isPrivateAddress = v),
           title: Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'private_address'),
+                _t('private_address'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(fontWeight: FontWeight.w600)),
           dense: true,
@@ -826,8 +825,7 @@ class _CreateCommunityEventScreenState
           value: _isFree,
           onChanged: (v) => setState(() => _isFree = v),
           title: Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'free_event'),
+                _t('events_free'),
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           secondary: const Text('\u{1F389}', style: TextStyle(fontSize: 20)),
@@ -838,7 +836,7 @@ class _CreateCommunityEventScreenState
           TextField(
             controller: _priceCtrl,
             decoration: InputDecoration(
-              hintText: 'z.B. 5 EUR pro Kind',
+              hintText: _t('event_create_price_example'),
               prefixIcon: const Icon(Icons.euro_rounded, size: 18),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -857,8 +855,7 @@ class _CreateCommunityEventScreenState
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 12),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'indoor_outdoor'),
+            _t('indoor_outdoor'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -868,7 +865,7 @@ class _CreateCommunityEventScreenState
             children: EventVenue.values
                 .map((v) => ChoiceChip(
                       label:
-                          Text(v.label, style: const TextStyle(fontSize: 12)),
+                          Text(_t('event_venue_${v.name}'), style: const TextStyle(fontSize: 12)),
                       selected: _venue == v,
                       onSelected: (_) => setState(() => _venue = v),
                       shape: RoundedRectangleBorder(
@@ -880,8 +877,8 @@ class _CreateCommunityEventScreenState
           TextField(
             controller: _rainPlanCtrl,
             decoration: InputDecoration(
-              labelText: 'Bei Regen? (optional)',
-              hintText: 'z.B. Faellt aus / Alternative Indoor',
+              labelText: _t('event_create_rain'),
+              hintText: _t('event_create_rain_example'),
               prefixIcon: const Icon(Icons.umbrella_rounded, size: 18),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -890,8 +887,7 @@ class _CreateCommunityEventScreenState
         ],
         const SizedBox(height: 20),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'accessibility_label'),
+            _t('accessibility_label'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
@@ -901,7 +897,7 @@ class _CreateCommunityEventScreenState
             children: AccessibilityTag.values
                 .map((a) => FilterChip(
                       label:
-                          Text(a.label, style: const TextStyle(fontSize: 11)),
+                          Text(_t('event_access_${a.name}'), style: const TextStyle(fontSize: 11)),
                       selected: _accessibility.contains(a),
                       onSelected: (s) => setState(() =>
                           s ? _accessibility.add(a) : _accessibility.remove(a)),
@@ -911,49 +907,38 @@ class _CreateCommunityEventScreenState
                 .toList()),
         const SizedBox(height: 20),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'event_language'),
+            _t('event_language'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: {
-              'de': '\u{1F1E9}\u{1F1EA} Deutsch',
-              'en': '\u{1F1EC}\u{1F1E7} English',
-              'tr': '\u{1F1F9}\u{1F1F7} Tuerkce',
-              'ar': '\u{1F1F8}\u{1F1E6} Arabisch',
-              'ku': 'Kurdi',
-              'ru': '\u{1F1F7}\u{1F1FA} Russisch',
-            }
-                .entries
+            children: AppLanguages.supported
                 .map((e) => ChoiceChip(
                       label:
-                          Text(e.value, style: const TextStyle(fontSize: 11)),
-                      selected: _eventLanguage == e.key,
-                      onSelected: (_) => setState(() => _eventLanguage = e.key),
+                          Text(e.nativeName, style: const TextStyle(fontSize: 11)),
+                      selected: _eventLanguage == e.code,
+                      onSelected: (_) => setState(() => _eventLanguage = e.code),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                     ))
                 .toList()),
         const SizedBox(height: 20),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'contact_optional'),
+            _t('contact_optional'),
             style: theme.textTheme.labelLarge
                 ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'contact_hint'),
+            _t('contact_hint'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 10),
         TextField(
           controller: _contactNameCtrl,
           decoration: InputDecoration(
-            labelText: 'Ansprechpartner',
+            labelText: _t('event_create_contact_name'),
             prefixIcon: const Icon(Icons.person_outline_rounded, size: 18),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -963,7 +948,7 @@ class _CreateCommunityEventScreenState
           controller: _contactPhoneCtrl,
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
-            labelText: 'Telefon',
+            labelText: _t('event_create_phone'),
             prefixIcon: const Icon(Icons.phone_rounded, size: 18),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -973,7 +958,7 @@ class _CreateCommunityEventScreenState
           controller: _urlCtrl,
           keyboardType: TextInputType.url,
           decoration: InputDecoration(
-            labelText: 'Website / Link (optional)',
+            labelText: _t('event_create_website'),
             hintText: 'https://...',
             prefixIcon: const Icon(Icons.link_rounded, size: 18),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
