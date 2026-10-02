@@ -4,8 +4,43 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
+
+String ritualStepCopy(String language, String text) {
+  if (language != 'ku') return text;
+  const steps = <String, String>{
+    'Guten Morgen': 'Rojbaş', 'Langsam ankommen': 'Bi hêdî dest pê bike',
+    'Anziehen': 'Cil li xwe bike', 'Etwas Bequemes finden': 'Cilên rehet bibîne',
+    'Frühstück': 'Taştê', 'Gemeinsam in den Tag starten': 'Bi hev re rojê dest pê bikin',
+    'Bereit für den Tag': 'Ji bo rojê amade ye', 'Was brauchen wir heute?': 'Îro em ji çi hewce ne?',
+    'Ankommen': 'Bi rehetî bigihîje', 'Schuhe aus, erst einmal ankommen': 'Pêlavên xwe derxe û hinekî rihet be',
+    'Kleine Pause': 'Navbereke kurt', 'Etwas trinken und durchatmen': 'Tiştekî vexwe û nefesê bistîne',
+    'Freie Zeit': 'Dema azad', 'Was tut euch jetzt gut?': 'Niha çi ji we re baş e?',
+    'Waschen': 'Şûştin', 'Gesicht und Hände werden ruhig': 'Rû û destan bi aramî bişo',
+    'Frisch und gemütlich werden': 'Paşî xwe nû û rehet hîs bike',
+    'Zähne putzen': 'Diranan paqij bike', 'Kleine Kreise, ganz in Ruhe': 'Bi tevgereke biçûk û bi aramî',
+    'Der Mund bekommt seine Nachtpflege': 'Dev ji bo şevê paqij dibe',
+    'In Ruhe fertig werden': 'Bi aramî amade bibe',
+    'Kuscheln': 'Hemêzkirin', 'Noch ein lieber Moment': 'Kêliyek din a bi hez',
+    'Für morgen vorbereiten': 'Ji bo sibê amade bike',
+    'Lieblingskleidung bereitlegen': 'Cilên xwe yên bijare amade bike',
+    'Geschichte aussuchen': 'Çîrokek hilbijêre', 'Eine ruhige Geschichte wartet': 'Çîrokeke aram li bendê ye',
+    'Morgen vorbereiten': 'Sibê amade bike', 'Tasche und Kleidung bereitlegen': 'Çente û cilan amade bike',
+    'Tasche, Kleidung und Wecker': 'Çente, cil û saetê amade bike',
+    'Kurz Ordnung schaffen': 'Hinekî rêkûpêk bike', 'Ein kleiner Handgriff für morgen': 'Gaveke biçûk ji bo sibê',
+    'Tagesmoment': 'Kêliya rojê', 'Was war heute gut?': 'Îro çi baş bû?',
+    'Tag abschließen': 'Rojê bi dawî bike', 'Was darf für heute losgelassen werden?': 'Îro tu dikarî çi ji xwe dûr bikî?',
+    'Ein guter Moment': 'Kêliyek baş', 'Ein Satz für dich selbst': 'Hevokek ji bo xwe',
+    'Aufwachen': 'Şiyar bibe', 'Langsam in den Tag finden': 'Bi hêdî rojê dest pê bike',
+    'Sanfter Morgen': 'Sibeke aram', 'Ankommen am Nachmittag': 'Bi aramî piştî nîvro bigihîje',
+    'Bequeme Kleidung auswählen': 'Cilên rehet hilbijêre', 'Gemeinsam starten': 'Bi hev re dest pê bikin',
+    'Erst einmal durchatmen': 'Pêşî nefesê bistîne', 'Pause': 'Navber',
+    'Trinken, snacken, entspannen': 'Vexwe, tiştekî bixwe û rihet be',
+  };
+  return steps[text] ?? text;
+}
 
 class RitualRuheScreen extends StatefulWidget {
   const RitualRuheScreen({super.key});
@@ -15,6 +50,9 @@ class RitualRuheScreen extends StatefulWidget {
 }
 
 class _RitualRuheScreenState extends State<RitualRuheScreen> {
+  String get _localeCode => Localizations.localeOf(context).languageCode;
+  String _t(String key) => AppStringsManager.getString(
+      _localeCode, key);
   static const _quietModeKey = 'ritual_ruhe.quiet_mode';
   static const _plansKey = 'ritual_ruhe.plans.v2';
   final _gratitudeController = TextEditingController();
@@ -39,9 +77,9 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
 
   bool get _isNightSection => _selectedSection == 'night';
   String get _sectionTitle => switch (_selectedSection) {
-        'afternoon' => 'Nachmittag',
-        'night' => 'Gute Nacht',
-        _ => 'Morgen',
+      'afternoon' => _t('ritual_afternoon'),
+      'night' => _t('ritual_evening'),
+      _ => _t('ritual_section_morning'),
       };
 
   KindDossier? get _child => _children.isEmpty
@@ -51,14 +89,15 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
   int get _ageMonths => _child?.ageMonths ?? 60;
   int get _ageYears => (_ageMonths / 12).floor();
   String get _ageVariantLabel {
-    if (_ageYears < 5) return '2–5 Jahre: Bild- und Bewegungskarten';
-    if (_ageYears < 8) return '5–7 Jahre: Bild + kurzer Satz';
-    if (_ageYears < 11) return '6–10 Jahre: Tagesplaner';
-    return '10–14 Jahre: Selbstplanung & Reflexion';
+    if (_ageYears < 5) return _t('ritual_age_young');
+    if (_ageYears < 8) return _t('ritual_age_growing');
+    if (_ageYears < 11) return _t('ritual_age_school');
+    return _t('ritual_age_older');
   }
 
-  String get _suggestionLabel =>
-      'Vorschlag für $_ageYears Jahre, $_sectionTitle';
+    String get _suggestionLabel => _t('ritual_suggestion')
+      .replaceAll('{age}', '$_ageYears')
+      .replaceAll('{section}', _sectionTitle);
 
   _RitualPlan? get _customPlan =>
       _plans[_child?.childName ?? '']?[_selectedSection];
@@ -107,8 +146,9 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
     final previousAge = prefs.getInt(ageKey);
     final currentAge = _child?.ageYears ?? 0;
     if (previousAge != null && previousAge != currentAge && mounted) {
-      setState(() => _ageNotice =
-          '${_child?.childName ?? 'Euer Kind'} ist jetzt $currentAge — mögt ihr die Rituale gemeinsam anpassen?');
+      setState(() => _ageNotice = _t('ritual_age_notice')
+          .replaceAll('{name}', _child?.childName ?? _t('ritual_child'))
+          .replaceAll('{age}', '$currentAge'));
     }
     await prefs.setInt(ageKey, currentAge);
     await _loadChildState();
@@ -279,7 +319,7 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
         'Erstelle eine kurze Ritualvorlage für ein Kind im Alter von $_ageYears Jahren. Tageszeit: $_sectionTitle. Liefere ausschließlich JSON mit name, time, weekdays und steps. steps ist eine Liste aus title, subtitle, icon und timerSeconds. Maximal 6 Schritte. Keine Namen und keine persönlichen Daten.',
         systemInstruction:
             'Du bist eine pädagogische, inklusive Familienbegleitung. Erstelle sanfte, realistische und druckfreie Rituale. Nutze nur JSON, keine Markdown-Zeichen. Keine Punkte, Streaks, Strafen oder Leistungsdruck.',
-        appLanguage: 'de',
+        appLanguage: _localeCode,
       );
       plan = _RitualPlan.fromJson(jsonDecode(response));
     } catch (_) {
@@ -291,8 +331,8 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
   }
 
   _RitualPlan _fallbackPlan(String section, int ageYears) => _RitualPlan(
-        name:
-            section == 'morning' ? 'Sanfter Morgen' : 'Ankommen am Nachmittag',
+        name: ritualStepCopy(_localeCode, section == 'morning'
+          ? 'Sanfter Morgen' : 'Ankommen am Nachmittag'),
         time: section == 'morning' ? '07:30' : '15:30',
         weekdays: [1, 2, 3, 4, 5],
         steps: section == 'morning'
@@ -370,8 +410,8 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
       final story = await GeminiAIService().generateText(
         'Schreibe eine kurze Gute-Nacht-Geschichte für ein Kind, etwa $_ageYears Jahre alt. Thema: Mut, Geborgenheit und ein kleiner freundlicher Moment. 350 bis 500 Wörter. Verwende keine Namen und keine persönlichen Daten.',
         systemInstruction:
-            'Du bist eine ruhige, inklusive Kinderbuchautorin. Schreibe warm, beruhigend und altersgerecht auf Deutsch. Keine Angst, Gewalt, Diagnosen oder Leistungsdruck. Gib nur die Geschichte zurück, ohne Überschrift oder Erklärung.',
-        appLanguage: 'de',
+          'Du bist eine ruhige, inklusive Kinderbuchautorin. Schreibe warm, beruhigend und altersgerecht in der angefragten App-Sprache. Keine Angst, Gewalt, Diagnosen oder Leistungsdruck. Gib nur die Geschichte zurück, ohne Überschrift oder Erklärung.',
+        appLanguage: _localeCode,
       );
       if (mounted) setState(() => _story = story.trim());
     } catch (_) {
@@ -384,8 +424,8 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
     }
   }
 
-  String _fallbackStory(String name) =>
-      'Als ${name.isEmpty ? 'ein Kind' : name} am Abend aus dem Fenster schaute, sah es einen kleinen Stern, der besonders freundlich funkelte. Der Stern erinnerte ${name.isEmpty ? 'das Kind' : name} daran, dass jeder Tag kleine gute Momente trägt: ein Lächeln, eine warme Hand und ein Zuhause, in dem man einfach sein darf.\n\nDer Wind flüsterte: „Für heute ist genug geschafft.“ ${name.isEmpty ? 'Das Kind' : name} kuschelte sich ein. Der Stern blieb noch ein wenig am Fenster und passte auf. Dann wurde alles still und weich, bis der neue Morgen kam.';
+    String _fallbackStory(String name) => _t('ritual_fallback_story')
+      .replaceAll('{name}', name.isEmpty ? _t('ritual_child') : name);
 
   @override
   Widget build(BuildContext context) {
@@ -394,11 +434,11 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F3EE),
       appBar: AppBar(
-        title: Text(_isEvening ? 'Gute Nacht' : 'Guten Morgen'),
+        title: Text(_isEvening ? _t('ritual_evening') : _t('ritual_morning')),
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            tooltip: 'Ruhemodus',
+            tooltip: _t('ritual_quiet_mode'),
             onPressed: () => _toggleQuietMode(!_quietMode),
             icon: Icon(_quietMode
                 ? Icons.notifications_off_rounded
@@ -433,19 +473,19 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
   Widget _buildSectionPicker(ThemeData theme) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: SegmentedButton<String>(
-          segments: const [
+            segments: [
             ButtonSegment(
                 value: 'morning',
-                label: Text('Morgen'),
-                icon: Icon(Icons.wb_sunny_rounded)),
+              label: Text(_t('ritual_section_morning')),
+              icon: const Icon(Icons.wb_sunny_rounded)),
             ButtonSegment(
                 value: 'afternoon',
-                label: Text('Nachmittag'),
-                icon: Icon(Icons.wb_twilight_rounded)),
+              label: Text(_t('ritual_afternoon')),
+              icon: const Icon(Icons.wb_twilight_rounded)),
             ButtonSegment(
                 value: 'night',
-                label: Text('Abend'),
-                icon: Icon(Icons.nightlight_round)),
+              label: Text(_t('ritual_section_evening')),
+              icon: const Icon(Icons.nightlight_round)),
           ],
           selected: {_selectedSection},
           onSelectionChanged: (value) => _selectSection(value.first),
@@ -486,16 +526,18 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
           const SizedBox(height: 18),
           Text(
             _isNightSection
-                ? 'Zeit zum Runterkommen'
-                : '$_sectionTitle mit ${child.childName}',
+                ? _t('ritual_welcome_night')
+                : _t('ritual_welcome_child')
+                  .replaceAll('{section}', _sectionTitle)
+                  .replaceAll('{name}', child.childName),
             style: const TextStyle(
                 color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 7),
           Text(
             _isNightSection
-                ? 'Ein kleiner, ruhiger Schritt nach dem anderen.'
-                : 'Was würde euch heute gut tun?',
+                ? _t('ritual_welcome_relaxed')
+                : _t('ritual_welcome_question'),
             style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.82), height: 1.4),
           ),
@@ -515,7 +557,7 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
               Expanded(
                   child: Text(_ageNotice!, style: theme.textTheme.bodySmall)),
               IconButton(
-                tooltip: 'Schließen',
+                tooltip: _t('ritual_close'),
                 onPressed: () => setState(() => _ageNotice = null),
                 icon: const Icon(Icons.close_rounded, size: 18),
               ),
@@ -532,11 +574,12 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
           border: Border.all(color: const Color(0xFFE5DED7)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_isNightSection ? 'Euer Abendmoment' : 'Euer $_sectionTitle',
+            Text(_isNightSection ? _t('ritual_night_title')
+              : _t('ritual_your_section').replaceAll('{section}', _sectionTitle),
               style: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 4),
-          Text('Nichts muss perfekt sein. Nehmt, was heute passt.',
+          Text(_t('ritual_card_subtitle'),
               style: theme.textTheme.bodySmall),
           const SizedBox(height: 6),
           Text(
@@ -559,7 +602,7 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
                                   _fallbackPlan(_selectedSection, _ageYears),
                             ),
                     icon: const Icon(Icons.edit_rounded),
-                    label: const Text('Bearbeiten'),
+                    label: Text(_t('ritual_edit')),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -587,12 +630,12 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
                     backgroundColor: const Color(0xFFEAF3EF),
                     child: Icon(step.icon, color: const Color(0xFF287F76)),
                   ),
-                  title: Text(step.title,
+                  title: Text(ritualStepCopy(_localeCode, step.title),
                       style: const TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(step.subtitle),
+                      Text(ritualStepCopy(_localeCode, step.subtitle)),
                       if (step.timerSeconds > 0)
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
@@ -618,7 +661,7 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        tooltip: 'Ruhiger Timer starten',
+                        tooltip: _t('ritual_timer_start'),
                         onPressed: () {
                           if (step.timerSeconds > 0) {
                             setState(
@@ -630,24 +673,24 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
                       ),
                       TextButton(
                         onPressed: () => _toggleStep(step.id),
-                        child: const Text('Geschafft'),
+                        child: Text(_t('ritual_done')),
                       ),
                     ],
                   ),
                 ),
               ),
           if (_steps.every((step) => _completed.contains(step.id)))
-            const Padding(
-              padding: EdgeInsets.fromLTRB(12, 14, 12, 18),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 18),
               child: Text(
-                  'Für heute ist genug geschafft. Jetzt darf Ruhe kommen.',
-                  style: TextStyle(
+                  _t('ritual_all_done'),
+                  style: const TextStyle(
                       fontWeight: FontWeight.w700, color: Color(0xFF287F76))),
             ),
           if (_secondsRemaining > 0)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-              child: Text('Ruhiger Timer  $_timerLabel',
+              child: Text('${_t('ritual_timer')}  $_timerLabel',
                   style: const TextStyle(
                       color: Color(0xFF287F76), fontWeight: FontWeight.w800)),
             ),
@@ -661,15 +704,15 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Row(children: [
-            Icon(Icons.auto_stories_rounded, color: Color(0xFF6F5A9C)),
-            SizedBox(width: 8),
-            Text('Eine Geschichte für heute',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+          Row(children: [
+            const Icon(Icons.auto_stories_rounded, color: Color(0xFF6F5A9C)),
+            const SizedBox(width: 8),
+            Text(_t('ritual_story_title'),
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
           ]),
           const SizedBox(height: 10),
           if (_story == null)
-            Text('Eine ruhige Geschichte, passend für ${child.childName}.',
+            Text(_t('ritual_story_hint').replaceAll('{name}', child.childName),
                 style: theme.textTheme.bodyMedium)
           else
             Text(_story!,
@@ -683,8 +726,8 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.auto_awesome_rounded),
-            label: Text(
-                _story == null ? 'Geschichte erzählen' : 'Neue Geschichte'),
+            label: Text(_story == null ? _t('ritual_story_generate')
+              : _t('ritual_story_new')),
           ),
         ]),
       );
@@ -696,20 +739,20 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Ein guter Moment',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            Text(_t('ritual_gratitude_title'),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
           const SizedBox(height: 6),
-          const Text('Heute war schön, dass …'),
+          Text(_t('ritual_gratitude_hint')),
           const SizedBox(height: 10),
           TextField(
             controller: _gratitudeController,
             maxLines: 2,
             onChanged: (_) => _saveState(),
-            decoration: const InputDecoration(
-              hintText: 'Ein kleiner Satz genügt',
+            decoration: InputDecoration(
+              hintText: _t('ritual_gratitude_placeholder'),
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderSide: BorderSide.none),
+              border: const OutlineInputBorder(borderSide: BorderSide.none),
             ),
           ),
         ]),
@@ -804,6 +847,8 @@ class _RitualPlanEditor extends StatefulWidget {
 }
 
 class _RitualPlanEditorState extends State<_RitualPlanEditor> {
+  String _t(String key) => AppStringsManager.getString(
+      Localizations.localeOf(context).languageCode, key);
   late final TextEditingController _nameController;
   late final TextEditingController _timeController;
   late List<_RitualStep> _steps;
@@ -832,32 +877,32 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
     final added = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Schritt hinzufügen'),
+        title: Text(_t('ritual_add_step')),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: 'Titel')),
+              decoration: InputDecoration(labelText: _t('ritual_step_title'))),
           TextField(
               controller: subtitleController,
-              decoration: const InputDecoration(labelText: 'Kurzer Satz')),
+              decoration: InputDecoration(labelText: _t('ritual_step_subtitle'))),
           const SizedBox(height: 8),
           TextField(
             controller: timerController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Timer in Sekunden',
-              hintText: '0 = ohne Timer',
+            decoration: InputDecoration(
+              labelText: _t('ritual_timer_seconds'),
+              hintText: _t('ritual_timer_hint'),
             ),
           ),
         ]),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Abbrechen')),
+              child: Text(_t('ritual_cancel'))),
           FilledButton(
             onPressed: () => Navigator.pop(
                 dialogContext, titleController.text.trim().isNotEmpty),
-            child: const Text('Hinzufügen'),
+            child: Text(_t('ritual_add')),
           ),
         ],
       ),
@@ -902,7 +947,7 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${widget.title} bearbeiten',
+                Text(_t('ritual_edit_title').replaceAll('{title}', widget.title),
                     style: Theme.of(context)
                         .textTheme
                         .headlineSmall
@@ -910,20 +955,19 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                 const SizedBox(height: 12),
                 TextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Ritualname')),
+                    decoration: InputDecoration(labelText: _t('ritual_name'))),
                 const SizedBox(height: 8),
                 TextField(
                     controller: _timeController,
-                    decoration: const InputDecoration(
-                        labelText: 'Uhrzeit', hintText: '08:00')),
+                    decoration: InputDecoration(
+                      labelText: _t('ritual_time'), hintText: '08:00')),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 6,
                   children: List.generate(7, (index) {
                     final day = index + 1;
                     return FilterChip(
-                      label: Text(
-                          ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][index]),
+                        label: Text(_t('ritual_weekdays').split('|')[index]),
                       selected: _weekdays.contains(day),
                       onSelected: (selected) => setState(() => selected
                           ? _weekdays.add(day)
@@ -947,10 +991,10 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                       return ListTile(
                         key: ValueKey(step.id),
                         leading: Icon(step.icon),
-                        title: Text(step.title),
-                        subtitle: Text(step.subtitle),
+                        title: Text(ritualStepCopy(Localizations.localeOf(context).languageCode, step.title)),
+                        subtitle: Text(ritualStepCopy(Localizations.localeOf(context).languageCode, step.subtitle)),
                         trailing: IconButton(
-                          tooltip: 'Schritt entfernen',
+                          tooltip: _t('ritual_remove_step'),
                           onPressed: () =>
                               setState(() => _steps.removeAt(index)),
                           icon: const Icon(Icons.remove_circle_outline_rounded),
@@ -963,10 +1007,10 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                   OutlinedButton.icon(
                       onPressed: _addStep,
                       icon: const Icon(Icons.add_rounded),
-                      label: const Text('Schritt')),
+                      label: Text(_t('ritual_step'))),
                   const Spacer(),
                   FilledButton(
-                      onPressed: _save, child: const Text('Speichern')),
+                      onPressed: _save, child: Text(_t('ritual_save'))),
                 ]),
               ]),
         ),
@@ -985,16 +1029,19 @@ class _EmptyChildState extends StatelessWidget {
             const Icon(Icons.child_care_rounded,
                 size: 56, color: Color(0xFF6E7BA8)),
             const SizedBox(height: 14),
-            const Text('Noch kein Kinderprofil',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+            Text(AppStringsManager.getString(
+              Localizations.localeOf(context).languageCode, 'ritual_empty_title'),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
             const SizedBox(height: 8),
-            const Text(
-                'Sobald ein Kinderprofil angelegt ist, kann ParentPeak die Rituale altersgerecht begleiten.',
+            Text(
+              AppStringsManager.getString(Localizations.localeOf(context).languageCode,
+                'ritual_empty_description'),
                 textAlign: TextAlign.center),
             const SizedBox(height: 18),
             FilledButton(
                 onPressed: onOpenProfile,
-                child: const Text('Zum Familienprofil')),
+                child: Text(AppStringsManager.getString(
+                  Localizations.localeOf(context).languageCode, 'ritual_empty_action'))),
           ]),
         ),
       );
