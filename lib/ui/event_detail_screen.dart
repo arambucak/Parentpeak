@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/event_backend_service.dart';
 import 'package:parentpeak/logic/participation_service.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/meetup_chat_screen.dart';
@@ -16,18 +17,71 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
   final _participationService = ParticipationService();
+  final _eventBackendService = EventBackendService();
   bool _hasRequested = false;
   bool _isApproved = false;
   bool _isDeclined = false;
   bool _isLoading = false;
   bool _requiresSignIn = false;
 
+  // Serie folgen (Issue #47) — nur relevant, wenn das Event zu einer Serie
+  // gehört (event.seriesId != null).
+  bool _isFollowingSeries = false;
+  bool _followBusy = false;
+
   String? get _currentUserId => AuthService.instance.currentUser?.uid;
+
+  bool get _hasSeries =>
+      widget.event.seriesId != null && widget.event.seriesId!.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
     _checkParticipationStatus();
+    _loadFollowStatus();
+  }
+
+  Future<void> _loadFollowStatus() async {
+    if (!_hasSeries) return;
+    final uid = _currentUserId;
+    if (uid == null || uid.trim().isEmpty) return;
+    final following = await _eventBackendService.isFollowingSeries(
+      seriesId: widget.event.seriesId!,
+      userId: uid,
+    );
+    if (!mounted || following == null) return;
+    setState(() => _isFollowingSeries = following);
+  }
+
+  Future<void> _toggleFollowSeries() async {
+    final uid = _currentUserId;
+    if (uid == null || uid.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('event_series_sign_in_required'))),
+      );
+      return;
+    }
+    if (!_hasSeries || _followBusy) return;
+    setState(() => _followBusy = true);
+    final wasFollowing = _isFollowingSeries;
+    final ok = wasFollowing
+        ? await _eventBackendService.unfollowSeries(
+            seriesId: widget.event.seriesId!, userId: uid)
+        : await _eventBackendService.followSeries(
+            seriesId: widget.event.seriesId!, userId: uid);
+    if (!mounted) return;
+    setState(() {
+      _followBusy = false;
+      if (ok) _isFollowingSeries = !wasFollowing;
+    });
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_isFollowingSeries
+            ? context.tr('event_series_followed')
+            : context.tr('event_series_unfollowed')),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   Future<void> _checkParticipationStatus() async {
@@ -287,6 +341,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  if (_hasSeries) ...[
+                    _buildSeriesFollowCard(theme),
+                    const SizedBox(height: 16),
+                  ],
                   if (_isApproved)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,6 +413,88 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Karte für wiederkehrende Angebote: Eltern können der Serie folgen und
+  /// werden dann über neue konkrete Termine benachrichtigt (Issue #47).
+  Widget _buildSeriesFollowCard(ThemeData theme) {
+    final following = _isFollowingSeries;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.repeat_rounded, color: Color(0xFF7C3AED)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  context.tr('event_series_title'),
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            following
+                ? context.tr('event_series_following_hint')
+                : context.tr('event_series_follow_hint'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: following
+                ? OutlinedButton.icon(
+                    onPressed: _followBusy ? null : _toggleFollowSeries,
+                    icon: _followBusy
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.notifications_active_rounded,
+                            size: 18),
+                    label: Text(context.tr('event_series_unfollow')),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF7C3AED),
+                      side: const BorderSide(color: Color(0xFF7C3AED)),
+                    ),
+                  )
+                : FilledButton.icon(
+                    onPressed: _followBusy ? null : _toggleFollowSeries,
+                    icon: _followBusy
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.notifications_none_rounded,
+                            size: 18),
+                    label: Text(context.tr('event_series_follow')),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF7C3AED),
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
