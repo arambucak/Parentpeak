@@ -426,7 +426,10 @@ class EventBackendService {
       'maxParticipants': parseInt(raw['maxParticipants'], 20),
       'currentParticipants': parseInt(raw['currentParticipants'], 0),
       'photoUrl': (raw['photoUrl'] ?? '').toString(),
-      'status': (raw['status'] ?? 'active').toString(),
+      'status': switch (raw['status']?.toString()) {
+        'upcoming' || 'ongoing' => EventStatus.active.name,
+        final status => status ?? EventStatus.active.name,
+      },
       'price': raw['price'] is num
           ? (raw['price'] as num).toDouble()
           : double.tryParse(raw['price']?.toString() ?? ''),
