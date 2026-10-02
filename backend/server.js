@@ -4290,7 +4290,9 @@ function mapEventRecordToApiItem(record, options = {}) {
     participationMode: record.participationMode || 'legacyApproval',
     externalUrl: record.externalUrl || null,
     category: record.eventType || memoryEvent?.category || 'other',
-    ageGroups: Array.isArray(memoryEvent?.ageGroups) ? memoryEvent.ageGroups : [],
+    ageGroups: Array.isArray(record.ageGroups) && record.ageGroups.length > 0
+      ? record.ageGroups
+      : (Array.isArray(memoryEvent?.ageGroups) ? memoryEvent.ageGroups : []),
     location: record.location || '',
     latitude: Number(record.latitude || 0),
     longitude: Number(record.longitude || 0),
@@ -12309,6 +12311,17 @@ app.post('/api/events', async (req, res) => {
     return res.status(400).json({ error: 'Titel muss 3-200 Zeichen lang sein' });
   }
 
+  // Altersgruppen bereinigen: nur nicht-leere Strings, getrimmt, dedupliziert,
+  // defensiv begrenzt. Nicht-Array/ungültige Eingaben -> leeres Array.
+  const sanitizedAgeGroups = Array.isArray(ageGroups)
+    ? [...new Set(
+        ageGroups
+          .filter(group => typeof group === 'string')
+          .map(group => group.trim())
+          .filter(group => group.length > 0 && group.length <= 40),
+      )].slice(0, 12)
+    : [];
+
   try {
     const event = await prisma.event.create({
       data: {
@@ -12321,6 +12334,7 @@ app.post('/api/events', async (req, res) => {
         startDate: startDate ? new Date(startDate) : new Date(),
         endDate: endDate ? new Date(endDate) : null,
         eventType: eventType ? String(eventType).slice(0, 50) : 'generic',
+        ageGroups: sanitizedAgeGroups,
         participationMode,
         externalUrl: externalUrl || null,
         visibility: visibility ? String(visibility).slice(0, 50) : 'publicNearby',
