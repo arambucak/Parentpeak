@@ -137,6 +137,10 @@ class AppStringsManager {
       'tile_calendar_desc': 'Termine und Familienplan',
       'tile_events': 'Events & Aktivitäten',
       'tile_events_desc': 'Events finden und selbst anbieten',
+      'treasureTileTitle': 'Verschenkmarkt',
+      'treasureTileSubtitle': 'Verschenken, austauschen, Eltern verbinden',
+      'ritualRuheTitle': 'Ritual & Ruhe',
+      'ritualRuheTileSubtitle': 'Ein ruhiger Moment für euren Familienalltag',
       'tile_network': 'Eltern-Netzwerk',
       'tile_network_desc': 'Vernetze dich, lade Freunde ein, verdiene Coins',
       'tile_chat': 'KI Elternberatung',
@@ -1106,8 +1110,8 @@ class AppStringsManager {
       'family_name_exists': 'Name ist bereits vorhanden.',
       'family_min_member': 'Mindestens ein Mitglied muss bleiben.',
       'family_import_invalid': 'Import fehlgeschlagen. JSON ungültig.',
-      // Events Carousel Widget
 
+      // Events Carousel Widget
       'events_free': 'Kostenlos',
       'events_add_event': 'Event eintragen',
       'events_add_event_short': 'Event\neintragen',
@@ -2077,6 +2081,10 @@ class AppStringsManager {
       'tile_calendar_desc': 'Appointments and family plan',
       'tile_events': 'Events & Activities',
       'tile_events_desc': 'Find events and offer your own',
+      'treasureTileTitle': 'Giveaway Market',
+      'treasureTileSubtitle': 'Give away, exchange, meet parents',
+      'ritualRuheTitle': 'Ritual & Calm',
+      'ritualRuheTileSubtitle': 'A calm moment for everyday family life',
       'tile_network': 'Parent Network',
       'tile_network_desc': 'Connect, invite friends, earn coins',
       'tile_chat': 'AI Parenting Advice',
@@ -3504,7 +3512,8 @@ class AppStringsManager {
       'event_scan_field_time': 'Time',
       'event_scan_field_category': 'Category',
       'event_scan_field_age': 'Age group',
-      'event_scan_recurring_confirm': 'Show the repeat schedule to other parents',
+      'event_scan_recurring_confirm':
+          'Show the repeat schedule to other parents',
       'event_scan_recurring_explanation':
           'Check the flyer details. This appears in the description; future dates and notifications are not created automatically.',
       'publish_event': 'Publish event',
@@ -6788,6 +6797,11 @@ class AppStringsManager {
       'tile_calendar_desc': 'Randevû û plana malbatê',
       'tile_events': 'Çalakî & Bûyer',
       'tile_events_desc': 'Bûyeran bibîne û ya xwe pêşkêş bike',
+      'treasureTileTitle': 'Bazara tiştên belaş',
+      'treasureTileSubtitle':
+          'Tiştan bibexşîne, biguherîne û dêûbavên din nas bike',
+      'ritualRuheTitle': 'Rîtuel û Aramî',
+      'ritualRuheTileSubtitle': 'Demek aram ji bo jiyana rojane ya malbata we',
       'tile_network': 'Tora dêûbavan',
       'tile_network_desc':
           'Girêdan bikin, hevalan vexwînin, pereyên xwe qezenc bikin',
@@ -7421,7 +7435,8 @@ class AppStringsManager {
       'event_scan_field_time': 'Dem',
       'event_scan_field_category': 'Kategorî',
       'event_scan_field_age': 'Koma temen',
-      'event_scan_recurring_confirm': 'Dubarebûnê ji dêûbavên din re nîşan bide',
+      'event_scan_recurring_confirm':
+          'Dubarebûnê ji dêûbavên din re nîşan bide',
       'event_scan_recurring_explanation':
           'Agahiyên flyerê kontrol bike. Ev di danasînê de xuya dibe; demên din an agahdarkirin bi xweberî nayên çêkirin.',
       'publish_event': 'Bûyerê weşîne',
@@ -10300,6 +10315,10 @@ class AppStringsManager {
       'tile_calendar_desc': 'Randevular ve aile planı',
       'tile_events': 'Etkinlikler & Aktiviteler',
       'tile_events_desc': 'Etkinlik bul ve kendi etkinliğini sun',
+      'treasureTileTitle': 'Hediye Pazarı',
+      'treasureTileSubtitle': 'Hediye et, paylaş, ebeveynleri buluştur',
+      'ritualRuheTitle': 'Ritüel ve Huzur',
+      'ritualRuheTileSubtitle': 'Ailenizin günlük yaşamı için sakin bir an',
       'tile_network': 'Ebeveyn Ağı',
       'tile_network_desc': 'Bağlan, arkadaş davet et, jeton kazan',
       'tile_chat': 'AI Ebeveyn Danışmanlığı',
@@ -10928,7 +10947,8 @@ class AppStringsManager {
       'event_scan_field_time': 'Saat',
       'event_scan_field_category': 'Kategori',
       'event_scan_field_age': 'Yaş grubu',
-      'event_scan_recurring_confirm': 'Tekrar bilgisini diğer ebeveynlere göster',
+      'event_scan_recurring_confirm':
+          'Tekrar bilgisini diğer ebeveynlere göster',
       'event_scan_recurring_explanation':
           'Broşürdeki bilgiyi kontrol edin. Açıklamada gösterilir; gelecek tarihler ve bildirimler otomatik oluşturulmaz.',
       'publish_event': 'Etkinliği yayınla',
@@ -11251,8 +11271,8 @@ class AppStringsManager {
       'family_name_exists': 'Bu isim zaten mevcut.',
       'family_min_member': 'En az bir üye kalmalı.',
       'family_import_invalid': 'İçe aktarma başarısız. JSON geçersiz.',
-      // Events Carousel Widget
 
+      // Events Carousel Widget
       'events_free': 'Ücretsiz',
       'events_add_event': 'Etkinlik ekle',
       'events_add_event_short': 'Etkinlik\nekle',
