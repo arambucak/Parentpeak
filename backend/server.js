@@ -4165,6 +4165,41 @@ async function ensureBackendUser(userId, displayName) {
   return trimmedUserId;
 }
 
+async function ensureAuthenticatedEventUser(req, userId) {
+  if (!req.firebaseUid) {
+    return ensureBackendUser(userId, req.body.userName || userId);
+  }
+  if (req.firebaseUid !== userId) {
+    throw new Error('Firebase UID stimmt nicht mit userId ueberein');
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+  if (existingUser) return existingUser.id;
+
+  const account = await firebaseAdmin.auth().getUser(req.firebaseUid);
+  if (account.uid !== req.firebaseUid || account.disabled) {
+    throw new Error('Firebase-Konto ist nicht gueltig');
+  }
+  const email = account.emailVerified && account.email
+    ? account.email.trim().toLowerCase()
+    : `firebase-${crypto.createHash('sha256').update(account.uid).digest('hex')}@firebase.local.invalid`;
+  const [firstName, ...lastName] = (account.displayName || '').trim().split(/\s+/);
+  const passwordSalt = crypto.randomBytes(32).toString('hex');
+  const user = await prisma.user.upsert({
+    where: { id: account.uid },
+    update: {},
+    create: {
+      id: account.uid,
+      email,
+      passwordHash: crypto.scryptSync(crypto.randomBytes(32), passwordSalt, 64).toString('hex'),
+      passwordSalt,
+      firstName: firstName || null,
+      lastName: lastName.join(' ') || null,
+    },
+  });
+  return user.id;
+}
+
 async function ensurePaymentContext(eventId, hosterId) {
   const trimmedEventId = (eventId || '').toString().trim();
   const trimmedHosterId = (hosterId || '').toString().trim();
@@ -9719,6 +9754,10 @@ app.post('/events/participations', async (req, res) => {
   const eventId = (req.body.eventId || '').toString();
   const userId = (req.body.userId || '').toString();
 
+  if (req.firebaseUid && req.firebaseUid !== userId) {
+    return res.status(403).json({ error: 'Teilnahme nur fuer das eigene Konto erlaubt' });
+  }
+
   if (!eventId || !userId) {
     return res.status(400).json({ error: 'eventId und userId sind erforderlich' });
   }
@@ -9729,7 +9768,7 @@ app.post('/events/participations', async (req, res) => {
       return res.status(404).json({ error: 'Event nicht gefunden' });
     }
 
-    const safeUserId = await ensureBackendUser(userId, req.body.userName || userId);
+    const safeUserId = await ensureAuthenticatedEventUser(req, userId);
     const item = await prisma.eventParticipation.upsert({
       where: {
         eventId_userId: {

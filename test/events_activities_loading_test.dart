@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -161,6 +162,34 @@ void main() {
     await _open(tester, agent, service);
     await _showFeed(tester, 'Community picnic');
     expect(agent.calls, hasLength(1));
+  });
+
+  testWidgets('UTC community occurrence renders local time and Berlin date',
+      (tester) async {
+    final utc = DateTime.utc(2026, 10, 14, 8);
+    final local = utc.toLocal();
+    final event = MeetupEvent.fromJson({
+      ..._event('UTC picnic').toJson(),
+      'eventDate': utc.toIso8601String(),
+    });
+    final service = _Service()..events = [event];
+    await _open(tester, _Agent(), service);
+    await tester.pumpAndSettle();
+    await _showFeed(tester, 'UTC picnic');
+
+    final date = '${local.day.toString().padLeft(2, '0')}.'
+        '${local.month.toString().padLeft(2, '0')}.${local.year}';
+    final time = '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+    expect(find.text('$date  $time'), findsOneWidget);
+    if (Platform.environment['TZ'] == 'Europe/Berlin') {
+      expect(local.timeZoneOffset, const Duration(hours: 2));
+      expect(find.text('14.10.2026  10:00'), findsOneWidget);
+      expect(find.text('14.10.2026  08:00'), findsNothing);
+    }
+    expect(event.eventDate.isUtc, isTrue);
+    expect(event.eventDate, utc);
+    await _close(tester);
   });
 
   testWidgets('equivalent GPS update does not duplicate pending query',
