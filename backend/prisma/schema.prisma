@@ -107,6 +107,9 @@ model Event {
   // Event Status & Type
   status                String   @default("upcoming") // upcoming, ongoing, completed, cancelled
   eventType             String   @default("generic") // generic, birthday, meeting, outing, etc.
+  // Zielaltersgruppen (z.B. ["toddler","preschool","mixed"]). Leeres Array =
+  // keine Angabe. Wird für Filterung/Ranking in der Event-Suche genutzt.
+  ageGroups             String[] @default([])
   participationMode     String   @default("legacyApproval")
   externalUrl           String?
   visibility            String   @default("publicNearby") // publicNearby, familyCircle, privateOnly, inviteOnly
