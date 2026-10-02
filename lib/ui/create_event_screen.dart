@@ -30,6 +30,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _recurringNoteController;
   late TextEditingController _locationController;
   late TextEditingController _maxParticipantsController;
 
@@ -55,12 +56,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _flyerScanner = EventFlyerScannerService();
   bool _isScanning = false;
   String? _priceHint;
+  bool _showRecurringNote = false;
+  bool _includeRecurringNote = false;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
+    _recurringNoteController = TextEditingController();
     _locationController = TextEditingController(text: 'Berlin, Deutschland');
     _maxParticipantsController = TextEditingController(text: '10');
     _loadFamilyContacts();
@@ -91,6 +95,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _recurringNoteController.dispose();
     _locationController.dispose();
     _maxParticipantsController.dispose();
     super.dispose();
@@ -240,7 +245,17 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
       setState(() => _isScanning = true);
-      final draft = await _flyerScanner.scanFromImage(bytes);
+      final fileName = picked.name.toLowerCase();
+      final imageMimeType = picked.mimeType ??
+          (fileName.endsWith('.png')
+              ? 'image/png'
+              : fileName.endsWith('.webp')
+                  ? 'image/webp'
+                  : 'image/jpeg');
+      final draft = await _flyerScanner.scanFromImage(
+        bytes,
+        imageMimeType: imageMimeType,
+      );
       _applyScanResult(draft);
     } catch (e) {
       if (mounted) _showScanError();
@@ -338,6 +353,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       filled.add(_t('event_scan_field_age'));
     }
     _priceHint = draft.priceNote;
+    if (draft.recurringNote != null && !_showRecurringNote) {
+      _recurringNoteController.text = draft.recurringNote!;
+      _showRecurringNote = true;
+      _includeRecurringNote = true;
+      filled.add(_t('recurring_event'));
+    }
 
     setState(() {});
 
@@ -417,7 +438,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         id: 'event_${DateTime.now().millisecondsSinceEpoch}',
         hosterId: currentUserId,
         title: _titleController.text,
-        description: _descriptionController.text,
+        description: _includeRecurringNote &&
+            _recurringNoteController.text.trim().isNotEmpty
+          ? '${_descriptionController.text.trim()}\n\n${_t('recurring_event')}: ${_recurringNoteController.text.trim()}'
+          : _descriptionController.text,
         category: _selectedCategory,
         ageGroups: _selectedAgeGroups,
         location: _locationController.text,
@@ -624,6 +648,28 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+
+                if (_showRecurringNote) ...[
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_t('event_scan_recurring_confirm')),
+                    subtitle: Text(_t('event_scan_recurring_explanation')),
+                    value: _includeRecurringNote,
+                    onChanged: (value) =>
+                        setState(() => _includeRecurringNote = value),
+                  ),
+                  if (_includeRecurringNote) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _recurringNoteController,
+                      decoration: InputDecoration(
+                        labelText: _t('recurring_event'),
+                        prefixIcon: const Icon(Icons.repeat_rounded),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                ],
 
                 // Sichtbarkeit & Standortverteilung
                 Text(

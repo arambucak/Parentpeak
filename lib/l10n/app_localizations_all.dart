@@ -770,6 +770,9 @@ class AppStringsManager {
       'event_scan_field_time': 'Uhrzeit',
       'event_scan_field_category': 'Kategorie',
       'event_scan_field_age': 'Altersgruppe',
+      'event_scan_recurring_confirm': 'Wiederholung für andere Eltern anzeigen',
+      'event_scan_recurring_explanation':
+          'Bitte prüfe die Angabe vom Flyer. Sie erscheint in der Beschreibung; weitere Termine oder Benachrichtigungen werden nicht automatisch erstellt.',
       'publish_event': 'Event veröffentlichen',
       'event_ready': 'Event ist bereit',
       'your_code': 'Dein Code:',
@@ -3442,6 +3445,9 @@ class AppStringsManager {
       'event_scan_field_time': 'Time',
       'event_scan_field_category': 'Category',
       'event_scan_field_age': 'Age group',
+      'event_scan_recurring_confirm': 'Show the repeat schedule to other parents',
+      'event_scan_recurring_explanation':
+          'Check the flyer details. This appears in the description; future dates and notifications are not created automatically.',
       'publish_event': 'Publish event',
       'event_ready': 'Event is ready',
       'your_code': 'Your code:',
@@ -7299,6 +7305,9 @@ class AppStringsManager {
       'event_scan_field_time': 'Dem',
       'event_scan_field_category': 'Kategorî',
       'event_scan_field_age': 'Koma temen',
+      'event_scan_recurring_confirm': 'Dubarebûnê ji dêûbavên din re nîşan bide',
+      'event_scan_recurring_explanation':
+          'Agahiyên flyerê kontrol bike. Ev di danasînê de xuya dibe; demên din an agahdarkirin bi xweberî nayên çêkirin.',
       'publish_event': 'Bûyerê weşîne',
       'event_ready': 'Bûyer amade ye',
       'your_code': 'Koda te:',
@@ -10744,6 +10753,9 @@ class AppStringsManager {
       'event_scan_field_time': 'Saat',
       'event_scan_field_category': 'Kategori',
       'event_scan_field_age': 'Yaş grubu',
+      'event_scan_recurring_confirm': 'Tekrar bilgisini diğer ebeveynlere göster',
+      'event_scan_recurring_explanation':
+          'Broşürdeki bilgiyi kontrol edin. Açıklamada gösterilir; gelecek tarihler ve bildirimler otomatik oluşturulmaz.',
       'publish_event': 'Etkinliği yayınla',
       'event_ready': 'Etkinlik hazır',
       'your_code': 'Kodunuz:',

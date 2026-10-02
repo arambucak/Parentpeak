@@ -27,6 +27,7 @@ class ScannedEventDraft {
     this.category,
     this.ageGroups = const [],
     this.priceNote,
+    this.recurringNote,
   });
 
   final String? title;
@@ -39,6 +40,7 @@ class ScannedEventDraft {
 
   /// Freitext zum Preis (z.B. "kostenlos", "5 €"). Wird im UI als Hinweis genutzt.
   final String? priceNote;
+  final String? recurringNote;
 
   /// True, wenn mindestens ein nützliches Feld erkannt wurde.
   bool get hasContent =>
@@ -48,7 +50,8 @@ class ScannedEventDraft {
       time != null ||
       (location != null && location!.trim().isNotEmpty) ||
       category != null ||
-      ageGroups.isNotEmpty;
+      ageGroups.isNotEmpty ||
+      recurringNote != null;
 }
 
 /// Kleiner wertbasierter Zeit-Container, um keine Flutter-Abhängigkeit
@@ -123,11 +126,13 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, keine Erklärung):
   "location": "Ort/Adresse oder null",
   "category": "sports|outdoor|education|arts|socialGathering|other oder null",
   "ageGroups": ["infant|toddler|preschool|elementary|teenager|mixed"],
-  "price": "kurzer Preishinweis wie 'kostenlos' oder '5 €' oder null"
+  "price": "kurzer Preishinweis wie 'kostenlos' oder '5 €' oder null",
+  "recurringNote": "Wiederholung im Wortlaut des Flyers, z.B. 'jeden Dienstag', oder null"
 }
 
 Regeln:
 - Erfinde KEINE Fakten. Was nicht erkennbar ist, ist null (bzw. leeres Array).
+- recurringNote nur setzen, wenn eine Wiederholung ausdrücklich genannt ist; kein Enddatum erfinden.
 - category: sports=Sport/Bewegung, outdoor=Natur/draußen, education=Kurs/Lernen/Vorlesen,
   arts=Basteln/Musik/Theater/Museum, socialGathering=Treffen/Fest/Spielplatz, other=Rest.
 - ageGroups: infant=0-1, toddler=1-3, preschool=3-5, elementary=6-12, teenager=13+, mixed=altersgemischt.
@@ -160,6 +165,7 @@ Regeln:
       category: _parseCategory(_str(map['category'])),
       ageGroups: _parseAgeGroups(map['ageGroups']),
       priceNote: _str(map['price']),
+      recurringNote: _str(map['recurringNote']),
     );
 
     return draft.hasContent ? draft : null;
