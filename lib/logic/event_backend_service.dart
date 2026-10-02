@@ -10,12 +10,15 @@ import 'package:parentpeak/models/meetup_event.dart';
 
 import 'backend_api_client.dart';
 import 'backend_service_factory.dart';
+import 'event_geocoder.dart';
 
 class EventBackendService {
-  EventBackendService({BackendApiClient? apiClient})
-    : _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
+  EventBackendService({BackendApiClient? apiClient, EventGeocoder? geocoder})
+    : _apiClient = apiClient ?? BackendServiceFactory.createApiClient(),
+      _geocoder = geocoder ?? EventGeocoder.instance;
 
   final BackendApiClient? _apiClient;
+  final EventGeocoder _geocoder;
   String? lastSyncError;
 
   bool get isEnabled => _apiClient != null;
@@ -57,6 +60,10 @@ class EventBackendService {
     required double viewerLatitude,
     required double viewerLongitude,
     List<AgeGroup>? ageGroups,
+    double radiusKm = 25,
+    bool nearbyOnly = false,
+    bool onlyFree = false,
+    String timeWindow = 'all',
     int limit = 50,
     int offset = 0,
     bool throwOnFailure = false,
@@ -65,9 +72,17 @@ class EventBackendService {
     try {
       final query = <String, String>{
         'viewerUserId': viewerUserId,
-        'latitude': viewerLatitude.toString(),
-        'longitude': viewerLongitude.toString(),
-        'radiusKm': '25',
+        if (validCoordinates(viewerLatitude, viewerLongitude))
+          'latitude': viewerLatitude.toString(),
+        if (validCoordinates(viewerLatitude, viewerLongitude))
+          'longitude': viewerLongitude.toString(),
+        'radiusKm': radiusKm.toString(),
+        'nearbyOnly': nearbyOnly.toString(),
+        'onlyFree': onlyFree.toString(),
+        'timeWindow': timeWindow,
+        'utcOffsetMinutes': DateTime.now().timeZoneOffset.inMinutes.toString(),
+        if (ageGroups != null && ageGroups.isNotEmpty)
+          'ageGroups': ageGroups.map((age) => age.name).join(','),
         'limit': limit.toString(),
         'offset': offset.toString(),
         'status': 'upcoming',
@@ -105,13 +120,16 @@ class EventBackendService {
   Future<MeetupEvent?> createEvent(MeetupEvent event) async {
     if (_apiClient == null) return null;
     try {
+      final coords = reliableEventCoordinates(event.latitude, event.longitude)
+          ? (event.latitude, event.longitude)
+          : await _geocoder.resolve(event.location);
       final eventData = {
         'hosterId': event.hosterId,
         'title': event.title,
         'description': event.description,
         'location': event.location,
-        'latitude': event.latitude,
-        'longitude': event.longitude,
+        'latitude': coords?.$1,
+        'longitude': coords?.$2,
         'startDate': event.eventDate.toUtc().toIso8601String(),
         'eventType': event.category.name,
         'participationMode': event.participationMode.name,
@@ -119,8 +137,11 @@ class EventBackendService {
         'visibility': event.visibility.name,
         'shareRadiusKm': event.shareRadiusKm,
         'invitedUserIds': event.invitedUserIds,
-        'inviteCodeExpiresAt': event.inviteCodeExpiresAt?.toUtc().toIso8601String(),
+        'inviteCodeExpiresAt': event.inviteCodeExpiresAt
+            ?.toUtc()
+            .toIso8601String(),
         'maxParticipants': event.isSharedOffer ? null : event.maxParticipants,
+        'costPerPerson': event.price,
         'imageUrl': event.photoUrl,
         if (event.seriesId != null && event.seriesId!.isNotEmpty)
           'seriesId': event.seriesId,
@@ -161,6 +182,13 @@ class EventBackendService {
         ...fields,
         if (requestingUserId != null) 'hosterId': requestingUserId,
       };
+      if (fields.containsKey('location')) {
+        final coords = await _geocoder.resolve(
+          fields['location']?.toString() ?? '',
+        );
+        body['latitude'] = coords?.$1;
+        body['longitude'] = coords?.$2;
+      }
       final payload = await _apiClient!.putJson('$_eventsPath/$id', body);
       if (payload is Map<String, dynamic> && payload.containsKey('event')) {
         return _parseSingleEvent(payload['event']);
@@ -187,8 +215,10 @@ class EventBackendService {
     }
   }
 
-  Future<List<EventInvitation>> fetchInvitationsForUser(String userId,
-      {bool throwOnFailure = false}) async {
+  Future<List<EventInvitation>> fetchInvitationsForUser(
+    String userId, {
+    bool throwOnFailure = false,
+  }) async {
     if (_apiClient == null) return [];
     try {
       final payload = await _apiClient!.getJson(
@@ -334,11 +364,15 @@ class EventBackendService {
     }
   }
 
-  Future<void> withdrawParticipation({required String eventId, required String userId}) async {
+  Future<void> withdrawParticipation({
+    required String eventId,
+    required String userId,
+  }) async {
     if (_apiClient == null) throw StateError('Backend unavailable');
-    final payload = await _apiClient!.putJson('/events/participations/withdraw', {
-      'eventId': eventId, 'userId': userId,
-    });
+    final payload = await _apiClient!.putJson(
+      '/events/participations/withdraw',
+      {'eventId': eventId, 'userId': userId},
+    );
     if (payload is! Map || payload['success'] != true) {
       throw StateError('Withdrawal not acknowledged');
     }
@@ -381,18 +415,28 @@ class EventBackendService {
     }
   }
 
-  List<MeetupEvent> _parseEventList(dynamic payload) {
+  Future<List<MeetupEvent>> _parseEventList(dynamic payload) async {
     final list = _extractList(payload, const [
       'items',
       'events',
       'data',
       'results',
     ]);
-    return list
+    final normalized = list
         .whereType<Map>()
         .map((raw) => _normalizeEventMap(Map<String, dynamic>.from(raw)))
-        .map(MeetupEvent.fromJson)
         .toList();
+    await Future.wait(
+      normalized.map((event) async {
+        if (event['coordinatesNeedResolution'] == true ||
+            (event['latitude'] == 52.52 && event['longitude'] == 13.405)) {
+          final resolved = await _geocoder.resolve(event['location'] as String);
+          event['latitude'] = resolved?.$1;
+          event['longitude'] = resolved?.$2;
+        }
+      }),
+    );
+    return normalized.map(MeetupEvent.fromJson).toList();
   }
 
   MeetupEvent? _parseSingleEvent(dynamic payload) {
@@ -468,20 +512,29 @@ class EventBackendService {
           .toString(),
       'title': (raw['title'] ?? '').toString(),
       'description': (raw['description'] ?? '').toString(),
-        'category': EventCategory.values.any((category) => category.name == (raw['category'] ?? raw['eventType']))
-          ? (raw['category'] ?? raw['eventType']).toString() : 'other',
+      'category':
+          EventCategory.values.any(
+            (category) =>
+                category.name == (raw['category'] ?? raw['eventType']),
+          )
+          ? (raw['category'] ?? raw['eventType']).toString()
+          : 'other',
       'ageGroups': (raw['ageGroups'] is List)
           ? List<String>.from(
               (raw['ageGroups'] as List).map((e) => e.toString()),
             )
           : <String>[],
       'location': (raw['location'] ?? '').toString(),
-      'latitude': parseDouble(raw['latitude'], 0),
-      'longitude': parseDouble(raw['longitude'], 0),
+      'latitude': parseDouble(raw['latitude'], double.nan),
+      'longitude': parseDouble(raw['longitude'], double.nan),
+      'coordinatesNeedResolution': raw['coordinatesNeedResolution'] == true,
       'eventDate':
           (raw['eventDate'] ??
                   raw['startDate'] ??
-                  DateTime.now().toIso8601String())
+                  DateTime.fromMillisecondsSinceEpoch(
+                    0,
+                    isUtc: true,
+                  ).toIso8601String())
               .toString(),
       'createdAt': (raw['createdAt'] ?? DateTime.now().toIso8601String())
           .toString(),
@@ -492,7 +545,13 @@ class EventBackendService {
         raw['participants'] is List
             ? (raw['participants'] as List)
                   .whereType<Map>()
-                  .where((participant) => ['approved', 'accepted', 'attended'].contains(participant['status']))
+                  .where(
+                    (participant) => [
+                      'approved',
+                      'accepted',
+                      'attended',
+                    ].contains(participant['status']),
+                  )
                   .length
             : 0,
       ),
@@ -501,9 +560,9 @@ class EventBackendService {
         'upcoming' || 'ongoing' => EventStatus.active.name,
         final status => status ?? EventStatus.active.name,
       },
-      'price': raw['price'] is num
-          ? (raw['price'] as num).toDouble()
-          : double.tryParse(raw['price']?.toString() ?? ''),
+      'price': double.tryParse(
+        (raw['price'] ?? raw['costPerPerson'])?.toString() ?? '',
+      ),
       'visibility': (raw['visibility'] ?? 'publicNearby').toString(),
       'shareRadiusKm': parseDouble(raw['shareRadiusKm'], 25),
       'invitedUserIds': (raw['invitedUserIds'] is List)

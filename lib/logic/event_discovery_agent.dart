@@ -70,12 +70,12 @@ class EventDiscoveryAgent {
         ? 'Nutzerstandort: $latitude, $longitude. '
         : '';
 
-    // Kurzer Prompt für schnelle Grounding-Antwort (< 20 s)
     final groundingPrompt = '''
-$today. ${gpsHint}Suche 10 aktuelle Familienevents ${isCoordCity ? 'in der Nähe von' : 'in'} "$locationDesc" ($cleanRadius) — $saison. Zielgruppe: $agesText.
-Antworte NUR als JSON-Array (kein Markdown). Trage bei "url" die ECHTE URL aus dem Web-Suchergebnis ein:
-[{"id":"1","title":"...","description":"...","category":"theater","ageLabels":["alle"],"location":"Adresse, Stadtteil","cityHint":"$locationDesc","eventDate":"${now.year}-${now.month.toString().padLeft(2, '0')}-${(now.day + 2).toString().padLeft(2, '0')}T10:00:00","eventTimeRange":"10:00 – 12:00 Uhr","isRecurring":false,"recurringNote":null,"price":"kostenlos","url":"ECHTE_URL_AUS_WEBSUCHE","organizer":"..."}]
-Erstelle genau 10 echte Events. Bei "url" MUSS eine echte Webseite stehen (z.B. berlin.de, eventbrite.de, Veranstalter-Website).
+  $today. ${gpsHint}Finde bis zu 5 belegte Familienevents ${isCoordCity ? 'in der Nähe von' : 'in'} "$locationDesc" ($cleanRadius), $saison. Zielgruppe: $agesText.
+  Nutze Google Search. Bevorzuge konkrete Veranstalterseiten mit bestätigtem künftigem Termin. Weniger Treffer sind erlaubt; nichts erfinden oder zum Auffüllen ergänzen.
+  Antworte nur als kompaktes JSON-Array. Pro Treffer: title, description (höchstens ein kurzer Satz), category, ageLabels, location, eventDate (ISO-8601 oder null), price (belegter Preis oder null), url (zugehörige echte Quell-URL), organizer.
+  category: theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges.
+  Keinen Termin aus einem Angebots-Enddatum ableiten. Bei unbestätigtem Tag/Uhrzeit eventDate=null. Nur belegte Angebote ausgeben; ohne Treffer [].
 ''';
 
     return _callWithGrounding(groundingPrompt, city);

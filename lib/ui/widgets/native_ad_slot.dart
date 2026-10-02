@@ -11,10 +11,10 @@ import 'package:parentpeak/config/monetization_config.dart';
 /// Aktuell: Platzhalter-Widget (nach Beta: AdMob SDK einbinden).
 /// Design: Sieht aus wie ein Content-Item, aber mit "Anzeige"-Label.
 class NativeAdSlot extends StatelessWidget {
-  const NativeAdSlot({super.key, this.context_hint});
+  const NativeAdSlot({super.key, this.contextHint});
 
   /// Kontext-Hinweis für Targeting (z.B. "events", "recipes", "market")
-  final String? context_hint;
+  final String? contextHint;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class NativeAdSlot extends StatelessWidget {
     }
 
     // Platzhalter — nach Beta durch echte AdMob Native Ad ersetzen
-    return _PlaceholderAd(contextHint: context_hint);
+    return _PlaceholderAd(contextHint: contextHint);
   }
 
   /// Helper: Soll an dieser Position im Feed eine Ad erscheinen?

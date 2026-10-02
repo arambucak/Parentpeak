@@ -12290,8 +12290,18 @@ app.post('/api/events', async (req, res) => {
   if (await isUserSuspended(hosterId.toString().trim())) return respondSuspended(res);
 
   // Validate coordinates
-  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+  const coordinatesMissing = latitude == null && longitude == null;
+  if (!coordinatesMissing && (
+    typeof latitude !== 'number' || typeof longitude !== 'number' ||
+    !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+    latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
+  )) {
     return res.status(400).json({ error: 'Ungültige Koordinaten' });
+  }
+  if (costPerPerson != null && (
+    typeof costPerPerson !== 'number' || !Number.isFinite(costPerPerson) || costPerPerson < 0
+  )) {
+    return res.status(400).json({ error: 'Ungültiger Preis' });
   }
 
   // Validate title length
@@ -12306,8 +12316,8 @@ app.post('/api/events', async (req, res) => {
         title: String(title).slice(0, 200),
         description: description ? String(description).slice(0, 2000) : null,
         location: String(location).slice(0, 200),
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
+        latitude: coordinatesMissing ? null : latitude,
+        longitude: coordinatesMissing ? null : longitude,
         startDate: startDate ? new Date(startDate) : new Date(),
         endDate: endDate ? new Date(endDate) : null,
         eventType: eventType ? String(eventType).slice(0, 50) : 'generic',
@@ -12321,7 +12331,7 @@ app.post('/api/events', async (req, res) => {
         }),
         shareRadiusKm: shareRadiusKm ? parseFloat(shareRadiusKm) : 25,
         maxParticipants: participationMode === 'interest' ? null : maxParticipants,
-        costPerPerson: costPerPerson ? parseFloat(costPerPerson) : null,
+        costPerPerson: costPerPerson ?? null,
         imageUrl: imageUrl ? String(imageUrl).slice(0, 500) : null,
         seriesId: seriesId ? String(seriesId).slice(0, 100) : null,
         status: 'upcoming',
@@ -12406,6 +12416,54 @@ app.get('/api/events', async (req, res) => {
   } = req.query;
 
   try {
+    const numeric = value => value == null || String(value).trim() === '' ? null : Number(value);
+    const validCoords = (lat, lon) => Number.isFinite(lat) && Number.isFinite(lon) &&
+      Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && !(lat === 0 && lon === 0);
+    const viewerLat = numeric(latitude);
+    const viewerLon = numeric(longitude);
+    const originKnown = validCoords(viewerLat, viewerLon);
+    const maxDistance = numeric(radiusKm);
+    if (!Number.isFinite(maxDistance) || maxDistance <= 0 ||
+        ((latitude !== undefined || longitude !== undefined) && !originKnown)) {
+      return res.status(400).json({ error: 'Valid coordinates and positive radiusKm required' });
+    }
+    const limit = Math.min(Math.max(parseInt(req.query.limit ?? maxResults, 10) || 50, 1), 100);
+    const pageOffset = Math.max(parseInt(offset, 10) || 0, 0);
+    const nearbyOnly = req.query.nearbyOnly === 'true';
+    const onlyFree = req.query.onlyFree === 'true';
+    const timeWindow = req.query.timeWindow || 'all';
+    if (!['all', 'today', 'weekend'].includes(timeWindow)) {
+      return res.status(400).json({ error: 'Invalid timeWindow' });
+    }
+    const utcOffsetMinutes = numeric(req.query.utcOffsetMinutes) ?? 0;
+    if (!Number.isFinite(utcOffsetMinutes) || Math.abs(utcOffsetMinutes) > 840) {
+      return res.status(400).json({ error: 'Invalid utcOffsetMinutes' });
+    }
+    const now = new Date();
+    const localDate = date => new Date(date.getTime() + utcOffsetMinutes * 60000);
+    const today = localDate(now).toISOString().slice(0, 10);
+    const requestedAges = String(req.query.ageGroups || '').split(',').filter(Boolean);
+    const matchesAges = ages => requestedAges.length === 0 || ages.length === 0 ||
+      ages.includes('mixed') || requestedAges.includes('mixed') || ages.some(age => requestedAges.includes(age));
+    const distanceKm = (lat1, lon1, lat2, lon2) => {
+      const latitudeDelta = (lat2 - lat1) * Math.PI / 180;
+      const longitudeDelta = (lon2 - lon1) * Math.PI / 180;
+      const haversine = Math.sin(latitudeDelta / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(longitudeDelta / 2) ** 2;
+      return 12742 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, haversine))));
+    };
+    const needsResolution = event => event.latitude === 52.52 && event.longitude === 13.405;
+    const distance = event => originKnown && !needsResolution(event) &&
+      validCoords(numeric(event.latitude), numeric(event.longitude))
+        ? distanceKm(viewerLat, viewerLon, numeric(event.latitude), numeric(event.longitude)) : null;
+    const knownAges = event => Array.isArray(event.ageGroups) ? event.ageGroups : [];
+    const score = event => {
+      const km = distance(event);
+      const days = (new Date(event.startDate) - now) / 86400000;
+      return Math.max(0, Math.min(30, 30 - days)) * 2 +
+        (km == null ? 0 : Math.max(0, Math.min(50, 50 - km))) +
+        (requestedAges.length > 0 && knownAges(event).length > 0 && matchesAges(knownAges(event)) ? 20 : 0);
+    };
     const where = {
       status: status === 'active' ? 'upcoming' : String(status),
       visibility: String(visibility),
@@ -12416,8 +12474,6 @@ app.get('/api/events', async (req, res) => {
     let events = await prisma.event.findMany({
       where,
       orderBy: { startDate: 'asc' },
-      take: Math.min(parseInt(maxResults, 10) || 50, 100),
-      skip: parseInt(offset, 10) || 0,
       include: {
         participants: { select: { userId: true, status: true } }
       }
@@ -12433,30 +12489,33 @@ app.get('/api/events', async (req, res) => {
     }
     events = visible;
 
-    // Filter by geographic proximity if coordinates provided
-    if (latitude !== undefined && longitude !== undefined) {
-      const viewerLat = parseFloat(latitude);
-      const viewerLon = parseFloat(longitude);
-      const maxDistance = parseFloat(radiusKm) || 25;
-
-      events = events.filter(event => {
-        const distance = haversineDistance(viewerLat, viewerLon, event.latitude, event.longitude);
-        return distance <= maxDistance;
-      }).sort((a, b) => {
-        const distA = haversineDistance(viewerLat, viewerLon, a.latitude, a.longitude);
-        const distB = haversineDistance(viewerLat, viewerLon, b.latitude, b.longitude);
-        return distA - distB; // Closest first
-      });
-    }
-
-    const formattedEvents = events.map(e => ({
+    events = events.filter(event => {
+      const date = new Date(event.startDate);
+      if (!Number.isFinite(date.getTime()) || date < now) return false;
+      const local = localDate(date);
+      if (timeWindow === 'today' && local.toISOString().slice(0, 10) !== today) return false;
+      if (timeWindow === 'weekend' && (!(local.getUTCDay() === 0 || local.getUTCDay() === 6) ||
+          date - now >= 7 * 86400000)) return false;
+      if (!matchesAges(knownAges(event))) return false;
+      if (onlyFree && numeric(event.costPerPerson) !== 0) return false;
+      const km = distance(event);
+      if (km == null) return !nearbyOnly || (originKnown && needsResolution(event));
+      const shareRadius = numeric(event.shareRadiusKm) ?? 25;
+      return km <= maxDistance && (!nearbyOnly || km <= 10) &&
+        (event.visibility !== 'publicNearby' || event.hosterId === req.firebaseUid || km <= shareRadius);
+    });
+    events.sort((first, second) => score(second) - score(first) || String(first.id).localeCompare(String(second.id)));
+    const total = events.length;
+    const formattedEvents = events.slice(pageOffset, pageOffset + limit).map(e => ({
       id: e.id,
       hosterId: e.hosterId,
       title: e.title,
       description: e.description,
       location: e.location,
-      latitude: e.latitude,
-      longitude: e.longitude,
+      latitude: needsResolution(e) ? null : (validCoords(numeric(e.latitude), numeric(e.longitude)) ? numeric(e.latitude) : null),
+      longitude: needsResolution(e) ? null : (validCoords(numeric(e.latitude), numeric(e.longitude)) ? numeric(e.longitude) : null),
+      coordinatesNeedResolution: needsResolution(e),
+      ageGroups: knownAges(e),
       startDate: e.startDate,
       endDate: e.endDate,
       eventType: e.eventType,
@@ -12474,7 +12533,7 @@ app.get('/api/events', async (req, res) => {
       updatedAt: e.updatedAt,
     }));
 
-    res.json({ events: formattedEvents, total: formattedEvents.length });
+    res.json({ events: formattedEvents, total, limit, offset: pageOffset, hasMore: pageOffset + limit < total });
   } catch (err) {
     console.error('❌ Events list error:', err.message);
     res.status(500).json({ error: `Failed to list events: ${err.message}` });

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
+import 'package:parentpeak/ui/widgets/user_avatar.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
@@ -61,7 +63,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
         _hostedInviteEvents = [];
         _acceptedByEvent = {};
         _contactsById = {};
-        _errorMessage = 'Bitte melde dich an, um Einladungen zu sehen.';
+        _errorMessage = 'event_invitations_sign_in';
         _isLoading = false;
       });
       return;
@@ -114,7 +116,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(accept ? 'Zusage gespeichert.' : 'Absage gespeichert.'),
+        content: Text(context.tr(accept ? 'events_invitation_accept_success' : 'events_invitation_decline_success')),
       ),
     );
   }
@@ -137,8 +139,8 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
         SnackBar(
           content: Text(
             _eventService.isInviteInputExpired(input)
-                ? 'Dieser Code ist abgelaufen.'
-                : 'Code oder Link konnte nicht gefunden werden.',
+                ? context.tr('event_invite_expired')
+                : context.tr('event_invite_not_found'),
           ),
         ),
       );
@@ -149,7 +151,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
     await _load();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Du bist jetzt dabei.')),
+      SnackBar(content: Text(context.tr('events_invitation_accept_success'))),
     );
   }
 
@@ -164,7 +166,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Einladungen'),
+        title: Text(context.tr('events_invitations')),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -173,7 +175,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      _errorMessage!,
+                      context.tr(_errorMessage!),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -199,14 +201,14 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Deine Einladungen',
+                          context.tr('events_invitations'),
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                               ),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Gemeinsam loslegen.',
+                          context.tr('event_invite_together'),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Theme.of(context)
                                     .colorScheme
@@ -220,7 +222,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                             Expanded(
                               child: _CountPill(
                                 icon: Icons.mark_email_unread_rounded,
-                                label: 'Ausstehend',
+                                label: context.tr('events_invitation_pending'),
                                 value: pending.length.toString(),
                                 color: const Color(0xFFF59E0B),
                               ),
@@ -229,7 +231,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                             Expanded(
                               child: _CountPill(
                                 icon: Icons.check_circle_outline_rounded,
-                                label: 'Zugesagt',
+                                label: context.tr('events_invitation_accepted'),
                                 value: accepted.length.toString(),
                                 color: const Color(0xFF16A34A),
                               ),
@@ -238,7 +240,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                             Expanded(
                               child: _CountPill(
                                 icon: Icons.celebration_rounded,
-                                label: 'Meine Events',
+                                label: context.tr('event_owner_yours'),
                                 value: _hostedInviteEvents.length.toString(),
                                 color: const Color(0xFF4F46E5),
                               ),
@@ -259,9 +261,9 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Mit Code starten',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        Text(
+                          context.tr('event_invite_code_join'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -270,9 +272,9 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                               child: TextField(
                                 controller: _codeCtrl,
                                 textCapitalization: TextCapitalization.characters,
-                                decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                   hintText:
-                                      'Code oder Link einfügen',
+                                    context.tr('event_invite_code_hint'),
                                   isDense: true,
                                 ),
                               ),
@@ -280,7 +282,7 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                             const SizedBox(width: 8),
                             FilledButton(
                               onPressed: _joinByCode,
-                              child: const Text('Starten'),
+                              child: Text(context.tr('event_next')),
                             ),
                           ],
                         ),
@@ -289,16 +291,16 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                   ),
                   const SizedBox(height: 18),
                   _SectionHeader(
-                    title: 'Ausstehend',
+                    title: context.tr('events_invitation_pending'),
                     subtitle: pending.isEmpty
-                        ? 'Nichts offen'
-                        : '${pending.length} offen',
+                      ? context.tr('events_no_open_invitations')
+                      : context.tr('events_open_count', values: {'count': pending.length}),
                   ),
                   const SizedBox(height: 8),
                   if (pending.isEmpty)
-                    const _EmptyTile(
+                    _EmptyTile(
                       icon: Icons.inbox_rounded,
-                      text: 'Gerade ist alles beantwortet.',
+                      text: context.tr('events_no_open_invitations'),
                     )
                   else
                     ...pending.map(
@@ -307,8 +309,8 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 10),
                           child: _PendingInviteRow(
-                            title: event?.title ?? 'Event',
-                            subtitle: event?.location ?? 'Unbekannter Ort',
+                            title: event?.title ?? context.tr('event_details_title'),
+                            subtitle: event?.location ?? context.tr('event_not_specified'),
                             onDecline: () => _respond(i, false),
                             onAccept: () => _respond(i, true),
                           ),
@@ -317,16 +319,16 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                     ),
                   const SizedBox(height: 18),
                   _SectionHeader(
-                    title: 'Zugesagt',
+                    title: context.tr('events_invitation_accepted'),
                     subtitle: accepted.isEmpty
-                        ? 'Noch keine'
-                        : '${accepted.length} aktiv',
+                      ? context.tr('event_invite_no_acceptances')
+                      : context.tr('event_confirmed_count', values: {'count': accepted.length}),
                   ),
                   const SizedBox(height: 8),
                   if (accepted.isEmpty)
-                    const _EmptyTile(
+                    _EmptyTile(
                       icon: Icons.check_circle_outline_rounded,
-                      text: 'Noch keine aktiven Zusagen.',
+                      text: context.tr('event_invite_no_acceptances'),
                     )
                   else
                     ...accepted.map(
@@ -336,24 +338,24 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                           padding: const EdgeInsets.only(bottom: 10),
                           child: _SimpleInviteRow(
                             icon: Icons.check_circle_outline_rounded,
-                            title: event?.title ?? 'Event',
-                            subtitle: event?.location ?? 'Unbekannter Ort',
+                            title: event?.title ?? context.tr('event_details_title'),
+                            subtitle: event?.location ?? context.tr('event_not_specified'),
                           ),
                         );
                       },
                     ),
                   const SizedBox(height: 20),
                   _SectionHeader(
-                    title: 'Als Gastgeber',
+                    title: context.tr('event_host'),
                     subtitle: _hostedInviteEvents.isEmpty
-                        ? 'Keine Events'
-                        : '${_hostedInviteEvents.length} Events',
+                      ? context.tr('event_invite_no_hosted')
+                      : context.tr('event_invite_event_count', values: {'count': _hostedInviteEvents.length}),
                   ),
                   const SizedBox(height: 8),
                   if (_hostedInviteEvents.isEmpty)
-                    const _EmptyTile(
+                    _EmptyTile(
                       icon: Icons.celebration_outlined,
-                      text: 'Keine eigenen privaten Events vorhanden.',
+                      text: context.tr('event_invite_no_hosted'),
                     )
                   else
                     ..._hostedInviteEvents.map((event) {
@@ -383,21 +385,21 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                               style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 4),
-                            Text('Code: $code'),
+                            Text(context.tr('event_invite_code', values: {'code': code})),
                             if (expiry != null)
                               Text(
-                                'Gültig bis: ${expiry.day.toString().padLeft(2, '0')}.${expiry.month.toString().padLeft(2, '0')}.${expiry.year}${expired ? ' (abgelaufen)' : ''}',
+                                '${context.tr('event_invite_valid_until', values: {'date': MaterialLocalizations.of(context).formatShortDate(expiry.toLocal())})}${expired ? ' (${context.tr('event_invite_expired')})' : ''}',
                               ),
                             const SizedBox(height: 8),
                             Text(
-                              'Zusagen (${acceptedList.length})',
+                              context.tr('event_confirmed_count', values: {'count': acceptedList.length}),
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 6),
                             if (acceptedList.isEmpty)
-                              const Text(
-                                'Noch keine Zusagen.',
-                                style: TextStyle(color: Colors.black54),
+                              Text(
+                                context.tr('event_invite_no_acceptances'),
+                                style: const TextStyle(color: Colors.black54),
                               )
                             else
                               Wrap(
@@ -407,11 +409,11 @@ class _EventInvitationsScreenState extends State<EventInvitationsScreen> {
                                   final contact = _contactsById[invite.invitedUserId];
                                   return Chip(
                                     label: Text(
-                                      contact?.displayName ?? invite.invitedUserId,
+                                      contact?.displayName ?? context.tr('event_invite_guest'),
                                     ),
-                                    avatar: const Icon(
-                                      Icons.check_circle_outline_rounded,
-                                      size: 16,
+                                    avatar: UserAvatar(
+                                      name: contact?.displayName ?? '',
+                                      radius: 12,
                                     ),
                                   );
                                 }).toList(),
@@ -565,14 +567,14 @@ class _PendingInviteRow extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: onDecline,
-                  child: const Text('Absagen'),
+                  child: Text(context.tr('events_invitation_declined')),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton(
                   onPressed: onAccept,
-                  child: const Text('Zusagen'),
+                  child: Text(context.tr('events_accept_invitation')),
                 ),
               ),
             ],

@@ -341,8 +341,11 @@ void main() {
     await tester.tap(find.byKey(const Key('event-feed-refresh')));
     await tester.pump();
     await _showFeed(tester, 'Community picnic');
+    await tester.ensureVisible(find.text('Community picnic'));
+    await tester.pump();
     await tester.tap(find.text('Community picnic'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.byKey(const Key('event-owner-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));

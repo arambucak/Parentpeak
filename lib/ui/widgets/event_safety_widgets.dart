@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/models/community_event.dart';
 
@@ -25,7 +26,7 @@ class EventDisclaimerBanner extends StatelessWidget {
           const Text('\u{26A0}\u{FE0F}', style: TextStyle(fontSize: 16)),
           const SizedBox(width: 8),
           Expanded(
-              child: Text('Hinweis zur Sicherheit',
+              child: Text(context.tr('event_safety_title'),
                   style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF92400E)))),
@@ -38,9 +39,7 @@ class EventDisclaimerBanner extends StatelessWidget {
         ]),
         const SizedBox(height: 6),
         Text(
-          'ParentPeak vermittelt nur Informationen zu Events. '
-          'Die Verantwortung liegt beim Veranstalter und den begleitenden Eltern. '
-          'Bitte begleite dein Kind immer persoenlich zu Treffen.',
+          context.tr('event_safety_disclaimer'),
           style: theme.textTheme.bodySmall
               ?.copyWith(color: const Color(0xFF92400E), height: 1.4),
         ),
@@ -71,41 +70,40 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
   static const _reasons = [
     {
       'id': 'spam',
-      'label': '\u{1F6AB} Spam oder Werbung',
-      'desc': 'Keine echte Veranstaltung'
+      'label': 'event_report_spam',
+      'desc': 'event_report_spam_hint'
     },
     {
       'id': 'fake',
-      'label': '\u{26A0}\u{FE0F} Falsche Informationen',
-      'desc': 'Ort, Datum oder Inhalt stimmen nicht'
+      'label': 'event_report_fake',
+      'desc': 'event_report_fake_hint'
     },
     {
       'id': 'unsafe',
-      'label': '\u{1F6A8} Unsicher für Kinder',
-      'desc': 'Kein sicherer Ort oder Betreuer'
+      'label': 'event_report_unsafe',
+      'desc': 'event_report_unsafe_hint'
     },
     {
       'id': 'inappropriate',
-      'label': '\u{1F645} Unangemessener Inhalt',
-      'desc': 'Beleidigend oder nicht für Familien geeignet'
+      'label': 'event_report_inappropriate',
+      'desc': 'event_report_inappropriate_hint'
     },
     {
       'id': 'expired',
-      'label': '\u{1F4C5} Veraltet / abgesagt',
-      'desc': 'Event findet nicht mehr statt'
+      'label': 'event_report_expired',
+      'desc': 'event_report_expired_hint'
     },
   ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
             width: 36,
             height: 4,
@@ -113,7 +111,7 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
                 color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2))),
         const SizedBox(height: 16),
-        Text('Event melden',
+        Text(context.tr('event_report_title'),
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
@@ -123,16 +121,17 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
         const SizedBox(height: 16),
-        ..._reasons.map((r) => Padding(
+        RadioGroup<String>(
+          groupValue: _selectedReason,
+          onChanged: (value) => setState(() => _selectedReason = value),
+          child: Column(children: _reasons.map((r) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: RadioListTile<String>(
                 value: r['id']!,
-                groupValue: _selectedReason,
-                onChanged: (v) => setState(() => _selectedReason = v),
-                title: Text(r['label']!,
+                title: Text(context.tr(r['label']!),
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(fontWeight: FontWeight.w600)),
-                subtitle: Text(r['desc']!,
+                subtitle: Text(context.tr(r['desc']!),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.outline)),
                 shape: RoundedRectangleBorder(
@@ -143,7 +142,8 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
                 activeColor: theme.colorScheme.error,
                 dense: true,
               ),
-            )),
+            )).toList()),
+          ),
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
@@ -161,10 +161,10 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
                     height: 18,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Text('Meldung senden'),
+                : Text(context.tr('event_report_send')),
           ),
         ),
-      ]),
+      ])),
     );
   }
 
@@ -175,11 +175,13 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
       _selectedReason!,
     );
     if (mounted) {
+      final messenger = ScaffoldMessenger.of(context);
+      final message = context.tr(success
+          ? 'event_report_thanks'
+          : 'event_report_failed');
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(success
-            ? 'Danke für deine Meldung. Wir pruefen das Event.'
-            : 'Meldung konnte nicht gesendet werden.'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(message),
       ));
     }
   }
@@ -240,7 +242,9 @@ class _EventInterestButtonState extends State<EventInterestButton> {
           ),
           const SizedBox(width: 4),
           Text(
-            _count > 0 ? '$_count Familien interessiert' : 'Interesse zeigen',
+            _count > 0
+              ? context.tr('event_interested_families', values: {'count': _count})
+              : context.tr('event_show_interest'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -278,20 +282,20 @@ class EventSourceBadge extends StatelessWidget {
     switch (event.source) {
       case EventSource.kiAgent:
         color = const Color(0xFF8B5CF6);
-        label = 'KI-Vorschlag';
+        label = context.tr('event_source_ai_suggestion');
         icon = Icons.auto_awesome_rounded;
         break;
       case EventSource.partner:
         color = event.isVerified
             ? const Color(0xFF16A34A)
             : const Color(0xFF2563EB);
-        label = event.isVerified ? 'Verifiziert' : 'Partner';
+        label = context.tr(event.isVerified ? 'event_source_verified' : 'event_source_partner');
         icon =
             event.isVerified ? Icons.verified_rounded : Icons.business_rounded;
         break;
       case EventSource.community:
         color = const Color(0xFFF97316);
-        label = 'Eltern-Tipp';
+        label = context.tr('event_source_parent_tip');
         icon = Icons.people_rounded;
         break;
     }
@@ -330,9 +334,9 @@ class PrivateAddressHint extends StatelessWidget {
         const Icon(Icons.lock_outline_rounded,
             size: 12, color: Color(0xFF92400E)),
         const SizedBox(width: 4),
-        Text('Privater Ort — Adresse erst nach Kontakt sichtbar',
+        Flexible(child: Text(context.tr('event_private_address_hint'),
             style: theme.textTheme.labelSmall?.copyWith(
-                color: const Color(0xFF92400E), fontWeight: FontWeight.w500)),
+          color: const Color(0xFF92400E), fontWeight: FontWeight.w500))),
       ]),
     );
   }

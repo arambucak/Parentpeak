@@ -10,6 +10,7 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
+import 'package:parentpeak/logic/event_geocoder.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/participation_service.dart';
 import 'package:parentpeak/models/event_participation.dart';
@@ -51,6 +52,10 @@ class _Fixture {
       seriesId: 'picnic-series',
     );
     backend = EventBackendService(
+      geocoder: EventGeocoder(
+        minimumInterval: Duration.zero,
+        client: MockClient((_) async => http.Response('[{"lat":"52","lon":"13"}]', 200)),
+      ),
       apiClient: BackendApiClient(
         baseUrl: 'http://localhost:3000',
         authToken: 'test-only',
@@ -231,6 +236,8 @@ void main() {
         'participationMode': 'legacyApproval',
         'externalUrl': null,
         'hosterId': 'debug_demo_user',
+        'latitude': 52.0,
+        'longitude': 13.0,
       });
       expect(
         tester
@@ -478,13 +485,13 @@ void main() {
     }
   });
 
-  test('owner labels retain English fallback for untranslated French', () {
+  test('owner labels resolve explicit French translations', () {
     for (final key in AppStringsManager.allStrings['en']!.keys.where(
       (key) => key.startsWith('event_owner_'),
     )) {
       expect(
         AppStringsManager.getString('fr', key),
-        AppStringsManager.getString('en', key),
+        AppStringsManager.allStrings['fr']![key],
       );
     }
   });

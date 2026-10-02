@@ -17,6 +17,25 @@ BackendApiClient _client(http.Response Function(http.Request) respond) =>
         httpClient: MockClient((request) async => respond(request)));
 
 void main() {
+  test('AI discovery requests a small grounded batch without invented dates', () async {
+    final agent = EventDiscoveryAgent(aiService: GeminiAIService(
+      apiClient: _client((request) {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        final prompt = body['prompt'] as String;
+        expect(body['useGoogleSearch'], isTrue);
+        expect(prompt, contains('bis zu 5'));
+        expect(prompt, contains('höchstens ein kurzer Satz'));
+        expect(prompt, contains('eventDate=null'));
+        expect(prompt, contains('ohne Treffer []'));
+        expect(prompt, isNot(contains('genau 10')));
+        expect(prompt, isNot(contains('T10:00:00')));
+        return http.Response(jsonEncode({'text': '[]'}), 200);
+      }),
+    ));
+
+    expect(await agent.discoverEvents(city: 'Berlin'), isEmpty);
+  });
+
   test('AI failure makes one request and never invents replacement events',
       () async {
     var requests = 0;

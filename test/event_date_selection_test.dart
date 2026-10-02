@@ -5,13 +5,41 @@ import 'package:parentpeak/logic/event_flyer_scanner_service.dart';
 void main() {
   final now = DateTime(2026, 10, 2, 12);
   EventDateSelection selection() => EventDateSelection(
-      date: DateTime(2026, 10, 3), time: const TimeOfDayLite(12, 0));
+    date: DateTime(2026, 10, 3),
+    time: const TimeOfDayLite(12, 0),
+  );
+
+  test('manual creation needs real choices and a strictly future instant', () {
+    final value = selection();
+    expect(value.hasConcreteDate, isFalse);
+    expect(value.hasConcreteTime, isFalse);
+    expect(value.canSubmit(now), isFalse);
+    value.selectDate(DateTime(2026, 10, 2));
+    value.selectTime(const TimeOfDayLite(11, 59));
+    expect(value.canSubmit(now), isFalse);
+    value.selectTime(const TimeOfDayLite(12, 0));
+    expect(value.canSubmit(now), isFalse);
+    value.selectTime(const TimeOfDayLite(12, 1));
+    expect(value.canSubmit(now), isTrue);
+    expect(value.localDateTime.toUtc().toLocal(), value.localDateTime);
+  });
+
+  test('missing scanned time stays unknown until explicitly selected', () {
+    final value = selection();
+    value.applyScan(ScannedEventDraft(date: DateTime(2026, 10, 3)), now);
+    value.selectDate(value.date);
+    expect(value.hasConcreteTime, isFalse);
+    expect(value.canSubmit(now), isFalse);
+    value.selectTime(const TimeOfDayLite(14, 20));
+    expect(value.canSubmit(now), isTrue);
+  });
 
   test('unknown scan date cannot publish the default tomorrow', () {
     final value = selection();
     value.applyScan(
-        const ScannedEventDraft(title: 'Theater', time: TimeOfDayLite(10, 0)),
-        now);
+      const ScannedEventDraft(title: 'Theater', time: TimeOfDayLite(10, 0)),
+      now,
+    );
     expect(value.hasConcreteDate, isFalse);
     expect(value.canSubmit(now), isFalse);
     value.selectTime(const TimeOfDayLite(10, 0));
@@ -27,9 +55,12 @@ void main() {
     value.selectDate(DateTime(2026, 10, 8));
     value.selectTime(const TimeOfDayLite(9, 30));
     value.applyScan(
-        ScannedEventDraft(
-            date: DateTime(2027, 1, 14), time: const TimeOfDayLite(10, 0)),
-        now);
+      ScannedEventDraft(
+        date: DateTime(2027, 1, 14),
+        time: const TimeOfDayLite(10, 0),
+      ),
+      now,
+    );
     expect(value.hasConcreteDate, isTrue);
     expect(value.localDateTime, DateTime(2026, 10, 8, 9, 30));
     expect(value.canSubmit(now), isFalse);
@@ -45,9 +76,12 @@ void main() {
   test('scanned concrete date and time still require both confirmations', () {
     final value = selection();
     value.applyScan(
-        ScannedEventDraft(
-            date: DateTime(2026, 10, 7), time: const TimeOfDayLite(10, 0)),
-        now);
+      ScannedEventDraft(
+        date: DateTime(2026, 10, 7),
+        time: const TimeOfDayLite(10, 0),
+      ),
+      now,
+    );
     expect(value.canSubmit(now), isFalse);
     value.selectDate(value.date);
     expect(value.canSubmit(now), isFalse);

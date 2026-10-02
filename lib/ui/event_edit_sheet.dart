@@ -109,9 +109,13 @@ class _EventEditSheetState extends State<EventEditSheet> {
         'description': _description.text.trim(),
         'location': _location.text.trim(),
         'startDate': _date.toUtc().toIso8601String(),
-        'maxParticipants': _mode == ParticipationMode.interest ? null : int.parse(_capacity.text.trim()),
+        'maxParticipants': _mode == ParticipationMode.interest
+            ? null
+            : int.parse(_capacity.text.trim()),
         'participationMode': _mode.name,
-        'externalUrl': _mode == ParticipationMode.interest ? _externalUrl.text.trim() : null,
+        'externalUrl': _mode == ParticipationMode.interest
+            ? _externalUrl.text.trim()
+            : null,
       });
       if (mounted) Navigator.pop(context, updated);
     } catch (_) {
@@ -246,56 +250,87 @@ class _EventEditSheetState extends State<EventEditSheet> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    if (widget.event.participationMode == ParticipationMode.legacyApproval) ...[
+                    if (widget.event.participationMode ==
+                        ParticipationMode.legacyApproval) ...[
                       DropdownButtonFormField<ParticipationMode>(
                         key: const Key('event-edit-mode'),
                         initialValue: _mode,
                         isExpanded: true,
-                        decoration: InputDecoration(labelText: context.tr('event_mode_label')),
-                        items: ParticipationMode.values.where((mode) =>
-                          mode != ParticipationMode.interest ||
-                          (widget.event.currentParticipants == 0 && widget.event.visibility == EventVisibility.publicNearby))
-                            .map((mode) => DropdownMenuItem(value: mode,
-                              child: Text(context.tr('event_mode_${mode.name}')))).toList(),
-                        onChanged: _busy ? null : (mode) => setState(() => _mode = mode!),
+                        decoration: InputDecoration(
+                          labelText: context.tr('event_mode_label'),
+                        ),
+                        items: ParticipationMode.values
+                            .where(
+                              (mode) =>
+                                  mode != ParticipationMode.interest ||
+                                  (widget.event.currentParticipants == 0 &&
+                                      widget.event.visibility ==
+                                          EventVisibility.publicNearby),
+                            )
+                            .map(
+                              (mode) => DropdownMenuItem(
+                                value: mode,
+                                child: Text(
+                                  context.tr(switch (mode) {
+                                    ParticipationMode.direct =>
+                                      'event_mode_direct',
+                                    ParticipationMode.interest =>
+                                      'event_mode_interest',
+                                    ParticipationMode.legacyApproval =>
+                                      'event_mode_legacyApproval',
+                                  }),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _busy
+                            ? null
+                            : (mode) => setState(() => _mode = mode!),
                       ),
                       const SizedBox(height: 8),
                       Text(context.tr('event_pending_preserved')),
                       const SizedBox(height: 12),
                     ],
-                    if (_mode == ParticipationMode.interest) TextFormField(
-                      key: const Key('event-edit-url'),
-                      controller: _externalUrl,
-                      enabled: !_busy,
-                      keyboardType: TextInputType.url,
-                      decoration: InputDecoration(labelText: context.tr('event_organizer_url'), border: fieldBorder),
-                      validator: (value) {
-                        final uri = Uri.tryParse(value?.trim() ?? '');
-                        return uri != null && ['http', 'https'].contains(uri.scheme) &&
-                            uri.host.isNotEmpty && uri.userInfo.isEmpty
-                            ? null : context.tr('event_invalid_url');
-                      },
-                    ),
-                    if (_mode != ParticipationMode.interest)
-                    TextFormField(
-                      key: const Key('event-edit-capacity'),
-                      controller: _capacity,
-                      enabled: !_busy,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: context.tr('event_owner_capacity'),
-                        border: fieldBorder,
+                    if (_mode == ParticipationMode.interest)
+                      TextFormField(
+                        key: const Key('event-edit-url'),
+                        controller: _externalUrl,
+                        enabled: !_busy,
+                        keyboardType: TextInputType.url,
+                        decoration: InputDecoration(
+                          labelText: context.tr('event_organizer_url'),
+                          border: fieldBorder,
+                        ),
+                        validator: (value) {
+                          final uri = Uri.tryParse(value?.trim() ?? '');
+                          return uri != null &&
+                                  ['http', 'https'].contains(uri.scheme) &&
+                                  uri.host.isNotEmpty &&
+                                  uri.userInfo.isEmpty
+                              ? null
+                              : context.tr('event_invalid_url');
+                        },
                       ),
-                      validator: (value) {
-                        final capacity = int.tryParse(value?.trim() ?? '');
-                        return capacity == null || capacity < minimumCapacity
-                            ? context.tr(
-                                'event_owner_capacity_min',
-                                values: {'count': minimumCapacity},
-                              )
-                            : null;
-                      },
-                    ),
+                    if (_mode != ParticipationMode.interest)
+                      TextFormField(
+                        key: const Key('event-edit-capacity'),
+                        controller: _capacity,
+                        enabled: !_busy,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: context.tr('event_owner_capacity'),
+                          border: fieldBorder,
+                        ),
+                        validator: (value) {
+                          final capacity = int.tryParse(value?.trim() ?? '');
+                          return capacity == null || capacity < minimumCapacity
+                              ? context.tr(
+                                  'event_owner_capacity_min',
+                                  values: {'count': minimumCapacity},
+                                )
+                              : null;
+                        },
+                      ),
                     if (_error != null) ...[
                       const SizedBox(height: 16),
                       Semantics(

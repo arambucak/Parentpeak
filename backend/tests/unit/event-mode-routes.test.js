@@ -182,6 +182,38 @@ test('capacity edits and new-mode conversion cannot invalidate confirmed attenda
   assert.equal((await route.request('put', '/api/events/:id', { hosterId: 'host', maxParticipants: 0 }, 'host')).status, 400);
   assert.equal((await route.request('put', '/api/events/:id', { hosterId: 'host', participationMode: 'interest', externalUrl: 'https://example.org' }, 'host')).status, 409);
 });
+
+test('create preserves paid, free and unknown prices without invented coordinates', async () => {
+  for (const price of [9.40, 0, null]) {
+    const route = fixture();
+    const result = await route.request('post', '/api/events', {
+      hosterId: 'host', title: 'Public offer', location: 'Unresolved venue',
+      latitude: null, longitude: null, startDate: '2099-01-01',
+      participationMode: 'interest', externalUrl: 'https://organizer.example',
+      costPerPerson: price,
+    }, 'host');
+    assert.equal(result.status, 201);
+    assert.equal(result.body.event.costPerPerson, price);
+    assert.equal(result.body.event.latitude, null);
+    assert.equal(result.body.event.longitude, null);
+  }
+});
+
+test('create rejects malformed coordinates and negative or invalid prices', async () => {
+  const body = {
+    hosterId: 'host', title: 'Public offer', location: 'Venue',
+    latitude: 52, longitude: 13, startDate: '2099-01-01',
+    participationMode: 'interest', externalUrl: 'https://organizer.example',
+  };
+  for (const change of [
+    { latitude: null }, { latitude: '52' }, { longitude: Infinity },
+    { costPerPerson: -1 }, { costPerPerson: '9,40' }, { costPerPerson: NaN },
+  ]) {
+    const route = fixture();
+    assert.equal((await route.request('post', '/api/events', { ...body, ...change }, 'host')).status, 400);
+    assert.deepEqual(route.calls, []);
+  }
+});
 test('event GET identity is derived from a verified Firebase token, not URL claims', async () => {
   const route = fixture();
   assert.deepEqual(await route.authenticate('Bearer verified-token'), { status: 200, uid: 'parent', nextCalled: true });
