@@ -26,6 +26,12 @@ services:
         value: "900000"
       - key: WRITE_RATE_LIMIT_MAX
         value: "120"
+      # Dediziertes, strengeres Limit für den teuren KI-Endpunkt (/ai/generate),
+      # pro Nutzer: schützt die Gemini-Kosten gegen Missbrauch.
+      - key: AI_RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: AI_RATE_LIMIT_MAX
+        value: "30"
       - key: WEEKLY_IMPULSE_SCHEMA_PATH
         value: "/opt/render/project/backend/weekly_impulse_schema_year3.json"
       - key: DISABLE_IN_MEMORY_FALLBACKS
