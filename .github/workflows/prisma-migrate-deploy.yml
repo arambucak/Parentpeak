@@ -1,0 +1,73 @@
+name: Prisma Migrate Deploy
+
+# Wendet ausstehende Prisma-Migrationen auf die Produktions-Datenbank an.
+#
+# Manuell auslösbar (workflow_dispatch). Die DATABASE_URL wird NICHT im Klartext
+# gespeichert, sondern aus dem Repository-Secret `DATABASE_URL` gelesen. Der Wert
+# erscheint nicht in den Logs (von GitHub automatisch maskiert).
+#
+# `prisma migrate deploy` ist der produktionssichere Befehl: Er wendet nur bereits
+# committete, versionierte Migrationen an — kein db push, kein Schema-Drift, keine
+# interaktiven Prompts. Bereits angewandte Migrationen werden übersprungen
+# (idempotent).
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Zum Bestätigen "deploy" eingeben'
+        required: true
+        default: ''
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Eingabe prüfen
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "deploy" ]; then
+            echo "::error::Bestätigung fehlt. Bitte den Workflow mit der Eingabe 'deploy' starten."
+            exit 1
+          fi
+
+      - name: Secret prüfen
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Repository-Secret DATABASE_URL ist nicht gesetzt."
+            echo "Setze es unter: Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          echo "DATABASE_URL ist gesetzt (Wert wird maskiert)."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Dependencies installieren
+        working-directory: backend
+        run: npm ci
+
+      - name: Migrationsstatus (vorher)
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate status || true
+
+      - name: Migrationen anwenden
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run migrate:deploy
+
+      - name: Migrationsstatus (nachher)
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate status
