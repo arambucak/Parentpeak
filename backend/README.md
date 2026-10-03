@@ -18,6 +18,45 @@
 
 Das Backend läuft dann auf: **http://localhost:3000**
 
+## Datenbank-Migrationen (Prisma)
+
+Das Schema wird über versionierte Prisma-Migrationen (`backend/prisma/migrations`)
+gepflegt. In Produktion werden Migrationen mit `prisma migrate deploy` angewandt
+(niemals `prisma db push` oder `migrate dev` gegen Produktion).
+
+**Automatisch beim Deploy (empfohlen):**
+`render.yaml` enthält `preDeployCommand: npm run migrate:deploy`. Render wendet
+ausstehende Migrationen damit einmal pro Deploy an (nach Build, vor dem
+Umschalten auf die neue Instanz). Die `DATABASE_URL` kommt aus dem Render-Service-
+Environment. Hinweis: Damit Render einen geänderten `preDeployCommand` übernimmt,
+muss der Blueprint im Render-Dashboard einmalig neu gesynct werden.
+
+**Einmalig manuell (schnellster Weg, z. B. für eine sofort nötige Migration):**
+Im Render-Dashboard den Service `parentpeak-backend` öffnen → Tab **Shell**:
+
+```bash
+cd backend && npx prisma migrate deploy
+```
+
+Die `DATABASE_URL` ist in der Render-Shell automatisch gesetzt.
+
+**Verifikation nach der Migration:**
+
+```bash
+BACKEND_BASE_URL=https://parentpeak.onrender.com \
+  bash scripts/verify_event_age_groups.sh
+```
+
+Prüft Health, dass `GET /api/events` ohne Schemafehler mit HTTP 200 antwortet und
+dass Events ein `ageGroups`-Feld tragen. Optional mit Auth
+(`FIREBASE_ID_TOKEN` + `HOSTER_ID`) wird zusätzlich ein Create-Roundtrip geprüft,
+der bestätigt, dass gesendete `ageGroups` persistiert werden.
+
+> Resilienz: Fehlt die `ageGroups`-Spalte (Migration noch nicht angewandt),
+> degradiert der Event-Feed sauber mit `ageGroups: []` statt zu crashen
+> (`resilientEventFindMany` in `server.js`). Die Filterung wird aktiv, sobald die
+> Migration die Spalte angelegt hat — ohne weitere Codeänderung.
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:
