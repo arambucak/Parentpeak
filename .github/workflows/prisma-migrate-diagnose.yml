@@ -1,0 +1,40 @@
+name: Prisma Migrate Diagnose (read-only)
+
+# Liest den Migrations-/Schemazustand der Produktions-DB aus, um einen
+# Migrations-Drift zu analysieren. Ändert NICHTS an der Datenbank.
+# DATABASE_URL kommt aus dem Repository-Secret (von Actions maskiert).
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Secret prüfen
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Repository-Secret DATABASE_URL ist nicht gesetzt."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Dependencies installieren
+        working-directory: backend
+        run: npm ci
+
+      - name: Read-only Diagnose
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/db_migration_diagnose.cjs
