@@ -7,6 +7,33 @@ Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [Unreleased] — 2026-10-03
+
+### Behoben
+- **Kalender** — Monats-Grid füllt vollständige Wochen (Mo–So) inkl. Folgemonatstage; Edit verliert keine Daten mehr bei Abbruch; Doppel-Submit beim Speichern verhindert; Schnelleingabe (NLP) weist ungültige Uhrzeit/Datum sauber ab statt still falsch zu interpretieren; wiederkehrende Termine kalendergenau (monatlich/jährlich, schaltjahrsicher). (#59)
+- **Events** — „Gastgeber" ersetzt durch ehrliches „Eingetragen von" / „Geteilt von" bei nicht selbst veranstalteten Events; differenziert über `EventHostRelation`. (#67, #68)
+- **Events** — Kein irreführendes „0 bestätigt" mehr bei eingetragenen Dritt-Veranstaltungen; stattdessen Hinweis auf Anmeldung beim Veranstalter. (#76)
+- **Events** — KI-Suche-Fehler werden sichtbar gemacht (retry-barer Hinweis) statt stumm verschluckt; Parser überspringt defekte Einträge statt den ganzen Feed zu verwerfen. (#71)
+- **Events / Auth** — Fehlende KI-Funde behoben: Firebase-ID-Token wird jetzt bei Bedarf erneuert (`getIdToken(true)`), sodass authentifizierte Backend-Calls (u. a. `/ai/generate`) keinen abgelaufenen Token mehr senden. (#75)
+- **Events** — Altersgruppen werden am Event persistiert und für Filterung/Ranking genutzt. (#60)
+
+### Hinzugefügt
+- **Kalender** — Vollständiges Qualitäts-Audit mit Unit-/Widget-Tests und Bericht (`docs/CALENDAR_QUALITY_AUDIT_2026-10-03.md`); i18n für alle Kalender-Strings in 16 Picker-Sprachen; Datums-/Zeitformate folgen der App-Sprache; `UserAvatar` in Terminkarten.
+- **Events** — Qualitäts-Audit-Bericht (`docs/EVENTS_QUALITY_AUDIT_2026-10-03.md`).
+- **Backend** — `/ai/health?grounding=1` testet den echten KI-Event-Pfad (Google-Search-Grounding + JSON-Array) für Launch-Monitoring.
+- **Backend-Client** — Typisierte `BackendApiException` mit HTTP-Status und Server-Fehlermeldung (unterscheidet Auth- von Upstream-Fehlern in Logs).
+
+### Infrastruktur
+- **DB-Migrationen** — `render.yaml` `preDeployCommand` wendet Prisma-Migrationen automatisch beim Deploy an; neues `migrate:deploy`-Script.
+- **GitHub Actions** — Neue Workflows: `prisma-migrate-deploy`, `prisma-migrate-diagnose` (read-only), `prisma-migrate-resolve` (Drift-Behebung) — ermöglichen DB-Migrationen und -Diagnose ohne Render-Shell-Zugang. `DATABASE_URL` als GitHub-Secret.
+- **DB** — Produktions-Migrations-Drift (hängende `treasure_items`-Migration) über `migrate resolve` bereinigt; `Event.ageGroups`-Spalte angewandt.
+- **Verifikation** — `scripts/verify_event_age_groups.sh` als Post-Migration-Smoke-Check.
+
+### Hinweise
+- KI-Event-Suche erfordert weiterhin eine authentifizierte Sitzung (gültiger Firebase-Token). Eine Öffnung für Gäste ist bewusst eine offene Produkt-/Kostenentscheidung und nicht umgesetzt.
+
+---
+
 ## [1.0.0-beta.1] — 2026-08-20
 
 ### Hinzugefügt
