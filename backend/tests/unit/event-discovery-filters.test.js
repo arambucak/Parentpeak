@@ -15,9 +15,11 @@ function event(id, overrides = {}) {
 function fixture(events) {
   let handler;
   const reads = [];
+  const prismaMock = { event: { findMany: async options => { reads.push(options); return events; } } };
   vm.runInNewContext(route, {
     app: { get: (_path, callback) => { handler = callback; } },
-    prisma: { event: { findMany: async options => { reads.push(options); return events; } } },
+    prisma: prismaMock,
+    resilientEventFindMany: args => prismaMock.event.findMany(args),
     authorizeEventParticipation: async (_db, row, uid) => {
       if (row.visibility !== 'publicNearby' && row.hosterId !== uid) {
         throw Object.assign(new Error('Forbidden'), { httpStatus: 403 });

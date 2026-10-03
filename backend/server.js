@@ -4279,6 +4279,65 @@ function getInMemoryEventById(eventId) {
   return events.find(item => item.id === eventId) || null;
 }
 
+// Felder des Event-Modells OHNE die optionale ageGroups-Spalte. Wird als
+// expliziter Fallback-select genutzt, falls die ageGroups-Migration in der
+// Zieldatenbank noch nicht angewandt wurde (z.B. Code live vor Migration).
+const EVENT_SCALAR_SELECT_WITHOUT_AGE_GROUPS = {
+  id: true,
+  title: true,
+  description: true,
+  hosterId: true,
+  familyId: true,
+  startDate: true,
+  endDate: true,
+  location: true,
+  latitude: true,
+  longitude: true,
+  status: true,
+  eventType: true,
+  participationMode: true,
+  externalUrl: true,
+  visibility: true,
+  shareRadiusKm: true,
+  inviteCode: true,
+  inviteCodeExpiresAt: true,
+  seriesId: true,
+  costPerPerson: true,
+  currency: true,
+  maxParticipants: true,
+  imageUrl: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+function isMissingAgeGroupsColumnError(error) {
+  const message = String(error && error.message ? error.message : error);
+  return message.includes('ageGroups') && /does not exist|column/i.test(message);
+}
+
+// Robuste Variante von prisma.event.findMany: Scheitert die Query daran, dass
+// die ageGroups-Spalte in der DB (noch) fehlt, wird transparent erneut ohne
+// diese Spalte geladen und ageGroups mit [] ergänzt. So funktioniert der
+// Event-Feed sowohl vor als auch nach der Migration.
+async function resilientEventFindMany(args) {
+  try {
+    return await prisma.event.findMany(args);
+  } catch (error) {
+    if (!isMissingAgeGroupsColumnError(error)) throw error;
+    const fallbackArgs = { ...args };
+    // include und select schließen sich bei Prisma gegenseitig aus. Wir bauen
+    // einen select, der die bisherigen Relationen (include) übernimmt.
+    const relations = fallbackArgs.include || {};
+    delete fallbackArgs.include;
+    fallbackArgs.select = {
+      ...EVENT_SCALAR_SELECT_WITHOUT_AGE_GROUPS,
+      ...relations,
+    };
+    const rows = await prisma.event.findMany(fallbackArgs);
+    return rows.map(row => ({ ...row, ageGroups: [] }));
+  }
+}
+
 function mapEventRecordToApiItem(record, options = {}) {
   const memoryEvent = getInMemoryEventById(record.id);
   const currentParticipants = Number(options.currentParticipants || 0);
@@ -5150,7 +5209,7 @@ async function exportAccountDataByUserIdPrisma(userId) {
       },
     }),
     prisma.family.findMany({ where: { createdById: userId } }),
-    prisma.event.findMany({ where: { hosterId: userId } }),
+    resilientEventFindMany({ where: { hosterId: userId } }),
     prisma.eventParticipation.findMany({ where: { userId } }),
     prisma.message.findMany({ where: { authorId: userId } }),
     prisma.chatReport.findMany({ where: { reportedById: userId } }),
@@ -9044,7 +9103,7 @@ app.get('/events', async (req, res) => {
 
   try {
     const hostUserId = (req.query.hostUserId || '').toString().trim();
-    const records = await prisma.event.findMany({
+    const records = await resilientEventFindMany({
       where: hostUserId ? { hosterId: hostUserId } : undefined,
       orderBy: { createdAt: 'desc' },
       skip: offset,
@@ -9102,7 +9161,7 @@ app.get('/events/discover', async (req, res) => {
     });
     const acceptedInviteEventIds = new Set(acceptedInvites.map(item => item.eventId));
 
-    const records = await prisma.event.findMany({
+    const records = await resilientEventFindMany({
       orderBy: { createdAt: 'desc' },
     });
     const candidateHostIds = [...new Set(records.map(item => item.hosterId).filter(Boolean))].filter(
@@ -9606,7 +9665,7 @@ app.get('/events/hosted-invite-only', async (req, res) => {
   const hostUserId = (req.query.hostUserId || '').toString();
 
   try {
-    const records = await prisma.event.findMany({
+    const records = await resilientEventFindMany({
       where: hostUserId ? { hosterId: hostUserId } : undefined,
       orderBy: { createdAt: 'desc' },
     });
@@ -12485,7 +12544,7 @@ app.get('/api/events', async (req, res) => {
       ...(hosterId && { hosterId: String(hosterId) }),
     };
 
-    let events = await prisma.event.findMany({
+    let events = await resilientEventFindMany({
       where,
       orderBy: { startDate: 'asc' },
       include: {
