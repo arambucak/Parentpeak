@@ -15,6 +15,52 @@ class SuspendedAccountException implements Exception {
   String toString() => message;
 }
 
+/// Fehlgeschlagene Backend-Antwort mit HTTP-Status und (falls vorhanden) der
+/// Server-Fehlermeldung. Erlaubt Aufrufern, Auth-Fehler (401) von Server-/
+/// Upstream-Fehlern (z.B. 502) zu unterscheiden, statt nur eine generische
+/// Exception zu sehen. Implementiert [Exception], ist also abwärtskompatibel
+/// zu bestehenden `catch`/`throwsException`-Stellen.
+class BackendApiException implements Exception {
+  BackendApiException({
+    required this.method,
+    required this.path,
+    required this.statusCode,
+    this.serverMessage,
+  });
+
+  final String method;
+  final String path;
+  final int statusCode;
+  final String? serverMessage;
+
+  bool get isUnauthorized => statusCode == 401;
+  bool get isForbidden => statusCode == 403;
+
+  @override
+  String toString() {
+    final detail = serverMessage != null && serverMessage!.isNotEmpty
+        ? ' — $serverMessage'
+        : '';
+    return '$method $path failed: $statusCode$detail';
+  }
+}
+
+/// Extrahiert die 'error'-Nachricht aus einem JSON-Fehlerbody, falls vorhanden.
+String? _extractServerError(String body) {
+  final trimmed = body.trim();
+  if (trimmed.isEmpty) return null;
+  try {
+    final decoded = jsonDecode(trimmed);
+    if (decoded is Map && decoded['error'] is String) {
+      return decoded['error'] as String;
+    }
+  } catch (_) {
+    // Kein JSON — rohen (gekürzten) Text zurückgeben.
+    return trimmed.length > 200 ? '${trimmed.substring(0, 200)}…' : trimmed;
+  }
+  return null;
+}
+
 class BackendApiClient {
   BackendApiClient({
     required this.baseUrl,
@@ -97,7 +143,12 @@ class BackendApiClient {
         .timeout(const Duration(seconds: 20));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('GET $path failed: ${response.statusCode}');
+      throw BackendApiException(
+        method: 'GET',
+        path: path,
+        statusCode: response.statusCode,
+        serverMessage: _extractServerError(response.body),
+      );
     }
 
     return _decodeResponse(response.body);
@@ -137,7 +188,12 @@ class BackendApiClient {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _throwIfSuspended(response);
-      throw Exception('POST $path failed: ${response.statusCode}');
+      throw BackendApiException(
+        method: 'POST',
+        path: path,
+        statusCode: response.statusCode,
+        serverMessage: _extractServerError(response.body),
+      );
     }
 
     return _decodeResponse(response.body);
