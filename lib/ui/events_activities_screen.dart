@@ -2012,6 +2012,11 @@ class _UnifiedEventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isAi = item.source == _FeedSource.ai;
     final color = isAi ? const Color(0xFF0EA5A4) : const Color(0xFF2563EB);
+    // Beziehung der angezeigten Person: geteiltes Angebot (interest) vs. nur
+    // eingetragenes Dritt-Event. Steuert Label UND Teilnehmerzeile konsistent.
+    final hostRelation = item.participationMode == ParticipationMode.interest
+        ? EventHostRelation.sharedOffer
+        : EventHostRelation.submittedBy;
 
     return Material(
       color: Colors.transparent,
@@ -2068,18 +2073,23 @@ class _UnifiedEventCard extends StatelessWidget {
                 if (item.hosterId?.isNotEmpty == true) ...[
                   EventHostIdentity(
                     userId: item.hosterId!,
-                    relation:
-                        item.participationMode == ParticipationMode.interest
-                            ? EventHostRelation.sharedOffer
-                            : EventHostRelation.submittedBy,
+                    relation: hostRelation,
                   ),
                   const SizedBox(height: 8),
                 ],
+                // Teilnehmerzahl nur bei echten Treffen mit Anmeldung
+                // (Gastgeber) sinnvoll. Fuer geteilte/eingetragene Dritt-Events
+                // ist „0 bestaetigt" irrefuehrend — stattdessen ein Hinweis auf
+                // Anmeldung beim Veranstalter.
                 Text(
                   context.tr(
-                    item.participationMode == ParticipationMode.interest
-                        ? 'event_interest_not_booking'
-                        : 'event_confirmed_count',
+                    switch (hostRelation) {
+                      EventHostRelation.host => 'event_confirmed_count',
+                      EventHostRelation.sharedOffer =>
+                        'event_interest_not_booking',
+                      EventHostRelation.submittedBy =>
+                        'event_submitted_not_booking',
+                    },
                     values: {'count': item.confirmedParticipants},
                   ),
                   style: Theme.of(context).textTheme.bodySmall,
