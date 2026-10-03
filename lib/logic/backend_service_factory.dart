@@ -23,13 +23,25 @@ Future<String?> _getFirebaseIdToken() async {
       user = await FirebaseAuth.instance
           .authStateChanges()
           .firstWhere((u) => u != null)
-          .timeout(const Duration(seconds: 2));
+          // Etwas großzügiger als bisher (2s): auf Web dauert der Session-
+          // Restore aus IndexedDB gelegentlich länger.
+          .timeout(const Duration(seconds: 4));
     } catch (_) {}
   }
   if (user != null) {
+    // Firebase-ID-Tokens laufen nach ~1h ab. Ein gecachter (abgelaufener)
+    // Token führt serverseitig zu 401 — z.B. beim KI-Event-Feed, der einen
+    // gültigen Firebase-Token verlangt. Daher IMMER einen frischen Token
+    // erzwingen (Firebase erneuert nur bei Bedarf, kein Dauer-Overhead).
     try {
-      return await user.getIdToken();
-    } catch (_) {}
+      return await user.getIdToken(true);
+    } catch (_) {
+      // Letzter Versuch ohne Force-Refresh (gecachter Token ist besser als
+      // gar keiner, falls das Erneuern transient scheitert).
+      try {
+        return await user.getIdToken();
+      } catch (_) {}
+    }
   }
   // Fallback: return null so BackendApiClient uses static authToken
   return null;
