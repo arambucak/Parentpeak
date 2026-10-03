@@ -4,6 +4,10 @@ services:
     runtime: node
     rootDir: backend
     buildCommand: npm install
+    # Prisma-Migrationen laufen genau einmal pro Deploy nach dem Build und vor
+    # dem Umschalten auf die neue Instanz. DATABASE_URL kommt aus dem Render-
+    # Service-Environment. Migrationen sind additiv/abwärtskompatibel.
+    preDeployCommand: npm run migrate:deploy
     startCommand: npm start
     healthCheckPath: /health
     autoDeploy: true
