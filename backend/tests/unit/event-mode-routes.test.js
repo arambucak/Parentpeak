@@ -57,6 +57,7 @@ function fixture(overrides = {}, initial = []) {
   };
   const context = vm.createContext({
     ...policy, prisma, crypto, console: { error() {} },
+    resilientEventFindMany: args => prisma.event.findMany(args),
     ensureAuthenticatedEventUser: async (_req, userId) => userId,
     verifyFirebaseIdToken: async req => req.headers.authorization === 'Bearer verified-token'
       ? { verified: true, uid: 'parent' } : { verified: false, uid: null },
