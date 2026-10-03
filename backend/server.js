@@ -193,6 +193,32 @@ const writeRateMax = Number.parseInt(
   10,
 );
 const writeRateBuckets = new Map();
+
+// Dediziertes, strengeres Limit für den teuren KI-Endpunkt (/ai/generate).
+// Schützt die Gemini-Kosten gegen Missbrauch durch ein einzelnes (eingeloggtes)
+// Konto. Pro Firebase-UID (Fallback: IP). Default: 30 Anfragen / 15 Min —
+// großzügig für normale Nutzung, aber eine harte Obergrenze gegen Abuse.
+const aiRateWindowMs = Number.parseInt(
+  process.env.AI_RATE_LIMIT_WINDOW_MS || `${15 * 60 * 1000}`,
+  10,
+);
+const aiRateMax = Number.parseInt(
+  process.env.AI_RATE_LIMIT_MAX || '30',
+  10,
+);
+const aiRateBuckets = new Map();
+
+// Reine, testbare Rate-Limit-Prüfung (Sliding-Window pro Schlüssel).
+// Gibt true zurück, wenn die Anfrage erlaubt ist, false bei Überschreitung.
+function checkRateLimit(buckets, key, { windowMs, max, now = Date.now() }) {
+  const bucket = buckets.get(key);
+  if (!bucket || now - bucket.start > windowMs) {
+    buckets.set(key, { start: now, count: 1 });
+    return true;
+  }
+  bucket.count += 1;
+  return bucket.count <= max;
+}
 const DEMO_USER_ID = 'host_demo_001';
 const DEMO_FAMILY_ID = 'demo-family-001';
 const weeklyImpulseCommunityState = new Map();
@@ -2687,6 +2713,16 @@ app.get('/ai/health', async (req, res) => {
 app.post('/ai/generate', async (req, res) => {
   if (!geminiApiKey) {
     return res.status(503).json({ error: 'KI-Dienst nicht konfiguriert' });
+  }
+
+  // Dediziertes KI-Limit pro Nutzer (UID) bzw. IP: schützt die Gemini-Kosten
+  // gegen Missbrauch, auch durch ein einzelnes eingeloggtes Konto.
+  const aiRateKey = `ai:${req.firebaseUid || getClientIp(req)}`;
+  if (!checkRateLimit(aiRateBuckets, aiRateKey,
+      { windowMs: aiRateWindowMs, max: aiRateMax })) {
+    return res.status(429).json({
+      error: 'KI-Limit erreicht. Bitte in einigen Minuten erneut versuchen.',
+    });
   }
 
   const model = String(req.body?.model || 'gemini-3.5-flash-lite').trim();
