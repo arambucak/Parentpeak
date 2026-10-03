@@ -2592,10 +2592,27 @@ app.get('/ai/health', async (req, res) => {
     return res.json({ ok: false, reason: 'GEMINI_API_KEY nicht gesetzt' });
   }
   const model = 'gemini-3.5-flash';
-  const body = JSON.stringify({
-    contents: [{ role: 'user', parts: [{ text: 'ping' }] }],
-    generationConfig: { maxOutputTokens: 5 },
-  });
+  // Mit ?grounding=1 wird der ECHTE Event-Suchpfad getestet (Google-Search-Tool
+  // + JSON-Array-Antwort), nicht nur die Key-Gültigkeit. So deckt der Health-
+  // Check genau das ab, was der KI-Feed in der App nutzt.
+  const testGrounding = String(req.query.grounding || '') === '1';
+  const body = testGrounding
+    ? JSON.stringify({
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: 'Heute. Finde bis zu 3 Familienevents in "Berlin" (20 km). '
+              + 'Nutze Google Search. Antworte nur als kompaktes JSON-Array mit '
+              + 'title, location. Ohne Treffer [].',
+          }],
+        }],
+        generationConfig: { temperature: 1.0, maxOutputTokens: 2000 },
+        tools: [{ google_search: {} }],
+      })
+    : JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: 'ping' }] }],
+        generationConfig: { maxOutputTokens: 5 },
+      });
   const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   try {
     // Erst Header, dann Query-Param (wie im Proxy)
@@ -2603,7 +2620,7 @@ app.get('/ai/health', async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiApiKey },
       body,
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000),
     });
     let method = 'header';
     if (up.status === 401 || up.status === 403) {
@@ -2611,10 +2628,51 @@ app.get('/ai/health', async (req, res) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body,
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(30000),
       });
       method = 'query';
     }
+
+    if (!up.ok) {
+      return res.json({
+        ok: false,
+        status: up.status,
+        reason: `Gemini antwortet mit ${up.status}`,
+      });
+    }
+
+    // Beim Grounding-Test zusätzlich prüfen, ob brauchbarer Text + JSON-Array
+    // zurückkommt (das ist der Teil, der den Event-Feed real speist).
+    if (testGrounding) {
+      const payload = await up.json().catch(() => ({}));
+      const cand = Array.isArray(payload.candidates) ? payload.candidates[0] : null;
+      const parts = Array.isArray(cand?.content?.parts) ? cand.content.parts : [];
+      const text = parts.map(p => String(p?.text || '')).join('').trim();
+      const start = text.indexOf('[');
+      const end = text.lastIndexOf(']');
+      let arrayParsed = false;
+      let itemCount = null;
+      if (start !== -1 && end > start) {
+        try {
+          const arr = JSON.parse(text.slice(start, end + 1));
+          arrayParsed = Array.isArray(arr);
+          itemCount = Array.isArray(arr) ? arr.length : null;
+        } catch (_) { /* nicht parsebar */ }
+      }
+      return res.json({
+        ok: true,
+        status: up.status,
+        authMethod: method,
+        grounding: true,
+        textLength: text.length,
+        hasJsonArray: arrayParsed,
+        itemCount,
+        reason: arrayParsed
+          ? 'Grounding liefert parsebares JSON-Array'
+          : 'Grounding erreichbar, aber kein parsebares JSON-Array',
+      });
+    }
+
     return res.json({
       ok: up.ok,
       status: up.status,
