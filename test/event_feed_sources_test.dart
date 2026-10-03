@@ -17,7 +17,8 @@ BackendApiClient _client(http.Response Function(http.Request) respond) =>
         httpClient: MockClient((request) async => respond(request)));
 
 void main() {
-  test('AI discovery requests a small grounded batch without invented dates', () async {
+  test('AI discovery requests a small grounded batch without invented dates',
+      () async {
     final agent = EventDiscoveryAgent(aiService: GeminiAIService(
       apiClient: _client((request) {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
@@ -100,5 +101,33 @@ void main() {
     await expectLater(load(), throwsException);
     await expectLater(service.getEvents(), throwsException);
     await expectLater(service.getInvitationsForUser('owner'), throwsException);
+  });
+
+  test('AI result skips non-object entries instead of failing the whole feed',
+      () async {
+    // Gemini liefert ein valides Event + einen Müll-Eintrag (String). Der
+    // Müll-Eintrag darf nicht den ganzen Feed verwerfen.
+    final mixed = jsonEncode([
+      {
+        'title': 'Laternenfest',
+        'description': 'Kurzes Fest',
+        'category': 'familienzentrum',
+        'ageLabels': ['3-6 Jahre'],
+        'location': 'Kreuzberg',
+        'eventDate': null,
+        'price': 'kostenlos',
+        'url': 'https://example.org/laterne',
+        'organizer': 'Familienzentrum',
+      },
+      'kein-objekt',
+    ]);
+    final agent = EventDiscoveryAgent(
+        aiService: GeminiAIService(
+      apiClient:
+          _client((_) => http.Response(jsonEncode({'text': mixed}), 200)),
+    ));
+    final events = await agent.discoverEvents(city: 'Berlin');
+    expect(events, hasLength(1));
+    expect(events.first.title, 'Laternenfest');
   });
 }

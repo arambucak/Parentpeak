@@ -105,15 +105,26 @@ class EventDiscoveryAgent {
       {List<String> groundingUrls = const []}) {
     try {
       final repairedJson = _extractAndRepairJsonArray(raw);
+      // Fehlt ein Array komplett (reiner Fließtext/Müll), bleibt das ein echter
+      // Fehler — nicht als „keine Treffer" tarnen (siehe event_feed_sources_test).
       if (repairedJson == null || repairedJson.isEmpty) {
         throw const FormatException('No event JSON array in AI response');
       }
 
-      final list = jsonDecode(repairedJson) as List<dynamic>;
+      // Ein (ggf. leeres) Array ist ein legitimes Ergebnis.
+      final decoded = jsonDecode(repairedJson);
+      if (decoded is! List) {
+        throw const FormatException('AI response is not a JSON array');
+      }
+      final list = decoded;
       final results = <DiscoveredEvent>[];
 
       for (var i = 0; i < list.length; i++) {
-        final map = list[i] as Map<String, dynamic>;
+        // Einzelne nicht-objektartige Einträge überspringen statt den ganzen
+        // Feed zu verwerfen.
+        final rawItem = list[i];
+        if (rawItem is! Map<String, dynamic>) continue;
+        final map = rawItem;
         final categoryStr =
             (map['category'] as String? ?? 'sonstiges').toLowerCase();
         final ageLabels = (map['ageLabels'] as List<dynamic>?)

@@ -93,6 +93,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
   bool _isLoading = true;
   String? _errorMessage;
+  // true, wenn der letzte KI-Discovery-Call fehlschlug (z.B. 401 ohne gültigen
+  // Firebase-Token, Timeout oder unparsebare Gemini-Antwort). Steuert einen
+  // dezenten, retry-baren Hinweis statt stummer Leere.
+  bool _aiFeedFailed = false;
   DateTime? _lastFeedSyncAt;
   List<DiscoveredEvent> _aiEvents = const [];
   List<MeetupEvent> _communityEvents = const [];
@@ -148,6 +152,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       _invitations = const [];
       _eventTitlesById = const {};
       _lastFeedSyncAt = null;
+      _aiFeedFailed = false;
     });
     if (_hasRealLocation) _refreshFeed();
   }
@@ -484,9 +489,15 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                 force: force,
               );
         final value = await request;
-        if (isCurrent()) setState(() => _aiEvents = value.data);
+        if (isCurrent()) {
+          setState(() {
+            _aiEvents = value.data;
+            _aiFeedFailed = false;
+          });
+        }
       } catch (e) {
         debugPrint('EventsActivitiesScreen: AI feed unavailable: $e');
+        if (isCurrent()) setState(() => _aiFeedFailed = true);
       }
     }
 
@@ -1043,6 +1054,57 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  // Dezenter Hinweis, wenn die KI-Suche fehlschlug (z.B. keine
+                  // gültige Sitzung) — statt stummer Leere. Nur wenn die
+                  // KI-Quelle aktiv ist und gerade nicht geladen wird.
+                  if (!_isLoading &&
+                      _errorMessage == null &&
+                      _aiFeedFailed &&
+                      _activeSources.contains(_FeedSource.ai)) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.auto_awesome_outlined,
+                              size: 18, color: Color(0xFF2563EB)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'events_ai_unavailable',
+                              ),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFF1E40AF),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () => _refreshFeed(force: true),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'retry_btn',
+                              ),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   if (_isLoading && feed.isNotEmpty)
                     const LinearProgressIndicator(),
                   if (_isLoading && feed.isEmpty)
