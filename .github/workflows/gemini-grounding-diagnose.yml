@@ -1,0 +1,72 @@
+name: Gemini Grounding Diagnose (read-only)
+
+# Ruft die Gemini-API direkt auf — exakt so, wie es der /ai/generate-Proxy für
+# die Event-Suche tut (Modell gemini-3.5-flash, google_search-Tool). Zeigt den
+# HTTP-Status, ob Text/Grounding zurückkommt und ob ein JSON-Array parsebar ist.
+# Umgeht die App-Auth, um die Kernfrage zu klären: liefert Gemini brauchbare
+# Event-Daten? Nutzt GEMINI_API_KEY (GitHub-Secret), nur Lesezugriff.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Gemini-Modell'
+        required: false
+        default: 'gemini-3.5-flash'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Secret prüfen
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::GEMINI_API_KEY nicht gesetzt."; exit 1
+          fi
+
+      - name: Grounding-Call direkt gegen Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MODEL: ${{ github.event.inputs.model }}
+        run: |
+          set -euo pipefail
+          node -e '
+            const key = process.env.GEMINI_API_KEY;
+            const model = process.env.MODEL || "gemini-3.5-flash";
+            const prompt = "Heute. Finde bis zu 5 belegte Familienevents in \"Berlin-Kreuzberg\" (20 km Umkreis), Herbst. Zielgruppe: Kinder 0-16 Jahre. Nutze Google Search. Antworte nur als kompaktes JSON-Array. Pro Treffer: title, description, category, ageLabels, location, eventDate, price, url, organizer. Ohne Treffer [].";
+            const body = {
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 1.0, maxOutputTokens: 6000 },
+              tools: [{ google_search: {} }],
+            };
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+            (async () => {
+              const r = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+                body: JSON.stringify(body),
+              });
+              console.log("HTTP", r.status);
+              const payload = await r.json().catch(() => ({}));
+              if (!r.ok) {
+                console.log("Gemini-Fehler:", JSON.stringify(payload.error || payload).slice(0, 800));
+                return;
+              }
+              const cand = (payload.candidates || [])[0];
+              console.log("finishReason:", cand && cand.finishReason);
+              const parts = (cand && cand.content && cand.content.parts) || [];
+              const text = parts.map(p => String(p.text || "")).join("").trim();
+              console.log("Textlänge:", text.length);
+              const chunks = (cand && cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
+              console.log("Grounding-Chunks:", chunks.length);
+              console.log("--- Text (erste 1500 Zeichen) ---");
+              console.log(text.slice(0, 1500));
+              const s = text.indexOf("["); const e = text.lastIndexOf("]");
+              if (s < 0) { console.log(">> KEIN JSON-Array (kein \"[\")"); return; }
+              try { const arr = JSON.parse(text.slice(s, e + 1)); console.log(">> JSON-Array parsebar, Einträge:", Array.isArray(arr) ? arr.length : "n/a"); }
+              catch (err) { console.log(">> JSON NICHT parsebar:", err.message); }
+            })().catch(e => { console.log("Call-Fehler:", e.message); process.exit(0); });
+          '
