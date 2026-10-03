@@ -469,7 +469,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   const SizedBox(height: 14),
                   EventHostIdentity(
                     userId: _event.hosterId,
-                    isSharedOffer: _event.isSharedOffer,
+                    relation: _event.isSharedOffer
+                        ? EventHostRelation.sharedOffer
+                        : EventHostRelation.host,
                   ),
                   const SizedBox(height: 14),
                   _buildInfoTile(

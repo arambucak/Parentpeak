@@ -461,7 +461,9 @@ class _MeetupScreenState extends State<MeetupScreen> {
                   const SizedBox(height: 4),
                   EventHostIdentity(
                     userId: event.hosterId,
-                    isSharedOffer: event.participationMode == ParticipationMode.interest,
+                    relation: event.participationMode == ParticipationMode.interest
+                        ? EventHostRelation.sharedOffer
+                        : EventHostRelation.host,
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -564,7 +566,9 @@ class _MeetupScreenState extends State<MeetupScreen> {
               const SizedBox(height: 4),
               EventHostIdentity(
                 userId: event.hosterId,
-                isSharedOffer: event.participationMode == ParticipationMode.interest,
+                relation: event.participationMode == ParticipationMode.interest
+                    ? EventHostRelation.sharedOffer
+                    : EventHostRelation.host,
               ),
               const SizedBox(height: 4),
               if (event.visibility != EventVisibility.publicNearby)
