@@ -5,12 +5,22 @@ import 'package:parentpeak/ui/widgets/event_host_identity.dart';
 
 void main() {
   group('eventHostLabelKey', () {
-    test('geteiltes Angebot -> event_shared_by', () {
-      expect(eventHostLabelKey(isSharedOffer: true), 'event_shared_by');
+    test('selbst veranstaltet -> event_host', () {
+      expect(eventHostLabelKey(EventHostRelation.host), 'event_host');
     });
 
-    test('sonst -> event_submitted_by (nicht mehr "Gastgeber")', () {
-      expect(eventHostLabelKey(isSharedOffer: false), 'event_submitted_by');
+    test('geteiltes Angebot -> event_shared_by', () {
+      expect(
+        eventHostLabelKey(EventHostRelation.sharedOffer),
+        'event_shared_by',
+      );
+    });
+
+    test('nur eingetragen -> event_submitted_by (nicht "Gastgeber")', () {
+      expect(
+        eventHostLabelKey(EventHostRelation.submittedBy),
+        'event_submitted_by',
+      );
     });
   });
 

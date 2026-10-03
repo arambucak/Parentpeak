@@ -2006,7 +2006,10 @@ class _UnifiedEventCard extends StatelessWidget {
                 if (item.hosterId?.isNotEmpty == true) ...[
                   EventHostIdentity(
                     userId: item.hosterId!,
-                    isSharedOffer: item.participationMode == ParticipationMode.interest,
+                    relation:
+                        item.participationMode == ParticipationMode.interest
+                            ? EventHostRelation.sharedOffer
+                            : EventHostRelation.submittedBy,
                   ),
                   const SizedBox(height: 8),
                 ],

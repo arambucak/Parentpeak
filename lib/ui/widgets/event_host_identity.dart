@@ -10,25 +10,41 @@ class EventHostProfile {
   final String? photoUrl;
 }
 
+/// Beziehung der angezeigten Person zum Event.
+enum EventHostRelation {
+  /// Veranstaltet das Event selbst (z.B. eigenes Eltern-Treffen) → „Gastgeber".
+  host,
+
+  /// Teilt ein offenes Angebot (interest-Modus) → „Geteilt von".
+  sharedOffer,
+
+  /// Hat eine (oft fremde) Veranstaltung nur in die Community eingetragen
+  /// → „Eingetragen von". Vermeidet die irreführende Gastgeber-Behauptung.
+  submittedBy,
+}
+
 /// Liefert den i18n-Key für das Beziehungs-Label einer Event-Karte.
-///
-/// Bewusst KEIN „Gastgeber" für geteilte/eingetragene Dritt-Veranstaltungen:
-/// Wer ein Theaterstück o. Ä. in die Community einträgt, veranstaltet es nicht.
-/// - geteiltes Angebot ([isSharedOffer]) → „Geteilt von"
-/// - sonst → „Eingetragen von" (ehrlich für private Treffen wie Community-Tipps)
-String eventHostLabelKey({required bool isSharedOffer}) =>
-    isSharedOffer ? 'event_shared_by' : 'event_submitted_by';
+String eventHostLabelKey(EventHostRelation relation) {
+  switch (relation) {
+    case EventHostRelation.host:
+      return 'event_host';
+    case EventHostRelation.sharedOffer:
+      return 'event_shared_by';
+    case EventHostRelation.submittedBy:
+      return 'event_submitted_by';
+  }
+}
 
 class EventHostIdentity extends StatefulWidget {
   const EventHostIdentity({
     super.key,
     required this.userId,
-    this.isSharedOffer = false,
+    this.relation = EventHostRelation.host,
     this.loadProfile,
   });
 
   final String userId;
-  final bool isSharedOffer;
+  final EventHostRelation relation;
   final Future<EventHostProfile> Function(String userId)? loadProfile;
 
   @override
@@ -118,8 +134,7 @@ class _EventHostIdentityState extends State<EventHostIdentity> {
             : _profile.name)
         .trim();
     final safeName = name == widget.userId ? '' : name;
-    final label =
-        context.tr(eventHostLabelKey(isSharedOffer: widget.isSharedOffer));
+    final label = context.tr(eventHostLabelKey(widget.relation));
     return Row(
       key: const Key('event-host-identity'),
       children: [
