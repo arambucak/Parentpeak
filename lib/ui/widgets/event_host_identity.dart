@@ -10,6 +10,15 @@ class EventHostProfile {
   final String? photoUrl;
 }
 
+/// Liefert den i18n-Key für das Beziehungs-Label einer Event-Karte.
+///
+/// Bewusst KEIN „Gastgeber" für geteilte/eingetragene Dritt-Veranstaltungen:
+/// Wer ein Theaterstück o. Ä. in die Community einträgt, veranstaltet es nicht.
+/// - geteiltes Angebot ([isSharedOffer]) → „Geteilt von"
+/// - sonst → „Eingetragen von" (ehrlich für private Treffen wie Community-Tipps)
+String eventHostLabelKey({required bool isSharedOffer}) =>
+    isSharedOffer ? 'event_shared_by' : 'event_submitted_by';
+
 class EventHostIdentity extends StatefulWidget {
   const EventHostIdentity({
     super.key,
@@ -104,15 +113,13 @@ class _EventHostIdentityState extends State<EventHostIdentity> {
   @override
   Widget build(BuildContext context) {
     final ownUser = AuthService.instance.currentUser;
-    final name =
-        (ownUser?.uid == widget.userId
-                ? ownUser?.displayName ?? ''
-                : _profile.name)
-            .trim();
+    final name = (ownUser?.uid == widget.userId
+            ? ownUser?.displayName ?? ''
+            : _profile.name)
+        .trim();
     final safeName = name == widget.userId ? '' : name;
-    final label = context.tr(
-      widget.isSharedOffer ? 'event_shared_by' : 'event_host',
-    );
+    final label =
+        context.tr(eventHostLabelKey(isSharedOffer: widget.isSharedOffer));
     return Row(
       key: const Key('event-host-identity'),
       children: [
