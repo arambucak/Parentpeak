@@ -1,0 +1,88 @@
+name: Prisma Migrate Resolve + Deploy
+
+# Behebt den Produktions-Migrations-Drift (P3018) und wendet danach die
+# ausstehenden Migrationen an.
+#
+# Hintergrund (per read-only Diagnose bestätigt):
+#   - Tabellen TreasureItem/TreasureReport/FoodOffer* existieren real.
+#   - Constraint Event_hosterId_fkey ist real bereits entfernt.
+#   - In _prisma_migrations hängt `20260830_add_treasure_items` als
+#     finished=false fest und blockiert alle weiteren Migrationen.
+#   - `Event.ageGroups` fehlt noch (unsere Zielmigration).
+#
+# Vorgehen (offizieller Prisma-Weg, pris.ly/d/migrate-resolve):
+#   1. die bereits real vorhandenen Migrationen als "applied" markieren,
+#   2. danach `migrate deploy` -> wendet nur noch add_event_age_groups an.
+#
+# Erfordert manuelle Bestätigung ("resolve"). DATABASE_URL aus Secret.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Zum Bestätigen "resolve" eingeben'
+        required: true
+        default: ''
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Eingabe prüfen
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "resolve" ]; then
+            echo "::error::Bestätigung fehlt. Bitte mit Eingabe 'resolve' starten."
+            exit 1
+          fi
+
+      - name: Secret prüfen
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Repository-Secret DATABASE_URL ist nicht gesetzt."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Dependencies installieren
+        working-directory: backend
+        run: npm ci
+
+      - name: Status (vorher)
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate status || true
+
+      - name: Hängende Migration als applied markieren (treasure_items)
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate resolve --applied 20260830_add_treasure_items
+
+      - name: Bereits erfolgte FK-Entfernung als applied markieren
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate resolve --applied 20260830_remove_event_host_fk
+
+      - name: Ausstehende Migrationen anwenden (add_event_age_groups)
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run migrate:deploy
+
+      - name: Status (nachher)
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate status
