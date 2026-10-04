@@ -171,6 +171,30 @@ class PedagogicalChatBackend {
       'lehrerin',
       'hausaufgaben',
     ],
+    'Lernen und Selbststaendigkeit': [
+      'selbststaendig',
+      'selbststandig',
+      'selber machen',
+      'allein anziehen',
+      'aufraeumen',
+      'aufraumen',
+      'helfen im haushalt',
+      'ueben',
+      'uben',
+      'lernen',
+      'konzentration',
+    ],
+    'Spielen und Kreativitaet': [
+      'spielen',
+      'spiel',
+      'malen',
+      'basteln',
+      'kreativ',
+      'langeweile',
+      'fantasie',
+      'draussen spielen',
+      'rollenspiel',
+    ],
   };
 
   Stream<String> streamReply({
@@ -371,6 +395,7 @@ class PedagogicalChatBackend {
     required List<String> historyAnchors,
   }) {
     final modeHint = _modeSpecificHint(topicMode);
+    final approachHint = _complementaryApproachHint(topicMode);
     final followUpRule = needsFollowUpQuestion
         ? 'Stelle am Ende genau EINE kurze Rueckfrage, die den naechsten hilfreichen Schritt absichert.'
         : 'Stelle keine Rueckfrage, wenn die Lage für konkrete Schritte ausreicht.';
@@ -399,7 +424,7 @@ HÜTHER-LINSE — wende sie bei jeder Antwort an:
 Pflichtformat mit klaren Ueberschriften:
   1) Immer zuerst Empathie in 1-2 Saetzen.
      Gefühle/Bedürfnisse nur als Vermutung oder Frage formulieren, nie als absolute Behauptung.
-  2) Hüther-Diagnose in einem Satz: Ist es ein Verbundenheits- oder Autonomie-Bedürfnis?
+  2) Kurze entwicklungs-/bindungsorientierte Einordnung in einem Satz: In der Regel die Hüther-Linse (Verbundenheit vs. Autonomie); bei Lern-, Selbststaendigkeits-, Spiel- oder Kreativthemen darf stattdessen die passende Linse unten greifen.
   3) Danach genau EIN GfK-Schritt im Fokus (Beobachtung ODER Gefühl ODER Bedürfnis ODER Bitte).
   4) Gib 1-2 kleine alltagstaugliche Optionen in Kann-Form, nicht in Muss-Form.
   5) Stelle genau EINE offene, behutsame Frage, passend zum gewählten GfK-Schritt.
@@ -407,6 +432,9 @@ Pflichtformat mit klaren Ueberschriften:
 
 Modus-Hinweis:
 $modeHint
+
+Passende weitere paedagogische Impulse (OPTIONAL, nur wenn sie der Familie konkret helfen — nicht benennen, nicht doziert, einfach einfliessen lassen):
+$approachHint
 
 Wichtig:
 - Kein Moralisieren.
@@ -566,8 +594,42 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
         return 'Fokus auf klare, vorab vereinbarte Grenzen plus kooperative Übergänge statt Machtkampf.';
       case 'Kita und Schule':
         return 'Fokus auf kindgerechte Begleitung, alltagsnahe Struktur und kooperative Kommunikation mit Fachkraeften.';
+      case 'Lernen und Selbststaendigkeit':
+        return 'Fokus auf Montessori ("Hilf mir, es selbst zu tun") und Situationsansatz: dem Kind altersgerecht etwas selbst zutrauen, '
+            'die Umgebung vorbereiten statt staendig einzugreifen, Alltagsaufgaben als Lernchance nutzen.';
+      case 'Spielen und Kreativitaet':
+        return 'Fokus auf Froebel (Spielen ist die hoechste Form des Lernens) und Reggio ("das Kind hat 100 Sprachen"): '
+            'freies Spiel, Prozess vor Ergebnis, Ausdruck ueber Malen/Bauen/Bewegen; Freinet: Lernen am echten Leben.';
       default:
         return 'Fokus auf eine sofort umsetzbare, bindungsorientierte Entlastung für den Familienalltag.';
+    }
+  }
+
+  /// Situativ passende weitere paedagogische Linse(n) als OPTIONALE Impulse —
+  /// damit die Antwort nicht nur Huether/GfK, sondern bei passenden Themen auch
+  /// Montessori, Reggio, Froebel, Freinet, Juul und den Situationsansatz
+  /// erkennbar einfliessen laesst (ohne starre Floskeln zu erzwingen).
+  String _complementaryApproachHint(String topicMode) {
+    switch (topicMode) {
+      case 'Lernen und Selbststaendigkeit':
+        return 'Montessori: dem Kind altersgerecht Selbststaendigkeit zutrauen und die Umgebung vorbereiten. '
+            'Situationsansatz: von der aktuellen Lebenswelt des Kindes ausgehen.';
+      case 'Spielen und Kreativitaet':
+        return 'Froebel: Spielen als vollwertige Lernform ernst nehmen. '
+            'Reggio: viele Ausdrucksformen zulassen, Prozess vor Ergebnis. '
+            'Freinet: an echten Alltagserfahrungen anknuepfen.';
+      case 'Geschwisterkonflikt':
+        return 'Juul: beide Kinder als vollwertige Menschen ernst nehmen, Selbstverantwortung statt Gehorsam staerken.';
+      case 'Kita und Schule':
+        return 'Situationsansatz: an der konkreten Lebenswelt des Kindes ansetzen. '
+            'Juul: Kooperation statt Gehorsam als Ziel.';
+      case 'Trotz und Wut':
+      case 'Schlaf':
+      case 'Medien':
+        return 'Juul: das Kind als vollwertigen Menschen ernst nehmen und authentisch, aber fuehrend begleiten.';
+      default:
+        return 'Waehle situativ die passende Linse (Montessori, Reggio, Froebel, Freinet, Juul oder Situationsansatz), '
+            'wenn sie der Familie konkret hilft — ohne Theorie-Vortrag.';
     }
   }
 
