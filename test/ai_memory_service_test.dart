@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/logic/ai_memory_service.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/models/ai_memory.dart';
 
 /// Stub-Client, der die aufgerufenen Endpunkte/Bodies aufzeichnet und
 /// vorbereitete JSON-Antworten liefert.
@@ -151,8 +152,53 @@ void main() {
       await service.deleteChild('c1');
       await service.deleteMemory('c1', 'm1');
 
-      expect(client.deletePaths,
-          ['/ai/children/c1', '/ai/children/c1/memory/m1']);
+      expect(
+          client.deletePaths, ['/ai/children/c1', '/ai/children/c1/memory/m1']);
+    });
+  });
+
+  group('AiMemoryService.resolveActiveChildId (Chat-Auto-Auswahl)', () {
+    AiChildProfile child(String id) =>
+        AiChildProfile(id: id, userId: 'u1', name: 'K-$id');
+
+    test('null, wenn das Gedächtnis AUS ist (auch mit Kindern)', () {
+      final result = AiMemoryService.resolveActiveChildId(
+        memoryEnabled: false,
+        children: [child('c1')],
+      );
+      expect(result, isNull);
+    });
+
+    test('null, wenn keine Kinder vorhanden sind', () {
+      final result = AiMemoryService.resolveActiveChildId(
+        memoryEnabled: true,
+        children: const [],
+      );
+      expect(result, isNull);
+    });
+
+    test('ein Kind -> dieses wird gewählt', () {
+      final result = AiMemoryService.resolveActiveChildId(
+        memoryEnabled: true,
+        children: [child('c1')],
+      );
+      expect(result, 'c1');
+    });
+
+    test('mehrere Kinder -> erstes (zuletzt aktualisiertes) wird gewählt', () {
+      final result = AiMemoryService.resolveActiveChildId(
+        memoryEnabled: true,
+        children: [child('neu'), child('alt')],
+      );
+      expect(result, 'neu');
+    });
+
+    test('überspringt Kinder mit leerer ID', () {
+      final result = AiMemoryService.resolveActiveChildId(
+        memoryEnabled: true,
+        children: [child(''), child('c2')],
+      );
+      expect(result, 'c2');
     });
   });
 }
