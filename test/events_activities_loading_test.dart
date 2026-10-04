@@ -151,7 +151,7 @@ void main() {
     expect(find.text('Community picnic'), findsOneWidget);
     // Community ist sofort da; die langsame KI läuft noch und wird durch den
     // sprechenden Such-Hinweis angezeigt (statt eines kontextlosen Spinners).
-    expect(find.textContaining('AI is searching'), findsOneWidget);
+    expect(find.textContaining('Parentpeak is searching'), findsOneWidget);
     await _close(tester);
     await _open(tester, agent, service);
     await _showFeed(tester, 'Community picnic');
@@ -160,7 +160,7 @@ void main() {
     ai.complete([]);
     await tester.pumpAndSettle();
     // KI fertig -> Such-Hinweis verschwindet.
-    expect(find.textContaining('AI is searching'), findsNothing);
+    expect(find.textContaining('Parentpeak is searching'), findsNothing);
     await _close(tester);
     await _open(tester, agent, service);
     await _showFeed(tester, 'Community picnic');
