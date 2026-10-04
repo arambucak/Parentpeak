@@ -474,10 +474,17 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     });
     final ageLabels = ages.map(_ageGroupLabel).toList();
     Future<void> loadAi() async {
-      if (city.trim().isEmpty) return;
+      if (city.trim().isEmpty) {
+        if (isCurrent() && _aiLoading) setState(() => _aiLoading = false);
+        return;
+      }
       try {
         final pendingAi = _session.ai.pending(aiKey);
-        if ((communityChanged || invitationsOnly) && pendingAi == null) return;
+        if ((communityChanged || invitationsOnly) && pendingAi == null) {
+          // Reiner Community-/Einladungs-Refresh: KI wird nicht neu geladen.
+          if (isCurrent() && _aiLoading) setState(() => _aiLoading = false);
+          return;
+        }
         final request = communityChanged || invitationsOnly
             ? pendingAi!
             : _session.ai.load(
@@ -500,17 +507,15 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           setState(() {
             _aiEvents = value.data;
             _aiFeedFailed = false;
-            _aiLoading = false;
           });
         }
       } catch (e) {
         debugPrint('EventsActivitiesScreen: AI feed unavailable: $e');
-        if (isCurrent()) {
-          setState(() {
-            _aiFeedFailed = true;
-            _aiLoading = false;
-          });
-        }
+        if (isCurrent()) setState(() => _aiFeedFailed = true);
+      } finally {
+        // In JEDEM Fall den KI-Ladezustand beenden — sonst bliebe der
+        // animierte Hinweis-Spinner stehen (und ließe pumpAndSettle hängen).
+        if (isCurrent() && _aiLoading) setState(() => _aiLoading = false);
       }
     }
 
