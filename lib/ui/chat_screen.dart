@@ -9,6 +9,7 @@ import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/main.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -1181,6 +1182,17 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: context.tr('tooltip_ai_memory'),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const AiMemorySettingsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.psychology_outlined, color: _kBrand),
+          ),
           IconButton(
             tooltip: context.tr('tooltip_topic_analysis'),
             onPressed: _showTopicInsights,
