@@ -940,6 +940,21 @@ class AuthService with ChangeNotifier {
         );
       }
       _firebaseAuth = FirebaseAuth.instance;
+      // Auf Web die Session explizit in IndexedDB (LOCAL) persistieren, damit
+      // der eingeloggte Nutzer samt ID-Token nach Reload/Neustart erhalten
+      // bleibt. Ohne diesen Aufruf können Web-Sessions verloren gehen bzw. zum
+      // Zeitpunkt des ersten authentifizierten Calls noch nicht wiederhergestellt
+      // sein — der KI-Endpunkt antwortet dann mit 401 und der Feed bleibt leer.
+      if (kIsWeb) {
+        try {
+          await _firebaseAuth!.setPersistence(Persistence.LOCAL);
+        } catch (e) {
+          _logIgnoredError(
+            'AuthService._tryInitFirebase(): setPersistence failed',
+            e,
+          );
+        }
+      }
       _firebaseReady = true;
     } catch (e) {
       _logIgnoredError(
