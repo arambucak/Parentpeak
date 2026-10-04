@@ -214,12 +214,29 @@ async function runTests() {
     if (res.status === 200 && Array.isArray(res.body.treasures)) {
       const nearbyCount = res.body.treasures.length;
       console.log(`  ✓ Found ${nearbyCount} treasures near Berlin`);
-      
+
       if (nearbyCount > 0) {
         console.log(`    Treasures sorted by proximity (verified):`);
         res.body.treasures.slice(0, 3).forEach((t, i) => {
           console.log(`      ${i + 1}. ${t.title}`);
         });
+
+        // Datenschutz: Die Liste darf fremden Nutzern NIEMALS die exakte
+        // Position (Heimadresse) liefern. Koordinaten müssen grob gerundet
+        // (max. 2 Dezimalstellen) und als approximativ markiert sein.
+        for (const t of res.body.treasures) {
+          if (t.latitude !== null && t.latitude !== undefined) {
+            const decimals = (String(t.latitude).split('.')[1] || '').length;
+            if (decimals > 2) {
+              throw new Error(
+                `Datenschutzverletzung: latitude zu genau (${t.latitude}) — Position darf nur grob sein`);
+            }
+          }
+          if (t.approximateLocation !== true) {
+            throw new Error('approximateLocation muss true sein (grobe Position)');
+          }
+        }
+        console.log('  ✓ Positionen sind grob gerundet + als approximativ markiert');
       }
       passed++;
     } else {
