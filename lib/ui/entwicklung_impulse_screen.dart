@@ -1102,25 +1102,31 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     sb.writeln(
         'Kind: ${p.name}, Alter: ${p.ageLabel}, Betreuung: ${p.careType}');
     sb.writeln('Altersgruppe: ${p.ageGroupId}\n');
+    // Antwort-Labels lokalisiert, damit der an das Modell übergebene Kontext in
+    // der App-Sprache steht (bessere Berichtsqualität in allen Sprachen).
+    final labelYes = _t('dev_answer_yes');
+    final labelSometimes = _t('dev_answer_sometimes');
+    final labelNotYet = _t('dev_answer_not_yet');
     for (final d in _devDomains) {
       sb.writeln('${d.title}:');
       for (int i = 0; i < d.questions.length; i++) {
         final a = _devAnswers['${d.id}_$i'] ?? 0;
         final label = a == 2
-            ? 'Ja'
+            ? labelYes
             : a == 1
-                ? 'Manchmal'
-                : 'Noch nicht';
+                ? labelSometimes
+                : labelNotYet;
         sb.writeln('  ${d.questions[i]} -> $label');
       }
       sb.writeln('');
     }
-    final specialNeedsNote = _hasSpecialNeeds
-        ? '\n- WICHTIG: Dieses Kind hat besondere Bedürfnisse. Vergleiche NICHT mit Altersnormen. '
-            'Beschreibe nur den individuellen Fortschritt. Statt "Förderbedarf" sage "wächst in eigenem Tempo". '
-            'Sei besonders wertschätzend und stärkend.\n'
-        : '';
-    final prompt = '${_t('development_report_language_instruction')}\n'
+    final specialNeedsNote =
+        _hasSpecialNeeds ? '\n${_t('development_report_special_needs')}\n' : '';
+    // Sprachanweisung bewusst DOPPELT (am Anfang und am Ende), damit das Modell
+    // den Bericht zuverlässig in der App-Sprache verfasst — auch wenn die
+    // Regeln selbst auf Deutsch formuliert sind.
+    final languageInstruction = _t('development_report_language_instruction');
+    final prompt = '$languageInstruction\n'
         'Du schreibst eine pädagogische Entwicklungseinschätzung für Eltern. '
         'WICHTIGE REGELN:\n'
         '- Schreibe AUS DER PERSPEKTIVE DER APP (nicht Kita, nicht Erzieher).\n'
@@ -1131,7 +1137,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         '- Struktur: 1) Sichtbare Kompetenzen (was das Kind bereits zeigt), 2) Aktuelle Entwicklungsfelder (woran es gerade wächst), 3) Impulse für den Alltag (2-3 konkrete Ideen)\n'
         '- Maximal 180 Wörter. Keine Emojis. Keine Sterne-Formatierung.\n'
         '- Kein "Liebe Eltern" am Anfang.\n'
-        '$specialNeedsNote\n$sb';
+        '$specialNeedsNote\n$sb\n$languageInstruction';
 
     try {
       final text = await GeminiAIService().generateText(prompt);
@@ -1888,18 +1894,46 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
   Future<void> _exportPdf() async {
     if (_childProfile == null) return;
-    final childName =
-        _childProfile!.name.isNotEmpty ? _childProfile!.name : 'Kind';
+    final childName = _childProfile!.name.isNotEmpty
+        ? _childProfile!.name
+        : _t('pdf_default_child_name');
     final ageMonths = _childProfile!.ageInMonths;
     final years = ageMonths ~/ 12;
     final months = ageMonths % 12;
-    final ageText =
-        months > 0 ? '$years Jahre, $months Monate' : '$years Jahre';
+    final ageText = months > 0
+        ? _t('pdf_age_years_months')
+            .replaceAll('{years}', '$years')
+            .replaceAll('{months}', '$months')
+        : _t('pdf_age_years').replaceAll('{years}', '$years');
+
+    // Lokalisierte Bereichsnamen aus den (bereits übersetzten) DevDomain-Titeln.
+    final domainLabels = <String, String>{
+      for (final d in _devDomains) d.id: d.title,
+    };
+
+    final labels = DevelopmentPdfLabels(
+      reportTitle: _t('pdf_report_title'),
+      createdOn: _t('pdf_created_on'),
+      progressTitle: _t('pdf_progress_title'),
+      compareWith: _t('pdf_compare_with'),
+      aiReportTitle: _t('pdf_ai_report_title'),
+      disclaimer: _t('pdf_disclaimer'),
+      legendCurrent: _t('pdf_legend_current'),
+      legendPrevious: _t('pdf_legend_previous'),
+      trendUp: _t('pdf_trend_up'),
+      trendDown: _t('pdf_trend_down'),
+      trendStable: _t('pdf_trend_stable'),
+      footer: _t('pdf_footer'),
+      pageOf: _t('pdf_page_of'),
+      fileNamePrefix: _t('pdf_filename_prefix'),
+      domainLabels: domainLabels,
+    );
 
     await DevelopmentPdfService.generateAndShow(
       childName: childName,
       childAge: ageText,
       currentScores: _currentDevScores(),
+      labels: labels,
       previousScores: _previousDevScores(),
       previousDate: _previousCheckDate(),
       aiReportText: _aiReport,
