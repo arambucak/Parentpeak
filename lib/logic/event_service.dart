@@ -18,8 +18,7 @@ double? eventDistanceKm(
   }
   final latitudeDelta = (lat2! - lat1!) * math.pi / 180;
   final longitudeDelta = (lon2! - lon1!) * math.pi / 180;
-  final haversine =
-      math.pow(math.sin(latitudeDelta / 2), 2) +
+  final haversine = math.pow(math.sin(latitudeDelta / 2), 2) +
       math.cos(lat1 * math.pi / 180) *
           math.cos(lat2 * math.pi / 180) *
           math.pow(math.sin(longitudeDelta / 2), 2);
@@ -67,8 +66,17 @@ List<AgeGroup> eventAgesFromLabel(String label) {
   return groups.toList();
 }
 
-bool eventMatchesTime(DateTime? date, String window, DateTime now) {
-  if (date == null) return window == 'all';
+bool eventMatchesTime(
+  DateTime? date,
+  String window,
+  DateTime now, {
+  bool isRecurring = false,
+}) {
+  // Wiederkehrende/dauerhaft offene Angebote (z.B. Familienzentrum mit
+  // Wochenprogramm, offener Spielplatz) haben oft kein festes eventDate, sind
+  // aber an jedem Tag relevant. Sie passieren daher jedes Zeitfenster — statt
+  // bei "Heute"/"Wochenende" fälschlich herauszufallen.
+  if (date == null) return window == 'all' || isRecurring;
   final local = date.toLocal();
   final today = now.toLocal();
   final startOfToday = DateTime(today.year, today.month, today.day);
@@ -100,19 +108,19 @@ double eventRankingScore({
   final timeScore = date == null
       ? 0.0
       : (30 - date.difference(now).inMilliseconds / Duration.millisecondsPerDay)
-                .clamp(0, 30) *
-            2;
+              .clamp(0, 30) *
+          2;
   final proximityScore = distance == null ? 0.0 : (50 - distance).clamp(0, 50);
   final ageScore =
       selected.isNotEmpty && ages.isNotEmpty && eventMatchesAges(ages, selected)
-      ? 20
-      : 0;
+          ? 20
+          : 0;
   return (timeScore + proximityScore + ageScore).toDouble();
 }
 
 class EventService {
   EventService({EventBackendService? backend})
-    : _backend = backend ?? EventBackendService();
+      : _backend = backend ?? EventBackendService();
 
   final _familyCircleService = FamilyCircleService.instance;
   final EventBackendService _backend;
@@ -219,11 +227,11 @@ class EventService {
     final now = DateTime.now();
     final selected = ageGroups ?? const <AgeGroup>[];
     double? distance(MeetupEvent event) => eventDistanceKm(
-      viewerLatitude,
-      viewerLongitude,
-      event.latitude,
-      event.longitude,
-    );
+          viewerLatitude,
+          viewerLongitude,
+          event.latitude,
+          event.longitude,
+        );
     final filtered = remote.where((event) {
       final km = distance(event);
       return event.status == EventStatus.active &&
@@ -233,28 +241,27 @@ class EventService {
           (km == null
               ? !nearbyOnly
               : km <= radiusKm &&
-                    (!nearbyOnly || km <= 10) &&
-                    (event.visibility != EventVisibility.publicNearby ||
-                        event.hosterId == viewerUserId ||
-                        km <= (event.shareRadiusKm ?? 25)));
+                  (!nearbyOnly || km <= 10) &&
+                  (event.visibility != EventVisibility.publicNearby ||
+                      event.hosterId == viewerUserId ||
+                      km <= (event.shareRadiusKm ?? 25)));
     }).toList();
     filtered.sort((first, second) {
-      final comparison =
-          eventRankingScore(
-            distance: distance(second),
-            date: second.eventDate,
-            ages: second.ageGroups,
-            selected: selected,
-            now: now,
-          ).compareTo(
-            eventRankingScore(
-              distance: distance(first),
-              date: first.eventDate,
-              ages: first.ageGroups,
-              selected: selected,
-              now: now,
-            ),
-          );
+      final comparison = eventRankingScore(
+        distance: distance(second),
+        date: second.eventDate,
+        ages: second.ageGroups,
+        selected: selected,
+        now: now,
+      ).compareTo(
+        eventRankingScore(
+          distance: distance(first),
+          date: first.eventDate,
+          ages: first.ageGroups,
+          selected: selected,
+          now: now,
+        ),
+      );
       return comparison != 0 ? comparison : first.id.compareTo(second.id);
     });
     return filtered;
@@ -536,9 +543,8 @@ class EventService {
 
     await Future.delayed(const Duration(milliseconds: 300));
 
-    final hostEvents = _cachedEvents
-        .where((e) => e.hosterId == hosterId)
-        .toList();
+    final hostEvents =
+        _cachedEvents.where((e) => e.hosterId == hosterId).toList();
     final hostEventIds = hostEvents.map((e) => e.id).toList();
 
     return _cachedParticipations

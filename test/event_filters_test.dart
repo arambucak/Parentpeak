@@ -56,6 +56,19 @@ void main() {
       isFalse,
     );
   });
+  test('recurring/open offers without a date pass every time window', () {
+    final now = DateTime(2026, 10, 3, 12);
+    // Wiederkehrende/dauerhaft offene Angebote (z.B. Familienzentrum mit
+    // Wochenprogramm, offener Spielplatz) haben kein festes Datum, sind aber
+    // an jedem Tag relevant — sie dürfen bei "Heute"/"Wochenende" nicht
+    // herausfallen.
+    expect(eventMatchesTime(null, 'today', now, isRecurring: true), isTrue);
+    expect(eventMatchesTime(null, 'weekend', now, isRecurring: true), isTrue);
+    expect(eventMatchesTime(null, 'all', now, isRecurring: true), isTrue);
+    // Einmalige Angebote ohne Datum bleiben weiterhin nur bei "all" sichtbar.
+    expect(eventMatchesTime(null, 'today', now, isRecurring: false), isFalse);
+    expect(eventMatchesTime(null, 'weekend', now), isFalse);
+  });
   test('ranking rewards known proximity, time and confirmed age fit', () {
     final now = DateTime(2026, 10, 3);
     double score(double? km, int days, List<AgeGroup> ages) =>
