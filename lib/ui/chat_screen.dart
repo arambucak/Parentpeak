@@ -9,6 +9,8 @@ import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/logic/ai_memory_service.dart';
+import 'package:parentpeak/models/ai_memory.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/main.dart';
 
@@ -110,6 +112,11 @@ class _ChatScreenState extends State<ChatScreen> {
   // Land des Nutzers (aus Onboarding) für länderrichtige Notrufnummern im
   // Krisenfall. Default DE; wird in initState aus den Prefs geladen.
   String? _countryCode;
+  // Aktives Kind-Profil für das KI-Gedächtnis. Nur gesetzt, wenn das Gedächtnis
+  // AKTIVIERT ist und mindestens ein Kinderprofil existiert — sonst null
+  // (kein Kontext, Datenschutz by default). Wird an streamReply übergeben,
+  // damit der Server den bestätigten Familienkontext einspeisen kann.
+  String? _activeChildProfileId;
 
   @override
   void initState() {
@@ -117,6 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadTopicInsights();
     _checkTermsAcceptance();
     _loadCountryCode();
+    _loadActiveChildProfile();
     _initializeGemini();
     // Wenn mit initialMessage geöffnet, automatisch senden
     if (widget.initialMessage != null &&
@@ -135,6 +143,30 @@ class _ChatScreenState extends State<ChatScreen> {
     final country = prefs.getString('holiday.country');
     if (mounted && country != null && country.trim().isNotEmpty) {
       setState(() => _countryCode = country.trim());
+    }
+  }
+
+  /// Ermittelt das aktive Kind-Profil fürs KI-Gedächtnis. Läuft nur, wenn das
+  /// Gedächtnis aktiviert ist; wählt bei einem Kind dieses, bei mehreren das
+  /// zuletzt aktualisierte (Server liefert bereits updatedAt-absteigend).
+  /// Fehler/kein Backend sind unkritisch — dann bleibt der Chat ohne Kontext.
+  Future<void> _loadActiveChildProfile() async {
+    final service = AiMemoryService();
+    if (!service.isEnabled) return;
+    try {
+      final settings = await service.getSettings();
+      final children = settings.enabled
+          ? await service.getChildren()
+          : const <AiChildProfile>[];
+      final activeId = AiMemoryService.resolveActiveChildId(
+        memoryEnabled: settings.enabled,
+        children: children,
+      );
+      if (mounted) {
+        setState(() => _activeChildProfileId = activeId);
+      }
+    } catch (_) {
+      // Still ignorieren — Chat funktioniert auch ohne Gedächtniskontext.
     }
   }
 
@@ -276,6 +308,7 @@ class _ChatScreenState extends State<ChatScreen> {
           userMessage: smartPrompt,
           languageCode: languageService.currentLanguage,
           countryCode: _countryCode,
+          childProfileId: _activeChildProfileId,
         );
 
         await for (final chunk in stream) {
@@ -353,6 +386,7 @@ class _ChatScreenState extends State<ChatScreen> {
         userMessage: text,
         languageCode: languageService.currentLanguage,
         countryCode: _countryCode,
+        childProfileId: _activeChildProfileId,
       );
 
       await for (final chunk in stream) {
@@ -1184,12 +1218,15 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           IconButton(
             tooltip: context.tr('tooltip_ai_memory'),
-            onPressed: () {
-              Navigator.of(context).push(
+            onPressed: () async {
+              await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const AiMemorySettingsScreen(),
                 ),
               );
+              // Nach dem Verwalten das aktive Kind neu bestimmen (Gedächtnis
+              // könnte gerade aktiviert oder ein Kind angelegt worden sein).
+              await _loadActiveChildProfile();
             },
             icon: const Icon(Icons.psychology_outlined, color: _kBrand),
           ),

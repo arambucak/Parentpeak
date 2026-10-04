@@ -13,14 +13,16 @@ class AiMemoryService {
 
   Future<AiMemorySettings> getSettings() async {
     final response = await _requireClient().getJson('/ai/settings');
-    return AiMemorySettings.fromJson(Map<String, dynamic>.from(response as Map));
+    return AiMemorySettings.fromJson(
+        Map<String, dynamic>.from(response as Map));
   }
 
   Future<AiMemorySettings> setEnabled(bool enabled) async {
     final response = await _requireClient().putJson('/ai/settings', {
       'enabled': enabled,
     });
-    return AiMemorySettings.fromJson(Map<String, dynamic>.from(response as Map));
+    return AiMemorySettings.fromJson(
+        Map<String, dynamic>.from(response as Map));
   }
 
   Future<List<AiChildProfile>> getChildren() async {
@@ -89,6 +91,19 @@ class AiMemoryService {
 
   Future<void> deleteMemory(String childId, String itemId) {
     return _requireClient().delete('/ai/children/$childId/memory/$itemId');
+  }
+
+  /// Wählt das aktive Kind-Profil für den Chat: null, wenn das Gedächtnis AUS
+  /// ist oder keine Kinder existieren; sonst das zuletzt aktualisierte (die
+  /// Liste kommt bereits updatedAt-absteigend vom Server, also das erste).
+  /// Reine, seiteneffektfreie Auswahl-Logik — getrennt testbar.
+  static String? resolveActiveChildId({
+    required bool memoryEnabled,
+    required List<AiChildProfile> children,
+  }) {
+    if (!memoryEnabled || children.isEmpty) return null;
+    final firstWithId = children.where((child) => child.id.trim().isNotEmpty);
+    return firstWithId.isEmpty ? null : firstWithId.first.id;
   }
 
   BackendApiClient _requireClient() {
