@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:parentpeak/logic/crisis_support.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 
 class PedagogicalChatBackend {
@@ -175,6 +176,8 @@ class PedagogicalChatBackend {
   Stream<String> streamReply({
     required List<Map<String, dynamic>> history,
     required String userMessage,
+    String languageCode = 'de',
+    String? countryCode,
   }) async* {
     final message = userMessage.trim();
     if (message.isEmpty) {
@@ -183,13 +186,22 @@ class PedagogicalChatBackend {
 
     final lower = message.toLowerCase();
 
-    if (_containsAny(lower, _acuteSafetyKeywords)) {
-      yield _crisisResponse();
+    // SICHERHEIT ZUERST: Krise/Überlastung mehrsprachig erkennen (DE/EN/TR/KU)
+    // und mit lokalisierter, länderabhängiger Hilfe antworten — VOR jedem
+    // KI-Call. Die alten deutschen Keyword-Listen bleiben als zusätzliche
+    // Absicherung erhalten.
+    if (CrisisSupport.isAcuteCrisis(message) ||
+        _containsAny(lower, _acuteSafetyKeywords)) {
+      yield CrisisSupport.crisisResponse(
+        languageCode: languageCode,
+        countryCode: countryCode,
+      );
       return;
     }
 
-    if (_containsAny(lower, _emotionalOverloadKeywords)) {
-      yield _emotionalSupportResponse(message);
+    if (CrisisSupport.isEmotionalOverload(message) ||
+        _containsAny(lower, _emotionalOverloadKeywords)) {
+      yield CrisisSupport.emotionalSupportResponse(languageCode: languageCode);
       return;
     }
 
@@ -776,20 +788,8 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
         'Bei Unsicherheit ausserhalb der Sprechzeiten hilft in Deutschland der aerztliche Bereitschaftsdienst unter 116117.';
   }
 
-  String _crisisResponse() {
-    return 'Das klingt nach einer akuten Belastung. Du musst damit nicht allein bleiben. '
-        'Dies ist eine KI-gestuetzte Orientierung und ersetzt keine professionelle Beratung. '
-        'Bitte hole jetzt direkte menschliche Hilfe: '
-        'Im Notfall 112, Telefonseelsorge 0800 111 0 111 oder 0800 111 0 222 (24/7), '
-        'bei medizinischer Dringlichkeit 116117 und bei Kindeswohlgefaehrdung das zustaendige Jugendamt.';
-  }
-
-  String _emotionalSupportResponse(String message) {
-    return 'Das klingt gerade richtig schwer. Du musst da nicht stark sein und du bist damit nicht allein. 🫶\n\n'
-        'Wenn du magst, machen wir es ganz klein: einmal ausatmen, ein Glas Wasser, dann nur den naechsten schwierigen Moment anschauen.\n\n'
-        'Was war direkt davor los - nur der Ablauf, ohne Bewertung?\n\n'
-        'Hinweis: Ich bin eine unterstuetzende KI und kein Ersatz für therapeutische Beratung. Wenn du menschliche Hilfe möchtest, nenne ich dir gern passende Anlaufstellen.';
-  }
+  // Hinweis: Krisen- und Überlastungs-Antworten sind in CrisisSupport
+  // ausgelagert (mehrsprachig + länderabhängige Notrufnummern).
 
   String _providerUnavailableResponse({String? rawError}) {
     final reason = _providerIssueReason(rawError);
