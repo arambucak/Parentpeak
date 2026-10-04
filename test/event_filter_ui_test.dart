@@ -36,22 +36,23 @@ MeetupEvent _event(
   double longitude = double.nan,
   double? price,
   int days = 1,
-}) => MeetupEvent(
-  id: title,
-  hosterId: 'host',
-  title: title,
-  description: '',
-  category: EventCategory.other,
-  ageGroups: [],
-  location: 'Unresolved venue',
-  latitude: latitude,
-  longitude: longitude,
-  price: price,
-  eventDate: DateTime.now().add(Duration(days: days)),
-  createdAt: DateTime.now(),
-  maxParticipants: 5,
-  photoUrl: '',
-);
+}) =>
+    MeetupEvent(
+      id: title,
+      hosterId: 'host',
+      title: title,
+      description: '',
+      category: EventCategory.other,
+      ageGroups: [],
+      location: 'Unresolved venue',
+      latitude: latitude,
+      longitude: longitude,
+      price: price,
+      eventDate: DateTime.now().add(Duration(days: days)),
+      createdAt: DateTime.now(),
+      maxParticipants: 5,
+      photoUrl: '',
+    );
 
 class _Service extends EventService {
   final List<MeetupEvent> events;
@@ -209,6 +210,12 @@ void main() {
         -200,
         scrollable: find.byType(Scrollable).last,
       );
+      // Der Chip liegt in einer horizontal scrollbaren Filterleiste; nach dem
+      // vertikalen Zurückscrollen zusätzlich sicherstellen, dass er auch
+      // horizontal vollständig sichtbar (und damit tappbar) ist. Robust
+      // gegenüber unterschiedlich breiten Chip-Labels.
+      await tester.ensureVisible(free);
+      await tester.pumpAndSettle();
       await tester.tap(free);
       await tester.pumpAndSettle();
       expect(agent.calls, 1);
