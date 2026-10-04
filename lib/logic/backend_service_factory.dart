@@ -13,21 +13,30 @@ import 'todo_backend_service.dart';
 import 'weekly_planner_storage_service.dart';
 import 'weekly_impulse_service.dart';
 
-/// Waits for the Firebase session to restore before returning the ID token.
-/// On web, [FirebaseAuth.currentUser] is null for ~500ms after init while
-/// the session is restored from IndexedDB — requests in that window get 401.
-Future<String?> _getFirebaseIdToken() async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user == null) {
-    try {
-      user = await FirebaseAuth.instance
-          .authStateChanges()
-          .firstWhere((u) => u != null)
-          // Etwas großzügiger als bisher (2s): auf Web dauert der Session-
-          // Restore aus IndexedDB gelegentlich länger.
-          .timeout(const Duration(seconds: 4));
-    } catch (_) {}
+/// Wartet, bis die Firebase-Session wiederhergestellt ist, und liefert den
+/// aktuellen eingeloggten Nutzer — oder null, wenn niemand eingeloggt ist.
+/// Auf Web ist [FirebaseAuth.currentUser] für ~500ms+ nach dem Init null,
+/// während die Session aus IndexedDB restored wird. Anfragen in diesem Fenster
+/// würden sonst ohne Token laufen und 401 bekommen.
+Future<User?> _awaitRestoredUser() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) return user;
+  try {
+    return await FirebaseAuth.instance
+        .authStateChanges()
+        .firstWhere((u) => u != null)
+        // Auf Web dauert der Session-Restore aus IndexedDB gelegentlich länger;
+        // auf Mobil ist der Nutzer sofort da, der Timeout greift dort nie.
+        .timeout(const Duration(seconds: 6));
+  } catch (_) {
+    return null;
   }
+}
+
+/// Liefert den (ggf. gecachten) Firebase-ID-Token. Wartet bei Bedarf auf den
+/// Session-Restore (Web).
+Future<String?> _getFirebaseIdToken() async {
+  final user = await _awaitRestoredUser();
   if (user != null) {
     // getIdToken() OHNE Force-Refresh: Firebase gibt den gecachten Token zurück
     // und erneuert ihn automatisch, wenn er bald abläuft. Ein erzwungener
@@ -45,9 +54,11 @@ Future<String?> _getFirebaseIdToken() async {
 
 /// Erzwingt einen frischen Firebase-ID-Token (Force-Refresh). Wird vom
 /// BackendApiClient genutzt, um nach einem 401 einmal mit frischem Token zu
-/// wiederholen — ohne jeden normalen Call zu verlangsamen.
+/// wiederholen — ohne jeden normalen Call zu verlangsamen. Wartet (wie der
+/// normale Abruf) auf den Session-Restore, damit der 401-Retry auf Web eine
+/// noch ladende Session nicht verpasst.
 Future<String?> _forceRefreshFirebaseIdToken() async {
-  final user = FirebaseAuth.instance.currentUser;
+  final user = await _awaitRestoredUser();
   if (user == null) return null;
   try {
     return await user.getIdToken(true);
