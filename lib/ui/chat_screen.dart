@@ -106,12 +106,16 @@ class _ChatScreenState extends State<ChatScreen> {
   String _currentResponse = '';
   bool _termsAccepted = true; // wird in initState geladen
   bool _termsLoading = true;
+  // Land des Nutzers (aus Onboarding) für länderrichtige Notrufnummern im
+  // Krisenfall. Default DE; wird in initState aus den Prefs geladen.
+  String? _countryCode;
 
   @override
   void initState() {
     super.initState();
     _loadTopicInsights();
     _checkTermsAcceptance();
+    _loadCountryCode();
     _initializeGemini();
     // Wenn mit initialMessage geöffnet, automatisch senden
     if (widget.initialMessage != null &&
@@ -121,6 +125,15 @@ class _ChatScreenState extends State<ChatScreen> {
           _handleInitialMessage(widget.initialMessage!);
         }
       });
+    }
+  }
+
+  Future<void> _loadCountryCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Gleiche Quelle wie Kalender/Feiertage + Familien-Geld (Onboarding).
+    final country = prefs.getString('holiday.country');
+    if (mounted && country != null && country.trim().isNotEmpty) {
+      setState(() => _countryCode = country.trim());
     }
   }
 
@@ -260,6 +273,8 @@ class _ChatScreenState extends State<ChatScreen> {
         final stream = _chatBackend!.streamReply(
           history: _messages,
           userMessage: smartPrompt,
+          languageCode: languageService.currentLanguage,
+          countryCode: _countryCode,
         );
 
         await for (final chunk in stream) {
@@ -335,6 +350,8 @@ class _ChatScreenState extends State<ChatScreen> {
       final stream = _chatBackend!.streamReply(
         history: _messages,
         userMessage: text,
+        languageCode: languageService.currentLanguage,
+        countryCode: _countryCode,
       );
 
       await for (final chunk in stream) {
@@ -613,18 +630,18 @@ class _ChatScreenState extends State<ChatScreen> {
     // Zeitbasierte Begrüßung
     final hour = DateTime.now().hour;
     final greetingKey = hour < 11
-      ? 'chat_greeting_morning'
+        ? 'chat_greeting_morning'
         : hour < 17
-        ? 'chat_greeting_day'
+            ? 'chat_greeting_day'
             : hour < 22
-          ? 'chat_greeting_evening'
-          : 'chat_greeting_night';
+                ? 'chat_greeting_evening'
+                : 'chat_greeting_night';
 
     final topics = [
       {
         'emoji': '😤',
-      'label': context.tr('chat_topic_tantrum_label'),
-      'q': context.tr('chat_topic_tantrum_question'),
+        'label': context.tr('chat_topic_tantrum_label'),
+        'q': context.tr('chat_topic_tantrum_question'),
       },
       {
         'emoji': '😴',
@@ -983,7 +1000,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   child: Text(
                     context.tr('chat_terms_accept'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -1259,8 +1277,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       maxLines: 4,
                       decoration: InputDecoration(
                         hintText: AppStringsManager.getString(
-                          languageService.currentLanguage,
-                          'chat_message_hint'),
+                            languageService.currentLanguage,
+                            'chat_message_hint'),
                         hintStyle: TextStyle(
                           color: Colors.grey[400],
                           fontSize: 15,
