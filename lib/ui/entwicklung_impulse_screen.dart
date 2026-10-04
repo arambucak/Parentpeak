@@ -18,6 +18,7 @@ import 'package:parentpeak/ui/widgets/eltern_wissen_widget.dart';
 import 'package:parentpeak/ui/widgets/expert_bibliothek_section.dart';
 import 'package:parentpeak/ui/widgets/development_progress_chart.dart';
 import 'package:parentpeak/logic/development_pdf_service.dart';
+import 'package:parentpeak/logic/development_checkin_store.dart';
 import 'package:parentpeak/services/development_report_limit_service.dart';
 import 'package:parentpeak/services/premium_service.dart';
 import 'package:parentpeak/config/monetization_config.dart';
@@ -74,7 +75,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     _tabController = TabController(
       length: 3,
       vsync: this,
-      initialIndex: widget.initialTabIndex.clamp(0, 1),
+      // 3 Tabs (Impuls, Entwicklung, Wissen) -> gültiger Start-Index 0..2.
+      initialIndex: widget.initialTabIndex.clamp(0, 2),
     );
     _impulseService = widget.impulseService ??
         BackendServiceFactory.createWeeklyImpulseService();
@@ -555,6 +557,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                       // Audio Button
                       if (impulse.audioScript != null)
                         GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: () => _playAudio(
                               impulse.audioScript ?? impulse.contentBody),
                           child: Container(
@@ -652,6 +655,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
             // KI-Vertiefung
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () {
                 Navigator.push(
                   context,
@@ -764,6 +768,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     final isExpanded = _expandedFormat == index;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         HapticFeedback.lightImpact();
         setState(() => _expandedFormat = isExpanded ? -1 : index);
@@ -835,6 +840,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               const SizedBox(height: 12),
               // Audio für diesen Abschnitt
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => _playAudio(content),
                 child: Row(
                   children: [
@@ -902,6 +908,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               ),
               if (impulse.audioScript != null)
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _playAudio(impulse.audioScript ?? content),
                   child: Container(
                     padding:
@@ -945,6 +952,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
           if (hasMore) ...[
             const SizedBox(height: 10),
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () => setState(() => _contentExpanded = !_contentExpanded),
               child: Row(
                 children: [
@@ -984,7 +992,17 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   bool _devDone = false;
   bool _hasSpecialNeeds = false;
   String? _aiReport;
+  // true, wenn der letzte KI-Report-Versuch fehlschlug. Trennt den Fehlerzustand
+  // sauber vom echten Bericht (kein PDF-/Historien-Eintrag bei Fehler).
+  bool _reportFailed = false;
   bool _generatingReport = false;
+
+  // Altersgruppen-getrennte Persistenz (verhindert, dass Antworten einer
+  // Altersgruppe fälschlich den Fragen einer anderen zugeordnet werden).
+  final DevelopmentCheckinStore _checkinStore = DevelopmentCheckinStore();
+  // Score-Snapshot des zuletzt abgeschlossenen Checks dieser Altersgruppe —
+  // speist den Vorher-Nachher-Vergleich (Chart + PDF).
+  DevelopmentScoreSnapshot? _previousSnapshot;
 
   Future<void> _loadCheckIn() async {
     final prefs = await SharedPreferences.getInstance();
@@ -1000,23 +1018,27 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         _devDomains = _localizedDevelopmentDomains(_childProfile!.ageGroupId);
       }
     }
-    final saved = prefs.getString('dev.answers.v3');
-    if (saved != null && saved.isNotEmpty) {
-      for (final part in saved.split(',')) {
-        final kv = part.split(':');
-        if (kv.length == 2) _devAnswers[kv[0]] = int.tryParse(kv[1]) ?? 0;
-      }
+    // Antworten + Verlauf STRIKT für die aktuelle Altersgruppe laden. So kann
+    // ein über eine Altersgrenze gewachsenes Kind keine alten Antworten auf
+    // neue, inhaltlich andere Fragen übertragen bekommen.
+    if (_childProfile != null) {
+      final ageGroupId = _childProfile!.ageGroupId;
+      final answers = await _checkinStore.loadAnswers(ageGroupId);
+      _devAnswers
+        ..clear()
+        ..addAll(answers);
       final tQ = _devDomains.fold(0, (int s, d) => s + d.questions.length);
-      _devDone = _devAnswers.length >= tQ;
+      _devDone = _devAnswers.length >= tQ && tQ > 0;
+      _previousSnapshot = await _checkinStore.loadPreviousSnapshot(ageGroupId);
     }
     _aiReport = prefs.getString('dev.ai_report.v3');
     if (mounted) setState(() {});
   }
 
   Future<void> _saveDevAnswers() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('dev.answers.v3',
-        _devAnswers.entries.map((e) => '${e.key}:${e.value}').join(','));
+    final ageGroupId = _childProfile?.ageGroupId;
+    if (ageGroupId == null) return;
+    await _checkinStore.saveAnswers(ageGroupId, _devAnswers);
   }
 
   Future<void> _saveChildProfile(String name, DateTime birth, String care,
@@ -1026,14 +1048,26 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     await prefs.setString('dev.child_birth', birth.toIso8601String());
     await prefs.setString('dev.child_care', care);
     await prefs.setBool('dev.child_special_needs', hasSpecialNeeds);
+    final profile = ChildProfile(name: name, birthDate: birth, careType: care);
+    // Beim (Neu-)Anlegen eines Profils die bereits gespeicherten Antworten DER
+    // PASSENDEN Altersgruppe wiederherstellen, statt stumm zu leeren — so geht
+    // ein laufender Check beim Bearbeiten des Profils nicht verloren.
+    final restored = await _checkinStore.loadAnswers(profile.ageGroupId);
+    final previous =
+        await _checkinStore.loadPreviousSnapshot(profile.ageGroupId);
+    if (!mounted) return;
     setState(() {
-      _childProfile =
-          ChildProfile(name: name, birthDate: birth, careType: care);
+      _childProfile = profile;
       _hasSpecialNeeds = hasSpecialNeeds;
-      _devDomains = _localizedDevelopmentDomains(_childProfile!.ageGroupId);
-      _devAnswers.clear();
-      _devDone = false;
+      _devDomains = _localizedDevelopmentDomains(profile.ageGroupId);
+      _devAnswers
+        ..clear()
+        ..addAll(restored);
+      final tQ = _devDomains.fold(0, (int s, d) => s + d.questions.length);
+      _devDone = _devAnswers.length >= tQ && tQ > 0;
+      _previousSnapshot = previous;
       _aiReport = null;
+      _reportFailed = false;
     });
   }
 
@@ -1111,19 +1145,45 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       await prefs.setStringList('dev.report_history', historyRaw);
       // Report-Limit tracken
       await DevelopmentReportLimitService.instance.recordReportCreated();
+      // Aktuellen Score-Stand als "letzten abgeschlossenen Check" DIESER
+      // Altersgruppe sichern — damit der NÄCHSTE Check einen echten Vorher-
+      // Nachher-Vergleich zeigen kann. Der aktuell angezeigte Vergleich
+      // (_previousSnapshot) bleibt bis dahin unverändert.
+      await _checkinStore.saveSnapshot(
+        p.ageGroupId,
+        DevelopmentScoreSnapshot(
+          scores: _currentDevScores(),
+          date: DateTime.now(),
+        ),
+      );
       if (mounted) {
         setState(() {
           _aiReport = text;
+          _reportFailed = false;
           _generatingReport = false;
         });
       }
     } catch (e) {
+      debugPrint('EntwicklungImpulse: KI-Report fehlgeschlagen: $e');
       if (mounted) {
+        // Fehlerzustand sauber vom echten Bericht trennen: _aiReport NICHT mit
+        // Fehlertext überschreiben (sonst sähe es aus wie ein echter Bericht
+        // inkl. PDF-Export). Stattdessen dezenter, retry-barer Hinweis.
         setState(() {
-          _aiReport =
-              _t('development_report_error').replaceAll('{error}', '$e');
+          _reportFailed = true;
           _generatingReport = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_t('development_report_error')
+                .replaceAll('{error}', '')
+                .trim()),
+            action: SnackBarAction(
+              label: _t('retry_btn'),
+              onPressed: _generateAIReport,
+            ),
+          ),
+        );
       }
     }
   }
@@ -1135,6 +1195,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
   Widget _buildHistoryButton(ThemeData theme) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _showReportHistory,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1187,6 +1248,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 const Spacer(),
                 GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => Navigator.pop(ctx),
                     child: Icon(Icons.close_rounded,
                         color: theme.colorScheme.outline)),
@@ -1264,6 +1326,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       _devAnswers.clear();
       _devDone = false;
       _aiReport = null;
+      _reportFailed = false;
     });
     _saveDevAnswers();
   }
@@ -1327,7 +1390,33 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                     ]),
               ),
             ),
-          if (_devDone && _aiReport == null && !_generatingReport)
+          if (_devDone && _aiReport == null && !_generatingReport) ...[
+            if (_reportFailed)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4F1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFFD1C3)),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.info_outline_rounded,
+                        size: 18, color: Color(0xFF8C3E28)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _t('development_report_error')
+                            .replaceAll('{error}', '')
+                            .trim(),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: const Color(0xFF8C3E28)),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
             Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: SizedBox(
@@ -1335,11 +1424,14 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                     child: FilledButton.icon(
                         onPressed: _generateAIReport,
                         icon: const Icon(Icons.auto_awesome_rounded),
-                        label: Text(_t('generate_report')),
+                        label: Text(_reportFailed
+                            ? _t('retry_btn')
+                            : _t('generate_report')),
                         style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14)))))),
+          ],
           if (_generatingReport)
             Padding(
                 padding: const EdgeInsets.all(32),
@@ -1384,6 +1476,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                       _devAnswers.clear();
                       _devDone = false;
                       _aiReport = null;
+                      _reportFailed = false;
+                      _previousSnapshot = null;
                     });
                   },
                   child: Text(_t('other_child')))),
@@ -1658,6 +1752,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     final sel = _devAnswers[key] == val;
     return Expanded(
         child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               HapticFeedback.selectionClick();
               setState(() {
@@ -1780,15 +1875,16 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     return scores;
   }
 
+  // Vorheriger Score-Stand DIESER Altersgruppe (für den Vorher-Nachher-
+  // Vergleich). null, solange noch kein früherer Check abgeschlossen wurde —
+  // dann blendet die UI den Vergleich sauber aus, statt Leeres vorzutäuschen.
   Map<String, double>? _previousDevScores() {
-    // Laden aus dem MonthlyCardMeta (letzter gespeicherter Check)
-    // Wird beim nächsten Check verfügbar
-    return null; // TODO: Load from SharedPreferences when history exists
+    final scores = _previousSnapshot?.scores;
+    if (scores == null || scores.isEmpty) return null;
+    return scores;
   }
 
-  DateTime? _previousCheckDate() {
-    return null; // TODO: Load from SharedPreferences
-  }
+  DateTime? _previousCheckDate() => _previousSnapshot?.date;
 
   Future<void> _exportPdf() async {
     if (_childProfile == null) return;
@@ -1906,6 +2002,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
             ('😌', _t('mood_okay'), 2),
             ('🌟', _t('mood_great'), 3),
           ].map((item) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => _saveMood(item.$3),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -1962,6 +2059,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                 padding: EdgeInsets.only(
                     right: card.topic == cards.last.topic ? 0 : 8),
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     HapticFeedback.lightImpact();
                     setState(() => _wissenTopic = card.topic);
