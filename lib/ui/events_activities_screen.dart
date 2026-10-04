@@ -333,8 +333,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       final cityLabel = district ?? context.tr('events_current_location');
       final city = district != null
           ? (district.contains(',')
-                ? district.split(',').last.trim()
-                : district)
+              ? district.split(',').last.trim()
+              : district)
           : coordCity; // pass raw coords to agent when city name unknown
       final newLocation = PickedLocation(
         displayName: cityLabel,
@@ -344,8 +344,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         lon: pos.longitude,
       );
       if (mounted) {
-        final shouldUpdate =
-            (forceOverride || !_userLockedLocation) &&
+        final shouldUpdate = (forceOverride || !_userLockedLocation) &&
             identical(startingLocation, _activeLocation);
         if (shouldUpdate) {
           final prefs = await SharedPreferences.getInstance();
@@ -386,12 +385,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         final address = data['address'] as Map<String, dynamic>?;
-        final suburb =
-            address?['suburb'] as String? ??
+        final suburb = address?['suburb'] as String? ??
             address?['quarter'] as String? ??
             address?['neighbourhood'] as String?;
-        final cityName =
-            address?['city'] as String? ??
+        final cityName = address?['city'] as String? ??
             address?['town'] as String? ??
             address?['village'] as String?;
         if (suburb != null && cityName != null) return '$suburb, $cityName';
@@ -458,11 +455,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     setState(() {
       _displayedQuery = key;
       _aiEvents = aiCached?.data ?? (sameQuery ? _aiEvents : const []);
-      _communityEvents =
-          communityCached?.data ??
+      _communityEvents = communityCached?.data ??
           (sameQuery && !communityChanged ? _communityEvents : const []);
-      _invitations =
-          invitationCached?.data ??
+      _invitations = invitationCached?.data ??
           (sameQuery && !communityChanged ? _invitations : const []);
       if (!sameQuery || communityChanged) _eventTitlesById = const {};
       if (!sameQuery || communityChanged) _lastFeedSyncAt = null;
@@ -493,12 +488,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   city: city,
                   radiusHint: '$radius km Umkreis',
                   childAges: ageLabels,
-                  latitude: validCoordinates(coords.$1, coords.$2)
-                      ? coords.$1
-                      : null,
-                  longitude: validCoordinates(coords.$1, coords.$2)
-                      ? coords.$2
-                      : null,
+                  latitude:
+                      validCoordinates(coords.$1, coords.$2) ? coords.$1 : null,
+                  longitude:
+                      validCoordinates(coords.$1, coords.$2) ? coords.$2 : null,
                 ),
                 force: force,
               );
@@ -564,22 +557,22 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
               .where((id) => id.isNotEmpty && !_eventTitlesById.containsKey(id))
               .toSet()
               .map((eventId) async {
-                try {
-                  final event = await _eventService.getEventById(eventId);
-                  if (event != null && isCurrent()) {
-                    setState(
-                      () => _eventTitlesById = {
-                        ..._eventTitlesById,
-                        eventId: event.title,
-                      },
-                    );
-                  }
-                } catch (e) {
-                  debugPrint(
-                    'EventsActivitiesScreen: invitation title unavailable: $e',
-                  );
-                }
-              }),
+            try {
+              final event = await _eventService.getEventById(eventId);
+              if (event != null && isCurrent()) {
+                setState(
+                  () => _eventTitlesById = {
+                    ..._eventTitlesById,
+                    eventId: event.title,
+                  },
+                );
+              }
+            } catch (e) {
+              debugPrint(
+                'EventsActivitiesScreen: invitation title unavailable: $e',
+              );
+            }
+          }),
         );
       } catch (e) {
         debugPrint('EventsActivitiesScreen: invitations load skipped: $e');
@@ -593,8 +586,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     // koppeln, damit diese sofort erscheinen. Die langsame KI-Suche läuft
     // parallel weiter; ihre Treffer poppen progressiv nach (eigener
     // _aiLoading-Hinweis), statt alles hinter dem Spinner zu blockieren.
-    final fastSources = Future.wait([loadCommunity(), loadInvitations()])
-        .then((_) {
+    final fastSources =
+        Future.wait([loadCommunity(), loadInvitations()]).then((_) {
       if (!isCurrent()) return;
       final community = _session.community.peek(key);
       setState(() {
@@ -670,7 +663,6 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     if (_activeSources.contains(_FeedSource.community)) {
       items.addAll(_communityEvents.map(_UnifiedFeedItem.fromCommunity));
     }
-
     final filtered = items
         .where((item) => _withinRadius(item, coords.$1, coords.$2, _radiusKm))
         .where((item) => _matchesNearbyQuickFilter(item, coords.$1, coords.$2))
@@ -709,10 +701,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         .where(_matchesPriceFilter)
         .where(_matchesTimeWindow)
         .where((item) {
-          final distance = _distanceKmForDisplay(item, coords.$1, coords.$2);
-          return distance != null && distance <= 10;
-        })
-        .length;
+      // Konsistent mit _matchesNearbyQuickFilter: KI-Funde ohne Koordinaten
+      // zählen als „in der Nähe" (standortbezogen gesucht); Community ohne
+      // Koordinaten nicht. Bekannte Distanzen nur bis 10 km.
+      final distance = _distanceKmForDisplay(item, coords.$1, coords.$2);
+      if (distance == null) return item.source == _FeedSource.ai;
+      return distance <= 10;
+    }).length;
   }
 
   bool _matchesPriceFilter(_UnifiedFeedItem item) {
@@ -725,6 +720,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       item.eventDate,
       _timeWindowFilter.name,
       DateTime.now(),
+      isRecurring: item.isRecurring,
     );
   }
 
@@ -745,7 +741,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   ) {
     if (!_onlyNearbyQuick) return true;
     final distance = _distanceKmForDisplay(item, originLat, originLon);
-    return distance != null && distance <= 10;
+    // KI-Funde haben keine Koordinaten (distance == null), wurden aber gezielt
+    // für Standort + Radius des Nutzers gesucht — sie gelten daher als „in der
+    // Nähe" und bleiben sichtbar. Community-Angebote OHNE Koordinaten sind
+    // dagegen echte Unbekannte und werden nicht fälschlich als nah gewertet.
+    if (distance == null) return item.source == _FeedSource.ai;
+    return distance <= 10;
   }
 
   bool _matchesSelectedAges(_UnifiedFeedItem item) {
@@ -754,8 +755,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
   List<AgeGroup> _itemAges(_UnifiedFeedItem item) =>
       item.source == _FeedSource.community
-      ? item.communityAgeGroups
-      : eventAgesFromLabel(item.ageLabel ?? '');
+          ? item.communityAgeGroups
+          : eventAgesFromLabel(item.ageLabel ?? '');
 
   double _rankingScore(
     _UnifiedFeedItem item,
@@ -1120,7 +1121,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                           TextButton(
                             onPressed: () => _refreshFeed(force: true),
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -1394,9 +1396,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
               if (!mounted) return;
               setState(() {
                 _activeLocation = loc;
-                _fallbackCity = loc.city.isNotEmpty
-                    ? loc.city
-                    : loc.displayName;
+                _fallbackCity =
+                    loc.city.isNotEmpty ? loc.city : loc.displayName;
                 _userLockedLocation = true;
                 _hasRealLocation = true;
               });
@@ -1778,9 +1779,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                                   onPressed: isBusy
                                       ? null
                                       : () => _respondInvitation(
-                                          invitation,
-                                          false,
-                                        ),
+                                            invitation,
+                                            false,
+                                          ),
                                   child: Text(
                                     AppStringsManager.getString(
                                       languageService.currentLanguage,
@@ -1795,9 +1796,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                                   onPressed: isBusy
                                       ? null
                                       : () => _respondInvitation(
-                                          invitation,
-                                          true,
-                                        ),
+                                            invitation,
+                                            true,
+                                          ),
                                   child: Text(
                                     isBusy
                                         ? '...'
@@ -1849,9 +1850,8 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     EventsLimitService.instance.recordEventView();
 
     // Finde das originale DiscoveredEvent
-    final discoveredEvent = _aiEvents
-        .where((e) => e.id == item.eventId)
-        .firstOrNull;
+    final discoveredEvent =
+        _aiEvents.where((e) => e.id == item.eventId).firstOrNull;
     if (discoveredEvent != null) {
       Navigator.push(
         context,
@@ -1866,8 +1866,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         MaterialPageRoute(
           builder: (_) => EventDetailPage(
             event: DiscoveredEvent(
-              id:
-                  item.eventId ??
+              id: item.eventId ??
                   'temp_${DateTime.now().millisecondsSinceEpoch}',
               title: item.title,
               description: item.description,
@@ -1935,10 +1934,10 @@ class _CompactActionButton extends StatelessWidget {
                   label,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    fontSize: compact ? 13 : null,
-                  ),
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        fontSize: compact ? 13 : null,
+                      ),
                 ),
               ),
             ],
@@ -1967,6 +1966,7 @@ class _UnifiedFeedItem {
     this.hosterId,
     this.participationMode,
     this.confirmedParticipants = 0,
+    this.isRecurring = false,
   });
 
   final _FeedSource source;
@@ -1985,12 +1985,13 @@ class _UnifiedFeedItem {
   final String? hosterId;
   final ParticipationMode? participationMode;
   final int confirmedParticipants;
+  // true bei wiederkehrenden/dauerhaft offenen KI-Angeboten ohne festes Datum.
+  final bool isRecurring;
 
   factory _UnifiedFeedItem.fromAi(DiscoveredEvent event) {
     final price = event.price?.trim();
     final normalized = (price ?? '').toLowerCase();
-    final isFree =
-        normalized.contains('kostenlos') ||
+    final isFree = normalized.contains('kostenlos') ||
         normalized.contains('free') ||
         normalized == '0 €' ||
         normalized == '0€';
@@ -2008,9 +2009,12 @@ class _UnifiedFeedItem {
       priceLabel: price,
       isFree: isFree,
       eventId: event.id,
+      isRecurring: event.isRecurring,
     );
   }
 
+  // Hinweis: Community-Events haben immer ein Datum (kein isRecurring-Konzept),
+  // daher bleibt isRecurring hier beim Default false.
   factory _UnifiedFeedItem.fromCommunity(MeetupEvent event) {
     final isFree = event.price == 0;
     final priceLabel = event.price == null || event.price == 0
@@ -2130,9 +2134,9 @@ class _UnifiedEventCard extends StatelessWidget {
                     Text(
                       _formatCardDate(item),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF374151),
-                      ),
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF374151),
+                          ),
                     ),
                 ],
               ),
@@ -2214,7 +2218,9 @@ class _UnifiedEventCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             '${distanceKm!.toStringAsFixed(1)} km · ${_distanceHint(context, distanceKm!)}',
-                            style: Theme.of(context).textTheme.labelSmall
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
                                 ?.copyWith(
                                   color: _distanceColor(distanceKm!),
                                   fontWeight: FontWeight.w800,
@@ -2239,8 +2245,8 @@ class _UnifiedEventCard extends StatelessWidget {
                     },
                   ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
               ],
               if ((item.ageLabel != null && item.ageLabel!.isNotEmpty) ||
@@ -2252,14 +2258,14 @@ class _UnifiedEventCard extends StatelessWidget {
                     values: {
                       'age': item.communityAgeGroups.isNotEmpty
                           ? item.communityAgeGroups
-                                .map((group) => context.tr(_ageGroupKey(group)))
-                                .join(', ')
+                              .map((group) => context.tr(_ageGroupKey(group)))
+                              .join(', ')
                           : item.ageLabel!,
                     },
                   ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
               ],
             ],

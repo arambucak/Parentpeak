@@ -16,6 +16,8 @@ import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Agent extends EventDiscoveryAgent {
+  _Agent([this.events = const []]);
+  final List<DiscoveredEvent> events;
   int calls = 0;
   @override
   Future<List<DiscoveredEvent>> discoverEvents({
@@ -26,9 +28,29 @@ class _Agent extends EventDiscoveryAgent {
     double? longitude,
   }) async {
     calls++;
-    return [];
+    return events;
   }
 }
+
+DiscoveredEvent _aiEvent(
+  String title, {
+  DateTime? eventDate,
+  bool isRecurring = false,
+  String? recurringNote,
+}) =>
+    DiscoveredEvent(
+      id: title,
+      title: title,
+      description: 'Beschreibung',
+      category: DiscoveredEventCategory.familienzentrum,
+      ageLabels: const ['Alle Altersgruppen'],
+      location: 'Kreuzberg',
+      cityHint: 'Berlin',
+      eventDate: eventDate,
+      isRecurring: isRecurring,
+      recurringNote: recurringNote,
+      discoveredAt: DateTime.now(),
+    );
 
 MeetupEvent _event(
   String title, {
@@ -228,6 +250,75 @@ void main() {
         scrollable: find.byType(Scrollable).last,
       );
       expect(find.textContaining('9.8 km'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'recurring AI offer without a date survives the Today filter; one-off does not',
+    (tester) async {
+      // Titel bewusst so gewählt, dass das wiederkehrende Angebot ("A…") im
+      // Tiebreaker vor dem einmaligen ("Z…") sortiert und damit oben im
+      // (lazy gebauten) Feed sichtbar ist.
+      final service = _Service([]);
+      final agent = _Agent([
+        _aiEvent('A Offener Familientreff',
+            isRecurring: true, recurringNote: 'jeden Samstag'),
+        _aiEvent('Z Einmaliges Angebot ohne Datum'),
+      ]);
+      await _open(
+        tester,
+        service,
+        agent,
+        location: const PickedLocation(
+          displayName: 'Kreuzberg',
+          city: 'Berlin',
+          postcode: '',
+          lat: 52.4986,
+          lon: 13.4033,
+        ),
+      );
+      // Der KI-Feed lädt progressiv (async); auf das Eintreffen der Treffer
+      // warten. Das wiederkehrende Angebot ("A…") steht oben im Feed.
+      await tester.pumpAndSettle();
+      for (var i = 0;
+          i < 20 &&
+              find
+                  .text('A Offener Familientreff', skipOffstage: false)
+                  .evaluate()
+                  .isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      // Standardmäßig ("Alle Termine") ist das wiederkehrende Angebot im Feed
+      // gebaut (skipOffstage:false, da der lazy ListView-Eintrag außerhalb des
+      // Viewports liegen kann).
+      expect(
+        find.text('A Offener Familientreff', skipOffstage: false),
+        findsOneWidget,
+      );
+
+      // Auf "Heute" umschalten (ChoiceChip mit Label "Today").
+      final today = find.widgetWithText(ChoiceChip, 'Today');
+      await tester.scrollUntilVisible(
+        today,
+        100,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.ensureVisible(today);
+      await tester.pumpAndSettle();
+      await tester.tap(today);
+      await tester.pumpAndSettle();
+
+      // Nach dem Umschalten auf "Heute": Das wiederkehrende/offene Angebot
+      // bleibt im Feed, das einmalige ohne Datum ist komplett heraus.
+      expect(
+        find.text('A Offener Familientreff', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Z Einmaliges Angebot ohne Datum', skipOffstage: false),
+        findsNothing,
+      );
     },
   );
 }

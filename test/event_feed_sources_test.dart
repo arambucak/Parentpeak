@@ -28,6 +28,13 @@ void main() {
         expect(prompt, contains('höchstens ein kurzer Satz'));
         expect(prompt, contains('eventDate=null'));
         expect(prompt, contains('ohne Treffer []'));
+        // Der gelockerte Prompt erlaubt neben Einzel-Events auch
+        // wiederkehrende/dauerhaft offene Familienorte und fordert dafür einen
+        // Rhythmus-Hinweis statt eines erfundenen Datums.
+        expect(prompt, contains('recurringNote'));
+        expect(prompt, contains('wiederkehrende'));
+        // Weiterhin keine erfundenen Platzhalter-Daten/-Mengen.
+        expect(prompt, contains('Nichts erfinden'));
         expect(prompt, isNot(contains('genau 10')));
         expect(prompt, isNot(contains('T10:00:00')));
         return http.Response(jsonEncode({'text': '[]'}), 200);
@@ -35,6 +42,37 @@ void main() {
     ));
 
     expect(await agent.discoverEvents(city: 'Berlin'), isEmpty);
+  });
+
+  test('recurring offer without a date is marked as recurring (not dropped)',
+      () async {
+    // Ein dauerhaft offenes Angebot (Familienzentrum mit Wochenprogramm) kommt
+    // ohne eventDate, aber mit recurringNote. Es muss als isRecurring markiert
+    // werden, damit es die Zeitfenster-Filter übersteht.
+    final payload = jsonEncode([
+      {
+        'title': 'Offener Familientreff',
+        'description': 'Jeden Samstag Spiel und Austausch',
+        'category': 'familienzentrum',
+        'ageLabels': ['0-6 Jahre'],
+        'location': 'Kreuzberg',
+        'eventDate': null,
+        'recurringNote': 'jeden Samstag 10-13 Uhr',
+        'price': 'kostenlos',
+        'url': 'https://example.org/treff',
+        'organizer': 'Familienzentrum',
+      },
+    ]);
+    final agent = EventDiscoveryAgent(
+        aiService: GeminiAIService(
+      apiClient:
+          _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
+    ));
+    final events = await agent.discoverEvents(city: 'Berlin');
+    expect(events, hasLength(1));
+    expect(events.first.eventDate, isNull);
+    expect(events.first.isRecurring, isTrue);
+    expect(events.first.recurringNote, 'jeden Samstag 10-13 Uhr');
   });
 
   test('AI failure makes one request and never invents replacement events',

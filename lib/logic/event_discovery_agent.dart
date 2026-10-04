@@ -71,11 +71,11 @@ class EventDiscoveryAgent {
         : '';
 
     final groundingPrompt = '''
-  $today. ${gpsHint}Finde bis zu 5 belegte Familienevents ${isCoordCity ? 'in der Nähe von' : 'in'} "$locationDesc" ($cleanRadius), $saison. Zielgruppe: $agesText.
-  Nutze Google Search. Bevorzuge konkrete Veranstalterseiten mit bestätigtem künftigem Termin. Weniger Treffer sind erlaubt; nichts erfinden oder zum Auffüllen ergänzen.
-  Antworte nur als kompaktes JSON-Array. Pro Treffer: title, description (höchstens ein kurzer Satz), category, ageLabels, location, eventDate (ISO-8601 oder null), price (belegter Preis oder null), url (zugehörige echte Quell-URL), organizer.
+  $today. ${gpsHint}Finde bis zu 5 echte Familienangebote ${isCoordCity ? 'in der Nähe von' : 'in'} "$locationDesc" ($cleanRadius), $saison. Zielgruppe: $agesText.
+  Nutze Google Search. Erlaubt sind: Einzel-Events mit Termin, regelmäßige/wiederkehrende Angebote (z.B. "jeden Samstag") UND dauerhaft offene Familienorte mit Programm (Familienzentren, Museen, Bibliotheken, Spielplätze, Schwimmbäder, Indoorspielplätze, Zoos). Bevorzuge konkrete, über Google Search auffindbare Veranstalter- oder Einrichtungsseiten. Nichts erfinden oder zum Auffüllen ergänzen; lieber weniger, dafür echte Treffer.
+  Antworte nur als kompaktes JSON-Array. Pro Treffer: title, description (höchstens ein kurzer Satz), category, ageLabels, location, eventDate (ISO-8601 oder null), recurringNote (kurzer Rhythmus-Hinweis bei wiederkehrenden/offenen Angeboten, sonst null), price (belegter Preis oder null), url (zugehörige echte Quell-URL), organizer.
   category: theater,kino,sport,musik,natur,basteln,familienzentrum,museum,festival,spielplatz,sonstiges.
-  Keinen Termin aus einem Angebots-Enddatum ableiten. Bei unbestätigtem Tag/Uhrzeit eventDate=null. Nur belegte Angebote ausgeben; ohne Treffer [].
+  Keinen Termin aus einem Angebots-Enddatum ableiten. Bei unbestätigtem Tag/Uhrzeit eventDate=null (bei wiederkehrenden/offenen Angeboten den Rhythmus in recurringNote statt in eventDate). Nur echte, belegte Angebote ausgeben; ohne Treffer [].
 ''';
 
     return _callWithGrounding(groundingPrompt, city);
@@ -159,6 +159,10 @@ class EventDiscoveryAgent {
           }
         }
 
+        final recurringNote = (map['recurringNote'] as String?)?.trim();
+        final hasRecurringNote =
+            recurringNote != null && recurringNote.isNotEmpty;
+
         results.add(DiscoveredEvent(
           id: map['id']?.toString() ?? _generateId(),
           title: map['title'] as String? ?? 'Event',
@@ -168,8 +172,12 @@ class EventDiscoveryAgent {
           location: map['location'] as String? ?? city,
           cityHint: map['cityHint'] as String? ?? city,
           eventDate: eventDate,
-          isRecurring: map['isRecurring'] as bool? ?? false,
-          recurringNote: map['recurringNote'] as String?,
+          // Ein wiederkehrendes/dauerhaft offenes Angebot (recurringNote
+          // gesetzt) gilt als laufend — auch ohne festes eventDate. Das
+          // schützt solche echten Treffer vor dem Zeitfenster-Filter.
+          isRecurring:
+              (map['isRecurring'] as bool? ?? false) || hasRecurringNote,
+          recurringNote: hasRecurringNote ? recurringNote : null,
           eventTimeRange: map['eventTimeRange'] as String?,
           price: map['price'] as String?,
           url: url?.isNotEmpty == true ? url : null,
