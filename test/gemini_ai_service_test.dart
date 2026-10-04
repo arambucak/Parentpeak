@@ -8,13 +8,17 @@ class _RecordingApiClient extends BackendApiClient {
   String? path;
   Map<String, dynamic>? body;
 
+  Duration? timeout;
+
   @override
   Future<Map<String, dynamic>> postJson(
     String path,
-    Map<String, dynamic> body,
-  ) async {
+    Map<String, dynamic> body, {
+    Duration? timeout,
+  }) async {
     this.path = path;
     this.body = body;
+    this.timeout = timeout;
     return {
       'text': 'Sichere Antwort',
       'groundingUrls': ['https://example.com/source'],
