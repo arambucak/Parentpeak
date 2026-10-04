@@ -29,22 +29,31 @@ Future<String?> _getFirebaseIdToken() async {
     } catch (_) {}
   }
   if (user != null) {
-    // Firebase-ID-Tokens laufen nach ~1h ab. Ein gecachter (abgelaufener)
-    // Token führt serverseitig zu 401 — z.B. beim KI-Event-Feed, der einen
-    // gültigen Firebase-Token verlangt. Daher IMMER einen frischen Token
-    // erzwingen (Firebase erneuert nur bei Bedarf, kein Dauer-Overhead).
+    // getIdToken() OHNE Force-Refresh: Firebase gibt den gecachten Token zurück
+    // und erneuert ihn automatisch, wenn er bald abläuft. Ein erzwungener
+    // Refresh bei JEDEM Call verursacht einen langsamen Netzwerk-Roundtrip —
+    // auf Mobilfunk kann das zusammen mit dem KI-Call ins Timeout laufen und den
+    // Feed scheitern lassen. Abgelaufene Token werden stattdessen gezielt per
+    // 401-Retry im BackendApiClient erneuert.
     try {
-      return await user.getIdToken(true);
-    } catch (_) {
-      // Letzter Versuch ohne Force-Refresh (gecachter Token ist besser als
-      // gar keiner, falls das Erneuern transient scheitert).
-      try {
-        return await user.getIdToken();
-      } catch (_) {}
-    }
+      return await user.getIdToken();
+    } catch (_) {}
   }
   // Fallback: return null so BackendApiClient uses static authToken
   return null;
+}
+
+/// Erzwingt einen frischen Firebase-ID-Token (Force-Refresh). Wird vom
+/// BackendApiClient genutzt, um nach einem 401 einmal mit frischem Token zu
+/// wiederholen — ohne jeden normalen Call zu verlangsamen.
+Future<String?> _forceRefreshFirebaseIdToken() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return null;
+  try {
+    return await user.getIdToken(true);
+  } catch (_) {
+    return null;
+  }
 }
 
 class BackendServiceFactory {
@@ -58,6 +67,7 @@ class BackendServiceFactory {
       baseUrl: baseUrl,
       authToken: APIConfig.getBackendApiToken(),
       authTokenProvider: _getFirebaseIdToken,
+      forceRefreshTokenProvider: _forceRefreshFirebaseIdToken,
     );
   }
 

@@ -55,4 +55,45 @@ void main() {
       throwsA(isA<Exception>()),
     );
   });
+
+  test('401 wird einmal mit frisch erzwungenem Token wiederholt', () async {
+    var calls = 0;
+    final tokensSeen = <String?>[];
+    final client = BackendApiClient(
+      baseUrl: 'http://localhost:3000',
+      authToken: 'static',
+      authTokenProvider: () async => 'stale-token',
+      forceRefreshTokenProvider: () async => 'fresh-token',
+      httpClient: MockClient((request) async {
+        calls++;
+        tokensSeen.add(request.headers['Authorization']);
+        // Erster Versuch (alter Token) -> 401, zweiter (frischer Token) -> 200.
+        if (calls == 1) return http.Response('{"error":"unauth"}', 401);
+        return http.Response(jsonEncode({'ok': true}), 200);
+      }),
+    );
+
+    final result = await client.postJson('/ai/generate', {'x': 1});
+    assert(result['ok'] == true);
+    assert(calls == 2);
+    assert(tokensSeen[0] == 'Bearer stale-token');
+    assert(tokensSeen[1] == 'Bearer fresh-token');
+  });
+
+  test('401 ohne forceRefreshProvider wirft (kein Retry)', () async {
+    var calls = 0;
+    final client = BackendApiClient(
+      baseUrl: 'http://localhost:3000',
+      authToken: 'static',
+      httpClient: MockClient((_) async {
+        calls++;
+        return http.Response('{"error":"unauth"}', 401);
+      }),
+    );
+    await expectLater(
+      client.postJsonAny('/ai/generate', const {}),
+      throwsA(isA<BackendApiException>()),
+    );
+    assert(calls == 1);
+  });
 }
