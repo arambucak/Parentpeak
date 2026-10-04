@@ -133,8 +133,10 @@ Future<void> _showFeed(WidgetTester tester, String title) async {
   // Nach dem Scrollen sicherstellen, dass der Titel vollständig sichtbar (und
   // damit tappbar) ist — robust gegenüber Layout-Verschiebungen durch
   // unterschiedlich hohe/breite Hinweis- und Chip-Zeilen oben im Feed.
+  // Nur pump() (kein pumpAndSettle), da der KI-Such-Hinweis einen dauerhaft
+  // animierten Spinner zeigen kann, auf den pumpAndSettle endlos warten würde.
   await tester.ensureVisible(find.text(title));
-  await tester.pumpAndSettle();
+  await tester.pump();
 }
 
 void main() {
