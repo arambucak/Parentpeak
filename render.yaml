@@ -32,6 +32,10 @@ services:
         value: "900000"
       - key: AI_RATE_LIMIT_MAX
         value: "30"
+      # Globales Tages-Hard-Cap über ALLE KI-Aufrufe (Kostenschutz, auch bei
+      # vielen Konten). 0 = deaktiviert. Bei Erreichen: 503 bis Mitternacht UTC.
+      - key: AI_DAILY_BUDGET_MAX
+        value: "2000"
       - key: WEEKLY_IMPULSE_SCHEMA_PATH
         value: "/opt/render/project/backend/weekly_impulse_schema_year3.json"
       - key: DISABLE_IN_MEMORY_FALLBACKS

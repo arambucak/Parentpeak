@@ -208,6 +208,16 @@ const aiRateMax = Number.parseInt(
 );
 const aiRateBuckets = new Map();
 
+// Globales Tagesbudget für ALLE KI-Aufrufe zusammen (Hard-Cap gegen
+// Kosten-Explosion, selbst bei vielen Konten oder einer koordinierten
+// Attacke). Default 2000 Calls/Tag; 0 deaktiviert das Cap. Zählt pro
+// UTC-Kalendertag und setzt sich automatisch um Mitternacht zurück.
+const aiDailyBudgetMax = Number.parseInt(
+  process.env.AI_DAILY_BUDGET_MAX || '2000',
+  10,
+);
+const aiDailyBudget = { day: '', count: 0 };
+
 // Reine, testbare Rate-Limit-Prüfung (Sliding-Window pro Schlüssel).
 // Gibt true zurück, wenn die Anfrage erlaubt ist, false bei Überschreitung.
 function checkRateLimit(buckets, key, { windowMs, max, now = Date.now() }) {
@@ -218,6 +228,19 @@ function checkRateLimit(buckets, key, { windowMs, max, now = Date.now() }) {
   }
   bucket.count += 1;
   return bucket.count <= max;
+}
+
+// Reine, testbare Tagesbudget-Prüfung. [state] = {day, count} wird mutiert.
+// max <= 0 bedeutet "kein Cap". Gibt true zurück, wenn erlaubt.
+function checkDailyBudget(state, max, now = new Date()) {
+  if (!Number.isFinite(max) || max <= 0) return true;
+  const day = now.toISOString().slice(0, 10); // UTC-Kalendertag
+  if (state.day !== day) {
+    state.day = day;
+    state.count = 0;
+  }
+  state.count += 1;
+  return state.count <= max;
 }
 const DEMO_USER_ID = 'host_demo_001';
 const DEMO_FAMILY_ID = 'demo-family-001';
@@ -2722,6 +2745,16 @@ app.post('/ai/generate', async (req, res) => {
       { windowMs: aiRateWindowMs, max: aiRateMax })) {
     return res.status(429).json({
       error: 'KI-Limit erreicht. Bitte in einigen Minuten erneut versuchen.',
+    });
+  }
+
+  // Globales Tages-Hard-Cap über alle Nutzer: letzte Verteidigungslinie gegen
+  // Kosten-Explosion. Erst NACH dem Per-Nutzer-Limit, damit bereits gedrosselte
+  // Einzelanfragen das Gesamtbudget nicht belasten.
+  if (!checkDailyBudget(aiDailyBudget, aiDailyBudgetMax)) {
+    console.warn(`AI daily budget reached (${aiDailyBudgetMax}) — blocking further calls today`);
+    return res.status(503).json({
+      error: 'KI-Dienst heute stark ausgelastet. Bitte morgen erneut versuchen.',
     });
   }
 
