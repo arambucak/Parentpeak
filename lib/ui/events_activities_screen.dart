@@ -97,6 +97,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   // Firebase-Token, Timeout oder unparsebare Gemini-Antwort). Steuert einen
   // dezenten, retry-baren Hinweis statt stummer Leere.
   bool _aiFeedFailed = false;
+  // true, solange die (langsame) KI-Suche noch läuft. Unabhängig vom globalen
+  // _isLoading, damit Community-Angebote sofort erscheinen und die KI-Treffer
+  // progressiv nachladen — statt alle hinter einem Spinner zu blockieren.
+  bool _aiLoading = false;
   DateTime? _lastFeedSyncAt;
   List<DiscoveredEvent> _aiEvents = const [];
   List<MeetupEvent> _communityEvents = const [];
@@ -463,6 +467,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       if (!sameQuery || communityChanged) _eventTitlesById = const {};
       if (!sameQuery || communityChanged) _lastFeedSyncAt = null;
       _isLoading = true;
+      _aiLoading = _activeSources.contains(_FeedSource.ai) &&
+          city.trim().isNotEmpty &&
+          !invitationsOnly;
       _errorMessage = null;
     });
     final ageLabels = ages.map(_ageGroupLabel).toList();
@@ -493,11 +500,17 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           setState(() {
             _aiEvents = value.data;
             _aiFeedFailed = false;
+            _aiLoading = false;
           });
         }
       } catch (e) {
         debugPrint('EventsActivitiesScreen: AI feed unavailable: $e');
-        if (isCurrent()) setState(() => _aiFeedFailed = true);
+        if (isCurrent()) {
+          setState(() {
+            _aiFeedFailed = true;
+            _aiLoading = false;
+          });
+        }
       }
     }
 
@@ -569,22 +582,36 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
     }
 
     _pendingQuery = key;
-    final pending = Future.wait([loadAi(), loadCommunity(), loadInvitations()])
+    final aiFuture = loadAi();
+
+    // Globalen Spinner nur an die SCHNELLEN Quellen (Community + Einladungen)
+    // koppeln, damit diese sofort erscheinen. Die langsame KI-Suche läuft
+    // parallel weiter; ihre Treffer poppen progressiv nach (eigener
+    // _aiLoading-Hinweis), statt alles hinter dem Spinner zu blockieren.
+    final fastSources = Future.wait([loadCommunity(), loadInvitations()])
         .then((_) {
-          if (!isCurrent()) return;
-          final ai = _session.ai.peek(aiKey);
-          final community = _session.community.peek(key);
-          setState(() {
-            _isLoading = false;
-            _lastFeedSyncAt = ai != null && community != null
-                ? (ai.loadedAt.isBefore(community.loadedAt)
-                      ? ai.loadedAt
-                      : community.loadedAt)
-                : null;
-          });
-          _pendingQuery = null;
-          _pendingRefresh = null;
-        });
+      if (!isCurrent()) return;
+      final community = _session.community.peek(key);
+      setState(() {
+        _isLoading = false;
+        _lastFeedSyncAt = community?.loadedAt;
+      });
+    });
+
+    final pending = Future.wait([aiFuture, fastSources]).then((_) {
+      if (!isCurrent()) return;
+      final ai = _session.ai.peek(aiKey);
+      final community = _session.community.peek(key);
+      setState(() {
+        _lastFeedSyncAt = ai != null && community != null
+            ? (ai.loadedAt.isBefore(community.loadedAt)
+                ? ai.loadedAt
+                : community.loadedAt)
+            : (community?.loadedAt ?? ai?.loadedAt);
+      });
+      _pendingQuery = null;
+      _pendingRefresh = null;
+    });
     _pendingRefresh = pending;
     return pending;
   }
@@ -1105,6 +1132,42 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                     ),
                     const SizedBox(height: 10),
                   ],
+                  if (_aiLoading &&
+                      _activeSources.contains(_FeedSource.ai)) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F3FF),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFDDD6FE)),
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF7C3AED),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'events_ai_searching',
+                              ),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFF5B21B6),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   if (_isLoading && feed.isNotEmpty)
                     const LinearProgressIndicator(),
                   if (_isLoading && feed.isEmpty)
@@ -1144,7 +1207,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                         ],
                       ),
                     )
-                  else if (feed.isEmpty)
+                  else if (feed.isEmpty && !_aiLoading)
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
