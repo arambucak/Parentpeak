@@ -19,6 +19,7 @@ class _FakeGemini extends GeminiAIService {
     Uint8List? imageBytes,
     String imageMimeType = 'image/jpeg',
     String? appLanguage,
+    String? childProfileId,
   }) async {
     lastPrompt = prompt;
     return GeminiProxyResponse(text: result, groundingUrls: const []);
@@ -40,7 +41,8 @@ void main() {
         expect(
           (await scanner.scanFromImage(
             Uint8List.fromList([1, 2]),
-          ))?.priceAmount,
+          ))
+              ?.priceAmount,
           9.4,
         );
       }

@@ -202,6 +202,7 @@ class PedagogicalChatBackend {
     required String userMessage,
     String languageCode = 'de',
     String? countryCode,
+    String? childProfileId,
   }) async* {
     final message = userMessage.trim();
     if (message.isEmpty) {
@@ -270,7 +271,8 @@ class PedagogicalChatBackend {
     );
     preparedHistory.add({'role': 'user', 'content': coachingPrompt});
 
-    var response = await _geminiService!.chatWithHistory(preparedHistory);
+    var response = await _geminiService!
+        .chatWithHistory(preparedHistory, childProfileId: childProfileId);
     if (_looksLikeProviderError(response)) {
       yield _providerUnavailableResponse(rawError: response);
       return;
@@ -284,7 +286,8 @@ class PedagogicalChatBackend {
           'content': 'Bitte antworte nicht mit einer allgemeinen Grenzformel. '
               'Antworte stattdessen konkret, empathisch und loesungsorientiert für Eltern im Alltag.',
         });
-      final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
+      final retryResponse = await _geminiService!
+          .chatWithHistory(retryHistory, childProfileId: childProfileId);
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
         response = retryResponse;
@@ -298,7 +301,8 @@ class PedagogicalChatBackend {
           'role': 'user',
           'content': _contextRetentionRetryInstruction(contextAnchors),
         });
-      final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
+      final retryResponse = await _geminiService!
+          .chatWithHistory(retryHistory, childProfileId: childProfileId);
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
         response = retryResponse;
@@ -309,7 +313,8 @@ class PedagogicalChatBackend {
       final retryHistory = List<Map<String, String>>.from(preparedHistory)
         ..add({'role': 'assistant', 'content': response})
         ..add({'role': 'user', 'content': _qualityRetryInstruction(topicMode)});
-      final retryResponse = await _geminiService!.chatWithHistory(retryHistory);
+      final retryResponse = await _geminiService!
+          .chatWithHistory(retryHistory, childProfileId: childProfileId);
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
         response = retryResponse;
@@ -334,6 +339,7 @@ class PedagogicalChatBackend {
         preparedHistory: preparedHistory,
         originalResponse: response,
         topicMode: topicMode,
+        childProfileId: childProfileId,
       );
 
       if (_looksLikeProviderError(repaired)) {
@@ -768,6 +774,7 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
     required List<Map<String, String>> preparedHistory,
     required String originalResponse,
     required String topicMode,
+    String? childProfileId,
   }) async {
     final retryHistory = List<Map<String, String>>.from(preparedHistory)
       ..add({'role': 'assistant', 'content': originalResponse})
@@ -780,7 +787,8 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
                 'Themenmodus: $topicMode.',
       });
 
-    return _geminiService!.chatWithHistory(retryHistory);
+    return _geminiService!
+        .chatWithHistory(retryHistory, childProfileId: childProfileId);
   }
 
   String _pedagogicalFallbackResponse(String topicMode) {

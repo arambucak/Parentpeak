@@ -46,4 +46,28 @@ void main() {
     expect(response.text, 'Sichere Antwort');
     expect(response.groundingUrls, ['https://example.com/source']);
   });
+
+  test('passes childProfileId through to the backend when set', () async {
+    final client = _RecordingApiClient();
+    final service = GeminiAIService(
+      modelName: 'gemini-3.5-flash',
+      apiClient: client,
+    );
+
+    await service.generate('Frage', childProfileId: 'child-123');
+
+    expect(client.body?['childProfileId'], 'child-123');
+  });
+
+  test('omits childProfileId when not provided (privacy by default)', () async {
+    final client = _RecordingApiClient();
+    final service = GeminiAIService(
+      modelName: 'gemini-3.5-flash',
+      apiClient: client,
+    );
+
+    await service.generate('Frage');
+
+    expect(client.body?.containsKey('childProfileId'), isFalse);
+  });
 }

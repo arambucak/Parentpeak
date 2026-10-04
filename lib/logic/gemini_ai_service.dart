@@ -22,6 +22,7 @@ class GeminiAIService {
     Uint8List? imageBytes,
     String imageMimeType = 'image/jpeg',
     String? appLanguage,
+    String? childProfileId,
   }) async {
     final response = await generate(
       prompt,
@@ -30,6 +31,7 @@ class GeminiAIService {
       imageBytes: imageBytes,
       imageMimeType: imageMimeType,
       appLanguage: appLanguage,
+      childProfileId: childProfileId,
     );
     return response.text;
   }
@@ -41,6 +43,7 @@ class GeminiAIService {
     Uint8List? imageBytes,
     String imageMimeType = 'image/jpeg',
     String? appLanguage,
+    String? childProfileId,
   }) async {
     final client = _apiClient;
     if (client == null) {
@@ -56,6 +59,8 @@ class GeminiAIService {
           'systemInstruction': systemInstruction.trim(),
         'useGoogleSearch': useGoogleSearch,
         'language': appLanguage ?? LanguageService.activeCode,
+        if (childProfileId != null && childProfileId.trim().isNotEmpty)
+          'childProfileId': childProfileId.trim(),
         if (imageBytes != null) 'imageBase64': base64Encode(imageBytes),
         if (imageBytes != null) 'imageMimeType': imageMimeType,
       },
@@ -89,11 +94,15 @@ class GeminiAIService {
     }
   }
 
-  Future<String> chatWithHistory(List<Map<String, String>> messages) async {
+  Future<String> chatWithHistory(
+    List<Map<String, String>> messages, {
+    String? childProfileId,
+  }) async {
     try {
       return await generateText(
         _historyPrompt(messages),
         systemInstruction: APIConfig.parentAssistantSystemPrompt,
+        childProfileId: childProfileId,
       );
     } catch (error) {
       return 'Fehler: $error';
