@@ -130,6 +130,11 @@ Future<void> _close(WidgetTester tester) async {
 Future<void> _showFeed(WidgetTester tester, String title) async {
   await tester.scrollUntilVisible(find.text(title), 300,
       scrollable: find.byType(Scrollable).last);
+  // Nach dem Scrollen sicherstellen, dass der Titel vollständig sichtbar (und
+  // damit tappbar) ist — robust gegenüber Layout-Verschiebungen durch
+  // unterschiedlich hohe/breite Hinweis- und Chip-Zeilen oben im Feed.
+  await tester.ensureVisible(find.text(title));
+  await tester.pumpAndSettle();
 }
 
 void main() {
