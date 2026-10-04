@@ -69,9 +69,14 @@ List<AgeGroup> eventAgesFromLabel(String label) {
 
 bool eventMatchesTime(DateTime? date, String window, DateTime now) {
   if (date == null) return window == 'all';
-  if (date.isBefore(now)) return false;
   final local = date.toLocal();
   final today = now.toLocal();
+  final startOfToday = DateTime(today.year, today.month, today.day);
+  // Ein Event gilt erst dann als "vergangen", wenn sein Tag vor heute liegt.
+  // So bleiben heute stattfindende Events den ganzen Tag sichtbar — auch wenn
+  // ihr Datum nur den Tag (00:00) trägt (häufig bei KI-Funden) und die aktuelle
+  // Uhrzeit bereits weiter ist.
+  if (local.isBefore(startOfToday)) return false;
   if (window == 'today') {
     return local.year == today.year &&
         local.month == today.month &&

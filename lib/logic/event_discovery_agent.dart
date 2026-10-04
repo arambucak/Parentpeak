@@ -89,9 +89,12 @@ class EventDiscoveryAgent {
 
   Future<List<DiscoveredEvent>> _callWithGrounding(
       String prompt, String city) async {
+    // Großzügiges Timeout: Grounding-Gemini-Calls über Mobilfunk brauchen
+    // länger. Der Backend-Proxy selbst bricht nach 35s ab; der Client wartet
+    // etwas darüber, damit eine echte Serverantwort nicht clientseitig abreißt.
     final response = await _aiService
         .generate(prompt, useGoogleSearch: true)
-        .timeout(const Duration(seconds: 35));
+        .timeout(const Duration(seconds: 45));
     return _parseAgentResponse(
       response.text,
       city,

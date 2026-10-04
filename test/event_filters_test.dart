@@ -33,12 +33,20 @@ void main() {
     ]);
     expect(eventAgesFromLabel('unbekannt'), isEmpty);
   });
-  test('time filters exclude past dates even in all; unknown only in all', () {
+  test('time filters keep today all day, drop yesterday; unknown only in all',
+      () {
     final now = DateTime(2026, 10, 3, 12);
+    // Heutige Events bleiben den ganzen Tag sichtbar — auch wenn ihr Datum
+    // schon früher am Tag liegt (z.B. 00:00) oder vor einer Minute war.
     expect(
       eventMatchesTime(now.subtract(const Duration(minutes: 1)), 'all', now),
-      isFalse,
+      isTrue,
     );
+    expect(eventMatchesTime(DateTime(2026, 10, 3), 'all', now), isTrue);
+    expect(eventMatchesTime(DateTime(2026, 10, 3), 'today', now), isTrue);
+    // Gestern bleibt ausgeschlossen.
+    expect(eventMatchesTime(DateTime(2026, 10, 2, 23), 'all', now), isFalse);
+    // Unbekanntes Datum nur bei "all".
     expect(eventMatchesTime(null, 'all', now), isTrue);
     expect(eventMatchesTime(null, 'today', now), isFalse);
     expect(eventMatchesTime(DateTime(2026, 10, 3, 15), 'today', now), isTrue);

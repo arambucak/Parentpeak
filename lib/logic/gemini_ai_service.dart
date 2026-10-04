@@ -47,16 +47,24 @@ class GeminiAIService {
       throw Exception('Backend-URL nicht konfiguriert.');
     }
 
-    final response = await client.postJson('/ai/generate', {
-      'model': _modelName,
-      'prompt': PrivacySanitizer.sanitizeForAi(prompt),
-      if (systemInstruction != null && systemInstruction.trim().isNotEmpty)
-        'systemInstruction': systemInstruction.trim(),
-      'useGoogleSearch': useGoogleSearch,
-      'language': appLanguage ?? LanguageService.activeCode,
-      if (imageBytes != null) 'imageBase64': base64Encode(imageBytes),
-      if (imageBytes != null) 'imageMimeType': imageMimeType,
-    });
+    final response = await client.postJson(
+      '/ai/generate',
+      {
+        'model': _modelName,
+        'prompt': PrivacySanitizer.sanitizeForAi(prompt),
+        if (systemInstruction != null && systemInstruction.trim().isNotEmpty)
+          'systemInstruction': systemInstruction.trim(),
+        'useGoogleSearch': useGoogleSearch,
+        'language': appLanguage ?? LanguageService.activeCode,
+        if (imageBytes != null) 'imageBase64': base64Encode(imageBytes),
+        if (imageBytes != null) 'imageMimeType': imageMimeType,
+      },
+      // Grounding-Suche darf serverseitig bis ~35s dauern; mehr Client-Puffer,
+      // besonders auf Mobilfunk, damit echte Antworten nicht abreißen.
+      timeout: useGoogleSearch
+          ? const Duration(seconds: 50)
+          : const Duration(seconds: 30),
+    );
     final text = response['text']?.toString().trim();
     if (text == null || text.isEmpty) {
       throw Exception('KI-Dienst lieferte keine Antwort.');

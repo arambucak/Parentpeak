@@ -66,12 +66,18 @@ class BackendApiClient {
     required this.baseUrl,
     this.authToken,
     this.authTokenProvider,
+    this.forceRefreshTokenProvider,
     http.Client? httpClient,
   }) : _httpClient = httpClient ?? http.Client();
 
   final String baseUrl;
   final String? authToken;
   final Future<String?> Function()? authTokenProvider;
+
+  /// Liefert einen frisch erzwungenen Token (Force-Refresh). Wird nur nach einem
+  /// 401 genutzt, um einmal mit frischem Token zu wiederholen — ohne jeden Call
+  /// zu verlangsamen.
+  final Future<String?> Function()? forceRefreshTokenProvider;
   final http.Client _httpClient;
 
   Future<String?> _resolveAuthToken() async {
@@ -99,14 +105,19 @@ class BackendApiClient {
     return null;
   }
 
-  Future<Map<String, String>> _headers({bool includeContentType = true}) async {
+  Future<Map<String, String>> _headers(
+      {bool includeContentType = true, bool forceRefresh = false}) async {
     final headers = <String, String>{
       if (includeContentType) 'Content-Type': 'application/json',
     };
 
-    final resolvedToken = await _resolveAuthToken();
-    if (resolvedToken != null && resolvedToken.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $resolvedToken';
+    String? token;
+    if (forceRefresh && forceRefreshTokenProvider != null) {
+      token = (await forceRefreshTokenProvider!())?.trim();
+    }
+    token ??= await _resolveAuthToken();
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
     }
 
     return headers;
@@ -137,10 +148,17 @@ class BackendApiClient {
   }
 
   Future<dynamic> getJson(String path) async {
-    final headers = await _headers();
-    final response = await _httpClient
-        .get(_uri(path), headers: headers)
+    var response = await _httpClient
+        .get(_uri(path), headers: await _headers())
         .timeout(const Duration(seconds: 20));
+
+    // Bei 401 einmal mit frisch erzwungenem Token wiederholen (abgelaufener
+    // gecachter Token). Vermeidet Force-Refresh auf jedem normalen Call.
+    if (response.statusCode == 401 && forceRefreshTokenProvider != null) {
+      response = await _httpClient
+          .get(_uri(path), headers: await _headers(forceRefresh: true))
+          .timeout(const Duration(seconds: 20));
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw BackendApiException(
@@ -164,9 +182,10 @@ class BackendApiClient {
 
   Future<Map<String, dynamic>> postJson(
     String path,
-    Map<String, dynamic> body,
-  ) async {
-    final decoded = await postJsonAny(path, body);
+    Map<String, dynamic> body, {
+    Duration? timeout,
+  }) async {
+    final decoded = await postJsonAny(path, body, timeout: timeout);
     if (decoded is Map<String, dynamic>) {
       return decoded;
     }
@@ -175,16 +194,22 @@ class BackendApiClient {
 
   Future<dynamic> postJsonAny(
     String path,
-    Map<String, dynamic> body,
-  ) async {
-    final headers = await _headers();
-    final response = await _httpClient
-        .post(
-          _uri(path),
-          headers: headers,
-          body: jsonEncode(body),
-        )
-        .timeout(const Duration(seconds: 30));
+    Map<String, dynamic> body, {
+    Duration? timeout,
+  }) async {
+    final effectiveTimeout = timeout ?? const Duration(seconds: 30);
+    final encoded = jsonEncode(body);
+    var response = await _httpClient
+        .post(_uri(path), headers: await _headers(), body: encoded)
+        .timeout(effectiveTimeout);
+
+    // Bei 401 einmal mit frisch erzwungenem Token wiederholen.
+    if (response.statusCode == 401 && forceRefreshTokenProvider != null) {
+      response = await _httpClient
+          .post(_uri(path),
+              headers: await _headers(forceRefresh: true), body: encoded)
+          .timeout(effectiveTimeout);
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _throwIfSuspended(response);
