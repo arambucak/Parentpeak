@@ -13355,6 +13355,16 @@ app.get('/api/treasures', async (req, res) => {
       });
     }
 
+    // Datenschutz: Fremden Nutzern NIEMALS die exakte Angebots-Position
+    // (= oft die Heimadresse der schenkenden Familie) liefern. Für die grobe
+    // Karten-/Umkreisdarstellung reicht eine stark gerundete Position
+    // (~1 km Raster bei 2 Dezimalstellen). Die genaue Distanz wird separat
+    // serverseitig berechnet und verrät keine Position.
+    const coarse = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return null;
+      return Math.round(num * 100) / 100;
+    };
     const formattedTreasures = treasures.map(t => ({
       id: t.id,
       userId: t.userId,
@@ -13362,8 +13372,10 @@ app.get('/api/treasures', async (req, res) => {
       title: t.title,
       description: t.description,
       location: t.location,
-      latitude: t.latitude,
-      longitude: t.longitude,
+      // Nur grob gerundete Position ausliefern (keine punktgenaue Adresse).
+      latitude: coarse(t.latitude),
+      longitude: coarse(t.longitude),
+      approximateLocation: true,
       category: t.category,
       condition: t.condition,
       visibility: t.visibility,
