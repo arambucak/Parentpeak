@@ -130,6 +130,13 @@ Future<void> _close(WidgetTester tester) async {
 Future<void> _showFeed(WidgetTester tester, String title) async {
   await tester.scrollUntilVisible(find.text(title), 300,
       scrollable: find.byType(Scrollable).last);
+  // Nach dem Scrollen sicherstellen, dass der Titel vollständig sichtbar (und
+  // damit tappbar) ist — robust gegenüber Layout-Verschiebungen durch
+  // unterschiedlich hohe/breite Hinweis- und Chip-Zeilen oben im Feed.
+  // Nur pump() (kein pumpAndSettle), da der KI-Such-Hinweis einen dauerhaft
+  // animierten Spinner zeigen kann, auf den pumpAndSettle endlos warten würde.
+  await tester.ensureVisible(find.text(title));
+  await tester.pump();
 }
 
 void main() {
@@ -151,7 +158,7 @@ void main() {
     expect(find.text('Community picnic'), findsOneWidget);
     // Community ist sofort da; die langsame KI läuft noch und wird durch den
     // sprechenden Such-Hinweis angezeigt (statt eines kontextlosen Spinners).
-    expect(find.textContaining('AI is searching'), findsOneWidget);
+    expect(find.textContaining('Parentpeak is searching'), findsOneWidget);
     await _close(tester);
     await _open(tester, agent, service);
     await _showFeed(tester, 'Community picnic');
@@ -160,7 +167,7 @@ void main() {
     ai.complete([]);
     await tester.pumpAndSettle();
     // KI fertig -> Such-Hinweis verschwindet.
-    expect(find.textContaining('AI is searching'), findsNothing);
+    expect(find.textContaining('Parentpeak is searching'), findsNothing);
     await _close(tester);
     await _open(tester, agent, service);
     await _showFeed(tester, 'Community picnic');
