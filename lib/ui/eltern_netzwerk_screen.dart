@@ -1903,16 +1903,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     await FriendshipService.instance.createInviteLink();
                 if (link == null) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text(
-                          'Link konnte nicht erstellt werden — bitte später erneut.'),
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(_t('network_link_create_failed')),
                       behavior: SnackBarBehavior.floating,
                     ));
                   }
                   return;
                 }
                 await Share.share(
-                    'Hey! 👋 Verbinde dich mit mir auf ParentPeak:\n$link',
+                    _t('network_share_message').replaceAll('{link}', link),
                     sharePositionOrigin: box != null
                         ? box.localToGlobal(Offset.zero) & box.size
                         : null);
@@ -1925,9 +1924,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     await FriendshipService.instance.createInviteLink();
                 if (!mounted) return;
                 if (link == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text(
-                        'QR-Code konnte nicht erstellt werden — bitte später erneut.'),
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(_t('network_qr_create_failed')),
                     behavior: SnackBarBehavior.floating,
                   ));
                   return;
@@ -1954,7 +1952,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final incoming = FriendshipService.instance.incoming;
     if (incoming.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Anfragen (${incoming.length})',
+      Text(
+          _t('network_requests_count')
+              .replaceAll('{count}', '${incoming.length}'),
           style: theme.textTheme.titleSmall
               ?.copyWith(fontWeight: FontWeight.w800)),
       const SizedBox(height: 12),
@@ -2431,7 +2431,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 QrImageView(data: qrData, version: QrVersions.auto, size: 200),
           ),
           const SizedBox(height: 16),
-          Text('Scannen & mit einem Tap verbinden',
+          Text(_t('network_scan_to_connect'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline)),
           const SizedBox(height: 24),
@@ -2593,11 +2593,11 @@ class _ProfileFormState extends State<_ProfileForm> {
   Future<void> _submit() async {
     // Validierung mit Feedback
     if (_nameCtrl.text.trim().isEmpty) {
-      _showValidationError('Bitte gib euren Namen ein (Schritt 1)');
+      _showValidationError(_t('network_validation_name'));
       return;
     }
     if (_districtCtrl.text.trim().isEmpty) {
-      _showValidationError('Bitte gib euren Stadtteil ein (Schritt 1)');
+      _showValidationError(_t('network_validation_district'));
       return;
     }
     setState(() => _saving = true);
@@ -2647,7 +2647,9 @@ class _ProfileFormState extends State<_ProfileForm> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Speichern: $e')),
+          SnackBar(
+              content:
+                  Text(_t('network_save_error').replaceAll('{error}', '$e'))),
         );
       }
     } finally {
@@ -2782,6 +2784,10 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 14),
           LocationPickerWidget(
             hint: _networkCopy('location_hint', 'Euer Stadtteil / PLZ wählen'),
+            // Bewusst nur der Anzeigename (Stadtteil/PLZ) ins Profil. Die
+            // genaue Position fürs Matching holt _syncProfileToMatching separat
+            // und rundet sie grob (Datenschutz, siehe coarseCoordinate) — so
+            // speichert das Profil selbst keine Koordinaten.
             onLocationPicked: (loc) {
               _districtCtrl.text = loc.displayName;
             },

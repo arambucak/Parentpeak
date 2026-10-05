@@ -10,9 +10,27 @@ import 'package:parentpeak/main.dart';
 
 String _locationPickerCopy(String key, String fallback) {
   const copies = {
-    'en': {'choose_location': 'Choose a location', 'confirm': 'Confirm'},
-    'ku': {'choose_location': 'Cih hilbijêre', 'confirm': 'Piştrast bike'},
-    'tr': {'choose_location': 'Bir konum seçin', 'confirm': 'Onayla'},
+    'en': {
+      'choose_location': 'Choose a location',
+      'confirm': 'Confirm',
+      'search_hint': 'Search city, district or ZIP...',
+      'tap_map_hint': 'Tap the map or drag the pin',
+      'gps_error': 'Location error. Please try again.',
+    },
+    'ku': {
+      'choose_location': 'Cih hilbijêre',
+      'confirm': 'Piştrast bike',
+      'search_hint': 'Bajar, taxe an koda postê bigere...',
+      'tap_map_hint': 'Li ser nexşeyê bitikîne an derzîkê bikişîne',
+      'gps_error': 'Çewtiya cihê. Ji kerema xwe dîsa biceribîne.',
+    },
+    'tr': {
+      'choose_location': 'Bir konum seçin',
+      'confirm': 'Onayla',
+      'search_hint': 'Şehir, mahalle veya posta kodu ara...',
+      'tap_map_hint': 'Haritaya dokunun veya iğneyi sürükleyin',
+      'gps_error': 'Konum hatası. Lütfen tekrar deneyin.',
+    },
   };
   return copies[languageService.currentLanguage]?[key] ?? fallback;
 }
@@ -78,6 +96,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
     final theme = Theme.of(context);
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => _openPicker(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -222,7 +241,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(children: [
-              Text('Standort wählen',
+              Text(_locationPickerCopy('choose_location', 'Standort wählen'),
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800)),
               const Spacer(),
@@ -237,6 +256,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: _gpsLoading ? null : _useGps,
               child: Container(
                 padding:
@@ -275,7 +295,8 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
               controller: _searchCtrl,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Stadt, Stadtteil oder PLZ suchen...',
+                hintText: _locationPickerCopy(
+                    'search_hint', 'Stadt, Stadtteil oder PLZ suchen...'),
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
@@ -390,9 +411,10 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                       decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(8)),
-                      child: const Text(
-                          'Tippe auf die Karte oder ziehe den Pin',
-                          style: TextStyle(
+                      child: Text(
+                          _locationPickerCopy('tap_map_hint',
+                              'Tippe auf die Karte oder ziehe den Pin'),
+                          style: const TextStyle(
                               fontSize: 10,
                               color: Colors.white,
                               fontWeight: FontWeight.w500)),
@@ -490,9 +512,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.medium,
-            timeLimit: kIsWeb
-                ? Duration(seconds: 20)
-                : Duration(seconds: 10)),
+            timeLimit: kIsWeb ? Duration(seconds: 20) : Duration(seconds: 10)),
       );
 
       final pos = LatLng(position.latitude, position.longitude);
@@ -500,9 +520,12 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
       _mapCtrl.move(pos, 15);
       await _reverseGeocode(pos);
     } catch (e) {
+      debugPrint('LocationPicker._useGps: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('GPS-Fehler: $e')),
+          SnackBar(
+              content: Text(_locationPickerCopy(
+                  'gps_error', 'Standort-Fehler. Bitte versuche es erneut.'))),
         );
       }
     } finally {

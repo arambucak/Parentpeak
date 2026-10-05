@@ -298,7 +298,8 @@ class AppStringsManager {
       'ritualRuheTitle': 'Ritual & Ruhe',
       'ritualRuheTileSubtitle': 'Ein ruhiger Moment für euren Familienalltag',
       'tile_network': 'Eltern-Netzwerk',
-      'tile_network_desc': 'Vernetze dich, finde Spielfreunde, lade Freunde ein',
+      'tile_network_desc':
+          'Vernetze dich, finde Spielfreunde, lade Freunde ein',
       'tile_chat': 'KI Elternberatung',
       'tile_chat_desc': 'Schnelle Hilfe und Tipps rund um Erziehung',
       'tile_zentrale': 'Familien-Zentrale',
@@ -1165,6 +1166,17 @@ class AppStringsManager {
       'network_scan_to_connect':
           'Beim Treffen einfach scannen – sofort verbunden!',
       'network_found': 'Gefunden ✓',
+      'network_share_message':
+          'Hey! 👋 Verbinde dich mit mir auf ParentPeak:\n{link}',
+      'network_link_create_failed':
+          'Link konnte nicht erstellt werden – bitte später erneut.',
+      'network_qr_create_failed':
+          'QR-Code konnte nicht erstellt werden – bitte später erneut.',
+      'network_requests_count': 'Anfragen ({count})',
+      'network_validation_name': 'Bitte gib euren Namen ein (Schritt 1)',
+      'network_validation_district':
+          'Bitte gib euren Stadtteil ein (Schritt 1)',
+      'network_save_error': 'Fehler beim Speichern: {error}',
       'network_delete_profile_confirm':
           'Dein Spielfreunde-Profil wird dauerhaft gelöscht. Du kannst jederzeit ein neues erstellen.',
       'network_back': 'Zurück',
@@ -4352,6 +4364,15 @@ class AppStringsManager {
       'network_scan_to_connect':
           'Simply scan when you meet — connected instantly!',
       'network_found': 'Found ✓',
+      'network_share_message': 'Hey! 👋 Connect with me on ParentPeak:\n{link}',
+      'network_link_create_failed':
+          'Could not create link – please try again later.',
+      'network_qr_create_failed':
+          'Could not create QR code – please try again later.',
+      'network_requests_count': 'Requests ({count})',
+      'network_validation_name': 'Please enter your name (step 1)',
+      'network_validation_district': 'Please enter your district (step 1)',
+      'network_save_error': 'Error while saving: {error}',
       'network_delete_profile_confirm':
           'Your playmate profile will be permanently deleted. You can create a new one at any time.',
       'network_back': 'Back',
@@ -4963,7 +4984,8 @@ class AppStringsManager {
       'tile_events': 'Événements & Activités',
       'tile_events_desc': 'Trouver des événements et en proposer',
       'tile_network': 'Réseau de parents',
-      'tile_network_desc': 'Connectez-vous, trouvez des copains de jeu, invitez des amis',
+      'tile_network_desc':
+          'Connectez-vous, trouvez des copains de jeu, invitez des amis',
       'tile_chat': 'Conseil parental IA',
       'tile_chat_desc': 'Aide rapide et conseils sur l\'éducation',
       'tile_zentrale': 'Centre familial',
@@ -5738,7 +5760,8 @@ class AppStringsManager {
       'tile_events': 'Eventos & Actividades',
       'tile_events_desc': 'Encuentra eventos y ofrece los tuyos',
       'tile_network': 'Red de padres',
-      'tile_network_desc': 'Conéctate, encuentra compañeros de juego, invita amigos',
+      'tile_network_desc':
+          'Conéctate, encuentra compañeros de juego, invita amigos',
       'tile_chat': 'Asesoría parental IA',
       'tile_chat_desc': 'Ayuda rápida y consejos sobre crianza',
       'tile_zentrale': 'Centro familiar',
@@ -7279,7 +7302,8 @@ class AppStringsManager {
       'tile_events': 'Eventos & Atividades',
       'tile_events_desc': 'Encontre eventos e ofereça os seus',
       'tile_network': 'Rede de pais',
-      'tile_network_desc': 'Conecte-se, encontre colegas de brincadeira, convide amigos',
+      'tile_network_desc':
+          'Conecte-se, encontre colegas de brincadeira, convide amigos',
       'tile_chat': 'Consultoria parental IA',
       'tile_chat_desc': 'Ajuda rápida e dicas sobre criação',
       'tile_zentrale': 'Central familiar',
@@ -11133,6 +11157,16 @@ class AppStringsManager {
       'network_scan_to_connect':
           'Dema hevdîtinê tenê venihêre — tavilê tên girêdan!',
       'network_found': 'Hat dîtin ✓',
+      'network_share_message':
+          'Silav! 👋 Li ser ParentPeak bi min re girêbide:\n{link}',
+      'network_link_create_failed':
+          'Lînk nehat çêkirin – ji kerema xwe paşê dîsa biceribîne.',
+      'network_qr_create_failed':
+          'Koda QR nehat çêkirin – ji kerema xwe paşê dîsa biceribîne.',
+      'network_requests_count': 'Daxwaz ({count})',
+      'network_validation_name': 'Ji kerema xwe navê xwe binivîse (gav 1)',
+      'network_validation_district': 'Ji kerema xwe taxa xwe binivîse (gav 1)',
+      'network_save_error': 'Çewtî di tomarkirinê de: {error}',
       'network_delete_profile_confirm':
           'Profîla te ya hevalên lîstikê dê bi domdarî were jêbirin. Tu dikarî her demê profîleke nû çêkî.',
       'network_back': 'Paşve',
@@ -12607,7 +12641,8 @@ class AppStringsManager {
       'tile_events': 'ڕووداو و چالاکییەکان',
       'tile_events_desc': 'ڕووداو بدۆزەوە و خۆت پێشکەش بکە',
       'tile_network': 'تۆڕی دایکوباوک',
-      'tile_network_desc': 'پەیوەندی دروست بکە، ھاوەڵی یاری بدۆزەرەوە، ھاوڕێ بانگھێشت بکە',
+      'tile_network_desc':
+          'پەیوەندی دروست بکە، ھاوەڵی یاری بدۆزەرەوە، ھاوڕێ بانگھێشت بکە',
       'tile_chat': 'ڕاوێژکاری دایکوباوکی AI',
       'tile_chat_desc': 'یارمەتی خێرا و ئامۆژگاری لەسەر پەروەردە',
       'tile_zentrale': 'ناوەندی خێزان',
@@ -14856,7 +14891,8 @@ class AppStringsManager {
       'tile_events': 'कार्यक्रम और गतिविधियाँ',
       'tile_events_desc': 'कार्यक्रम खोजें और अपने स्वयं के प्रस्ताव दें',
       'tile_network': 'अभिभावक नेटवर्क',
-      'tile_network_desc': 'जुड़ें, खेलने के साथी खोजें, दोस्तों को आमंत्रित करें',
+      'tile_network_desc':
+          'जुड़ें, खेलने के साथी खोजें, दोस्तों को आमंत्रित करें',
       'tile_chat': 'AI पेरेंटिंग सलाह',
       'tile_chat_desc': 'पालन-पोषण पर त्वरित सहायता और सुझाव',
       'tile_zentrale': 'परिवार केंद्र',
@@ -16400,6 +16436,16 @@ class AppStringsManager {
       'network_share_code_hint': 'Kodunu paylaş – tek dokunuşla bağlanın!',
       'network_scan_to_connect': 'Buluşmada tara – anında bağlan!',
       'network_found': 'Bulundu ✓',
+      'network_share_message':
+          'Selam! 👋 ParentPeak\'te benimle bağlan:\n{link}',
+      'network_link_create_failed':
+          'Bağlantı oluşturulamadı – lütfen daha sonra tekrar deneyin.',
+      'network_qr_create_failed':
+          'QR kodu oluşturulamadı – lütfen daha sonra tekrar deneyin.',
+      'network_requests_count': 'İstekler ({count})',
+      'network_validation_name': 'Lütfen adınızı girin (adım 1)',
+      'network_validation_district': 'Lütfen semtinizi girin (adım 1)',
+      'network_save_error': 'Kaydetme hatası: {error}',
       'network_delete_profile_confirm':
           'Oyun arkadaşı profilin kalıcı olarak silinecek. İstediğin zaman yeni bir tane oluşturabilirsin.',
       'network_back': 'Geri',
@@ -18087,7 +18133,8 @@ class AppStringsManager {
       'tile_events': 'Події та активності',
       'tile_events_desc': 'Знайдіть події та запропонуйте свої',
       'tile_network': 'Мережа батьків',
-      'tile_network_desc': 'Спілкуйтесь, знаходьте друзів для ігор, запрошуйте друзів',
+      'tile_network_desc':
+          'Спілкуйтесь, знаходьте друзів для ігор, запрошуйте друзів',
       'tile_chat': 'ШІ-консультація для батьків',
       'tile_chat_desc': 'Швидка допомога та поради з виховання',
       'tile_zentrale': 'Сімейний центр',
@@ -18862,7 +18909,8 @@ class AppStringsManager {
       'tile_events': 'Wydarzenia i aktywności',
       'tile_events_desc': 'Znajdź wydarzenia i zaproponuj swoje',
       'tile_network': 'Sieć rodziców',
-      'tile_network_desc': 'Łącz się, znajduj towarzyszy zabaw, zapraszaj znajomych',
+      'tile_network_desc':
+          'Łącz się, znajduj towarzyszy zabaw, zapraszaj znajomych',
       'tile_chat': 'Porada rodzicielska AI',
       'tile_chat_desc': 'Szybka pomoc i porady dotyczące wychowania',
       'tile_zentrale': 'Centrum rodzinne',
@@ -19346,7 +19394,8 @@ class AppStringsManager {
       'tile_events': 'Događaji i aktivnosti',
       'tile_events_desc': 'Pronađite događaje i ponudite svoje',
       'tile_network': 'Mreža roditelja',
-      'tile_network_desc': 'Povežite se, pronađite društvo za igru, pozovite prijatelje',
+      'tile_network_desc':
+          'Povežite se, pronađite društvo za igru, pozovite prijatelje',
       'tile_chat': 'AI Roditeljski savjet',
       'tile_chat_desc': 'Brza pomoć i savjeti o odgoju',
       'tile_zentrale': 'Obiteljski centar',
@@ -19830,7 +19879,8 @@ class AppStringsManager {
       'tile_events': 'Догађаји и активности',
       'tile_events_desc': 'Пронађите догађаје и понудите своје',
       'tile_network': 'Мрежа родитеља',
-      'tile_network_desc': 'Повежите се, пронађите друштво за игру, позовите пријатеље',
+      'tile_network_desc':
+          'Повежите се, пронађите друштво за игру, позовите пријатеље',
       'tile_chat': 'АИ Родитељски савет',
       'tile_chat_desc': 'Брза помоћ и савети о васпитању',
       'tile_zentrale': 'Породични центар',
@@ -21279,7 +21329,8 @@ class AppStringsManager {
       'tile_events': 'Εκδηλώσεις & Δραστηριότητες',
       'tile_events_desc': 'Βρείτε εκδηλώσεις και προτείνετε τις δικές σας',
       'tile_network': 'Δίκτυο γονέων',
-      'tile_network_desc': 'Συνδεθείτε, βρείτε παρέα για παιχνίδι, καλέστε φίλους',
+      'tile_network_desc':
+          'Συνδεθείτε, βρείτε παρέα για παιχνίδι, καλέστε φίλους',
       'tile_chat': 'AI Γονεϊκή Συμβουλευτική',
       'tile_chat_desc': 'Γρήγορη βοήθεια και συμβουλές για ανατροφή',
       'tile_zentrale': 'Οικογενειακό κέντρο',
@@ -23210,7 +23261,8 @@ class AppStringsManager {
       'tile_events': 'Dhacdooyinka & Howlaha',
       'tile_events_desc': 'Raadi dhacdooyin oo soo bandhig kuwaaga',
       'tile_network': 'Shabakadda waalidiinta',
-      'tile_network_desc': 'Ku xidh, hel asxaab aad la ciyaarto, casuumee asxaab',
+      'tile_network_desc':
+          'Ku xidh, hel asxaab aad la ciyaarto, casuumee asxaab',
       'tile_chat': 'La-talinta AI ee waalidiinta',
       'tile_chat_desc': 'Caawimo degdeg ah iyo talooyin ku saabsan barbaarinta',
       'tile_zentrale': 'Xarunta qoyska',
