@@ -489,7 +489,7 @@ model ParentMatchingProfile {
   externalId            String?  @unique
   ownerUserId           String?
   name                  String
-  age                   Int
+  age                   Int?
   city                  String
   latitude              Float?
   longitude             Float?

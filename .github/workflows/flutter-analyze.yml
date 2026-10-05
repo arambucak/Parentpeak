@@ -34,6 +34,9 @@ jobs:
       - name: Run Tests
         run: flutter test --no-pub
 
+      - name: Run Backend Unit Tests
+        run: node --test backend/tests/unit/*.test.js
+
       - name: Run Analyzer (CI-safe)
         run: bash scripts/ci_flutter_analyze.sh
 
