@@ -11,7 +11,6 @@ void main() {
     'invites_successful',
     'premium_unlocked',
     'redeem_premium',
-    'invite_reward',
     'share_failed',
     'families_waiting',
     'families_remaining',
@@ -153,13 +152,14 @@ void main() {
     'new_member',
   };
   final placeholderPattern = RegExp(r'\{[^{}]+\}');
-  final arabicScriptPattern = RegExp(r'[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff]');
+  final arabicScriptPattern =
+      RegExp(r'[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff]');
 
   test('audited localization invariants hold', () {
     const strings = AppStringsManager.allStrings;
     final referenceKeys = strings['de']!.keys.toSet();
 
-    expect(auditedCopiedEnglishKeys, hasLength(148));
+    expect(auditedCopiedEnglishKeys, hasLength(147));
     for (final code in const ['en', 'tr', 'ku']) {
       expect(strings[code]!.keys.toSet(), referenceKeys, reason: code);
     }
