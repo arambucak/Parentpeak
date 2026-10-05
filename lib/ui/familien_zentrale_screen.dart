@@ -146,10 +146,10 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
           tabs: [
             Tab(
                 icon: const Icon(Icons.shopping_cart_rounded, size: 20),
-              text: context.tr('family_hub_tab_shopping')),
+                text: context.tr('family_hub_tab_shopping')),
             Tab(
-              icon: const Icon(Icons.task_alt_rounded, size: 20),
-              text: context.tr('family_hub_tab_todo')),
+                icon: const Icon(Icons.task_alt_rounded, size: 20),
+                text: context.tr('family_hub_tab_todo')),
             Tab(
               child: SizedBox(
                 height: 46,
@@ -177,7 +177,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(context.tr('family_hub_tab_children'),
-                      style: const TextStyle(fontSize: 12)),
+                        style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -572,8 +572,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
-          Text(
-              context.tr('family_hub_children_empty_hint'),
+          Text(context.tr('family_hub_children_empty_hint'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.outline),
               textAlign: TextAlign.center),
@@ -635,8 +634,9 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                 Text(dossier.childName,
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w800)),
-                Text(context.tr('family_hub_age_years',
-                  values: {'count': '$ageYears'}),
+                Text(
+                    context.tr('family_hub_age_years',
+                        values: {'count': '$ageYears'}),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.outline)),
               ])),
@@ -649,11 +649,13 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
         // Quick-Infos
         Wrap(spacing: 8, runSpacing: 6, children: [
           if (dossier.clothingSize != null)
-            _infoChip('${context.tr('family_hub_clothing_size_short')} ${dossier.clothingSize}',
+            _infoChip(
+                '${context.tr('family_hub_clothing_size_short')} ${dossier.clothingSize}',
                 const Color(0xFF2563EB)),
           if (dossier.shoeSize != null)
             _infoChip(
-                '${context.tr('family_hub_shoe_size_short')} ${dossier.shoeSize}', const Color(0xFF8B5CF6)),
+                '${context.tr('family_hub_shoe_size_short')} ${dossier.shoeSize}',
+                const Color(0xFF8B5CF6)),
           if (dossier.allergies.isNotEmpty)
             _infoChip('\u{26A0}\u{FE0F} ${dossier.allergies.join(", ")}',
                 const Color(0xFFDC2626)),
@@ -661,28 +663,10 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             _infoChip(
                 '\u{1F3EB} ${dossier.kitaSchool}', const Color(0xFF0EA5A4)),
         ]),
-        // U-Untersuchung Hinweis
-        if (nextExam.isNotEmpty) ...[
+        // U-Untersuchungen: aufklappbar + abhakbar
+        if (dossier.uExams.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(children: [
-              const Text('\u{1F3E5}', style: TextStyle(fontSize: 14)),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: Text(
-                context.tr('family_hub_exam_due',
-                  values: {'exam': nextExam.first.label}),
-                style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF92400E)),
-              )),
-            ]),
-          ),
+          _uExamsSection(theme, dossier, nextExam),
         ],
         // Notfall-Button
         const SizedBox(height: 10),
@@ -703,6 +687,114 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             )),
       ]),
     );
+  }
+
+  /// Aufklappbare U-Untersuchungs-Liste eines Kindes. Jede Untersuchung ist
+  /// abhakbar; fällige (noch offene) Untersuchungen sind farblich markiert.
+  Widget _uExamsSection(
+      ThemeData theme, KindDossier dossier, List<UExamination> dueExams) {
+    final lang = languageService.currentLanguage;
+    final openCount = dossier.uExams.where((u) => !u.isDone).length;
+    final hasDue = dueExams.isNotEmpty;
+    // Titel: nächste fällige Untersuchung hervorheben, sonst neutralen Stand.
+    final subtitle = hasDue
+        ? context.tr('family_hub_exam_due', values: {
+            'exam': UExaminationData.localizedLabel(dueExams.first, lang)
+          })
+        : context.tr('family_hub_uexams_open', values: {'count': '$openCount'});
+
+    return Theme(
+      // ExpansionTile-Divider ausblenden, damit es sich in die Card einfügt.
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: Container(
+        decoration: BoxDecoration(
+          color: hasDue
+              ? const Color(0xFFFEF3C7)
+              : theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 10),
+          childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+          leading: const Text('\u{1F3E5}', style: TextStyle(fontSize: 16)),
+          title: Text(
+            context.tr('family_hub_uexams_title'),
+            style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: hasDue ? const Color(0xFF92400E) : null),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+                color: hasDue
+                    ? const Color(0xFF92400E)
+                    : theme.colorScheme.outline),
+          ),
+          children: dossier.uExams
+              .map((exam) => _uExamTile(theme, dossier, exam, lang))
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _uExamTile(
+      ThemeData theme, KindDossier dossier, UExamination exam, String lang) {
+    final isDue = !exam.isDone && exam.dueAtMonths <= dossier.ageMonths + 6;
+    String? doneLabel;
+    if (exam.isDone && exam.doneDate != null) {
+      final parsed = DateTime.tryParse(exam.doneDate!);
+      if (parsed != null) {
+        final d = parsed.toLocal();
+        final dateStr =
+            '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+        doneLabel =
+            context.tr('family_hub_uexam_done_on', values: {'date': dateStr});
+      }
+    }
+    return InkWell(
+      onTap: () => _toggleUExam(dossier, exam),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+        child: Row(children: [
+          Icon(
+            exam.isDone
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
+            size: 20,
+            color: exam.isDone
+                ? const Color(0xFF16A34A)
+                : (isDue ? const Color(0xFFD97706) : theme.colorScheme.outline),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                UExaminationData.localizedLabel(exam, lang),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  decoration: exam.isDone ? TextDecoration.lineThrough : null,
+                  color: exam.isDone ? theme.colorScheme.outline : null,
+                ),
+              ),
+              if (doneLabel != null)
+                Text(doneLabel,
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: const Color(0xFF16A34A))),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _toggleUExam(KindDossier dossier, UExamination exam) async {
+    await _dossierService.setUExamDone(
+        dossier.childName, exam.id, !exam.isDone);
+    HapticFeedback.selectionClick();
+    if (mounted) setState(() {});
   }
 
   Widget _infoChip(String text, Color color) {
@@ -737,18 +829,21 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 16),
-            _notfallRow(context.tr('family_hub_blood_type'),
+          _notfallRow(context.tr('family_hub_blood_type'),
               d.bloodType ?? context.tr('family_hub_not_entered')),
           _notfallRow(
               context.tr('family_hub_allergies'),
               d.allergies.isNotEmpty
                   ? d.allergies.join(', ')
-                    : context.tr('family_hub_none_known')),
-                _notfallRow(context.tr('family_hub_pediatrician'),
-                  d.doctorName ?? context.tr('family_hub_not_entered')),
-                _notfallRow(context.tr('family_hub_doctor_phone'), d.doctorPhone ?? '—'),
-                _notfallRow(context.tr('family_hub_emergency_contact'), d.emergencyContact ?? '—'),
-                _notfallRow(context.tr('family_hub_emergency_phone'), d.emergencyPhone ?? '—'),
+                  : context.tr('family_hub_none_known')),
+          _notfallRow(context.tr('family_hub_pediatrician'),
+              d.doctorName ?? context.tr('family_hub_not_entered')),
+          _notfallRow(
+              context.tr('family_hub_doctor_phone'), d.doctorPhone ?? '—'),
+          _notfallRow(context.tr('family_hub_emergency_contact'),
+              d.emergencyContact ?? '—'),
+          _notfallRow(context.tr('family_hub_emergency_phone'),
+              d.emergencyPhone ?? '—'),
           const SizedBox(height: 16),
           SizedBox(
               width: double.infinity,
@@ -819,22 +914,38 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                           color: Theme.of(ctx).colorScheme.outlineVariant,
                           borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 16),
-                    Text(context.tr('family_hub_edit_child',
+              Text(
+                  context.tr('family_hub_edit_child',
                       values: {'name': dossier.childName}),
                   style: Theme.of(ctx)
                       .textTheme
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
-                _editField(clothingCtrl, context.tr('family_hub_clothing_size'), context.tr('family_hub_clothing_hint')),
-                _editField(shoeCtrl, context.tr('family_hub_shoe_size'), context.tr('family_hub_shoe_hint')),
-                _editField(allergiesCtrl, context.tr('family_hub_allergies_csv'), context.tr('family_hub_allergies_hint')),
-                _editField(doctorCtrl, context.tr('family_hub_pediatrician_name'), context.tr('family_hub_pediatrician_hint')),
-                _editField(doctorPhoneCtrl, context.tr('family_hub_pediatrician_phone'), context.tr('family_hub_phone_hint')),
-                _editField(bloodCtrl, context.tr('family_hub_blood_type_plain'), context.tr('family_hub_blood_type_hint')),
-                _editField(emergCtrl, context.tr('family_hub_emergency_contact_name'), context.tr('family_hub_emergency_contact_hint')),
-                _editField(emergPhoneCtrl, context.tr('family_hub_emergency_phone_plain'), context.tr('family_hub_emergency_phone_hint')),
-                _editField(kitaCtrl, context.tr('family_hub_daycare_school'), context.tr('family_hub_daycare_hint')),
+              _editField(clothingCtrl, context.tr('family_hub_clothing_size'),
+                  context.tr('family_hub_clothing_hint')),
+              _editField(shoeCtrl, context.tr('family_hub_shoe_size'),
+                  context.tr('family_hub_shoe_hint')),
+              _editField(allergiesCtrl, context.tr('family_hub_allergies_csv'),
+                  context.tr('family_hub_allergies_hint')),
+              _editField(doctorCtrl, context.tr('family_hub_pediatrician_name'),
+                  context.tr('family_hub_pediatrician_hint')),
+              _editField(
+                  doctorPhoneCtrl,
+                  context.tr('family_hub_pediatrician_phone'),
+                  context.tr('family_hub_phone_hint')),
+              _editField(bloodCtrl, context.tr('family_hub_blood_type_plain'),
+                  context.tr('family_hub_blood_type_hint')),
+              _editField(
+                  emergCtrl,
+                  context.tr('family_hub_emergency_contact_name'),
+                  context.tr('family_hub_emergency_contact_hint')),
+              _editField(
+                  emergPhoneCtrl,
+                  context.tr('family_hub_emergency_phone_plain'),
+                  context.tr('family_hub_emergency_phone_hint')),
+              _editField(kitaCtrl, context.tr('family_hub_daycare_school'),
+                  context.tr('family_hub_daycare_hint')),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () async {
