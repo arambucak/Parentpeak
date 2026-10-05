@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
@@ -448,6 +450,35 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
       _plans[_child!.childName]![_selectedSection] = edited;
     });
     await _savePlans();
+    await _scheduleRitualReminders(edited);
+  }
+
+  /// Plant für die im Plan eingestellte Uhrzeit und Wochentage sanfte
+  /// Erinnerungen. Nutzt den vorhandenen NotificationService, der selbst
+  /// `kIsWeb` und den `quiet_mode` respektiert (keine Erinnerung bei Ruhe/Web).
+  /// Macht die zuvor folgenlosen Felder `time`/`weekdays` tatsächlich wirksam.
+  Future<void> _scheduleRitualReminders(_RitualPlan plan) async {
+    if (kIsWeb) return;
+    final parts = plan.time.split(':');
+    if (parts.length != 2) return;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return;
+    if (plan.weekdays.isEmpty) return;
+
+    final now = DateTime.now();
+    final title = _t('ritual_reminder_title');
+    final body = _t('ritual_reminder_body').replaceAll('{name}', plan.name);
+    for (final weekday in plan.weekdays) {
+      if (weekday < 1 || weekday > 7) continue;
+      // Nächstes Vorkommen dieses Wochentags zur eingestellten Uhrzeit finden.
+      var daysAhead = (weekday - now.weekday) % 7;
+      var when =
+          DateTime(now.year, now.month, now.day + daysAhead, hour, minute);
+      if (!when.isAfter(now)) when = when.add(const Duration(days: 7));
+      await NotificationService.instance.scheduleReminder(when, title, body);
+    }
   }
 
   Future<void> _toggleQuietMode(bool value) async {
