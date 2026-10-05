@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
@@ -48,7 +49,44 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
     super.dispose();
   }
 
+  /// Einmalige, transparente Einwilligung bevor ein Kühlschrank-Foto an die KI
+  /// geht. Das Foto und die Allergie-Angaben werden zur Zutaten-/Rezept-
+  /// erstellung an unseren KI-Dienst gesendet; der Nutzer erfährt das vorher
+  /// und bestätigt aktiv. Zustimmung wird gemerkt.
+  Future<bool> _ensurePhotoConsent() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('fridge.ai_photo_consent') == true) return true;
+    if (!mounted) return false;
+    final theme = Theme.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(context.tr('fridge_consent_title')),
+        content: Text(context.tr('fridge_consent_body'),
+            style: theme.textTheme.bodyMedium),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.tr('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.tr('fridge_consent_accept')),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await prefs.setBool('fridge.ai_photo_consent', true);
+      return true;
+    }
+    return false;
+  }
+
   Future<void> _pickPhoto(ImageSource source) async {
+    if (!await _ensurePhotoConsent()) return;
+    if (!mounted) return;
     try {
       final img = await _picker.pickImage(
         source: source,
