@@ -8,31 +8,24 @@ import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
+/// Lokalisierte Texte des Location-Pickers über die zentrale String-Verwaltung,
+/// damit alle Picker-Sprachen abgedeckt sind (nicht nur de/en/tr/ku wie zuvor).
 String _locationPickerCopy(String key, String fallback) {
-  const copies = {
-    'en': {
-      'choose_location': 'Choose a location',
-      'confirm': 'Confirm',
-      'search_hint': 'Search city, district or ZIP...',
-      'tap_map_hint': 'Tap the map or drag the pin',
-      'gps_error': 'Location error. Please try again.',
-    },
-    'ku': {
-      'choose_location': 'Cih hilbijêre',
-      'confirm': 'Piştrast bike',
-      'search_hint': 'Bajar, taxe an koda postê bigere...',
-      'tap_map_hint': 'Li ser nexşeyê bitikîne an derzîkê bikişîne',
-      'gps_error': 'Çewtiya cihê. Ji kerema xwe dîsa biceribîne.',
-    },
-    'tr': {
-      'choose_location': 'Bir konum seçin',
-      'confirm': 'Onayla',
-      'search_hint': 'Şehir, mahalle veya posta kodu ara...',
-      'tap_map_hint': 'Haritaya dokunun veya iğneyi sürükleyin',
-      'gps_error': 'Konum hatası. Lütfen tekrar deneyin.',
-    },
+  const keyMap = {
+    'choose_location': 'events_loc_choose',
+    'confirm': 'events_loc_confirm',
+    'search_hint': 'events_loc_search_hint',
+    'tap_map_hint': 'events_loc_tap_hint',
+    'gps_error': 'events_loc_gps_error',
+    'pick_hint': 'events_loc_pick_hint',
   };
-  return copies[languageService.currentLanguage]?[key] ?? fallback;
+  final mapped = keyMap[key];
+  if (mapped == null) return fallback;
+  final value = AppStringsManager.getString(
+    languageService.currentLanguage,
+    mapped,
+  );
+  return value.isEmpty ? fallback : value;
 }
 
 /// Ergebnis des Location-Pickers.
@@ -61,13 +54,16 @@ class PickedLocation {
 class LocationPickerWidget extends StatefulWidget {
   final PickedLocation? initialLocation;
   final void Function(PickedLocation) onLocationPicked;
-  final String hint;
+
+  /// Platzhaltertext, solange kein Ort gewählt ist. Wenn null, wird der
+  /// lokalisierte Standardtext („Standort wählen") in der App-Sprache genutzt.
+  final String? hint;
 
   const LocationPickerWidget({
     super.key,
     this.initialLocation,
     required this.onLocationPicked,
-    this.hint = 'Standort wählen',
+    this.hint,
   });
 
   @override
@@ -133,7 +129,9 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _picked?.displayName ?? widget.hint,
+                _picked?.displayName ??
+                    widget.hint ??
+                    _locationPickerCopy('pick_hint', 'Standort wählen'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight:
                       _picked != null ? FontWeight.w600 : FontWeight.w400,
