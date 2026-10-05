@@ -5,6 +5,10 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 /// Kind-Dossier — alle wichtigen Infos zu einem Kind an einem Ort.
 /// NUR LOKAL gespeichert (sensible Daten verlassen nie das Geraet).
 class KindDossier {
+  /// Stabile ID eines Dossiers. Entkoppelt die Identität vom (editierbaren)
+  /// Kindnamen — so können Kinder umbenannt werden und gleichnamige Kinder
+  /// kollidieren nicht mehr. Wird automatisch vergeben, wenn leer übergeben.
+  final String id;
   final String childName;
   final DateTime birthDate;
   final String? clothingSize;
@@ -22,6 +26,7 @@ class KindDossier {
   final String? notes;
 
   KindDossier({
+    String? id,
     required this.childName,
     DateTime? birthDate,
     int? ageMonths,
@@ -38,12 +43,18 @@ class KindDossier {
     this.kitaTeacher,
     this.uExams = const [],
     this.notes,
-  }) : birthDate = birthDate ?? _birthDateFromAgeMonths(ageMonths ?? 0);
+  })  : id = (id == null || id.isEmpty) ? _generateId() : id,
+        birthDate = birthDate ?? _birthDateFromAgeMonths(ageMonths ?? 0);
+
+  static int _idCounter = 0;
+  static String _generateId() =>
+      'kd_${DateTime.now().microsecondsSinceEpoch}_${_idCounter++}';
 
   int get ageMonths => _ageMonthsFromBirthDate(birthDate);
   int get ageYears => (ageMonths / 12).floor();
 
   KindDossier copyWith({
+    String? id,
     String? childName,
     DateTime? birthDate,
     String? clothingSize,
@@ -61,6 +72,7 @@ class KindDossier {
     String? notes,
   }) =>
       KindDossier(
+        id: id ?? this.id,
         childName: childName ?? this.childName,
         birthDate: birthDate ?? this.birthDate,
         clothingSize: clothingSize ?? this.clothingSize,
@@ -92,6 +104,7 @@ class KindDossier {
   }
 
   Map<String, dynamic> toJson() => {
+        'id': id,
         'childName': childName,
         'ageMonths': ageMonths,
         'birthDate': birthDate.toIso8601String(),
@@ -111,6 +124,9 @@ class KindDossier {
       };
 
   factory KindDossier.fromJson(Map<String, dynamic> j) => KindDossier(
+        // Alt-Daten ohne 'id' bekommen beim Laden automatisch eine neue ID
+        // (Konstruktor-Default) und werden einmalig migriert zurückgeschrieben.
+        id: j['id'] as String?,
         childName: j['childName'] as String? ?? '',
         birthDate: DateTime.tryParse(j['birthDate']?.toString() ?? ''),
         ageMonths: (j['ageMonths'] as num?)?.round() ?? 0,
@@ -262,6 +278,12 @@ class KindDossierService {
           final birthDate =
               DateTime.tryParse(data['birthDate']?.toString() ?? '');
           if (birthDate == null) migrated = true;
+          // Alt-Daten ohne stabile ID: einmalig migrieren (fromJson vergibt
+          // dann eine neue ID über den Konstruktor-Default).
+          final idRaw = data['id'];
+          if (idRaw == null || (idRaw is String && idRaw.isEmpty)) {
+            migrated = true;
+          }
           return KindDossier.fromJson(data);
         }).toList();
         if (migrated) {
@@ -281,8 +303,12 @@ class KindDossierService {
         _key, jsonEncode(_dossiers.map((d) => d.toJson()).toList()));
   }
 
+  /// Fügt ein Dossier hinzu oder aktualisiert ein bestehendes. Die Zuordnung
+  /// erfolgt über die stabile [KindDossier.id] — so bleibt ein Kind auch nach
+  /// einer Umbenennung dasselbe Dossier, und gleichnamige Kinder kollidieren
+  /// nicht mehr.
   Future<void> addOrUpdate(KindDossier dossier) async {
-    final idx = _dossiers.indexWhere((d) => d.childName == dossier.childName);
+    final idx = _dossiers.indexWhere((d) => d.id == dossier.id);
     if (idx != -1) {
       _dossiers[idx] = dossier;
     } else {
@@ -291,16 +317,27 @@ class KindDossierService {
     await save(_dossiers);
   }
 
-  /// Hakt eine U-Untersuchung eines Kindes ab bzw. entfernt den Haken wieder.
-  /// Beim Abhaken wird das aktuelle Datum (ISO-8601) als [doneDate] gesetzt.
-  /// Gibt das aktualisierte Dossier zurück oder null, wenn kein passendes
-  /// Kind/keine passende Untersuchung gefunden wurde.
+  /// Findet ein Dossier anhand des Kindnamens (für das Nachziehen aus dem
+  /// Eltern-Netzwerk-Profil, das keine Dossier-IDs kennt). Gibt null zurück,
+  /// wenn kein Dossier mit diesem Namen existiert.
+  KindDossier? findByName(String childName) {
+    final name = childName.trim();
+    for (final d in _dossiers) {
+      if (d.childName.trim() == name) return d;
+    }
+    return null;
+  }
+
+  /// Hakt eine U-Untersuchung eines Kindes (per Dossier-[id]) ab bzw. entfernt
+  /// den Haken wieder. Beim Abhaken wird das aktuelle Datum (ISO-8601) als
+  /// [doneDate] gesetzt. Gibt das aktualisierte Dossier zurück oder null, wenn
+  /// kein passendes Dossier/keine passende Untersuchung gefunden wurde.
   Future<KindDossier?> setUExamDone(
-    String childName,
+    String dossierId,
     String examId,
     bool done,
   ) async {
-    final idx = _dossiers.indexWhere((d) => d.childName == childName);
+    final idx = _dossiers.indexWhere((d) => d.id == dossierId);
     if (idx == -1) return null;
     final dossier = _dossiers[idx];
     var found = false;

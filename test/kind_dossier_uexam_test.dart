@@ -64,20 +64,21 @@ void main() {
     });
   });
 
-  group('KindDossierService.setUExamDone', () {
+  group('KindDossierService.setUExamDone (per Dossier-ID)', () {
     setUp(() => SharedPreferences.setMockInitialValues({}));
 
-    test('hakt eine Untersuchung ab und setzt doneDate', () async {
-      final service = KindDossierService.instance;
-      await service.save([
-        KindDossier(
+    KindDossier mila() => KindDossier(
+          id: 'id_mila',
           childName: 'Mila',
           ageMonths: 24,
           uExams: UExaminationData.generateForChild(24),
-        ),
-      ]);
+        );
 
-      final updated = await service.setUExamDone('Mila', 'u3', true);
+    test('hakt eine Untersuchung ab und setzt doneDate', () async {
+      final service = KindDossierService.instance;
+      await service.save([mila()]);
+
+      final updated = await service.setUExamDone('id_mila', 'u3', true);
       expect(updated, isNotNull);
       final u3 = updated!.uExams.firstWhere((e) => e.id == 'u3');
       expect(u3.isDone, isTrue);
@@ -86,16 +87,10 @@ void main() {
 
     test('entfernt den Haken wieder und löscht doneDate', () async {
       final service = KindDossierService.instance;
-      await service.save([
-        KindDossier(
-          childName: 'Mila',
-          ageMonths: 24,
-          uExams: UExaminationData.generateForChild(24),
-        ),
-      ]);
-      await service.setUExamDone('Mila', 'u3', true);
+      await service.save([mila()]);
+      await service.setUExamDone('id_mila', 'u3', true);
 
-      final updated = await service.setUExamDone('Mila', 'u3', false);
+      final updated = await service.setUExamDone('id_mila', 'u3', false);
       final u3 = updated!.uExams.firstWhere((e) => e.id == 'u3');
       expect(u3.isDone, isFalse);
       expect(u3.doneDate, isNull);
@@ -103,19 +98,13 @@ void main() {
 
     test('persistiert über Neuladen hinweg', () async {
       final service = KindDossierService.instance;
-      await service.save([
-        KindDossier(
-          childName: 'Mila',
-          ageMonths: 24,
-          uExams: UExaminationData.generateForChild(24),
-        ),
-      ]);
-      await service.setUExamDone('Mila', 'u3', true);
+      await service.save([mila()]);
+      await service.setUExamDone('id_mila', 'u3', true);
 
       // Frisch laden simuliert App-Neustart.
       await service.load();
       final u3 = service.dossiers
-          .firstWhere((d) => d.childName == 'Mila')
+          .firstWhere((d) => d.id == 'id_mila')
           .uExams
           .firstWhere((e) => e.id == 'u3');
       expect(u3.isDone, isTrue);
@@ -124,14 +113,9 @@ void main() {
     test('gibt null bei unbekanntem Kind oder unbekannter Untersuchung',
         () async {
       final service = KindDossierService.instance;
-      await service.save([
-        KindDossier(
-            childName: 'Mila',
-            ageMonths: 24,
-            uExams: UExaminationData.generateForChild(24)),
-      ]);
-      expect(await service.setUExamDone('Unbekannt', 'u3', true), isNull);
-      expect(await service.setUExamDone('Mila', 'u999', true), isNull);
+      await service.save([mila()]);
+      expect(await service.setUExamDone('id_unbekannt', 'u3', true), isNull);
+      expect(await service.setUExamDone('id_mila', 'u999', true), isNull);
     });
   });
 }
