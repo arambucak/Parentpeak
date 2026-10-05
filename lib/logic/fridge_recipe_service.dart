@@ -76,7 +76,7 @@ class FridgeRecipeService {
   /// Erkennt Zutaten auf einem Foto. Gibt eine Liste erkannter Lebensmittel
   /// zurück (leere Liste bei Fehler). Nicht-essbare Objekte werden ignoriert.
   Future<List<String>> detectIngredients(Uint8List imageBytes,
-      {String mimeType = 'image/jpeg'}) async {
+      {String mimeType = 'image/jpeg', String languageCode = 'de'}) async {
     await _ensureContext();
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
@@ -84,13 +84,14 @@ class FridgeRecipeService {
       throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
     }
 
-    const prompt = '''
+    final outputLanguage = _outputLanguage(languageCode);
+    final prompt = '''
 Auf diesem Foto sind Lebensmittel (z. B. aus einem Kühlschrank oder einer Vorratskammer).
 Erkenne NUR die essbaren Lebensmittel/Zutaten, die du sicher siehst.
 
 Regeln:
 - Nur essbare Lebensmittel auflisten (keine Verpackungen, Möbel, Hände, sonstige Objekte).
-- Deutsche Bezeichnungen, im Singular oder als übliche Zutat (z. B. "Eier", "Karotten", "Käse").
+- Bezeichnungen auf $outputLanguage, im Singular oder als übliche Zutat (z. B. "Eier", "Karotten", "Käse").
 - Wenn du unsicher bist, lieber weglassen.
 - Maximal 20 Zutaten.
 
@@ -104,7 +105,7 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
         prompt,
         systemInstruction:
             'Du erkennst Lebensmittel auf Fotos. Antworte IMMER NUR mit einem '
-            'gültigen JSON-Array aus deutschen Zutaten-Namen. Kein Markdown.',
+            'gültigen JSON-Array aus Zutaten-Namen auf $outputLanguage. Kein Markdown.',
         imageBytes: imageBytes,
         imageMimeType: mimeType,
       );
@@ -118,8 +119,8 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
 
   /// Generiert ein kindgerechtes Rezept aus den (vom Nutzer bestätigten)
   /// Zutaten. Gibt null zurück, wenn nichts erzeugt werden konnte.
-  Future<FamilyRecipe?> generateFromIngredients(
-      List<String> ingredients) async {
+  Future<FamilyRecipe?> generateFromIngredients(List<String> ingredients,
+      {String languageCode = 'de'}) async {
     await _ensureContext();
     final clean =
         ingredients.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
@@ -131,8 +132,9 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
       throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
     }
 
+    final outputLanguage = _outputLanguage(languageCode);
     final prompt = '''
-Erstelle EIN kinderfreundliches Familien-Rezept auf Deutsch, das möglichst viele
+Erstelle EIN kinderfreundliches Familien-Rezept auf $outputLanguage, das möglichst viele
 dieser vorhandenen Zutaten nutzt:
 ${clean.join(", ")}
 
@@ -149,6 +151,7 @@ Regeln:
 - Kinder müssen es mögen (nicht zu scharf, nicht zu bitter).
 - Liste unter "missingIngredients" die Zutaten auf, die NICHT in der vorhandenen
   Liste stehen, aber fürs Rezept gebraucht werden (für die Einkaufsliste).
+- Alle nutzersichtbaren JSON-Werte müssen auf $outputLanguage sein. Die JSON-Schlüssel bleiben exakt wie vorgegeben.
 
 Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/danach):
 {
@@ -203,6 +206,15 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────
+
+  /// Mappt einen Sprachcode auf die (deutsche) Bezeichnung für den KI-Prompt,
+  /// damit Gemini in der aktiven App-Sprache antwortet.
+  static String _outputLanguage(String languageCode) => switch (languageCode) {
+        'de' => 'Deutsch',
+        'tr' => 'Türkisch',
+        'ku' => 'Kurmandschi (lateinische Schrift)',
+        _ => 'Englisch',
+      };
 
   // Grobes Kernwort einer Zutatenzeile (letztes Wort, oft der Zutatenname).
   String _coreWord(String s) {

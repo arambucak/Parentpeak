@@ -60,8 +60,12 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
         _photo = img;
         _phase = _Phase.detecting;
       });
+      final languageCode = Localizations.localeOf(context).languageCode;
       final bytes = await img.readAsBytes();
-      final detected = await _service.detectIngredients(bytes);
+      final detected = await _service.detectIngredients(
+        bytes,
+        languageCode: languageCode,
+      );
       if (!mounted) return;
       setState(() {
         _ingredients = detected;
@@ -114,10 +118,14 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
       ));
       return;
     }
+    final languageCode = Localizations.localeOf(context).languageCode;
     setState(() => _phase = _Phase.generating);
     FamilyRecipe? recipe;
     try {
-      recipe = await _service.generateFromIngredients(_ingredients);
+      recipe = await _service.generateFromIngredients(
+        _ingredients,
+        languageCode: languageCode,
+      );
     } on AiRateLimitException catch (e) {
       if (!mounted) return;
       setState(() => _phase = _Phase.ingredients);
@@ -151,10 +159,10 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
     await ShoppingListService.instance.addItemsFromRecipe(_missing);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_missing.length == 1
+      content: Text(_missing.length == 1
           ? context.tr('fridge_shopping_added_one')
           : context.tr('fridge_shopping_added_many',
-            values: {'count': _missing.length})),
+              values: {'count': _missing.length})),
       behavior: SnackBarBehavior.floating,
       backgroundColor: const Color(0xFF16A34A),
     ));
@@ -194,13 +202,13 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
           _shared = true;
         });
         final destination = visibility == 'private'
-          ? context.tr('fridge_saved_private')
-          : visibility == 'public'
-            ? context.tr('fridge_saved_public')
-            : context.tr('fridge_saved_friends');
+            ? context.tr('fridge_saved_private')
+            : visibility == 'public'
+                ? context.tr('fridge_saved_public')
+                : context.tr('fridge_saved_friends');
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.tr('fridge_save_success',
-            values: {'destination': destination})),
+          content: Text(context
+              .tr('fridge_save_success', values: {'destination': destination})),
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFF16A34A),
         ));
@@ -616,8 +624,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
                     onPressed: _addMissingToShoppingList,
                     icon: const Icon(Icons.add_shopping_cart_rounded),
                     label: Text(_missing.length == 1
-                      ? context.tr('fridge_add_missing_one')
-                      : context.tr('fridge_add_missing_many')),
+                        ? context.tr('fridge_add_missing_one')
+                        : context.tr('fridge_add_missing_many')),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF16A34A),
                       padding: const EdgeInsets.symmetric(vertical: 13),
@@ -647,8 +655,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
                 : Icon(
                     _shared ? Icons.check_rounded : Icons.bookmark_add_rounded),
             label: Text(_shared
-                ? 'In Familien-Rezepten gespeichert'
-                : 'In Familien-Rezepten teilen'),
+                ? context.tr('fridge_shared_to_family')
+                : context.tr('fridge_share_to_family')),
             style: FilledButton.styleFrom(
               backgroundColor: _shared ? const Color(0xFF16A34A) : _accent,
               disabledBackgroundColor: _shared ? const Color(0xFF16A34A) : null,
@@ -665,7 +673,7 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
           child: OutlinedButton.icon(
             onPressed: _restart,
             icon: const Icon(Icons.photo_camera_rounded),
-            label: const Text('Neues Foto'),
+            label: Text(context.tr('fridge_new_photo')),
             style: OutlinedButton.styleFrom(
               foregroundColor: _accent,
               side: const BorderSide(color: _accent),

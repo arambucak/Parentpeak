@@ -151,7 +151,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
     setState(() => _generatingAi = true);
     try {
       await _aiService.initialize();
-      final recipe = await _aiService.generateRecipeFor(dish);
+      final recipe = await _aiService.generateRecipeFor(
+        dish,
+        languageCode: languageService.currentLanguage,
+      );
       if (!mounted) return;
       setState(() {
         _aiRecipe = recipe;
@@ -987,6 +990,7 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
 
               // Foto
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: _pickPhoto,
                 child: Container(
                   height: 150,

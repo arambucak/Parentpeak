@@ -8,6 +8,7 @@ import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/logic/allergen_guard.dart';
+import 'package:parentpeak/logic/fallback_recipes.dart';
 
 /// KI-Rezept-Service — generiert kinderfreundliche Rezepte via Gemini.
 ///
@@ -86,7 +87,7 @@ class FamilyRecipeService {
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('FamilyRecipeService: Rate limit reached');
-      return _fallbackRecipe();
+      return _fallbackRecipe(languageCode: languageCode);
     }
 
     final season = _currentSeason();
@@ -100,12 +101,7 @@ class FamilyRecipeService {
             : _childAge < 6
                 ? 'Kita-Kind ($_childAge Jahre, normal)'
                 : 'Schulkind ($_childAge Jahre, alles)';
-    final outputLanguage = switch (languageCode) {
-      'de' => 'Deutsch',
-      'tr' => 'Türkisch',
-      'ku' => 'Kurmandschi (lateinische Schrift)',
-      _ => 'Englisch',
-    };
+    final outputLanguage = _outputLanguage(languageCode);
 
     final prompt = '''
 Generiere EIN kinderfreundliches Familien-Rezept auf $outputLanguage.
@@ -160,10 +156,10 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
       if (raw.isEmpty) {
         debugPrint('FamilyRecipeService: Leere Antwort von Gemini!');
-        return _fallbackRecipe();
+        return _fallbackRecipe(languageCode: languageCode);
       }
 
-      final recipe = _parseRecipe(raw);
+      final recipe = _parseRecipe(raw, languageCode: languageCode);
       if (recipe != null) {
         // SICHERHEIT: KI-Antwort gegen die Allergene gegenprüfen. Enthält das
         // Rezept trotz Prompt-Anweisung ein Allergen, NICHT ausliefern, sondern
@@ -173,25 +169,26 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
         }
         debugPrint(
             'FamilyRecipeService: KI-Rezept enthält Allergen(e) → sicheres Fallback');
-        return _fallbackRecipe();
+        return _fallbackRecipe(languageCode: languageCode);
       }
       debugPrint(
           'FamilyRecipeService: Parsing fehlgeschlagen, Antwort: ${raw.substring(0, raw.length.clamp(0, 200))}');
-      return _fallbackRecipe();
+      return _fallbackRecipe(languageCode: languageCode);
     } catch (e, stack) {
       debugPrint('FamilyRecipeService: KI-Fehler: $e');
       debugPrint(
           'FamilyRecipeService: Stack: ${stack.toString().split('\n').take(3).join('\n')}');
-      return _fallbackRecipe();
+      return _fallbackRecipe(languageCode: languageCode);
     }
   }
 
   /// Generiert ein kinderfreundliches Rezept zu einem GESUCHTEN Gericht
   /// (z. B. "Kartoffelsalat"). Wird als KI-Fallback genutzt, wenn die Community
   /// kein passendes Rezept hat.
-  Future<FamilyRecipe?> generateRecipeFor(String dish) async {
+  Future<FamilyRecipe?> generateRecipeFor(String dish,
+      {String languageCode = 'de'}) async {
     final wanted = dish.trim();
-    if (wanted.isEmpty) return generateRecipe();
+    if (wanted.isEmpty) return generateRecipe(languageCode: languageCode);
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('FamilyRecipeService: Rate limit reached (generateFor)');
@@ -208,9 +205,10 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
             : _childAge < 6
                 ? 'Kita-Kind ($_childAge Jahre, normal)'
                 : 'Schulkind ($_childAge Jahre, alles)';
+    final outputLanguage = _outputLanguage(languageCode);
 
     final prompt = '''
-Erstelle EIN kinderfreundliches Familien-Rezept auf Deutsch für: "$wanted".
+Erstelle EIN kinderfreundliches Familien-Rezept auf $outputLanguage für: "$wanted".
 
 Kontext:
 - Jüngstes Kind: $ageText
@@ -225,6 +223,7 @@ Regeln:
 - Einfache Zutaten aus dem Supermarkt. Kein zu scharfer/bitterer Geschmack.
 - Gib einen konkreten, warmen Eltern-Tipp.
 - allergensFree: nur auflisten, wenn das Rezept tatsächlich frei davon ist.
+- Alle nutzersichtbaren JSON-Werte müssen auf $outputLanguage sein. Die JSON-Schlüssel bleiben exakt wie vorgegeben.
 
 Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/danach):
 {
@@ -336,6 +335,15 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
+  /// Mappt einen Sprachcode auf die (deutsche) Bezeichnung für den KI-Prompt,
+  /// damit Gemini in der aktiven App-Sprache antwortet.
+  static String _outputLanguage(String languageCode) => switch (languageCode) {
+        'de' => 'Deutsch',
+        'tr' => 'Türkisch',
+        'ku' => 'Kurmandschi (lateinische Schrift)',
+        _ => 'Englisch',
+      };
+
   String _currentSeason() {
     final month = DateTime.now().month;
     if (month >= 3 && month <= 5) return 'Frühling';
@@ -344,7 +352,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     return 'Winter';
   }
 
-  FamilyRecipe? _parseRecipe(String raw) {
+  FamilyRecipe? _parseRecipe(String raw, {String languageCode = 'de'}) {
     try {
       var text = raw.trim();
       text = text.replaceAll(RegExp(r'^```(?:json)?\s*'), '');
@@ -352,7 +360,9 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
       final start = text.indexOf('{');
       final end = text.lastIndexOf('}');
-      if (start == -1 || end == -1) return _fallbackRecipe();
+      if (start == -1 || end == -1) {
+        return _fallbackRecipe(languageCode: languageCode);
+      }
 
       final jsonStr = text.substring(start, end + 1);
       final map = jsonDecode(jsonStr) as Map<String, dynamic>;
@@ -360,7 +370,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       return FamilyRecipe.fromJson(map);
     } catch (e) {
       debugPrint('FamilyRecipeService._parseRecipe: $e');
-      return _fallbackRecipe();
+      return _fallbackRecipe(languageCode: languageCode);
     }
   }
 
@@ -370,10 +380,14 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   /// Rotiert dafür durch die Liste und überspringt unsichere Rezepte. Gibt
   /// null zurück, wenn KEIN Fallback sicher ist — dann zeigt die UI eine klare
   /// Allergen-Warnung statt eines (gefährlichen) Rezepts.
-  FamilyRecipe? _fallbackRecipe() {
-    final count = _allFallbackRecipes.length;
+  ///
+  /// Die Fallback-Rezepte werden in der aktiven App-Sprache ausgegeben
+  /// (DE/EN/TR/KU, sonst EN als inklusiver Rückfall).
+  FamilyRecipe? _fallbackRecipe({String languageCode = 'de'}) {
+    final recipes = FallbackRecipes.forLanguage(languageCode);
+    final count = recipes.length;
     for (var i = 0; i < count; i++) {
-      final recipe = _allFallbackRecipes[(_fallbackIndex + i) % count];
+      final recipe = recipes[(_fallbackIndex + i) % count];
       if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys)) {
         _fallbackIndex = (_fallbackIndex + i + 1) % count;
         return FamilyRecipe(
@@ -394,255 +408,4 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     // Kein einziges Fallback-Rezept ist für diese Allergene sicher.
     return null;
   }
-
-  static const _allFallbackRecipes = [
-    // FLEISCH
-    FamilyRecipe(
-        id: '',
-        title: 'Spaghetti Bolognese',
-        description: 'DER Klassiker — Kinder-Liebling Nr. 1 weltweit.',
-        prepMinutes: 30,
-        costPerPortion: 2.00,
-        minChildAge: 1,
-        ingredients: [
-          '400g Spaghetti',
-          '300g Hackfleisch',
-          '1 Dose Tomaten',
-          '1 Karotte',
-          '1 Zwiebel',
-          'Olivenöl'
-        ],
-        steps: [
-          'Zwiebel + Karotte fein hacken, in Öl anbraten.',
-          'Hack dazu, krümelig braten.',
-          'Tomaten dazu, 15 Min köcheln.',
-          'Nudeln kochen, servieren.'
-        ],
-        allergensFree: ['nuesse'],
-        season: '',
-        tip:
-            'Lass dein Kind das Hackfleisch krümeln — wer mithilft isst lieber.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Hähnchen-Nuggets aus dem Ofen',
-        description: 'Knusprig wie aus dem Restaurant aber gesunder.',
-        prepMinutes: 25,
-        costPerPortion: 2.20,
-        minChildAge: 1,
-        ingredients: [
-          '500g Hähnchenbrust',
-          '100g Semmelbrösel',
-          '1 Ei',
-          'Paprikapulver',
-          'Salz'
-        ],
-        steps: [
-          'Hähnchen in Stücke schneiden.',
-          'In Ei wenden, dann in Semmelbrösel.',
-          '15 Min bei 200 Grad backen.',
-          'Mit Ketchup oder Gurkensticks servieren.'
-        ],
-        allergensFree: ['nuesse'],
-        season: '',
-        tip:
-            'Kinder ab 3 können beim Panieren helfen — Hände eintauchen macht Spass!'),
-    FamilyRecipe(
-        id: '',
-        title: 'Mini-Schnitzel mit Kartoffelpüree',
-        description: 'Schnell, saftig, und das Püree ist wie eine Umarmung.',
-        prepMinutes: 30,
-        costPerPortion: 2.50,
-        minChildAge: 1,
-        ingredients: [
-          '4 kleine Schweineschnitzel',
-          '100g Semmelbrösel',
-          '1 Ei',
-          '600g Kartoffeln',
-          '50ml Milch',
-          'Butter'
-        ],
-        steps: [
-          'Kartoffeln kochen, stampfen mit Milch + Butter.',
-          'Schnitzel klopfen, in Ei + Brösel wenden.',
-          'In Pfanne goldbraun braten.',
-          'Mit Püree + Gurkensalat servieren.'
-        ],
-        allergensFree: ['nuesse'],
-        season: '',
-        tip:
-            'Kleine Schnitzel die in Kinderhände passen wirken einladender als grosse.'),
-    // FISCH
-    FamilyRecipe(
-        id: '',
-        title: 'Selbstgemachte Fischstäbchen',
-        description: 'Besser als TK — und in 20 Min fertig.',
-        prepMinutes: 20,
-        costPerPortion: 2.30,
-        minChildAge: 1,
-        ingredients: [
-          '400g Fischfilet (Kabeljau/Seelachs)',
-          '80g Semmelbrösel',
-          '1 Ei',
-          'Zitrone',
-          'Salz'
-        ],
-        steps: [
-          'Fisch in Stäbchen schneiden.',
-          'In Ei, dann Semmelbrösel wenden.',
-          'In Pfanne mit wenig Oel 3-4 Min pro Seite braten.',
-          'Mit Zitrone und Kartoffeln servieren.'
-        ],
-        allergensFree: ['nuesse', 'laktose'],
-        season: '',
-        tip:
-            'Fischstäbchen-Form macht Fisch für Kinder attraktiver als ein ganzes Filet.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Lachs-Nudeln mit Sahne-Sauce',
-        description: 'Cremig, mild, reich an Omega-3 für kleine Gehirne.',
-        prepMinutes: 20,
-        costPerPortion: 3.00,
-        minChildAge: 2,
-        ingredients: [
-          '300g Pasta',
-          '200g Lachsfilet',
-          '150ml Sahne',
-          '1 EL Butter',
-          'Dill',
-          'Salz'
-        ],
-        steps: [
-          'Nudeln kochen.',
-          'Lachs in Stücke schneiden, in Butter anbraten.',
-          'Sahne dazu, kurz aufkochen.',
-          'Mit Nudeln vermischen, Dill drauf.'
-        ],
-        allergensFree: ['nuesse', 'ei'],
-        season: '',
-        tip:
-            'Lachs ist mild genug für Kinder die keinen Fischgeschmack mögen.'),
-    // VEGETARISCH
-    FamilyRecipe(
-        id: '',
-        title: 'Pizza vom Blech (mit Kindern belegt)',
-        description: 'Jedes Kind belegt seine eigene Ecke — Spass garantiert.',
-        prepMinutes: 30,
-        costPerPortion: 1.50,
-        minChildAge: 1,
-        ingredients: [
-          '1 Fertig-Pizzateig (oder 500g Mehl + Hefe)',
-          '200ml Tomatensauce',
-          '200g Käse',
-          'Belag nach Wunsch: Mais, Salami, Paprika'
-        ],
-        steps: [
-          'Teig ausrollen auf Blech.',
-          'Sauce verteilen.',
-          'Kinder belegen lassen!',
-          '12-15 Min bei 220 Grad backen.'
-        ],
-        allergensFree: ['nuesse'],
-        season: '',
-        tip: 'Jedes Familienmitglied bekommt ein Viertel zum Selbst-Belegen.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Mac and Cheese (Nudeln mit Käse)',
-        description:
-            'Cremig, käsig, geht immer. Comfort-Food für die ganze Familie.',
-        prepMinutes: 20,
-        costPerPortion: 1.30,
-        minChildAge: 1,
-        ingredients: [
-          '400g Makkaroni',
-          '200ml Milch',
-          '150g geriebener Käse',
-          '1 EL Butter',
-          '1 EL Mehl',
-          'Muskat'
-        ],
-        steps: [
-          'Nudeln kochen.',
-          'Butter schmelzen, Mehl einrühren.',
-          'Milch dazu, glatt rühren.',
-          'Käse unterheben bis cremig.',
-          'Nudeln in Sauce wenden.'
-        ],
-        allergensFree: ['nuesse', 'ei'],
-        season: '',
-        tip:
-            'Käse-Fäden ziehen finden Kinder faszinierend — das ist Teil des Spaßes!'),
-    FamilyRecipe(
-        id: '',
-        title: 'Pfannkuchen mit Apfelmus',
-        description: 'Süß, schnell, beliebt bei JEDEM Kind.',
-        prepMinutes: 15,
-        costPerPortion: 0.80,
-        minChildAge: 1,
-        ingredients: [
-          '200g Mehl',
-          '2 Eier',
-          '300ml Milch',
-          'Butter',
-          'Apfelmus'
-        ],
-        steps: [
-          'Teig glatt rühren.',
-          'Pfanne erhitzen, Butter rein.',
-          'Dünn ausgießen, goldbraun wenden.',
-          'Mit Apfelmus servieren.'
-        ],
-        allergensFree: ['nuesse'],
-        season: '',
-        tip:
-            'Pfannkuchen eignen sich perfekt zum gemeinsam Wenden-Ueben ab 4 Jahren.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Kartoffelsuppe mit Würstchen',
-        description:
-            'Wärmt von innen. Kinder lieben die Würstchen-Stücke drin.',
-        prepMinutes: 25,
-        costPerPortion: 1.40,
-        minChildAge: 1,
-        ingredients: [
-          '600g Kartoffeln',
-          '1 Karotte',
-          '500ml Brühe',
-          '2 Wiener Würstchen',
-          '100ml Sahne'
-        ],
-        steps: [
-          'Kartoffeln + Karotte würfeln, in Brühe kochen.',
-          'Pürieren (nicht ganz glatt — Stücke lassen).',
-          'Sahne einrühren.',
-          'Würstchen in Scheiben schneiden, dazu geben.'
-        ],
-        allergensFree: ['nuesse', 'ei'],
-        season: '',
-        tip: 'Lass dein Kind die Würstchen mit dem Kindermesser schneiden.'),
-    FamilyRecipe(
-        id: '',
-        title: 'Reis-Pfanne mit Hähnchen und Gemüse',
-        description: 'Bunt, schnell, alles in einer Pfanne.',
-        prepMinutes: 25,
-        costPerPortion: 2.00,
-        minChildAge: 1,
-        ingredients: [
-          '250g Reis',
-          '300g Hähnchenbrust',
-          '1 Paprika',
-          '1 kleine Zucchini',
-          '2 EL Sojasauce',
-          'Oel'
-        ],
-        steps: [
-          'Reis kochen.',
-          'Hähnchen in Streifen schneiden, anbraten.',
-          'Gemüse dazu, 5 Min braten.',
-          'Reis unterheben, Sojasauce drüber.'
-        ],
-        allergensFree: ['nuesse', 'ei', 'laktose'],
-        season: '',
-        tip:
-            'Wenn Kinder das Gemüse in lustigen Formen schneiden hilft das beim Probieren.'),
-  ];
 }

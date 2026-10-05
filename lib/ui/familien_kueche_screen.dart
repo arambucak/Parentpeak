@@ -27,6 +27,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   bool _loading = true;
   bool _noSafeRecipe = false;
   bool _dayRecipeExpanded = false;
+  // "Kinder-Hits": Rezepte, die den Kindern geschmeckt haben (lokal gepflegt).
+  List<String> _kinderHits = [];
 
   @override
   void initState() {
@@ -42,7 +44,14 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
 
   Future<void> _init() async {
     await _service.initialize();
+    await _loadKinderHits();
     await _generateNew();
+  }
+
+  /// Lädt die lokale "Kinder-Hits"-Liste (geschmeckt-Bewertungen).
+  Future<void> _loadKinderHits() async {
+    final hits = await _service.getKinderHits();
+    if (mounted) setState(() => _kinderHits = hits);
   }
 
   /// Öffnet die Familien-Rezepte mit vorausgefülltem Suchbegriff.
@@ -93,6 +102,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   Future<void> _rateRecipe(bool liked) async {
     if (_currentRecipe == null) return;
     await _service.rateRecipe(_currentRecipe!.title, liked);
+    // Hit-Liste nach der Bewertung aktualisieren, damit sie sofort sichtbar ist.
+    await _loadKinderHits();
     if (mounted) {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -100,6 +111,13 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             .tr(liked ? 'kitchen_rating_liked' : 'kitchen_rating_not_liked')),
       ));
     }
+  }
+
+  /// Entfernt einen Eintrag aus den Kinder-Hits (Daumen weg).
+  Future<void> _removeKinderHit(String title) async {
+    await _service.rateRecipe(title, false);
+    await _loadKinderHits();
+    if (mounted) HapticFeedback.selectionClick();
   }
 
   @override
@@ -146,6 +164,11 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             _recipeCard(theme, _currentRecipe!)
           else if (_noSafeRecipe)
             _noSafeRecipeCard(theme),
+          // Kinder-Hits: was den Kindern bisher geschmeckt hat
+          if (_kinderHits.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            _kinderHitsSection(theme),
+          ],
           const SizedBox(height: 20),
           // Tipps-Bereich
           _tippsSection(theme),
@@ -678,6 +701,56 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           style: TextStyle(
               fontSize: 10, fontWeight: FontWeight.w700, color: color)),
     );
+  }
+
+  // ─── Kinder-Hits ───────────────────────────────────────────────────────────
+
+  /// Zeigt die Gerichte, die den Kindern geschmeckt haben, als warme Chip-Liste.
+  /// Jeder Chip ist antippbar: öffnet die Familien-Rezepte mit dem Gericht als
+  /// Suchbegriff. Ein kleines x entfernt den Eintrag wieder.
+  Widget _kinderHitsSection(ThemeData theme) {
+    const accent = Color(0xFFE8543A);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Text('\u{2B50}', style: TextStyle(fontSize: 18)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            context.tr('kitchen_kids_hits_title'),
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ),
+      ]),
+      const SizedBox(height: 4),
+      Text(
+        context.tr('kitchen_kids_hits_subtitle'),
+        style: theme.textTheme.bodySmall
+            ?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.3),
+      ),
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: _kinderHits.map((title) {
+          return InputChip(
+            label: Text(title),
+            labelStyle: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600, color: const Color(0xFF8C3E28)),
+            backgroundColor: const Color(0xFFFFF4F1),
+            side: const BorderSide(color: Color(0xFFFFD1C3)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            avatar: const Icon(Icons.favorite_rounded, size: 16, color: accent),
+            deleteIcon: const Icon(Icons.close_rounded, size: 16),
+            deleteIconColor: const Color(0xFF8C3E28),
+            onDeleted: () => _removeKinderHit(title),
+            onPressed: () => _searchRecipes(title),
+            tooltip: context.tr('kitchen_kids_hits_tooltip'),
+          );
+        }).toList(),
+      ),
+    ]);
   }
 
   // ─── Tipps-Bereich ────────────────────────────────────────────────────────
