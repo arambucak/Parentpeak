@@ -470,10 +470,17 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 ])),
           ]),
         ),
-        // Feature 1: Steuer-Spar-Berechnung (DE + AT)
-        if (_country.code == 'de' || _country.code == 'at') ...[
+        // Feature 1: Steuer-Spar — DE: Kita-Kosten absetzbar (2/3-Regel).
+        if (_country.code == 'de') ...[
           const SizedBox(height: 12),
           _buildTaxSavingsHint(theme),
+        ],
+        // AT: Seit 2019 ersetzt der Familienbonus Plus die frühere
+        // Absetzbarkeit der Kinderbetreuungskosten. Daher KEINE Kita-abhängige
+        // Rechnung, sondern ein korrekter Hinweis auf den fixen Absetzbetrag.
+        if (_country.code == 'at') ...[
+          const SizedBox(height: 12),
+          _buildFamilienbonusHint(theme),
         ],
         const SizedBox(height: 12),
         // Feature 4: Monat ist eng
@@ -766,6 +773,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
         if (b.url != null) ...[
           const SizedBox(height: 8),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               HapticFeedback.lightImpact();
               _openUrl(b.url!);
@@ -1032,14 +1040,16 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
       );
     }
 
-    final double deductibleMax = _country.code == 'de' ? 4000.0 : 2300.0;
+    // DE: Kinderbetreuungskosten sind zu 2/3 absetzbar, max. 4.000 €/Jahr/Kind
+    // als Sonderausgabe. Nur für Deutschland aufgerufen.
+    const double deductibleMax = 4000.0;
     final kitaAnnual = kitaMonthly * 12;
-    final double deductiblePart =
-        _country.code == 'de' ? kitaAnnual * 2 / 3 : kitaAnnual;
+    final double deductiblePart = kitaAnnual * 2 / 3;
     final double deductible = deductiblePart.clamp(0, deductibleMax);
     final estimatedSavings = deductible * 0.30; // ~30% Grenzsteuersatz
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _showTaxDetail = !_showTaxDetail),
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -1088,9 +1098,8 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             const SizedBox(height: 10),
             _taxDetailRow(theme, context.tr('finance_tax_childcare_year'),
                 _country.formatAmount(kitaAnnual)),
-            if (_country.code == 'de')
-              _taxDetailRow(theme, context.tr('finance_tax_deductible_share'),
-                  _country.formatAmount(deductiblePart)),
+            _taxDetailRow(theme, context.tr('finance_tax_deductible_share'),
+                _country.formatAmount(deductiblePart)),
             _taxDetailRow(theme, context.tr('finance_tax_max_expense'),
                 _country.formatAmount(deductibleMax)),
             _taxDetailRow(theme, context.tr('finance_tax_actual_deductible'),
@@ -1100,10 +1109,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
                 highlight: true),
             const SizedBox(height: 8),
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () => _openUrl(
-                _country.code == 'de'
-                    ? 'https://www.bundesfinanzministerium.de/Web/DE/Themen/Steuern/Steuerarten/Einkommensteuer/einkommensteuer.html'
-                    : 'https://www.oesterreich.gv.at/de/landingpages/familienbonusplus',
+                'https://www.bundesfinanzministerium.de/Web/DE/Themen/Steuern/Steuerarten/Einkommensteuer/einkommensteuer.html',
               ),
               child: Text(
                 context.tr('finance_tax_more_info'),
@@ -1113,6 +1121,54 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               ),
             ),
           ],
+        ]),
+      ),
+    );
+  }
+
+  /// AT: Hinweis auf den Familienbonus Plus (fixer Steuerabsetzbetrag pro Kind).
+  /// Bewusst OHNE Kita-abhängige Rechnung — die frühere Absetzbarkeit der
+  /// Kinderbetreuungskosten gibt es seit 2019 nicht mehr.
+  Widget _buildFamilienbonusHint(ThemeData theme) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openUrl(
+          'https://www.oesterreich.gv.at/de/landingpages/familienbonusplus'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFECFDF5),
+          borderRadius: BorderRadius.circular(14),
+          border:
+              Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
+          const SizedBox(width: 10),
+          Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                context.tr('finance_familienbonus_title'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF065F46)),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                context.tr('finance_familienbonus_body'),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: const Color(0xFF065F46), height: 1.3),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                context.tr('finance_tax_more_info'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF059669),
+                    fontWeight: FontWeight.w700),
+              ),
+            ]),
+          ),
         ]),
       ),
     );
@@ -1175,6 +1231,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             ),
           ),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () => setState(() {
               _eligibilityDone = false;
               _saveEligibility();
@@ -1273,6 +1330,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   Widget _eligChip(
       ThemeData theme, String label, bool selected, VoidCallback onTap) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1303,7 +1361,9 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     int? yearsLeft;
     if (_children.isNotEmpty) {
       for (final child in _children) {
-        final ageYears = (child.ageMonths / 12).floor();
+        // round() statt floor() — konsistent mit _childMilestones, damit ein
+        // Kind in beiden Ansichten denselben Meilensteinen zugeordnet wird.
+        final ageYears = (child.ageMonths / 12).round();
         for (final m in _country.milestones) {
           if (m.childAgeYears > ageYears) {
             final yrs = m.childAgeYears - ageYears;
@@ -1330,11 +1390,6 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
     final needed = (target - _totalSaved).clamp(0, target);
     final autoGoal = monthsLeft > 0 ? (needed / monthsLeft) : 0.0;
     final progress = (_totalSaved / target).clamp(0.0, 1.0);
-
-    final goalController = TextEditingController(
-      text:
-          _monthlySavingsGoal > 0 ? _monthlySavingsGoal.toStringAsFixed(0) : '',
-    );
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1407,13 +1462,12 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              onSubmitted: (v) {
-                final val = double.tryParse(v) ?? _totalSaved;
-                setState(() => _totalSaved = val);
+              controller: _controllerFor('savings_total', _totalSaved),
+              onChanged: (v) {
+                _totalSaved = double.tryParse(v) ?? 0;
                 _saveSavingsGoal();
+                setState(() {});
               },
-              controller: TextEditingController(
-                  text: _totalSaved > 0 ? _totalSaved.toStringAsFixed(0) : ''),
             ),
           ),
           const SizedBox(width: 10),
@@ -1429,11 +1483,11 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              controller: goalController,
-              onSubmitted: (v) {
-                final val = double.tryParse(v) ?? _monthlySavingsGoal;
-                setState(() => _monthlySavingsGoal = val);
+              controller: _controllerFor('savings_goal', _monthlySavingsGoal),
+              onChanged: (v) {
+                _monthlySavingsGoal = double.tryParse(v) ?? 0;
                 _saveSavingsGoal();
+                setState(() {});
               },
             ),
           ),
@@ -1505,6 +1559,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
 
     return Column(children: [
       GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () => setState(() => _showKnappSection = !_showKnappSection),
         child: Container(
           width: double.infinity,
@@ -1565,6 +1620,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
             ...resources.map((r) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _openUrl(r.$2),
                     child: Row(children: [
                       const Icon(Icons.link_rounded,

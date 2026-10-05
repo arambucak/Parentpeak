@@ -7,10 +7,10 @@
 /// - Kategorien für den Monats-Schnellcheck
 
 class CountryFinanceConfig {
-  final String code;           // "de", "at", "tr", "gb", "generic"
-  final String name;           // "Deutschland"
-  final String flag;           // Emoji
-  final String currency;       // "EUR"
+  final String code; // "de", "at", "tr", "gb", "generic"
+  final String name; // "Deutschland"
+  final String flag; // Emoji
+  final String currency; // "EUR"
   final String currencySymbol; // "€"
   final List<SocialBenefit> benefits;
   final List<MilestoneCost> milestones;
@@ -27,10 +27,17 @@ class CountryFinanceConfig {
     required this.categories,
   });
 
-  /// Formatiert einen Betrag mit Waehrungssymbol.
+  /// Formatiert einen Betrag mit Tausenderpunkt + Waehrungssymbol
+  /// (z. B. 15000 -> "15.000₺"). Locale-neutral mit Punkt als Gruppierung.
   String formatAmount(double amount) {
-    final rounded = amount.toStringAsFixed(0);
-    return '$rounded$currencySymbol';
+    final rounded = amount.round().abs().toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < rounded.length; i++) {
+      if (i > 0 && (rounded.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(rounded[i]);
+    }
+    final sign = amount < 0 ? '-' : '';
+    return '$sign$buffer$currencySymbol';
   }
 }
 
@@ -39,10 +46,10 @@ class SocialBenefit {
   final String id;
   final String name;
   final String description;
-  final String? amount;          // z.B. "250€/Kind" oder "bis 292€"
-  final String? eligibility;     // Kurze Beschreibung wer Anspruch hat
-  final String? url;             // Link zum offiziellen Rechner/Antrag
-  final BenefitStatus status;    // Fuer alle, einkommenabhaengig, etc.
+  final String? amount; // z.B. "250€/Kind" oder "bis 292€"
+  final String? eligibility; // Kurze Beschreibung wer Anspruch hat
+  final String? url; // Link zum offiziellen Rechner/Antrag
+  final BenefitStatus status; // Fuer alle, einkommenabhaengig, etc.
 
   const SocialBenefit({
     required this.id,
@@ -56,19 +63,19 @@ class SocialBenefit {
 }
 
 enum BenefitStatus {
-  universal,       // Jeder bekommt es (z.B. Kindergeld)
+  universal, // Jeder bekommt es (z.B. Kindergeld)
   incomeDependent, // Einkommensabhaengig
-  checkRequired,   // Muss individuell geprueft werden
+  checkRequired, // Muss individuell geprueft werden
 }
 
 /// Kosten eines Meilensteins im Kinderleben.
 class MilestoneCost {
   final String id;
-  final String label;         // z.B. "Schulstart"
+  final String label; // z.B. "Schulstart"
   final String emoji;
   final double estimatedCost; // Durchschnittliche Kosten
-  final int childAgeYears;    // Ab welchem Alter relevant
-  final String? note;         // z.B. "Ranzen, Stifte, Turnbeutel"
+  final int childAgeYears; // Ab welchem Alter relevant
+  final String? note; // z.B. "Ranzen, Stifte, Turnbeutel"
 
   const MilestoneCost({
     required this.id,

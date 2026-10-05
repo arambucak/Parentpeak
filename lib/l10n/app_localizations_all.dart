@@ -509,6 +509,9 @@ class AppStringsManager {
           'Dies ist keine Rechtsberatung. Bitte prüfe deine Ansprüche beim zuständigen Amt oder einer Beratungsstelle.',
       'finance_amounts_disclaimer':
           'Beträge und Links dienen nur der Orientierung (Stand 2026, ohne Gewähr). Die genaue Höhe berechnet die zuständige Stelle.',
+      'finance_familienbonus_title': 'Familienbonus Plus',
+      'finance_familienbonus_body':
+          'In Österreich gibt es den Familienbonus Plus — einen Steuerabsetzbetrag pro Kind (bis zu 2.000 €/Jahr bis zum 18. Geburtstag). Er wird über die Steuererklärung oder beim Arbeitgeber beantragt.',
       'finance_link_open_failed':
           'Der Link konnte nicht geöffnet werden. Bitte versuche es später erneut.',
       'finance_guide_title': 'Was steht uns zu?',
@@ -2797,6 +2800,9 @@ class AppStringsManager {
           'This is not legal advice. Check your entitlement with the responsible authority or an advice center.',
       'finance_amounts_disclaimer':
           'Amounts and links are for orientation only (as of 2026, without guarantee). The exact amount is determined by the responsible authority.',
+      'finance_familienbonus_title': 'Familienbonus Plus',
+      'finance_familienbonus_body':
+          'In Austria there is the Familienbonus Plus — a tax credit per child (up to €2,000/year until age 18). You claim it via your tax return or through your employer.',
       'finance_link_open_failed':
           'The link could not be opened. Please try again later.',
       'finance_guide_title': 'What are we entitled to?',
@@ -10446,6 +10452,9 @@ class AppStringsManager {
           'Ev şêwirmendiya hiqûqî nîne. Mafê xwe li dezgeha berpirsiyar kontrol bike.',
       'finance_amounts_disclaimer':
           'Mîqdar û lînk tenê ji bo rêberiyê ne (rewşa 2026, bê garantî). Mîqdara rastîn ji aliyê dezgeha berpirsiyar ve tê hesibandin.',
+      'finance_familienbonus_title': 'Familienbonus Plus',
+      'finance_familienbonus_body':
+          'Li Awustriyayê Familienbonus Plus heye — ji bo her zarokî mafek bacê (heta 2.000 €/salê heta 18 saliyê). Bi daxuyaniya bacê an bi rêya kardêr tê daxwazkirin.',
       'finance_link_open_failed':
           'Lînk nehat vekirin. Ji kerema xwe paşê dîsa biceribîne.',
       'finance_guide_title': 'Mafê me çi ye?',
@@ -15730,6 +15739,9 @@ class AppStringsManager {
           'Bu bir hukuki danışmanlık değildir. Haklarınızı yetkili kurumdan veya danışma merkezinden kontrol edin.',
       'finance_amounts_disclaimer':
           'Tutarlar ve bağlantılar yalnızca yol gösterme amaçlıdır (2026 itibarıyla, garanti verilmez). Kesin tutarı yetkili kurum hesaplar.',
+      'finance_familienbonus_title': 'Familienbonus Plus',
+      'finance_familienbonus_body':
+          'Avusturya\'da Familienbonus Plus var — çocuk başına bir vergi indirimi (18 yaşına kadar yılda 2.000 €\'ya kadar). Vergi beyannamesiyle veya işveren üzerinden talep edilir.',
       'finance_link_open_failed':
           'Bağlantı açılamadı. Lütfen daha sonra tekrar deneyin.',
       'finance_guide_title': 'Hangi haklardan yararlanabiliriz?',
