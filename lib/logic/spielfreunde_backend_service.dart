@@ -66,7 +66,8 @@ class SpielfreundeBackendService {
     } catch (e) {
       debugPrint('SpielfreundeBackendService.getWaitlistCount failed: $e');
     }
-    return const WaitlistStatus(total: 0, threshold: 20, remaining: 20, progress: 0);
+    return const WaitlistStatus(
+        total: 0, threshold: 20, remaining: 20, progress: 0);
   }
 
   /// Andere Familien-Profile abrufen (gefiltert).
@@ -94,41 +95,6 @@ class SpielfreundeBackendService {
     return [];
   }
 
-  /// Referral registrieren (wenn eingeladener User sich registriert).
-  Future<bool> registerReferral(
-      String referralCode, String newUserId, String newUserName) async {
-    if (_api == null) return false;
-    try {
-      await _api!.postJsonAny('/api/referral/register', {
-        'referralCode': referralCode,
-        'newUserId': newUserId,
-        'newUserName': newUserName,
-      });
-      return true;
-    } catch (e) {
-      debugPrint('SpielfreundeBackendService.registerReferral failed: $e');
-      return false;
-    }
-  }
-
-  /// Referral-Status abrufen.
-  Future<ReferralStatus> getReferralStatus(String code) async {
-    if (_api == null) return ReferralStatus(code: code, coins: 0, invites: 0);
-    try {
-      final data = await _api!.getJson('/api/referral/status/$code');
-      if (data is Map<String, dynamic>) {
-        return ReferralStatus(
-          code: code,
-          coins: (data['totalCoins'] as num?)?.toInt() ?? 0,
-          invites: (data['totalInvites'] as num?)?.toInt() ?? 0,
-        );
-      }
-    } catch (e) {
-      debugPrint('SpielfreundeBackendService.getReferralStatus failed: $e');
-    }
-    return ReferralStatus(code: code, coins: 0, invites: 0);
-  }
-
   /// Profil vom Server loeschen.
   Future<bool> deleteProfile(String userId) async {
     if (_api == null) return false;
@@ -137,21 +103,6 @@ class SpielfreundeBackendService {
       return true;
     } catch (e) {
       debugPrint('SpielfreundeBackendService.deleteProfile failed: $e');
-      return false;
-    }
-  }
-
-  /// Coins einloesen.
-  Future<bool> redeemCoins(String referralCode, int amount) async {
-    if (_api == null) return false;
-    try {
-      await _api!.postJsonAny('/api/referral/redeem', {
-        'referralCode': referralCode,
-        'coinsToSpend': amount,
-      });
-      return true;
-    } catch (e) {
-      debugPrint('SpielfreundeBackendService.redeemCoins failed: $e');
       return false;
     }
   }
@@ -167,12 +118,4 @@ class WaitlistStatus {
       required this.threshold,
       required this.remaining,
       required this.progress});
-}
-
-class ReferralStatus {
-  final String code;
-  final int coins;
-  final int invites;
-  const ReferralStatus(
-      {required this.code, required this.coins, required this.invites});
 }
