@@ -14,8 +14,8 @@ import 'event_geocoder.dart';
 
 class EventBackendService {
   EventBackendService({BackendApiClient? apiClient, EventGeocoder? geocoder})
-    : _apiClient = apiClient ?? BackendServiceFactory.createApiClient(),
-      _geocoder = geocoder ?? EventGeocoder.instance;
+      : _apiClient = apiClient ?? BackendServiceFactory.createApiClient(),
+        _geocoder = geocoder ?? EventGeocoder.instance;
 
   final BackendApiClient? _apiClient;
   final EventGeocoder _geocoder;
@@ -72,10 +72,13 @@ class EventBackendService {
     try {
       final query = <String, String>{
         'viewerUserId': viewerUserId,
+        // Datensparsamkeit: nur grob gerundete Koordinaten (~1 km) ans Backend
+        // senden statt des metergenauen Standorts. Für die Umkreissuche reicht
+        // das; der exakte Aufenthaltsort landet so nicht in Server-/Proxy-Logs.
         if (validCoordinates(viewerLatitude, viewerLongitude))
-          'latitude': viewerLatitude.toString(),
+          'latitude': roundCoordinate(viewerLatitude).toString(),
         if (validCoordinates(viewerLatitude, viewerLongitude))
-          'longitude': viewerLongitude.toString(),
+          'longitude': roundCoordinate(viewerLongitude).toString(),
         'radiusKm': radiusKm.toString(),
         'nearbyOnly': nearbyOnly.toString(),
         'onlyFree': onlyFree.toString(),
@@ -137,9 +140,8 @@ class EventBackendService {
         'visibility': event.visibility.name,
         'shareRadiusKm': event.shareRadiusKm,
         'invitedUserIds': event.invitedUserIds,
-        'inviteCodeExpiresAt': event.inviteCodeExpiresAt
-            ?.toUtc()
-            .toIso8601String(),
+        'inviteCodeExpiresAt':
+            event.inviteCodeExpiresAt?.toUtc().toIso8601String(),
         'maxParticipants': event.isSharedOffer ? null : event.maxParticipants,
         'costPerPerson': event.price,
         'imageUrl': event.photoUrl,
@@ -512,11 +514,9 @@ class EventBackendService {
           .toString(),
       'title': (raw['title'] ?? '').toString(),
       'description': (raw['description'] ?? '').toString(),
-      'category':
-          EventCategory.values.any(
-            (category) =>
-                category.name == (raw['category'] ?? raw['eventType']),
-          )
+      'category': EventCategory.values.any(
+        (category) => category.name == (raw['category'] ?? raw['eventType']),
+      )
           ? (raw['category'] ?? raw['eventType']).toString()
           : 'other',
       'ageGroups': (raw['ageGroups'] is List)
@@ -528,31 +528,30 @@ class EventBackendService {
       'latitude': parseDouble(raw['latitude'], double.nan),
       'longitude': parseDouble(raw['longitude'], double.nan),
       'coordinatesNeedResolution': raw['coordinatesNeedResolution'] == true,
-      'eventDate':
-          (raw['eventDate'] ??
-                  raw['startDate'] ??
-                  DateTime.fromMillisecondsSinceEpoch(
-                    0,
-                    isUtc: true,
-                  ).toIso8601String())
-              .toString(),
-      'createdAt': (raw['createdAt'] ?? DateTime.now().toIso8601String())
+      'eventDate': (raw['eventDate'] ??
+              raw['startDate'] ??
+              DateTime.fromMillisecondsSinceEpoch(
+                0,
+                isUtc: true,
+              ).toIso8601String())
           .toString(),
+      'createdAt':
+          (raw['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
       'paymentDate': raw['paymentDate']?.toString(),
       'maxParticipants': parseInt(raw['maxParticipants'], 0),
       'currentParticipants': parseInt(
         raw['currentParticipants'],
         raw['participants'] is List
             ? (raw['participants'] as List)
-                  .whereType<Map>()
-                  .where(
-                    (participant) => [
-                      'approved',
-                      'accepted',
-                      'attended',
-                    ].contains(participant['status']),
-                  )
-                  .length
+                .whereType<Map>()
+                .where(
+                  (participant) => [
+                    'approved',
+                    'accepted',
+                    'attended',
+                  ].contains(participant['status']),
+                )
+                .length
             : 0,
       ),
       'photoUrl': (raw['photoUrl'] ?? raw['imageUrl'] ?? '').toString(),

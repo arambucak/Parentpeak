@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -15,6 +16,19 @@ bool validCoordinates(double? latitude, double? longitude) =>
 
 bool reliableEventCoordinates(double? latitude, double? longitude) =>
     validCoordinates(latitude, longitude);
+
+/// Datensparsamkeit: Rundet eine Koordinate auf [fractionDigits] Nachkommastellen.
+///
+/// Für die Umkreissuche nach Events reicht eine grobe Verortung völlig aus. Mit
+/// dem Standard von 2 Nachkommastellen liegt die Genauigkeit bei rund 1 km, statt
+/// den metergenauen Aufenthaltsort einer Familie an Backend oder KI-Dienst zu
+/// übertragen. Die Rundung ist bewusst zentral und testbar, damit alle Pfade
+/// (Backend-Query und KI-Prompt) dieselbe Datensparsamkeit nutzen.
+double roundCoordinate(double value, {int fractionDigits = 2}) {
+  if (!value.isFinite) return value;
+  final factor = math.pow(10, fractionDigits).toDouble();
+  return (value * factor).roundToDouble() / factor;
+}
 
 class EventGeocoder {
   EventGeocoder({

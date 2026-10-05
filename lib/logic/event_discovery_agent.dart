@@ -13,6 +13,7 @@
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:parentpeak/logic/event_geocoder.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/models/discovered_event.dart';
 import 'package:parentpeak/logic/privacy_sanitizer.dart';
@@ -43,10 +44,16 @@ class EventDiscoveryAgent {
     final cleanCity = _sanitize(PrivacySanitizer.sanitizeForAi(city));
     final cleanRadius = _sanitize(PrivacySanitizer.sanitizeForAi(radiusHint));
 
+    // Datensparsamkeit: Falls überhaupt Koordinaten an die KI gehen, nur grob
+    // gerundet (~1 km). Der metergenaue Standort hat im Prompt nichts verloren.
+    final roundedLat = latitude != null ? roundCoordinate(latitude) : null;
+    final roundedLon = longitude != null ? roundCoordinate(longitude) : null;
+
     // When city is raw coordinates (Nominatim failed) or a placeholder, use coords as search location
     final isCoordCity = RegExp(r'^-?\d+\.\d+,-?\d+\.\d+$').hasMatch(cleanCity);
-    final locationDesc =
-        isCoordCity && latitude != null ? '$latitude,$longitude' : cleanCity;
+    final locationDesc = isCoordCity && roundedLat != null
+        ? '$roundedLat,$roundedLon'
+        : cleanCity;
     final agesText = childAges.isEmpty
         ? 'Kinder verschiedener Altersgruppen (0–16 Jahre)'
         : 'Kinder im Alter von ${childAges.map((a) => _sanitize(PrivacySanitizer.sanitizeForAi(a))).join(', ')}';
@@ -65,9 +72,9 @@ class EventDiscoveryAgent {
         '${weekdayNames[now.weekday - 1]}, ${now.day}.${now.month}.${now.year}';
     final saison = _getSaison(now.month);
 
-    // GPS-Koordinaten für Distanz-Info
-    final gpsHint = (latitude != null && longitude != null)
-        ? 'Nutzerstandort: $latitude, $longitude. '
+    // Grob gerundete Koordinaten für Distanz-Info (keine metergenaue Ortung).
+    final gpsHint = (roundedLat != null && roundedLon != null)
+        ? 'Nutzerstandort (ungefähr): $roundedLat, $roundedLon. '
         : '';
 
     final groundingPrompt = '''
