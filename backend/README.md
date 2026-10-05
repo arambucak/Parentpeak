@@ -76,6 +76,20 @@ Der CI-Job `analyze` fuehrt auch die isolierten Backend-Unit-Tests aus.
 Eine Rueckkehr zu NOT NULL braucht eine explizite Entscheidung zum Umgang mit
 Profilen ohne Altersangabe; diese duerfen nicht mit erfundenen Werten aufgefuellt werden.
 
+### Spielfreunde-Profil loeschen
+
+`DELETE /parent-matching/my-profile?userId=<Firebase-UID>` verlangt eine
+verifizierte Firebase-UID, die mit `userId` uebereinstimmt. Die Route entfernt
+alle Matching-Profile dieser UID, ohne das Konto oder andere Familien zu
+loeschen. Bereits fehlende Profile werden idempotent mit `{"success": true}`
+bestaetigt. Ein Datenbankfehler liefert HTTP 503 statt eines lokalen Scheinerfolgs.
+Die App entfernt ihre lokale Kopie erst nach dieser expliziten Bestaetigung.
+
+```bash
+node --test backend/tests/unit/parent-matching-delete.test.js
+flutter test --no-pub test/playmate_profile_delete_test.dart
+```
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:

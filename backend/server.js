@@ -7001,6 +7001,27 @@ app.post('/parent-matching/my-profile', async (req, res) => {
   }
 });
 
+app.delete('/parent-matching/my-profile', async (req, res) => {
+  const userId = (req.query.userId || '').toString().trim();
+  if (!req.firebaseUid) {
+    return res.status(401).json({ error: 'Firebase sign-in required' });
+  }
+  if (userId !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Own account only' });
+  }
+  try {
+    await ensureParentMatchingSchemaReady();
+    await prisma.parentMatchingProfile.deleteMany({ where: { ownerUserId: userId } });
+    for (let i = parentProfiles.length - 1; i >= 0; i--) {
+      if (parentProfiles[i].ownerUserId === userId) parentProfiles.splice(i, 1);
+    }
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Matching-Profil konnte nicht geloescht werden:', error);
+    return res.status(503).json({ error: 'Profil konnte nicht geloescht werden' });
+  }
+});
+
 app.get('/parent-matching/profiles', async (req, res) => {
   const userId = (req.query.userId || '').toString().trim();
   if (!userId) {
