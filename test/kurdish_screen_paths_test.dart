@@ -6,7 +6,6 @@ import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
-import 'package:parentpeak/ui/ritual_ruhe_screen.dart';
 
 void main() {
   test('giveaway feed, detail and upload resolve every literal key in Kurmanji',
