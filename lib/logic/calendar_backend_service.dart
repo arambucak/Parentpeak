@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backend_api_client.dart';
 import 'contracts/calendar_contract.dart';
@@ -9,8 +10,31 @@ class CalendarBackendService {
   final BackendApiClient? apiClient;
   String? lastSyncError;
 
+  /// Datenschutz: Steuert, ob Termine zum Geräte-Sync ans Backend gehen.
+  /// Standard: an (Sync-Nutzen), aber von den Eltern abschaltbar — dann
+  /// bleiben alle Termine ausschließlich lokal auf dem Gerät.
+  static const _syncEnabledKey = 'calendar.sync_enabled';
+  static bool _syncEnabled = true;
+
+  static bool get syncEnabled => _syncEnabled;
+
+  /// Lädt die Sync-Präferenz (einmalig beim Start/Screen-Init).
+  static Future<void> loadSyncPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    _syncEnabled = prefs.getBool(_syncEnabledKey) ?? true;
+  }
+
+  /// Setzt die Sync-Präferenz und merkt sie dauerhaft.
+  static Future<void> setSyncEnabled(bool enabled) async {
+    _syncEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_syncEnabledKey, enabled);
+  }
+
   Future<List<Map<String, dynamic>>> fetchEvents() async {
     lastSyncError = null;
+    // Sync aus → nicht vom Server laden, nur lokale Termine nutzen.
+    if (!_syncEnabled) return <Map<String, dynamic>>[];
     if (apiClient == null) {
       lastSyncError = 'Kalender-Backend ist nicht konfiguriert.';
       return <Map<String, dynamic>>[];
@@ -32,6 +56,8 @@ class CalendarBackendService {
 
   Future<void> addEvent(Map<String, dynamic> event) async {
     lastSyncError = null;
+    // Sync aus → Termin verlässt das Gerät nicht (nur lokale Persistenz).
+    if (!_syncEnabled) return;
     if (apiClient == null) {
       lastSyncError = 'Backend nicht konfiguriert (BACKEND_BASE_URL fehlt).';
       throw StateError(lastSyncError!);
@@ -51,6 +77,7 @@ class CalendarBackendService {
 
   Future<void> deleteEvent(String id) async {
     lastSyncError = null;
+    if (!_syncEnabled) return;
     if (apiClient == null) return;
     try {
       await apiClient!.deleteJson('${CalendarContract.eventsPath}/$id', {});

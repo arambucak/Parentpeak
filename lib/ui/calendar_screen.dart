@@ -201,7 +201,11 @@ class _CalendarScreenState extends State<CalendarScreen>
     HolidayService.initialize();
     _loadCustomPersons();
     _loadPersonColors();
-    _loadEvents();
+    // Sync-Präferenz zuerst laden, damit _loadEvents weiß, ob es vom Backend
+    // laden darf. Danach die Events laden.
+    CalendarBackendService.loadSyncPreference().then((_) {
+      if (mounted) _loadEvents();
+    });
   }
 
   static const String _customPersonsKey = 'calendar_custom_persons';
@@ -1526,6 +1530,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   void _showHolidaySettings() {
     String tempCountry = HolidayService.country;
     String tempRegion = HolidayService.region;
+    bool tempSyncEnabled = CalendarBackendService.syncEnabled;
 
     showModalBottomSheet(
       context: context,
@@ -1654,12 +1659,41 @@ class _CalendarScreenState extends State<CalendarScreen>
                   }).toList(),
                 ),
                 const SizedBox(height: 24),
+                // ── Datenschutz: Geräte-Sync (transparent + abschaltbar) ──
+                const Divider(height: 1),
+                const SizedBox(height: 16),
+                Row(children: [
+                  const Icon(Icons.sync_rounded,
+                      size: 18, color: Color(0xFF8B5CF6)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(_t('calendar_sync_title'),
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
+                  Switch(
+                    value: tempSyncEnabled,
+                    activeThumbColor: const Color(0xFF8B5CF6),
+                    onChanged: (v) => setSheetState(() => tempSyncEnabled = v),
+                  ),
+                ]),
+                const SizedBox(height: 4),
+                Text(
+                  tempSyncEnabled
+                      ? _t('calendar_sync_desc_on')
+                      : _t('calendar_sync_desc_off'),
+                  style: TextStyle(
+                      fontSize: 12, color: Colors.grey[600], height: 1.4),
+                ),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: () async {
                       await HolidayService.setCountry(tempCountry);
                       await HolidayService.setRegion(tempRegion);
+                      await CalendarBackendService.setSyncEnabled(
+                          tempSyncEnabled);
                       if (mounted) setState(() {});
                       if (ctx.mounted) Navigator.pop(ctx);
                     },
