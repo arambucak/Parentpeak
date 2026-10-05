@@ -23,8 +23,12 @@ class PrivacySanitizer {
 
   static final RegExp _postalCodePattern = RegExp(r'\b\d{5}\b');
 
+  // Fängt sowohl "mein Kind Max" als auch "Kind: Max" / "Kind - Max" ab. Der
+  // Trenner nach kind/sohn/tochter darf Whitespace, Doppelpunkt oder Bindestrich
+  // sein (jeweils optional von Leerzeichen umgeben), damit struktureller
+  // Prompt-Kontext wie "Kind: Max, Alter: ..." nicht am Schutz vorbeiläuft.
   static final RegExp _childNamePattern = RegExp(
-    r'\b(?:mein(?:e|er|em)?\s+)?(?:kind|sohn|tochter)\s+([A-ZÄÖÜ][a-zäöüß]{1,20})\b',
+    r'\b(?:[Mm]ein(?:e|er|em)?\s+)?(?:[Kk]ind|[Ss]ohn|[Tt]ochter)\s*[:\-]?\s*([A-ZÄÖÜ][a-zäöüß]{1,20})\b',
     unicode: true,
   );
 
