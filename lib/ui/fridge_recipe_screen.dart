@@ -549,14 +549,20 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
             Icon(Icons.schedule_rounded,
                 size: 14, color: theme.colorScheme.outline),
             const SizedBox(width: 4),
-            Text(r.timeLabel,
+            Text(
+                context
+                    .tr('kitchen_minutes', values: {'minutes': r.prepMinutes}),
                 style: theme.textTheme.labelSmall
                     ?.copyWith(color: theme.colorScheme.outline)),
             const SizedBox(width: 12),
             Icon(Icons.child_care_rounded,
                 size: 14, color: theme.colorScheme.outline),
             const SizedBox(width: 4),
-            Text(r.ageLabel,
+            Text(
+                r.minChildAge == 0
+                    ? context.tr('kitchen_age_months')
+                    : context.tr('kitchen_age_years',
+                        values: {'age': r.minChildAge}),
                 style: theme.textTheme.labelSmall
                     ?.copyWith(color: theme.colorScheme.outline)),
           ],
