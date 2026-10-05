@@ -35,11 +35,12 @@ class EventDetailPage extends StatelessWidget {
               color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(context.tr(switch (event.category) {
-              DiscoveredEventCategory.sport => 'event_category_sports',
-              DiscoveredEventCategory.sonstiges => 'event_category_other',
-              _ => 'event_community_category_${event.category.name}',
-            }),
+            child: Text(
+                context.tr(switch (event.category) {
+                  DiscoveredEventCategory.sport => 'event_category_sports',
+                  DiscoveredEventCategory.sonstiges => 'event_category_other',
+                  _ => 'event_community_category_${event.category.name}',
+                }),
                 style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -57,19 +58,24 @@ class EventDetailPage extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
           const SizedBox(height: 20),
           // Info-Karten
-          if (_formatWann(context, event) case final wann when wann.isNotEmpty) ...[
-            _infoCard(theme, '\u{1F4C5}', context.tr('event_scan_field_date'), wann),
+          if (_formatWann(context, event) case final wann
+              when wann.isNotEmpty) ...[
+            _infoCard(
+                theme, '\u{1F4C5}', context.tr('event_scan_field_date'), wann),
             const SizedBox(height: 10),
           ],
-          _infoCard(theme, '\u{1F4CD}', context.tr('event_owner_location'), event.location),
+          _infoCard(theme, '\u{1F4CD}', context.tr('event_owner_location'),
+              event.location),
           const SizedBox(height: 10),
-          _infoCard(theme, '\u{1F476}', context.tr('event_detail_age_groups'), event.ageLabels.join(', ')),
+          _infoCard(theme, '\u{1F476}', context.tr('event_detail_age_groups'),
+              event.ageLabels.join(', ')),
           const SizedBox(height: 10),
-          _infoCard(
-              theme, '\u{1F4B0}', context.tr('event_price'), event.price ?? context.tr('event_not_specified')),
+          _infoCard(theme, '\u{1F4B0}', context.tr('event_price'),
+              event.price ?? context.tr('event_not_specified')),
           if (event.organizer != null && event.organizer!.isNotEmpty) ...[
             const SizedBox(height: 10),
-            _infoCard(theme, '\u{1F3E2}', context.tr('event_create_organizer'), event.organizer!),
+            _infoCard(theme, '\u{1F3E2}', context.tr('event_create_organizer'),
+                event.organizer!),
           ],
           const SizedBox(height: 20),
           // In Maps oeffnen
@@ -114,19 +120,23 @@ class EventDetailPage extends StatelessWidget {
                 onPressed: () {
                   final parts = [
                     event.title,
-                    if (event.organizer != null && event.organizer!.isNotEmpty) event.organizer!,
+                    if (event.organizer != null && event.organizer!.isNotEmpty)
+                      event.organizer!,
                     event.cityHint,
                     'Veranstaltung',
                   ];
-                  _openUrl('https://www.google.com/search?q=${Uri.encodeComponent(parts.join(' '))}');
+                  _openUrl(
+                      'https://www.google.com/search?q=${Uri.encodeComponent(parts.join(' '))}');
                 },
                 icon: const Icon(Icons.search_rounded, size: 18),
                 label: Text(context.tr('search_event_online')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF0EA5A4),
-                  side: BorderSide(color: const Color(0xFF0EA5A4).withValues(alpha: 0.5)),
+                  side: BorderSide(
+                      color: const Color(0xFF0EA5A4).withValues(alpha: 0.5)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
               ),
             ),
@@ -222,15 +232,20 @@ class EventDetailPage extends StatelessWidget {
     } else if (event.eventDate != null) {
       final d = event.eventDate!.toLocal();
       if (d.hour != 0 || d.minute != 0) {
-        parts.add(MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(d)));
+        parts.add(MaterialLocalizations.of(context)
+            .formatTimeOfDay(TimeOfDay.fromDateTime(d)));
       }
     }
     return parts.join(' · ');
   }
 
   void _openInMaps(String location) async {
+    // Plattformneutraler Karten-Link: Die Google-Maps-Such-URL öffnet auf
+    // Android/iOS die jeweilige Karten-App und auf Web den Browser. Zuvor war
+    // der Link fest auf Apple Maps, was auf Android/Web schlecht funktioniert.
     final query = Uri.encodeComponent(location);
-    final url = Uri.parse('https://maps.apple.com/?q=$query');
+    final url =
+        Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }

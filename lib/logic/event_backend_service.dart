@@ -430,6 +430,11 @@ class EventBackendService {
         .toList();
     await Future.wait(
       normalized.map((event) async {
+        // Neu geocodieren, wenn der Server die Koordinaten als unaufgelöst
+        // markiert (coordinatesNeedResolution) ODER wenn ein Alt-Event noch den
+        // Berliner Platzhalter 52.52/13.405 trägt (Legacy-Daten aus der Zeit vor
+        // dem server-seitigen Flag — siehe event_filters_test). In beiden Fällen
+        // wird die hinterlegte Adresse als Quelle genutzt.
         if (event['coordinatesNeedResolution'] == true ||
             (event['latitude'] == 52.52 && event['longitude'] == 13.405)) {
           final resolved = await _geocoder.resolve(event['location'] as String);
