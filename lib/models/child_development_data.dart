@@ -12,9 +12,20 @@ class ChildProfile {
     required this.careType,
   });
 
-  int get ageInMonths {
-    final now = DateTime.now();
-    return (now.year - birthDate.year) * 12 + now.month - birthDate.month;
+  int get ageInMonths => monthsBetween(birthDate, DateTime.now());
+
+  /// Vollendete Lebensmonate zwischen [birth] und [reference].
+  ///
+  /// Der Monat zählt erst als „voll", wenn der Geburtstag im Referenzmonat
+  /// erreicht ist. Ohne diese Tag-Korrektur würde ein Kind bis zu ~4 Wochen zu
+  /// alt gezählt und könnte an Altersgruppen-Grenzen zu früh die falschen
+  /// Check-Fragen bekommen. Als separate, reine Funktion testbar (ohne
+  /// DateTime.now()).
+  static int monthsBetween(DateTime birth, DateTime reference) {
+    var months =
+        (reference.year - birth.year) * 12 + reference.month - birth.month;
+    if (reference.day < birth.day) months -= 1;
+    return months < 0 ? 0 : months;
   }
 
   String get ageLabel {
