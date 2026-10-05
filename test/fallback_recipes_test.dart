@@ -15,7 +15,7 @@ void main() {
       // Alle Sprachen müssen gleich viele Rezepte haben (parallele Pflege).
       expect(counts.length, 1,
           reason: 'Sprachen haben unterschiedlich viele Rezepte');
-      expect(FallbackRecipes.forLanguage('de').length, 10);
+      expect(FallbackRecipes.forLanguage('de').length, 11);
     });
 
     test('unbekannte Sprache fällt inklusiv auf Englisch zurück', () {
@@ -83,6 +83,27 @@ void main() {
         }
       }
       expect(mismatches, isEmpty, reason: mismatches.join('\n'));
+    });
+
+    test('jede Sprache hat ein babygerechtes Fallback (minChildAge 0)', () {
+      // Grundlage für den Altersfilter: ein 6-Monate-Baby muss ein sicheres,
+      // altersgerechtes Fallback bekommen können (statt eines Rezepts "ab 1").
+      for (final lang in languages) {
+        final hasBaby =
+            FallbackRecipes.forLanguage(lang).any((r) => r.minChildAge == 0);
+        expect(hasBaby, isTrue, reason: '$lang hat kein Baby-Fallback');
+      }
+    });
+
+    test('minChildAge ist über alle Sprachen positionsgleich (auch Baby)', () {
+      final de = FallbackRecipes.forLanguage('de');
+      for (final lang in languages.where((l) => l != 'de')) {
+        final other = FallbackRecipes.forLanguage(lang);
+        for (var i = 0; i < de.length; i++) {
+          expect(other[i].minChildAge, de[i].minChildAge,
+              reason: '$lang[$i] minChildAge weicht ab');
+        }
+      }
     });
   });
 }

@@ -37,6 +37,31 @@ class FallbackRecipes {
 
   // ─── Deutsch ───────────────────────────────────────────────────────────
   static const _de = [
+    // BABY (ab 6 Monaten, BLW/Brei) — sicheres Fallback für die Jüngsten.
+    FamilyRecipe(
+      id: '',
+      title: 'Gemüse-Kartoffel-Brei',
+      description: 'Mild und weich — ideal für die ersten Löffel (ab 6 Mon.).',
+      prepMinutes: 20,
+      costPerPortion: 0.80,
+      minChildAge: 0,
+      ingredients: [
+        '2 Kartoffeln',
+        '1 Karotte',
+        '1 kleine Zucchini',
+        '1 TL Olivenöl',
+        'Wasser'
+      ],
+      steps: [
+        'Kartoffeln, Karotte und Zucchini schälen und klein würfeln.',
+        'In wenig Wasser weich kochen (ca. 15 Min).',
+        'Mit dem Öl fein pürieren (für Babys ganz glatt).',
+        'Lauwarm servieren — Konsistenz je nach Alter anpassen.'
+      ],
+      allergensFree: ['nuesse', 'ei', 'laktose', 'gluten', 'fisch'],
+      season: '',
+      tip: 'Für größere Kinder gröber stampfen statt pürieren — mehr zu kauen.',
+    ),
     // FLEISCH
     FamilyRecipe(
       id: '',
@@ -239,8 +264,7 @@ class FallbackRecipes {
     FamilyRecipe(
       id: '',
       title: 'Kartoffelsuppe mit Würstchen',
-      description:
-          'Wärmt von innen. Kinder lieben die Würstchen-Stücke drin.',
+      description: 'Wärmt von innen. Kinder lieben die Würstchen-Stücke drin.',
       prepMinutes: 25,
       costPerPortion: 1.40,
       minChildAge: 1,
@@ -291,6 +315,31 @@ class FallbackRecipes {
 
   // ─── English ─────────────────────────────────────────────────────────────
   static const _en = [
+    // BABY (from 6 months, BLW/puree) — safe fallback for the youngest.
+    FamilyRecipe(
+      id: '',
+      title: 'Veggie potato puree',
+      description: 'Mild and soft — perfect for the first spoonfuls (6 mo+).',
+      prepMinutes: 20,
+      costPerPortion: 0.80,
+      minChildAge: 0,
+      ingredients: [
+        '2 potatoes',
+        '1 carrot',
+        '1 small zucchini',
+        '1 tsp olive oil',
+        'water'
+      ],
+      steps: [
+        'Peel potatoes, carrot and zucchini and dice small.',
+        'Cook in a little water until soft (about 15 min).',
+        'Puree finely with the oil (very smooth for babies).',
+        'Serve lukewarm — adjust the texture to the age.'
+      ],
+      allergensFree: ['nuesse', 'ei', 'laktose', 'gluten', 'fisch'],
+      season: '',
+      tip: 'For older kids, mash coarsely instead of pureeing — more to chew.',
+    ),
     // MEAT
     FamilyRecipe(
       id: '',
@@ -546,6 +595,31 @@ class FallbackRecipes {
 
   // ─── Türkçe ────────────────────────────────────────────────────────────
   static const _tr = [
+    // BEBEK (6 aydan itibaren, BLW/püre) — en küçükler için güvenli seçenek.
+    FamilyRecipe(
+      id: '',
+      title: 'Sebzeli patates püresi',
+      description: 'Yumuşak ve hafif — ilk kaşıklar için ideal (6 ay+).',
+      prepMinutes: 20,
+      costPerPortion: 0.80,
+      minChildAge: 0,
+      ingredients: [
+        '2 patates',
+        '1 havuç',
+        '1 küçük kabak',
+        '1 tatlı kaşığı zeytinyağı',
+        'su'
+      ],
+      steps: [
+        'Patates, havuç ve kabağı soyup küçük küçük doğra.',
+        'Az suda yumuşayana kadar pişir (yaklaşık 15 dk).',
+        'Yağla birlikte ince püre yap (bebekler için çok pürüzsüz).',
+        'Ilık servis et — kıvamı yaşa göre ayarla.'
+      ],
+      allergensFree: ['nuesse', 'ei', 'laktose', 'gluten', 'fisch'],
+      season: '',
+      tip: 'Daha büyük çocuklar için püre yerine kabaca ez — çiğnemesi için.',
+    ),
     // ET
     FamilyRecipe(
       id: '',
@@ -721,8 +795,7 @@ class FallbackRecipes {
       ],
       allergensFree: ['nuesse', 'ei'],
       season: '',
-      tip:
-          'Çocuklar uzayan peyniri çok sever — bu da eğlencenin bir parçası!',
+      tip: 'Çocuklar uzayan peyniri çok sever — bu da eğlencenin bir parçası!',
     ),
     FamilyRecipe(
       id: '',
@@ -751,7 +824,8 @@ class FallbackRecipes {
     FamilyRecipe(
       id: '',
       title: 'Sosisli Patates Çorbası',
-      description: 'İçinizi ısıtır. Çocuklar içindeki sosis parçalarına bayılır.',
+      description:
+          'İçinizi ısıtır. Çocuklar içindeki sosis parçalarına bayılır.',
       prepMinutes: 25,
       costPerPortion: 1.40,
       minChildAge: 1,
@@ -802,6 +876,31 @@ class FallbackRecipes {
 
   // ─── Kurmancî ────────────────────────────────────────────────────────────
   static const _ku = [
+    // PITIK (ji 6 mehî, BLW/pelte) — hilbijartineke ewle ji bo biçûktirîn.
+    FamilyRecipe(
+      id: '',
+      title: 'Pelteya sebze û kartol',
+      description: 'Nerm û sivik — ji bo kefçiyên pêşîn îdeal (ji 6 mehî).',
+      prepMinutes: 20,
+      costPerPortion: 0.80,
+      minChildAge: 0,
+      ingredients: [
+        '2 kartol',
+        '1 gêzer',
+        '1 kûjeya biçûk',
+        '1 kevçîzayê zeytûnê',
+        'av'
+      ],
+      steps: [
+        'Kartol, gêzer û kûjeyê qalik bike û biçûk hûr bike.',
+        'Di hindik avê de heta nerm bibe bikelîne (nêzî 15 deqe).',
+        'Bi rûn re hûrik pelte bike (ji bo pitikan pir nerm).',
+        'Nîvgerm pêşkêş bike — hişkiya wê li gorî temen biguherîne.'
+      ],
+      allergensFree: ['nuesse', 'ei', 'laktose', 'gluten', 'fisch'],
+      season: '',
+      tip: 'Ji bo zarokên mezintir li şûna pelteyê hûrik bitepisîne.',
+    ),
     // GOŞT
     FamilyRecipe(
       id: '',
@@ -927,8 +1026,7 @@ class FallbackRecipes {
       ],
       allergensFree: ['nuesse', 'ei'],
       season: '',
-      tip:
-          'Somon têra xwe nerm e ji bo zarokên ku ji tama masî hez nakin.',
+      tip: 'Somon têra xwe nerm e ji bo zarokên ku ji tama masî hez nakin.',
     ),
     // VEGETARÎ
     FamilyRecipe(
@@ -979,8 +1077,7 @@ class FallbackRecipes {
       ],
       allergensFree: ['nuesse', 'ei'],
       season: '',
-      tip:
-          'Zarok ji penîrê ku dirêj dibe pir hez dikin — ev beşek ji kêfê ye!',
+      tip: 'Zarok ji penîrê ku dirêj dibe pir hez dikin — ev beşek ji kêfê ye!',
     ),
     FamilyRecipe(
       id: '',
@@ -989,13 +1086,7 @@ class FallbackRecipes {
       prepMinutes: 15,
       costPerPortion: 0.80,
       minChildAge: 1,
-      ingredients: [
-        '200g arvan',
-        '2 hêk',
-        '300ml şîr',
-        'rûn',
-        'pelûla sêvan'
-      ],
+      ingredients: ['200g arvan', '2 hêk', '300ml şîr', 'rûn', 'pelûla sêvan'],
       steps: [
         'Hevîr heta nerm bibe tevlihev bikin.',
         'Tawê germ bikin, rûn lê bikin.',
@@ -1004,8 +1095,7 @@ class FallbackRecipes {
       ],
       allergensFree: ['nuesse'],
       season: '',
-      tip:
-          'Pankek ji bo ji 4 saliyê ve bi hev re fêrbûna zivirandinê îdeal e.',
+      tip: 'Pankek ji bo ji 4 saliyê ve bi hev re fêrbûna zivirandinê îdeal e.',
     ),
     FamilyRecipe(
       id: '',
