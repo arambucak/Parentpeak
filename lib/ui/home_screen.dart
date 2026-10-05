@@ -21,7 +21,6 @@ import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
-import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/ui/widgets/home/context_home_card.dart';
 import 'package:parentpeak/services/mood_history_service.dart';
 import 'package:parentpeak/ui/wochenrueckblick_screen.dart';
@@ -87,11 +86,9 @@ class _HomeScreenState extends State<HomeScreen>
     languageService.addListener(_onLanguageChanged);
     _restoreRecentTiles();
     _restoreTileOrder();
-    // Retry pending referral + coin claim whenever auth state changes
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null && mounted) {
         _processPendingReferral();
-        ParentCoinService.instance.claimPendingReferrals(context);
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -100,7 +97,6 @@ class _HomeScreenState extends State<HomeScreen>
       _handleStartupReferralIfNeeded();
       _processPendingReferral(); // also covers post-login case
       _openDebugFeatureIfNeeded();
-      ParentCoinService.instance.claimPendingReferrals(context);
     });
   }
 
@@ -181,18 +177,16 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
+  /// Räumt einen eventuell über einen Einladungslink gespeicherten Code auf.
+  /// Das frühere ParentCoin-Belohnungssystem wurde entfernt; ein offener Code
+  /// hat keinen Zweck mehr und wird hier nur noch verworfen.
   Future<void> _processPendingReferral() async {
     final uid = AuthService.instance.currentUser?.uid;
     if (uid == null) return;
     final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString('pending_referral_code');
-    if (code == null || code.isEmpty) return;
-    final name = AuthService.instance.currentUser?.displayName ??
-        AppStringsManager.getString(
-            languageService.currentLanguage, 'new_member');
-    final sent =
-        await ParentCoinService.instance.recordReferral(code, uid, name);
-    if (sent) await prefs.remove('pending_referral_code');
+    if (prefs.getString('pending_referral_code') != null) {
+      await prefs.remove('pending_referral_code');
+    }
   }
 
   void _openDebugFeatureIfNeeded() {
@@ -716,8 +710,8 @@ class _HomeScreenState extends State<HomeScreen>
       'events_aktivitaeten'
     };
     final gridActions = visibleGridActions
-        .where((a) =>
-            a.featureId == null || !quickAccessIds.contains(a.featureId))
+        .where(
+            (a) => a.featureId == null || !quickAccessIds.contains(a.featureId))
         .toList();
 
     return Scaffold(
