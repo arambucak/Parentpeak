@@ -291,86 +291,85 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
         }));
   }
 
+  /// Baut einen Default-Schritt mit lokalisierten Texten. Titel/Untertitel
+  /// kommen aus der zentralen String-Verwaltung, damit die Standard-Rituale in
+  /// allen Picker-Sprachen erscheinen (statt nur Deutsch bzw. KU über die alte
+  /// ritualStepCopy-Map).
+  _RitualStep _defaultStep(
+          String id, String titleKey, IconData icon, String subKey) =>
+      _RitualStep(id, _t(titleKey), icon, _t(subKey));
+
   List<_RitualStep> get _steps {
-    if (_selectedSection == 'morning') {
-      return _customPlan?.steps ??
-          [
-            const _RitualStep('aufstehen', 'Guten Morgen',
-                Icons.wb_sunny_rounded, 'Langsam ankommen'),
-            const _RitualStep('anziehen', 'Anziehen', Icons.checkroom_rounded,
-                'Etwas Bequemes finden'),
-            const _RitualStep('fruehstueck', 'Frühstück',
-                Icons.breakfast_dining_rounded, 'Gemeinsam in den Tag starten'),
-            const _RitualStep('tasche', 'Bereit für den Tag',
-                Icons.backpack_rounded, 'Was brauchen wir heute?'),
-          ];
+    if (_selectedSection == 'morning' ||
+        !_isNightSection && _selectedSection != 'afternoon') {
+      return _customPlan?.steps ?? _morningSteps();
     }
     if (_selectedSection == 'afternoon') {
-      return _customPlan?.steps ??
-          [
-            const _RitualStep('ankommen', 'Ankommen', Icons.home_rounded,
-                'Schuhe aus, erst einmal ankommen'),
-            const _RitualStep('snack', 'Kleine Pause', Icons.local_cafe_rounded,
-                'Etwas trinken und durchatmen'),
-            const _RitualStep('spielen', 'Freie Zeit', Icons.toys_rounded,
-                'Was tut euch jetzt gut?'),
-          ];
-    }
-    if (!_isNightSection) {
-      return [
-        const _RitualStep('aufstehen', 'Guten Morgen', Icons.wb_sunny_rounded,
-            'Langsam ankommen'),
-        const _RitualStep('anziehen', 'Anziehen', Icons.checkroom_rounded,
-            'Etwas Bequemes finden'),
-        const _RitualStep('fruehstueck', 'Frühstück',
-            Icons.breakfast_dining_rounded, 'Gemeinsam in den Tag starten'),
-        const _RitualStep('tasche', 'Bereit für den Tag',
-            Icons.backpack_rounded, 'Was brauchen wir heute?'),
-      ];
+      return _customPlan?.steps ?? _afternoonSteps();
     }
     if (_ageYears < 5) {
       return [
-        const _RitualStep('waschen', 'Waschen', Icons.water_drop_rounded,
-            'Gesicht und Hände werden ruhig'),
-        const _RitualStep('zaehne', 'Zähne putzen', Icons.clean_hands_rounded,
-            'Kleine Kreise, ganz in Ruhe'),
-        const _RitualStep('kuscheln', 'Kuscheln', Icons.favorite_rounded,
-            'Noch ein lieber Moment'),
+        _defaultStep('waschen', 'ritual_step_wash_title',
+            Icons.water_drop_rounded, 'ritual_step_wash_calm_sub'),
+        _defaultStep('zaehne', 'ritual_step_teeth_title',
+            Icons.clean_hands_rounded, 'ritual_step_teeth_circles_sub'),
+        _defaultStep('kuscheln', 'ritual_step_cuddle_title',
+            Icons.favorite_rounded, 'ritual_step_cuddle_sub'),
       ];
     }
     if (_ageYears < 8) {
       return [
-        const _RitualStep('waschen', 'Waschen', Icons.water_drop_rounded,
-            'Frisch und gemütlich werden'),
-        const _RitualStep('zaehne', 'Zähne putzen', Icons.clean_hands_rounded,
-            'Der Mund bekommt seine Nachtpflege'),
-        const _RitualStep('morgen', 'Für morgen vorbereiten',
-            Icons.checkroom_rounded, 'Lieblingskleidung bereitlegen'),
-        const _RitualStep('geschichte', 'Geschichte aussuchen',
-            Icons.auto_stories_rounded, 'Eine ruhige Geschichte wartet'),
+        _defaultStep('waschen', 'ritual_step_wash_title',
+            Icons.water_drop_rounded, 'ritual_step_wash_cozy_sub'),
+        _defaultStep('zaehne', 'ritual_step_teeth_title',
+            Icons.clean_hands_rounded, 'ritual_step_teeth_night_sub'),
+        _defaultStep('morgen', 'ritual_step_prep_tomorrow_title',
+            Icons.checkroom_rounded, 'ritual_step_prep_clothes_sub'),
+        _defaultStep('geschichte', 'ritual_step_story_title',
+            Icons.auto_stories_rounded, 'ritual_step_story_sub'),
       ];
     }
     if (_ageYears < 11) {
       return [
-        const _RitualStep('zaehne', 'Zähne putzen', Icons.clean_hands_rounded,
-            'In Ruhe fertig werden'),
-        const _RitualStep('morgen', 'Morgen vorbereiten',
-            Icons.backpack_rounded, 'Tasche und Kleidung bereitlegen'),
-        const _RitualStep('aufräumen', 'Kurz Ordnung schaffen',
-            Icons.auto_awesome_rounded, 'Ein kleiner Handgriff für morgen'),
-        const _RitualStep('reflexion', 'Tagesmoment',
-            Icons.chat_bubble_outline_rounded, 'Was war heute gut?'),
+        _defaultStep('zaehne', 'ritual_step_teeth_title',
+            Icons.clean_hands_rounded, 'ritual_step_teeth_calm_sub'),
+        _defaultStep('morgen', 'ritual_step_prep_tomorrow_title',
+            Icons.backpack_rounded, 'ritual_step_prep_bag_sub'),
+        _defaultStep('aufräumen', 'ritual_step_tidy_title',
+            Icons.auto_awesome_rounded, 'ritual_step_tidy_sub'),
+        _defaultStep('reflexion', 'ritual_step_daymoment_title',
+            Icons.chat_bubble_outline_rounded, 'ritual_step_daymoment_sub'),
       ];
     }
     return [
-      const _RitualStep('morgen', 'Morgen vorbereiten', Icons.backpack_rounded,
-          'Tasche, Kleidung und Wecker'),
-      const _RitualStep('abschluss', 'Tag abschließen', Icons.nightlight_round,
-          'Was darf für heute losgelassen werden?'),
-      const _RitualStep('reflexion', 'Ein guter Moment',
-          Icons.favorite_border_rounded, 'Ein Satz für dich selbst'),
+      _defaultStep('morgen', 'ritual_step_prep_tomorrow_title',
+          Icons.backpack_rounded, 'ritual_step_prep_full_sub'),
+      _defaultStep('abschluss', 'ritual_step_close_title',
+          Icons.nightlight_round, 'ritual_step_close_sub'),
+      _defaultStep('reflexion', 'ritual_step_goodmoment_title',
+          Icons.favorite_border_rounded, 'ritual_step_goodmoment_sub'),
     ];
   }
+
+  List<_RitualStep> _morningSteps() => [
+        _defaultStep('aufstehen', 'ritual_step_morning_title',
+            Icons.wb_sunny_rounded, 'ritual_step_morning_sub'),
+        _defaultStep('anziehen', 'ritual_step_dress_title',
+            Icons.checkroom_rounded, 'ritual_step_dress_sub'),
+        _defaultStep('fruehstueck', 'ritual_step_breakfast_title',
+            Icons.breakfast_dining_rounded, 'ritual_step_breakfast_sub'),
+        _defaultStep('tasche', 'ritual_step_ready_title',
+            Icons.backpack_rounded, 'ritual_step_ready_sub'),
+      ];
+
+  List<_RitualStep> _afternoonSteps() => [
+        _defaultStep('ankommen', 'ritual_step_arrive_title', Icons.home_rounded,
+            'ritual_step_arrive_sub'),
+        _defaultStep('snack', 'ritual_step_pause_title',
+            Icons.local_cafe_rounded, 'ritual_step_pause_sub'),
+        _defaultStep('spielen', 'ritual_step_free_title', Icons.toys_rounded,
+            'ritual_step_free_sub'),
+      ];
 
   Future<void> _toggleStep(String id) async {
     setState(() {
@@ -411,24 +410,28 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
   }
 
   _RitualPlan _fallbackPlan(String section, int ageYears) => _RitualPlan(
-        name: ritualStepCopy(_localeCode,
-            section == 'morning' ? 'Sanfter Morgen' : 'Ankommen am Nachmittag'),
+        name: section == 'morning'
+            ? _t('ritual_fallback_name_morning')
+            : _t('ritual_fallback_name_afternoon'),
         time: section == 'morning' ? '07:30' : '15:30',
         weekdays: [1, 2, 3, 4, 5],
         steps: section == 'morning'
             ? [
-                const _RitualStep('wake', 'Aufwachen', Icons.wb_sunny_rounded,
-                    'Langsam in den Tag finden'),
-                const _RitualStep('dress', 'Anziehen', Icons.checkroom_rounded,
-                    'Bequeme Kleidung auswählen'),
-                const _RitualStep('breakfast', 'Frühstück',
-                    Icons.breakfast_dining_rounded, 'Gemeinsam starten'),
+                _defaultStep('wake', 'ritual_step_morning_title',
+                    Icons.wb_sunny_rounded, 'ritual_step_morning_sub'),
+                _defaultStep('dress', 'ritual_step_dress_title',
+                    Icons.checkroom_rounded, 'ritual_step_dress_sub'),
+                _defaultStep(
+                    'breakfast',
+                    'ritual_step_breakfast_title',
+                    Icons.breakfast_dining_rounded,
+                    'ritual_step_breakfast_sub'),
               ]
             : [
-                const _RitualStep('arrive', 'Ankommen', Icons.home_rounded,
-                    'Erst einmal durchatmen'),
-                const _RitualStep('pause', 'Pause', Icons.local_cafe_rounded,
-                    'Trinken, snacken, entspannen'),
+                _defaultStep('arrive', 'ritual_step_arrive_title',
+                    Icons.home_rounded, 'ritual_step_pause_breathe_sub'),
+                _defaultStep('pause', 'ritual_step_pause_short_title',
+                    Icons.local_cafe_rounded, 'ritual_step_pause_relax_sub'),
               ],
       );
 
