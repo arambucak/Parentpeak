@@ -17,7 +17,8 @@ class AppStringsManager {
       'events_badge_network': 'Netzwerk',
       'events_join_title': 'Ich bin dabei!',
       'events_join_privacy': 'Andere Familien sehen deinen Vornamen.',
-      'events_join_message_hint': 'Optional: kurze Nachricht (z.B. "Wir kommen um 10!")',
+      'events_join_message_hint':
+          'Optional: kurze Nachricht (z.B. "Wir kommen um 10!")',
       'events_join_confirm': 'Bestätigen',
       'events_loc_choose': 'Standort wählen',
       'events_loc_confirm': 'Bestätigen',
@@ -1289,7 +1290,8 @@ class AppStringsManager {
       'quick_activity_needs': 'Was ihr braucht',
       'calendar_public_holiday': 'Gesetzlicher Feiertag',
       'calendar_holidays_title': 'Feiertage & Schulferien',
-      'calendar_holidays_until': 'Feiertage & Ferien sind bis {year} gepflegt. Deine eigenen Termine funktionieren auch danach.',
+      'calendar_holidays_until':
+          'Feiertage & Ferien sind bis {year} gepflegt. Deine eigenen Termine funktionieren auch danach.',
       'calendar_template_pediatrician': 'Kinderarzt',
       'calendar_template_dentist': 'Zahnarzt',
       'calendar_template_parent_teacher': 'Elternsprechtag',
@@ -1299,8 +1301,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Impfung',
       'calendar_sync_title': 'Termine zwischen Geräten synchronisieren',
-      'calendar_sync_desc_on': 'An: Deine Termine werden verschlüsselt auf unserem Server gespeichert, damit du sie auf allen deinen Geräten siehst. Nur du hast über dein Konto Zugriff.',
-      'calendar_sync_desc_off': 'Aus: Deine Termine bleiben nur auf diesem Gerät und verlassen es nicht. Ein Gerätewechsel überträgt sie dann nicht.',
+      'calendar_sync_desc_on':
+          'An: Deine Termine werden verschlüsselt auf unserem Server gespeichert, damit du sie auf allen deinen Geräten siehst. Nur du hast über dein Konto Zugriff.',
+      'calendar_sync_desc_off':
+          'Aus: Deine Termine bleiben nur auf diesem Gerät und verlassen es nicht. Ein Gerätewechsel überträgt sie dann nicht.',
       'calendar_country': 'Land',
       'calendar_region': 'Region / Bundesland',
       'calendar_choose_region': 'Wähle dein Land und deine Region',
@@ -1742,6 +1746,10 @@ class AppStringsManager {
           'Schreibe den gesamten Bericht auf Deutsch.',
       'development_report_special_needs':
           '- WICHTIG: Dieses Kind hat besondere Beduerfnisse. Vergleiche NICHT mit Altersnormen. Beschreibe nur den individuellen Fortschritt. Statt "Foerderbedarf" sage "waechst in eigenem Tempo". Sei besonders wertschaetzend und staerkend.',
+      'development_consent_title': 'Bericht mit KI erstellen',
+      'development_consent_body':
+          'Für den Bericht werden die Antworten dieses Entwicklungs-Checks an unseren KI-Dienst gesendet. Der Name deines Kindes bleibt dabei auf deinem Gerät und wird nicht übertragen. Deine Angaben werden nur zur Erstellung des Berichts verarbeitet, nicht gespeichert, um dich zu identifizieren.',
+      'development_consent_accept': 'Einverstanden, Bericht erstellen',
       'dev_answer_yes': 'Ja',
       'dev_answer_sometimes': 'Manchmal',
       'dev_answer_not_yet': 'Noch nicht',
@@ -2354,7 +2362,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -3549,6 +3558,10 @@ class AppStringsManager {
           'Write the entire report in English.',
       'development_report_special_needs':
           '- IMPORTANT: This child has special needs. Do NOT compare to age norms. Describe only individual progress. Instead of "needs support" say "grows at their own pace". Be especially appreciative and encouraging.',
+      'development_consent_title': 'Create report with AI',
+      'development_consent_body':
+          'To create the report, the answers from this development check are sent to our AI service. Your child\'s name stays on your device and is not transmitted. Your input is only processed to create the report and is not stored to identify you.',
+      'development_consent_accept': 'Agree and create report',
       'dev_answer_yes': 'Yes',
       'dev_answer_sometimes': 'Sometimes',
       'dev_answer_not_yet': 'Not yet',
@@ -4505,7 +4518,8 @@ class AppStringsManager {
       'quick_activity_needs': 'What you need',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & School Breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -4515,8 +4529,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -4626,7 +4642,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -5407,7 +5424,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -5417,8 +5435,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -5441,7 +5461,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -6209,7 +6230,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -6219,8 +6241,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -6243,7 +6267,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -7011,7 +7036,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -7021,8 +7047,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -7045,7 +7073,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -7815,7 +7844,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -7825,8 +7855,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -7849,7 +7881,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -8620,7 +8653,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -8630,8 +8664,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -8654,7 +8690,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -9403,7 +9440,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -9413,8 +9451,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -9437,7 +9477,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -10202,7 +10243,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -10212,8 +10254,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -10236,7 +10280,8 @@ class AppStringsManager {
       'events_badge_network': 'Tor',
       'events_join_title': 'Ez dixwazim!',
       'events_join_privacy': 'Malbatên din navê te yê pêşîn dibînin.',
-      'events_join_message_hint': 'Bijarte: nota kurt (mînak "Em ê di saet 10an de bên!")',
+      'events_join_message_hint':
+          'Bijarte: nota kurt (mînak "Em ê di saet 10an de bên!")',
       'events_join_confirm': 'Piştrast bike',
       'events_loc_choose': 'Cih hilbijêre',
       'events_loc_confirm': 'Piştrast bike',
@@ -11540,7 +11585,8 @@ class AppStringsManager {
       'quick_activity_needs': 'Pêdiviyên we',
       'calendar_public_holiday': 'Betlaneya fermî',
       'calendar_holidays_title': 'Betlane & betlaneyên dibistanê',
-      'calendar_holidays_until': 'Betlane û betlaneyên dibistanê heta {year} hene. Bûyerên te yên xwe piştî wê jî dixebitin.',
+      'calendar_holidays_until':
+          'Betlane û betlaneyên dibistanê heta {year} hene. Bûyerên te yên xwe piştî wê jî dixebitin.',
       'calendar_template_pediatrician': 'Bijiskê zarokan',
       'calendar_template_dentist': 'Bijiskê diranan',
       'calendar_template_parent_teacher': 'Roja hevdîtina dê û bavan',
@@ -11550,8 +11596,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Werziş',
       'calendar_template_vaccination': 'Vaksîn',
       'calendar_sync_title': 'Bûyeran di navbera amûran de hevdeng bike',
-      'calendar_sync_desc_on': 'Vekirî: Bûyerên te bi şîfre li ser rajekara me tên tomarkirin da ku tu wan li ser hemû amûrên xwe bibînî. Tenê tu bi hesabê xwe digihîjî wan.',
-      'calendar_sync_desc_off': 'Girtî: Bûyerên te tenê li ser vê amûrê dimînin û jê dernakevin. Guhertina amûrê wan venaguhêze.',
+      'calendar_sync_desc_on':
+          'Vekirî: Bûyerên te bi şîfre li ser rajekara me tên tomarkirin da ku tu wan li ser hemû amûrên xwe bibînî. Tenê tu bi hesabê xwe digihîjî wan.',
+      'calendar_sync_desc_off':
+          'Girtî: Bûyerên te tenê li ser vê amûrê dimînin û jê dernakevin. Guhertina amûrê wan venaguhêze.',
       'calendar_country': 'Welat',
       'calendar_region': 'Herêm / Eyalet',
       'calendar_choose_region': 'Welat û herêma xwe hilbijêre',
@@ -11976,6 +12024,10 @@ class AppStringsManager {
           'Hemû raporê bi kurmancî binivîse.',
       'development_report_special_needs':
           '- GIRÎNG: Ev zarok xwedî pêdiviyên taybet e. Bi normên temen RE neqiyase. Tenê pêşketina kesane rave bike. Li şûna "pêdiviya piştgiriyê" bibêje "bi leza xwe mezin dibe". Bi taybetî bihapîne û hêzdar be.',
+      'development_consent_title': 'Bi AI\'yê rapor çêbike',
+      'development_consent_body':
+          'Ji bo raporê, bersivên vê kontrola pêşketinê ji xizmeta me ya AI\'yê re tên şandin. Navê zaroka te li ser cîhaza te dimîne û nayê veguhastin. Agahiyên te tenê ji bo çêkirina raporê têne pêvajokirin, ji bo nasîna te nayên tomarkirin.',
+      'development_consent_accept': 'Razî me, raporê çêbike',
       'dev_answer_yes': 'Erê',
       'dev_answer_sometimes': 'Carinan',
       'dev_answer_not_yet': 'Hêj na',
@@ -12536,7 +12588,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -13301,7 +13354,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Bijiskê zarokan',
       'calendar_template_dentist': 'Bijiskê diranan',
       'calendar_template_parent_teacher': 'Roja hevdîtina dê û bavan',
@@ -13311,8 +13365,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Werziş',
       'calendar_template_vaccination': 'Vaksîn',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -13335,7 +13391,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -14069,7 +14126,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -14079,8 +14137,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -14103,7 +14163,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -14839,7 +14900,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -14849,8 +14911,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -14873,7 +14937,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -15641,7 +15706,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -15651,8 +15717,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -15675,7 +15743,8 @@ class AppStringsManager {
       'events_badge_network': 'Ağ',
       'events_join_title': 'Ben varım!',
       'events_join_privacy': 'Diğer aileler adını görür.',
-      'events_join_message_hint': 'İsteğe bağlı: kısa not (örn. "Saat 10\'da oradayız!")',
+      'events_join_message_hint':
+          'İsteğe bağlı: kısa not (örn. "Saat 10\'da oradayız!")',
       'events_join_confirm': 'Onayla',
       'events_loc_choose': 'Bir konum seçin',
       'events_loc_confirm': 'Onayla',
@@ -16975,7 +17044,8 @@ class AppStringsManager {
       'quick_activity_needs': 'İhtiyacınız olanlar',
       'calendar_public_holiday': 'Resmi tatil',
       'calendar_holidays_title': 'Tatiller & okul tatilleri',
-      'calendar_holidays_until': 'Tatiller ve okul tatilleri {year} yılına kadar mevcuttur. Kendi etkinliklerin bundan sonra da çalışır.',
+      'calendar_holidays_until':
+          'Tatiller ve okul tatilleri {year} yılına kadar mevcuttur. Kendi etkinliklerin bundan sonra da çalışır.',
       'calendar_template_pediatrician': 'Çocuk doktoru',
       'calendar_template_dentist': 'Diş hekimi',
       'calendar_template_parent_teacher': 'Veli görüşme günü',
@@ -16985,8 +17055,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Spor',
       'calendar_template_vaccination': 'Aşı',
       'calendar_sync_title': 'Etkinlikleri cihazlar arasında senkronize et',
-      'calendar_sync_desc_on': 'Açık: Etkinliklerin, tüm cihazlarında görebilmen için sunucumuzda şifreli olarak saklanır. Yalnızca sen, hesabın üzerinden erişebilirsin.',
-      'calendar_sync_desc_off': 'Kapalı: Etkinliklerin yalnızca bu cihazda kalır ve cihazdan çıkmaz. Cihaz değiştirince aktarılmazlar.',
+      'calendar_sync_desc_on':
+          'Açık: Etkinliklerin, tüm cihazlarında görebilmen için sunucumuzda şifreli olarak saklanır. Yalnızca sen, hesabın üzerinden erişebilirsin.',
+      'calendar_sync_desc_off':
+          'Kapalı: Etkinliklerin yalnızca bu cihazda kalır ve cihazdan çıkmaz. Cihaz değiştirince aktarılmazlar.',
       'calendar_country': 'Ülke',
       'calendar_region': 'Bölge / Eyalet',
       'calendar_choose_region': 'Ülkeni ve bölgeni seç',
@@ -17424,6 +17496,10 @@ class AppStringsManager {
       'development_report_language_instruction': 'Raporun tamamını Türkçe yaz.',
       'development_report_special_needs':
           '- ÖNEMLİ: Bu çocuğun özel gereksinimleri var. Yaş normlarıyla KARŞILAŞTIRMA. Yalnızca bireysel ilerlemeyi anlat. "Destek gerekli" yerine "kendi hızında büyüyor" de. Özellikle takdir edici ve güçlendirici ol.',
+      'development_consent_title': 'Yapay zekâ ile rapor oluştur',
+      'development_consent_body':
+          'Rapor için bu gelişim kontrolünün yanıtları yapay zekâ hizmetimize gönderilir. Çocuğunuzun adı cihazınızda kalır ve aktarılmaz. Bilgileriniz yalnızca raporu oluşturmak için işlenir, sizi tanımlamak için saklanmaz.',
+      'development_consent_accept': 'Kabul ediyorum, raporu oluştur',
       'dev_answer_yes': 'Evet',
       'dev_answer_sometimes': 'Bazen',
       'dev_answer_not_yet': 'Henüz değil',
@@ -17981,7 +18057,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -18460,7 +18537,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -18470,8 +18548,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -18494,7 +18574,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -18974,7 +19055,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -18984,8 +19066,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -19008,7 +19092,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -19781,7 +19866,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -19791,8 +19877,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -19815,7 +19903,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -20295,7 +20384,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -20305,8 +20395,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -20329,7 +20421,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -20809,7 +20902,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -20819,8 +20913,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -20843,7 +20939,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -21322,7 +21419,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -21332,8 +21430,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -21356,7 +21456,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -21834,7 +21935,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -21844,8 +21946,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -21868,7 +21972,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -22353,7 +22458,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -22363,8 +22469,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -22387,7 +22495,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -22864,7 +22973,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -22874,8 +22984,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -22898,7 +23010,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -23374,7 +23487,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -23384,8 +23498,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -23408,7 +23524,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -23886,7 +24003,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -23896,8 +24014,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -23920,7 +24040,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -24404,7 +24525,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -24414,8 +24536,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',
@@ -24438,7 +24562,8 @@ class AppStringsManager {
       'events_badge_network': 'Network',
       'events_join_title': 'I\'m in!',
       'events_join_privacy': 'Other families see your first name.',
-      'events_join_message_hint': 'Optional: short note (e.g. "We\'ll be there at 10!")',
+      'events_join_message_hint':
+          'Optional: short note (e.g. "We\'ll be there at 10!")',
       'events_join_confirm': 'Confirm',
       'events_loc_choose': 'Choose a location',
       'events_loc_confirm': 'Confirm',
@@ -24914,7 +25039,8 @@ class AppStringsManager {
       'calendar_person_birthday': 'Birthday',
       'calendar_public_holiday': 'Public holiday',
       'calendar_holidays_title': 'Holidays & school breaks',
-      'calendar_holidays_until': 'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
+      'calendar_holidays_until':
+          'Holidays & school breaks are available through {year}. Your own events still work beyond that.',
       'calendar_template_pediatrician': 'Pediatrician',
       'calendar_template_dentist': 'Dentist',
       'calendar_template_parent_teacher': 'Parent-teacher day',
@@ -24924,8 +25050,10 @@ class AppStringsManager {
       'calendar_template_sport': 'Sport',
       'calendar_template_vaccination': 'Vaccination',
       'calendar_sync_title': 'Sync events across devices',
-      'calendar_sync_desc_on': 'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
-      'calendar_sync_desc_off': 'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
+      'calendar_sync_desc_on':
+          'On: Your events are stored encrypted on our server so you can see them on all your devices. Only you can access them via your account.',
+      'calendar_sync_desc_off':
+          'Off: Your events stay only on this device and never leave it. Switching devices will not transfer them.',
       'calendar_country': 'Country',
       'calendar_region': 'Region / state',
       'calendar_choose_region': 'Choose your country and region',

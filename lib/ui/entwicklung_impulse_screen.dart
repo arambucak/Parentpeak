@@ -1071,8 +1071,48 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     });
   }
 
+  /// Einmalige, transparente Einwilligung bevor Entwicklungs-Antworten an die
+  /// KI gehen. Der Kindname bleibt ohnehin lokal; hier wird offengelegt, dass
+  /// die (anonymisierten) Antworten zur Berichtserstellung verarbeitet werden.
+  /// Rückgabe: true, wenn der Bericht erstellt werden darf.
+  Future<bool> _ensureAiConsent() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('dev.ai_report_consent') == true) return true;
+    if (!mounted) return false;
+
+    final theme = Theme.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(_t('development_consent_title')),
+        content: Text(_t('development_consent_body'),
+            style: theme.textTheme.bodyMedium),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(_t('development_consent_accept')),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await prefs.setBool('dev.ai_report_consent', true);
+      return true;
+    }
+    return false;
+  }
+
   Future<void> _generateAIReport() async {
     if (_childProfile == null) return;
+
+    // Vor dem ersten KI-Bericht: transparente Einwilligung einholen.
+    if (!await _ensureAiConsent()) return;
+    if (!mounted) return;
 
     // Report-Limit prüfen
     final limitService = DevelopmentReportLimitService.instance;
@@ -1098,9 +1138,13 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
 
     setState(() => _generatingReport = true);
     final p = _childProfile!;
+    // Datenschutz: Der echte Kindname verlässt das Gerät NICHT. Im Prompt steht
+    // nur ein neutraler Platzhalter; der echte Name wird erst lokal in den
+    // zurückgelieferten Bericht eingesetzt (siehe unten).
+    const namePlaceholder = '[KIND]';
     final sb = StringBuffer();
     sb.writeln(
-        'Kind: ${p.name}, Alter: ${p.ageLabel}, Betreuung: ${p.careType}');
+        'Kind: $namePlaceholder, Alter: ${p.ageLabel}, Betreuung: ${p.careType}');
     sb.writeln('Altersgruppe: ${p.ageGroupId}\n');
     // Antwort-Labels lokalisiert, damit der an das Modell übergebene Kontext in
     // der App-Sprache steht (bessere Berichtsqualität in allen Sprachen).
@@ -1130,7 +1174,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         'Du schreibst eine pädagogische Entwicklungseinschätzung für Eltern. '
         'WICHTIGE REGELN:\n'
         '- Schreibe AUS DER PERSPEKTIVE DER APP (nicht Kita, nicht Erzieher).\n'
-        '- Erster Satz: "Basierend auf euren Angaben zeigt [Name] folgendes Entwicklungsprofil:"\n'
+        '- Erster Satz: "Basierend auf euren Angaben zeigt [KIND] folgendes Entwicklungsprofil:"\n'
+        '- Verwende durchgehend den Platzhalter [KIND] für den Namen des Kindes (unverändert, in eckigen Klammern).\n'
         '- KEINE Bewertungswörter wie "toll", "super", "gut", "wunderbar", "schlecht", "sehr gut".\n'
         '- Stattdessen: fachlich, objektiv, wertschätzend. Beschreibe WAS das Kind zeigt, nicht WIE GUT.\n'
         '- Benutze Formulierungen wie: "zeigt sich sicher in...", "befindet sich im typischen Entwicklungsfenster für...", "beginnt zunehmend...", "übt aktuell..."\n'
@@ -1140,7 +1185,12 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         '$specialNeedsNote\n$sb\n$languageInstruction';
 
     try {
-      final text = await GeminiAIService().generateText(prompt);
+      final raw = await GeminiAIService().generateText(prompt);
+      // Den echten Namen erst lokal einsetzen — er war nie Teil des KI-Calls.
+      final childName = p.name.trim().isNotEmpty
+          ? p.name.trim()
+          : _t('pdf_default_child_name');
+      final text = raw.replaceAll(namePlaceholder, childName);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('dev.ai_report.v3', text);
       // Bericht-Historie speichern
