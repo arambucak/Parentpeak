@@ -1245,6 +1245,8 @@ class AppStringsManager {
       'network_validation_district':
           'Bitte gib euren Stadtteil ein (Schritt 1)',
       'network_save_error': 'Fehler beim Speichern: {error}',
+      'network_delete_failed':
+          'Das Profil konnte nicht gelöscht werden. Es bleibt gespeichert. Bitte versuche es erneut.',
       'network_delete_profile_confirm':
           'Dein Spielfreunde-Profil wird dauerhaft gelöscht. Du kannst jederzeit ein neues erstellen.',
       'network_back': 'Zurück',
@@ -4543,6 +4545,8 @@ class AppStringsManager {
       'network_validation_name': 'Please enter your name (step 1)',
       'network_validation_district': 'Please enter your district (step 1)',
       'network_save_error': 'Error while saving: {error}',
+      'network_delete_failed':
+          'Could not delete your profile. It remains saved. Please try again.',
       'network_delete_profile_confirm':
           'Your playmate profile will be permanently deleted. You can create a new one at any time.',
       'network_back': 'Back',
@@ -11686,6 +11690,8 @@ class AppStringsManager {
       'network_validation_name': 'Ji kerema xwe navê xwe binivîse (gav 1)',
       'network_validation_district': 'Ji kerema xwe taxa xwe binivîse (gav 1)',
       'network_save_error': 'Çewtî di tomarkirinê de: {error}',
+      'network_delete_failed':
+          'Profîl nehat jêbirin. Ew hîn tomarkirî ye. Ji kerema xwe dîsa biceribîne.',
       'network_delete_profile_confirm':
           'Profîla te ya hevalên lîstikê dê bi domdarî were jêbirin. Tu dikarî her demê profîleke nû çêkî.',
       'network_back': 'Paşve',
@@ -17210,6 +17216,8 @@ class AppStringsManager {
       'network_validation_name': 'Lütfen adınızı girin (adım 1)',
       'network_validation_district': 'Lütfen semtinizi girin (adım 1)',
       'network_save_error': 'Kaydetme hatası: {error}',
+      'network_delete_failed':
+          'Profil silinemedi. Kayıtlı kalmaya devam ediyor. Lütfen tekrar deneyin.',
       'network_delete_profile_confirm':
           'Oyun arkadaşı profilin kalıcı olarak silinecek. İstediğin zaman yeni bir tane oluşturabilirsin.',
       'network_back': 'Geri',

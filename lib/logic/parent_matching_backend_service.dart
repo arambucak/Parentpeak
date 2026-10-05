@@ -1,6 +1,7 @@
 /// Smart Parent Matching Service with intelligent algorithm
 /// Uses geographic proximity + interests + child compatibility scoring
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
@@ -350,6 +351,31 @@ class ParentMatchingBackendService {
     } catch (e) {
       lastSyncError = 'Fehler beim Erstellen des Profils: $e';
       return null;
+    }
+  }
+
+  Future<bool> deleteProfile({required String userId}) async {
+    lastSyncError = null;
+    final client = _typedApiClient;
+    if (client == null || userId.trim().isEmpty) {
+      lastSyncError = 'Authenticated backend or user ID missing';
+      debugPrint('ParentMatchingBackendService.deleteProfile: $lastSyncError');
+      return false;
+    }
+    try {
+      final path = APIConfig.getBackendParentMatchingMyProfilePath();
+      final result = await client.deleteJson(
+          '$path?userId=${Uri.encodeQueryComponent(userId)}', {});
+      if (result is! Map<String, dynamic> || result['success'] != true) {
+        lastSyncError = 'Profile deletion was not acknowledged';
+        debugPrint('ParentMatchingBackendService.deleteProfile: $lastSyncError');
+        return false;
+      }
+      return true;
+    } catch (e) {
+      lastSyncError = e.toString();
+      debugPrint('ParentMatchingBackendService.deleteProfile failed: $e');
+      return false;
     }
   }
 

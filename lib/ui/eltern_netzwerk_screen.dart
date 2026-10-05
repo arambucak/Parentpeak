@@ -12,6 +12,7 @@ import 'package:parentpeak/ui/group_chat_screen.dart';
 import 'package:parentpeak/ui/widgets/user_avatar.dart';
 import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
+import 'package:parentpeak/logic/playmate_profile_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/friendship_service.dart';
@@ -368,6 +369,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   final _matching = ParentMatchingBackendService(
       apiClient: BackendServiceFactory.createApiClient());
   FamilyMatchProfile? _profile;
+  bool _deletingProfile = false;
   Set<String> _dismissedSuggestions = {};
   List<_SuggestedParent> _suggestedProfiles = [];
   bool _loadingSuggestions = true;
@@ -1429,7 +1431,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         if (ownerId == null || ownerId.isEmpty) return true;
         return !BlockReportService.instance.isBlocked(ownerId);
       }).toList();
-      if (mounted) {
+      if (mounted && _profile != null) {
         setState(() {
           _matches = visible;
           _matchScope = result.scope;
@@ -1478,7 +1480,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 Row(mainAxisSize: MainAxisSize.min, children: [
                   GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () async {
+                      onTap: _deletingProfile ? null : () async {
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.remove('spielfreunde.profile');
                         setState(() => _profile = null);
@@ -1493,7 +1495,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   const SizedBox(width: 12),
                   GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => _confirmDeleteProfile(theme),
+                      onTap: _deletingProfile
+                          ? null
+                          : () => _confirmDeleteProfile(theme),
                       child: Text(_t('delete'),
                           style: TextStyle(
                               fontSize: 12,
@@ -2458,6 +2462,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   }
 
   Future<void> _confirmDeleteProfile(ThemeData theme) async {
+    if (_deletingProfile) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -2477,13 +2482,35 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ],
       ),
     );
-    if (confirmed == true) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('spielfreunde.profile');
-      // Server-seitig loeschen
-      final uid = AuthService.instance.currentUser?.uid ?? 'guest';
-      await _backend.deleteProfile(uid);
-      if (mounted) setState(() => _profile = null);
+    if (confirmed != true || !mounted || _deletingProfile) return;
+    setState(() => _deletingProfile = true);
+    try {
+      final uid = AuthService.instance.currentUser?.uid ?? '';
+      final deleted = await PlaymateProfileService(matchingService: _matching)
+          .deleteProfile(uid);
+      if (!mounted) return;
+      if (!deleted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('network_delete_failed')),
+          backgroundColor: theme.colorScheme.error,
+        ));
+        return;
+      }
+      setState(() {
+        _profile = null;
+        _matches = [];
+        _loadingMatches = false;
+      });
+    } catch (e) {
+      debugPrint('ElternNetzwerkScreen profile deletion failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('network_delete_failed')),
+          backgroundColor: theme.colorScheme.error,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _deletingProfile = false);
     }
   }
 }
