@@ -28,6 +28,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   final _todoCtrl = TextEditingController();
   List<Map<String, dynamic>> _todos = [];
   bool _loaded = false;
+  bool _loadError = false;
   int _activeTabIndex = 0;
 
   @override
@@ -52,29 +53,36 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     try {
       await _shopping.load();
       await _dossierService.load();
-      if (_dossierService.dossiers.isEmpty) await _initDossiersFromProfile();
+      // Kinder aus dem Eltern-Netzwerk-Profil nachziehen (auch wenn schon
+      // Dossiers existieren) — so landen neu angelegte Kinder zuverlässig hier.
+      await _syncDossiersFromProfile();
       await _loadTodos();
+      _loadError = false;
     } catch (e) {
       debugPrint('FamilienZentrale._load() Fehler: $e');
+      _loadError = true;
     }
     if (mounted) setState(() => _loaded = true);
   }
 
-  Future<void> _initDossiersFromProfile() async {
+  /// Legt für jedes Kind aus dem Profil ein Dossier an, das noch keines hat
+  /// (per Name abgeglichen). Bestehende Dossiers bleiben unangetastet — es wird
+  /// also nichts überschrieben, nur Fehlendes ergänzt.
+  Future<void> _syncDossiersFromProfile() async {
     try {
       final profile = await FamilyMatchProfile.load();
-      if (profile != null && profile.children.isNotEmpty) {
-        for (final child in profile.children) {
-          final exams = UExaminationData.generateForChild(child.ageMonths);
-          await _dossierService.addOrUpdate(KindDossier(
-            childName: child.name.isNotEmpty ? child.name : 'Kind',
-            ageMonths: child.ageMonths,
-            uExams: exams,
-          ));
-        }
+      if (profile == null || profile.children.isEmpty) return;
+      for (final child in profile.children) {
+        final name = child.name.isNotEmpty ? child.name : 'Kind';
+        if (_dossierService.findByName(name) != null) continue;
+        await _dossierService.addOrUpdate(KindDossier(
+          childName: name,
+          ageMonths: child.ageMonths,
+          uExams: UExaminationData.generateForChild(child.ageMonths),
+        ));
       }
     } catch (e) {
-      debugPrint('FamilienZentrale._initDossiersFromProfile() Fehler: $e');
+      debugPrint('FamilienZentrale._syncDossiersFromProfile() Fehler: $e');
     }
   }
 
@@ -90,8 +98,12 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   }
 
   Future<void> _saveTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('zentrale.todos', jsonEncode(_todos));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('zentrale.todos', jsonEncode(_todos));
+    } catch (e) {
+      debugPrint('FamilienZentrale._saveTodos() Fehler: $e');
+    }
   }
 
   /// Anzahl fälliger oder überfälliger U-Untersuchungen über alle Kinder.
@@ -125,6 +137,39 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             title: Text(AppStringsManager.getString(
                 languageService.currentLanguage, 'familien_zentrale_title'))),
         body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_loadError) {
+      return Scaffold(
+        appBar: AppBar(
+            title: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'familien_zentrale_title'))),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.cloud_off_rounded,
+                  size: 40, color: Color(0xFF9CA3AF)),
+              const SizedBox(height: 14),
+              Text(
+                context.tr('family_hub_load_error'),
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () {
+                  setState(() => _loaded = false);
+                  _load();
+                },
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(context.tr('family_hub_retry')),
+              ),
+            ]),
+          ),
+        ),
       );
     }
 
@@ -662,7 +707,33 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
           if (dossier.kitaSchool != null)
             _infoChip(
                 '\u{1F3EB} ${dossier.kitaSchool}', const Color(0xFF0EA5A4)),
+          if (dossier.kitaGroup != null)
+            _infoChip(
+                '\u{1F46B} ${dossier.kitaGroup}', const Color(0xFF0EA5A4)),
+          if (dossier.kitaTeacher != null)
+            _infoChip('\u{1F9D1}\u{200D}\u{1F3EB} ${dossier.kitaTeacher}',
+                const Color(0xFF0EA5A4)),
         ]),
+        // Notizen (frei)
+        if (dossier.notes != null && dossier.notes!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('\u{1F4DD} ', style: TextStyle(fontSize: 13)),
+              Expanded(
+                child: Text(dossier.notes!,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ),
+            ]),
+          ),
+        ],
         // U-Untersuchungen: aufklappbar + abhakbar
         if (dossier.uExams.isNotEmpty) ...[
           const SizedBox(height: 12),
@@ -791,8 +862,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   }
 
   Future<void> _toggleUExam(KindDossier dossier, UExamination exam) async {
-    await _dossierService.setUExamDone(
-        dossier.childName, exam.id, !exam.isDone);
+    await _dossierService.setUExamDone(dossier.id, exam.id, !exam.isDone);
     HapticFeedback.selectionClick();
     if (mounted) setState(() {});
   }
@@ -874,6 +944,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   // ─── Dossier bearbeiten ───────────────────────────────────────────────────
 
   void _editDossier(KindDossier dossier) {
+    final nameCtrl = TextEditingController(text: dossier.childName);
     final clothingCtrl =
         TextEditingController(text: dossier.clothingSize ?? '');
     final shoeCtrl = TextEditingController(text: dossier.shoeSize ?? '');
@@ -888,6 +959,10 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     final emergPhoneCtrl =
         TextEditingController(text: dossier.emergencyPhone ?? '');
     final kitaCtrl = TextEditingController(text: dossier.kitaSchool ?? '');
+    final kitaGroupCtrl = TextEditingController(text: dossier.kitaGroup ?? '');
+    final kitaTeacherCtrl =
+        TextEditingController(text: dossier.kitaTeacher ?? '');
+    final notesCtrl = TextEditingController(text: dossier.notes ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -922,6 +997,8 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
+              _editField(nameCtrl, context.tr('family_hub_child_name'),
+                  context.tr('family_hub_child_name_hint')),
               _editField(clothingCtrl, context.tr('family_hub_clothing_size'),
                   context.tr('family_hub_clothing_hint')),
               _editField(shoeCtrl, context.tr('family_hub_shoe_size'),
@@ -946,43 +1023,53 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                   context.tr('family_hub_emergency_phone_hint')),
               _editField(kitaCtrl, context.tr('family_hub_daycare_school'),
                   context.tr('family_hub_daycare_hint')),
+              _editField(kitaGroupCtrl, context.tr('family_hub_daycare_group'),
+                  context.tr('family_hub_daycare_group_hint')),
+              _editField(
+                  kitaTeacherCtrl,
+                  context.tr('family_hub_daycare_teacher'),
+                  context.tr('family_hub_daycare_teacher_hint')),
+              _editField(notesCtrl, context.tr('family_hub_notes'),
+                  context.tr('family_hub_notes_hint'),
+                  maxLines: 3),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () async {
+                  String? trimOrNull(String s) =>
+                      s.trim().isEmpty ? null : s.trim();
+                  // Namensfeld darf nicht leer gespeichert werden —
+                  // sonst würde das Kind aus der Liste "verschwinden".
+                  final newName = nameCtrl.text.trim().isEmpty
+                      ? dossier.childName
+                      : nameCtrl.text.trim();
+                  // Direkter Konstruktor mit explizit übergebener id (statt
+                  // copyWith): Das Formular setzt bewusst ALLE Felder, auch
+                  // geleerte sollen auf null gehen. Die stabile Dossier-id wird
+                  // weitergereicht, damit Umbenennen dasselbe Dossier
+                  // aktualisiert statt ein zweites anzulegen. birthDate und
+                  // uExams bleiben erhalten.
                   final updated = KindDossier(
-                    childName: dossier.childName,
-                    ageMonths: dossier.ageMonths,
-                    clothingSize: clothingCtrl.text.trim().isEmpty
-                        ? null
-                        : clothingCtrl.text.trim(),
-                    shoeSize: shoeCtrl.text.trim().isEmpty
-                        ? null
-                        : shoeCtrl.text.trim(),
+                    id: dossier.id,
+                    childName: newName,
+                    birthDate: dossier.birthDate,
+                    clothingSize: trimOrNull(clothingCtrl.text),
+                    shoeSize: trimOrNull(shoeCtrl.text),
                     allergies: allergiesCtrl.text.trim().isEmpty
-                        ? []
+                        ? <String>[]
                         : allergiesCtrl.text
                             .split(',')
                             .map((s) => s.trim())
                             .where((s) => s.isNotEmpty)
                             .toList(),
-                    doctorName: doctorCtrl.text.trim().isEmpty
-                        ? null
-                        : doctorCtrl.text.trim(),
-                    doctorPhone: doctorPhoneCtrl.text.trim().isEmpty
-                        ? null
-                        : doctorPhoneCtrl.text.trim(),
-                    bloodType: bloodCtrl.text.trim().isEmpty
-                        ? null
-                        : bloodCtrl.text.trim(),
-                    emergencyContact: emergCtrl.text.trim().isEmpty
-                        ? null
-                        : emergCtrl.text.trim(),
-                    emergencyPhone: emergPhoneCtrl.text.trim().isEmpty
-                        ? null
-                        : emergPhoneCtrl.text.trim(),
-                    kitaSchool: kitaCtrl.text.trim().isEmpty
-                        ? null
-                        : kitaCtrl.text.trim(),
+                    doctorName: trimOrNull(doctorCtrl.text),
+                    doctorPhone: trimOrNull(doctorPhoneCtrl.text),
+                    bloodType: trimOrNull(bloodCtrl.text),
+                    emergencyContact: trimOrNull(emergCtrl.text),
+                    emergencyPhone: trimOrNull(emergPhoneCtrl.text),
+                    kitaSchool: trimOrNull(kitaCtrl.text),
+                    kitaGroup: trimOrNull(kitaGroupCtrl.text),
+                    kitaTeacher: trimOrNull(kitaTeacherCtrl.text),
+                    notes: trimOrNull(notesCtrl.text),
                     uExams: dossier.uExams,
                   );
                   await _dossierService.addOrUpdate(updated);
@@ -1007,11 +1094,13 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     );
   }
 
-  Widget _editField(TextEditingController ctrl, String label, String hint) {
+  Widget _editField(TextEditingController ctrl, String label, String hint,
+      {int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: ctrl,
+        maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
