@@ -364,7 +364,10 @@ class _CalendarScreenState extends State<CalendarScreen>
       endMode: base.recurrenceEndMode,
       endDate: base.recurrenceEndDate,
       count: base.recurrenceCount,
-      openEndedLimit: 5,
+      // Unbefristete Wiederholungen bis ~2 Jahre im Voraus zeigen (z. B. 104
+      // Wochen), damit wöchentliche Termine nicht nach wenigen Vorkommen
+      // verschwinden. Die Logik hat ohnehin eine harte Obergrenze von 1000.
+      openEndedLimit: 104,
     );
     if (starts.length <= 1) return [base];
 
@@ -411,16 +414,50 @@ class _CalendarScreenState extends State<CalendarScreen>
     });
   }
 
-  // Quick templates — person will be replaced by first real child or 'Eltern'
+  // Quick templates — person will be replaced by first real child or 'Eltern'.
+  // 'labelKey' is resolved via l10n so the chip label and the event title are
+  // shown in the user's language (DE/EN/TR/KU and all picker languages).
   static const List<Map<String, String>> _eventTemplates = [
-    {'emoji': '\u{1F3E5}', 'label': 'Kinderarzt', 'person': 'Eltern'},
-    {'emoji': '\u{1F9B7}', 'label': 'Zahnarzt', 'person': 'Eltern'},
-    {'emoji': '\u{1F4DA}', 'label': 'Elternsprechtag', 'person': 'Eltern'},
-    {'emoji': '\u{1F382}', 'label': 'Geburtstag', 'person': 'Eltern'},
-    {'emoji': '\u{1F3CA}', 'label': 'Schwimmen', 'person': 'Kind'},
-    {'emoji': '\u{1F393}', 'label': 'Kita-Fest', 'person': 'Kindergarten'},
-    {'emoji': '\u{1F3C3}', 'label': 'Sport', 'person': 'Kind'},
-    {'emoji': '\u{1F489}', 'label': 'Impfung', 'person': 'Eltern'},
+    {
+      'emoji': '\u{1F3E5}',
+      'labelKey': 'calendar_template_pediatrician',
+      'person': 'Eltern'
+    },
+    {
+      'emoji': '\u{1F9B7}',
+      'labelKey': 'calendar_template_dentist',
+      'person': 'Eltern'
+    },
+    {
+      'emoji': '\u{1F4DA}',
+      'labelKey': 'calendar_template_parent_teacher',
+      'person': 'Eltern'
+    },
+    {
+      'emoji': '\u{1F382}',
+      'labelKey': 'calendar_template_birthday',
+      'person': 'Eltern'
+    },
+    {
+      'emoji': '\u{1F3CA}',
+      'labelKey': 'calendar_template_swimming',
+      'person': 'Kind'
+    },
+    {
+      'emoji': '\u{1F393}',
+      'labelKey': 'calendar_template_daycare_event',
+      'person': 'Kindergarten'
+    },
+    {
+      'emoji': '\u{1F3C3}',
+      'labelKey': 'calendar_template_sport',
+      'person': 'Kind'
+    },
+    {
+      'emoji': '\u{1F489}',
+      'labelKey': 'calendar_template_vaccination',
+      'person': 'Eltern'
+    },
   ];
 
   /// Returns first real child name, or 'Eltern' as fallback.
@@ -678,9 +715,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                         itemCount: _eventTemplates.length,
                         itemBuilder: (_, i) {
                           final t = _eventTemplates[i];
+                          final label = _t(t['labelKey']!);
                           return GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () {
-                              _titleController.text = t['label']!;
+                              _titleController.text = label;
                               setSheetState(() => person =
                                   _resolveTemplatePerson(t['person']!));
                             },
@@ -699,7 +738,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   Text(t['emoji']!,
                                       style: const TextStyle(fontSize: 14)),
                                   const SizedBox(width: 5),
-                                  Text(t['label']!,
+                                  Text(label,
                                       style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
@@ -1161,6 +1200,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                       ]),
                   // Add person chip
                   GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _showAddPersonDialog(
                         onAdded: (name) =>
                             setState(() => _filterPerson = name)),
@@ -1387,6 +1427,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 onEdit: () => _editEvent(e))),
             if (_eventsForSelectedDay.isEmpty)
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: _openAddSheet,
                 child: Container(
                   width: double.infinity,
@@ -2036,6 +2077,7 @@ class _MonthGrid extends StatelessWidget {
               if (isSelected) textColor = const Color(0xFF8B5CF6);
 
               return GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => onSelectDay(day),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),

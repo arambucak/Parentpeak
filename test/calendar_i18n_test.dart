@@ -104,6 +104,14 @@ void main() {
     'calendar_sync_desc_on',
     'calendar_sync_desc_off',
     'calendar_holidays_until',
+    'calendar_template_pediatrician',
+    'calendar_template_dentist',
+    'calendar_template_parent_teacher',
+    'calendar_template_birthday',
+    'calendar_template_swimming',
+    'calendar_template_daycare_event',
+    'calendar_template_sport',
+    'calendar_template_vaccination',
   ];
 
   group('Calendar i18n completeness', () {
