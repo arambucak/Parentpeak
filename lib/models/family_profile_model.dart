@@ -117,7 +117,9 @@ class FamilyMatchProfile {
 
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('spielfreunde.profile', jsonEncode(toJson()));
+    if (!await prefs.setString('spielfreunde.profile', jsonEncode(toJson()))) {
+      throw StateError('Could not save the local playmate profile');
+    }
   }
 }
 

@@ -90,6 +90,25 @@ node --test backend/tests/unit/parent-matching-delete.test.js
 flutter test --no-pub test/playmate_profile_delete_test.dart
 ```
 
+### Datensparsame Spielfreunde-Veroeffentlichung
+
+Die App veroeffentlicht nur Anzeigename, Ort/grobe Koordinaten, ungefaehre
+Kinderalter, Sprachen, Familienform, Werte, gesuchte Aktivitaeten und die
+oeffentliche Bio ueber `/parent-matching/my-profile`. Kindnamen, Geburtsdaten,
+Kind-Geschlecht/-Freitext und Besonderheiten (auch Gesundheitsangaben) bleiben
+in der lokalen Kopie. Der alte Spielfreunde-Upload wurde entfernt.
+
+Vor jeder Veroeffentlichung bestaetigt der Nutzer einen transparenten Dialog.
+Matching nutzt keine KI. Freitext in der Bio ist oeffentlich; der Dialog warnt
+vor Kindnamen, Adresse und Gesundheitsdaten. Erst eine Serverantwort mit Profil-ID
+und passender Eigentuemer-UID fuehrt zur lokalen Speicherung. Abbrechen oder
+Backend-Fehler erzeugen kein neues lokal als aktiv dargestelltes Profil.
+Beim Speichern wird nicht mehr automatisch GPS angefordert.
+
+```bash
+flutter test --no-pub test/playmate_profile_publication_test.dart
+```
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:

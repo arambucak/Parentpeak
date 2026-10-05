@@ -278,7 +278,7 @@ class ParentMatchingBackendService {
   }) async {
     lastSyncError = null;
 
-    if (_apiUrl == null) {
+    if (_typedApiClient == null && _apiUrl == null) {
       lastSyncError = 'Backend-URL nicht konfiguriert';
       return null;
     }

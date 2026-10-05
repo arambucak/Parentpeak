@@ -23,6 +23,7 @@ import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
+import 'package:parentpeak/ui/widgets/playmate_publication_dialog.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -157,14 +158,6 @@ String networkWizardOptionLabel(
     },
   };
   return options[group]?[key] ?? fallback;
-}
-
-/// Rundet eine Koordinate grob auf ~1 km Raster (2 Dezimalstellen). Gibt null
-/// zurück, wenn kein gültiger Wert vorliegt. Datenschutz: so verlässt die exakte
-/// Position einer Familie nie das Gerät.
-double? coarseCoordinate(double? value) {
-  if (value == null || value.isNaN || value.isInfinite) return null;
-  return (value * 100).round() / 100;
 }
 
 String _t(String key) =>
@@ -1347,12 +1340,25 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           }
           return;
         }
-        await p.save();
-        await _backend.saveProfile(p, uid);
-        // In den echten Matching-Store schreiben, damit andere Familien uns
-        // per Standort + Interessen finden koennen (echtes Matching).
         try {
-          await _syncProfileToMatching(p, uid);
+          final loc = LocationService.instance;
+          final result = await PlaymateProfileService(matchingService: _matching)
+              .publishProfile(
+            p,
+            uid,
+            confirmPublication: () => confirmPlaymatePublication(context),
+            city: loc.city,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+          );
+          if (!mounted || result == PlaymatePublicationResult.cancelled) return;
+          if (result == PlaymatePublicationResult.failed) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(_t('network_publish_failed')),
+              backgroundColor: theme.colorScheme.error,
+            ));
+            return;
+          }
         } on SuspendedAccountException {
           if (mounted) await showAccountSuspendedNotice(context);
           return;
@@ -1361,52 +1367,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         await _loadMatches();
       })),
     ]);
-  }
-
-  /// Mappt das Spielfreunde-Wizard-Profil auf den echten Matching-Store
-  /// (/api/parent-matching/find nutzt genau diese Felder inkl. GPS + Interessen).
-  Future<void> _syncProfileToMatching(FamilyMatchProfile p, String uid) async {
-    // Standort: bevorzugt echte GPS-Koordinaten aus dem LocationService.
-    final loc = LocationService.instance;
-    if (!loc.hasLocation) {
-      // Versuch, GPS zu holen (Web/Native). Schlaegt es fehl, bleibt es ohne
-      // Koordinaten – dann matcht der Server ueber Interessen/Alter/Werte.
-      await loc.requestGPSLocation();
-    }
-    // DATENSCHUTZ: Für ein "Familien in der Nähe"-Matching reicht die grobe
-    // Lage. Wir senden daher NIE die exakte Position einer Familie mit Kindern,
-    // sondern runden schon auf dem Gerät auf ~1 km Raster (2 Dezimalstellen).
-    final coarseLat = coarseCoordinate(loc.latitude);
-    final coarseLon = coarseCoordinate(loc.longitude);
-
-    // Kinder-Alter als lesbare Tags ("3J", "8M") fuer das Matching.
-    final childAges = p.children.map((c) {
-      final years = c.ageMonths ~/ 12;
-      final months = c.ageMonths % 12;
-      return years >= 1 ? '${years}J' : '${months}M';
-    }).toList();
-
-    // Interessen = wonach die Familie sucht + besondere Merkmale.
-    final interests = <String>{
-      ...p.lookingFor,
-      ...p.specials,
-    }.where((e) => e.trim().isNotEmpty).toList();
-
-    await _matching.createProfile(
-      userId: uid,
-      name: p.displayName.isNotEmpty ? 'Familie ${p.displayName}' : 'Familie',
-      city: (loc.city != null && loc.city!.isNotEmpty)
-          ? loc.city!
-          : (p.district.isNotEmpty ? p.district : 'Deutschland'),
-      latitude: coarseLat,
-      longitude: coarseLon,
-      interests: interests,
-      languages: p.languages,
-      valuesFocus: p.values,
-      childAges: childAges,
-      familyForm: p.familyForm,
-      bio: p.bio,
-    );
   }
 
   /// Laedt echte Familien in der Naehe ueber das bestehende Matching-Backend.
@@ -2748,7 +2708,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         child: Row(children: [
           if (_step > 0)
             TextButton.icon(
-                onPressed: _prev,
+                onPressed: _saving ? null : _prev,
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
                 label: Text(_t('network_back')))
           else
@@ -2756,7 +2716,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const Spacer(),
           if (_step < _totalSteps - 1)
             FilledButton.icon(
-                onPressed: _next,
+                onPressed: _saving ? null : _next,
                 icon: const Icon(Icons.arrow_forward_rounded, size: 18),
                 label: Text(AppStringsManager.getString(
                     languageService.currentLanguage, 'next_btn_wizard')),
@@ -2812,8 +2772,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           LocationPickerWidget(
             hint: _networkCopy('location_hint', 'Euer Stadtteil / PLZ wählen'),
             // Bewusst nur der Anzeigename (Stadtteil/PLZ) ins Profil. Die
-            // genaue Position fürs Matching holt _syncProfileToMatching separat
-            // und rundet sie grob (Datenschutz, siehe coarseCoordinate) — so
+            // Position fuer das Matching wird vor dem Upload grob gerundet — so
             // speichert das Profil selbst keine Koordinaten.
             onLocationPicked: (loc) {
               _districtCtrl.text = loc.displayName;
@@ -2914,7 +2873,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         TextField(
             controller: child.nameCtrl,
             decoration: InputDecoration(
-                labelText: 'Name / Spitzname',
+                labelText: _t('network_child_name_local'),
                 hintText: 'z.B. Mia',
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -3277,7 +3236,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 22),
           _sectionTitle(theme, '\u{1F49C} Besonderheiten (optional)'),
           const SizedBox(height: 6),
-          Text(_t('network_wizard_location'),
+          Text(_t('network_specials_local'),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 10),
@@ -3299,7 +3258,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                       languageService.currentLanguage, 'custom_entry'),
                   style: const TextStyle(fontSize: 11)),
               onPressed: () => _showCustomInput(_specialsCustomCtrl,
-                  'Was sollten andere Familien noch wissen?'),
+                  _t('network_specials_hint')),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               side: const BorderSide(color: Color(0xFF8B5CF6)),
