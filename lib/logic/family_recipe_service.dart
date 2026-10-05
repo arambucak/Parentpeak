@@ -161,14 +161,16 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
       final recipe = _parseRecipe(raw, languageCode: languageCode);
       if (recipe != null) {
-        // SICHERHEIT: KI-Antwort gegen die Allergene gegenprüfen. Enthält das
-        // Rezept trotz Prompt-Anweisung ein Allergen, NICHT ausliefern, sondern
-        // auf ein garantiert sicheres Fallback-Rezept ausweichen.
-        if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys)) {
+        // SICHERHEIT: KI-Antwort gegen die Allergene UND das Kindesalter
+        // gegenprüfen. Enthält das Rezept trotz Prompt-Anweisung ein Allergen
+        // oder ist es nicht altersgerecht (minChildAge > Kindalter), NICHT
+        // ausliefern, sondern auf ein garantiert sicheres Fallback ausweichen.
+        if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys) &&
+            _isAgeAppropriate(recipe)) {
           return recipe;
         }
         debugPrint(
-            'FamilyRecipeService: KI-Rezept enthält Allergen(e) → sicheres Fallback');
+            'FamilyRecipeService: KI-Rezept unsicher (Allergen/Alter) → sicheres Fallback');
         return _fallbackRecipe(languageCode: languageCode);
       }
       debugPrint(
@@ -383,12 +385,19 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   ///
   /// Die Fallback-Rezepte werden in der aktiven App-Sprache ausgegeben
   /// (DE/EN/TR/KU, sonst EN als inklusiver Rückfall).
+  /// Ein Rezept ist für das jüngste Kind geeignet, wenn sein Mindestalter das
+  /// Kindalter nicht überschreitet. So bekommt z. B. ein Baby kein Rezept
+  /// „ab 3 Jahren" mit verschluckbaren Stücken untergeschoben.
+  bool _isAgeAppropriate(FamilyRecipe recipe) =>
+      recipe.minChildAge <= _childAge;
+
   FamilyRecipe? _fallbackRecipe({String languageCode = 'de'}) {
     final recipes = FallbackRecipes.forLanguage(languageCode);
     final count = recipes.length;
     for (var i = 0; i < count; i++) {
       final recipe = recipes[(_fallbackIndex + i) % count];
-      if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys)) {
+      if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys) &&
+          _isAgeAppropriate(recipe)) {
         _fallbackIndex = (_fallbackIndex + i + 1) % count;
         return FamilyRecipe(
           id: 'fallback_${DateTime.now().millisecondsSinceEpoch}_$_fallbackIndex',
