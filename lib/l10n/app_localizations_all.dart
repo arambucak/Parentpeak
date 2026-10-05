@@ -593,6 +593,9 @@ class AppStringsManager {
       'kitchen_family_recipes_tooltip': 'Familien-Rezepte (teilen & entdecken)',
       'kitchen_search_hint':
           'Suchst du ein bestimmtes Rezept? (z. B. Pfannkuchen, Nudeln)',
+      'kitchen_no_safe_recipe_title': 'Sicherheit zuerst',
+      'kitchen_no_safe_recipe_body': 'Wegen der eingetragenen Allergien konnten wir gerade kein sicheres Rezept vorschlagen. Prüfe die Allergien im Kind-Dossier oder versuch es erneut.',
+      'kitchen_try_again': 'Erneut versuchen',
       'kitchen_fridge_title': 'Aus dem, was da ist',
       'kitchen_fridge_subtitle':
           'Foto vom Kühlschrank machen – ich schlage ein Rezept vor.',
@@ -2814,6 +2817,9 @@ class AppStringsManager {
       'kitchen_family_recipes_tooltip': 'Family recipes (share & discover)',
       'kitchen_search_hint':
           'Looking for a particular recipe? (e.g. pancakes, pasta)',
+      'kitchen_no_safe_recipe_title': 'Safety first',
+      'kitchen_no_safe_recipe_body': 'Because of the saved allergies we couldn\'t suggest a safe recipe right now. Check the allergies in the child profile or try again.',
+      'kitchen_try_again': 'Try again',
       'kitchen_fridge_title': 'Cook with what you have',
       'kitchen_fridge_subtitle':
           'Take a photo of your fridge and I’ll suggest a recipe.',
@@ -10167,6 +10173,9 @@ class AppStringsManager {
           'Rêçeteyên malbatê (parve bike & keşif bike)',
       'kitchen_search_hint':
           'Li rêçeteyeke taybet digerî? (mînak pankek, pasta)',
+      'kitchen_no_safe_recipe_title': 'Pêşî ewlehî',
+      'kitchen_no_safe_recipe_body': 'Ji ber alerjiyên tomarkirî me nikaribû niha reçeteyek ewle pêşniyar bike. Alerjiyan di profîla zarok de kontrol bike an dîsa biceribîne.',
+      'kitchen_try_again': 'Dîsa biceribîne',
       'kitchen_fridge_title': 'Bi tiştên heyî bipêje',
       'kitchen_fridge_subtitle':
           'Wêneyê sarincê bikişîne; ez ê rêçeteyek pêşniyar bikim.',
@@ -15314,6 +15323,9 @@ class AppStringsManager {
       'kitchen_family_recipes_tooltip': 'Aile tarifleri (paylaş & keşfet)',
       'kitchen_search_hint':
           'Belirli bir tarif mi arıyorsun? (ör. pankek, makarna)',
+      'kitchen_no_safe_recipe_title': 'Önce güvenlik',
+      'kitchen_no_safe_recipe_body': 'Kayıtlı alerjiler nedeniyle şu an güvenli bir tarif öneremedik. Çocuk profilindeki alerjileri kontrol et veya tekrar dene.',
+      'kitchen_try_again': 'Tekrar dene',
       'kitchen_fridge_title': 'Evdekilerle pişir',
       'kitchen_fridge_subtitle':
           'Buzdolabının fotoğrafını çek; sana bir tarif önereyim.',

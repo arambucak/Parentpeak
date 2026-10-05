@@ -7,6 +7,8 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
+import 'package:parentpeak/models/kind_dossier.dart';
+import 'package:parentpeak/logic/allergen_guard.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
 
 /// Phase 3b: KI-Kühlschrank-Foto.
@@ -21,6 +23,7 @@ class FridgeRecipeService {
 
   int _childAgeYears = 3;
   List<String> _allergies = [];
+  Set<String> _allergenKeys = {};
   bool _loaded = false;
 
   /// Lädt Alter (jüngstes Kind) + Allergien aus Profil/Einstellungen.
@@ -36,9 +39,22 @@ class FridgeRecipeService {
         _childAgeYears = (youngest / 12).round().clamp(0, 16);
       }
     } catch (_) {}
+    // SICHERHEIT: Allergien aus dem Kind-Dossier (echte Quelle) + Legacy-Key.
     try {
       final prefs = await SharedPreferences.getInstance();
-      _allergies = prefs.getStringList('familyküche.allergies') ?? [];
+      final legacy = prefs.getStringList('familyküche.allergies') ?? [];
+      final fromDossiers = <String>{};
+      try {
+        await KindDossierService.instance.load();
+        for (final d in KindDossierService.instance.dossiers) {
+          for (final a in d.allergies) {
+            final clean = a.trim();
+            if (clean.isNotEmpty) fromDossiers.add(clean);
+          }
+        }
+      } catch (_) {}
+      _allergies = {...fromDossiers, ...legacy}.toList();
+      _allergenKeys = _allergies.map(AllergenGuard.canonicalAllergen).toSet();
     } catch (_) {}
   }
 
@@ -156,7 +172,15 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
             'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
       );
       await AIRateLimiter.recordRequest();
-      return _parseRecipe(raw);
+      final recipe = _parseRecipe(raw);
+      if (recipe == null) return null;
+      // SICHERHEIT: Kühlschrank-Rezept gegen die Allergene gegenprüfen. Enthält
+      // es ein Allergen, nicht ausliefern (die UI zeigt dann eine Warnung).
+      if (!AllergenGuard.isRecipeSafe(recipe, _allergenKeys)) {
+        debugPrint('FridgeRecipeService: Rezept enthält Allergen → verworfen');
+        return null;
+      }
+      return recipe;
     } catch (e) {
       debugPrint('FridgeRecipeService.generateFromIngredients: $e');
       return null;

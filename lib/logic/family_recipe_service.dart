@@ -6,6 +6,8 @@ import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
+import 'package:parentpeak/models/kind_dossier.dart';
+import 'package:parentpeak/logic/allergen_guard.dart';
 
 /// KI-Rezept-Service — generiert kinderfreundliche Rezepte via Gemini.
 ///
@@ -23,6 +25,9 @@ class FamilyRecipeService {
   List<FamilyRecipe> _savedRecipes = [];
   int _childAge = 3;
   List<String> _allergies = [];
+  // Kanonische Allergen-Keys (aus Kind-Dossier) für die clientseitige
+  // Sicherheitsprüfung generierter/Fallback-Rezepte.
+  Set<String> _allergenKeys = {};
 
   List<FamilyRecipe> get savedRecipes => List.unmodifiable(_savedRecipes);
 
@@ -32,9 +37,21 @@ class FamilyRecipeService {
     if (profile != null && profile.children.isNotEmpty) {
       _childAge = (profile.children.first.ageMonths / 12).round().clamp(0, 16);
     }
-    // Allergien aus SharedPreferences (später aus Profil erweiterbar)
+
+    // SICHERHEIT: Allergien aus dem Kind-Dossier (die echte, gepflegte Quelle)
+    // laden. Der alte Key 'familyküche.allergies' wird zusätzlich gelesen,
+    // falls dort je etwas gesetzt wurde — beides zusammengeführt.
     final prefs = await SharedPreferences.getInstance();
-    _allergies = prefs.getStringList('familyküche.allergies') ?? [];
+    final legacy = prefs.getStringList('familyküche.allergies') ?? [];
+    final dossierAllergies = await _loadDossierAllergies();
+    _allergies = {...dossierAllergies, ...legacy}.toList();
+    // Kanonische Allergen-Keys für die clientseitige Rezept-Prüfung.
+    _allergenKeys = AllergenGuard.allergensFromDossiers([
+      // Legacy-Begriffe ebenfalls kanonisieren.
+      ...legacy.map((a) => KindDossier(childName: '', allergies: [a])),
+    ])
+      ..addAll(dossierAllergies.map(AllergenGuard.canonicalAllergen));
+
     // Gespeicherte Rezepte laden
     final savedRaw = prefs.getString(_savedKey);
     if (savedRaw != null) {
@@ -43,6 +60,23 @@ class FamilyRecipeService {
             .map((e) => FamilyRecipe.fromJson(e))
             .toList();
       } catch (_) {}
+    }
+  }
+
+  /// Sammelt die (rohen) Allergie-Begriffe aus allen Kind-Dossiers.
+  Future<List<String>> _loadDossierAllergies() async {
+    try {
+      await KindDossierService.instance.load();
+      final all = <String>{};
+      for (final d in KindDossierService.instance.dossiers) {
+        for (final a in d.allergies) {
+          final clean = a.trim();
+          if (clean.isNotEmpty) all.add(clean);
+        }
+      }
+      return all.toList();
+    } catch (_) {
+      return const [];
     }
   }
 
@@ -130,7 +164,17 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       }
 
       final recipe = _parseRecipe(raw);
-      if (recipe != null) return recipe;
+      if (recipe != null) {
+        // SICHERHEIT: KI-Antwort gegen die Allergene gegenprüfen. Enthält das
+        // Rezept trotz Prompt-Anweisung ein Allergen, NICHT ausliefern, sondern
+        // auf ein garantiert sicheres Fallback-Rezept ausweichen.
+        if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys)) {
+          return recipe;
+        }
+        debugPrint(
+            'FamilyRecipeService: KI-Rezept enthält Allergen(e) → sicheres Fallback');
+        return _fallbackRecipe();
+      }
       debugPrint(
           'FamilyRecipeService: Parsing fehlgeschlagen, Antwort: ${raw.substring(0, raw.length.clamp(0, 200))}');
       return _fallbackRecipe();
@@ -322,23 +366,33 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
   int _fallbackIndex = 0;
 
-  FamilyRecipe _fallbackRecipe() {
-    final recipe =
-        _allFallbackRecipes[_fallbackIndex % _allFallbackRecipes.length];
-    _fallbackIndex++;
-    return FamilyRecipe(
-      id: 'fallback_${DateTime.now().millisecondsSinceEpoch}_$_fallbackIndex',
-      title: recipe.title,
-      description: recipe.description,
-      prepMinutes: recipe.prepMinutes,
-      costPerPortion: recipe.costPerPortion,
-      minChildAge: recipe.minChildAge,
-      ingredients: recipe.ingredients,
-      steps: recipe.steps,
-      allergensFree: recipe.allergensFree,
-      season: _currentSeason(),
-      tip: recipe.tip,
-    );
+  /// Liefert ein Fallback-Rezept, das für die gesetzten Allergene SICHER ist.
+  /// Rotiert dafür durch die Liste und überspringt unsichere Rezepte. Gibt
+  /// null zurück, wenn KEIN Fallback sicher ist — dann zeigt die UI eine klare
+  /// Allergen-Warnung statt eines (gefährlichen) Rezepts.
+  FamilyRecipe? _fallbackRecipe() {
+    final count = _allFallbackRecipes.length;
+    for (var i = 0; i < count; i++) {
+      final recipe = _allFallbackRecipes[(_fallbackIndex + i) % count];
+      if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys)) {
+        _fallbackIndex = (_fallbackIndex + i + 1) % count;
+        return FamilyRecipe(
+          id: 'fallback_${DateTime.now().millisecondsSinceEpoch}_$_fallbackIndex',
+          title: recipe.title,
+          description: recipe.description,
+          prepMinutes: recipe.prepMinutes,
+          costPerPortion: recipe.costPerPortion,
+          minChildAge: recipe.minChildAge,
+          ingredients: recipe.ingredients,
+          steps: recipe.steps,
+          allergensFree: recipe.allergensFree,
+          season: _currentSeason(),
+          tip: recipe.tip,
+        );
+      }
+    }
+    // Kein einziges Fallback-Rezept ist für diese Allergene sicher.
+    return null;
   }
 
   static const _allFallbackRecipes = [
