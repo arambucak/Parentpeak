@@ -100,6 +100,9 @@ void main() {
     'calendar_quick_add_bad_time',
     'calendar_quick_add_bad_date',
     'calendar_quick_add_failed',
+    'calendar_sync_title',
+    'calendar_sync_desc_on',
+    'calendar_sync_desc_off',
   ];
 
   group('Calendar i18n completeness', () {
