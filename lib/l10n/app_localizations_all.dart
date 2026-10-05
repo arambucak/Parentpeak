@@ -263,7 +263,8 @@ class AppStringsManager {
       'ritual_empty_action': 'Zum Familienprofil',
       'ritual_section_morning': 'Morgen', 'ritual_afternoon': 'Nachmittag',
       'ritual_reminder_title': 'Zeit für euer Ritual 🌙',
-      'ritual_reminder_body': 'Sanfte Erinnerung an „{name}“. Nehmt euch einen ruhigen Moment.',
+      'ritual_reminder_body':
+          'Sanfte Erinnerung an „{name}“. Nehmt euch einen ruhigen Moment.',
       'ritual_fallback_name_morning': 'Sanfter Morgen',
       'ritual_fallback_name_afternoon': 'Ankommen am Nachmittag',
       'ritual_step_pause_breathe_sub': 'Erst einmal durchatmen',
@@ -1506,6 +1507,10 @@ class AppStringsManager {
       'fridge_intro':
           'Mach ein Foto von deinen Lebensmitteln – ich erkenne die Zutaten und schlage ein kindgerechtes Rezept vor.',
       'fridge_take_photo': 'Foto machen',
+      'fridge_consent_title': 'Foto mit KI auswerten',
+      'fridge_consent_body':
+          'Für die Zutaten-Erkennung wird dein Foto an unseren KI-Dienst gesendet. Bitte achte darauf, dass keine Personen oder privaten Notizen darauf zu sehen sind. Auch die im Profil hinterlegten Allergien werden zur sicheren Rezept-Erstellung mitgenutzt. Das Foto wird nicht dauerhaft gespeichert.',
+      'fridge_consent_accept': 'Einverstanden, Foto auswerten',
       'fridge_choose_photo': 'Auswählen',
       'fridge_no_ingredients_detected':
           'Ich konnte keine Zutaten sicher erkennen. Du kannst sie unten einfach selbst ergänzen.',
@@ -2657,7 +2662,8 @@ class AppStringsManager {
       'ritual_empty_action': 'Go to family profile',
       'ritual_section_morning': 'Morning', 'ritual_afternoon': 'Afternoon',
       'ritual_reminder_title': 'Time for your ritual 🌙',
-      'ritual_reminder_body': 'Gentle reminder for „{name}“. Take a calm moment together.',
+      'ritual_reminder_body':
+          'Gentle reminder for „{name}“. Take a calm moment together.',
       'ritual_fallback_name_morning': 'Gentle morning',
       'ritual_fallback_name_afternoon': 'Afternoon arrival',
       'ritual_step_pause_breathe_sub': 'Take a breath first',
@@ -3378,6 +3384,10 @@ class AppStringsManager {
       'fridge_intro':
           'Take a photo of your food. I’ll identify the ingredients and suggest a child-friendly recipe.',
       'fridge_take_photo': 'Take photo',
+      'fridge_consent_title': 'Analyze photo with AI',
+      'fridge_consent_body':
+          'To detect ingredients, your photo is sent to our AI service. Please make sure no people or private notes are visible. The allergies saved in your profile are also used to create a safe recipe. The photo is not stored permanently.',
+      'fridge_consent_accept': 'Agree and analyze photo',
       'fridge_choose_photo': 'Choose',
       'fridge_no_ingredients_detected':
           'I could not identify any ingredients reliably. You can add them manually below.',
@@ -10653,7 +10663,8 @@ class AppStringsManager {
       'ritual_empty_action': 'Herin profîla malbatê',
       'ritual_section_morning': 'Sibe', 'ritual_afternoon': 'Piştî nîvro',
       'ritual_reminder_title': 'Dema rîtuela we 🌙',
-      'ritual_reminder_body': 'Bîranîneke nerm ji bo „{name}“. Kêliyeke aram ji xwe re bigirin.',
+      'ritual_reminder_body':
+          'Bîranîneke nerm ji bo „{name}“. Kêliyeke aram ji xwe re bigirin.',
       'ritual_fallback_name_morning': 'Sibeke aram',
       'ritual_fallback_name_afternoon': 'Bi aramî piştî nîvro bigihîje',
       'ritual_step_pause_breathe_sub': 'Pêşî nefesê bistîne',
@@ -11916,6 +11927,10 @@ class AppStringsManager {
       'fridge_intro':
           'Wêneyekî xwarinên xwe bikişîne — ez pêkhateyan nas dikim û rêçeteyeke guncaw ji bo zarokan pêşniyar dikim.',
       'fridge_take_photo': 'Wêne bikişîne',
+      'fridge_consent_title': 'Wêne bi AI\'yê binirxîne',
+      'fridge_consent_body':
+          'Ji bo naskirina pêkhateyan, wêneyê te ji xizmeta me ya AI\'yê re tê şandin. Ji kerema xwe bawer bike ku kes an notên taybet lê xuya nabin. Alerjiyên di profîla te de jî ji bo çêkirina reçeteyeke ewle têne bikaranîn. Wêne bi domdarî nayê tomarkirin.',
+      'fridge_consent_accept': 'Razî me, wêne binirxîne',
       'fridge_choose_photo': 'Hilbijêre',
       'fridge_no_ingredients_detected':
           'Min pêkhate bi ewlehî nas nekirin. Tu dikarî li jêr bixwe wan lê zêde bikî.',
@@ -16183,7 +16198,8 @@ class AppStringsManager {
       'ritual_empty_action': 'Aile profiline git',
       'ritual_section_morning': 'Sabah', 'ritual_afternoon': 'Öğleden sonra',
       'ritual_reminder_title': 'Rutininiz için vakit 🌙',
-      'ritual_reminder_body': '„{name}“ için nazik bir hatırlatma. Sakin bir an ayırın.',
+      'ritual_reminder_body':
+          '„{name}“ için nazik bir hatırlatma. Sakin bir an ayırın.',
       'ritual_fallback_name_morning': 'Nazik bir sabah',
       'ritual_fallback_name_afternoon': 'Öğleden sonra varış',
       'ritual_step_pause_breathe_sub': 'Önce bir nefes al',
@@ -17455,6 +17471,10 @@ class AppStringsManager {
       'fridge_intro':
           'Yiyeceklerinin fotoğrafını çek — malzemeleri tanıyıp çocuklara uygun bir tarif önereyim.',
       'fridge_take_photo': 'Fotoğraf çek',
+      'fridge_consent_title': 'Fotoğrafı yapay zekâ ile analiz et',
+      'fridge_consent_body':
+          'Malzemeleri tanımak için fotoğrafın yapay zekâ hizmetimize gönderilir. Lütfen üzerinde kişiler veya özel notlar olmamasına dikkat et. Profilindeki alerjiler de güvenli bir tarif oluşturmak için kullanılır. Fotoğraf kalıcı olarak saklanmaz.',
+      'fridge_consent_accept': 'Kabul ediyorum, fotoğrafı analiz et',
       'fridge_choose_photo': 'Fotoğraf seç',
       'fridge_no_ingredients_detected':
           'Malzemeleri güvenilir biçimde tanıyamadım. Aşağıdan kendin kolayca ekleyebilirsin.',
