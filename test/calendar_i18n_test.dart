@@ -103,6 +103,7 @@ void main() {
     'calendar_sync_title',
     'calendar_sync_desc_on',
     'calendar_sync_desc_off',
+    'calendar_holidays_until',
   ];
 
   group('Calendar i18n completeness', () {
@@ -135,6 +136,7 @@ void main() {
         'calendar_events_count': '{n}',
         'calendar_pack_tomorrow': '{title}',
         'calendar_pack_dont_forget': '{note}',
+        'calendar_holidays_until': '{year}',
       };
       for (final lang in AppLanguages.supported) {
         final map = AppStringsManager.allStrings[lang.code]!;

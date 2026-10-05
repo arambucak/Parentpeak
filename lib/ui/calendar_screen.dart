@@ -1285,6 +1285,35 @@ class _CalendarScreenState extends State<CalendarScreen>
               onSelectDay: _selectDay,
               eventCounter: _countEventsForDay,
             ),
+            // Ehrlicher Hinweis statt stiller Leere, wenn für dieses Jahr keine
+            // Feiertags-/Ferien-Daten mehr gepflegt sind.
+            if (HolidayService.isBeyondData(_focusedDay.year)) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(children: [
+                  Icon(Icons.info_outline_rounded,
+                      size: 15, color: Colors.blueGrey[400]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _t('calendar_holidays_until').replaceAll(
+                          '{year}', '${HolidayService.maxDataYear() ?? ''}'),
+                      style: TextStyle(
+                          fontSize: 11,
+                          height: 1.3,
+                          color: Colors.blueGrey[600]),
+                    ),
+                  ),
+                ]),
+              ),
+            ],
             const SizedBox(height: 16),
             // Quick-Add Natural Language Input
             Container(
