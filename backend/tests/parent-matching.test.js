@@ -142,7 +142,27 @@ async function runTests() {
       const topMatch = res.body.matches[0];
       console.log(`  Top match: ${topMatch.profile.name} (score: ${topMatch.score})`);
       console.log(`    Breakdown: proximity=${topMatch.breakdown.proximity}, interest=${topMatch.breakdown.interest}, childAge=${topMatch.breakdown.childAge}, familyForm=${topMatch.breakdown.familyForm}`);
-      
+
+      // DATENSCHUTZ: Fremden Nutzern darf nie die exakte Position einer
+      // Familie mit Kindern ausgeliefert werden. Die Koordinaten müssen grob
+      // gerundet sein (max. 2 Dezimalstellen, ~1 km) und approximateLocation
+      // muss gesetzt sein.
+      for (const m of res.body.matches) {
+        for (const field of ['latitude', 'longitude']) {
+          const v = m.profile[field];
+          if (v === null || v === undefined) continue;
+          const decimals = (String(v).split('.')[1] || '').length;
+          if (decimals > 2) {
+            throw new Error(
+              `Datenschutz-Verletzung: ${field}=${v} ist zu genau (max. 2 Dezimalstellen erlaubt)`);
+          }
+        }
+        if (m.profile.approximateLocation !== true) {
+          throw new Error('approximateLocation muss true sein (grobe Position)');
+        }
+      }
+      console.log(`  ✓ Koordinaten grob gerundet (Datenschutz)`);
+
       // Verify scoring logic
       if (topMatch.profile.city === 'Berlin' && topMatch.score > 70) {
         console.log(`  ✓ Correct match with good score`);
