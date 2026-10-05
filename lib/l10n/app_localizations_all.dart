@@ -1245,6 +1245,16 @@ class AppStringsManager {
       'network_validation_district':
           'Bitte gib euren Stadtteil ein (Schritt 1)',
       'network_save_error': 'Fehler beim Speichern: {error}',
+      'network_publish_title': 'Spielfreunde-Profil veröffentlichen?',
+      'network_publish_body':
+          'Dein Anzeigename, Ort, grob gerundeter Standort (falls vorhanden), ungefähre Kinderalter, Sprachen, Familienform, Werte, gewünschte Aktivitäten und deine Bio werden auf unserem Backend gespeichert und anderen Familien im Netzwerk angezeigt. Kindnamen, Geburtsdaten und Besonderheiten bleiben auf diesem Gerät. Trage keine Kindnamen, Adresse oder Gesundheitsdaten in deine öffentliche Bio ein. Das Matching verwendet keine KI. Du kannst dein Profil jederzeit löschen.',
+      'network_publish_accept': 'Profil veröffentlichen',
+      'network_child_name_local': 'Name / Spitzname (nur auf diesem Gerät)',
+      'network_specials_hint': 'Notiz zu Besonderheiten (nur auf diesem Gerät)',
+      'network_publish_failed':
+          'Das Profil konnte nicht veröffentlicht werden. Bitte versuche es erneut.',
+      'network_specials_local':
+          'Diese Angaben bleiben nur auf deinem Gerät. Sie werden nicht veröffentlicht oder für das Backend-Matching verwendet.',
       'network_delete_failed':
           'Das Profil konnte nicht gelöscht werden. Es bleibt gespeichert. Bitte versuche es erneut.',
       'network_delete_profile_confirm':
@@ -4545,6 +4555,16 @@ class AppStringsManager {
       'network_validation_name': 'Please enter your name (step 1)',
       'network_validation_district': 'Please enter your district (step 1)',
       'network_save_error': 'Error while saving: {error}',
+      'network_publish_title': 'Publish your playmate profile?',
+      'network_publish_body':
+          'Your display name, area, coarsely rounded location (if available), approximate child ages, languages, family type, values, activities you are looking for and bio will be stored on our backend and shown to other families in the network. Child names, dates of birth and special circumstances stay on this device. Do not include child names, your address or health details in your public bio. Matching does not use AI. You can delete your profile at any time.',
+      'network_publish_accept': 'Publish profile',
+      'network_child_name_local': 'Name / nickname (only on this device)',
+      'network_specials_hint': 'Note about special circumstances (device only)',
+      'network_publish_failed':
+          'Could not publish your profile. Please try again.',
+      'network_specials_local':
+          'These details stay on your device only. They are not published or used for backend matching.',
       'network_delete_failed':
           'Could not delete your profile. It remains saved. Please try again.',
       'network_delete_profile_confirm':
@@ -11690,6 +11710,16 @@ class AppStringsManager {
       'network_validation_name': 'Ji kerema xwe navê xwe binivîse (gav 1)',
       'network_validation_district': 'Ji kerema xwe taxa xwe binivîse (gav 1)',
       'network_save_error': 'Çewtî di tomarkirinê de: {error}',
+      'network_publish_title': 'Profîla hevalên lîstikê biweşînî?',
+      'network_publish_body':
+          'Navê te yê xuyangê, herêm, cihê nêzîk (heke hebe), temenê nêzîk yê zarokan, ziman, cureya malbatê, nirx, çalakiyên ku hûn dixwazin û biyografiya te li ser backendê me tên tomarkirin û ji malbatên din re tên nîşandan. Navên zarokan, rojên jidayikbûnê û taybetmendî li ser vê amûrê dimînin. Navên zarokan, navnîşan an agahiyên tenduristiyê di biyografiya gelemperî de nenivîse. Lihevkirin AI bi kar nayîne. Tu dikarî profîla xwe her dem jê bibî.',
+      'network_publish_accept': 'Profîlê biweşîne',
+      'network_child_name_local': 'Nav / navê nasnav (tenê li ser vê amûrê)',
+      'network_specials_hint': 'Nîşe li ser taybetmendiyan (tenê li ser amûrê)',
+      'network_publish_failed':
+          'Profîl nehat weşandin. Ji kerema xwe dîsa biceribîne.',
+      'network_specials_local':
+          'Ev agahî tenê li ser amûra te dimînin. Nayên weşandin û ji bo lihevkirina backendê nayên bikaranîn.',
       'network_delete_failed':
           'Profîl nehat jêbirin. Ew hîn tomarkirî ye. Ji kerema xwe dîsa biceribîne.',
       'network_delete_profile_confirm':
@@ -17216,6 +17246,16 @@ class AppStringsManager {
       'network_validation_name': 'Lütfen adınızı girin (adım 1)',
       'network_validation_district': 'Lütfen semtinizi girin (adım 1)',
       'network_save_error': 'Kaydetme hatası: {error}',
+      'network_publish_title': 'Oyun arkadaşı profilini yayınla?',
+      'network_publish_body':
+          'Görünen adınız, bölgeniz, kabaca yuvarlanmış konumunuz (varsa), çocukların yaklaşık yaşları, diller, aile türü, değerler, aradığınız etkinlikler ve biyografiniz sunucumuzda saklanır ve ağdaki diğer ailelere gösterilir. Çocuk adları, doğum tarihleri ve özel durumlar bu cihazda kalır. Herkese açık biyografinize çocuk adları, adres veya sağlık bilgileri yazmayın. Eşleştirmede yapay zekâ kullanılmaz. Profilinizi istediğiniz zaman silebilirsiniz.',
+      'network_publish_accept': 'Profili yayınla',
+      'network_child_name_local': 'Ad / takma ad (yalnızca bu cihazda)',
+      'network_specials_hint': 'Özel durumlar hakkında not (yalnızca cihazda)',
+      'network_publish_failed':
+          'Profil yayınlanamadı. Lütfen tekrar deneyin.',
+      'network_specials_local':
+          'Bu bilgiler yalnızca cihazınızda kalır. Yayınlanmaz ve sunucudaki eşleştirme için kullanılmaz.',
       'network_delete_failed':
           'Profil silinemedi. Kayıtlı kalmaya devam ediyor. Lütfen tekrar deneyin.',
       'network_delete_profile_confirm':

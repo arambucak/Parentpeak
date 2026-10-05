@@ -1,48 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
-import 'package:parentpeak/models/family_profile_model.dart';
 
-/// Backend-Service für Spielfreunde + Referral.
-///
-/// Verbindet die App mit:
-/// - POST/GET /api/spielfreunde/profiles
-/// - GET /api/spielfreunde/waitlist-count
-/// - POST /api/referral/register
-/// - GET /api/referral/status/:code
-/// - POST /api/referral/redeem
+/// Legacy reads for suggestions; profile publication uses PlaymateProfileService.
 class SpielfreundeBackendService {
   SpielfreundeBackendService({BackendApiClient? apiClient})
       : _api = apiClient ?? BackendServiceFactory.createApiClient();
 
   final BackendApiClient? _api;
   String? lastError;
-
-  /// Profil auf dem Server speichern.
-  Future<bool> saveProfile(FamilyMatchProfile profile, String userId) async {
-    if (_api == null) return false;
-    lastError = null;
-    try {
-      await _api!.postJsonAny('/api/spielfreunde/profiles', {
-        'userId': userId,
-        'displayName': profile.displayName,
-        'district': profile.district,
-        'children': profile.children.map((c) => c.toJson()).toList(),
-        'languages': profile.languages,
-        'familyForm': profile.familyForm,
-        'values': profile.values,
-        'lookingFor': profile.lookingFor,
-        'availability': profile.availability,
-        'specials': profile.specials,
-        'bio': profile.bio,
-      });
-      return true;
-    } catch (e) {
-      lastError = e.toString();
-      debugPrint('SpielfreundeBackendService.saveProfile failed: $e');
-      return false;
-    }
-  }
 
   /// Warteliste-Counter für einen Stadtteil abrufen.
   Future<WaitlistStatus> getWaitlistCount(String? district) async {

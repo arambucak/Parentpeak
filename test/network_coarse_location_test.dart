@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:parentpeak/ui/eltern_netzwerk_screen.dart' show coarseCoordinate;
+import 'package:parentpeak/logic/playmate_profile_service.dart'
+    show coarseCoordinate;
 
 /// Datenschutz: Das Spielfreunde-Profil darf die exakte Position einer Familie
 /// nie ans Backend senden. coarseCoordinate rundet auf ~1 km Raster.
