@@ -50,12 +50,10 @@ class DevelopmentReportLimitService {
     return r > 0 ? r : 0;
   }
 
-  /// Wann ist der nächste kostenlose Bericht verfügbar?
-  String get nextFreeReportInfo {
-    if (!isLimitReached) return '';
-    final nextYear = _trackedYear + 1;
-    return 'Nächster kostenloser Bericht: ab Januar $nextYear';
-  }
+  /// Jahr, ab dem der nächste kostenlose Bericht verfügbar ist — oder null,
+  /// wenn das Limit nicht erreicht ist. Die (lokalisierte) Textformulierung
+  /// baut die UI, damit der Service sprachunabhängig bleibt.
+  int? get nextFreeReportYear => isLimitReached ? _trackedYear + 1 : null;
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
