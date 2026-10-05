@@ -78,4 +78,21 @@ void main() {
       expect(validCoordinates(0, 13), isTrue);
     },
   );
+  group('roundCoordinate (Datensparsamkeit)', () {
+    test('rundet standardmäßig auf 2 Nachkommastellen (~1 km)', () {
+      expect(roundCoordinate(52.5234567), 52.52);
+      expect(roundCoordinate(13.4087654), 13.41);
+      // Metergenaue Varianten desselben Orts kollabieren auf denselben Wert.
+      expect(roundCoordinate(52.520008), roundCoordinate(52.519900));
+    });
+    test('rundet negative Koordinaten korrekt', () {
+      expect(roundCoordinate(-33.868819), -33.87);
+      expect(roundCoordinate(-0.004), 0.0);
+    });
+    test('respektiert fractionDigits und lässt nicht-endliche Werte durch', () {
+      expect(roundCoordinate(52.5234567, fractionDigits: 1), 52.5);
+      expect(roundCoordinate(double.nan).isNaN, isTrue);
+      expect(roundCoordinate(double.infinity), double.infinity);
+    });
+  });
 }

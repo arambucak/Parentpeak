@@ -27,26 +27,40 @@ BackendApiClient _client(http.Client httpClient) {
 }
 
 void main() {
-  test('create preserves the selected local time across the server round trip', () async {
+  test('create preserves the selected local time across the server round trip',
+      () async {
     final selected = DateTime(2026, 10, 3, 10);
     final event = MeetupEvent(
-      id: 'timezone-event', hosterId: 'owner', title: 'Timezone test',
-      description: '', category: EventCategory.other,
-      ageGroups: const [], location: 'Berlin', latitude: 52.52,
-      longitude: 13.405, eventDate: selected, createdAt: selected,
-      maxParticipants: 10, photoUrl: '',
+      id: 'timezone-event',
+      hosterId: 'owner',
+      title: 'Timezone test',
+      description: '',
+      category: EventCategory.other,
+      ageGroups: const [],
+      location: 'Berlin',
+      latitude: 52.52,
+      longitude: 13.405,
+      eventDate: selected,
+      createdAt: selected,
+      maxParticipants: 10,
+      photoUrl: '',
     );
-    final service = EventBackendService(apiClient: _client(MockClient((request) async {
+    final service =
+        EventBackendService(apiClient: _client(MockClient((request) async {
       final body = jsonDecode(request.body) as Map<String, dynamic>;
       final startDate = body['startDate'] as String;
       expect(startDate, endsWith('Z'));
       expect(startDate, selected.toUtc().toIso8601String());
-      return http.Response(jsonEncode({'event': {
-        ...event.toJson(),
-        'eventDate': null,
-        'startDate': startDate,
-        'status': 'upcoming',
-      }}), 201);
+      return http.Response(
+          jsonEncode({
+            'event': {
+              ...event.toJson(),
+              'eventDate': null,
+              'startDate': startDate,
+              'status': 'upcoming',
+            }
+          }),
+          201);
     })));
 
     final created = await service.createEvent(event);
@@ -112,9 +126,12 @@ void main() {
         }),
       ),
     );
-    final updated = await service.updateEvent('ev1', {
-      'title': 'Updated',
-    }, requestingUserId: 'owner');
+    final updated = await service.updateEvent(
+        'ev1',
+        {
+          'title': 'Updated',
+        },
+        requestingUserId: 'owner');
     expect(updated?.currentParticipants, 1);
     expect(updated?.photoUrl, 'https://example.test/event.jpg');
   });
@@ -146,11 +163,14 @@ void main() {
         }),
       ),
     );
-    final updated = await service.updateEvent('ev1', {
-      'title': 'Updated',
-      'startDate': '2026-10-10T10:00:00Z',
-      'maxParticipants': 8,
-    }, requestingUserId: 'owner');
+    final updated = await service.updateEvent(
+        'ev1',
+        {
+          'title': 'Updated',
+          'startDate': '2026-10-10T10:00:00Z',
+          'maxParticipants': 8,
+        },
+        requestingUserId: 'owner');
     expect(updated?.title, 'Updated');
     expect(updated?.maxParticipants, 8);
   });
@@ -196,11 +216,13 @@ void main() {
         participationId: 'part1',
         accept: true,
       );
-      await expectLater(service.fetchParticipationByUserAndEvent(
-        userId: 'user1',
-        eventId: 'ev1',
-      ), throwsA(isA<Exception>()));
-        await expectLater(service.fetchApprovedParticipantsForEvent('ev1'),
+      await expectLater(
+          service.fetchParticipationByUserAndEvent(
+            userId: 'user1',
+            eventId: 'ev1',
+          ),
+          throwsA(isA<Exception>()));
+      await expectLater(service.fetchApprovedParticipantsForEvent('ev1'),
           throwsA(isA<Exception>()));
 
       expect(paths, [
@@ -296,9 +318,8 @@ void main() {
             'description': '',
             'status': 'active',
             'eventType': 'other',
-            'startDate': DateTime.now()
-                .add(const Duration(days: 1))
-                .toIso8601String(),
+            'startDate':
+                DateTime.now().add(const Duration(days: 1)).toIso8601String(),
             'location': 'Berlin',
             'latitude': 52.52,
             'longitude': 13.4,
@@ -379,6 +400,31 @@ void main() {
       expect(captured!.url.queryParameters['viewerUserId'], 'viewer1');
       expect(captured!.url.queryParameters['limit'], '25');
     });
+
+    test('rounds the viewer coordinates to ~1 km before sending them',
+        () async {
+      http.Request? captured;
+      final mockHttp = MockClient((request) async {
+        captured = request;
+        return http.Response(
+          jsonEncode({'items': [], 'limit': 50, 'offset': 0, 'hasMore': false}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final svc = EventBackendService(apiClient: _client(mockHttp));
+      await svc.discoverEventsForUser(
+        viewerUserId: 'viewer1',
+        // Metergenaue Koordinaten dürfen das Gerät nicht verlassen.
+        viewerLatitude: 52.5234567,
+        viewerLongitude: 13.4087654,
+      );
+
+      // Datensparsamkeit: nur grob gerundete Koordinaten (2 Nachkommastellen).
+      expect(captured!.url.queryParameters['latitude'], '52.52');
+      expect(captured!.url.queryParameters['longitude'], '13.41');
+    });
   });
 
   group('EventBackendService.updateEvent', () {
@@ -395,9 +441,8 @@ void main() {
               'description': '',
               'status': 'active',
               'eventType': 'other',
-              'startDate': DateTime.now()
-                  .add(const Duration(days: 1))
-                  .toIso8601String(),
+              'startDate':
+                  DateTime.now().add(const Duration(days: 1)).toIso8601String(),
               'location': 'Hamburg',
               'latitude': 53.57,
               'longitude': 10.02,
@@ -416,10 +461,13 @@ void main() {
       });
 
       final svc = EventBackendService(apiClient: _client(mockHttp));
-      final updated = await svc.updateEvent('ev1', {
-        'title': 'Updated Title',
-        'location': 'Hamburg',
-      }, requestingUserId: 'user1');
+      final updated = await svc.updateEvent(
+          'ev1',
+          {
+            'title': 'Updated Title',
+            'location': 'Hamburg',
+          },
+          requestingUserId: 'user1');
 
       expect(captured!.method, 'PUT');
       expect(captured!.url.path, contains('ev1'));
