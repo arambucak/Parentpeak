@@ -221,6 +221,7 @@ class AppStringsManager {
       'care_other': 'Andere',
       'next': 'Weiter',
       'yes_answer': 'Ja',
+      'no_answer': 'Nein',
       'sometimes': 'Manchmal',
       'not_yet': 'Noch nicht',
       'calendar_new_event': 'Neuen Termin hinzufuegen',
@@ -506,6 +507,10 @@ class AppStringsManager {
           'Diese Leistungen könnten für euch in {country} relevant sein.',
       'finance_legal_disclaimer':
           'Dies ist keine Rechtsberatung. Bitte prüfe deine Ansprüche beim zuständigen Amt oder einer Beratungsstelle.',
+      'finance_amounts_disclaimer':
+          'Beträge und Links dienen nur der Orientierung (Stand 2026, ohne Gewähr). Die genaue Höhe berechnet die zuständige Stelle.',
+      'finance_link_open_failed':
+          'Der Link konnte nicht geöffnet werden. Bitte versuche es später erneut.',
       'finance_guide_title': 'Was steht uns zu?',
       'finance_guide_subtitle':
           'Schildert eure Situation – der Wegweiser hilft euch weiter.',
@@ -581,7 +586,7 @@ class AppStringsManager {
       'finance_milestone_fuehrerschein_note': 'Fahrstunden + Prüfungen',
       'finance_milestone_ausbildung_note': 'Erstausstattung, Umzug, Kaution',
       'finance_benefit_de_kindergeld':
-          'Kindergeld|Monatliche Zahlung für jedes Kind bis 25 Jahre.|250€/Kind|Alle Eltern mit Kindern unter 25 (in Ausbildung).',
+          'Kindergeld|Monatliche Zahlung für jedes Kind bis 25 Jahre.|259€/Kind|Alle Eltern mit Kindern unter 25 (in Ausbildung).',
       'finance_benefit_de_kinderzuschlag':
           'Kinderzuschlag (KiZ)|Zusätzliche Unterstützung für Familien mit geringem Einkommen.|bis 292€/Kind|Einkommen reicht für euch, aber nicht für die Kinder.',
       'finance_benefit_de_wohngeld':
@@ -2510,6 +2515,7 @@ class AppStringsManager {
       'care_other': 'Other',
       'next': 'Next',
       'yes_answer': 'Yes',
+      'no_answer': 'No',
       'sometimes': 'Sometimes',
       'not_yet': 'Not yet',
       'calendar_new_event': 'Add new event',
@@ -2789,6 +2795,10 @@ class AppStringsManager {
           'These benefits may be relevant to your family in {country}.',
       'finance_legal_disclaimer':
           'This is not legal advice. Check your entitlement with the responsible authority or an advice center.',
+      'finance_amounts_disclaimer':
+          'Amounts and links are for orientation only (as of 2026, without guarantee). The exact amount is determined by the responsible authority.',
+      'finance_link_open_failed':
+          'The link could not be opened. Please try again later.',
       'finance_guide_title': 'What are we entitled to?',
       'finance_guide_subtitle':
           'Tell us about your situation and the guide will point you in the right direction.',
@@ -2865,7 +2875,7 @@ class AppStringsManager {
       'finance_milestone_ausbildung_note':
           'Initial equipment, moving and deposit',
       'finance_benefit_de_kindergeld':
-          'Child Benefit|Monthly payment for each child up to age 25.|€250/child|Parents with children under 25 who are still in education.',
+          'Child Benefit|Monthly payment for each child up to age 25.|€259/child|Parents with children under 25 who are still in education.',
       'finance_benefit_de_kinderzuschlag':
           'Child Supplement (KiZ)|Additional support for low-income families.|up to €292/child|Your income covers the parents, but not the children.',
       'finance_benefit_de_wohngeld':
@@ -10151,6 +10161,7 @@ class AppStringsManager {
       'care_other': 'Yên din',
       'next': 'Pêşve',
       'yes_answer': 'Erê',
+      'no_answer': 'Na',
       'sometimes': 'Carinan',
       'not_yet': 'Hîn na',
       'calendar_new_event': 'Bûyerekê nû lê zêde bike',
@@ -10433,6 +10444,10 @@ class AppStringsManager {
           'Dibe ku ev alîkarî ji bo malbata we li {country} girîng bin.',
       'finance_legal_disclaimer':
           'Ev şêwirmendiya hiqûqî nîne. Mafê xwe li dezgeha berpirsiyar kontrol bike.',
+      'finance_amounts_disclaimer':
+          'Mîqdar û lînk tenê ji bo rêberiyê ne (rewşa 2026, bê garantî). Mîqdara rastîn ji aliyê dezgeha berpirsiyar ve tê hesibandin.',
+      'finance_link_open_failed':
+          'Lînk nehat vekirin. Ji kerema xwe paşê dîsa biceribîne.',
       'finance_guide_title': 'Mafê me çi ye?',
       'finance_guide_subtitle': 'Rewşa xwe bêje; rêber dê alîkariya we bike.',
       'finance_status_universal': 'Ji bo hemûyan',
@@ -10506,7 +10521,7 @@ class AppStringsManager {
       'finance_milestone_fuehrerschein_note': 'Dersên ajotinê + îmtîhan',
       'finance_milestone_ausbildung_note': 'Amûrên destpêkê, koç û depoyît',
       'finance_benefit_de_kindergeld':
-          'Alîkariya zarokan|Ji bo her zarokî heta 25 salî dravê mehane.|250€/zarok|Dêûbavên zarokên di perwerdeyê de yên di bin 25 salî de.',
+          'Alîkariya zarokan|Ji bo her zarokî heta 25 salî dravê mehane.|259€/zarok|Dêûbavên zarokên di perwerdeyê de yên di bin 25 salî de.',
       'finance_benefit_de_kinderzuschlag':
           'Piştgiriya zarokan (KiZ)|Alîkariya zêde ji bo malbatên kêm-dahat.|heta 292€/zarok|Dahat ji bo dêûbavan bes e, lê ji bo zarokan ne bes e.',
       'finance_benefit_de_wohngeld':
@@ -15432,6 +15447,7 @@ class AppStringsManager {
       'care_other': 'Diğer',
       'next': 'İleri',
       'yes_answer': 'Evet',
+      'no_answer': 'Hayır',
       'sometimes': 'Bazen',
       'not_yet': 'Henüz değil',
       'calendar_new_event': 'Yeni etkinlik ekle',
@@ -15712,6 +15728,10 @@ class AppStringsManager {
           'Bu yardımlar {country} ülkesinde aileniz için uygun olabilir.',
       'finance_legal_disclaimer':
           'Bu bir hukuki danışmanlık değildir. Haklarınızı yetkili kurumdan veya danışma merkezinden kontrol edin.',
+      'finance_amounts_disclaimer':
+          'Tutarlar ve bağlantılar yalnızca yol gösterme amaçlıdır (2026 itibarıyla, garanti verilmez). Kesin tutarı yetkili kurum hesaplar.',
+      'finance_link_open_failed':
+          'Bağlantı açılamadı. Lütfen daha sonra tekrar deneyin.',
       'finance_guide_title': 'Hangi haklardan yararlanabiliriz?',
       'finance_guide_subtitle':
           'Durumunuzu anlatın; rehber size yol göstersin.',
@@ -15786,7 +15806,7 @@ class AppStringsManager {
       'finance_milestone_ausbildung_note':
           'İlk ihtiyaçlar, taşınma ve depozito',
       'finance_benefit_de_kindergeld':
-          'Çocuk Parası|25 yaşına kadar her çocuk için aylık ödeme.|250€/çocuk|Eğitimde olan 25 yaş altı çocukların ebeveynleri.',
+          'Çocuk Parası|25 yaşına kadar her çocuk için aylık ödeme.|259€/çocuk|Eğitimde olan 25 yaş altı çocukların ebeveynleri.',
       'finance_benefit_de_kinderzuschlag':
           'Çocuk Ek Yardımı (KiZ)|Düşük gelirli ailelere ek destek.|çocuk başına 292€ tutarına kadar|Gelir ebeveynlere yetiyor ancak çocuklara yetmiyor.',
       'finance_benefit_de_wohngeld':

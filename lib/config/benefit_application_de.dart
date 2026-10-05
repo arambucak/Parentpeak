@@ -38,7 +38,8 @@ class BenefitApplicationDE {
     processingTime: '4–6 Wochen',
     renewalNote:
         'Kein Folgeantrag nötig. Wird automatisch bis zum 18. (bzw. 25.) Geburtstag gezahlt.',
-    onlineApplicationUrl: 'https://web.arbeitsagentur.de/ofa/kindergeld/',
+    onlineApplicationUrl:
+        'https://www.arbeitsagentur.de/familie-und-kinder/downloads-familie-und-kinder/formulare-kindergeld',
     proTip:
         'Antrag direkt nach der Geburt stellen — Kindergeld wird max. 6 Monate rückwirkend gezahlt.',
     aiTemplatePrompt:
@@ -70,7 +71,8 @@ class BenefitApplicationDE {
         title: 'Online-Antrag ausfüllen',
         description:
             'Auf der Website der Familienkasse den Antrag "KG1" online ausfüllen. Dauert ca. 10 Minuten.',
-        url: 'https://web.arbeitsagentur.de/ofa/kindergeld/',
+        url:
+            'https://www.arbeitsagentur.de/familie-und-kinder/downloads-familie-und-kinder/formulare-kindergeld',
       ),
       ApplicationStep(
         stepNumber: 2,
@@ -100,7 +102,8 @@ class BenefitApplicationDE {
     processingTime: '4–8 Wochen',
     renewalNote:
         'Muss alle 6 Monate neu beantragt werden (Weiterbewilligungsantrag).',
-    onlineApplicationUrl: 'https://web.arbeitsagentur.de/ofa/kiz/',
+    onlineApplicationUrl:
+        'https://www.arbeitsagentur.de/familie-und-kinder/kinderzuschlag',
     proTip:
         'Mit dem KiZ-Lotsen der Familienkasse kannst du in 2 Minuten prüfen ob du Anspruch hast — bevor du den vollen Antrag ausfüllst.',
     aiTemplatePrompt:
@@ -144,7 +147,7 @@ class BenefitApplicationDE {
         title: 'Online-Antrag ausfüllen',
         description:
             'Antrag auf der Familienkasse-Website ausfüllen. Du brauchst Einkommensnachweise und Mietkosten griffbereit.',
-        url: 'https://web.arbeitsagentur.de/ofa/kiz/',
+        url: 'https://www.arbeitsagentur.de/familie-und-kinder/kinderzuschlag',
       ),
       ApplicationStep(
         stepNumber: 3,

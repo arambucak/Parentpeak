@@ -33,7 +33,7 @@ class CountryFinanceData {
         id: 'kindergeld',
         name: 'Kindergeld',
         description: 'Monatliche Zahlung für jedes Kind bis 25 Jahre.',
-        amount: '250\u{20AC}/Kind',
+        amount: '259\u{20AC}/Kind',
         eligibility: 'Alle Eltern mit Kindern unter 25 (in Ausbildung).',
         url: 'https://www.arbeitsagentur.de/familie-und-kinder/kindergeld',
         status: BenefitStatus.universal,
