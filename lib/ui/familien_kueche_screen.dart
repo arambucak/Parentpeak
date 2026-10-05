@@ -25,6 +25,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   final _searchCtrl = TextEditingController();
   FamilyRecipe? _currentRecipe;
   bool _loading = true;
+  bool _noSafeRecipe = false;
   bool _dayRecipeExpanded = false;
 
   @override
@@ -68,6 +69,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     if (mounted) {
       setState(() {
         _currentRecipe = recipe;
+        // null trotz abgeschlossener Generierung => kein für die Allergien
+        // sicheres Rezept verfügbar. Die UI zeigt dann eine klare Warnung.
+        _noSafeRecipe = recipe == null;
         _loading = false;
       });
     }
@@ -92,8 +96,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
     if (mounted) {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr(
-            liked ? 'kitchen_rating_liked' : 'kitchen_rating_not_liked')),
+        content: Text(context
+            .tr(liked ? 'kitchen_rating_liked' : 'kitchen_rating_not_liked')),
       ));
     }
   }
@@ -139,12 +143,63 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           if (_loading)
             _loadingState(theme)
           else if (_currentRecipe != null)
-            _recipeCard(theme, _currentRecipe!),
+            _recipeCard(theme, _currentRecipe!)
+          else if (_noSafeRecipe)
+            _noSafeRecipeCard(theme),
           const SizedBox(height: 20),
           // Tipps-Bereich
           _tippsSection(theme),
         ]),
       ),
+    );
+  }
+
+  /// Klarer Hinweis, wenn wegen der Allergien KEIN sicheres Rezept vorgeschlagen
+  /// werden konnte — statt stiller Leere oder (gefährlich) irgendeinem Rezept.
+  Widget _noSafeRecipeCard(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF4F1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFD1C3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.health_and_safety_outlined,
+              color: Color(0xFF8C3E28), size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              context.tr('kitchen_no_safe_recipe_title'),
+              style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800, color: const Color(0xFF8C3E28)),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 8),
+        Text(
+          context.tr('kitchen_no_safe_recipe_body'),
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: const Color(0xFF8C3E28), height: 1.4),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _generateNew,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: Text(context.tr('kitchen_try_again')),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF8C3E28),
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 
@@ -214,9 +269,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                             fontSize: 15,
                             fontWeight: FontWeight.w800)),
                     const SizedBox(height: 2),
-                    Text(
-                      context.tr('kitchen_fridge_subtitle'),
-                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    Text(context.tr('kitchen_fridge_subtitle'),
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 12)),
                   ],
                 ),
               ),
@@ -234,11 +289,11 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   Widget _tischmomentCard(ThemeData theme) {
     final isEvening = DateTime.now().hour >= 17;
     final title = context.tr(isEvening
-      ? 'kitchen_table_moment_evening_title'
-      : 'kitchen_table_moment_title');
+        ? 'kitchen_table_moment_evening_title'
+        : 'kitchen_table_moment_title');
     final subtitle = isEvening
-      ? context.tr('kitchen_table_moment_evening_subtitle')
-      : context.tr('kitchen_table_moment_subtitle');
+        ? context.tr('kitchen_table_moment_evening_subtitle')
+        : context.tr('kitchen_table_moment_subtitle');
 
     final borderRadius = BorderRadius.circular(18);
     return Material(
@@ -368,14 +423,24 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             const SizedBox(height: 12),
             // Meta-Chips
             Wrap(spacing: 8, runSpacing: 6, children: [
-              _metaChip('\u{23F1}\u{FE0F} ${context.tr('kitchen_minutes', values: {'minutes': recipe.prepMinutes})}',
+              _metaChip(
+                  '\u{23F1}\u{FE0F} ${context.tr('kitchen_minutes', values: {
+                        'minutes': recipe.prepMinutes
+                      })}',
                   const Color(0xFF2563EB)),
               _metaChip(
-                  '\u{1F4B0} ${context.tr('kitchen_cost_per_portion', values: {'cost': recipe.costPerPortion.toStringAsFixed(2)})}', const Color(0xFF16A34A)),
+                  '\u{1F4B0} ${context.tr('kitchen_cost_per_portion', values: {
+                        'cost': recipe.costPerPortion.toStringAsFixed(2)
+                      })}',
+                  const Color(0xFF16A34A)),
               _metaChip(
-                  '\u{1F476} ${context.tr(recipe.minChildAge == 0 ? 'kitchen_age_months' : 'kitchen_age_years', values: {'age': recipe.minChildAge})}', const Color(0xFF8B5CF6)),
+                  '\u{1F476} ${context.tr(recipe.minChildAge == 0 ? 'kitchen_age_months' : 'kitchen_age_years', values: {
+                        'age': recipe.minChildAge
+                      })}',
+                  const Color(0xFF8B5CF6)),
               if (recipe.allergensFree.isNotEmpty)
-                _metaChip('${context.tr('kitchen_without')} ${recipe.allergensFree.join(", ")}',
+                _metaChip(
+                    '${context.tr('kitchen_without')} ${recipe.allergensFree.join(", ")}',
                     const Color(0xFFDC2626)),
             ]),
           ]),
@@ -686,22 +751,22 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       if (season == 'sommer')
         {
           'emoji': '\u{1F353}',
-            'id': 'season_summer',
+          'id': 'season_summer',
         },
       if (season == 'herbst')
         {
           'emoji': '\u{1F383}',
-            'id': 'season_autumn',
+          'id': 'season_autumn',
         },
       if (season == 'winter')
         {
           'emoji': '\u{2744}\u{FE0F}',
-            'id': 'season_winter',
+          'id': 'season_winter',
         },
       if (season == 'frühling')
         {
           'emoji': '\u{1F331}',
-            'id': 'season_spring',
+          'id': 'season_spring',
         },
       {
         'emoji': '\u{1F4B0}',
@@ -833,9 +898,15 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
                               style: theme.textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w700)),
                           subtitle: Text(
-                              '${context.tr('kitchen_minutes', values: {'minutes': r.prepMinutes})} \u{2022} '
-                              '${context.tr('kitchen_cost_per_portion', values: {'cost': r.costPerPortion.toStringAsFixed(2)})} \u{2022} '
-                              '${context.tr(r.minChildAge == 0 ? 'kitchen_age_months' : 'kitchen_age_years', values: {'age': r.minChildAge})}',
+                              '${context.tr('kitchen_minutes', values: {
+                                    'minutes': r.prepMinutes
+                                  })} \u{2022} '
+                              '${context.tr('kitchen_cost_per_portion', values: {
+                                    'cost': r.costPerPortion.toStringAsFixed(2)
+                                  })} \u{2022} '
+                              '${context.tr(r.minChildAge == 0 ? 'kitchen_age_months' : 'kitchen_age_years', values: {
+                                    'age': r.minChildAge
+                                  })}',
                               style: theme.textTheme.labelSmall
                                   ?.copyWith(color: theme.colorScheme.outline)),
                           trailing: IconButton(
@@ -902,16 +973,16 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             await shopping.addItemsFromRecipe(selected);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(
-                    context.tr('kitchen_ingredients_added', values: {
-                      'count': selected.length,
-                    })),
+                content: Text(context.tr('kitchen_ingredients_added', values: {
+                  'count': selected.length,
+                })),
               ));
             }
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(context.tr('kitchen_error', values: {'error': e})),
+                content:
+                    Text(context.tr('kitchen_error', values: {'error': e})),
               ));
             }
           }
@@ -982,8 +1053,9 @@ class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text(AppStringsManager.getString(
-          languageService.currentLanguage, 'kitchen_buy_only_needed'),
+        Text(
+            AppStringsManager.getString(
+                languageService.currentLanguage, 'kitchen_buy_only_needed'),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 14),
@@ -1032,7 +1104,7 @@ class _IngredientPickerSheetState extends State<_IngredientPickerSheet> {
                       widget.onConfirm(selected);
                     },
               icon: const Icon(Icons.check_rounded, size: 18),
-                label: Text(context.tr('kitchen_add_ingredients_count',
+              label: Text(context.tr('kitchen_add_ingredients_count',
                   values: {'count': selectedCount})),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF16A34A),
