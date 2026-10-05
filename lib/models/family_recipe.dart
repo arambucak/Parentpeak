@@ -30,10 +30,6 @@ class FamilyRecipe {
     this.isSaved = false,
   });
 
-  String get timeLabel => '$prepMinutes Min.';
-  String get costLabel => '~${costPerPortion.toStringAsFixed(2)}\u{20AC}/Portion';
-  String get ageLabel => minChildAge == 0 ? 'ab 6 Mon.' : 'ab $minChildAge J.';
-
   factory FamilyRecipe.fromJson(Map<String, dynamic> j) => FamilyRecipe(
         id: j['id'] as String? ?? '',
         title: j['title'] as String? ?? '',
