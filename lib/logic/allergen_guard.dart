@@ -22,13 +22,16 @@ class AllergenGuard {
       'milch',
       'milk',
       'sut',
+      'sir', // ku: şîr (Milch)
       'kase',
       'kaese',
       'cheese',
       'peynir',
+      'penir', // ku: penîr (Käse)
       'sahne',
       'cream',
       'krema',
+      'qeymax', // ku: Sahne/Rahm
       'butter',
       'tereyag',
       'joghurt',
@@ -48,12 +51,16 @@ class AllergenGuard {
       'milch',
       'milk',
       'sut',
+      'sir', // ku: şîr (Milch)
       'kase',
       'kaese',
       'cheese',
       'peynir',
+      'penir', // ku: penîr (Käse)
       'sahne',
       'cream',
+      'krema',
+      'qeymax', // ku: Sahne/Rahm
       'butter',
       'tereyag',
       'joghurt',
@@ -67,17 +74,23 @@ class AllergenGuard {
       'mehl',
       'flour',
       'un',
+      'arvan', // ku: Mehl
       'weizen',
       'wheat',
       'bugday',
       'nudeln',
       'pasta',
       'makkaroni',
+      'makaroni', // tr/ku: makarna/makaronî
+      'makarna', // tr: Nudeln
       'spaghetti',
+      'spagetti', // tr: Schreibweise ohne h
+      'spagetî', // ku
       'brot',
       'bread',
       'ekmek',
       'semmelbrosel',
+      'galeta', // tr: galeta unu (Paniermehl)
       'paniermehl',
       'couscous',
       'bulgur',
@@ -87,7 +100,9 @@ class AllergenGuard {
       'pizzateig',
       'teig',
       'dough',
-      'hamur',
+      'hamur', // tr: Teig
+      'hevir', // ku: hevîr (Teig)
+      'nani', // ku: nanî (Brot/Panade)
       'cracker',
       'keks',
       'zwieback',
@@ -102,6 +117,7 @@ class AllergenGuard {
       'egg',
       'eggs',
       'yumurta',
+      'hek', // ku: hêk (Ei)
       'eiklar',
       'eigelb',
       'mayonnaise',
@@ -154,8 +170,10 @@ class AllergenGuard {
       'fisch',
       'fish',
       'balik',
+      'masi', // ku: masî (Fisch)
       'lachs',
       'salmon',
+      'somon', // tr/ku: Lachs
       'kabeljau',
       'cod',
       'seelachs',
@@ -257,13 +275,30 @@ class AllergenGuard {
       final signals = allergenKeywords[allergen] ?? [allergen];
       for (final signal in signals) {
         final s = _normalize(signal);
-        if (s.isNotEmpty && text.contains(s)) {
+        if (s.isNotEmpty && _containsSignal(text, s)) {
           hits.add(allergen);
           break;
         }
       }
     }
     return hits;
+  }
+
+  /// Prüft, ob [text] das (normalisierte) Signalwort [signal] enthält.
+  ///
+  /// Kurze Signalwörter (≤ 3 Zeichen wie "ei", "un", "nut", "egg", "soy")
+  /// werden NUR an Wortgrenzen gematcht — sonst würde "ei" fälschlich in
+  /// "Fleisch" oder "un" in "Thunfisch" anschlagen und jedes Rezept als unsicher
+  /// markieren. Längere Signalwörter werden als Teilstring erkannt, damit
+  /// Komposita wie "Milchpulver" oder "Fischstäbchen" sicher greifen.
+  static bool _containsSignal(String text, String signal) {
+    if (signal.length <= 3) {
+      // Wortgrenzen-Match: Signalwort als eigenständiges Wort.
+      final pattern =
+          RegExp('(^|[^a-z0-9])${RegExp.escape(signal)}([^a-z0-9]|\$)');
+      return pattern.hasMatch(text);
+    }
+    return text.contains(signal);
   }
 
   /// true, wenn das Rezept für die gegebenen Allergene SICHER ist.
