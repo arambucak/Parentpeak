@@ -82,5 +82,25 @@ void main() {
       final regions = HolidayService.getRegionsForCountry('DE');
       expect(regions.length, equals(16));
     });
+
+    test('German holidays 2028 are present (Ostern 16.04.2028)', () {
+      HolidayService.setCountry('DE');
+      final apr = HolidayService.getHolidaysForMonth(2028, 4);
+      expect(apr.any((h) => h.name == 'Karfreitag'), isTrue);
+      expect(apr.any((h) => h.name == 'Ostermontag'), isTrue);
+      final jun = HolidayService.getHolidaysForMonth(2028, 6);
+      expect(jun.any((h) => h.name == 'Pfingstmontag'), isTrue);
+    });
+
+    test('maxDataYear reflects German data through 2028', () {
+      HolidayService.setCountry('DE');
+      expect(HolidayService.maxDataYear(), equals(2028));
+    });
+
+    test('isBeyondData flags years past the maintained data', () {
+      HolidayService.setCountry('DE');
+      expect(HolidayService.isBeyondData(2028), isFalse);
+      expect(HolidayService.isBeyondData(2029), isTrue);
+    });
   });
 }
