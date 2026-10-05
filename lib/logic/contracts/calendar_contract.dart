@@ -38,6 +38,12 @@ class CalendarContract {
               ?.toIso8601String(),
       'recurrenceCount':
           _pickNullableInt(raw, const ['recurrenceCount', 'repeat_count']),
+      // Zusatzfelder vom Server zurücklesen, damit "Wer bringt/holt" und der
+      // Pack-Reminder einen Backend-Roundtrip (z.B. Gerätewechsel) überleben.
+      'packReminder':
+          _pickNullableString(raw, const ['packReminder', 'pack_reminder']),
+      'bringer': _pickNullableString(raw, const ['bringer']),
+      'abholer': _pickNullableString(raw, const ['abholer', 'picker']),
     };
   }
 
@@ -48,7 +54,8 @@ class CalendarContract {
     return normalize(item);
   }
 
-  static Map<String, dynamic> buildCreatePayload(Map<String, dynamic> event, {String? userId}) {
+  static Map<String, dynamic> buildCreatePayload(Map<String, dynamic> event,
+      {String? userId}) {
     return {
       'userId': userId ?? '',
       'familyId': APIConfig.getBackendFamilyId(),
@@ -64,8 +71,27 @@ class CalendarContract {
       'recurrenceEndDate': event['recurrenceEndDate'],
       'recurrenceCount': event['recurrenceCount'],
       'reminderMinutes': event['reminderMinutes'] ?? 0,
+      // Zusatzfelder mitsenden (sonst gehen sie beim Backend-Roundtrip
+      // verloren): Pack-Reminder sowie Wer bringt / Wer holt ab.
+      'packReminder': event['packReminder'],
+      'bringer': event['bringer'],
+      'abholer': event['abholer'],
       'schemaVersion': APIConfig.getBackendApiVersion(),
     };
+  }
+
+  /// Liest einen optionalen String; gibt null (statt Leerstring) zurück, wenn
+  /// kein nicht-leerer Wert vorhanden ist — so bleiben die Zusatzfelder sauber
+  /// optional.
+  static String? _pickNullableString(
+      Map<String, dynamic> source, List<String> keys) {
+    for (final key in keys) {
+      final value = source[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return null;
   }
 
   static DateTime? _pickDate(Map<String, dynamic> source, List<String> keys) {
