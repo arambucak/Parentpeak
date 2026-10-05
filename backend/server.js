@@ -3507,7 +3507,7 @@ async function ensureParentMatchingSchemaReady() {
       "externalId" TEXT,
       "ownerUserId" TEXT,
       "name" TEXT NOT NULL,
-      "age" INTEGER NOT NULL,
+      "age" INTEGER,
       "city" TEXT NOT NULL,
       "latitude" DOUBLE PRECISION,
       "longitude" DOUBLE PRECISION,
@@ -3546,6 +3546,10 @@ async function ensureParentMatchingSchemaReady() {
     ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN NOT NULL DEFAULT true,
     ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "ParentMatchingProfile" ALTER COLUMN "age" DROP NOT NULL;
   `);
 
   await prisma.$executeRawUnsafe(`
@@ -6886,6 +6890,14 @@ app.get('/parent-matching/my-profile', async (req, res) => {
   }
 });
 
+function parseOptionalParentAge(value, min = 16, max = 99) {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'number' && typeof value !== 'string') return undefined;
+  if (typeof value === 'string' && !value.trim()) return undefined;
+  const age = Number(value);
+  return Number.isInteger(age) && age >= min && age <= max ? age : undefined;
+}
+
 app.post('/parent-matching/my-profile', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   if (!userId) {
@@ -6897,7 +6909,7 @@ app.post('/parent-matching/my-profile', async (req, res) => {
     return res.status(400).json({ error: 'Name fehlt' });
   }
 
-  const age = Number.parseInt((req.body.age || '').toString(), 10);
+  const age = parseOptionalParentAge(req.body.age);
   const city = (req.body.city || '').toString().trim();
   const familyForm = (req.body.familyForm || '').toString().trim();
   const bio = (req.body.bio || '').toString().trim();
@@ -6915,7 +6927,7 @@ app.post('/parent-matching/my-profile', async (req, res) => {
   const valuesFocus = toList(req.body.valuesFocus || req.body.values);
   const childAges = toList(req.body.childAges);
 
-  if (!Number.isInteger(age) || age < 16 || age > 99) {
+  if (age === undefined) {
     return res.status(400).json({ error: 'Alter ist ungültig' });
   }
   if (!city) {
@@ -11744,7 +11756,8 @@ function jaccardSimilarity(arr1, arr2) {
  * Create or update user's matching profile
  */
 app.post('/api/parent-matching/profiles', async (req, res) => {
-  const { userId, name, age, city, latitude, longitude, interests, languages, valuesFocus, childAges, familyForm, bio } = req.body;
+  const { userId, name, city, latitude, longitude, interests, languages, valuesFocus, childAges, familyForm, bio } = req.body;
+  const age = parseOptionalParentAge(req.body.age, 18, 120);
 
   if (!userId || !name || !city) {
     return res.status(400).json({ error: 'userId, name, city erforderlich' });
@@ -11752,16 +11765,17 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
   // Echter Bann: gesperrte Nutzer koennen ihr Profil nicht (neu) veroeffentlichen.
   if (await isUserSuspended(userId)) return respondSuspended(res);
 
-  if (age && (age < 18 || age > 120)) {
+  if (age === undefined) {
     return res.status(400).json({ error: 'Alter muss zwischen 18 und 120 liegen' });
   }
 
   try {
+    await ensureParentMatchingSchemaReady();
     const profile = await prisma.parentMatchingProfile.upsert({
       where: { ownerUserId: userId },
       update: {
         name: String(name).slice(0, 100),
-        age: age ? parseInt(age, 10) : undefined,
+        age,
         city: String(city).slice(0, 50),
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
@@ -11776,7 +11790,7 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
       create: {
         ownerUserId: userId,
         name: String(name).slice(0, 100),
-        age: age ? parseInt(age, 10) : null,
+        age,
         city: String(city).slice(0, 50),
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,

@@ -57,6 +57,25 @@ der bestätigt, dass gesendete `ageGroups` persistiert werden.
 > (`resilientEventFindMany` in `server.js`). Die Filterung wird aktiv, sobald die
 > Migration die Spalte angelegt hat — ohne weitere Codeänderung.
 
+### Optionales Erwachsenenalter im Eltern-Netzwerk
+
+`ParentMatchingProfile.age` ist optional. Die Migration
+`20261006000000_optional_parent_matching_age` entfernt nur die NOT-NULL-Bedingung;
+vorhandene Altersangaben bleiben erhalten. Beide Profil-Endpunkte akzeptieren
+fehlendes Alter, `null` oder `""` als keine Angabe, ohne einen Standardwert zu
+erfinden. Ein angegebenes Alter muss ganzzahlig sein und innerhalb des bisherigen
+Bereichs des jeweiligen Endpunkts liegen (16-99 bzw. 18-120).
+
+Lokale Regressionstests ohne Datenbank oder Produktionszugriff:
+
+```bash
+node --test backend/tests/unit/parent-matching-age.test.js
+```
+
+Der CI-Job `analyze` fuehrt auch die isolierten Backend-Unit-Tests aus.
+Eine Rueckkehr zu NOT NULL braucht eine explizite Entscheidung zum Umgang mit
+Profilen ohne Altersangabe; diese duerfen nicht mit erfundenen Werten aufgefuellt werden.
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:
