@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 /// Kind-Dossier — alle wichtigen Infos zu einem Kind an einem Ort.
 /// NUR LOKAL gespeichert (sensible Daten verlassen nie das Geraet).
@@ -41,6 +42,41 @@ class KindDossier {
 
   int get ageMonths => _ageMonthsFromBirthDate(birthDate);
   int get ageYears => (ageMonths / 12).floor();
+
+  KindDossier copyWith({
+    String? childName,
+    DateTime? birthDate,
+    String? clothingSize,
+    String? shoeSize,
+    List<String>? allergies,
+    String? doctorName,
+    String? doctorPhone,
+    String? bloodType,
+    String? emergencyContact,
+    String? emergencyPhone,
+    String? kitaSchool,
+    String? kitaGroup,
+    String? kitaTeacher,
+    List<UExamination>? uExams,
+    String? notes,
+  }) =>
+      KindDossier(
+        childName: childName ?? this.childName,
+        birthDate: birthDate ?? this.birthDate,
+        clothingSize: clothingSize ?? this.clothingSize,
+        shoeSize: shoeSize ?? this.shoeSize,
+        allergies: allergies ?? this.allergies,
+        doctorName: doctorName ?? this.doctorName,
+        doctorPhone: doctorPhone ?? this.doctorPhone,
+        bloodType: bloodType ?? this.bloodType,
+        emergencyContact: emergencyContact ?? this.emergencyContact,
+        emergencyPhone: emergencyPhone ?? this.emergencyPhone,
+        kitaSchool: kitaSchool ?? this.kitaSchool,
+        kitaGroup: kitaGroup ?? this.kitaGroup,
+        kitaTeacher: kitaTeacher ?? this.kitaTeacher,
+        uExams: uExams ?? this.uExams,
+        notes: notes ?? this.notes,
+      );
 
   static DateTime _birthDateFromAgeMonths(int months) {
     final now = DateTime.now();
@@ -99,18 +135,28 @@ class KindDossier {
 /// U-Untersuchung (Vorsorge) mit automatischer Faelligkeit.
 class UExamination {
   final String id; // "u1", "u2", ..., "u9", "j1", "j2"
-  final String label; // "U1 (direkt nach Geburt)"
+  final String label; // Rohes (deutsches) Label — nur noch Fallback/Alt-Daten.
   final int dueAtMonths; // Faellig ab diesem Alter (Monate)
   final bool isDone;
-  final String? doneDate; // Wann gemacht (optional)
+  final String? doneDate; // Wann gemacht (ISO-8601, optional)
 
   const UExamination({
     required this.id,
-    required this.label,
+    this.label = '',
     required this.dueAtMonths,
     this.isDone = false,
     this.doneDate,
   });
+
+  UExamination copyWith({bool? isDone, String? doneDate}) => UExamination(
+        id: id,
+        label: label,
+        dueAtMonths: dueAtMonths,
+        isDone: isDone ?? this.isDone,
+        // doneDate darf bewusst auf null gesetzt werden (Haken entfernen),
+        // daher kein `?? this.doneDate`.
+        doneDate: isDone == false ? null : (doneDate ?? this.doneDate),
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -129,11 +175,20 @@ class UExamination {
       );
 }
 
-/// Deutsche U-Untersuchungen (automatisch generiert nach Kind-Alter).
+/// Deutsche U-Untersuchungen (U-Heft-Schema). Die sichtbaren Labels werden zur
+/// Anzeigezeit über [UExaminationData.localizedLabel] in der App-Sprache gebaut
+/// (DE/EN/TR/KU), nicht als fester String persistiert.
 class UExaminationData {
+  /// Erzeugt für ein Kind die vollständige U-Untersuchungs-Liste und übernimmt
+  /// den Erledigt-Status aus [existing] (z. B. bereits abgehakte Einträge).
+  ///
+  /// Hinweis: [ageMonths] wird NICHT zum Filtern verwendet — es werden bewusst
+  /// IMMER alle Untersuchungen erzeugt, damit Eltern auch bereits vergangene
+  /// Untersuchungen rückwirkend abhaken können. Der Parameter bleibt für
+  /// zukünftige alters-/länderspezifische Varianten erhalten.
   static List<UExamination> generateForChild(int ageMonths,
       {List<UExamination> existing = const []}) {
-    final all = _allExams.map((e) {
+    return _allExams.map((e) {
       final done = existing.where((ex) => ex.id == e.id).firstOrNull;
       return UExamination(
         id: e.id,
@@ -143,7 +198,29 @@ class UExaminationData {
         doneDate: done?.doneDate,
       );
     }).toList();
-    return all;
+  }
+
+  /// Baut das sichtbare Label einer U-Untersuchung in der aktiven App-Sprache:
+  /// die ID bleibt sprachneutral (U1, U7a, J1), das Zeitfenster wird übersetzt.
+  /// Fällt auf das rohe [UExamination.label] (bzw. die ID) zurück, wenn kein
+  /// l10n-Zeitfenster hinterlegt ist.
+  static String localizedLabel(UExamination exam, String languageCode) {
+    final displayId = _displayId(exam.id);
+    final window =
+        AppStringsManager.getString(languageCode, 'uexam_window_${exam.id}');
+    // getString gibt bei fehlendem Key den Key selbst zurück.
+    if (window == 'uexam_window_${exam.id}') {
+      return exam.label.isNotEmpty ? exam.label : displayId;
+    }
+    return '$displayId — $window';
+  }
+
+  /// Sprachneutraler Anzeigename der ID (z. B. 'u7a' -> 'U7a', 'j1' -> 'J1').
+  /// Nur der erste Buchstabe wird großgeschrieben, damit Suffixe wie das 'a'
+  /// in 'U7a' korrekt klein bleiben.
+  static String _displayId(String id) {
+    if (id.isEmpty) return id;
+    return id[0].toUpperCase() + id.substring(1);
   }
 
   static const _allExams = [
@@ -212,5 +289,33 @@ class KindDossierService {
       _dossiers.add(dossier);
     }
     await save(_dossiers);
+  }
+
+  /// Hakt eine U-Untersuchung eines Kindes ab bzw. entfernt den Haken wieder.
+  /// Beim Abhaken wird das aktuelle Datum (ISO-8601) als [doneDate] gesetzt.
+  /// Gibt das aktualisierte Dossier zurück oder null, wenn kein passendes
+  /// Kind/keine passende Untersuchung gefunden wurde.
+  Future<KindDossier?> setUExamDone(
+    String childName,
+    String examId,
+    bool done,
+  ) async {
+    final idx = _dossiers.indexWhere((d) => d.childName == childName);
+    if (idx == -1) return null;
+    final dossier = _dossiers[idx];
+    var found = false;
+    final updatedExams = dossier.uExams.map((e) {
+      if (e.id != examId) return e;
+      found = true;
+      return e.copyWith(
+        isDone: done,
+        doneDate: done ? DateTime.now().toIso8601String() : null,
+      );
+    }).toList();
+    if (!found) return null;
+    final updated = dossier.copyWith(uExams: updatedExams);
+    _dossiers[idx] = updated;
+    await save(_dossiers);
+    return updated;
   }
 }
