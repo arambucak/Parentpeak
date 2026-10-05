@@ -1118,11 +1118,14 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     final limitService = DevelopmentReportLimitService.instance;
     if (limitService.isLimitReached) {
       if (!mounted) return;
+      final nextYear = limitService.nextFreeReportYear;
+      final nextFreeInfo = nextYear != null
+          ? ' ${_t('development_report_next_free').replaceAll('{year}', '$nextYear')}'
+          : '';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${_t('development_report_limit_reached')} '
-            '${limitService.nextFreeReportInfo}',
+            '${_t('development_report_limit_reached')}$nextFreeInfo',
           ),
           duration: const Duration(seconds: 5),
           action: SnackBarAction(

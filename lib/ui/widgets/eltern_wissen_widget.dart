@@ -482,7 +482,9 @@ class _ExpandableResultCardState extends State<_ExpandableResultCard> {
                   size: 18,
                   color: const Color(0xFF8B5CF6)),
               const SizedBox(width: 6),
-              Text(_expanded ? 'Weniger' : 'Ausfuehrlich verstehen',
+              Text(
+                  AppStringsManager.getString(languageService.currentLanguage,
+                      _expanded ? 'wissen_show_less' : 'wissen_show_more'),
                   style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -498,11 +500,20 @@ class _ExpandableResultCardState extends State<_ExpandableResultCard> {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const SizedBox(height: 12),
               // Beduerfnis
-              _section(theme, '\u{1F50D}', 'Was dahinter steckt', e.beduerfnis),
+              _section(
+                  theme,
+                  '\u{1F50D}',
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'wissen_whats_behind'),
+                  e.beduerfnis),
               const SizedBox(height: 10),
               // GfK-Satz
               _section(
-                  theme, '\u{1F4AC}', 'Was du sagen kannst (GfK)', e.gfkSatz),
+                  theme,
+                  '\u{1F4AC}',
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'wissen_what_to_say'),
+                  e.gfkSatz),
               const SizedBox(height: 10),
               // Aktionen
               Text(
