@@ -158,6 +158,14 @@ String networkWizardOptionLabel(
   return options[group]?[key] ?? fallback;
 }
 
+/// Rundet eine Koordinate grob auf ~1 km Raster (2 Dezimalstellen). Gibt null
+/// zurück, wenn kein gültiger Wert vorliegt. Datenschutz: so verlässt die exakte
+/// Position einer Familie nie das Gerät.
+double? coarseCoordinate(double? value) {
+  if (value == null || value.isNaN || value.isInfinite) return null;
+  return (value * 100).round() / 100;
+}
+
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
@@ -1363,6 +1371,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       // Koordinaten – dann matcht der Server ueber Interessen/Alter/Werte.
       await loc.requestGPSLocation();
     }
+    // DATENSCHUTZ: Für ein "Familien in der Nähe"-Matching reicht die grobe
+    // Lage. Wir senden daher NIE die exakte Position einer Familie mit Kindern,
+    // sondern runden schon auf dem Gerät auf ~1 km Raster (2 Dezimalstellen).
+    final coarseLat = coarseCoordinate(loc.latitude);
+    final coarseLon = coarseCoordinate(loc.longitude);
 
     // Kinder-Alter als lesbare Tags ("3J", "8M") fuer das Matching.
     final childAges = p.children.map((c) {
@@ -1383,8 +1396,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       city: (loc.city != null && loc.city!.isNotEmpty)
           ? loc.city!
           : (p.district.isNotEmpty ? p.district : 'Deutschland'),
-      latitude: loc.latitude,
-      longitude: loc.longitude,
+      latitude: coarseLat,
+      longitude: coarseLon,
       interests: interests,
       languages: p.languages,
       valuesFocus: p.values,

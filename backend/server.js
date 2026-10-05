@@ -3884,6 +3884,16 @@ async function ensureSocialSchemaReady() {
   socialSchemaEnsured = true;
 }
 
+// Datenschutz: grobe Rundung einer Koordinate auf ~1 km Raster (2 Dezimal-
+// stellen). Fremden Nutzern wird NIEMALS die exakte Position einer Familie
+// ausgeliefert — fürs "Familien in der Nähe"-Matching reicht die grobe Lage.
+function coarseCoordinate(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  return Math.round(num * 100) / 100;
+}
+
 function mapParentMatchingProfileForClient(profile) {
   return {
     id: profile.id,
@@ -3891,8 +3901,11 @@ function mapParentMatchingProfileForClient(profile) {
     name: profile.name,
     age: profile.age,
     city: profile.city,
-    latitude: profile.latitude ?? null,
-    longitude: profile.longitude ?? null,
+    // Nur grob gerundete Position ausliefern (keine punktgenaue Adresse einer
+    // Familie mit Kindern). Die genaue Distanz berechnet der Server separat.
+    latitude: coarseCoordinate(profile.latitude),
+    longitude: coarseCoordinate(profile.longitude),
+    approximateLocation: true,
     bio: profile.bio || '',
     interests: Array.isArray(profile.interests) ? profile.interests : [],
     languages: Array.isArray(profile.languages) ? profile.languages : [],
