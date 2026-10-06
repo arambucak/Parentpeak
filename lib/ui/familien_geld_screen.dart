@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:parentpeak/logic/family_finance_store.dart';
 import 'package:parentpeak/logic/finance_number.dart';
+import 'package:parentpeak/logic/finance_milestone_timeline.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
@@ -22,18 +23,20 @@ import 'package:parentpeak/main.dart';
 /// 2. Leistungen — Was steht euch zu? (Laender-spezifisch)
 /// 3. Meilensteine — Was kommt auf euch zu? (Kind-Alter-basiert)
 class FamilienGeldScreen extends StatelessWidget {
-  const FamilienGeldScreen({super.key, this.store});
+  const FamilienGeldScreen({super.key, this.store, this.now});
   final FamilyFinanceStore? store;
+  final DateTime Function()? now;
 
   @override
   Widget build(BuildContext context) => FamilyHubAccountBoundary(
-    builder: (_) => _ScopedFamilienGeldScreen(store: store),
+    builder: (_) => _ScopedFamilienGeldScreen(store: store, now: now),
   );
 }
 
 class _ScopedFamilienGeldScreen extends StatefulWidget {
-  const _ScopedFamilienGeldScreen({this.store});
+  const _ScopedFamilienGeldScreen({this.store, this.now});
   final FamilyFinanceStore? store;
+  final DateTime Function()? now;
 
   @override
   State<_ScopedFamilienGeldScreen> createState() => _FamilienGeldScreenState();
@@ -41,6 +44,7 @@ class _ScopedFamilienGeldScreen extends StatefulWidget {
 
 class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     with SingleTickerProviderStateMixin {
+  DateTime get _now => widget.now?.call() ?? DateTime.now();
   late final TabController _tabs;
   CountryFinanceConfig _country = CountryFinanceData.germany;
   bool _countrySelected = false;
@@ -377,15 +381,14 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     if (_children.isNotEmpty) {
       sb.writeln('');
       sb.writeln(context.tr('finance_share_next_milestones'));
+      final now = _now;
       for (final child in _children) {
-        final ageYears = (child.ageMonths / 12).round();
-        final upcoming = _country.milestones
-            .where((m) => m.childAgeYears > ageYears)
-            .take(2);
-        for (final m in upcoming) {
-          final years = m.childAgeYears - ageYears;
+        final upcoming = FinanceMilestoneTimeline.upcoming(
+          _country.milestones, child.birthDate, now).take(2);
+        for (final estimate in upcoming) {
+          final m = estimate.milestone;
           sb.writeln(
-            '${m.emoji} ${_milestoneLabel(m)} \u00B7 ~${_country.formatAmount(m.estimatedCost)} (${context.tr('finance_in_years_short', values: {'years': years})})',
+            '${m.emoji} ${_milestoneLabel(m)} \u00B7 ~${_country.formatAmount(m.estimatedCost)} (${_estimateTime(estimate)})',
           );
         }
       }
@@ -405,6 +408,11 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
 
   String _milestoneLabel(MilestoneCost milestone) =>
       context.tr('finance_milestone_${milestone.id}');
+
+  String _estimateTime(FinanceMilestoneEstimate estimate) => context.tr(
+    estimate.monthsLeft == 1 ? 'finance_estimated_one_month' : 'finance_estimated_months',
+    values: {'months': estimate.monthsLeft, 'year': estimate.date.year},
+  );
 
   String? _milestoneNote(MilestoneCost milestone) {
     if (milestone.note == null) return null;
@@ -1005,6 +1013,7 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             builder: (_) => BenefitGuideScreen(
               country: _country,
               isSingleParent: _isSingleParent,
+              now: widget.now,
             ),
           ),
         ),
@@ -1281,7 +1290,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
           if (_children.isNotEmpty)
             ..._children.map((child) => _childMilestones(theme, child))
           else
-            ..._country.milestones.map((m) => _milestoneCard(theme, m, null)),
+            ...FinanceMilestoneTimeline.sorted(_country.milestones)
+                .map((m) => _milestoneCard(theme, m, null)),
           // Spar-Empfehlung
           if (_children.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -1295,10 +1305,9 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   }
 
   Widget _childMilestones(ThemeData theme, ChildEntry child) {
-    final ageYears = (child.ageMonths / 12).round();
-    final upcoming = _country.milestones
-        .where((m) => m.childAgeYears > ageYears)
-        .toList();
+    final now = _now;
+    final upcoming = FinanceMilestoneTimeline.upcoming(
+      _country.milestones, child.birthDate, now);
 
     if (upcoming.isEmpty) return const SizedBox.shrink();
 
@@ -1314,15 +1323,15 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             ),
           ),
         ),
-        ...upcoming.take(4).map((m) => _milestoneCard(theme, m, ageYears)),
+        ...upcoming.take(4).map((estimate) =>
+            _milestoneCard(theme, estimate.milestone, estimate)),
         const SizedBox(height: 12),
       ],
     );
   }
 
-  Widget _milestoneCard(ThemeData theme, MilestoneCost m, int? currentAge) {
-    final yearsUntil = currentAge != null ? m.childAgeYears - currentAge : null;
-    final year = yearsUntil != null ? DateTime.now().year + yearsUntil : null;
+  Widget _milestoneCard(ThemeData theme, MilestoneCost m,
+      FinanceMilestoneEstimate? estimate) {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1365,17 +1374,9 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
                       color: theme.colorScheme.outline,
                     ),
                   ),
-                if (year != null)
+                if (estimate != null)
                   Text(
-                    yearsUntil == 1
-                        ? context.tr(
-                            'finance_next_year',
-                            values: {'year': year},
-                          )
-                        : context.tr(
-                            'finance_in_years',
-                            values: {'years': yearsUntil, 'year': year},
-                          ),
+                    _estimateTime(estimate),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: const Color(0xFF8B5CF6),
                       fontWeight: FontWeight.w600,
@@ -1402,15 +1403,12 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
 
   Widget _savingRecommendation(ThemeData theme) {
     // Berechne Gesamtkosten der naechsten 5 Jahre
-    final now = DateTime.now().year;
+    final now = _now;
     double totalUpcoming = 0;
     for (final child in _children) {
-      final ageYears = (child.ageMonths / 12).round();
-      for (final m in _country.milestones) {
-        final eventYear = now + (m.childAgeYears - ageYears);
-        if (eventYear > now && eventYear <= now + 5) {
-          totalUpcoming += m.estimatedCost;
-        }
+      for (final estimate in FinanceMilestoneTimeline.withinFiveYears(
+        _country.milestones, child.birthDate, now)) {
+        totalUpcoming += estimate.milestone.estimatedCost;
       }
     }
 
@@ -1948,35 +1946,29 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   Widget _buildSavingsGoal(ThemeData theme) {
     // Naechsten Meilenstein finden
     MilestoneCost? nextMilestone;
-    int? yearsLeft;
+    FinanceMilestoneEstimate? nextEstimate;
+    final now = _now;
     if (_children.isNotEmpty) {
       for (final child in _children) {
-        // round() statt floor() — konsistent mit _childMilestones, damit ein
-        // Kind in beiden Ansichten denselben Meilensteinen zugeordnet wird.
-        final ageYears = (child.ageMonths / 12).round();
-        for (final m in _country.milestones) {
-          if (m.childAgeYears > ageYears) {
-            final yrs = m.childAgeYears - ageYears;
-            if (yearsLeft == null || yrs < yearsLeft) {
-              yearsLeft = yrs;
-              nextMilestone = m;
-            }
-            break;
+        for (final estimate in FinanceMilestoneTimeline.upcoming(
+          _country.milestones, child.birthDate, now)) {
+          if (nextEstimate == null || estimate.date.isBefore(nextEstimate.date)) {
+            nextEstimate = estimate;
+            nextMilestone = estimate.milestone;
           }
         }
       }
     } else {
       // Ohne Kinderprofil: erstes Meilenstein zeigen
       if (_country.milestones.isNotEmpty) {
-        nextMilestone = _country.milestones.first;
-        yearsLeft = nextMilestone.childAgeYears;
+        nextMilestone = FinanceMilestoneTimeline.sorted(_country.milestones).first;
       }
     }
 
     if (nextMilestone == null) return const SizedBox.shrink();
 
     final target = nextMilestone.estimatedCost;
-    final monthsLeft = (yearsLeft! * 12).toDouble();
+    final monthsLeft = nextEstimate?.monthsLeft ?? nextMilestone.childAgeYears * 12;
     final needed = (target - _totalSaved).clamp(0, target);
     final autoGoal = monthsLeft > 0 ? (needed / monthsLeft) : 0.0;
     final progress = (_totalSaved / target).clamp(0.0, 1.0);
@@ -2009,15 +2001,9 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
                       ),
                     ),
                     Text(
-                      context.tr(
-                        yearsLeft == 1
-                            ? 'finance_goal_in_one_year'
-                            : 'finance_goal_in_years',
-                        values: {
-                          'years': yearsLeft,
-                          'amount': _country.formatAmount(target),
-                        },
-                      ),
+                      nextEstimate == null
+                          ? '~${_country.formatAmount(target)}'
+                          : '${_estimateTime(nextEstimate)} · ~${_country.formatAmount(target)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: const Color(0xFF9A3412),
                       ),
@@ -2117,11 +2103,11 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             Text(
               context.tr(
                 _monthlySavingsGoal >= autoGoal
-                    ? 'finance_goal_projection_on_time'
-                    : 'finance_goal_projection_almost',
+                    ? 'finance_goal_months_on_time'
+                    : 'finance_goal_months_shortfall',
                 values: {
                   'amount': _country.formatAmount(_monthlySavingsGoal),
-                  'years': yearsLeft,
+                  'months': monthsLeft,
                 },
               ),
               style: theme.textTheme.bodySmall?.copyWith(

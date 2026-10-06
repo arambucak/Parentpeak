@@ -254,6 +254,39 @@ Anzeige ist keine Eingabevalidierung; Eingabecontroller behalten Dezimalwerte.
 flutter test --no-pub --reporter expanded test/finance_persistence_test.dart test/finance_persistence_ui_test.dart test/family_finance_account_test.dart test/family_finance_ui_test.dart test/benefit_guide_consent_test.dart test/localization_audit_verification_test.dart
 ```
 
+### Finanz-Meilensteine: Chronologie und geschaetzte Termine
+
+`FinanceMilestoneTimeline` sortiert eine Kopie der Landes-Meilensteine nach
+typischem Alter. Karten, Teilen, Sparziel und Fuenfjahresempfehlung verwenden
+dieselbe geburtsdatumsbasierte Zeitachse statt gerundeter Lebensjahre.
+Der geschaetzte Zieltermin ist das Geburtsdatum plus Meilensteinalter;
+Kalenderjahr und Restzeit stammen aus diesem Termin, nicht aus einem
+aufgerundeten Alter. Ein Meilenstein bleibt bis zum Tag vor diesem Geburtstag
+sichtbar und wird ab dem Geburtstag nicht mehr als zukuenftig gezaehlt.
+
+Die Restzeit wird in ungefaehren Kalendermonaten angezeigt; ein angebrochener
+Restmonat zaehlt als ein Planungsmonat. Das Sparziel waehlt den zeitlich
+naechsten Termin ueber alle Kinder und berechnet die Rate aus dem noch
+fehlenden Betrag und dieser Restzeit. Die Fuenfjahressumme enthaelt Termine
+nach heute bis einschliesslich des Tages in fuenf Jahren, auch noch im
+aktuellen Kalenderjahr. Ohne Kinderprofil werden die Karten ebenfalls
+chronologisch gezeigt, aber ohne erfundenen Geburtstag oder Kalendertermin.
+
+Das sind typische Kosten-/Altersannahmen, keine echten Einschulungs- oder
+Rechtstermine. Datum und Sparprognose sind ausdruecklich als Schaetzung
+gekennzeichnet; die bestehenden Disclaimer bleiben erhalten. Der 29. Februar
+wird in Nichtschaltjahren wie in den vorhandenen Altershelfern auf Maerz
+normalisiert, ohne eine rechtliche Geburtstagsregel zu behaupten.
+Der Wegweiser verwendet nur vollendete Lebensjahre mit dem bestehenden
+tagkorrigierten `ChildProfile.monthsBetween`; Geburtsdaten werden fuer diese
+Berechnung lokal genutzt und nicht neu an die KI uebertragen.
+Amtliche Betraege, Leistungsfilter, Betragformatierung und AT-Hinweis bleiben
+unveraendert und sind nicht durch diesen Fix auf Aktualitaet freigegeben.
+
+```bash
+flutter test --no-pub --reporter expanded test/finance_milestone_timeline_test.dart test/finance_milestone_ui_test.dart test/finance_persistence_test.dart test/finance_persistence_ui_test.dart test/family_finance_account_test.dart test/family_finance_ui_test.dart test/benefit_guide_consent_test.dart test/finance_links_i18n_test.dart test/country_finance_format_test.dart test/localization_audit_verification_test.dart
+```
+
 ## Installation
 
 1. **Node.js installieren** (falls nicht vorhanden)
