@@ -3,6 +3,7 @@ import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:parentpeak/logic/family_finance_store.dart';
+import 'package:parentpeak/logic/finance_number.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
@@ -21,16 +22,18 @@ import 'package:parentpeak/main.dart';
 /// 2. Leistungen — Was steht euch zu? (Laender-spezifisch)
 /// 3. Meilensteine — Was kommt auf euch zu? (Kind-Alter-basiert)
 class FamilienGeldScreen extends StatelessWidget {
-  const FamilienGeldScreen({super.key});
+  const FamilienGeldScreen({super.key, this.store});
+  final FamilyFinanceStore? store;
 
   @override
   Widget build(BuildContext context) => FamilyHubAccountBoundary(
-    builder: (_) => const _ScopedFamilienGeldScreen(),
+    builder: (_) => _ScopedFamilienGeldScreen(store: store),
   );
 }
 
 class _ScopedFamilienGeldScreen extends StatefulWidget {
-  const _ScopedFamilienGeldScreen();
+  const _ScopedFamilienGeldScreen({this.store});
+  final FamilyFinanceStore? store;
 
   @override
   State<_ScopedFamilienGeldScreen> createState() => _FamilienGeldScreenState();
@@ -52,6 +55,9 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   bool _isEmployee = true;
   bool _isSingleParent = false;
   int _incomeLevel = 1; // 0=unter 2.000€, 1=2.000–4.000€, 2=ueber 4.000€
+  bool _draftEmployee = true;
+  bool _draftSingleParent = false;
+  int _draftIncome = 1;
 
   // Feature 3: Spar-Ziel
   double _monthlySavingsGoal = 0;
@@ -62,17 +68,22 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
 
   // Persistente TextField-Controller (verhindert Reset beim setState)
   final Map<String, TextEditingController> _controllers = {};
-  final _store = FamilyFinanceStore.instance;
+  late final _store = widget.store ?? FamilyFinanceStore.instance;
   late final String _scope = _store.scope;
   bool _loaded = false;
   bool _loadError = false;
   bool _hasLegacy = false;
   bool _claiming = false;
+  int _pendingWrites = 0;
+  bool _switchingCountry = false;
+  final Map<String, String> _fieldErrors = {};
+  final Map<String, int> _fieldRevisions = {};
 
   TextEditingController _controllerFor(String id, double amount) {
     if (!_controllers.containsKey(id)) {
       _controllers[id] = TextEditingController(
-          text: amount > 0 ? amount.toStringAsFixed(0) : '');
+        text: amount > 0 ? _inputAmount(amount) : '',
+      );
     }
     return _controllers[id]!;
   }
@@ -101,20 +112,32 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       _store.requireScope(_scope);
       if (!mounted) return;
       final code = data[FamilyFinanceStore.countryKey] as String?;
-      final amounts = data[FamilyFinanceStore.amountsKey] as Map<String, dynamic>?;
+      final amounts =
+          data[FamilyFinanceStore.amountsKey] as Map<String, dynamic>?;
       setState(() {
-        _country = code == null ? CountryFinanceData.germany
-          : CountryFinanceData.getByCode(code);
+        _country = code == null
+            ? CountryFinanceData.germany
+            : CountryFinanceData.getByCode(code);
         _countrySelected = code != null;
-        _monthlyAmounts = amounts?.map((key, value) =>
-          MapEntry(key, (value as num).toDouble())) ?? {};
+        _monthlyAmounts =
+            amounts?.map(
+              (key, value) => MapEntry(key, (value as num).toDouble()),
+            ) ??
+            {};
         _children = profile?.children ?? [];
-        _eligibilityDone = data[FamilyFinanceStore.eligibilityKey] as bool? ?? false;
+        _eligibilityDone =
+            data[FamilyFinanceStore.eligibilityKey] as bool? ?? false;
         _isEmployee = data[FamilyFinanceStore.employeeKey] as bool? ?? true;
-        _isSingleParent = data[FamilyFinanceStore.singleParentKey] as bool? ?? false;
+        _isSingleParent =
+            data[FamilyFinanceStore.singleParentKey] as bool? ?? false;
         _incomeLevel = data[FamilyFinanceStore.incomeKey] as int? ?? 1;
-        _monthlySavingsGoal = (data[FamilyFinanceStore.savingsGoalKey] as num?)?.toDouble() ?? 0;
-        _totalSaved = (data[FamilyFinanceStore.savedKey] as num?)?.toDouble() ?? 0;
+        _draftEmployee = _isEmployee;
+        _draftSingleParent = _isSingleParent;
+        _draftIncome = _incomeLevel;
+        _monthlySavingsGoal =
+            (data[FamilyFinanceStore.savingsGoalKey] as num?)?.toDouble() ?? 0;
+        _totalSaved =
+            (data[FamilyFinanceStore.savedKey] as num?)?.toDouble() ?? 0;
         _hasLegacy = hasLegacy;
         _loaded = true;
         _loadError = false;
@@ -130,47 +153,131 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     }
   }
 
-  Future<void> _write(Map<String, dynamic> values) async {
+  Future<bool> _write(Map<String, dynamic> values, VoidCallback commit,
+      {bool mergeAmounts = false}) async {
+    setState(() => _pendingWrites++);
     try {
-      await _store.write(values, expectedScope: _scope);
+      await _store.write(values, expectedScope: _scope, mergeAmounts: mergeAmounts);
+      _store.requireScope(_scope);
+      if (!mounted) return false;
+      setState(commit);
+      return true;
     } catch (error) {
       debugPrint('FamilienGeld write: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.tr('family_hub_save_error'))));
+          SnackBar(content: Text(context.tr('family_hub_save_error'))),
+        );
       }
+      return false;
+    } finally {
+      if (mounted) setState(() => _pendingWrites--);
     }
   }
 
-  Future<void> _saveCountry(String code) =>
-    _write({FamilyFinanceStore.countryKey: code});
+  Future<void> _selectCountry(String code) async {
+    if (_pendingWrites > 0 || _switchingCountry) return;
+    setState(() => _switchingCountry = true);
+    try {
+      final saved = await _write({FamilyFinanceStore.countryKey: code}, () {});
+      if (!saved || !mounted) return;
+      await _loadSavedData();
+      if (!mounted) return;
+      _fieldErrors.clear();
+      _fieldRevisions.clear();
+      for (final entry in _controllers.entries) {
+        final amount = entry.key == 'savings_total'
+            ? _totalSaved
+            : entry.key == 'savings_goal'
+            ? _monthlySavingsGoal
+            : _monthlyAmounts[entry.key] ?? 0;
+        entry.value.text = amount == 0 ? '' : _inputAmount(amount);
+      }
+    } finally {
+      if (mounted) setState(() => _switchingCountry = false);
+    }
+  }
 
-  Future<void> _saveAmounts() =>
-    _write({FamilyFinanceStore.amountsKey: Map<String, double>.from(_monthlyAmounts)});
+  static String _inputAmount(double value) => value == value.truncateToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toStringAsFixed(2);
 
-  Future<void> _saveEligibility() => _write({
-    FamilyFinanceStore.eligibilityKey: _eligibilityDone,
-    FamilyFinanceStore.employeeKey: _isEmployee,
-    FamilyFinanceStore.singleParentKey: _isSingleParent,
-    FamilyFinanceStore.incomeKey: _incomeLevel,
-  });
+  Future<void> _saveEligibility(bool done) async {
+    final employee = _draftEmployee;
+    final singleParent = _draftSingleParent;
+    final income = _draftIncome;
+    await _write(
+      {
+        FamilyFinanceStore.eligibilityKey: done,
+        FamilyFinanceStore.employeeKey: employee,
+        FamilyFinanceStore.singleParentKey: singleParent,
+        FamilyFinanceStore.incomeKey: income,
+      },
+      () {
+        _eligibilityDone = done;
+        _isEmployee = employee;
+        _isSingleParent = singleParent;
+        _incomeLevel = income;
+      },
+    );
+  }
 
-  Future<void> _saveSavingsGoal() => _write({
-    FamilyFinanceStore.savingsGoalKey: _monthlySavingsGoal,
-    FamilyFinanceStore.savedKey: _totalSaved,
-  });
+  Future<void> _saveNumber(String id, String input) async {
+    final revision = (_fieldRevisions[id] ?? 0) + 1;
+    _fieldRevisions[id] = revision;
+    double value;
+    try {
+      value = FinanceNumber.parse(input);
+    } on FormatException {
+      setState(() => _fieldErrors[id] = context.tr('finance_number_invalid'));
+      return;
+    }
+    setState(() => _fieldErrors.remove(id));
+    final Map<String, dynamic> changes;
+    final VoidCallback commit;
+    if (id == 'savings_total' || id == 'savings_goal') {
+      changes = {
+        id == 'savings_total'
+                ? FamilyFinanceStore.savedKey
+                : FamilyFinanceStore.savingsGoalKey:
+            value,
+      };
+      commit = () {
+        if (id == 'savings_total') {
+          _totalSaved = value;
+        } else {
+          _monthlySavingsGoal = value;
+        }
+      };
+    } else {
+      changes = {FamilyFinanceStore.amountsKey: {id: value}};
+      commit = () => _monthlyAmounts[id] = value;
+    }
+    final saved = await _write(changes, commit,
+      mergeAmounts: id != 'savings_total' && id != 'savings_goal');
+    if (!mounted || _fieldRevisions[id] != revision) return;
+    if (!saved) {
+      setState(() => _fieldErrors[id] = context.tr('family_hub_save_error'));
+    }
+  }
 
   Future<void> _claimLegacy() async {
-    final confirmed = await showDialog<bool>(context: context,
-      builder: (ctx) => FamilyHubAccountModal(expectedScope: _scope,
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => FamilyHubAccountModal(
+        expectedScope: _scope,
         builder: (ctx) => AlertDialog(
           title: Text(context.tr('finance_legacy_title')),
           content: Text(context.tr('finance_legacy_confirm')),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false),
-              child: Text(context.tr('cancel'))),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true),
-              child: Text(context.tr('family_hub_legacy_claim'))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.tr('cancel')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.tr('family_hub_legacy_claim')),
+            ),
           ],
         ),
       ),
@@ -187,16 +294,19 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       await _loadSavedData();
       if (!mounted) return;
       for (final entry in _controllers.entries) {
-        final amount = entry.key == 'savings_total' ? _totalSaved
-          : entry.key == 'savings_goal' ? _monthlySavingsGoal
-          : _monthlyAmounts[entry.key] ?? 0;
-        entry.value.text = amount > 0 ? amount.toStringAsFixed(0) : '';
+        final amount = entry.key == 'savings_total'
+            ? _totalSaved
+            : entry.key == 'savings_goal'
+            ? _monthlySavingsGoal
+            : _monthlyAmounts[entry.key] ?? 0;
+        entry.value.text = amount > 0 ? _inputAmount(amount) : '';
       }
     } catch (error) {
       debugPrint('FamilienGeld legacy claim: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.tr('family_hub_legacy_failed'))));
+          SnackBar(content: Text(context.tr('family_hub_legacy_failed'))),
+        );
       }
     } finally {
       if (mounted) setState(() => _claiming = false);
@@ -218,10 +328,12 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     // Konnte der Link nicht geöffnet werden, bekommt der Nutzer eine klare
     // Rückmeldung statt stillschweigendem Nichts.
     if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr('finance_link_open_failed')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('finance_link_open_failed')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -229,18 +341,26 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   Future<void> _shareOverview() async {
     final total = _monthlyAmounts.values.fold(0.0, (a, b) => a + b);
     final sb = StringBuffer();
-    sb.writeln(context.tr('finance_share_title', values: {
-      'flag': _country.flag,
-      'country': _countryName,
-    }));
+    sb.writeln(
+      context.tr(
+        'finance_share_title',
+        values: {'flag': _country.flag, 'country': _countryName},
+      ),
+    );
     sb.writeln('');
     if (total > 0) {
-      sb.writeln(context.tr('finance_share_monthly_costs', values: {
-        'amount': _country.formatAmount(total),
-      }));
-      sb.writeln(context.tr('finance_share_yearly_costs', values: {
-        'amount': _country.formatAmount(total * 12),
-      }));
+      sb.writeln(
+        context.tr(
+          'finance_share_monthly_costs',
+          values: {'amount': _country.formatAmount(total)},
+        ),
+      );
+      sb.writeln(
+        context.tr(
+          'finance_share_yearly_costs',
+          values: {'amount': _country.formatAmount(total * 12)},
+        ),
+      );
       sb.writeln('');
     }
     sb.writeln(context.tr('finance_share_possible_benefits'));
@@ -248,10 +368,11 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       final symbol = b.status == BenefitStatus.universal
           ? '\u2705'
           : b.status == BenefitStatus.incomeDependent
-              ? '\u{1F7E0}'
-              : '\u{1F535}';
+          ? '\u{1F7E0}'
+          : '\u{1F535}';
       sb.writeln(
-          '$symbol ${_benefitText(b, 'name')}${b.amount != null ? ' \u00B7 ${_benefitText(b, 'amount')}' : ''}');
+        '$symbol ${_benefitText(b, 'name')}${b.amount != null ? ' \u00B7 ${_benefitText(b, 'amount')}' : ''}',
+      );
     }
     if (_children.isNotEmpty) {
       sb.writeln('');
@@ -264,16 +385,17 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         for (final m in upcoming) {
           final years = m.childAgeYears - ageYears;
           sb.writeln(
-              '${m.emoji} ${_milestoneLabel(m)} \u00B7 ~${_country.formatAmount(m.estimatedCost)} (${context.tr('finance_in_years_short', values: {
-                'years': years
-              })})');
+            '${m.emoji} ${_milestoneLabel(m)} \u00B7 ~${_country.formatAmount(m.estimatedCost)} (${context.tr('finance_in_years_short', values: {'years': years})})',
+          );
         }
       }
     }
     sb.writeln('');
     sb.writeln(context.tr('finance_share_footer'));
-    await Share.share(sb.toString(),
-        subject: context.tr('finance_share_subject'));
+    await Share.share(
+      sb.toString(),
+      subject: context.tr('finance_share_subject'),
+    );
   }
 
   String get _countryName => context.tr('finance_country_${_country.code}');
@@ -317,31 +439,54 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_loadError) {
-      return Scaffold(body: Center(child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(context.tr('finance_load_failed')),
-        TextButton(onPressed: _loadSavedData,
-          child: Text(context.tr('family_hub_retry'))),
-      ],
-      )));
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(context.tr('finance_load_failed')),
+              TextButton(
+                onPressed: _loadSavedData,
+                child: Text(context.tr('family_hub_retry')),
+              ),
+            ],
+          ),
+        ),
+      );
     }
-    return Column(children: [
-      if (_hasLegacy) Material(
-        child: SafeArea(bottom: false, child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(children: [
-            Text(context.tr('finance_legacy_notice')),
-            if (_store.userId != null) TextButton(
-              onPressed: _claiming ? null : _claimLegacy,
-              child: Text(context.tr('finance_legacy_title')),
+    return Column(
+      children: [
+        if (_hasLegacy)
+          Material(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Text(context.tr('finance_legacy_notice')),
+                    if (_store.userId != null)
+                      TextButton(
+                        onPressed: _claiming || _pendingWrites > 0
+                            ? null
+                            : _claimLegacy,
+                        child: Text(context.tr('finance_legacy_title')),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ]),
-        )),
-      ),
-      Expanded(child: AbsorbPointer(absorbing: _claiming,
-        child: _countrySelected ? _mainScreen(context) : _countrySelector(context))),
-    ]);
+          ),
+        Expanded(
+          child: AbsorbPointer(
+            absorbing: _claiming || _switchingCountry,
+            child: _countrySelected
+                ? _mainScreen(context)
+                : _countrySelector(context),
+          ),
+        ),
+      ],
+    );
   }
 
   // ─── Country Selector (erster Besuch) ─────────────────────────────────────
@@ -349,72 +494,98 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-          title: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'familien_geld_title')),
-          elevation: 0),
+        title: Text(
+          AppStringsManager.getString(
+            languageService.currentLanguage,
+            'familien_geld_title',
+          ),
+        ),
+        elevation: 0,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            const SizedBox(height: 20),
-            const Text('\u{1F30D}', style: TextStyle(fontSize: 40)),
-            const SizedBox(height: 16),
-            Text(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              const Text('\u{1F30D}', style: TextStyle(fontSize: 40)),
+              const SizedBox(height: 16),
+              Text(
                 AppStringsManager.getString(
-                    languageService.currentLanguage, 'country_question'),
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 6),
-            Text(
+                  languageService.currentLanguage,
+                  'country_question',
+                ),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
                 AppStringsManager.getString(
-                    languageService.currentLanguage, 'country_hint'),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            Expanded(
+                  languageService.currentLanguage,
+                  'country_hint',
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Expanded(
                 child: ListView.separated(
-              itemCount: CountryFinanceData.availableCountries.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, i) {
-                final c = CountryFinanceData.availableCountries[i];
-                return Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                        color: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.4)),
-                  ),
-                  child: Material(
-                      color: Colors.transparent,
-                      child: ListTile(
-                        onTap: () {
-                          setState(() {
-                            _country = c;
-                            _countrySelected = true;
-                          });
-                          _saveCountry(c.code);
-                        },
-                        leading:
-                            Text(c.flag, style: const TextStyle(fontSize: 28)),
-                        title: Text(context.tr('finance_country_${c.code}'),
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w700)),
-                        subtitle: Text('${c.currency} (${c.currencySymbol})',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: theme.colorScheme.outline)),
-                        trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                            size: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                      )),
-                );
-              },
-            )),
-          ]),
+                  itemCount: CountryFinanceData.availableCountries.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) {
+                    final c = CountryFinanceData.availableCountries[i];
+                    return Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: theme.colorScheme.outlineVariant.withValues(
+                            alpha: 0.4,
+                          ),
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          onTap: _pendingWrites > 0
+                              ? null
+                              : () => _selectCountry(c.code),
+                          leading: Text(
+                            c.flag,
+                            style: const TextStyle(fontSize: 28),
+                          ),
+                          title: Text(
+                            context.tr('finance_country_${c.code}'),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${c.currency} (${c.currencySymbol})',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -425,23 +596,34 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(_country.flag, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 8),
-          Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'familien_geld_title')),
-        ]),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_country.flag, style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 8),
+            Text(
+              AppStringsManager.getString(
+                languageService.currentLanguage,
+                'familien_geld_title',
+              ),
+            ),
+          ],
+        ),
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share_rounded, size: 20),
             tooltip: context.tr('tooltip_share_overview'),
-            onPressed: _shareOverview,
+            onPressed: _pendingWrites > 0 || _fieldErrors.isNotEmpty
+                ? null
+                : _shareOverview,
           ),
           IconButton(
             icon: const Icon(Icons.language_rounded, size: 20),
             tooltip: context.tr('tooltip_change_country'),
-            onPressed: () => setState(() => _countrySelected = false),
+            onPressed: _pendingWrites > 0
+                ? null
+                : () => setState(() => _countrySelected = false),
           ),
         ],
         bottom: TabBar(
@@ -473,120 +655,157 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Übersichts-Card
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Übersichts-Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF16A34A).withValues(alpha: 0.2),
+              ),
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: const Color(0xFF16A34A).withValues(alpha: 0.2)),
-          ),
-          child: Column(children: [
-            const Text('\u{1F4B0}', style: TextStyle(fontSize: 28)),
-            const SizedBox(height: 8),
-            Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'monthly_child_costs'),
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(
-              total > 0
-                  ? context.tr('finance_amount_per_month', values: {
-                      'amount': _country.formatAmount(total),
-                    })
-                  : context.tr('finance_not_entered'),
-              style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: total > 0
-                      ? const Color(0xFF16A34A)
-                      : theme.colorScheme.outline),
+            child: Column(
+              children: [
+                const Text('\u{1F4B0}', style: TextStyle(fontSize: 28)),
+                const SizedBox(height: 8),
+                Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'monthly_child_costs',
+                  ),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  total > 0
+                      ? context.tr(
+                          'finance_amount_per_month',
+                          values: {'amount': _country.formatAmount(total)},
+                        )
+                      : context.tr('finance_not_entered'),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: total > 0
+                        ? const Color(0xFF16A34A)
+                        : theme.colorScheme.outline,
+                  ),
+                ),
+                if (total > 0) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    context.tr(
+                      'finance_amount_per_year',
+                      values: {'amount': _country.formatAmount(total * 12)},
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ],
             ),
-            if (total > 0) ...[
-              const SizedBox(height: 6),
-              Text(
-                  context.tr('finance_amount_per_year', values: {
-                    'amount': _country.formatAmount(total * 12),
-                  }),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.outline)),
-            ],
-          ]),
-        ),
-        const SizedBox(height: 20),
-        Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'your_monthly_costs'),
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'money_once_hint'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline)),
-        const SizedBox(height: 14),
-        // Kategorien
-        ..._country.categories.map((cat) => _categoryRow(theme, cat)),
-        const SizedBox(height: 20),
-        // KI-Tipp
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF7ED),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: const Color(0xFFF97316).withValues(alpha: 0.2)),
           ),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('\u{1F4A1}', style: TextStyle(fontSize: 18)),
-            const SizedBox(width: 10),
-            Expanded(
-                child: Column(
+          const SizedBox(height: 20),
+          Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'your_monthly_costs',
+            ),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'money_once_hint',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: 14),
+          // Kategorien
+          ..._country.categories.map((cat) => _categoryRow(theme, cat)),
+          const SizedBox(height: 20),
+          // KI-Tipp
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFFF97316).withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('\u{1F4A1}', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text(
-                      AppStringsManager.getString(
-                          languageService.currentLanguage, 'saving_tip'),
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      Text(
+                        AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'saving_tip',
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFFEA580C))),
-                  const SizedBox(height: 2),
-                  Text(
-                    context.tr(_country.code == 'de'
-                        ? 'finance_saving_tip_de'
-                        : 'finance_saving_tip_generic'),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: const Color(0xFF9A3412), height: 1.3),
+                          color: const Color(0xFFEA580C),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        context.tr(
+                          _country.code == 'de'
+                              ? 'finance_saving_tip_de'
+                              : 'finance_saving_tip_generic',
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF9A3412),
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
                   ),
-                ])),
-          ]),
-        ),
-        // Feature 1: Steuer-Spar — DE: Kita-Kosten absetzbar (2/3-Regel).
-        if (_country.code == 'de') ...[
+                ),
+              ],
+            ),
+          ),
+          // Feature 1: Steuer-Spar — DE: Kita-Kosten absetzbar (2/3-Regel).
+          if (_country.code == 'de') ...[
+            const SizedBox(height: 12),
+            _buildTaxSavingsHint(theme),
+          ],
+          // AT: Seit 2019 ersetzt der Familienbonus Plus die frühere
+          // Absetzbarkeit der Kinderbetreuungskosten. Daher KEINE Kita-abhängige
+          // Rechnung, sondern ein korrekter Hinweis auf den fixen Absetzbetrag.
+          if (_country.code == 'at') ...[
+            const SizedBox(height: 12),
+            _buildFamilienbonusHint(theme),
+          ],
           const SizedBox(height: 12),
-          _buildTaxSavingsHint(theme),
+          // Feature 4: Monat ist eng
+          _buildKnappSection(theme),
+          const SizedBox(height: 16),
+          _disclaimerBox(theme),
         ],
-        // AT: Seit 2019 ersetzt der Familienbonus Plus die frühere
-        // Absetzbarkeit der Kinderbetreuungskosten. Daher KEINE Kita-abhängige
-        // Rechnung, sondern ein korrekter Hinweis auf den fixen Absetzbetrag.
-        if (_country.code == 'at') ...[
-          const SizedBox(height: 12),
-          _buildFamilienbonusHint(theme),
-        ],
-        const SizedBox(height: 12),
-        // Feature 4: Monat ist eng
-        _buildKnappSection(theme),
-        const SizedBox(height: 16),
-        _disclaimerBox(theme),
-      ]),
+      ),
     );
   }
 
@@ -600,49 +819,63 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
-        ),
-        child: Row(children: [
-          Text(cat.emoji, style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(_categoryLabel(cat),
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                if (cat.typicalAmount != null)
-                  Text(
-                      context.tr('finance_average_amount', values: {
-                        'amount': _country.formatAmount(cat.typicalAmount!),
-                      }),
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: theme.colorScheme.outline)),
-              ])),
-          SizedBox(
-            width: 90,
-            child: TextField(
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.right,
-              decoration: InputDecoration(
-                hintText: '0',
-                suffixText: _country.currencySymbol,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              ),
-              controller: _controllerFor(cat.id, amount),
-              onChanged: (v) {
-                _monthlyAmounts[cat.id] = double.tryParse(v) ?? 0;
-                _saveAmounts();
-                setState(() {});
-              },
-            ),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
           ),
-        ]),
+        ),
+        child: Row(
+          children: [
+            Text(cat.emoji, style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _categoryLabel(cat),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (cat.typicalAmount != null)
+                    Text(
+                      context.tr(
+                        'finance_average_amount',
+                        values: {
+                          'amount': _country.formatAmount(cat.typicalAmount!),
+                        },
+                      ),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 90,
+              child: TextField(
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.right,
+                decoration: InputDecoration(
+                  hintText: '0',
+                  errorText: _fieldErrors[cat.id],
+                  suffixText: _country.currencySymbol,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                ),
+                controller: _controllerFor(cat.id, amount),
+                onChanged: (v) async => await _saveNumber(cat.id, v),
+                onSubmitted: (v) async => await _saveNumber(cat.id, v),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -654,51 +887,64 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   Widget _leistungenTab(ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+              ),
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2)),
+            child: Column(
+              children: [
+                const Text('\u{1F4CB}', style: TextStyle(fontSize: 28)),
+                const SizedBox(height: 8),
+                Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'what_you_deserve',
+                  ),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  context.tr(
+                    'finance_benefits_country_intro',
+                    values: {'country': _countryName},
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF6B21A8),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          child: Column(children: [
-            const Text('\u{1F4CB}', style: TextStyle(fontSize: 28)),
-            const SizedBox(height: 8),
-            Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'what_you_deserve'),
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(
-              context.tr('finance_benefits_country_intro',
-                  values: {'country': _countryName}),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: const Color(0xFF6B21A8)),
-              textAlign: TextAlign.center,
-            ),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        // KI-Wegweiser: personalisierte Orientierung zur eigenen Situation
-        _benefitGuideCard(theme),
-        const SizedBox(height: 16),
-        // Feature 2: Eligibility Quick-Check
-        _buildEligibilityCheck(theme),
-        const SizedBox(height: 16),
-        // Leistungen-Liste
-        ..._filteredBenefits.map((b) => _benefitCard(theme, b)),
-        const SizedBox(height: 16),
-        _disclaimerBox(theme),
-      ]),
+          const SizedBox(height: 16),
+          // KI-Wegweiser: personalisierte Orientierung zur eigenen Situation
+          _benefitGuideCard(theme),
+          const SizedBox(height: 16),
+          // Feature 2: Eligibility Quick-Check
+          _buildEligibilityCheck(theme),
+          const SizedBox(height: 16),
+          // Leistungen-Liste
+          ..._filteredBenefits.map((b) => _benefitCard(theme, b)),
+          const SizedBox(height: 16),
+          _disclaimerBox(theme),
+        ],
+      ),
     );
   }
 
@@ -712,27 +958,36 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         color: const Color(0xFFFEF3C7),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('\u{26A0}\u{FE0F}', style: TextStyle(fontSize: 14)),
-        const SizedBox(width: 8),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(
-            context.tr('finance_legal_disclaimer'),
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('\u{26A0}\u{FE0F}', style: TextStyle(fontSize: 14)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr('finance_legal_disclaimer'),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: const Color(0xFF92400E),
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  context.tr('finance_amounts_disclaimer'),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: const Color(0xFF92400E),
+                    height: 1.3,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            context.tr('finance_amounts_disclaimer'),
-            style: theme.textTheme.labelSmall?.copyWith(
-                color: const Color(0xFF92400E),
-                height: 1.3,
-                fontStyle: FontStyle.italic),
-          ),
-        ])),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -764,28 +1019,40 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(children: [
-              const Text('\u{2728}', style: TextStyle(fontSize: 26)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(context.tr('finance_guide_title'),
+            child: Row(
+              children: [
+                const Text('\u{2728}', style: TextStyle(fontSize: 26)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('finance_guide_title'),
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 2),
-                    Text(context.tr('finance_guide_subtitle'),
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        context.tr('finance_guide_subtitle'),
                         style: const TextStyle(
-                            color: Colors.white70, fontSize: 12)),
-                  ],
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  color: Colors.white, size: 16),
-            ]),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -822,100 +1089,136 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2))
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(
-              child: Text(_benefitText(b, 'name'),
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w800))),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(statusIcon, size: 12, color: statusColor),
-              const SizedBox(width: 3),
-              Text(statusLabel,
-                  style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: statusColor)),
-            ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _benefitText(b, 'name'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, size: 12, color: statusColor),
+                    const SizedBox(width: 3),
+                    Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ]),
-        const SizedBox(height: 6),
-        Text(_benefitText(b, 'description'),
-            style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
-        if (b.amount != null) ...[
           const SizedBox(height: 6),
-          Text('\u{1F4B0} ${_benefitText(b, 'amount')}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700, color: const Color(0xFF16A34A))),
-        ],
-        if (b.eligibility != null) ...[
-          const SizedBox(height: 4),
-          Text('\u{1F464} ${_benefitText(b, 'eligibility')}',
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.outline)),
-        ],
-        if (b.url != null) ...[
-          const SizedBox(height: 8),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              HapticFeedback.lightImpact();
-              _openUrl(b.url!);
-            },
-            child: Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'common_check_here'),
-                style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF8B5CF6))),
+          Text(
+            _benefitText(b, 'description'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.3,
+            ),
           ),
-        ],
-        // Antragshelfer Button (nur für DE mit vorhandenen Daten)
-        if (_country.code == 'de' &&
-            BenefitApplicationDE.getById(b.id) != null) ...[
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                final appData = BenefitApplicationDE.getById(b.id)!;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => AntragshelferScreen(benefit: appData)),
-                );
-              },
-              icon: const Icon(Icons.assignment_turned_in_rounded, size: 16),
-              label: Text(context.tr('finance_start_application_helper')),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF16A34A),
-                side: const BorderSide(color: Color(0xFF16A34A)),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                textStyle:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          if (b.amount != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              '\u{1F4B0} ${_benefitText(b, 'amount')}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF16A34A),
               ),
             ),
-          ),
+          ],
+          if (b.eligibility != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              '\u{1F464} ${_benefitText(b, 'eligibility')}',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          ],
+          if (b.url != null) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _openUrl(b.url!);
+              },
+              child: Text(
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'common_check_here',
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF8B5CF6),
+                ),
+              ),
+            ),
+          ],
+          // Antragshelfer Button (nur für DE mit vorhandenen Daten)
+          if (_country.code == 'de' &&
+              BenefitApplicationDE.getById(b.id) != null) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  final appData = BenefitApplicationDE.getById(b.id)!;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AntragshelferScreen(benefit: appData),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.assignment_turned_in_rounded, size: 16),
+                label: Text(context.tr('finance_start_application_helper')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF16A34A),
+                  side: const BorderSide(color: Color(0xFF16A34A)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 
@@ -926,79 +1229,95 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   Widget _meilensteineTab(ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFFFF7ED), Color(0xFFFEF3C7)],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFF7ED), Color(0xFFFEF3C7)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFF97316).withValues(alpha: 0.2),
+              ),
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: const Color(0xFFF97316).withValues(alpha: 0.2)),
+            child: Column(
+              children: [
+                const Text('\u{1F3AF}', style: TextStyle(fontSize: 28)),
+                const SizedBox(height: 8),
+                Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'whats_coming',
+                  ),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _children.isEmpty
+                      ? context.tr('finance_create_profile_for_milestones')
+                      : context.tr('finance_based_on_children_age'),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF9A3412),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          child: Column(children: [
-            const Text('\u{1F3AF}', style: TextStyle(fontSize: 28)),
-            const SizedBox(height: 8),
-            Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'whats_coming'),
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(
-              _children.isEmpty
-                  ? context.tr('finance_create_profile_for_milestones')
-                  : context.tr('finance_based_on_children_age'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: const Color(0xFF9A3412)),
-              textAlign: TextAlign.center,
-            ),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        // Feature 3: Spar-Ziel für nächsten Meilenstein
-        _buildSavingsGoal(theme),
-        const SizedBox(height: 16),
-        // Meilensteine pro Kind
-        if (_children.isNotEmpty)
-          ..._children.map((child) => _childMilestones(theme, child))
-        else
-          ..._country.milestones.map((m) => _milestoneCard(theme, m, null)),
-        // Spar-Empfehlung
-        if (_children.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _savingRecommendation(theme),
+          // Feature 3: Spar-Ziel für nächsten Meilenstein
+          _buildSavingsGoal(theme),
+          const SizedBox(height: 16),
+          // Meilensteine pro Kind
+          if (_children.isNotEmpty)
+            ..._children.map((child) => _childMilestones(theme, child))
+          else
+            ..._country.milestones.map((m) => _milestoneCard(theme, m, null)),
+          // Spar-Empfehlung
+          if (_children.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _savingRecommendation(theme),
+          ],
+          const SizedBox(height: 16),
+          _disclaimerBox(theme),
         ],
-        const SizedBox(height: 16),
-        _disclaimerBox(theme),
-      ]),
+      ),
     );
   }
 
   Widget _childMilestones(ThemeData theme, ChildEntry child) {
     final ageYears = (child.ageMonths / 12).round();
-    final upcoming =
-        _country.milestones.where((m) => m.childAgeYears > ageYears).toList();
+    final upcoming = _country.milestones
+        .where((m) => m.childAgeYears > ageYears)
+        .toList();
 
     if (upcoming.isEmpty) return const SizedBox.shrink();
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.only(bottom: 10, top: 6),
-        child: Text(
-          '\u{1F476} ${child.name.isNotEmpty ? child.name : context.tr('child_label')} (${child.ageDisplay})',
-          style:
-              theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10, top: 6),
+          child: Text(
+            '\u{1F476} ${child.name.isNotEmpty ? child.name : context.tr('child_label')} (${child.ageDisplay})',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
-      ),
-      ...upcoming.take(4).map((m) => _milestoneCard(theme, m, ageYears)),
-      const SizedBox(height: 12),
-    ]);
+        ...upcoming.take(4).map((m) => _milestoneCard(theme, m, ageYears)),
+        const SizedBox(height: 12),
+      ],
+    );
   }
 
   Widget _milestoneCard(ThemeData theme, MilestoneCost m, int? currentAge) {
@@ -1012,48 +1331,72 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
-      ),
-      child: Row(children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF97316).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-              child: Text(m.emoji, style: const TextStyle(fontSize: 22))),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_milestoneLabel(m),
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          if (_milestoneNote(m) case final note?)
-            Text(note,
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
-          if (year != null)
-            Text(
-                yearsUntil == 1
-                    ? context.tr('finance_next_year', values: {'year': year})
-                    : context.tr('finance_in_years', values: {
-                        'years': yearsUntil,
-                        'year': year,
-                      }),
-                style: theme.textTheme.labelSmall?.copyWith(
-                    color: const Color(0xFF8B5CF6),
-                    fontWeight: FontWeight.w600)),
-        ])),
-        Column(children: [
-          Text('~${_country.formatAmount(m.estimatedCost)}',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w800, color: const Color(0xFFF97316))),
-        ]),
-      ]),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF97316).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(m.emoji, style: const TextStyle(fontSize: 22)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _milestoneLabel(m),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (_milestoneNote(m) case final note?)
+                  Text(
+                    note,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                if (year != null)
+                  Text(
+                    yearsUntil == 1
+                        ? context.tr(
+                            'finance_next_year',
+                            values: {'year': year},
+                          )
+                        : context.tr(
+                            'finance_in_years',
+                            values: {'years': yearsUntil, 'year': year},
+                          ),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: const Color(0xFF8B5CF6),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Column(
+            children: [
+              Text(
+                '~${_country.formatAmount(m.estimatedCost)}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFFF97316),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -1073,39 +1416,56 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
 
     if (totalUpcoming == 0) return const SizedBox.shrink();
 
-    final monthlyTarget =
-        (totalUpcoming / 60).ceilToDouble(); // 5 Jahre = 60 Monate
+    final monthlyTarget = (totalUpcoming / 60)
+        .ceilToDouble(); // 5 Jahre = 60 Monate
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF16A34A).withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.2)),
+        border: Border.all(
+          color: const Color(0xFF16A34A).withValues(alpha: 0.2),
+        ),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('\u{1F4A1}', style: TextStyle(fontSize: 20)),
-        const SizedBox(width: 12),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'saving_recommendation'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700, color: const Color(0xFF16A34A))),
-          const SizedBox(height: 4),
-          Text(
-            context.tr('finance_five_year_recommendation', values: {
-              'total': _country.formatAmount(totalUpcoming),
-              'monthly': _country.formatAmount(monthlyTarget),
-            }),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: const Color(0xFF166534), height: 1.4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('\u{1F4A1}', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'saving_recommendation',
+                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF16A34A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  context.tr(
+                    'finance_five_year_recommendation',
+                    values: {
+                      'total': _country.formatAmount(totalUpcoming),
+                      'monthly': _country.formatAmount(monthlyTarget),
+                    },
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF166534),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ])),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -1121,21 +1481,25 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
-        ),
-        child: Row(children: [
-          const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              _country.code == 'de'
-                  ? context.tr('finance_enter_childcare_de')
-                  : context.tr('finance_enter_childcare_generic'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
           ),
-        ]),
+        ),
+        child: Row(
+          children: [
+            const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _country.code == 'de'
+                    ? context.tr('finance_enter_childcare_de')
+                    : context.tr('finance_enter_childcare_generic'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -1155,72 +1519,101 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         decoration: BoxDecoration(
           color: const Color(0xFFECFDF5),
           borderRadius: BorderRadius.circular(14),
-          border:
-              Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+          border: Border.all(
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+          ),
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr('finance_tax_saving_potential'),
-                      style: theme.textTheme.bodySmall?.copyWith(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('finance_tax_saving_potential'),
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF065F46)),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      context.tr('finance_tax_saving_summary', values: {
-                        'deductible': _country.formatAmount(deductible),
-                        'savings': _country.formatAmount(estimatedSavings),
-                      }),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF065F46), height: 1.3),
-                    ),
-                  ]),
+                          color: const Color(0xFF065F46),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        context.tr(
+                          'finance_tax_saving_summary',
+                          values: {
+                            'deductible': _country.formatAmount(deductible),
+                            'savings': _country.formatAmount(estimatedSavings),
+                          },
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF065F46),
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _showTaxDetail
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
+                  color: const Color(0xFF10B981),
+                  size: 20,
+                ),
+              ],
             ),
-            Icon(
-              _showTaxDetail
-                  ? Icons.expand_less_rounded
-                  : Icons.expand_more_rounded,
-              color: const Color(0xFF10B981),
-              size: 20,
-            ),
-          ]),
-          if (_showTaxDetail) ...[
-            const SizedBox(height: 10),
-            const Divider(color: Color(0xFF10B981), height: 1),
-            const SizedBox(height: 10),
-            _taxDetailRow(theme, context.tr('finance_tax_childcare_year'),
-                _country.formatAmount(kitaAnnual)),
-            _taxDetailRow(theme, context.tr('finance_tax_deductible_share'),
-                _country.formatAmount(deductiblePart)),
-            _taxDetailRow(theme, context.tr('finance_tax_max_expense'),
-                _country.formatAmount(deductibleMax)),
-            _taxDetailRow(theme, context.tr('finance_tax_actual_deductible'),
-                _country.formatAmount(deductible)),
-            _taxDetailRow(theme, context.tr('finance_tax_estimated_saving'),
+            if (_showTaxDetail) ...[
+              const SizedBox(height: 10),
+              const Divider(color: Color(0xFF10B981), height: 1),
+              const SizedBox(height: 10),
+              _taxDetailRow(
+                theme,
+                context.tr('finance_tax_childcare_year'),
+                _country.formatAmount(kitaAnnual),
+              ),
+              _taxDetailRow(
+                theme,
+                context.tr('finance_tax_deductible_share'),
+                _country.formatAmount(deductiblePart),
+              ),
+              _taxDetailRow(
+                theme,
+                context.tr('finance_tax_max_expense'),
+                _country.formatAmount(deductibleMax),
+              ),
+              _taxDetailRow(
+                theme,
+                context.tr('finance_tax_actual_deductible'),
+                _country.formatAmount(deductible),
+              ),
+              _taxDetailRow(
+                theme,
+                context.tr('finance_tax_estimated_saving'),
                 _country.formatAmount(estimatedSavings),
-                highlight: true),
-            const SizedBox(height: 8),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _openUrl(
-                'https://www.bundesfinanzministerium.de/Web/DE/Themen/Steuern/Steuerarten/Einkommensteuer/einkommensteuer.html',
+                highlight: true,
               ),
-              child: Text(
-                context.tr('finance_tax_more_info'),
-                style: theme.textTheme.bodySmall?.copyWith(
+              const SizedBox(height: 8),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _openUrl(
+                  'https://www.bundesfinanzministerium.de/Web/DE/Themen/Steuern/Steuerarten/Einkommensteuer/einkommensteuer.html',
+                ),
+                child: Text(
+                  context.tr('finance_tax_more_info'),
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF059669),
-                    fontWeight: FontWeight.w700),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
+            ],
           ],
-        ]),
+        ),
       ),
     );
   }
@@ -1232,66 +1625,87 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _openUrl(
-          'https://www.oesterreich.gv.at/de/landingpages/familienbonusplus'),
+        'https://www.oesterreich.gv.at/de/landingpages/familienbonusplus',
+      ),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: const Color(0xFFECFDF5),
           borderRadius: BorderRadius.circular(14),
-          border:
-              Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-        ),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
-          const SizedBox(width: 10),
-          Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(
-                context.tr('finance_familienbonus_title'),
-                style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF065F46)),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                context.tr('finance_familienbonus_body'),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: const Color(0xFF065F46), height: 1.3),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                context.tr('finance_tax_more_info'),
-                style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF059669),
-                    fontWeight: FontWeight.w700),
-              ),
-            ]),
+          border: Border.all(
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
           ),
-        ]),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('\u{1F4B0}', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('finance_familienbonus_title'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF065F46),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    context.tr('finance_familienbonus_body'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF065F46),
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    context.tr('finance_tax_more_info'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF059669),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _taxDetailRow(ThemeData theme, String label, String value,
-      {bool highlight = false}) {
+  Widget _taxDetailRow(
+    ThemeData theme,
+    String label,
+    String value, {
+    bool highlight = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Row(children: [
-        Expanded(
-          child: Text(label,
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: const Color(0xFF065F46))),
-        ),
-        Text(
-          value,
-          style: theme.textTheme.labelSmall?.copyWith(
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: const Color(0xFF065F46),
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
               color: highlight
                   ? const Color(0xFF047857)
-                  : const Color(0xFF065F46)),
-        ),
-      ]),
+                  : const Color(0xFF065F46),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1316,33 +1730,38 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         decoration: BoxDecoration(
           color: const Color(0xFFF5F3FF),
           borderRadius: BorderRadius.circular(14),
-          border:
-              Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+          border: Border.all(
+            color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+          ),
         ),
-        child: Row(children: [
-          const Text('\u{2705}', style: TextStyle(fontSize: 14)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              context.tr('finance_benefits_filtered'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: const Color(0xFF5B21B6)),
+        child: Row(
+          children: [
+            const Text('\u{2705}', style: TextStyle(fontSize: 14)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.tr('finance_benefits_filtered'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF5B21B6),
+                ),
+              ),
             ),
-          ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => setState(() {
-              _eligibilityDone = false;
-              _saveEligibility();
-            }),
-            child: Text(
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _pendingWrites > 0 ? null : () => _saveEligibility(false),
+              child: Text(
                 AppStringsManager.getString(
-                    languageService.currentLanguage, 'change_action'),
+                  languageService.currentLanguage,
+                  'change_action',
+                ),
                 style: theme.textTheme.labelSmall?.copyWith(
-                    color: const Color(0xFF7C3AED),
-                    fontWeight: FontWeight.w700)),
-          ),
-        ]),
+                  color: const Color(0xFF7C3AED),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -1351,86 +1770,154 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       decoration: BoxDecoration(
         color: const Color(0xFFF5F3FF),
         borderRadius: BorderRadius.circular(18),
-        border:
-            Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
-          const SizedBox(width: 8),
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'quick_check'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700, color: const Color(0xFF4C1D95))),
-        ]),
-        const SizedBox(height: 12),
-        // Frage 1: Berufstaetigkeit
-        Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'employed_question'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        Wrap(spacing: 8, children: [
-          _eligChip(theme, context.tr('yes_answer'), _isEmployee,
-              () => setState(() => _isEmployee = true)),
-          _eligChip(theme, context.tr('finance_no_parental_leave'),
-              !_isEmployee, () => setState(() => _isEmployee = false)),
-        ]),
-        const SizedBox(height: 10),
-        // Frage 2: Alleinerziehend
-        Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'single_parent'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        Wrap(spacing: 8, children: [
-          _eligChip(theme, context.tr('yes_answer'), _isSingleParent,
-              () => setState(() => _isSingleParent = true)),
-          _eligChip(theme, context.tr('no_answer'), !_isSingleParent,
-              () => setState(() => _isSingleParent = false)),
-        ]),
-        const SizedBox(height: 10),
-        // Frage 3: Einkommen
-        Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'net_income'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        Wrap(spacing: 8, children: [
-          _eligChip(theme, context.tr('finance_income_low'), _incomeLevel == 0,
-              () => setState(() => _incomeLevel = 0)),
-          _eligChip(theme, context.tr('finance_income_medium'),
-              _incomeLevel == 1, () => setState(() => _incomeLevel = 1)),
-          _eligChip(theme, context.tr('finance_income_high'), _incomeLevel == 2,
-              () => setState(() => _incomeLevel = 2)),
-        ]),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF7C3AED)),
-            onPressed: () {
-              setState(() => _eligibilityDone = true);
-              _saveEligibility();
-            },
-            child: Text(AppStringsManager.getString(
-                languageService.currentLanguage, 'filter_benefits')),
-          ),
+        border: Border.all(
+          color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
         ),
-      ]),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Text(
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'quick_check',
+                ),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF4C1D95),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Frage 1: Berufstaetigkeit
+          Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'employed_question',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              _eligChip(
+                theme,
+                context.tr('yes_answer'),
+                _draftEmployee,
+                () => setState(() => _draftEmployee = true),
+              ),
+              _eligChip(
+                theme,
+                context.tr('finance_no_parental_leave'),
+                !_draftEmployee,
+                () => setState(() => _draftEmployee = false),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Frage 2: Alleinerziehend
+          Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'single_parent',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              _eligChip(
+                theme,
+                context.tr('yes_answer'),
+                _draftSingleParent,
+                () => setState(() => _draftSingleParent = true),
+              ),
+              _eligChip(
+                theme,
+                context.tr('no_answer'),
+                !_draftSingleParent,
+                () => setState(() => _draftSingleParent = false),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Frage 3: Einkommen
+          Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'net_income',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              _eligChip(
+                theme,
+                context.tr('finance_income_low'),
+                _draftIncome == 0,
+                () => setState(() => _draftIncome = 0),
+              ),
+              _eligChip(
+                theme,
+                context.tr('finance_income_medium'),
+                _draftIncome == 1,
+                () => setState(() => _draftIncome = 1),
+              ),
+              _eligChip(
+                theme,
+                context.tr('finance_income_high'),
+                _draftIncome == 2,
+                () => setState(() => _draftIncome = 2),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7C3AED),
+              ),
+              onPressed: _pendingWrites > 0
+                  ? null
+                  : () => _saveEligibility(true),
+              child: Text(
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'filter_benefits',
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _eligChip(
-      ThemeData theme, String label, bool selected, VoidCallback onTap) {
+    ThemeData theme,
+    String label,
+    bool selected,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+      onTap: _pendingWrites > 0 ? null : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -1439,14 +1926,18 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
               : theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: selected
-                  ? const Color(0xFF7C3AED)
-                  : theme.colorScheme.outlineVariant),
+            color: selected
+                ? const Color(0xFF7C3AED)
+                : theme.colorScheme.outlineVariant,
+          ),
         ),
-        child: Text(label,
-            style: theme.textTheme.labelSmall?.copyWith(
-                color: selected ? Colors.white : theme.colorScheme.onSurface,
-                fontWeight: FontWeight.w600)),
+        child: Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: selected ? Colors.white : theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -1495,127 +1986,163 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7ED),
         borderRadius: BorderRadius.circular(18),
-        border:
-            Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(nextMilestone.emoji, style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: 8),
-          Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(
-                  '${context.tr('saving_goal')} ${_milestoneLabel(nextMilestone)}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFFEA580C))),
-              Text(
-                context.tr(
-                    yearsLeft == 1
-                        ? 'finance_goal_in_one_year'
-                        : 'finance_goal_in_years',
-                    values: {
-                      'years': yearsLeft,
-                      'amount': _country.formatAmount(target),
-                    }),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: const Color(0xFF9A3412)),
-              ),
-            ]),
-          ),
-        ]),
-        const SizedBox(height: 12),
-        // Fortschrittsbalken
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 10,
-            backgroundColor: const Color(0xFFFFD7B0),
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
-          ),
+        border: Border.all(
+          color: const Color(0xFFF97316).withValues(alpha: 0.3),
         ),
-        const SizedBox(height: 6),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(
-              '${context.tr('saved_amount')} ${_country.formatAmount(_totalSaved)}',
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: const Color(0xFF9A3412))),
-          Text('${context.tr('goal_amount')} ${_country.formatAmount(target)}',
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: const Color(0xFF9A3412))),
-        ]),
-        const SizedBox(height: 12),
-        // Eingabe: aktuell gespart
-        Row(children: [
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: context.tr('finance_saved_so_far'),
-                isDense: true,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(nextMilestone.emoji, style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${context.tr('saving_goal')} ${_milestoneLabel(nextMilestone)}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFEA580C),
+                      ),
+                    ),
+                    Text(
+                      context.tr(
+                        yearsLeft == 1
+                            ? 'finance_goal_in_one_year'
+                            : 'finance_goal_in_years',
+                        values: {
+                          'years': yearsLeft,
+                          'amount': _country.formatAmount(target),
+                        },
+                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF9A3412),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              controller: _controllerFor('savings_total', _totalSaved),
-              onChanged: (v) {
-                _totalSaved = double.tryParse(v) ?? 0;
-                _saveSavingsGoal();
-                setState(() {});
-              },
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Fortschrittsbalken
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 10,
+              backgroundColor: const Color(0xFFFFD7B0),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFFF97316),
+              ),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: context.tr('finance_savings_rate_month'),
-                isDense: true,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${context.tr('saved_amount')} ${_country.formatAmount(_totalSaved)}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: const Color(0xFF9A3412),
+                ),
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              controller: _controllerFor('savings_goal', _monthlySavingsGoal),
-              onChanged: (v) {
-                _monthlySavingsGoal = double.tryParse(v) ?? 0;
-                _saveSavingsGoal();
-                setState(() {});
-              },
-            ),
+              Text(
+                '${context.tr('goal_amount')} ${_country.formatAmount(target)}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: const Color(0xFF9A3412),
+                ),
+              ),
+            ],
           ),
-        ]),
-        if (_monthlySavingsGoal > 0 && monthsLeft > 0) ...[
-          const SizedBox(height: 8),
-          Text(
-            context.tr(
+          const SizedBox(height: 12),
+          // Eingabe: aktuell gespart
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: context.tr('finance_saved_so_far'),
+                    errorText: _fieldErrors['savings_total'],
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  controller: _controllerFor('savings_total', _totalSaved),
+                  onChanged: (v) async => await _saveNumber('savings_total', v),
+                  onSubmitted: (v) async => await _saveNumber('savings_total', v),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: context.tr('finance_savings_rate_month'),
+                    errorText: _fieldErrors['savings_goal'],
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  controller: _controllerFor(
+                    'savings_goal',
+                    _monthlySavingsGoal,
+                  ),
+                  onChanged: (v) async => await _saveNumber('savings_goal', v),
+                  onSubmitted: (v) async => await _saveNumber('savings_goal', v),
+                ),
+              ),
+            ],
+          ),
+          if (_monthlySavingsGoal > 0 && monthsLeft > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              context.tr(
                 _monthlySavingsGoal >= autoGoal
                     ? 'finance_goal_projection_on_time'
                     : 'finance_goal_projection_almost',
                 values: {
                   'amount': _country.formatAmount(_monthlySavingsGoal),
                   'years': yearsLeft,
-                }),
-            style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF9A3412), fontStyle: FontStyle.italic),
-          ),
-        ] else if (autoGoal > 0) ...[
-          const SizedBox(height: 8),
-          Text(
-            context.tr('finance_monthly_recommendation', values: {
-              'amount': _country.formatAmount(autoGoal),
-            }),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: const Color(0xFF9A3412)),
-          ),
+                },
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF9A3412),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ] else if (autoGoal > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              context.tr(
+                'finance_monthly_recommendation',
+                values: {'amount': _country.formatAmount(autoGoal)},
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF9A3412),
+              ),
+            ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 
@@ -1628,117 +2155,142 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             ('finance_support_de_food', 'https://www.tafel.de/suche'),
             (
               'finance_support_de_education',
-              'https://familienportal.de/familienportal/familienleistungen/bildung-und-teilhabe'
+              'https://familienportal.de/familienportal/familienleistungen/bildung-und-teilhabe',
             ),
             (
               'finance_support_de_debt',
-              'https://www.verbraucherzentrale.de/beratung'
+              'https://www.verbraucherzentrale.de/beratung',
             ),
             (
               'finance_support_de_clothing',
-              'https://www.caritas.de/hilfeundberatung/onlineberatung/'
+              'https://www.caritas.de/hilfeundberatung/onlineberatung/',
             ),
           ]
         : _country.code == 'at'
-            ? [
-                ('finance_support_at_food', 'https://www.wienertafel.at/'),
-                ('finance_support_debt', 'https://www.schuldnerberatung.at/'),
-                (
-                  'finance_support_caritas',
-                  'https://www.caritas.at/hilfe-beratung'
-                ),
-              ]
-            : [
-                ('finance_support_food_bank', 'https://eurofoodbank.org/'),
-                (
-                  'finance_support_family_advice',
-                  'https://www.unicef.org/parenting/'
-                ),
-              ];
-
-    return Column(children: [
-      GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => setState(() => _showKnappSection = !_showKnappSection),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: _showKnappSection
-                ? const Color(0xFFFEF2F2)
-                : theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: _showKnappSection
-                  ? const Color(0xFFEF4444).withValues(alpha: 0.4)
-                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ? [
+            ('finance_support_at_food', 'https://www.wienertafel.at/'),
+            ('finance_support_debt', 'https://www.schuldnerberatung.at/'),
+            (
+              'finance_support_caritas',
+              'https://www.caritas.at/hilfe-beratung',
             ),
-          ),
-          child: Row(children: [
-            const Text('\u{1F91D}', style: TextStyle(fontSize: 16)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'month_tight'),
-                  style: theme.textTheme.bodySmall?.copyWith(
+          ]
+        : [
+            ('finance_support_food_bank', 'https://eurofoodbank.org/'),
+            (
+              'finance_support_family_advice',
+              'https://www.unicef.org/parenting/',
+            ),
+          ];
+
+    return Column(
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _showKnappSection = !_showKnappSection),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: _showKnappSection
+                  ? const Color(0xFFFEF2F2)
+                  : theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _showKnappSection
+                    ? const Color(0xFFEF4444).withValues(alpha: 0.4)
+                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Text('\u{1F91D}', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'month_tight',
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: _showKnappSection
                           ? const Color(0xFFB91C1C)
-                          : theme.colorScheme.onSurface)),
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                Icon(
+                  _showKnappSection
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
             ),
-            Icon(
-              _showKnappSection
-                  ? Icons.expand_less_rounded
-                  : Icons.expand_more_rounded,
-              size: 18,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ]),
-        ),
-      ),
-      if (_showKnappSection) ...[
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFEF2F2),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
           ),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              context.tr('finance_free_support_in',
-                  values: {'country': _countryName}),
-              style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700, color: const Color(0xFF991B1B)),
+        ),
+        if (_showKnappSection) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF2F2),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+              ),
             ),
-            const SizedBox(height: 10),
-            ...resources.map((r) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _openUrl(r.$2),
-                    child: Row(children: [
-                      const Icon(Icons.link_rounded,
-                          size: 14, color: Color(0xFFDC2626)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(context.tr(r.$1),
-                            style: theme.textTheme.bodySmall?.copyWith(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr(
+                    'finance_free_support_in',
+                    values: {'country': _countryName},
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF991B1B),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...resources.map(
+                  (r) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _openUrl(r.$2),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.link_rounded,
+                            size: 14,
+                            color: Color(0xFFDC2626),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              context.tr(r.$1),
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color: const Color(0xFFDC2626),
                                 fontWeight: FontWeight.w600,
                                 decoration: TextDecoration.underline,
-                                decorationColor: const Color(0xFFDC2626))),
+                                decorationColor: const Color(0xFFDC2626),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ]),
+                    ),
                   ),
-                )),
-          ]),
-        ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
-    ]);
+    );
   }
 }
