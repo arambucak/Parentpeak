@@ -593,38 +593,41 @@ class ParentMatchingBackendService {
   }) async {
     lastSyncError = null;
 
-    if (_apiUrl == null) {
-      lastSyncError = 'Backend-URL nicht konfiguriert';
-      return [];
-    }
-
     try {
-      final discoveryPath = APIConfig.getBackendParentMatchingDiscoveryPath();
-      final response = await _httpClient.get(
-        Uri.parse(
-          '$_apiUrl$discoveryPath?userId=$userId&limit=$limit&maxDistanceKm=$maxDistanceKm',
-        ),
-      );
-
-      if (response.statusCode == 404) {
-        return [];
+      final client = _typedApiClient;
+      if (client == null || userId.trim().isEmpty) {
+        throw StateError('Authenticated backend or user ID missing');
       }
-
-      if (response.statusCode != 200) {
-        lastSyncError = 'Matching fehlgeschlagen: ${response.statusCode}';
-        return [];
+      if (limit < 1 || !maxDistanceKm.isFinite || maxDistanceKm <= 0) {
+        throw ArgumentError('Invalid discovery limit or distance');
       }
-
-      final data = jsonDecode(response.body);
-      final matches = List<MatchResult>.from(
-        (data['matches'] as List? ?? [])
-            .map((m) => MatchResult.fromJson(m as Map<String, dynamic>)),
-      );
-
-      return matches;
+      final path = APIConfig.getBackendParentMatchingDiscoveryPath();
+      final query = Uri(queryParameters: {
+        'userId': userId,
+        'limit': '$limit',
+        'maxDistanceKm': '$maxDistanceKm',
+      }).query;
+      final data = await client.getJson('$path?$query');
+      if (data is! Map<String, dynamic> || data['matches'] is! List) {
+        throw const FormatException('Invalid discovery response');
+      }
+      return (data['matches'] as List).map((item) {
+        if (item is! Map<String, dynamic> ||
+            item['profile'] is! Map<String, dynamic> ||
+            item['score'] is! int) {
+          throw const FormatException('Invalid discovery match');
+        }
+        final profile = item['profile'] as Map<String, dynamic>;
+        if (profile['id'] is! String || (profile['id'] as String).trim().isEmpty ||
+            profile['name'] is! String || (profile['name'] as String).trim().isEmpty) {
+          throw const FormatException('Invalid discovery profile');
+        }
+        return MatchResult.fromJson(item);
+      }).toList();
     } catch (e) {
       lastSyncError = 'Fehler beim Finden von Matches: $e';
-      return [];
+      debugPrint('ParentMatchingBackendService.findMatches: $lastSyncError');
+      rethrow;
     }
   }
 

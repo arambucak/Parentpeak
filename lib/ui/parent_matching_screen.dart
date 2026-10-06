@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/ui/widgets/playmate_discovery_error.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
@@ -72,6 +74,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
   int _currentIndex = 0;
   bool _isRestoring = true;
+  String? _discoveryErrorKey;
   bool _requiresProfileSetup = false;
   bool _isSavingProfile = false;
   bool _saveSuccessFlash = false;
@@ -183,10 +186,13 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
   }
 
   Future<void> _bootstrap() async {
+    if (mounted) {
+      setState(() => _isRestoring = true);
+    }
     final profileReady = await _ensureMyProfileExists();
     if (!profileReady) return;
 
-    await _loadProfiles();
+    if (!await _loadProfiles()) return;
     await _restoreState();
     await _refreshConnectionsFromBackend(
       announce: !widget.openNewConnectionsOnOpen,
@@ -216,7 +222,10 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
     if (!mounted) return false;
     if (_service.lastSyncError != null) {
-      setState(() => _isRestoring = false);
+      setState(() {
+        _isRestoring = false;
+        _discoveryErrorKey = 'network_profile_unverified';
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_t('network_profile_unverified'))));
@@ -239,7 +248,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     return false;
   }
 
-  Future<void> _loadProfiles() async {
+  Future<bool> _loadProfiles() async {
     try {
       final discovery = await _service.findMatchesWithFallback(
         userId: _effectiveUserId,
@@ -277,8 +286,9 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
         );
       }).toList();
 
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() {
+        _discoveryErrorKey = null;
         _showDiscoveryInviteBanner = discovery.showInviteBanner;
         _globalDigitalMode = discovery.globalDigitalMode;
         _discoveryScope = discovery.scope;
@@ -287,14 +297,18 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
           ..clear()
           ..addAll(profiles);
       });
+      return true;
     } catch (e) {
-      // Fallback for errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_t('matching_load_failed')}: $e'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      debugPrint('ParentMatchingScreen discovery failed: $e');
+      if (!mounted) return false;
+      setState(() {
+        _isRestoring = false;
+        _discoveryErrorKey = e is BackendApiException &&
+                (e.isUnauthorized || e.isForbidden)
+            ? 'network_discovery_auth_failed'
+            : 'network_discovery_failed';
+      });
+      return false;
     }
   }
 
@@ -438,7 +452,11 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
   Future<void> _refreshConnectionsFromBackend({bool announce = true}) async {
     try {
       // Fetch latest matches using smart algorithm
-      final matchResults = await _service.findMatches(userId: _effectiveUserId);
+      final discovery = await _service.findMatchesWithFallback(
+        userId: _effectiveUserId,
+        childAges: _childAgeFilter.toList(),
+      );
+      final matchResults = discovery.matches;
 
       // Get connected profile IDs from backend
       final connectedIds =
@@ -477,6 +495,11 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       }).toList();
 
       setState(() {
+        _discoveryErrorKey = null;
+        _showDiscoveryInviteBanner = discovery.showInviteBanner;
+        _globalDigitalMode = discovery.globalDigitalMode;
+        _discoveryScope = discovery.scope;
+        _globalRooms = discovery.globalRooms;
         _allProfiles
           ..clear()
           ..addAll(profiles);
@@ -505,36 +528,14 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
 
       _persistState();
     } catch (e) {
-      // Fallback - try the old method
-      final connectedIds =
-          await _service.fetchConnectedProfileIds(userId: _effectiveUserId);
-      final newlyConfirmedIds = connectedIds.difference(_seenMatchedProfileIds);
-
+      debugPrint('ParentMatchingScreen connection discovery failed: $e');
       if (!mounted) return;
       setState(() {
-        _matchedProfiles
-          ..clear()
-          ..addAll(_allProfiles.where((p) => connectedIds.contains(p.id)));
-        _newlyConfirmedProfileIds
-          ..clear()
-          ..addAll(newlyConfirmedIds);
-        _newConfirmedSinceLastVisit = _newlyConfirmedProfileIds.length;
+        _discoveryErrorKey = e is BackendApiException &&
+                (e.isUnauthorized || e.isForbidden)
+            ? 'network_discovery_auth_failed'
+            : 'network_discovery_failed';
       });
-
-      if (announce && newlyConfirmedIds.isNotEmpty) {
-        final count = newlyConfirmedIds.length;
-        final text = count == 1
-            ? 'Neue bestätigte Verbindung verfügbar.'
-            : '$count neue bestätigte Verbindungen verfügbar.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(text),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-
-      _persistState();
     }
   }
 
@@ -2274,7 +2275,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                     : TextOverflow.visible,
               ),
             ),
-            if (_showDiscoveryInviteBanner) ...[
+            if (_showDiscoveryInviteBanner && _discoveryErrorKey == null) ...[
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
@@ -2309,7 +2310,12 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
             ],
             const SizedBox(height: 12),
             Expanded(
-              child: profile == null
+              child: _discoveryErrorKey != null
+                  ? PlaymateDiscoveryError(
+                      messageKey: _discoveryErrorKey!,
+                      onRetry: _bootstrap,
+                    )
+                  : profile == null
                   ? (_globalDigitalMode
                       ? _GlobalParentRoomsState(
                           rooms: _globalRooms,
