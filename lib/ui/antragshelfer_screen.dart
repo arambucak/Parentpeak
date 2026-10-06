@@ -3,13 +3,12 @@ import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:parentpeak/logic/family_finance_store.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:parentpeak/ui/widgets/finance_link_launcher.dart';
+import 'package:parentpeak/l10n/finance_content.dart';
 import 'package:parentpeak/config/monetization_config.dart';
 import 'package:parentpeak/models/benefit_application_data.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/services/premium_service.dart';
-import 'package:parentpeak/l10n/app_localizations_all.dart';
-import 'package:parentpeak/main.dart';
 
 /// Antragshelfer — geführter 3-Schritt-Flow für Sozialleistungs-Anträge.
 ///
@@ -19,8 +18,9 @@ import 'package:parentpeak/main.dart';
 class AntragshelferScreen extends StatefulWidget {
   final BenefitApplicationData benefit;
   final FamilyFinanceStore? store;
+  final GeminiAIService? aiService;
 
-  const AntragshelferScreen({super.key, required this.benefit, this.store});
+  const AntragshelferScreen({super.key, required this.benefit, this.store, this.aiService});
 
   @override
   State<AntragshelferScreen> createState() => _AntragshelferRouteState();
@@ -32,14 +32,15 @@ class _AntragshelferRouteState extends State<AntragshelferScreen> {
   @override
   Widget build(BuildContext context) => FamilyHubAccountModal(
     expectedScope: _scope,
-    builder: (_) => _ScopedAntragshelferScreen(benefit: widget.benefit, store: widget.store),
+    builder: (_) => _ScopedAntragshelferScreen(benefit: widget.benefit, store: widget.store, aiService: widget.aiService),
   );
 }
 
 class _ScopedAntragshelferScreen extends StatefulWidget {
-  const _ScopedAntragshelferScreen({required this.benefit, this.store});
+  const _ScopedAntragshelferScreen({required this.benefit, this.store, this.aiService});
   final BenefitApplicationData benefit;
   final FamilyFinanceStore? store;
+  final GeminiAIService? aiService;
 
   @override
   State<_ScopedAntragshelferScreen> createState() =>
@@ -50,8 +51,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
 
-  String _t(String key) =>
-      AppStringsManager.getString(languageService.currentLanguage, key);
+  String _t(String key) => context.tr(key);
   final Set<int> _checkedDocs = {};
   bool _aiLoading = false;
   String? _aiText;
@@ -62,7 +62,9 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
   bool _loadError = false;
   bool _saving = false;
 
-  BenefitApplicationData get _b => widget.benefit;
+  BenefitApplicationData get _b => localizedFinanceApplication(
+    widget.benefit, Localizations.localeOf(context).languageCode,
+  );
 
   @override
   void initState() {
@@ -80,11 +82,11 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
   Future<void> _loadCheckedDocs() async {
     try {
       final saved = await _store.loadChecklist(
-        FamilyFinanceStore.documentsKey(_b.benefitId),
+        FamilyFinanceStore.documentsKey(widget.benefit.benefitId),
         expectedScope: _scope,
       );
       final checked = saved.map(int.parse).toSet();
-      if (checked.any((index) => index < 0 || index >= _b.documents.length)) {
+      if (checked.any((index) => index < 0 || index >= widget.benefit.documents.length)) {
         throw const FormatException('Invalid application document index');
       }
       _store.requireScope(_scope);
@@ -113,7 +115,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
     setState(() => _saving = true);
     try {
       await _store.saveChecklist(
-        FamilyFinanceStore.documentsKey(_b.benefitId),
+        FamilyFinanceStore.documentsKey(widget.benefit.benefitId),
         next.map((i) => i.toString()).toSet(),
         expectedScope: _scope,
       );
@@ -137,10 +139,23 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
     }
   }
 
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _openUrl(String url) => openFinanceLink(context, url);
+
+  Future<void> _copyTemplate() async {
+    try {
+      await Clipboard.setData(ClipboardData(text: _aiText!));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('antrag_copied'))),
+        );
+      }
+    } catch (error) {
+      debugPrint('Application template copy failed: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('antrag_copy_failed'))),
+        );
+      }
     }
   }
 
@@ -165,15 +180,15 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
         elevation: 0,
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
+          tabs: [
             Tab(
-              icon: Icon(Icons.checklist_rounded, size: 18),
-              text: 'Unterlagen',
+              icon: const Icon(Icons.checklist_rounded, size: 18),
+              text: _t('antrag_documents_tab'),
             ),
-            Tab(icon: Icon(Icons.route_rounded, size: 18), text: 'Anleitung'),
+            Tab(icon: const Icon(Icons.route_rounded, size: 18), text: _t('antrag_guide_tab')),
             Tab(
-              icon: Icon(Icons.auto_awesome_rounded, size: 18),
-              text: 'KI-Hilfe',
+              icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+              text: _t('antrag_ai_tab'),
             ),
           ],
         ),
@@ -237,7 +252,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  allChecked ? 'Alles bereit!' : 'Das brauchst du',
+                  _t(allChecked ? 'antrag_all_ready' : 'antrag_need_documents'),
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -245,8 +260,10 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
                 const SizedBox(height: 4),
                 Text(
                   allChecked
-                      ? 'Du hast alle Unterlagen zusammen. Weiter zu Schritt 2!'
-                      : '${_checkedDocs.length} von ${_b.documents.length} Unterlagen bereit',
+                      ? _t('antrag_ready_next')
+                      : context.tr('antrag_documents_count', values: {
+                        'checked': _checkedDocs.length, 'total': _b.documents.length,
+                      }),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF166534),
                   ),
@@ -256,6 +273,8 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
             ),
           ),
           const SizedBox(height: 20),
+          Text(_t('antrag_content_limits'), style: theme.textTheme.bodySmall),
+          const SizedBox(height: 12),
 
           // Progress bar
           ClipRRect(
@@ -420,7 +439,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
 
   Widget _buildStepsTab(ThemeData theme) {
     if (!_isPremium && MonetizationConfig.enabled) {
-      return _buildPremiumLock(theme, 'Schritt-für-Schritt Anleitung');
+      return _buildPremiumLock(theme, _t('antrag_step_guide'));
     }
 
     return SingleChildScrollView(
@@ -457,7 +476,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '⏱️ Bearbeitungszeit: ${_b.processingTime}',
+                        context.tr('antrag_processing_time', values: {'time': _b.processingTime}),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.outline,
                         ),
@@ -575,6 +594,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
                 if (step.url != null) ...[
                   const SizedBox(height: 8),
                   GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _openUrl(step.url!),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -610,7 +630,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
 
   Widget _buildAiTab(ThemeData theme) {
     if (!_isPremium && MonetizationConfig.enabled) {
-      return _buildPremiumLock(theme, 'KI-Textvorlagen');
+      return _buildPremiumLock(theme, _t('antrag_ai_template'));
     }
 
     return SingleChildScrollView(
@@ -643,7 +663,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Die KI erstellt dir einen Begleitbrief oder eine Begründung — fertig zum Kopieren.',
+                  _t('antrag_ai_description'),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF831843),
                   ),
@@ -741,7 +761,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Vorlage',
+                        _t('antrag_template'),
                         style: theme.textTheme.labelMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -750,17 +770,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
                       IconButton(
                         icon: const Icon(Icons.copy_rounded, size: 18),
                         tooltip: context.tr('tooltip_copy'),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: _aiText!));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                '📋 In die Zwischenablage kopiert!',
-                              ),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
+                        onPressed: _copyTemplate,
                       ),
                     ],
                   ),
@@ -801,7 +811,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Dies ist eine Vorlage, keine Rechtsberatung. Passe den Text an deine persönliche Situation an.',
+                    _t('antrag_ai_disclaimer'),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: const Color(0xFF92400E),
                       height: 1.3,
@@ -842,9 +852,16 @@ Regeln:
 - Format: Direkt als Brief-Text (kein "Betreff:", kein Header)
 ''';
 
-      final text = await GeminiAIService()
-          .generateText(prompt)
+      final languageCode = Localizations.localeOf(context).languageCode;
+      final text = await (widget.aiService ?? GeminiAIService())
+          .generateText(
+            prompt,
+            appLanguage: languageCode,
+            systemInstruction: 'Write the template in ${switch (languageCode) {'de' => 'German', 'tr' => 'Turkish', 'ku' => 'Kurmanji Kurdish', _ => 'English'}}. Use placeholders, no personal data. This is wording assistance, not legal advice.',
+          )
           .timeout(const Duration(seconds: 20));
+      _store.requireScope(_scope);
+      if (text.trim().isEmpty) throw const FormatException('Empty application template');
 
       if (mounted) {
         setState(() {
@@ -853,10 +870,11 @@ Regeln:
         });
       }
     } catch (e) {
+      debugPrint('Application template generation failed: $e');
       if (mounted) {
         setState(() {
           _aiError =
-              'Textvorlage konnte nicht erstellt werden. Bitte versuche es erneut.';
+              _t('antrag_ai_failed');
           _aiLoading = false;
         });
       }
@@ -894,7 +912,7 @@ Regeln:
             ),
             const SizedBox(height: 8),
             Text(
-              'Mit Premium bekommst du die volle Anleitung, KI-Textvorlagen und Erinnerungen.',
+              _t('antrag_premium_description'),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.outline,
@@ -906,9 +924,9 @@ Regeln:
               onPressed: () {
                 // TODO: Open Premium sheet
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text(
-                      'Premium kommt bald! Während der Beta ist alles kostenlos.',
+                      _t('antrag_premium_soon'),
                     ),
                   ),
                 );

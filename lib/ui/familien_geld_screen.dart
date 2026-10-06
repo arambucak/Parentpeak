@@ -7,7 +7,8 @@ import 'package:parentpeak/logic/finance_number.dart';
 import 'package:parentpeak/logic/finance_milestone_timeline.dart';
 import 'package:parentpeak/logic/childcare_tax_estimate.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:parentpeak/ui/widgets/finance_link_launcher.dart';
+import 'package:parentpeak/l10n/finance_content.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
 import 'package:parentpeak/config/benefit_application_de.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
@@ -318,32 +319,19 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     }
   }
 
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    var opened = false;
-    if (uri != null) {
-      try {
-        if (await canLaunchUrl(uri)) {
-          opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-      } catch (e) {
-        debugPrint('FamilienGeld._openUrl: $e');
-      }
-    }
-    // Konnte der Link nicht geöffnet werden, bekommt der Nutzer eine klare
-    // Rückmeldung statt stillschweigendem Nichts.
-    if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr('finance_link_open_failed')),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
+  Future<void> _openUrl(String url) => openFinanceLink(context, url);
 
   // Feature 5: Übersicht teilen
-  Future<void> _shareOverview() async {
+  Future<void> _shareOverview(BuildContext buttonContext) async {
+    final box = buttonContext.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) {
+      debugPrint('Finance share: missing button anchor');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('finance_share_failed'))),
+      );
+      return;
+    }
+    final origin = box.localToGlobal(Offset.zero) & box.size;
     final total = _monthlyAmounts.values.fold(0.0, (a, b) => a + b);
     final sb = StringBuffer();
     sb.writeln(
@@ -396,10 +384,20 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     }
     sb.writeln('');
     sb.writeln(context.tr('finance_share_footer'));
-    await Share.share(
-      sb.toString(),
-      subject: context.tr('finance_share_subject'),
-    );
+    try {
+      await Share.share(
+        sb.toString(),
+        subject: context.tr('finance_share_subject'),
+        sharePositionOrigin: origin,
+      );
+    } catch (error) {
+      debugPrint('Finance share failed: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('finance_share_failed'))),
+        );
+      }
+    }
   }
 
   String get _countryName => context.tr('finance_country_${_country.code}');
@@ -417,29 +415,16 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
 
   String? _milestoneNote(MilestoneCost milestone) {
     if (milestone.note == null) return null;
-    if (_country.code != 'de') return milestone.note;
+    if (_country.code != 'de') {
+      return financeContent(milestone.note!, Localizations.localeOf(context).languageCode);
+    }
     return context.tr('finance_milestone_${milestone.id}_note');
   }
 
   String _benefitText(SocialBenefit benefit, String field) {
-    if (_country.code == 'de') {
-      final parts = context.tr('finance_benefit_de_${benefit.id}').split('|');
-      final index = switch (field) {
-        'name' => 0,
-        'description' => 1,
-        'amount' => 2,
-        'eligibility' => 3,
-        _ => -1,
-      };
-      if (index >= 0 && index < parts.length) return parts[index];
-    }
-    return switch (field) {
-      'name' => benefit.name,
-      'description' => benefit.description,
-      'amount' => benefit.amount ?? '',
-      'eligibility' => benefit.eligibility ?? '',
-      _ => '',
-    };
+    return financeBenefitText(
+      benefit, _country.code, Localizations.localeOf(context).languageCode, field,
+    );
   }
 
   @override
@@ -620,13 +605,13 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         ),
         elevation: 0,
         actions: [
-          IconButton(
+          Builder(builder: (buttonContext) => IconButton(
             icon: const Icon(Icons.ios_share_rounded, size: 20),
             tooltip: context.tr('tooltip_share_overview'),
             onPressed: _pendingWrites > 0 || _fieldErrors.isNotEmpty
                 ? null
-                : _shareOverview,
-          ),
+                : () => _shareOverview(buttonContext),
+          )),
           IconButton(
             icon: const Icon(Icons.language_rounded, size: 20),
             tooltip: context.tr('tooltip_change_country'),

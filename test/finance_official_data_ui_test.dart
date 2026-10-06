@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
+import 'package:parentpeak/l10n/finance_content.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/family_finance_store.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
@@ -75,7 +76,8 @@ void main() {
             'Advance Maintenance Payment',
             'Care Allowance',
           ],
-          _ => country.benefits.map((benefit) => benefit.name).toList(),
+          _ => country.benefits.map((benefit) =>
+            financeBenefitText(benefit, country.code, 'en', 'name')).toList(),
         };
         for (final name in expectedNames) {
           expect(
