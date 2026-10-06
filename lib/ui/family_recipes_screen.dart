@@ -15,6 +15,7 @@ import 'package:parentpeak/models/shared_family_recipe.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
+import 'package:parentpeak/ui/widgets/family_recipe_consent_dialog.dart';
 
 /// Phase 3a: Familien-Rezepte teilen.
 ///
@@ -148,6 +149,7 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
   Future<void> _generateAiFallback() async {
     final dish = _query.trim();
     if (dish.isEmpty) return;
+    if (!await ensureFamilyRecipeConsent(context) || !mounted) return;
     setState(() => _generatingAi = true);
     try {
       await _aiService.initialize();

@@ -9,6 +9,7 @@ import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
+import 'package:parentpeak/ui/widgets/family_recipe_consent_dialog.dart';
 
 /// Familien-Küche — 1-Tap Rezept-Inspiration + Eltern-Tipps.
 ///
@@ -27,6 +28,9 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   bool _loading = true;
   bool _noSafeRecipe = false;
   bool _dayRecipeExpanded = false;
+  bool _localRecipe = false;
+  bool _recipeError = false;
+  bool _checkingConsent = false;
   // "Kinder-Hits": Rezepte, die den Kindern geschmeckt haben (lokal gepflegt).
   List<String> _kinderHits = [];
 
@@ -43,8 +47,8 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   }
 
   Future<void> _init() async {
-    await _service.initialize();
     await _loadKinderHits();
+    if (!mounted) return;
     await _generateNew();
   }
 
@@ -68,20 +72,44 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
   }
 
   Future<void> _generateNew() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
+      _recipeError = false;
+      _checkingConsent = true;
       _dayRecipeExpanded = false;
     });
-    final recipe = await _service.generateRecipe(
-      languageCode: languageService.currentLanguage,
-    );
-    if (mounted) {
+    try {
+      final accepted = await ensureFamilyRecipeConsent(context);
+      if (!mounted) return;
+      setState(() => _checkingConsent = false);
+      await _service.initialize();
+      if (!mounted) return;
+      final recipe = accepted
+          ? await _service.generateRecipe(
+              languageCode: languageService.currentLanguage,
+            )
+          : _service.localRecipe(
+              languageCode: languageService.currentLanguage,
+            );
+      if (!mounted) return;
       setState(() {
         _currentRecipe = recipe;
+        _localRecipe = !accepted;
         // null trotz abgeschlossener Generierung => kein für die Allergien
         // sicheres Rezept verfügbar. Die UI zeigt dann eine klare Warnung.
         _noSafeRecipe = recipe == null;
         _loading = false;
+      });
+    } catch (error) {
+      debugPrint('FamilienKueche._generateNew: $error');
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _checkingConsent = false;
+        _recipeError = true;
+        _localRecipe = false;
+        _currentRecipe = null;
       });
     }
   }
@@ -158,8 +186,21 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
           _tischmomentCard(theme),
           const SizedBox(height: 16),
           // Rezept-Card
+          if (_localRecipe && !_loading)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(context.tr('recipe_ai_local_notice')),
+            ),
           if (_loading)
             _loadingState(theme)
+          else if (_recipeError)
+            Column(children: [
+              Text(context.tr('recipe_ai_request_failed')),
+              OutlinedButton(
+                onPressed: _generateNew,
+                child: Text(context.tr('kitchen_try_again')),
+              ),
+            ])
           else if (_currentRecipe != null)
             _recipeCard(theme, _currentRecipe!)
           else if (_noSafeRecipe)
@@ -394,8 +435,10 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
         const Text('\u{1F373}', style: TextStyle(fontSize: 36)),
         const SizedBox(height: 14),
         Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'generating_recipe'),
+            _checkingConsent
+                ? context.tr('recipe_ai_consent_title')
+                : AppStringsManager.getString(
+                    languageService.currentLanguage, 'generating_recipe'),
             style: theme.textTheme.bodyMedium
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
