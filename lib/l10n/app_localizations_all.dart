@@ -562,7 +562,7 @@ class AppStringsManager {
       'finance_not_entered': 'Noch nicht eingetragen',
       'finance_amount_per_year': '{amount}/Jahr',
       'finance_saving_tip_de':
-          'Kita-Gebühren sind steuerlich absetzbar — bis zu 4.000€/Jahr pro Kind als Sonderausgabe.',
+          'Begünstigte Kinderbetreuungskosten: 80%, höchstens 4.800€/Jahr je Kind, als Sonderausgabe (§10 EStG). Voraussetzungen prüfen.',
       'finance_saving_tip_generic':
           'Prüfe, ob Kinderbetreuungskosten in deinem Land steuerlich absetzbar sind.',
       'finance_average_amount': 'Durchschnitt: ~{amount}',
@@ -571,7 +571,7 @@ class AppStringsManager {
       'finance_legal_disclaimer':
           'Dies ist keine Rechtsberatung. Bitte prüfe deine Ansprüche beim zuständigen Amt oder einer Beratungsstelle.',
       'finance_amounts_disclaimer':
-          'Beträge und Links dienen nur der Orientierung (Stand 2026, ohne Gewähr). Die genaue Höhe berechnet die zuständige Stelle.',
+          'Beträge und Links dienen nur der Orientierung, ohne Gewähr. Nur einzelne Angaben wurden amtlich geprüft; keine vollständige Aktualitätsprüfung. Die genaue Höhe berechnet die zuständige Stelle.',
       'finance_familienbonus_title': 'Familienbonus Plus',
       'finance_familienbonus_body':
           'In Österreich gibt es den Familienbonus Plus — einen Steuerabsetzbetrag pro Kind (bis zu 2.000 €/Jahr bis zum 18. Geburtstag). Er wird über die Steuererklärung oder beim Arbeitgeber beantragt.',
@@ -580,7 +580,7 @@ class AppStringsManager {
       'finance_guide_title': 'Was steht uns zu?',
       'finance_guide_subtitle':
           'Schildert eure Situation – der Wegweiser hilft euch weiter.',
-      'finance_status_universal': 'Für alle',
+      'finance_status_universal': 'Allgemeine Leistung · Voraussetzungen prüfen',
       'finance_status_income_dependent': 'Einkommensabhängig',
       'finance_status_check_required': 'Prüfung nötig',
       'finance_start_application_helper': 'Antragshelfer starten',
@@ -597,15 +597,15 @@ class AppStringsManager {
           'Trag deine Kinderbetreuungskosten ein – dann zeige ich die Absetzbarkeit.',
       'finance_tax_saving_potential': 'Steuer-Spar-Potenzial',
       'finance_tax_saving_summary':
-          'Bis zu {deductible} absetzbar → ca. {savings} Steuerersparnis/Jahr',
+          'Beispiel: {deductible} Sonderausgabe → ca. {savings} Steuerersparnis/Jahr bei angenommenen 30%',
       'finance_tax_childcare_year': 'Kita-Kosten/Jahr',
-      'finance_tax_deductible_share': 'Davon absetzbar (2/3)',
+      'finance_tax_deductible_share': 'Begünstigter Anteil (80%)',
       'finance_tax_max_expense': 'Max. Sonderausgabe',
-      'finance_tax_actual_deductible': 'Tatsächlich absetzbar',
+      'finance_tax_actual_deductible': 'Sonderausgabe im Beispiel',
       'finance_tax_estimated_saving': 'Geschätzte Ersparnis (30%)',
       'finance_tax_more_info': '🔗 Mehr Infos beim Finanzamt →',
       'finance_benefits_filtered':
-          'Leistungen gefiltert basierend auf eurer Situation.',
+          'Angaben gespeichert. Alle Leistungen bleiben sichtbar; Einkommen und Berufstätigkeit sind keine Anspruchsprüfung.',
       'finance_no_parental_leave': 'Nein / Elternzeit',
       'finance_income_low': 'Unter 2.000€',
       'finance_income_medium': '2.000–4.000€',
@@ -652,19 +652,19 @@ class AppStringsManager {
       'finance_milestone_fuehrerschein_note': 'Fahrstunden + Prüfungen',
       'finance_milestone_ausbildung_note': 'Erstausstattung, Umzug, Kaution',
       'finance_benefit_de_kindergeld':
-          'Kindergeld|Monatliche Zahlung für jedes Kind bis 25 Jahre.|259€/Kind|Alle Eltern mit Kindern unter 25 (in Ausbildung).',
+          'Kindergeld|Monatliche Zahlung für Kinder; bei Volljährigen gelten zusätzliche Voraussetzungen.|259€/Kind|Grundsätzlich für Minderjährige; Versorgung, Haushalt und Wohnsitz sowie Sonderfälle prüfen.',
       'finance_benefit_de_kinderzuschlag':
-          'Kinderzuschlag (KiZ)|Zusätzliche Unterstützung für Familien mit geringem Einkommen.|bis 292€/Kind|Einkommen reicht für euch, aber nicht für die Kinder.',
+          'Kinderzuschlag (KiZ)|Zusätzliche Unterstützung für Familien mit geringem Einkommen.|bis 297€/Kind/Monat|Kind unter 25 im Haushalt, Kindergeldbezug; Einkommen, Vermögen und Familienbedarf individuell prüfen.',
       'finance_benefit_de_wohngeld':
-          'Wohngeld|Mietzuschuss für Familien mit niedrigem Einkommen.|individuell berechnet|Haushaltseinkommen unter bestimmter Grenze.',
+          'Wohngeld|Mietzuschuss für Familien mit niedrigem Einkommen.|individuell berechnet|Abhängig von Haushaltsgröße, berücksichtigter Miete/Belastung und Gesamteinkommen.',
       'finance_benefit_de_but':
           'Bildung & Teilhabe (BuT)|Schulbedarf, Ausflüge, Nachhilfe, Mittagessen, Sport-Verein.|Sachleistungen + 195€/Jahr Schulbedarf|Familien mit KiZ, Wohngeld oder Bürgergeld.',
       'finance_benefit_de_elterngeld':
-          'Elterngeld|Einkommensersatz nach der Geburt (12–14 Monate).|300€–1.800€/Monat|Eltern mit Kindern unter 14 Monaten.',
+          'Elterngeld|Einkommensersatz nach der Geburt; Basis und Plus haben unterschiedliche Bezugszeiten.|Basis: 300€–1.800€/Monat; Plus: 150€–900€/Monat (ohne Zuschläge)|Gemeinsamer Haushalt, eigene Betreuung und keine volle Erwerbstätigkeit; weitere Voraussetzungen und Ausnahmen prüfen.',
       'finance_benefit_de_unterhaltsvorschuss':
-          'Unterhaltsvorschuss|Wenn der andere Elternteil keinen Unterhalt zahlt.|187€–338€/Monat|Alleinerziehende, deren Ex keinen Unterhalt zahlt.',
+          'Unterhaltsvorschuss|Wenn der andere Elternteil keinen, unregelmäßig oder zu wenig Unterhalt zahlt.|227 / 299 / 394€/Monat (0–5 / 6–11 / 12–17 Jahre)|Kind lebt bei alleinerziehendem Elternteil; für 12 bis 17 Jahre gelten zusätzliche Voraussetzungen.',
       'finance_benefit_de_pflegegeld':
-          'Pflegegeld|Für Kinder mit Behinderung oder chronischer Erkrankung, die Pflege brauchen.|332€–947€/Monat (je Pflegegrad)|Kinder mit anerkanntem Pflegegrad (ab Pflegegrad 2).',
+          'Pflegegeld|Für Kinder mit Behinderung oder chronischer Erkrankung, die Pflege brauchen.|347 / 599 / 800 / 990€/Monat (Pflegegrad 2 / 3 / 4 / 5)|Pflegegrad 2 bis 5; häusliche Pflege muss in geeigneter Weise selbst sichergestellt sein.',
       'finance_benefit_de_eingliederungshilfe':
           'Eingliederungshilfe|Unterstützung für Kinder mit Behinderung: Therapie, Schulbegleitung, Frühförderung.|Individuell (Sachleistungen)|Kinder mit drohender oder bestehender Behinderung.',
       'kitchen_rating_liked': '⭐ Auf die Kinder-Hits-Liste gesetzt.',
@@ -2178,6 +2178,9 @@ class AppStringsManager {
       'benefit_ai_consent_title': 'KI-Leistungswegweiser verwenden?',
       'finance_load_failed': 'Die lokalen Finanzdaten konnten nicht geladen werden. Bitte versuche es erneut.',
       'finance_number_invalid': 'Bitte einen gültigen, nicht negativen Betrag mit höchstens zwei Nachkommastellen eingeben.',
+      'finance_tax_example_limits': 'Beispiel für ein Kind, keine Anspruchsprüfung oder Kostenaufteilung zwischen Kindern. Begünstigte Betreuungskosten: Kind im Haushalt und unter 14 Jahren oder gesetzliche Behinderungsausnahme; Rechnung und Zahlung auf das Konto des Anbieters erforderlich. Unterricht, Sport und Freizeit sind nicht begünstigt. 30% ist nur ein angenommener Steuersatz.',
+      'finance_orientation_only': 'Nur Orientierung, keine Anspruchsprüfung. Einkommen, Berufstätigkeit und Familienstatus schließen hier keine Leistung aus. Die zuständige Stelle prüft euren Einzelfall.',
+      'finance_save_orientation': 'Angaben zur Orientierung speichern',
       'finance_estimated_months': 'Geschätzt in {months} Monaten ({year})',
       'finance_estimated_one_month': 'Geschätzt in einem Monat ({year})',
       'finance_goal_months_on_time': 'Mit {amount}/Monat erreichst du das geschätzte Ziel voraussichtlich innerhalb von {months} Monaten.',
@@ -3190,7 +3193,7 @@ class AppStringsManager {
       'finance_not_entered': 'Not entered yet',
       'finance_amount_per_year': '{amount}/year',
       'finance_saving_tip_de':
-          'Childcare fees are tax-deductible — up to €4,000 per child per year.',
+          'Qualifying childcare costs: 80%, up to €4,800/year per child, as a special expense (§10 EStG). Check the conditions.',
       'finance_saving_tip_generic':
           'Check whether childcare costs are tax-deductible in your country.',
       'finance_average_amount': 'Average: ~{amount}',
@@ -3199,7 +3202,7 @@ class AppStringsManager {
       'finance_legal_disclaimer':
           'This is not legal advice. Check your entitlement with the responsible authority or an advice center.',
       'finance_amounts_disclaimer':
-          'Amounts and links are for orientation only (as of 2026, without guarantee). The exact amount is determined by the responsible authority.',
+          'Amounts and links are for orientation only, without guarantee. Only selected details have been checked against official sources; there is no guarantee that all details are up to date. The responsible authority determines the exact amount.',
       'finance_familienbonus_title': 'Familienbonus Plus',
       'finance_familienbonus_body':
           'In Austria there is the Familienbonus Plus — a tax credit per child (up to €2,000/year until age 18). You claim it via your tax return or through your employer.',
@@ -3208,7 +3211,7 @@ class AppStringsManager {
       'finance_guide_title': 'What are we entitled to?',
       'finance_guide_subtitle':
           'Tell us about your situation and the guide will point you in the right direction.',
-      'finance_status_universal': 'For everyone',
+      'finance_status_universal': 'General benefit · check conditions',
       'finance_status_income_dependent': 'Income-dependent',
       'finance_status_check_required': 'Check required',
       'finance_start_application_helper': 'Start application helper',
@@ -3225,14 +3228,14 @@ class AppStringsManager {
           'Enter your childcare costs and I’ll show the deductible amount.',
       'finance_tax_saving_potential': 'Potential tax savings',
       'finance_tax_saving_summary':
-          'Up to {deductible} deductible → about {savings} tax savings/year',
+          'Example: {deductible} special expense → about {savings} tax savings/year at an assumed 30%',
       'finance_tax_childcare_year': 'Childcare costs/year',
-      'finance_tax_deductible_share': 'Deductible share (2/3)',
+      'finance_tax_deductible_share': 'Qualifying share (80%)',
       'finance_tax_max_expense': 'Maximum special expense',
-      'finance_tax_actual_deductible': 'Actually deductible',
+      'finance_tax_actual_deductible': 'Special expense in this example',
       'finance_tax_estimated_saving': 'Estimated savings (30%)',
       'finance_tax_more_info': '🔗 More information from the tax authority →',
-      'finance_benefits_filtered': 'Benefits filtered based on your situation.',
+      'finance_benefits_filtered': 'Details saved. All benefits remain visible; income and employment are not an entitlement assessment.',
       'finance_no_parental_leave': 'No / parental leave',
       'finance_income_low': 'Under €2,000',
       'finance_income_medium': '€2,000–4,000',
@@ -3281,19 +3284,19 @@ class AppStringsManager {
       'finance_milestone_ausbildung_note':
           'Initial equipment, moving and deposit',
       'finance_benefit_de_kindergeld':
-          'Child Benefit|Monthly payment for each child up to age 25.|€259/child|Parents with children under 25 who are still in education.',
+          'Child Benefit|Monthly payment for children; additional conditions apply to adults.|€259/child|Generally for minors; check care, household, residence and special cases.',
       'finance_benefit_de_kinderzuschlag':
-          'Child Supplement (KiZ)|Additional support for low-income families.|up to €292/child|Your income covers the parents, but not the children.',
+          'Child Supplement (KiZ)|Additional support for low-income families.|up to €297/child/month|Child under 25 in the household, child benefit received; income, assets and family needs require individual assessment.',
       'finance_benefit_de_wohngeld':
-          'Housing Benefit|Rent support for low-income families.|calculated individually|Household income below the applicable threshold.',
+          'Housing Benefit|Rent support for low-income families.|calculated individually|Depends on household size, qualifying rent or housing costs and total income.',
       'finance_benefit_de_but':
           'Education & Participation (BuT)|School supplies, trips, tutoring, lunches and sports clubs.|Benefits in kind + €195/year for school supplies|Families receiving KiZ, housing benefit or Bürgergeld.',
       'finance_benefit_de_elterngeld':
-          'Parental Allowance|Income replacement after birth (12–14 months).|€300–1,800/month|Parents with children under 14 months.',
+          'Parental Allowance|Income replacement after birth; basic and Plus have different payment periods.|Basic: €300–1,800/month; Plus: €150–900/month (excluding supplements)|Shared household, caring for the child and not working full-time; check additional conditions and exceptions.',
       'finance_benefit_de_unterhaltsvorschuss':
-          'Advance Maintenance Payment|Support when the other parent does not pay child maintenance.|€187–338/month|Single parents whose former partner does not pay maintenance.',
+          'Advance Maintenance Payment|Support when the other parent pays no, irregular or insufficient maintenance.|€227 / 299 / 394/month (ages 0–5 / 6–11 / 12–17)|Child lives with a single parent; additional conditions apply at ages 12 to 17.',
       'finance_benefit_de_pflegegeld':
-          'Care Allowance|For children with disabilities or chronic conditions who need care.|€332–947/month (by care level)|Children with a recognized care level of 2 or higher.',
+          'Care Allowance|For children with disabilities or chronic conditions who need care.|€347 / 599 / 800 / 990/month (care levels 2 / 3 / 4 / 5)|Care levels 2 to 5; suitable care at home must be ensured.',
       'finance_benefit_de_eingliederungshilfe':
           'Integration Assistance|Therapy, classroom assistance and early intervention for children with disabilities.|Individual benefits in kind|Children with an existing or potential disability.',
       'kitchen_rating_liked': '⭐ Added to the kids’ favorites.',
@@ -4258,6 +4261,9 @@ class AppStringsManager {
       'benefit_ai_consent_title': 'Use the AI benefits guide?',
       'finance_load_failed': 'Local financial data could not be loaded. Please try again.',
       'finance_number_invalid': 'Enter a valid non-negative amount with at most two decimal places.',
+      'finance_tax_example_limits': 'Example for one child, not an entitlement check or allocation of costs between children. Qualifying care: child in your household and under 14 or covered by the statutory disability exception; invoice and payment to the provider’s bank account required. Tuition, sports and leisure are excluded. 30% is only an assumed tax rate.',
+      'finance_orientation_only': 'Orientation only, not an entitlement check. Income, employment and family status do not exclude any benefit here. The responsible authority assesses your individual case.',
+      'finance_save_orientation': 'Save details for orientation',
       'finance_estimated_months': 'Estimated in {months} months ({year})',
       'finance_estimated_one_month': 'Estimated in 1 month ({year})',
       'finance_goal_months_on_time': 'At {amount}/month, you are on track to reach the estimated goal within {months} months.',
@@ -11430,7 +11436,7 @@ class AppStringsManager {
       'finance_not_entered': 'Hê nehatiye nivîsandin',
       'finance_amount_per_year': '{amount}/sal',
       'finance_saving_tip_de':
-          'Xercên lênêrîna zarokan ji bacê tên daxistin — heta 4.000€ ji bo her zarokî di salê de.',
+          'Xercên lênêrîna zarokan ên guncaw: 80%, heta 4.800€/sal ji bo her zarokî wek xerca taybet (§10 EStG). Mercan kontrol bike.',
       'finance_saving_tip_generic':
           'Kontrol bike ka xercên lênêrîna zarokan li welatê te ji bacê tên daxistin.',
       'finance_average_amount': 'Navîn: ~{amount}',
@@ -11439,7 +11445,7 @@ class AppStringsManager {
       'finance_legal_disclaimer':
           'Ev şêwirmendiya hiqûqî nîne. Mafê xwe li dezgeha berpirsiyar kontrol bike.',
       'finance_amounts_disclaimer':
-          'Mîqdar û lînk tenê ji bo rêberiyê ne (rewşa 2026, bê garantî). Mîqdara rastîn ji aliyê dezgeha berpirsiyar ve tê hesibandin.',
+          'Mîqdar û lînk tenê ji bo rêberiyê ne, bê garantî. Tenê hin agahî bi çavkaniyên fermî hatine kontrolkirin; hemû agahî nehatine nûkirin. Mîqdara rastîn dezgeha berpirsiyar hesab dike.',
       'finance_familienbonus_title': 'Familienbonus Plus',
       'finance_familienbonus_body':
           'Li Awustriyayê Familienbonus Plus heye — ji bo her zarokî mafek bacê (heta 2.000 €/salê heta 18 saliyê). Bi daxuyaniya bacê an bi rêya kardêr tê daxwazkirin.',
@@ -11447,7 +11453,7 @@ class AppStringsManager {
           'Lînk nehat vekirin. Ji kerema xwe paşê dîsa biceribîne.',
       'finance_guide_title': 'Mafê me çi ye?',
       'finance_guide_subtitle': 'Rewşa xwe bêje; rêber dê alîkariya we bike.',
-      'finance_status_universal': 'Ji bo hemûyan',
+      'finance_status_universal': 'Alîkariya giştî · mercan kontrol bike',
       'finance_status_income_dependent': 'Girêdayî dahatê',
       'finance_status_check_required': 'Kontrol pêwîst e',
       'finance_start_application_helper': 'Alîkarê serlêdanê dest pê bike',
@@ -11464,15 +11470,15 @@ class AppStringsManager {
           'Xercên lênêrînê binivîse; ez ê beşa ku ji bacê tê daxistin nîşan bidim.',
       'finance_tax_saving_potential': 'Derfeta teserûfa bacê',
       'finance_tax_saving_summary':
-          'Heta {deductible} ji bacê tê daxistin → nêzîkî {savings}/sal',
+          'Mînak: {deductible} xerca taybet → nêzîkî {savings}/sal teserûfa bacê bi texmîna 30%',
       'finance_tax_childcare_year': 'Xercên lênêrînê/sal',
-      'finance_tax_deductible_share': 'Beşa ku tê daxistin (2/3)',
+      'finance_tax_deductible_share': 'Beşa guncaw (80%)',
       'finance_tax_max_expense': 'Xerca taybet a herî zêde',
-      'finance_tax_actual_deductible': 'Bi rastî tê daxistin',
+      'finance_tax_actual_deductible': 'Xerca taybet di vê mînakê de',
       'finance_tax_estimated_saving': 'Teserûfa texmînî (30%)',
       'finance_tax_more_info': '🔗 Agahiyên zêdetir ji dezgeha bacê →',
       'finance_benefits_filtered':
-          'Alîkarî li gorî rewşa we hatin parzûnkirin.',
+          'Agahî hatin tomarkirin. Hemû alîkarî xuya dimînin; dahat û kar kontrola mafê alîkariyê nînin.',
       'finance_no_parental_leave': 'Na / betlaneya dêûbavtiyê',
       'finance_income_low': 'Kêmtirî 2.000€',
       'finance_income_medium': '2.000–4.000€',
@@ -11518,19 +11524,19 @@ class AppStringsManager {
       'finance_milestone_fuehrerschein_note': 'Dersên ajotinê + îmtîhan',
       'finance_milestone_ausbildung_note': 'Amûrên destpêkê, koç û depoyît',
       'finance_benefit_de_kindergeld':
-          'Alîkariya zarokan|Ji bo her zarokî heta 25 salî dravê mehane.|259€/zarok|Dêûbavên zarokên di perwerdeyê de yên di bin 25 salî de.',
+          'Alîkariya zarokan|Dravê mehane ji bo zarokan; ji bo mezinan mercên zêde hene.|259€/zarok|Bi gelemperî ji bo zarokên biçûk; lênêrîn, mal, rûniştin û rewşên taybet kontrol bike.',
       'finance_benefit_de_kinderzuschlag':
-          'Piştgiriya zarokan (KiZ)|Alîkariya zêde ji bo malbatên kêm-dahat.|heta 292€/zarok|Dahat ji bo dêûbavan bes e, lê ji bo zarokan ne bes e.',
+          'Piştgiriya zarokan (KiZ)|Alîkariya zêde ji bo malbatên kêm-dahat.|heta 297€/zarok/meh|Zarok di bin 25 salî de li malê ye û alîkariya zarokan distîne; dahat, milk û hewcedariya malbatê bi kesane tên kontrolkirin.',
       'finance_benefit_de_wohngeld':
-          'Alîkariya kirê|Piştgiriya kirê ji bo malbatên kêm-dahat.|bi kesane tê hesabkirin|Dahata malê di bin sînorê de ye.',
+          'Alîkariya kirê|Piştgiriya kirê ji bo malbatên kêm-dahat.|bi kesane tê hesabkirin|Girêdayî hejmarê endamên malê, kirê an xercên xanî û dahata giştî ye.',
       'finance_benefit_de_but':
           'Perwerde & Beşdarî (BuT)|Amûrên dibistanê, geşt, ders, xwarina nîvro û spor.|Alîkariya madî + 195€/sal|Malbatên ku KiZ, alîkariya kirê an Bürgergeld distînin.',
       'finance_benefit_de_elterngeld':
-          'Alîkariya dêûbavan|Cîgira dahatê piştî zayînê (12–14 meh).|300€–1.800€/meh|Dêûbavên zarokên di bin 14 mehan de.',
+          'Alîkariya dêûbavan|Cîgira dahatê piştî zayînê; Basis û Plus demên cuda hene.|Basis: 300€–1.800€/meh; Plus: 150€–900€/meh (bê zêdeyan)|Mala hevpar, lênêrîna zarokî û ne karê tam; merc û îstîsnayên din kontrol bike.',
       'finance_benefit_de_unterhaltsvorschuss':
-          'Pêşdana nafqeyê|Dema dêûbavê din nafqeyê nade.|187€–338€/meh|Dêûbavên tenê ku hevkarê berê nafqeyê nade.',
+          'Pêşdana nafqeyê|Dema dêûbavê din nafqeyê nade, nerêkûpêk an kêm dide.|227 / 299 / 394€/meh (0–5 / 6–11 / 12–17 sal)|Zarok bi dêûbavekî tenê re dijî; ji bo 12 heta 17 salî mercên zêde hene.',
       'finance_benefit_de_pflegegeld':
-          'Alîkariya lênêrînê|Ji bo zarokên ku lênêrînê dixwazin.|332€–947€/meh|Zarokên bi asta lênêrînê ya 2 an zêdetir.',
+          'Alîkariya lênêrînê|Ji bo zarokên ku lênêrînê dixwazin.|347 / 599 / 800 / 990€/meh (astên 2 / 3 / 4 / 5)|Astên lênêrînê 2 heta 5; divê lênêrîna guncaw li malê bê peydakirin.',
       'finance_benefit_de_eingliederungshilfe':
           'Alîkariya tevlêbûnê|Tedawî û alîkariya dibistanê ji bo zarokên bi seqetî.|Alîkariya kesane|Zarokên bi seqetiya heyî an gengaz.',
       'kitchen_rating_liked': '⭐ Li bijarteyên zarokan hat zêdekirin.',
@@ -13066,6 +13072,9 @@ class AppStringsManager {
       'benefit_ai_consent_title': 'Rêberê alîkariyan ê KI bikar bînî?',
       'finance_load_failed': 'Daneyên darayî yên herêmî nehatin barkirin. Ji kerema xwe dîsa biceribîne.',
       'finance_number_invalid': 'Ji kerema xwe nirxekî derbasdar ê ne neyînî bi herî zêde du hejmarên dehanî binivîse.',
+      'finance_tax_example_limits': 'Mînak ji bo zarokekî, ne kontrola mafê alîkariyê an parvekirina xercan di nav zarokan de ye. Lênêrîna guncaw: zarok di malê de û di bin 14 salî de an di îstîsnaya qanûnî ya seqetiyê de; fatura û dayîna drav bo hesabê peydaker pêwîst in. Ders, spor û demên vala ne guncaw in. 30% tenê texmîna bacê ye.',
+      'finance_orientation_only': 'Tenê rêberî ye, ne kontrola mafê alîkariyê ye. Dahat, kar û rewşa malbatê li vir tu alîkariyê dernake. Dezgeha berpirsiyar rewşa we ya kesane kontrol dike.',
+      'finance_save_orientation': 'Agahiyan ji bo rêberiyê tomar bike',
       'finance_estimated_months': 'Bi texmîn di {months} mehan de ({year})',
       'finance_estimated_one_month': 'Bi texmîn di mehekê de ({year})',
       'finance_goal_months_on_time': 'Bi {amount}/meh, tu dikarî di nav {months} mehan de bigihîjî armanca texmînkirî.',
@@ -17199,7 +17208,7 @@ class AppStringsManager {
       'finance_not_entered': 'Henüz girilmedi',
       'finance_amount_per_year': '{amount}/yıl',
       'finance_saving_tip_de':
-          'Çocuk bakım ücretleri vergiden düşülebilir — çocuk başına yılda 4.000€ tutarına kadar.',
+          'Uygun çocuk bakım giderlerinin %80’i, çocuk başına yılda en fazla 4.800€, özel gider olarak indirilebilir (§10 EStG). Koşulları kontrol edin.',
       'finance_saving_tip_generic':
           'Ülkenizde çocuk bakım masraflarının vergiden düşülüp düşülmediğini kontrol edin.',
       'finance_average_amount': 'Ortalama: ~{amount}',
@@ -17208,7 +17217,7 @@ class AppStringsManager {
       'finance_legal_disclaimer':
           'Bu bir hukuki danışmanlık değildir. Haklarınızı yetkili kurumdan veya danışma merkezinden kontrol edin.',
       'finance_amounts_disclaimer':
-          'Tutarlar ve bağlantılar yalnızca yol gösterme amaçlıdır (2026 itibarıyla, garanti verilmez). Kesin tutarı yetkili kurum hesaplar.',
+          'Tutarlar ve bağlantılar yalnızca yol gösterme amaçlıdır, garanti verilmez. Yalnızca bazı bilgiler resmi kaynaklarla kontrol edildi; tüm bilgiler için güncellik onayı yoktur. Kesin tutarı yetkili kurum hesaplar.',
       'finance_familienbonus_title': 'Familienbonus Plus',
       'finance_familienbonus_body':
           'Avusturya\'da Familienbonus Plus var — çocuk başına bir vergi indirimi (18 yaşına kadar yılda 2.000 €\'ya kadar). Vergi beyannamesiyle veya işveren üzerinden talep edilir.',
@@ -17217,7 +17226,7 @@ class AppStringsManager {
       'finance_guide_title': 'Hangi haklardan yararlanabiliriz?',
       'finance_guide_subtitle':
           'Durumunuzu anlatın; rehber size yol göstersin.',
-      'finance_status_universal': 'Herkes için',
+      'finance_status_universal': 'Genel yardım · koşulları kontrol edin',
       'finance_status_income_dependent': 'Gelire bağlı',
       'finance_status_check_required': 'Kontrol gerekli',
       'finance_start_application_helper': 'Başvuru yardımcısını başlat',
@@ -17234,14 +17243,14 @@ class AppStringsManager {
           'Çocuk bakım masraflarını girin; indirilebilir tutarı göstereyim.',
       'finance_tax_saving_potential': 'Vergi tasarrufu potansiyeli',
       'finance_tax_saving_summary':
-          '{deductible} tutarına kadar indirilebilir → yılda yaklaşık {savings} tasarruf',
+          'Örnek: {deductible} özel gider → varsayılan %30 oranıyla yılda yaklaşık {savings} vergi tasarrufu',
       'finance_tax_childcare_year': 'Yıllık çocuk bakım masrafı',
-      'finance_tax_deductible_share': 'İndirilebilir pay (2/3)',
+      'finance_tax_deductible_share': 'Uygun pay (%80)',
       'finance_tax_max_expense': 'Azami özel gider',
-      'finance_tax_actual_deductible': 'Gerçekte indirilebilir',
+      'finance_tax_actual_deductible': 'Bu örnekte özel gider',
       'finance_tax_estimated_saving': 'Tahmini tasarruf (%30)',
       'finance_tax_more_info': '🔗 Vergi kurumundan daha fazla bilgi →',
-      'finance_benefits_filtered': 'Yardımlar durumunuza göre filtrelendi.',
+      'finance_benefits_filtered': 'Bilgiler kaydedildi. Tüm yardımlar görünür; gelir ve çalışma durumu hak değerlendirmesi değildir.',
       'finance_no_parental_leave': 'Hayır / ebeveyn izni',
       'finance_income_low': '2.000€ altında',
       'finance_income_medium': '2.000–4.000€',
@@ -17288,19 +17297,19 @@ class AppStringsManager {
       'finance_milestone_ausbildung_note':
           'İlk ihtiyaçlar, taşınma ve depozito',
       'finance_benefit_de_kindergeld':
-          'Çocuk Parası|25 yaşına kadar her çocuk için aylık ödeme.|259€/çocuk|Eğitimde olan 25 yaş altı çocukların ebeveynleri.',
+          'Çocuk Parası|Çocuklar için aylık ödeme; yetişkin çocuklar için ek koşullar geçerlidir.|259€/çocuk|Genellikle reşit olmayanlar için; bakım, hane, ikamet ve özel durumları kontrol edin.',
       'finance_benefit_de_kinderzuschlag':
-          'Çocuk Ek Yardımı (KiZ)|Düşük gelirli ailelere ek destek.|çocuk başına 292€ tutarına kadar|Gelir ebeveynlere yetiyor ancak çocuklara yetmiyor.',
+          'Çocuk Ek Yardımı (KiZ)|Düşük gelirli ailelere ek destek.|çocuk başına ayda en fazla 297€|Çocuk hanede, 25 yaşından küçük ve çocuk parası alıyor olmalı; gelir, mal varlığı ve aile ihtiyacı bireysel değerlendirilir.',
       'finance_benefit_de_wohngeld':
-          'Konut Yardımı|Düşük gelirli ailelere kira desteği.|kişiye özel hesaplanır|Hane geliri ilgili sınırın altında.',
+          'Konut Yardımı|Düşük gelirli ailelere kira desteği.|kişiye özel hesaplanır|Hane büyüklüğüne, dikkate alınan kira veya konut giderlerine ve toplam gelire bağlıdır.',
       'finance_benefit_de_but':
           'Eğitim & Katılım (BuT)|Okul ihtiyaçları, geziler, özel ders, öğle yemeği ve spor.|Ayni yardım + yıllık 195€|KiZ, konut yardımı veya Bürgergeld alan aileler.',
       'finance_benefit_de_elterngeld':
-          'Ebeveyn Parası|Doğum sonrası gelir desteği (12–14 ay).|300€–1.800€/ay|14 aydan küçük çocuğu olan ebeveynler.',
+          'Ebeveyn Parası|Doğum sonrası gelir desteği; Basis ve Plus ödeme süreleri farklıdır.|Basis: 300€–1.800€/ay; Plus: 150€–900€/ay (ek ödemeler hariç)|Ortak hane, çocuğa bakım ve tam zamanlı çalışmama; ek koşulları ve istisnaları kontrol edin.',
       'finance_benefit_de_unterhaltsvorschuss':
-          'Nafaka Avansı|Diğer ebeveyn nafaka ödemediğinde destek.|187€–338€/ay|Eski eşi nafaka ödemeyen tek ebeveynler.',
+          'Nafaka Avansı|Diğer ebeveyn hiç, düzensiz veya yetersiz nafaka ödediğinde destek.|227 / 299 / 394€/ay (0–5 / 6–11 / 12–17 yaş)|Çocuk tek ebeveynle yaşar; 12–17 yaş için ek koşullar geçerlidir.',
       'finance_benefit_de_pflegegeld':
-          'Bakım Parası|Bakım gerektiren engelli veya kronik hastalığı olan çocuklar için.|332€–947€/ay|En az 2. bakım seviyesi tanınmış çocuklar.',
+          'Bakım Parası|Bakım gerektiren engelli veya kronik hastalığı olan çocuklar için.|347 / 599 / 800 / 990€/ay (bakım seviyeleri 2 / 3 / 4 / 5)|Bakım seviyeleri 2–5; evde uygun bakım sağlanmalıdır.',
       'finance_benefit_de_eingliederungshilfe':
           'Katılım Desteği|Engelli çocuklar için terapi, okul refakati ve erken destek.|Kişiye özel ayni yardım|Mevcut veya olası engeli olan çocuklar.',
       'kitchen_rating_liked': '⭐ Çocukların favorilerine eklendi.',
@@ -18846,6 +18855,9 @@ class AppStringsManager {
       'benefit_ai_consent_title': 'Yapay zekâ yardım rehberi kullanılsın mı?',
       'finance_load_failed': 'Yerel mali veriler yüklenemedi. Lütfen tekrar deneyin.',
       'finance_number_invalid': 'En fazla iki ondalık basamaklı, geçerli ve negatif olmayan bir tutar girin.',
+      'finance_tax_example_limits': 'Tek çocuk için örnek; hak değerlendirmesi veya giderlerin çocuklar arasında dağılımı değildir. Uygun bakım: çocuk hanede ve 14 yaşından küçük olmalı veya yasal engellilik istisnasına girmelidir; fatura ve sağlayıcının hesabına ödeme gerekir. Ders, spor ve boş zaman etkinlikleri dahil değildir. %30 yalnızca varsayılan vergi oranıdır.',
+      'finance_orientation_only': 'Yalnızca yol gösterir, hak değerlendirmesi değildir. Gelir, çalışma ve aile durumu burada hiçbir yardımı dışlamaz. Yetkili kurum kişisel durumunuzu inceler.',
+      'finance_save_orientation': 'Yol göstermek için bilgileri kaydet',
       'finance_estimated_months': 'Tahminen {months} ay içinde ({year})',
       'finance_estimated_one_month': 'Tahminen 1 ay içinde ({year})',
       'finance_goal_months_on_time': 'Ayda {amount} ile tahmini hedefe {months} ay içinde ulaşman bekleniyor.',

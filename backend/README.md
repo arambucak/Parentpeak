@@ -287,6 +287,78 @@ unveraendert und sind nicht durch diesen Fix auf Aktualitaet freigegeben.
 flutter test --no-pub --reporter expanded test/finance_milestone_timeline_test.dart test/finance_milestone_ui_test.dart test/finance_persistence_test.dart test/finance_persistence_ui_test.dart test/family_finance_account_test.dart test/family_finance_ui_test.dart test/benefit_guide_consent_test.dart test/finance_links_i18n_test.dart test/country_finance_format_test.dart test/localization_audit_verification_test.dart
 ```
 
+### Familien-Geld: Einzelpruefung amtlicher Leistungsdaten
+
+Pruefdatum: **06.10.2026**. Das ist das Abrufdatum, kein gemeinsamer
+Geltungsstichtag und keine Aktualitaetsfreigabe aller Daten. Die folgenden
+Einzelangaben wurden vor Aenderung gegen die genannten amtlichen Quellen
+geprueft. Kurztexte ersetzen keine vollstaendige Anspruchspruefung.
+DE-Betrags-/Voraussetzungstexte sind auch in de/en/tr/ku angepasst.
+
+| Angabe / gepruefter Umfang | Amtliche Quelle |
+| --- | --- |
+| DE Kinderbetreuung: 80% der beguenstigten Kosten, hoechstens 4.800 EUR je Kind/Jahr; Haushaltskind unter 14 oder gesetzliche Behinderungsausnahme, Rechnung/Kontozahlung; Unterricht, Sport/Freizeit ausgeschlossen | [§10 Abs.1 Nr.5 EStG](https://www.gesetze-im-internet.de/estg/__10.html) |
+| DE Kindergeld: 259 EUR unveraendert; keine pauschale Zahlung fuer alle Kinder bis 25. Kurztext zu Minderjaehrigen/Versorgung/Haushalt/Wohnsitz korrigiert; Detaillink ersetzt | [BA Anspruch, Hoehe, Dauer](https://www.arbeitsagentur.de/familie-und-kinder/infos-rund-um-kindergeld/kindergeld-anspruch-hoehe-dauer), [§66 EStG](https://www.gesetze-im-internet.de/estg/__66.html) |
+| DE KiZ: bis 297 EUR/Kind/Monat; Haushaltskind unter 25, Kindergeld und individuelle Einkommens-/Vermoegens-/Bedarfspruefung; Detaillink ersetzt | [BA KiZ](https://www.arbeitsagentur.de/familie-und-kinder/kinderzuschlag-verstehen/kinderzuschlag-anspruch-hoehe-dauer), [§6a BKGG](https://www.gesetze-im-internet.de/bkgg_1996/__6a.html) |
+| DE Wohngeld: Haushaltsgroesse, beruecksichtigte Miete/Belastung und Gesamteinkommen statt pauschaler Einkommensgrenze; kein Betrag erfunden | [§4 WoGG](https://www.gesetze-im-internet.de/wogg/__4.html) |
+| DE Elterngeld: Basis 300-1.800 / Plus 150-900 EUR/Monat ohne Zuschlaege; unterschiedliche Bezugszeiten, gemeinsamer Haushalt/eigene Betreuung/keine volle Erwerbstaetigkeit; keine pauschale Unter-14-Monate-Grenze fuer alle Modelle | [Familienportal Hoehe](https://familienportal.de/familienportal/familienleistungen/elterngeld/faq/wie-viel-elterngeld-kann-ich-bekommen--124616), [§1 BEEG](https://www.gesetze-im-internet.de/beeg/__1.html), [§4 BEEG](https://www.gesetze-im-internet.de/beeg/__4.html) |
+| DE Unterhaltsvorschuss: 227 / 299 / 394 EUR monatlich fuer 0-5 / 6-11 / 12-17 Jahre. Quelle nennt Gueltigkeit ab 01.01.2025, kein pauschales 2026-Siegel. Fehlender/unregelmaessiger/unzureichender Unterhalt; Zusatzbedingungen ab 12; Detaillink ersetzt | [Familienportal Hoehe](https://familienportal.de/familienportal/familienleistungen/unterhaltsvorschuss/wieviel-unterhaltsvorschuss-kann-ich-fuer-mein-kind-bekommen--125264), [§1 UhVorschG](https://www.gesetze-im-internet.de/uhvorschg/__1.html) |
+| DE Pflegegeld: 347 / 599 / 800 / 990 EUR/Monat fuer Pflegegrade 2 / 3 / 4 / 5; geeignete haeusliche Pflege selbst sicherstellen | [§37 SGB XI](https://www.gesetze-im-internet.de/sgb_11/__37.html) |
+| DE Pflege-Antragshelfer: grundsaetzlich 25 Arbeitstage Entscheidung, gesetzliche Ausnahmen; Widerspruch grundsaetzlich ein Monat ab Bekanntgabe, im Ausland drei Monate. Rechtsbehelfsbelehrung pruefen | [§18c SGB XI](https://www.gesetze-im-internet.de/sgb_11/__18c.html), [§84 SGG](https://www.gesetze-im-internet.de/sgg/__84.html) |
+| AT Familienbeihilfe: Grundbetraege 138,40 / 148 / 171,80 / 200,40 EUR ab 0 / 3 / 10 / 19 Jahren ohne Zuschlaege; Quelle nennt 2025-2027; Detaillink ergaenzt | [Bundeskanzleramt Betraege](https://www.bundeskanzleramt.gv.at/agenda/familie/familienbeihilfe/basisinformation-zur-familienbeihilfe/familienbeihilfenbetraege.html) |
+| AT Kinderabsetzbetrag: 70,90 EUR/Kind/Monat fuer 2026, mit Familienbeihilfe ausgezahlt, kein gesonderter Antrag; Detaillink ergaenzt | [Bundeskanzleramt Kinderabsetzbetrag](https://www.bundeskanzleramt.gv.at/agenda/familie/finanzielle-entlastung-von-familien/familiensteuerentlastung/kinderabsetzbetrag.html) |
+| AT KBG: Konto 17,65-41,14 EUR/Tag; einkommensabhaengig 80% der Letzteinkuenfte, max. 80,12 EUR/Tag. Keine unzutreffende gemeinsame Monatsspanne; gepruefter Basislink ergaenzt | [Konto](https://www.bundeskanzleramt.gv.at/agenda/familie/kinderbetreuungsgeld/basisinformationen-kinderbetreuungsgeld/kinderbetreuungsgeld-konto-pauschalsystem.html), [Einkommensabhaengig](https://www.bundeskanzleramt.gv.at/agenda/familie/kinderbetreuungsgeld/basisinformationen-kinderbetreuungsgeld/einkommensabhaengiges-kinderbetreuungsgeld.html), [Basislink](https://www.bundeskanzleramt.gv.at/agenda/familie/kinderbetreuungsgeld/basisinformationen-kinderbetreuungsgeld.html) |
+| CH Kinder-/Ausbildungszulage: Mindestbetraege 215 / 268 CHF monatlich, kantonal ggf. hoeher; keine unbelegte Obergrenze. Nachobligatorische Ausbildung fruehestens ab 15 bis laengstens 25, Monatsgrenzen pruefen; Links ergaenzt | [BSV Leistungen und Voraussetzungen](https://www.bsv.admin.ch/de/familienzulagen-leistungen-und-voraussetzungen) |
+| TR neues Dogum-Yardimi-Programm fuer Geburten ab 01.01.2025: erstes Kind 5.000 TRY einmalig, zweites 1.500 TRY/Monat, drittes+ 5.000 TRY/Monat; laufende Zahlungen ab Antrag bis einschliesslich 60. Monat; Staatsangehoerigkeit/Wohnsitz kurz benannt; Link ergaenzt | [Ministeriums-FAQ](https://www.aile.gov.tr/sss/sosyal-yardimlar-genel-mudurlugu/yeni-dogum-yardimi/), [Zahlungsbeginn](https://www.aile.gov.tr/sss/sosyal-yardimlar-genel-mudurlugu/yeni-dogum-yardimi/q-0005/) |
+| TR SED: individuelle soziale/wirtschaftliche Pruefung, Il Mudurlugu/Sosyal Hizmet Merkezi statt pauschaler SYDV-/Armutsgrenzenregel; Link ergaenzt | [Ministeriums-FAQ SED](https://www.aile.gov.tr/sss/cocuk-hizmetleri-genel-mudurlugu/sed-hizmeti/) |
+| GB Child Benefit: 27.05 / 17.90 GBP/Woche fuer erstes/einziges bzw. weitere Kinder | [GOV.UK Hoehe](https://www.gov.uk/child-benefit/what-youll-get) |
+| GB UC Child Element: 303.94 GBP/Monat je Kind, zusaetzlich 47.94 GBP fuer erstes Kind vor 06.04.2017; Leistungsanrechnung und weitere Regeln nicht vollstaendig abgebildet | [GOV.UK Universal Credit](https://www.gov.uk/universal-credit/what-youll-get) |
+| GB Tax-Free Childcare: 2 GBP je 8 GBP Einzahlung; max. 500 GBP/3 Monate bzw. 2.000/Jahr, bei behindertem Kind 1.000/3 Monate bzw. 4.000/Jahr | [GOV.UK Tax-Free Childcare](https://www.gov.uk/tax-free-childcare) |
+
+**Rechenbeispiel, keine amtliche Steuerersparnis:** Der DE-Steuerhelper wendet
+80%/4.800 EUR auf eingetragene Jahreskosten an, als Illustration fuer **ein**
+Kind. Das gemeinsame Kostenfeld kennt keine Verteilung je Kind und keine
+Einzelfallbedingungen. Der angenommene Grenzsteuersatz von 30% ist kein
+gesetzlicher Pauschalsatz. Weder Kinderzahlmultiplikation noch Anspruchs- oder
+Steuerpruefung wird behauptet. Betragformatierung und AT-Familienbonus-Hinweis
+sind unveraendert.
+
+**Ehrliche Orientierung:** Alle Landesleistungen bleiben unabhaengig von
+Schnellcheckantworten sichtbar. Die Einkommensbaender sind keine gesetzlichen
+Grenzen. Erwerbstaetigkeit/Alleinerziehung bleiben lokal gespeichert, ergeben
+keine Anspruchsentscheidung. Der Guide-Prompt bezeichnet die kuratierten Daten
+nicht mehr als vollstaendige Wahrheit. Disclaimer bleiben in allen Tabs,
+ohne pauschales "Stand 2026".
+
+**Unveraendert / keine Verifikationsfreigabe:**
+
+- TR `Cocuk Parasi`: kein eindeutig zuordenbares allgemeines monatliches
+  Programm amtlich belegt. Nutzerentscheidung: **nicht verifizierbar,
+  unveraendert gelassen**, nicht in ein anderes Programm umbenannt.
+- Wohngeld-Rechnerlink: Abruf lieferte HTTP 403, Inhalt nicht verifizierbar;
+  unveraendert gelassen, nicht als toter Link klassifiziert.
+- BuT: 195 EUR Schulbedarf/Jahr (130+65) und 15 EUR/Monat soziale Teilhabe
+  bestaetigt, unveraendert: [Familienportal](https://familienportal.de/familienportal/familienleistungen/bildung-und-teilhabe).
+  Die knappe Leistungs-/Empfaengerliste ist nicht als vollstaendig geprueft.
+- Alle sonstigen Antragshelfer-Dokumentlisten, Zustell-/Verfahrensdetails,
+  Online-Antragslinks und Zeitangaben sind **nicht vollstaendig amtlich
+  verifiziert, unveraendert gelassen**: Kindergeld 4-6 Wochen/Steuer-ID
+  2-3 Wochen/10-Minuten-Antrag/automatische Zahlung bis 25; KiZ 4-8 Wochen/
+  2-Minuten-Lotse; Wohngeld 3-8 Wochen/12 Monate/2 Monate Vorlauf/10-Monats-
+  Erinnerung; BuT 2-6 Wochen/Schuljahr oder 6 Monate; Elterngeld 4-8 Wochen/
+  pauschale 12-14 bzw. 24-28 Monate; Unterhaltsvorschuss 4-6 Wochen/
+  jaehrlicher Pruefbogen; Pflege Telefonantrag/Rueckwirkung/2-Wochen-Tagebuch/
+  automatische Weiterzahlung; Eingliederungshilfe 4-12 Wochen/pauschale
+  Zustaendigkeiten/4-Wochen-Widerspruch. Die verifizierte Pflegefrist wird
+  **nicht** pauschal auf andere Verfahren uebertragen.
+- KiZ-Bewilligung/Betrachtungszeitraum 6 Monate ist auf der BA-Quelle
+  bestaetigt; daraus folgt keine Freigabe der restlichen Dokumentlisten.
+- Weitere gesetzliche Ausnahmen, Auslands-/Wohnsitz-/Erwerbsbedingungen,
+  Einkommensgrenzen, kantonale Saetze und vollstaendige Bezugsdauern:
+  nicht vollstaendig verifiziert, keine neuen Regeln eingefuehrt.
+- Monatskategorien und Meilensteinkosten bleiben **Schaetzwerte**, keine
+  amtlichen Leistungsbetraege. AT-Familienbonus-Hinweis nicht neu verifiziert.
+
 ## Installation
 
 1. **Node.js installieren** (falls nicht vorhanden)

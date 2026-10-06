@@ -148,17 +148,17 @@ void main() {
 
       await tester.tap(find.text('Benefits'));
       await settle();
-      await tester.ensureVisible(find.text('Leistungen filtern'));
+      await tester.ensureVisible(find.text('Save details for orientation'));
       pending = Completer<bool>();
-      await tester.tap(find.text('Leistungen filtern'));
+      await tester.tap(find.text('Save details for orientation'));
       await settle();
       expect((await data())[FamilyFinanceStore.eligibilityKey], isNull);
       pending.complete(false);
       await settle();
       expect((await data())[FamilyFinanceStore.eligibilityKey], isNull);
-      expect(find.text('Leistungen filtern'), findsOneWidget);
+      expect(find.text('Save details for orientation'), findsOneWidget);
       pending = null;
-      await tester.tap(find.text('Leistungen filtern'));
+      await tester.tap(find.text('Save details for orientation'));
       await settle();
       expect((await data())[FamilyFinanceStore.eligibilityKey], isTrue);
 

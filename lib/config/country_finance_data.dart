@@ -32,10 +32,10 @@ class CountryFinanceData {
       SocialBenefit(
         id: 'kindergeld',
         name: 'Kindergeld',
-        description: 'Monatliche Zahlung für jedes Kind bis 25 Jahre.',
+        description: 'Monatliche Zahlung für Kinder; bei Volljährigen gelten zusätzliche Voraussetzungen.',
         amount: '259\u{20AC}/Kind',
-        eligibility: 'Alle Eltern mit Kindern unter 25 (in Ausbildung).',
-        url: 'https://www.arbeitsagentur.de/familie-und-kinder/kindergeld',
+        eligibility: 'Grundsätzlich für Minderjährige; Versorgung, Haushalt und Wohnsitz sowie Sonderfälle prüfen.',
+        url: 'https://www.arbeitsagentur.de/familie-und-kinder/infos-rund-um-kindergeld/kindergeld-anspruch-hoehe-dauer',
         status: BenefitStatus.universal,
       ),
       SocialBenefit(
@@ -43,9 +43,9 @@ class CountryFinanceData {
         name: 'Kinderzuschlag (KiZ)',
         description:
             'Zusätzliche Unterstützung für Familien mit geringem Einkommen.',
-        amount: 'bis 292\u{20AC}/Kind',
-        eligibility: 'Einkommen reicht für euch, aber nicht für die Kinder.',
-        url: 'https://www.arbeitsagentur.de/familie-und-kinder/kinderzuschlag',
+        amount: 'bis 297\u{20AC}/Kind/Monat',
+        eligibility: 'Kind unter 25 im Haushalt, Kindergeldbezug; Einkommen, Vermögen und Familienbedarf individuell prüfen.',
+        url: 'https://www.arbeitsagentur.de/familie-und-kinder/kinderzuschlag-verstehen/kinderzuschlag-anspruch-hoehe-dauer',
         status: BenefitStatus.incomeDependent,
       ),
       SocialBenefit(
@@ -53,7 +53,7 @@ class CountryFinanceData {
         name: 'Wohngeld',
         description: 'Mietzuschuss für Familien mit niedrigem Einkommen.',
         amount: 'individuell berechnet',
-        eligibility: 'Haushaltseinkommen unter bestimmter Grenze.',
+        eligibility: 'Abhängig von Haushaltsgröße, berücksichtigter Miete/Belastung und Gesamteinkommen.',
         url:
             'https://www.bmwsb.bund.de/Webs/BMWSB/DE/themen/stadt-wohnen/wohnraumfoerderung/wohngeld/wohngeldrechner-2025-artikel.html',
         status: BenefitStatus.incomeDependent,
@@ -72,9 +72,9 @@ class CountryFinanceData {
       SocialBenefit(
         id: 'elterngeld',
         name: 'Elterngeld',
-        description: 'Einkommensersatz nach der Geburt (12-14 Monate).',
-        amount: '300\u{20AC}\u{2013}1.800\u{20AC}/Monat',
-        eligibility: 'Eltern mit Kindern unter 14 Monaten.',
+        description: 'Einkommensersatz nach der Geburt; Basiselterngeld und ElterngeldPlus haben unterschiedliche Bezugszeiten.',
+        amount: 'Basis: 300\u{20AC}\u{2013}1.800\u{20AC}/Monat; Plus: 150\u{20AC}\u{2013}900\u{20AC}/Monat (ohne Zuschläge)',
+        eligibility: 'Gemeinsamer Haushalt, eigene Betreuung und keine volle Erwerbstätigkeit; weitere Voraussetzungen und Ausnahmen prüfen.',
         url:
             'https://familienportal.de/familienportal/familienleistungen/elterngeld',
         status: BenefitStatus.universal,
@@ -82,11 +82,11 @@ class CountryFinanceData {
       SocialBenefit(
         id: 'unterhaltsvorschuss',
         name: 'Unterhaltsvorschuss',
-        description: 'Wenn der andere Elternteil keinen Unterhalt zahlt.',
-        amount: '187\u{20AC}\u{2013}338\u{20AC}/Monat',
-        eligibility: 'Alleinerziehende deren Ex keinen Unterhalt zahlt.',
+        description: 'Wenn der andere Elternteil keinen, unregelmäßig oder zu wenig Unterhalt zahlt.',
+        amount: '227 / 299 / 394\u{20AC}/Monat (0\u{2013}5 / 6\u{2013}11 / 12\u{2013}17 Jahre)',
+        eligibility: 'Kind lebt bei alleinerziehendem Elternteil; für 12 bis 17 Jahre gelten zusätzliche Voraussetzungen.',
         url:
-            'https://www.bmfsfj.de/bmfsfj/themen/familie/familienleistungen/unterhaltsvorschuss',
+            'https://familienportal.de/familienportal/familienleistungen/unterhaltsvorschuss/wieviel-unterhaltsvorschuss-kann-ich-fuer-mein-kind-bekommen--125264',
         status: BenefitStatus.checkRequired,
       ),
       SocialBenefit(
@@ -94,10 +94,10 @@ class CountryFinanceData {
         name: 'Pflegegeld',
         description:
             'Für Kinder mit Behinderung oder chronischer Erkrankung die Pflege brauchen.',
-        amount: '332\u{20AC}\u{2013}947\u{20AC}/Monat (je Pflegegrad)',
-        eligibility: 'Kinder mit anerkanntem Pflegegrad (ab Pflegegrad 2).',
+        amount: '347 / 599 / 800 / 990\u{20AC}/Monat (Pflegegrad 2 / 3 / 4 / 5)',
+        eligibility: 'Pflegegrad 2 bis 5; häusliche Pflege muss in geeigneter Weise selbst sichergestellt sein.',
         url:
-            'https://familienportal.de/familienportal/familienleistungen/weitere-leistungen',
+            'https://www.gesetze-im-internet.de/sgb_11/__37.html',
         status: BenefitStatus.checkRequired,
       ),
       SocialBenefit(
@@ -216,19 +216,23 @@ class CountryFinanceData {
           name: 'Familienbeihilfe',
           description:
               'Monatliche Unterstützung pro Kind, gestaffelt nach Alter.',
-          amount: '132\u{20AC}\u{2013}191\u{20AC}/Kind',
+          amount: '138,40 / 148 / 171,80 / 200,40\u{20AC}/Monat (ab 0 / 3 / 10 / 19 Jahren; ohne Zuschläge)',
+          url: 'https://www.bundeskanzleramt.gv.at/agenda/familie/familienbeihilfe/basisinformation-zur-familienbeihilfe/familienbeihilfenbetraege.html',
           status: BenefitStatus.universal),
       SocialBenefit(
           id: 'kinderabsetzbetrag',
           name: 'Kinderabsetzbetrag',
           description: 'Steuerlicher Absetzbetrag pro Kind.',
-          amount: '67\u{20AC}/Monat',
+          amount: '70,90\u{20AC}/Kind/Monat',
+          eligibility: 'Wird gemeinsam mit der Familienbeihilfe ausgezahlt; kein gesonderter Antrag.',
+          url: 'https://www.bundeskanzleramt.gv.at/agenda/familie/finanzielle-entlastung-von-familien/familiensteuerentlastung/kinderabsetzbetrag.html',
           status: BenefitStatus.universal),
       SocialBenefit(
           id: 'kinderbetreuungsgeld',
           name: 'Kinderbetreuungsgeld',
           description: 'Nach der Geburt, verschiedene Modelle.',
-          amount: '476\u{20AC}\u{2013}2.000\u{20AC}/Monat',
+          amount: 'Konto: 17,65\u{2013}41,14\u{20AC}/Tag; einkommensabhängig: 80% der Letzteinkünfte, max. 80,12\u{20AC}/Tag',
+          url: 'https://www.bundeskanzleramt.gv.at/agenda/familie/kinderbetreuungsgeld/basisinformationen-kinderbetreuungsgeld.html',
           status: BenefitStatus.universal),
     ],
     milestones: [
@@ -295,13 +299,15 @@ class CountryFinanceData {
           id: 'kinderzulage',
           name: 'Kinderzulage',
           description: 'Kantonal unterschiedlich, pro Kind.',
-          amount: '200\u{2013}380 Fr./Kind',
+          amount: 'mindestens 215 Fr./Kind/Monat; kantonal ggf. höher',
+          url: 'https://www.bsv.admin.ch/de/familienzulagen-leistungen-und-voraussetzungen',
           status: BenefitStatus.universal),
       SocialBenefit(
           id: 'ausbildungszulage',
           name: 'Ausbildungszulage',
-          description: 'Ab 16 Jahren in Ausbildung.',
-          amount: '250\u{2013}450 Fr./Kind',
+          description: 'Nachobligatorische Ausbildung, frühestens ab 15 bis längstens 25 Jahre; genaue Monatsgrenzen prüfen.',
+          amount: 'mindestens 268 Fr./Kind/Monat; kantonal ggf. höher',
+          url: 'https://www.bsv.admin.ch/de/familienzulagen-leistungen-und-voraussetzungen',
           status: BenefitStatus.universal),
     ],
     milestones: [
@@ -368,8 +374,10 @@ class CountryFinanceData {
           id: 'dogum_yardimi',
           name: 'Dogum Yardimi',
           description:
-              'Einmalige Geburtshilfe (1. Kind: 300TL, 2.: 400TL, 3.+: 600TL).',
-          amount: '300\u{2013}600\u{20BA}',
+              'Neues Geburtshilfeprogramm für Geburten ab 01.01.2025; regelmäßige Zahlungen ab Antrag bis einschließlich 60. Monat.',
+          amount: '1. Kind: einmalig 5.000\u{20BA}; 2.: 1.500\u{20BA}/Monat; 3.+: 5.000\u{20BA}/Monat',
+          eligibility: 'Türkische Staatsangehörigkeit und Wohnsitz in Türkiye; weitere Antragsvoraussetzungen amtlich prüfen.',
+          url: 'https://www.aile.gov.tr/sss/sosyal-yardimlar-genel-mudurlugu/yeni-dogum-yardimi/',
           status: BenefitStatus.universal),
       SocialBenefit(
           id: 'cocuk_parasi',
@@ -380,8 +388,9 @@ class CountryFinanceData {
       SocialBenefit(
           id: 'sed',
           name: 'Sosyal Yardim (SED)',
-          description: 'Soziale Unterstützung über SYDV.',
-          eligibility: 'Familien unter der Armutsgrenze.',
+          description: 'Soziale und wirtschaftliche Unterstützung über İl Müdürlüğü/Sosyal Hizmet Merkezi.',
+          eligibility: 'Individuelle soziale Prüfung der familiären, wirtschaftlichen und regionalen Situation.',
+          url: 'https://www.aile.gov.tr/sss/cocuk-hizmetleri-genel-mudurlugu/sed-hizmeti/',
           status: BenefitStatus.checkRequired),
     ],
     milestones: [
@@ -446,19 +455,22 @@ class CountryFinanceData {
           id: 'child_benefit',
           name: 'Child Benefit',
           description: 'Weekly payment for each child.',
-          amount: '\u{00A3}25.60/week (1st), \u{00A3}16.95 (others)',
+          amount: '\u{00A3}27.05/week (eldest or only), \u{00A3}17.90/week (additional children)',
+          url: 'https://www.gov.uk/child-benefit/what-youll-get',
           status: BenefitStatus.universal),
       SocialBenefit(
           id: 'universal_credit',
           name: 'Universal Credit (Child Element)',
           description: 'Extra support for families on low income.',
-          amount: 'up to \u{00A3}315/month per child',
+          amount: '\u{00A3}303.94/month per child; extra \u{00A3}47.94 for first child born before 6 April 2017',
+          url: 'https://www.gov.uk/universal-credit/what-youll-get',
           status: BenefitStatus.incomeDependent),
       SocialBenefit(
           id: 'tax_free_childcare',
           name: 'Tax-Free Childcare',
-          description: 'Government tops up childcare payments by 20%.',
-          amount: 'up to \u{00A3}2,000/year per child',
+          description: 'Government adds \u{00A3}2 for each \u{00A3}8 paid into the childcare account.',
+          amount: 'up to \u{00A3}500/3 months (\u{00A3}2,000/year); disabled child: \u{00A3}1,000/3 months (\u{00A3}4,000/year)',
+          url: 'https://www.gov.uk/tax-free-childcare',
           status: BenefitStatus.checkRequired),
     ],
     milestones: [

@@ -1,9 +1,10 @@
 import 'package:parentpeak/models/benefit_application_data.dart';
 
-/// Antragshelfer-Daten für Deutschland — Top 5 Sozialleistungen.
+/// Antragshelfer-Daten für acht deutsche Sozialleistungen.
 ///
 /// Quellen: Familienkasse, BMFSFJ, Wohngeldstelle.
-/// Stand: 2026. Keine Rechtsberatung.
+/// Nur einzelne Angaben amtlich verifiziert; keine pauschale Aktualitätsfreigabe.
+/// Keine Rechtsberatung. Prüfumfang siehe backend/README.md.
 class BenefitApplicationDE {
   BenefitApplicationDE._();
 
@@ -455,7 +456,7 @@ class BenefitApplicationDE {
     emoji: '🫶',
     countryCode: 'de',
     responsibleAuthority: 'Pflegekasse (bei deiner Krankenkasse)',
-    processingTime: '4–12 Wochen (inkl. Begutachtung)',
+    processingTime: 'Grundsätzlich 25 Arbeitstage; gesetzliche Ausnahmen prüfen (§18c SGB XI).',
     renewalNote:
         'Kein Folgeantrag. Bei Verschlechterung: Höherstufungsantrag stellen.',
     onlineApplicationUrl: null,
@@ -501,7 +502,7 @@ class BenefitApplicationDE {
         stepNumber: 4,
         title: 'Bescheid + ggf. Widerspruch',
         description:
-            'Nach 4–12 Wochen kommt der Pflegegrad-Bescheid. Bei zu niedrigem Grad: innerhalb 4 Wochen Widerspruch einlegen (kostenlos).',
+            'Grundsätzlich erfolgt die Entscheidung binnen 25 Arbeitstagen (§18c SGB XI; Ausnahmen möglich). Für den Widerspruch gilt grundsätzlich ein Monat ab Bekanntgabe, bei Bekanntgabe im Ausland drei Monate (§84 SGG). Rechtsbehelfsbelehrung prüfen.',
       ),
     ],
   );

@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:parentpeak/logic/family_finance_store.dart';
 import 'package:parentpeak/logic/finance_number.dart';
 import 'package:parentpeak/logic/finance_milestone_timeline.dart';
+import 'package:parentpeak/logic/childcare_tax_estimate.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
@@ -795,7 +796,7 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
               ],
             ),
           ),
-          // Feature 1: Steuer-Spar — DE: Kita-Kosten absetzbar (2/3-Regel).
+          // Feature 1: illustrative DE childcare deduction.
           if (_country.code == 'de') ...[
             const SizedBox(height: 12),
             _buildTaxSavingsHint(theme),
@@ -948,7 +949,7 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
           _buildEligibilityCheck(theme),
           const SizedBox(height: 16),
           // Leistungen-Liste
-          ..._filteredBenefits.map((b) => _benefitCard(theme, b)),
+          ..._country.benefits.map((b) => _benefitCard(theme, b)),
           const SizedBox(height: 16),
           _disclaimerBox(theme),
         ],
@@ -1501,12 +1502,10 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       );
     }
 
-    // DE: Kinderbetreuungskosten sind zu 2/3 absetzbar, max. 4.000 €/Jahr/Kind
-    // als Sonderausgabe. Nur für Deutschland aufgerufen.
-    const double deductibleMax = 4000.0;
+    const double deductibleMax = ChildcareTaxEstimate.maximum;
     final kitaAnnual = kitaMonthly * 12;
-    final double deductiblePart = kitaAnnual * 2 / 3;
-    final double deductible = deductiblePart.clamp(0, deductibleMax);
+    final double deductiblePart = kitaAnnual * ChildcareTaxEstimate.share;
+    final double deductible = ChildcareTaxEstimate.deductible(kitaAnnual);
     final estimatedSavings = deductible * 0.30; // ~30% Grenzsteuersatz
 
     return GestureDetector(
@@ -1598,9 +1597,7 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
               const SizedBox(height: 8),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => _openUrl(
-                  'https://www.bundesfinanzministerium.de/Web/DE/Themen/Steuern/Steuerarten/Einkommensteuer/einkommensteuer.html',
-                ),
+                onTap: () => _openUrl(ChildcareTaxEstimate.source),
                 child: Text(
                   context.tr('finance_tax_more_info'),
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -1610,6 +1607,11 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
                 ),
               ),
             ],
+            const SizedBox(height: 8),
+            Text(
+              context.tr('finance_tax_example_limits'),
+              style: theme.textTheme.labelSmall,
+            ),
           ],
         ),
       ),
@@ -1710,17 +1712,6 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   // ═══════════════════════════════════════════════════════════════════════════
   // FEATURE 2: Eligibility Quick-Check
   // ═══════════════════════════════════════════════════════════════════════════
-  List<SocialBenefit> get _filteredBenefits {
-    if (!_eligibilityDone) return _country.benefits;
-    return _country.benefits.where((b) {
-      if (b.status == BenefitStatus.universal) return true;
-      if (b.status == BenefitStatus.incomeDependent) return _incomeLevel <= 1;
-      // checkRequired: unterhaltsvorschuss nur für Alleinerziehende
-      if (b.id == 'unterhaltsvorschuss') return _isSingleParent;
-      return true;
-    }).toList();
-  }
-
   Widget _buildEligibilityCheck(ThemeData theme) {
     if (_eligibilityDone) {
       return Container(
@@ -1790,6 +1781,11 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.tr('finance_orientation_only'),
+            style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
           // Frage 1: Berufstaetigkeit
@@ -1895,10 +1891,7 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
                   ? null
                   : () => _saveEligibility(true),
               child: Text(
-                AppStringsManager.getString(
-                  languageService.currentLanguage,
-                  'filter_benefits',
-                ),
+                context.tr('finance_save_orientation'),
               ),
             ),
           ),
