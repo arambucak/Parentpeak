@@ -237,6 +237,26 @@ Netzwerk-Tab mit Link-/QR-Einladung statt erneut denselben Tab auszuwaehlen.
 flutter test --no-pub test/network_i18n_navigation_test.dart test/localization_audit_verification_test.dart
 ```
 
+### Datensparsame Nominatim-Ortssuche
+
+Der gemeinsame Standort-Picker (Eltern-Netzwerk, Events-Suche,
+Community-Event-Erstellung) verwendet fuer GPS und Karten-Pin
+LocationAutocompleteService.searchCoordinates. Vor der Nominatim-Anfrage
+werden beide Werte mit dem bestehenden roundCoordinate-Helper auf zwei
+Nachkommastellen gerundet (ungefaehr 1 km). Auch numerische Koordinatenpaare
+ueber searchImmediate werden an dieser gemeinsamen HTTP-Grenze gerundet.
+Normale Suchtexte, lokale Pin-/GPS-Koordinaten und die bestaetigte
+PickedLocation bleiben unveraendert.
+
+Ein Hinweis erklaert Nominatim-Ortssuche und OSM-Kartenkacheln. Die Rundung
+ist keine Anonymisierung und rundet nicht die Kartenkachel-Anfragen; sie
+reduziert gezielt die Genauigkeit der an Nominatim gesendeten Koordinaten.
+Keine KI-Verarbeitung und keine neue Datenbankmigration.
+
+```bash
+flutter test --no-pub test/location_search_privacy_test.dart test/event_geocoder_test.dart test/localization_audit_verification_test.dart
+```
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:
