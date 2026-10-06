@@ -32,10 +32,28 @@ class BenefitGuideScreen extends StatefulWidget {
   });
 
   @override
-  State<BenefitGuideScreen> createState() => _BenefitGuideScreenState();
+  State<BenefitGuideScreen> createState() => _BenefitGuideRouteState();
 }
 
-class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
+class _BenefitGuideRouteState extends State<BenefitGuideScreen> {
+  late final String _scope = BenefitGuideConsent.instance.scope;
+
+  @override
+  Widget build(BuildContext context) => FamilyHubAccountModal(
+    expectedScope: _scope,
+    builder: (_) => _ScopedBenefitGuideScreen(screen: widget),
+  );
+}
+
+class _ScopedBenefitGuideScreen extends StatefulWidget {
+  const _ScopedBenefitGuideScreen({required this.screen});
+  final BenefitGuideScreen screen;
+
+  @override
+  State<_ScopedBenefitGuideScreen> createState() => _BenefitGuideScreenState();
+}
+
+class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
   static const _accent = Color(0xFF8B5CF6);
 
   late final BenefitGuideAgent _agent;
@@ -61,11 +79,12 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
   List<int> _childAges = const [];
   bool _contextReady = false;
   bool _contextError = false;
+  bool _savingChecklist = false;
 
   @override
   void initState() {
     super.initState();
-    _agent = widget.agent ?? BenefitGuideAgent();
+    _agent = widget.screen.agent ?? BenefitGuideAgent();
     _scope = _consent.scope;
     _loadContext();
   }
@@ -84,7 +103,8 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
           .map((c) => (c.ageMonths / 12).round())
           .toList();
       final checked =
-        await BenefitChecklistStore.loadChecked(widget.country.code);
+        await BenefitChecklistStore.loadChecked(widget.screen.country.code,
+          expectedScope: _scope);
       _consent.requireScope(_scope);
       if (mounted) {
         setState(() {
@@ -138,11 +158,11 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
       _consent.requireScope(_scope);
       final result = await _agent.guide(
         expectedScope: _scope,
-        country: widget.country,
+        country: widget.screen.country,
         situation: situation,
         childAgesYears: _childAges,
         isSingleParent:
-            widget.isSingleParent || _selectedChips.contains('Alleinerziehend'),
+            widget.screen.isSingleParent || _selectedChips.contains('Alleinerziehend'),
       );
       _consent.requireScope(_scope);
       if (!mounted) return;
@@ -173,14 +193,25 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
   }
 
   Future<void> _toggleChecklistItem(String item) async {
-    setState(() {
-      if (_checked.contains(item)) {
-        _checked.remove(item);
-      } else {
-        _checked.add(item);
+    if (_savingChecklist) return;
+    final checked = {..._checked};
+    if (!checked.remove(item)) checked.add(item);
+    setState(() => _savingChecklist = true);
+    try {
+      await BenefitChecklistStore.saveChecked(widget.screen.country.code, checked,
+        expectedScope: _scope);
+      _consent.requireScope(_scope);
+      if (mounted) setState(() => _checked = checked);
+    } catch (error) {
+      debugPrint('BenefitGuideScreen checklist write: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('family_hub_save_error'))),
+        );
       }
-    });
-    await BenefitChecklistStore.saveChecked(widget.country.code, _checked);
+    } finally {
+      if (mounted) setState(() => _savingChecklist = false);
+    }
   }
 
   Future<void> _openUrl(String url) async {
@@ -202,12 +233,10 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return FamilyHubAccountModal(
-      expectedScope: _scope,
-      builder: (context) => Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(widget.country.flag, style: const TextStyle(fontSize: 18)),
+          Text(widget.screen.country.flag, style: const TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
           Flexible(child: Text(context.tr('benefit_guide_title'))),
         ]),
@@ -239,7 +268,6 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
             ],
           ],
         ),
-      ),
       ),
     );
   }
@@ -416,7 +444,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
   }
 
   Widget _benefitCard(ThemeData theme, GuideBenefit b) {
-    final hasAntragshelfer = widget.country.code == 'de' &&
+    final hasAntragshelfer = widget.screen.country.code == 'de' &&
         b.benefitId.isNotEmpty &&
         BenefitApplicationDE.getById(b.benefitId) != null;
     return Container(
@@ -487,7 +515,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
     final checked = _checked.contains(item);
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => _toggleChecklistItem(item),
+      onTap: _savingChecklist ? null : () => _toggleChecklistItem(item),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: Row(children: [

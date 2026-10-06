@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/family_finance_store.dart';
+import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/monetization_config.dart';
 import 'package:parentpeak/models/benefit_application_data.dart';
@@ -21,10 +22,29 @@ class AntragshelferScreen extends StatefulWidget {
   const AntragshelferScreen({super.key, required this.benefit});
 
   @override
-  State<AntragshelferScreen> createState() => _AntragshelferScreenState();
+  State<AntragshelferScreen> createState() => _AntragshelferRouteState();
 }
 
-class _AntragshelferScreenState extends State<AntragshelferScreen>
+class _AntragshelferRouteState extends State<AntragshelferScreen> {
+  late final String _scope = FamilyFinanceStore.instance.scope;
+
+  @override
+  Widget build(BuildContext context) => FamilyHubAccountModal(
+    expectedScope: _scope,
+    builder: (_) => _ScopedAntragshelferScreen(benefit: widget.benefit),
+  );
+}
+
+class _ScopedAntragshelferScreen extends StatefulWidget {
+  const _ScopedAntragshelferScreen({required this.benefit});
+  final BenefitApplicationData benefit;
+
+  @override
+  State<_ScopedAntragshelferScreen> createState() =>
+      _AntragshelferScreenState();
+}
+
+class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
 
@@ -34,6 +54,11 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
   bool _aiLoading = false;
   String? _aiText;
   String? _aiError;
+  final _store = FamilyFinanceStore.instance;
+  late final String _scope = _store.scope;
+  bool _loaded = false;
+  bool _loadError = false;
+  bool _saving = false;
 
   BenefitApplicationData get _b => widget.benefit;
 
@@ -51,21 +76,60 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
   }
 
   Future<void> _loadCheckedDocs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getStringList('antragshelfer.${_b.benefitId}.docs');
-    if (saved != null) {
+    try {
+      final saved = await _store.loadChecklist(
+        FamilyFinanceStore.documentsKey(_b.benefitId),
+        expectedScope: _scope,
+      );
+      final checked = saved.map(int.parse).toSet();
+      _store.requireScope(_scope);
+      if (!mounted) return;
       setState(() {
-        _checkedDocs.addAll(saved.map(int.parse));
+        _checkedDocs
+          ..clear()
+          ..addAll(checked);
+        _loaded = true;
+        _loadError = false;
       });
+    } catch (error) {
+      debugPrint('Antragshelfer load: $error');
+      if (mounted) setState(() => _loadError = true);
     }
   }
 
-  Future<void> _saveCheckedDocs() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      'antragshelfer.${_b.benefitId}.docs',
-      _checkedDocs.map((i) => i.toString()).toList(),
-    );
+  Future<void> _toggleDocument(int index, bool checked) async {
+    if (!_loaded || _saving) return;
+    final next = {..._checkedDocs};
+    if (checked) {
+      next.add(index);
+    } else {
+      next.remove(index);
+    }
+    setState(() => _saving = true);
+    try {
+      await _store.saveChecklist(
+        FamilyFinanceStore.documentsKey(_b.benefitId),
+        next.map((i) => i.toString()).toSet(),
+        expectedScope: _scope,
+      );
+      _store.requireScope(_scope);
+      if (!mounted) return;
+      setState(
+        () => _checkedDocs
+          ..clear()
+          ..addAll(next),
+      );
+      HapticFeedback.lightImpact();
+    } catch (error) {
+      debugPrint('Antragshelfer write: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('family_hub_save_error'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _openUrl(String url) async {
@@ -83,38 +147,55 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(_b.emoji, style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              _b.benefitName,
-              overflow: TextOverflow.ellipsis,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_b.emoji, style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(_b.benefitName, overflow: TextOverflow.ellipsis),
             ),
-          ),
-        ]),
+          ],
+        ),
         elevation: 0,
         bottom: TabBar(
           controller: _tabs,
           tabs: const [
             Tab(
-                icon: Icon(Icons.checklist_rounded, size: 18),
-                text: 'Unterlagen'),
+              icon: Icon(Icons.checklist_rounded, size: 18),
+              text: 'Unterlagen',
+            ),
             Tab(icon: Icon(Icons.route_rounded, size: 18), text: 'Anleitung'),
             Tab(
-                icon: Icon(Icons.auto_awesome_rounded, size: 18),
-                text: 'KI-Hilfe'),
+              icon: Icon(Icons.auto_awesome_rounded, size: 18),
+              text: 'KI-Hilfe',
+            ),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabs,
-        children: [
-          _buildDocumentsTab(theme),
-          _buildStepsTab(theme),
-          _buildAiTab(theme),
-        ],
-      ),
+      body: _loadError
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(context.tr('finance_load_failed')),
+                  TextButton(
+                    onPressed: _loadCheckedDocs,
+                    child: Text(context.tr('family_hub_retry')),
+                  ),
+                ],
+              ),
+            )
+          : !_loaded
+          ? const Center(child: CircularProgressIndicator())
+          : TabBarView(
+              controller: _tabs,
+              children: [
+                _buildDocumentsTab(theme),
+                _buildStepsTab(theme),
+                _buildAiTab(theme),
+              ],
+            ),
     );
   }
 
@@ -127,141 +208,151 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color: const Color(0xFF16A34A).withValues(alpha: 0.2)),
-          ),
-          child: Column(children: [
-            Text(
-              allChecked ? '✅' : '📋',
-              style: const TextStyle(fontSize: 28),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              allChecked ? 'Alles bereit!' : 'Das brauchst du',
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              allChecked
-                  ? 'Du hast alle Unterlagen zusammen. Weiter zu Schritt 2!'
-                  : '${_checkedDocs.length} von ${_b.documents.length} Unterlagen bereit',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: const Color(0xFF166534)),
-              textAlign: TextAlign.center,
-            ),
-          ]),
-        ),
-        const SizedBox(height: 20),
-
-        // Progress bar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: _b.documents.isEmpty
-                ? 0
-                : _checkedDocs.length / _b.documents.length,
-            minHeight: 6,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            valueColor: const AlwaysStoppedAnimation(Color(0xFF16A34A)),
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Document list
-        ...List.generate(_b.documents.length, (i) {
-          final doc = _b.documents[i];
-          final checked = _checkedDocs.contains(i);
-          return _documentTile(theme, doc, i, checked);
-        }),
-
-        // Pro-Tipp
-        if (_b.proTip != null) ...[
-          const SizedBox(height: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
           Container(
-            padding: const EdgeInsets.all(14),
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(14),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+              ),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                  color: const Color(0xFFF97316).withValues(alpha: 0.2)),
+                color: const Color(0xFF16A34A).withValues(alpha: 0.2),
+              ),
             ),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('💡', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  _b.proTip!,
+            child: Column(
+              children: [
+                Text(
+                  allChecked ? '✅' : '📋',
+                  style: const TextStyle(fontSize: 28),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  allChecked ? 'Alles bereit!' : 'Das brauchst du',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  allChecked
+                      ? 'Du hast alle Unterlagen zusammen. Weiter zu Schritt 2!'
+                      : '${_checkedDocs.length} von ${_b.documents.length} Unterlagen bereit',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF9A3412),
-                    height: 1.4,
+                    color: const Color(0xFF166534),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: _b.documents.isEmpty
+                  ? 0
+                  : _checkedDocs.length / _b.documents.length,
+              minHeight: 6,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              valueColor: const AlwaysStoppedAnimation(Color(0xFF16A34A)),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Document list
+          ...List.generate(_b.documents.length, (i) {
+            final doc = _b.documents[i];
+            final checked = _checkedDocs.contains(i);
+            return _documentTile(theme, doc, i, checked);
+          }),
+
+          // Pro-Tipp
+          if (_b.proTip != null) ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFFF97316).withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('💡', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _b.proTip!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF9A3412),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // Next step button
+          if (allChecked) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _tabs.animateTo(1),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: Text(_t('antrag_next_guide')),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF16A34A),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
-            ]),
-          ),
-        ],
-
-        // Next step button
-        if (allChecked) ...[
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => _tabs.animateTo(1),
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: Text(_t('antrag_next_guide')),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF16A34A),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-              ),
             ),
-          ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 
   Widget _documentTile(
-      ThemeData theme, RequiredDocument doc, int index, bool checked) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
+    ThemeData theme,
+    RequiredDocument doc,
+    int index,
+    bool checked,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
         color: checked
             ? const Color(0xFF16A34A).withValues(alpha: 0.05)
             : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: checked
-              ? const Color(0xFF16A34A).withValues(alpha: 0.3)
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: checked
+                ? const Color(0xFF16A34A).withValues(alpha: 0.3)
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+          ),
         ),
-      ),
-      child: CheckboxListTile(
+        child: CheckboxListTile(
         value: checked,
-        onChanged: (val) {
-          setState(() {
-            if (val == true) {
-              _checkedDocs.add(index);
-            } else {
-              _checkedDocs.remove(index);
-            }
-          });
-          _saveCheckedDocs();
-          HapticFeedback.lightImpact();
-        },
+        onChanged: _saving
+            ? null
+            : (val) => _toggleDocument(index, val == true),
         controlAffinity: ListTileControlAffinity.leading,
         activeColor: const Color(0xFF16A34A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -276,19 +367,24 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
         subtitle: doc.whereToGet != null
             ? Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Row(children: [
-                  Icon(Icons.info_outline_rounded,
-                      size: 12, color: theme.colorScheme.outline),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      doc.whereToGet!,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.outline,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 12,
+                      color: theme.colorScheme.outline,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        doc.whereToGet!,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               )
             : null,
         secondary: doc.isOptional
@@ -298,13 +394,17 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
                   color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text(_t('antrag_optional'),
-                    style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFF59E0B))),
+                child: Text(
+                  _t('antrag_optional'),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFF59E0B),
+                  ),
+                ),
               )
             : null,
+        ),
       ),
     );
   }
@@ -320,68 +420,87 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Info-Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F3FF),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2)),
-          ),
-          child: Row(children: [
-            const Text('🏛️', style: TextStyle(fontSize: 22)),
-            const SizedBox(width: 12),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                    Text(_t('application_authority').replaceAll(
-                      '{authority}', _b.responsibleAuthority),
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text('⏱️ Bearbeitungszeit: ${_b.processingTime}',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: theme.colorScheme.outline)),
-                  if (_b.renewalNote != null) ...[
-                    const SizedBox(height: 2),
-                    Text('🔄 ${_b.renewalNote}',
-                        style: theme.textTheme.labelSmall
-                            ?.copyWith(color: const Color(0xFFF97316))),
-                  ],
-                ])),
-          ]),
-        ),
-        const SizedBox(height: 24),
-
-        // Steps
-        ...List.generate(_b.steps.length, (i) {
-          final step = _b.steps[i];
-          return _stepCard(theme, step, i == _b.steps.length - 1);
-        }),
-
-        // Online-Antrag Button
-        if (_b.onlineApplicationUrl != null) ...[
-          const SizedBox(height: 20),
-          SizedBox(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Info-Header
+          Container(
             width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => _openUrl(_b.onlineApplicationUrl!),
-              icon: const Icon(Icons.open_in_new_rounded, size: 18),
-              label: Text(_t('antrag_open_online')),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF8B5CF6),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F3FF),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
               ),
             ),
+            child: Row(
+              children: [
+                const Text('🏛️', style: TextStyle(fontSize: 22)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _t(
+                          'application_authority',
+                        ).replaceAll('{authority}', _b.responsibleAuthority),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '⏱️ Bearbeitungszeit: ${_b.processingTime}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                      if (_b.renewalNote != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '🔄 ${_b.renewalNote}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFFF97316),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(height: 24),
+
+          // Steps
+          ...List.generate(_b.steps.length, (i) {
+            final step = _b.steps[i];
+            return _stepCard(theme, step, i == _b.steps.length - 1);
+          }),
+
+          // Online-Antrag Button
+          if (_b.onlineApplicationUrl != null) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _openUrl(_b.onlineApplicationUrl!),
+                icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                label: Text(_t('antrag_open_online')),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 
@@ -390,31 +509,34 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Timeline
-        Column(children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                '${step.stepNumber}',
-                style: const TextStyle(
+        Column(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  '${step.stepNumber}',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
-                    fontSize: 14),
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ),
-          ),
-          if (!isLast)
-            Container(
-              width: 2,
-              height: 60,
-              color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
-            ),
-        ]),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 60,
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+              ),
+          ],
+        ),
         const SizedBox(width: 14),
         // Content
         Expanded(
@@ -425,35 +547,52 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
               color: theme.colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color:
-                      theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
             ),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(step.title,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              Text(step.description,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      height: 1.4, color: theme.colorScheme.onSurfaceVariant)),
-              if (step.url != null) ...[
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () => _openUrl(step.url!),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.open_in_new_rounded,
-                        size: 13, color: Color(0xFF8B5CF6)),
-                    const SizedBox(width: 4),
-                    Text(_t('antrag_open_link'),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF8B5CF6),
-                          fontWeight: FontWeight.w700,
-                        )),
-                  ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  step.title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  step.description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    height: 1.4,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (step.url != null) ...[
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => _openUrl(step.url!),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.open_in_new_rounded,
+                          size: 13,
+                          color: Color(0xFF8B5CF6),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _t('antrag_open_link'),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFF8B5CF6),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ]),
+            ),
           ),
         ),
       ],
@@ -471,162 +610,204 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFDF4FF), Color(0xFFFCE7F3)],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color: const Color(0xFFEC4899).withValues(alpha: 0.2)),
-          ),
-          child: Column(children: [
-            const Text('✨', style: TextStyle(fontSize: 28)),
-            const SizedBox(height: 8),
-            Text(_t('antrag_ai_template'),
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(
-              'Die KI erstellt dir einen Begleitbrief oder eine Begründung — fertig zum Kopieren.',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: const Color(0xFF831843)),
-              textAlign: TextAlign.center,
-            ),
-          ]),
-        ),
-        const SizedBox(height: 20),
-
-        // Generate button
-        if (_aiText == null && !_aiLoading)
-          SizedBox(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
             width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _generateAiText,
-              icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                label: Text(_t('application_create_template')
-                  .replaceAll('{benefit}', _b.benefitName)),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFEC4899),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFDF4FF), Color(0xFFFCE7F3)],
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: const Color(0xFFEC4899).withValues(alpha: 0.2),
               ),
             ),
+            child: Column(
+              children: [
+                const Text('✨', style: TextStyle(fontSize: 28)),
+                const SizedBox(height: 8),
+                Text(
+                  _t('antrag_ai_template'),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Die KI erstellt dir einen Begleitbrief oder eine Begründung — fertig zum Kopieren.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF831843),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-
-        // Loading
-        if (_aiLoading) ...[
           const SizedBox(height: 20),
-          const Center(
-              child: CircularProgressIndicator(color: Color(0xFFEC4899))),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(_t('antrag_ai_writing'),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
-          ),
-        ],
 
-        // Error
-        if (_aiError != null) ...[
-          const SizedBox(height: 16),
+          // Generate button
+          if (_aiText == null && !_aiLoading)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _generateAiText,
+                icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                label: Text(
+                  _t(
+                    'application_create_template',
+                  ).replaceAll('{benefit}', _b.benefitName),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFEC4899),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+
+          // Loading
+          if (_aiLoading) ...[
+            const SizedBox(height: 20),
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFFEC4899)),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                _t('antrag_ai_writing'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ),
+          ],
+
+          // Error
+          if (_aiError != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _aiError!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
+          ],
+
+          // Result
+          if (_aiText != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.description_rounded,
+                        size: 16,
+                        color: Color(0xFF8B5CF6),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Vorlage',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.copy_rounded, size: 18),
+                        tooltip: context.tr('tooltip_copy'),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: _aiText!));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                '📋 In die Zwischenablage kopiert!',
+                              ),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 16),
+                  SelectableText(
+                    _aiText!,
+                    style: theme.textTheme.bodySmall?.copyWith(height: 1.6),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _generateAiText,
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: Text(_t('antrag_regenerate')),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          // Disclaimer
+          const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+              color: const Color(0xFFFEF3C7),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(_aiError!,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.error)),
-          ),
-        ],
-
-        // Result
-        if (_aiText != null) ...[
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('⚠️', style: TextStyle(fontSize: 13)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Dies ist eine Vorlage, keine Rechtsberatung. Passe den Text an deine persönliche Situation an.',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: const Color(0xFF92400E),
+                      height: 1.3,
+                    ),
+                  ),
+                ),
               ],
             ),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                const Icon(Icons.description_rounded,
-                    size: 16, color: Color(0xFF8B5CF6)),
-                const SizedBox(width: 6),
-                Text('Vorlage',
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.copy_rounded, size: 18),
-                  tooltip: context.tr('tooltip_copy'),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: _aiText!));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('📋 In die Zwischenablage kopiert!'),
-                          duration: Duration(seconds: 2)),
-                    );
-                  },
-                ),
-              ]),
-              const Divider(height: 16),
-              SelectableText(
-                _aiText!,
-                style: theme.textTheme.bodySmall?.copyWith(height: 1.6),
-              ),
-            ]),
           ),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _generateAiText,
-                icon: const Icon(Icons.refresh_rounded, size: 16),
-                label: Text(_t('antrag_regenerate')),
-              ),
-            ),
-          ]),
         ],
-
-        // Disclaimer
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFEF3C7),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('⚠️', style: TextStyle(fontSize: 13)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Dies ist eine Vorlage, keine Rechtsberatung. Passe den Text an deine persönliche Situation an.',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: const Color(0xFF92400E), height: 1.3),
-              ),
-            ),
-          ]),
-        ),
-      ]),
+      ),
     );
   }
 
@@ -642,7 +823,8 @@ class _AntragshelferScreenState extends State<AntragshelferScreen>
     });
 
     try {
-      final prompt = '''
+      final prompt =
+          '''
 Du bist ein freundlicher Sozialberater-Assistent. Erstelle eine Textvorlage für Eltern.
 
 Aufgabe: ${_b.aiTemplatePrompt}
@@ -655,9 +837,9 @@ Regeln:
 - Format: Direkt als Brief-Text (kein "Betreff:", kein Header)
 ''';
 
-      final text = await GeminiAIService().generateText(prompt).timeout(
-            const Duration(seconds: 20),
-          );
+      final text = await GeminiAIService()
+          .generateText(prompt)
+          .timeout(const Duration(seconds: 20));
 
       if (mounted) {
         setState(() {
@@ -682,48 +864,65 @@ Regeln:
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.workspace_premium_rounded,
+                size: 36,
+                color: Color(0xFF8B5CF6),
+              ),
             ),
-            child: const Icon(Icons.workspace_premium_rounded,
-                size: 36, color: Color(0xFF8B5CF6)),
-          ),
-          const SizedBox(height: 20),
-          Text(featureName,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          Text(
-            'Mit Premium bekommst du die volle Anleitung, KI-Textvorlagen und Erinnerungen.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline, height: 1.5),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () {
-              // TODO: Open Premium sheet
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+            const SizedBox(height: 20),
+            Text(
+              featureName,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Mit Premium bekommst du die volle Anleitung, KI-Textvorlagen und Erinnerungen.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () {
+                // TODO: Open Premium sheet
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
                     content: Text(
-                        'Premium kommt bald! Während der Beta ist alles kostenlos.')),
-              );
-            },
-            icon: const Icon(Icons.star_rounded, size: 18),
-            label: Text(_t('antrag_unlock_premium')),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF8B5CF6),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                      'Premium kommt bald! Während der Beta ist alles kostenlos.',
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.star_rounded, size: 18),
+              label: Text(_t('antrag_unlock_premium')),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
