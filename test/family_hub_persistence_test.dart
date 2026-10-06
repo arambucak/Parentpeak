@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/logic/family_hub_store.dart';
+import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/family_hub_todos.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/logic/fridge_recipe_service.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
+import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/ui/familien_zentrale_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -215,6 +217,29 @@ void main() {
         FridgeRecipeService().generateFromIngredients(['Rice']),
         throwsFormatException,
       );
+    },
+  );
+
+  testWidgets(
+    'malformed profile import shows load failure instead of silently continuing',
+    (tester) async {
+      await tester.runAsync(() async {
+        await AuthService.instance.debugSeedSessionForTesting();
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          FamilyMatchProfile.storageKey(AuthService.instance.currentUser!.uid),
+          '{invalid',
+        );
+      });
+      await tester.pumpWidget(
+        const MaterialApp(home: FamilienZentraleScreen()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.cloud_off_rounded), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.runAsync(() => AuthService.instance.logout());
     },
   );
 
