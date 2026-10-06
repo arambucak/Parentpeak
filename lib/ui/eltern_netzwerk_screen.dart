@@ -10,7 +10,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/friend_chat_service.dart';
 import 'package:parentpeak/ui/group_chat_screen.dart';
 import 'package:parentpeak/ui/widgets/user_avatar.dart';
-import 'package:parentpeak/logic/spielfreunde_backend_service.dart';
+import 'package:parentpeak/logic/playmate_suggestions.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/logic/playmate_profile_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -359,7 +359,6 @@ class ElternNetzwerkScreen extends StatefulWidget {
 class _ScreenState extends State<ElternNetzwerkScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
-  final _backend = SpielfreundeBackendService();
   final _matching = ParentMatchingBackendService(
       apiClient: BackendServiceFactory.createApiClient());
   FamilyMatchProfile? _profile;
@@ -372,8 +371,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   int _profileRequest = 0;
   PlaymateProfileStatus _profileStatus = PlaymateProfileStatus.unavailable;
   Set<String> _dismissedSuggestions = {};
-  List<_SuggestedParent> _suggestedProfiles = [];
-  bool _loadingSuggestions = true;
 
   // Echte Spielfreunde-Discovery (nutzt /api/parent-matching/find)
   List<MatchResult> _matches = [];
@@ -655,54 +652,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final myName = AuthService.instance.currentUser?.displayName ??
         _profile?.displayName ??
         'Familie';
-    final myUserId = AuthService.instance.currentUser?.uid ?? '';
     unawaited(UserProfileService.instance.setDisplayName(myName));
     // Neue UID-Freundschaften + offene Anfragen laden.
     unawaited(FriendshipService.instance.load());
-
-    try {
-      final sug = await _backend.getProfiles();
-      if (mounted) {
-        // Vorschlaege filtern: nicht ich selbst, nicht bereits befreundet
-        // (UID-basiert), nicht bereits weggewischt.
-        final friendUids =
-            FriendshipService.instance.friends.map((f) => f.uid).toSet();
-        final suggestions = sug
-            .where((mp) =>
-                mp['userId'] != null &&
-                (mp['userId'] as String) != myUserId &&
-                !friendUids.contains(mp['userId'] as String) &&
-                !_dismissedSuggestions.contains(mp['userId'] as String? ?? ''))
-            .take(6)
-            .map((mp) {
-          final name = mp['displayName'] as String? ?? 'Familie';
-          final district = mp['district'] as String? ?? '';
-          final children =
-              (mp['children'] as List? ?? []).cast<Map<String, dynamic>>();
-          final kidsText = children.isEmpty
-              ? ''
-              : children.map((c) => '${c['name']} (${c['age']})').join(' · ');
-          final reason = (_profile?.district != null &&
-                  district.isNotEmpty &&
-                  district == _profile!.district)
-              ? '📍 Gleicher Bezirk'
-              : district.isNotEmpty
-                  ? '🌍 $district'
-                  : '👥 In deiner Nähe';
-          return _SuggestedParent(
-              id: mp['userId'] as String,
-              name: name,
-              kids: kidsText,
-              reason: reason);
-        }).toList();
-        setState(() {
-          _suggestedProfiles = suggestions;
-          _loadingSuggestions = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loadingSuggestions = false);
-    }
   }
 
   @override
@@ -2313,18 +2265,42 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   }
 
   Widget _suggestedParentsSection(ThemeData theme) {
-    if (_loadingSuggestions) {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null ||
+        uid.isEmpty ||
+        _profileStatus != PlaymateProfileStatus.active) {
+      return const SizedBox.shrink();
+    }
+    if (_loadingMatches) {
       return const Center(
           child: Padding(
               padding: EdgeInsets.all(24),
               child: CircularProgressIndicator(
                   color: Color(0xFF8B5CF6), strokeWidth: 2)));
     }
-    if (_suggestedProfiles.isEmpty) return const SizedBox.shrink();
+    if (_matchesErrorKey != null) {
+      return PlaymateDiscoveryError(
+        messageKey: _matchesErrorKey!,
+        onRetry: _loadMatches,
+      );
+    }
+    final suggestions = selectPlaymateSuggestions(
+      matches: _matches,
+      userId: uid,
+      friendIds: FriendshipService.instance.friends.map((f) => f.uid).toSet(),
+      dismissedIds: _dismissedSuggestions,
+      isBlocked: BlockReportService.instance.isBlocked,
+    );
+    if (suggestions.isEmpty) return const SizedBox.shrink();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
           Text(
               AppStringsManager.getString(
                   languageService.currentLanguage, 'maybe_you_know'),
@@ -2332,13 +2308,19 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   ?.copyWith(fontWeight: FontWeight.w800)),
           Text(
               AppStringsManager.getString(
-                  languageService.currentLanguage, 'real_parents_nearby'),
+                      languageService.currentLanguage,
+                      'network_matching_suggestions',
+                    ),
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.outline)),
-        ]),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
         Text(
-            _t('network_suggestions_count')
-                .replaceAll('{count}', '${_suggestedProfiles.length}'),
+              _t(
+                'network_suggestions_count',
+              ).replaceAll('{count}', '${suggestions.length}'),
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: const Color(0xFF8B5CF6))),
       ]),
@@ -2348,15 +2330,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.zero,
-          itemCount: _suggestedProfiles.length,
-          itemBuilder: (ctx, i) =>
-              _suggestionCard(theme, _suggestedProfiles[i]),
+            itemCount: suggestions.length,
+            itemBuilder: (ctx, i) => _suggestionCard(theme, suggestions[i]),
         ),
       ),
     ]);
   }
 
-  Widget _suggestionCard(ThemeData theme, _SuggestedParent s) {
+  Widget _suggestionCard(ThemeData theme, PlaymateSuggestion s) {
     final color = _avatarColor(s.name);
     final initial = s.name.isNotEmpty ? s.name[0].toUpperCase() : '?';
 
@@ -2397,22 +2378,25 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 ?.copyWith(fontWeight: FontWeight.w700),
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
-        if (s.kids.isNotEmpty) ...[
+          if (s.childAgeTags.isNotEmpty) ...[
           const SizedBox(height: 2),
-          Text(s.kids,
+            Text(
+              s.childAgeTags.join(' · '),
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
+          if (s.city.isNotEmpty)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(s.reason,
+              child: Text(
+                s.city,
               style: TextStyle(
                   fontSize: 10, fontWeight: FontWeight.w600, color: color),
               maxLines: 1,
@@ -2422,15 +2406,16 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         Row(children: [
           Expanded(
             child: FilledButton(
-              onPressed: () async {
-                // Echte UID-Freundschaftsanfrage (neues System). s.id ist die
-                // vollstaendige UID des Vorschlags.
-                final ok = await FriendshipService.instance.sendRequest(s.id);
-                if (mounted) {
-                  setState(() {
-                    _dismissedSuggestions.add(s.id);
-                    _suggestedProfiles.removeWhere((x) => x.id == s.id);
-                  });
+                  onPressed: () async {
+                    final account = AuthService.instance.currentUser?.uid;
+                    final ok = await FriendshipService.instance.sendRequest(
+                      s.userId,
+                    );
+                    if (mounted &&
+                        AuthService.instance.currentUser?.uid == account) {
+                      if (ok) {
+                        setState(() => _dismissedSuggestions.add(s.userId));
+                      }
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text(ok
                         ? 'Anfrage an ${s.name} gesendet. 👋'
@@ -2456,16 +2441,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           const SizedBox(width: 6),
           GestureDetector(
             onTap: () async {
-              final prefs = await SharedPreferences.getInstance();
-              if (mounted) {
+                  final account = AuthService.instance.currentUser?.uid;
+                  final prefs = await SharedPreferences.getInstance();
+                  if (mounted &&
+                      AuthService.instance.currentUser?.uid == account) {
                 setState(() {
-                  _dismissedSuggestions.add(s.id);
-                  _suggestedProfiles.removeWhere((x) => x.id == s.id);
+                      _dismissedSuggestions.add(s.userId);
                 });
                 await prefs.setStringList(
                     'friends.dismissed', _dismissedSuggestions.toList());
               }
-            },
+                },
+                behavior: HitTestBehavior.opaque,
             child: Container(
               width: 36,
               height: 36,
@@ -2625,21 +2612,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       if (mounted) setState(() => _deletingProfile = false);
     }
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-class _SuggestedParent {
-  final String id;
-  final String name;
-  final String kids;
-  final String reason;
-
-  const _SuggestedParent({
-    required this.id,
-    required this.name,
-    required this.kids,
-    required this.reason,
-  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
