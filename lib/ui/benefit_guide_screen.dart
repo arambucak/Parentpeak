@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:parentpeak/ui/widgets/finance_link_launcher.dart';
+import 'package:parentpeak/l10n/finance_content.dart';
 
 import 'package:parentpeak/config/benefit_application_de.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
@@ -69,12 +70,12 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
 
   // Schnell-Impuls-Chips, die den Freitext ergänzen.
   static const _chips = [
-    'Elternzeit',
-    'Gehalt sinkt',
-    'Alleinerziehend',
-    'Umzug',
-    'Zweites Kind kommt',
-    'Wenig Einkommen',
+    'benefit_chip_leave',
+    'benefit_chip_salary',
+    'benefit_chip_single',
+    'benefit_chip_move',
+    'benefit_chip_second',
+    'benefit_chip_income',
   ];
   final Set<String> _selectedChips = {};
 
@@ -129,7 +130,7 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
   Future<void> _ask() async {
     if (!_contextReady || _loading) return;
     final base = _situationCtrl.text.trim();
-    final chips = _selectedChips.join(', ');
+    final chips = _selectedChips.map(context.tr).join(', ');
     final situation = [base, chips].where((s) => s.isNotEmpty).join('. ');
     if (situation.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -169,7 +170,8 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
         situation: situation,
         childAgesYears: _childAges,
         isSingleParent:
-            widget.screen.isSingleParent || _selectedChips.contains('Alleinerziehend'),
+            widget.screen.isSingleParent || _selectedChips.contains('benefit_chip_single'),
+        languageCode: Localizations.localeOf(context).languageCode,
       );
       _consent.requireScope(_scope);
       if (!mounted) return;
@@ -221,12 +223,7 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
     }
   }
 
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
+  Future<void> _openUrl(String url) => openFinanceLink(context, url);
 
   void _openAntragshelfer(String benefitId) {
     final data = BenefitApplicationDE.getById(benefitId);
@@ -335,7 +332,7 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
           children: _chips.map((c) {
             final active = _selectedChips.contains(c);
             return FilterChip(
-              label: Text(c),
+              label: Text(context.tr(c)),
               selected: active,
               showCheckmark: false,
               onSelected: (_) => setState(() {
@@ -380,6 +377,10 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (r.isFallback) ...[
+          Text(context.tr('benefit_fallback_notice')),
+          const SizedBox(height: 12),
+        ],
         if (r.matched.isNotEmpty) ...[
           Text(context.tr('benefit_matches_title'),
               style: theme.textTheme.titleSmall
@@ -435,6 +436,7 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
           ...r.sources.map((s) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _openUrl(s),
                   child: Text('🔗 $s',
                       maxLines: 1,
@@ -464,7 +466,7 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(b.name,
+        Text(financeContent(b.name, Localizations.localeOf(context).languageCode),
             style: theme.textTheme.bodyLarge
                 ?.copyWith(fontWeight: FontWeight.w800)),
         if (b.why.isNotEmpty) ...[
@@ -487,6 +489,7 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
         if (b.url.isNotEmpty) ...[
           const SizedBox(height: 8),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               HapticFeedback.lightImpact();
               _openUrl(b.url);

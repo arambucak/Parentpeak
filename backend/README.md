@@ -359,6 +359,58 @@ ohne pauschales "Stand 2026".
 - Monatskategorien und Meilensteinkosten bleiben **Schaetzwerte**, keine
   amtlichen Leistungsbetraege. AT-Familienbonus-Hinweis nicht neu verifiziert.
 
+### Familien-Geld: lokalisierte Orientierung, Links und Sharing
+
+Der Wegweiser uebernimmt die aktuelle UI-Sprache fuer Chips, Fallback und
+KI-Antwort. JSON-Form und Ausgabesprache stehen im `systemInstruction`;
+Freitext bleibt im sanitisierten Request-Prompt. Die vorhandene Konto-
+Einwilligung und Kontextpruefung vor/nach KI-Verarbeitung bleiben erhalten.
+`BenefitGuideResult.isFallback` kennzeichnet lokale kuratierte Orientierung
+sichtbar als **nicht personalisiert**, auch bei unbrauchbarer KI-Antwort.
+
+Die Linkgrenze ist bewusst konservativ: Nur Leistungs-IDs aus dem angefragten
+Land bleiben im KI-Ergebnis. Namen stammen aus der lokalisierten Kuratierung;
+URLs werden ausschliesslich durch die hinterlegte URL ersetzt. Ohne
+kuratierten Link wird **kein** KI-Link ergaenzt. Grounding-Quellen bleiben
+nur erhalten, wenn ihre HTTPS-URL exakt einer Landesleistungs-URL entspricht.
+Host-Suffixe, Credentials, abweichende Ports und Redirect-Queryvarianten
+erweitern die erlaubten Links nicht. Neue Leistungen oder zusaetzliche
+amtliche Quellen brauchen zuerst eine kuratierte Aufnahme, keinen
+automatischen Vertrauensbonus fuer KI-Ausgaben.
+
+Alle drei Finanz-Screens benutzen `openFinanceLink`: gueltige HTTPS-Links
+werden direkt gestartet (kein vorgeschalteter `canLaunchUrl`-False-Negative
+auf Web). `false`, Plattformfehler und ungueltige URLs ergeben sichtbare
+lokalisierte Fehler; nach Dispose wird keine UI angesprochen.
+Die beiden Wegweiser-Taps und der Antragshelfer-Link haben `opaque`.
+Finance-Share verwendet das Rechteck des Share-Buttons als iPad-Anker,
+ohne Geraete-/Platform-Abfrage. Share-/Clipboard-Fehler sind sichtbar; eine
+Kopierbestaetigung folgt erst nach erfolgreichem Clipboard-Aufruf.
+
+`finance_content.dart` und `finance_content_keys.dart` verbinden vorhandene
+kuratierte Quelltexte mit stabilen Keys in `app_localizations_all.dart`.
+Alle acht Antragshelfer sind in de/en/tr/ku abgedeckt, einschliesslich
+Dokumenten, Herkunftshinweisen, Schritten und statischen KI-Aufgaben.
+Landesleistungen (auch Generic), TR/GB-Meilensteinnotizen und UI verwenden
+dieselbe Lokalisierung. IDs, Dokumentindizes/Optionalitaet, Reihenfolge,
+Zahlenwerte und URLs werden nicht geaendert; Checklisten bleiben kompatibel.
+Andere Inhaltssprachen fallen wie bisher auf EN zurueck. Frei generierte
+KI-Texte und externe/custom Daten werden nicht als neue Quellkeys behandelt.
+Coverage-Tests verlangen fuer jeden kuratierten Antrags-/Non-DE-Text einen
+Key in allen vier Sprachen; neue Rohdaten brauchen entsprechende Keys.
+
+Die Uebersetzungen sind **keine Rechtspruefung**: unverifizierte
+Antragsdetails bleiben unveraendert und erhalten einen sichtbaren
+Pruefhinweis. `Cocuk Parasi`, Betragformatierung, AT-Familienbonus-Hinweis
+und alle bestehenden Disclaimer bleiben erhalten. Kein vollstaendiges
+Aktualitaets- oder Rechtsberatungsversprechen.
+
+Wohngeld-Linkpruefung am 06.10.2026: Auch die gefundenen BMWSB-Kandidaten
+`https://www.bmwsb.bund.de/DE/wohnen/wohngeld/wohngeldrechner/wohngeldrechner-2025_node.html`
+und `https://www.bmwsb.bund.de/DE/themen/wohnen/wohngeld/wohngeldrechner/wohngeldrechner-node.html`
+antworten beim Abruf mit HTTP 403. Kein inhaltlich bestaetigter Ersatz;
+der bisher dokumentierte Link bleibt unveraendert, nicht als tot eingestuft.
+
 ## Installation
 
 1. **Node.js installieren** (falls nicht vorhanden)

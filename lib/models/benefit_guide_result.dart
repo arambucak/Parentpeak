@@ -14,12 +14,14 @@ class BenefitGuideResult {
 
   /// Quellen-Links (aus Google-Grounding), falls vorhanden.
   final List<String> sources;
+  final bool isFallback;
 
   const BenefitGuideResult({
     this.matched = const [],
     this.checklist = const [],
     this.nextSteps = const [],
     this.sources = const [],
+    this.isFallback = false,
   });
 
   bool get isEmpty =>
