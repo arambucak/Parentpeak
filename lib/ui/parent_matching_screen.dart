@@ -215,6 +215,13 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
     }
 
     if (!mounted) return false;
+    if (_service.lastSyncError != null) {
+      setState(() => _isRestoring = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('network_profile_unverified'))));
+      return false;
+    }
     _profileNameController.text =
         AuthService.instance.currentUser?.displayName.trim().isNotEmpty == true
             ? AuthService.instance.currentUser!.displayName.trim()

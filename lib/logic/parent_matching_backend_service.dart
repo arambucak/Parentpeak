@@ -383,60 +383,31 @@ class ParentMatchingBackendService {
   Future<Map<String, dynamic>?> fetchMyProfile({required String userId}) async {
     lastSyncError = null;
     try {
-      if (_apiUrl == null) {
-        lastSyncError = 'Backend-URL nicht konfiguriert';
-        return null;
-      }
-
-      final myProfilePath = APIConfig.getBackendParentMatchingMyProfilePath();
-      final requestPath = '$myProfilePath?userId=$userId';
       final client = _typedApiClient;
-      if (client != null) {
-        final decoded = await client.getJson(requestPath);
-        if (decoded is! Map<String, dynamic>) {
-          return null;
-        }
-        final item = decoded['item'];
-        if (item is Map<String, dynamic>) {
-          return item;
-        }
-        return decoded;
+      if (client == null || userId.trim().isEmpty) {
+        throw StateError('Authenticated backend or user ID missing');
       }
 
-      final fallbackToken = APIConfig.getBackendApiToken();
-      final response = await _httpClient.get(
-        Uri.parse('$_apiUrl$requestPath'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (fallbackToken != null && fallbackToken.trim().isNotEmpty)
-            'Authorization': 'Bearer ${fallbackToken.trim()}',
-        },
-      );
-
-      if (response.statusCode == 404) {
+      final path = APIConfig.getBackendParentMatchingMyProfilePath();
+      final decoded = await client.getJson('$path?userId=${Uri.encodeQueryComponent(userId)}');
+      if (decoded is! Map<String, dynamic> ||
+          decoded['item'] is! Map<String, dynamic>) {
+        throw const FormatException('Invalid matching profile response');
+      }
+      final item = decoded['item'] as Map<String, dynamic>;
+      if (item['id'] is! String || (item['id'] as String).isEmpty ||
+          item['ownerUserId'] != userId) {
+        throw const FormatException('Matching profile owner or ID mismatch');
+      }
+      return item;
+    } on BackendApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      lastSyncError = 'Profile verification failed: $e';
+      debugPrint('ParentMatchingBackendService.fetchMyProfile: $lastSyncError');
         return null;
-      }
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        lastSyncError =
-            'Profil konnte nicht geladen werden: ${response.statusCode}';
-        return null;
-      }
-
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) {
-        return null;
-      }
-      final item = decoded['item'];
-      if (item is Map<String, dynamic>) {
-        return item;
-      }
-      return decoded;
     } catch (e) {
-      final text = e.toString();
-      if (text.contains('404')) {
-        return null;
-      }
-      lastSyncError = 'Profil konnte nicht geladen werden: $e';
+      lastSyncError = 'Profile verification failed: $e';
+      debugPrint('ParentMatchingBackendService.fetchMyProfile: $lastSyncError');
       return null;
     }
   }

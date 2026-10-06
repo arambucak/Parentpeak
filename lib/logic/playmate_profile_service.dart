@@ -5,6 +5,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum PlaymatePublicationResult { cancelled, failed, published }
 
+enum PlaymateProfileStatus { draft, active, unavailable }
+
+class PlaymateProfileState {
+  const PlaymateProfileState({
+    required this.status,
+    this.profile,
+    this.hasUnassignedDraft = false,
+  });
+  final PlaymateProfileStatus status;
+  final FamilyMatchProfile? profile;
+  final bool hasUnassignedDraft;
+}
+
 /// Rounds location to a coarse grid before publishing it to other families.
 double? coarseCoordinate(double? value) {
   if (value == null || !value.isFinite) return null;
@@ -15,6 +28,65 @@ class PlaymateProfileService {
   PlaymateProfileService({required this.matchingService});
 
   final ParentMatchingBackendService matchingService;
+  static bool _assigningLegacyDraft = false;
+
+  Future<PlaymateProfileState> loadState(String userId) async {
+    final profile = await FamilyMatchProfile.load(
+      userId: userId,
+      throwOnError: true,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    final hasDraft =
+        profile == null && prefs.containsKey('spielfreunde.profile');
+    final remote = await matchingService.fetchMyProfile(userId: userId);
+    return PlaymateProfileState(
+      profile: profile,
+      hasUnassignedDraft: hasDraft,
+      status: matchingService.lastSyncError != null
+          ? PlaymateProfileStatus.unavailable
+          : remote == null
+          ? PlaymateProfileStatus.draft
+          : PlaymateProfileStatus.active,
+    );
+  }
+
+  Future<bool> adoptUnassignedDraft(
+    String userId, {
+    required Future<bool> Function() confirmOwnership,
+  }) async {
+    if (_assigningLegacyDraft) {
+      throw StateError('A legacy draft assignment is already in progress');
+    }
+    _assigningLegacyDraft = true;
+    try {
+      if (await FamilyMatchProfile.load(userId: userId, throwOnError: true) !=
+          null) {
+        throw StateError('An account profile already exists');
+      }
+      if (!await confirmOwnership()) return false;
+      if (await FamilyMatchProfile.load(userId: userId, throwOnError: true) !=
+          null) {
+        throw StateError('An account profile already exists');
+      }
+      final draft = await FamilyMatchProfile.loadUnassignedDraft();
+      if (draft == null) {
+        throw StateError('The unassigned draft no longer exists');
+      }
+      await draft.save(userId: userId);
+      final prefs = await SharedPreferences.getInstance();
+      try {
+        if (!await prefs.remove('spielfreunde.profile')) {
+          throw StateError('Could not finish assigning the legacy draft');
+        }
+      } catch (_) {
+        await FamilyMatchProfile.removeForAccount(userId);
+        rethrow;
+      }
+      return true;
+    } finally {
+      _assigningLegacyDraft = false;
+    }
+  }
 
   Future<PlaymatePublicationResult> publishProfile(
     FamilyMatchProfile profile,
@@ -50,17 +122,13 @@ class PlaymateProfileService {
       );
       return PlaymatePublicationResult.failed;
     }
-    await profile.save();
+    await profile.save(userId: userId);
     return PlaymatePublicationResult.published;
   }
 
   Future<bool> deleteProfile(String userId) async {
     if (!await matchingService.deleteProfile(userId: userId)) return false;
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.containsKey('spielfreunde.profile') &&
-        !await prefs.remove('spielfreunde.profile')) {
-      throw StateError('Could not remove the local playmate profile');
-    }
+    await FamilyMatchProfile.removeForAccount(userId);
     return true;
   }
 }

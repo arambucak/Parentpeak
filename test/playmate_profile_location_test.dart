@@ -107,8 +107,8 @@ void main() {
 
   test('profile coordinates survive local round-trip', () async {
     final selected = profile(city: 'Munich', lat: 48.14, lon: 11.58);
-    await selected.save();
-    final loaded = await FamilyMatchProfile.load();
+    await selected.save(userId: 'owner');
+    final loaded = await FamilyMatchProfile.load(userId: 'owner');
     expect(loaded!.city, 'Munich');
     expect(loaded.latitude, 48.14);
     expect(loaded.longitude, 11.58);

@@ -24,12 +24,10 @@ class FridgeRecipeService {
   int _childAgeYears = 3;
   List<String> _allergies = [];
   Set<String> _allergenKeys = {};
-  bool _loaded = false;
 
   /// Lädt Alter (jüngstes Kind) + Allergien aus Profil/Einstellungen.
   Future<void> _ensureContext() async {
-    if (_loaded) return;
-    _loaded = true;
+    _childAgeYears = 3;
     try {
       final profile = await FamilyMatchProfile.load();
       if (profile != null && profile.children.isNotEmpty) {

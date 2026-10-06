@@ -48,6 +48,7 @@ function fixture(routePath, persistenceFails = false) {
         json(value) { payload = value; return res; },
       };
       await handler({
+        firebaseUid: 'viewer',
         body: {
           userId: 'viewer',
           name: 'Test family',

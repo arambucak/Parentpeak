@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:parentpeak/logic/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Familien-Profil für "Spielfreunde finden".
@@ -106,31 +108,71 @@ class FamilyMatchProfile {
         createdAt: DateTime.tryParse(j['createdAt'] ?? '') ?? DateTime.now(),
       );
 
-  static Future<FamilyMatchProfile?> load() async {
+  static String storageKey(String userId) {
+    if (userId.trim().isEmpty) throw ArgumentError.value(userId, 'userId');
+    return 'spielfreunde.profile.account.${Uri.encodeComponent(userId)}';
+  }
+
+  /// All feature readers share this account boundary; legacy data is opt-in.
+  static Future<FamilyMatchProfile?> load({
+    String? userId,
+    bool throwOnError = false,
+  }) async {
+    final owner = userId ?? AuthService.instance.currentUser?.uid;
+    if (owner == null || owner.trim().isEmpty) return null;
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(storageKey(owner));
+    if (userId == null && AuthService.instance.currentUser?.uid != owner) {
+      return null;
+    }
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic> ||
+          decoded['ownerUserId'] != owner ||
+          decoded['profile'] is! Map<String, dynamic>) {
+        throw const FormatException('Invalid account profile envelope');
+      }
+      return FamilyMatchProfile.fromJson(decoded['profile']);
+    } catch (e) {
+      debugPrint('FamilyMatchProfile.load: invalid local account profile: $e');
+      if (throwOnError) rethrow;
+      return null;
+    }
+  }
+
+  static Future<FamilyMatchProfile?> loadUnassignedDraft() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('spielfreunde.profile');
     if (raw == null || raw.isEmpty) return null;
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is! Map<String, dynamic>) return null;
-      final profile = FamilyMatchProfile.fromJson(decoded);
-      final rawChildren = decoded['children'];
-      final hasLegacyChildren = rawChildren is List &&
-          rawChildren.whereType<Map>().any((child) {
-            return DateTime.tryParse(child['birthDate']?.toString() ?? '') ==
-                null;
-          });
-      if (hasLegacyChildren) await profile.save();
-      return profile;
-    } catch (_) {
-      return null;
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid legacy family profile');
+      }
+      return FamilyMatchProfile.fromJson(decoded);
+    } catch (e) {
+      debugPrint('FamilyMatchProfile.loadUnassignedDraft: $e');
+      rethrow;
     }
   }
 
-  Future<void> save() async {
+  Future<void> save({required String userId}) async {
+    final key = storageKey(userId);
     final prefs = await SharedPreferences.getInstance();
-    if (!await prefs.setString('spielfreunde.profile', jsonEncode(toJson()))) {
-      throw StateError('Could not save the local playmate profile');
+    if (!await prefs.setString(key, jsonEncode({
+      'ownerUserId': userId,
+      'profile': toJson(),
+    }))) {
+      throw StateError('Could not save the local account playmate profile');
+    }
+  }
+
+  static Future<void> removeForAccount(String userId) async {
+    final key = storageKey(userId);
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey(key) && !await prefs.remove(key)) {
+      throw StateError('Could not remove the local account playmate profile');
     }
   }
 }
