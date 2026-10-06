@@ -202,6 +202,28 @@ flutter test --no-pub test/playmate_discovery_test.dart
 node --test backend/tests/unit/parent-matching-discovery.test.js
 ```
 
+### Spielfreunde-Vorschlaege ohne Legacy-Endpunkt
+
+Der bisherige Client-Aufruf `/api/spielfreunde/profiles` hatte keinen
+Server-Endpunkt. Die Vorschlagskarten im Netzwerk-Tab verwenden jetzt direkt
+dieselben authentifizierten, servergeprueften Matching-Ergebnisse wie der
+Spielfreunde-Tab. Es gibt keine zusaetzliche Legacy-Abfrage und keine
+Demo-Familien. Bei Discovery-Fehlern erscheint auch hier Wiederholen statt
+einer vermeintlich leeren Vorschlagsliste.
+
+Vorschlaege setzen ein verifiziert aktives eigenes Profil voraus. Es werden
+hoechstens sechs unterschiedliche Konten in Matching-Reihenfolge gezeigt;
+eigene UID, bestehende Freunde, ausgeblendete und blockierte Konten werden
+ausgeschlossen. Fehlende Eigentuemer werden geloggt und nicht als
+Freundschaftsziel verwendet. Karten verwenden ausschliesslich oeffentlichen
+Anzeigenamen, Ort und veroeffentlichte Altersgruppen, keine Kindnamen,
+Geburtsdaten oder Gesundheitsdaten. Die veraltete, sonst ungenutzte
+SpielfreundeBackendService-Klasse wurde entfernt.
+
+```bash
+flutter test --no-pub test/playmate_suggestions_test.dart
+```
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:
