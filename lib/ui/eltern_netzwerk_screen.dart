@@ -24,6 +24,7 @@ import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/ui/widgets/playmate_publication_dialog.dart';
 import 'package:parentpeak/ui/widgets/playmate_profile_status.dart';
+import 'package:parentpeak/ui/widgets/playmate_discovery_error.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -377,6 +378,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   // Echte Spielfreunde-Discovery (nutzt /api/parent-matching/find)
   List<MatchResult> _matches = [];
   bool _loadingMatches = false;
+  String? _matchesErrorKey;
+  int _matchRequest = 0;
   String _matchScope = '10km';
 
   // Chats-Tab: Messenger-Übersicht
@@ -436,6 +439,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       _hasUnassignedDraft = false;
       _matches = [];
       _loadingMatches = false;
+      _matchesErrorKey = null;
+      _matchRequest++;
       _profileStatus = PlaymateProfileStatus.unavailable;
     });
     unawaited(_refreshProfile());
@@ -1496,6 +1501,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   Future<void> _loadMatches() async {
     if (_profile == null || _profileStatus != PlaymateProfileStatus.active) return;
     final request = _profileRequest;
+    final matchRequest = ++_matchRequest;
     if (mounted) setState(() => _loadingMatches = true);
     final uid = AuthService.instance.currentUser?.uid ?? 'guest';
     final childAges = _profile!.children.map((c) {
@@ -1516,18 +1522,28 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         return !BlockReportService.instance.isBlocked(ownerId);
       }).toList();
       if (mounted && _profile != null && request == _profileRequest &&
+          matchRequest == _matchRequest &&
           AuthService.instance.currentUser?.uid == uid &&
           _profileStatus == PlaymateProfileStatus.active) {
         setState(() {
           _matches = visible;
           _matchScope = result.scope;
           _loadingMatches = false;
+          _matchesErrorKey = null;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ElternNetzwerkScreen discovery failed: $e');
       if (mounted && request == _profileRequest &&
+          matchRequest == _matchRequest &&
           AuthService.instance.currentUser?.uid == uid) {
-        setState(() => _loadingMatches = false);
+        setState(() {
+          _loadingMatches = false;
+          _matchesErrorKey = e is BackendApiException &&
+                  (e.isUnauthorized || e.isForbidden)
+              ? 'network_discovery_auth_failed'
+              : 'network_discovery_failed';
+        });
     }
     }
   }
@@ -1615,7 +1631,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     size: 20, color: theme.colorScheme.primary),
               ),
           ]),
-          if (!_loadingMatches && _matches.isNotEmpty) ...[
+          if (!_loadingMatches && _matchesErrorKey == null && _matches.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
                 _matchScope == '10km'
@@ -1633,6 +1649,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           // ── Ergebnis: Liste, Loading oder ehrlicher Empty-State ──────────
           if (_loadingMatches)
             _matchesLoadingSkeleton(theme)
+          else if (_matchesErrorKey != null)
+            PlaymateDiscoveryError(
+              messageKey: _matchesErrorKey!,
+              onRetry: _loadMatches,
+            )
           else if (_matches.isEmpty)
             _emptyDiscoveryState(theme)
           else

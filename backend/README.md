@@ -179,6 +179,29 @@ flutter test --no-pub test/playmate_profile_state_test.dart
 node --test backend/tests/unit/parent-matching-state.test.js
 ```
 
+### Authentifizierte Discovery und echte Fehlerzustaende
+
+`/parent-matching/discover` und der Adapter `/api/parent-matching/find` nutzen
+denselben Handler mit verifizierter Firebase-UID und Eigentuemerpruefung.
+Ein fehlendes eigenes aktives Profil liefert HTTP 404, Auth-Fehler 401/403
+und Datenbank-/Safety-Filter-Fehler 503. Solche Fehler sind keine leeren
+Trefferlisten. In-Memory-Demo-Fallbacks werden bei Discovery-Fehlern nicht mehr
+ausgeliefert; Blocklisten und Sperrungen muessen vor dem Scoring verfuegbar sein.
+
+Die App verwendet den injizierten authentifizierten BackendApiClient statt
+eines separaten Raw-HTTP-Clients. Nur ein gueltiges `matches`-Array ist ein
+Suchergebnis. Der bestehende Radius-Fallback (10, 50, 100, 1200 km) wird nur
+nach erfolgreichen leeren Antworten erweitert. HTTP-, Transport- und
+Parsingfehler stoppen die Suche sofort, ohne globalen Empty-State.
+Beide Matching-Oberflaechen zeigen explizite Fehler mit Wiederholen; Auth-Fehler
+erhalten einen eigenen Hinweis. Alte Treffer bleiben intern erhalten, werden
+bei einem Fehler aber nicht als aktuelle Suchergebnisse angezeigt.
+
+```bash
+flutter test --no-pub test/playmate_discovery_test.dart
+node --test backend/tests/unit/parent-matching-discovery.test.js
+```
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:

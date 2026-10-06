@@ -11936,61 +11936,48 @@ function scoreParentMatchingCandidates({ userProfile, candidates, blockedIds, su
 
 async function discoverParentMatchingProfiles({ userId, limit, maxDistanceKm }) {
   const userProfile = await getMyParentMatchingProfile(userId);
-  if (!userProfile) return { matches: [], message: 'Benutzerprofil nicht gefunden' };
+  if (!userProfile) return null;
   const candidates = await prisma.parentMatchingProfile.findMany({
     where: { isActive: true, ownerUserId: { not: userId } },
     take: 100,
   });
-  let blockedIds = new Set();
-  let suspendedIds = new Set();
-  try {
-    await ensureSocialSchemaReady();
-    const blockRows = await prisma.$queryRawUnsafe(
-      `SELECT "blockedUserId" FROM "SafetyBlock" WHERE "blockerUserId" = $1`, userId);
-    blockedIds = new Set(blockRows.map(row => row.blockedUserId));
-    const suspensionRows = await prisma.$queryRawUnsafe(`SELECT "userId" FROM "SafetySuspension"`);
-    suspendedIds = new Set(suspensionRows.map(row => row.userId));
-  } catch (_) {
-    blockedIds = safetyBlocks.get(userId) || new Set();
-    suspendedIds = new Set([...safetySuspensions.keys()]);
-  }
+  await ensureSocialSchemaReady();
+  const blockRows = await prisma.$queryRawUnsafe(
+    `SELECT "blockedUserId" FROM "SafetyBlock" WHERE "blockerUserId" = $1`, userId);
+  const blockedIds = new Set(blockRows.map(row => row.blockedUserId));
+  const suspensionRows = await prisma.$queryRawUnsafe(`SELECT "userId" FROM "SafetySuspension"`);
+  const suspendedIds = new Set(suspensionRows.map(row => row.userId));
   return scoreParentMatchingCandidates({
     userProfile, candidates, blockedIds, suspendedIds, limit, maxDistanceKm,
-  });
-}
-
-function discoverParentMatchingProfilesInMemory({ userId, limit, maxDistanceKm }) {
-  const userProfile = getMyParentMatchingProfileInMemory(userId);
-  if (!userProfile) return { matches: [], message: 'Benutzerprofil nicht gefunden' };
-  return scoreParentMatchingCandidates({
-    userProfile,
-    candidates: parentProfiles.filter(profile => profile.isActive !== false && profile.ownerUserId !== userId),
-    blockedIds: safetyBlocks.get(userId) || new Set(),
-    suspendedIds: new Set([...safetySuspensions.keys()]),
-    limit,
-    maxDistanceKm,
   });
 }
 
 async function respondWithParentMatchingDiscovery(req, res) {
   const userId = (req.query.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  if (!req.firebaseUid) {
+    const { uid, verified } = await verifyFirebaseIdToken(req);
+    if (verified) req.firebaseUid = uid;
+  }
+  if (!req.firebaseUid) {
+    return res.status(401).json({ error: 'Firebase sign-in required' });
+  }
+  if (req.firebaseUid !== userId) {
+    return res.status(403).json({ error: 'Own discovery only' });
+  }
   try {
-    return res.json(await discoverParentMatchingProfiles({
+    const result = await discoverParentMatchingProfiles({
       userId,
       limit: req.query.limit || '10',
       maxDistanceKm: req.query.maxDistanceKm || '25',
-    }));
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/discover', error)) {
-      return;
+    });
+    if (result === null) {
+      return res.status(404).json({ error: 'Matching profile not found' });
     }
+    return res.json(result);
+  } catch (error) {
     console.error('Parent matching discovery failed:', error);
-    return res.json(discoverParentMatchingProfilesInMemory({
-      userId,
-      limit: req.query.limit || '10',
-      maxDistanceKm: req.query.maxDistanceKm || '25',
-    }));
+    return res.status(503).json({ error: 'Matching discovery unavailable' });
   }
 }
 
