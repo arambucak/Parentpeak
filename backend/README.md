@@ -1,5 +1,33 @@
 # Parentpeak Marktplatz Backend
 
+## Einwilligung fuer KI-Familienrezepte
+
+Die Familien-Kueche fragt vor der ersten KI-Rezepterstellung transparent nach
+Zustimmung. Kindesalter, lokale Dossier-/Kuechen-Allergien und bei einer
+Gerichtsuche der Suchtext werden ueber `/ai/generate` an Google Gemini gesendet.
+Dossier-Namen, Arzt- und Notfallangaben werden nicht automatisch uebernommen.
+Die Gerichtsuche in Familien-Rezepten verwendet denselben Dialog und dieselbe
+Service-Grenze. Die bestehende Fotoeinwilligung im Kuehlschrank-Feature ist ein
+separater Zweck und ersetzt diese Zustimmung nicht.
+
+`FamilyRecipeConsent` speichert eine versionierte Zustimmung pro Konto
+(ohne Konto separat fuer den Gastmodus) in SharedPreferences. Beide Methoden
+von `FamilyRecipeService` verweigern KI-Anfragen ohne passende Zustimmung und
+initialisierten Kontext fuer denselben Kontostand. Eine fehlgeschlagene
+Speicherbestaetigung aktiviert keine KI. Bei Ablehnung zeigt die Kueche
+ausdruecklich lokale Inspiration aus dem vorhandenen, lokal nach Allergien und
+Kindesalter gefilterten Rezeptbestand; die Gerichtsuche startet keine KI.
+Weder die Ablehnung noch ein lokales Rezept verbraucht KI-Anfragen.
+
+Die Kontotrennung der bisherigen globalen Dossiers, Einkaufslisten und To-dos
+ist ein eigener nachfolgender Audit-Fix; diese Einwilligung migriert keine Daten.
+
+Regressionen:
+
+```bash
+flutter test --no-pub test/family_recipe_consent_test.dart test/fallback_recipes_test.dart test/allergen_guard_test.dart test/localization_audit_verification_test.dart
+```
+
 ## Installation
 
 1. **Node.js installieren** (falls nicht vorhanden)

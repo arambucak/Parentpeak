@@ -1532,6 +1532,16 @@ class AppStringsManager {
           'Mach ein Foto von deinen Lebensmitteln – ich erkenne die Zutaten und schlage ein kindgerechtes Rezept vor.',
       'fridge_take_photo': 'Foto machen',
       'fridge_consent_title': 'Foto mit KI auswerten',
+      'recipe_ai_consent_title': 'Familien-Rezepte mit KI erstellen',
+      'recipe_ai_consent_body':
+          'Für KI-Rezepte werden das Kindesalter sowie die Allergie-Angaben aus deinen lokalen Kind-Dossiers und Kücheneinstellungen über unser Backend an den KI-Dienst (Google Gemini) gesendet. Bei einer Gerichtsuche wird auch dein Suchtext übertragen. Namen, Arzt- und Notfallangaben aus den Dossiers werden nicht automatisch übertragen. Ohne Zustimmung bleibt die Rezept-Inspiration lokal; es wird keine KI-Anfrage gesendet.',
+      'recipe_ai_consent_accept': 'Einverstanden, KI-Rezepte nutzen',
+      'recipe_ai_consent_failed':
+          'Die Zustimmung konnte nicht sicher gespeichert werden. Die KI bleibt ausgeschaltet.',
+      'recipe_ai_local_notice':
+          'Lokale Rezept-Inspiration: Keine Daten wurden an die KI gesendet.',
+      'recipe_ai_request_failed':
+          'Die Rezept-Erstellung konnte nicht gestartet werden. Bitte versuche es erneut.',
       'fridge_consent_body':
           'Für die Zutaten-Erkennung wird dein Foto an unseren KI-Dienst gesendet. Bitte achte darauf, dass keine Personen oder privaten Notizen darauf zu sehen sind. Auch die im Profil hinterlegten Allergien werden zur sicheren Rezept-Erstellung mitgenutzt. Das Foto wird nicht dauerhaft gespeichert.',
       'fridge_consent_accept': 'Einverstanden, Foto auswerten',
@@ -3590,6 +3600,16 @@ class AppStringsManager {
           'Take a photo of your food. I’ll identify the ingredients and suggest a child-friendly recipe.',
       'fridge_take_photo': 'Take photo',
       'fridge_consent_title': 'Analyze photo with AI',
+      'recipe_ai_consent_title': 'Create family recipes with AI',
+      'recipe_ai_consent_body':
+          'For AI recipes, your child’s age and allergy details from your local child dossiers and kitchen settings are sent through our backend to the AI service (Google Gemini). Recipe searches also send your search text. Names, doctor details and emergency contacts from dossiers are not automatically sent. Without consent, recipe inspiration stays local and no AI request is sent.',
+      'recipe_ai_consent_accept': 'Agree and use AI recipes',
+      'recipe_ai_consent_failed':
+          'Your consent could not be saved safely. AI remains switched off.',
+      'recipe_ai_local_notice':
+          'Local recipe inspiration: No data was sent to AI.',
+      'recipe_ai_request_failed':
+          'Recipe creation could not be started. Please try again.',
       'fridge_consent_body':
           'To detect ingredients, your photo is sent to our AI service. Please make sure no people or private notes are visible. The allergies saved in your profile are also used to create a safe recipe. The photo is not stored permanently.',
       'fridge_consent_accept': 'Agree and analyze photo',
@@ -12362,6 +12382,16 @@ class AppStringsManager {
           'Wêneyekî xwarinên xwe bikişîne — ez pêkhateyan nas dikim û rêçeteyeke guncaw ji bo zarokan pêşniyar dikim.',
       'fridge_take_photo': 'Wêne bikişîne',
       'fridge_consent_title': 'Wêne bi AI\'yê binirxîne',
+      'recipe_ai_consent_title': 'Reçeteyên malbatê bi AI çêbike',
+      'recipe_ai_consent_body':
+          'Ji bo reçeteyên AI, temenê zarok û agahiyên alerjiyê yên dosyeyên zarokan ên li ser cîhazê te û mîhengên metbexê, bi rêya servera me ji xizmeta AI (Google Gemini) re tên şandin. Di lêgerîna xwarinê de nivîsa lêgerîna te jî tê şandin. Nav, agahiyên doktor û têkiliyên acîl ên dosyeyan bi xwe nayên şandin. Bê razîbûn, pêşniyarên reçeteyan li ser cîhazê dimînin û daxwazek ji AI re nayê şandin.',
+      'recipe_ai_consent_accept': 'Razî me, reçeteyên AI bi kar bîne',
+      'recipe_ai_consent_failed':
+          'Razîbûna te bi ewlehî nehat tomarkirin. AI nayê çalakkirin.',
+      'recipe_ai_local_notice':
+          'Pêşniyara reçeteya li ser cîhazê: Tu agahî ji AI re nehat şandin.',
+      'recipe_ai_request_failed':
+          'Çêkirina reçeteyê dest pê nekir. Ji kerema xwe dîsa biceribîne.',
       'fridge_consent_body':
           'Ji bo naskirina pêkhateyan, wêneyê te ji xizmeta me ya AI\'yê re tê şandin. Ji kerema xwe bawer bike ku kes an notên taybet lê xuya nabin. Alerjiyên di profîla te de jî ji bo çêkirina reçeteyeke ewle têne bikaranîn. Wêne bi domdarî nayê tomarkirin.',
       'fridge_consent_accept': 'Razî me, wêne binirxîne',
@@ -18111,6 +18141,16 @@ class AppStringsManager {
           'Yiyeceklerinin fotoğrafını çek — malzemeleri tanıyıp çocuklara uygun bir tarif önereyim.',
       'fridge_take_photo': 'Fotoğraf çek',
       'fridge_consent_title': 'Fotoğrafı yapay zekâ ile analiz et',
+      'recipe_ai_consent_title': 'Yapay zekâ ile aile tarifleri oluştur',
+      'recipe_ai_consent_body':
+          'Yapay zekâ tarifleri için çocuğun yaşı ve yerel çocuk dosyaları ile mutfak ayarlarındaki alerji bilgileri sunucumuz üzerinden yapay zekâ hizmetine (Google Gemini) gönderilir. Yemek aramalarında arama metniniz de gönderilir. Dosyalardaki adlar, doktor bilgileri ve acil durum kişileri otomatik olarak gönderilmez. Onay vermezseniz tarif önerileri cihazınızda kalır ve yapay zekâ isteği gönderilmez.',
+      'recipe_ai_consent_accept': 'Onaylıyorum, yapay zekâ tariflerini kullan',
+      'recipe_ai_consent_failed':
+          'Onayınız güvenli şekilde kaydedilemedi. Yapay zekâ kapalı kalır.',
+      'recipe_ai_local_notice':
+          'Yerel tarif önerisi: Yapay zekâya veri gönderilmedi.',
+      'recipe_ai_request_failed':
+          'Tarif oluşturma başlatılamadı. Lütfen tekrar deneyin.',
       'fridge_consent_body':
           'Malzemeleri tanımak için fotoğrafın yapay zekâ hizmetimize gönderilir. Lütfen üzerinde kişiler veya özel notlar olmamasına dikkat et. Profilindeki alerjiler de güvenli bir tarif oluşturmak için kullanılır. Fotoğraf kalıcı olarak saklanmaz.',
       'fridge_consent_accept': 'Kabul ediyorum, fotoğrafı analiz et',

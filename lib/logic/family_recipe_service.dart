@@ -9,6 +9,7 @@ import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/logic/allergen_guard.dart';
 import 'package:parentpeak/logic/fallback_recipes.dart';
+import 'package:parentpeak/logic/family_recipe_consent.dart';
 
 /// KI-Rezept-Service — generiert kinderfreundliche Rezepte via Gemini.
 ///
@@ -18,8 +19,16 @@ import 'package:parentpeak/logic/fallback_recipes.dart';
 ///   - Generiert 1 Rezept pro Aufruf (schnell, fokussiert)
 ///   - Cached letzte 10 Rezepte lokal
 class FamilyRecipeService {
-  static final FamilyRecipeService instance = FamilyRecipeService._();
-  FamilyRecipeService._();
+  static final FamilyRecipeService instance = FamilyRecipeService();
+  FamilyRecipeService({
+    GeminiAIService? aiService,
+    FamilyRecipeConsent? consent,
+  }) : _aiService = aiService,
+       _consent = consent ?? FamilyRecipeConsent.instance;
+
+  final GeminiAIService? _aiService;
+  final FamilyRecipeConsent _consent;
+  String? _contextScope;
 
   static const _savedKey = 'familyküche.saved';
 
@@ -34,6 +43,8 @@ class FamilyRecipeService {
 
   /// Initialisiert den Service (lädt Profil-Daten + Cache).
   Future<void> initialize() async {
+    final scope = _consent.scope;
+    _contextScope = null;
     _childAge = 3;
     final profile = await FamilyMatchProfile.load();
     if (profile != null && profile.children.isNotEmpty) {
@@ -51,8 +62,7 @@ class FamilyRecipeService {
     _allergenKeys = AllergenGuard.allergensFromDossiers([
       // Legacy-Begriffe ebenfalls kanonisieren.
       ...legacy.map((a) => KindDossier(childName: '', allergies: [a])),
-    ])
-      ..addAll(dossierAllergies.map(AllergenGuard.canonicalAllergen));
+    ])..addAll(dossierAllergies.map(AllergenGuard.canonicalAllergen));
 
     // Gespeicherte Rezepte laden
     final savedRaw = prefs.getString(_savedKey);
@@ -63,6 +73,23 @@ class FamilyRecipeService {
             .toList();
       } catch (_) {}
     }
+    if (_consent.scope != scope) {
+      throw const RecipeAiConsentRequiredException();
+    }
+    _contextScope = scope;
+  }
+
+  String _requireContext() {
+    final scope = _contextScope;
+    if (scope == null || scope != _consent.scope) {
+      throw const RecipeAiConsentRequiredException();
+    }
+    return scope;
+  }
+
+  FamilyRecipe? localRecipe({String languageCode = 'de'}) {
+    _requireContext();
+    return _fallbackRecipe(languageCode: languageCode);
   }
 
   /// Sammelt die (rohen) Allergie-Begriffe aus allen Kind-Dossiers.
@@ -84,6 +111,8 @@ class FamilyRecipeService {
 
   /// Generiert ein neues Rezept via Gemini.
   Future<FamilyRecipe?> generateRecipe({String languageCode = 'de'}) async {
+    final requestScope = _requireContext();
+    await _consent.require(requestScope);
     // Rate limit check
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
@@ -98,13 +127,14 @@ class FamilyRecipeService {
     final ageText = _childAge < 1
         ? 'Baby (6-12 Monate, Brei/Fingerfood)'
         : _childAge < 3
-            ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
-            : _childAge < 6
-                ? 'Kita-Kind ($_childAge Jahre, normal)'
-                : 'Schulkind ($_childAge Jahre, alles)';
+        ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
+        : _childAge < 6
+        ? 'Kita-Kind ($_childAge Jahre, normal)'
+        : 'Schulkind ($_childAge Jahre, alles)';
     final outputLanguage = _outputLanguage(languageCode);
 
-    final prompt = '''
+    final prompt =
+        '''
 Generiere EIN kinderfreundliches Familien-Rezept auf $outputLanguage.
 
 Kontext:
@@ -144,14 +174,18 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     try {
       final modelName = APIConfig.getGeminiModelName();
       debugPrint(
-          'FamilyRecipeService: Verwende Backend-KI mit Modell=$modelName');
-
-      final raw = await GeminiAIService(modelName: modelName).generateText(
-        prompt,
-        systemInstruction:
-            'Du bist ein mehrsprachiger Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
-            'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+        'FamilyRecipeService: Verwende Backend-KI mit Modell=$modelName',
       );
+
+      await _consent.require(requestScope);
+      _requireContext();
+      final raw = await (_aiService ?? GeminiAIService(modelName: modelName))
+          .generateText(
+            prompt,
+            systemInstruction:
+                'Du bist ein mehrsprachiger Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
+                'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+          );
       await AIRateLimiter.recordRequest();
       debugPrint('FamilyRecipeService: Gemini Antwort (${raw.length} Zeichen)');
 
@@ -171,16 +205,21 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
           return recipe;
         }
         debugPrint(
-            'FamilyRecipeService: KI-Rezept unsicher (Allergen/Alter) → sicheres Fallback');
+          'FamilyRecipeService: KI-Rezept unsicher (Allergen/Alter) → sicheres Fallback',
+        );
         return _fallbackRecipe(languageCode: languageCode);
       }
       debugPrint(
-          'FamilyRecipeService: Parsing fehlgeschlagen, Antwort: ${raw.substring(0, raw.length.clamp(0, 200))}');
+        'FamilyRecipeService: Parsing fehlgeschlagen, Antwort: ${raw.substring(0, raw.length.clamp(0, 200))}',
+      );
       return _fallbackRecipe(languageCode: languageCode);
+    } on RecipeAiConsentRequiredException {
+      rethrow;
     } catch (e, stack) {
       debugPrint('FamilyRecipeService: KI-Fehler: $e');
       debugPrint(
-          'FamilyRecipeService: Stack: ${stack.toString().split('\n').take(3).join('\n')}');
+        'FamilyRecipeService: Stack: ${stack.toString().split('\n').take(3).join('\n')}',
+      );
       return _fallbackRecipe(languageCode: languageCode);
     }
   }
@@ -188,10 +227,14 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   /// Generiert ein kinderfreundliches Rezept zu einem GESUCHTEN Gericht
   /// (z. B. "Kartoffelsalat"). Wird als KI-Fallback genutzt, wenn die Community
   /// kein passendes Rezept hat.
-  Future<FamilyRecipe?> generateRecipeFor(String dish,
-      {String languageCode = 'de'}) async {
+  Future<FamilyRecipe?> generateRecipeFor(
+    String dish, {
+    String languageCode = 'de',
+  }) async {
     final wanted = dish.trim();
     if (wanted.isEmpty) return generateRecipe(languageCode: languageCode);
+    final requestScope = _requireContext();
+    await _consent.require(requestScope);
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('FamilyRecipeService: Rate limit reached (generateFor)');
@@ -204,13 +247,14 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     final ageText = _childAge < 1
         ? 'Baby (6-12 Monate, Brei/Fingerfood)'
         : _childAge < 3
-            ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
-            : _childAge < 6
-                ? 'Kita-Kind ($_childAge Jahre, normal)'
-                : 'Schulkind ($_childAge Jahre, alles)';
+        ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
+        : _childAge < 6
+        ? 'Kita-Kind ($_childAge Jahre, normal)'
+        : 'Schulkind ($_childAge Jahre, alles)';
     final outputLanguage = _outputLanguage(languageCode);
 
-    final prompt = '''
+    final prompt =
+        '''
 Erstelle EIN kinderfreundliches Familien-Rezept auf $outputLanguage für: "$wanted".
 
 Kontext:
@@ -246,15 +290,20 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
     try {
       final modelName = APIConfig.getGeminiModelName();
-      final raw = await GeminiAIService(modelName: modelName).generateText(
-        prompt,
-        systemInstruction:
-            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
-            'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
-      );
+      await _consent.require(requestScope);
+      _requireContext();
+      final raw = await (_aiService ?? GeminiAIService(modelName: modelName))
+          .generateText(
+            prompt,
+            systemInstruction:
+                'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
+                'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+          );
       await AIRateLimiter.recordRequest();
       if (raw.isEmpty) return null;
       return _parseRecipeStrict(raw);
+    } on RecipeAiConsentRequiredException {
+      rethrow;
     } catch (e) {
       debugPrint('FamilyRecipeService.generateRecipeFor: $e');
       return null;
@@ -291,7 +340,9 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-        _savedKey, jsonEncode(_savedRecipes.map((r) => r.toJson()).toList()));
+      _savedKey,
+      jsonEncode(_savedRecipes.map((r) => r.toJson()).toList()),
+    );
   }
 
   /// Entfernt ein gespeichertes Rezept.
@@ -299,7 +350,9 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     _savedRecipes.removeWhere((r) => r.id == id);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-        _savedKey, jsonEncode(_savedRecipes.map((r) => r.toJson()).toList()));
+      _savedKey,
+      jsonEncode(_savedRecipes.map((r) => r.toJson()).toList()),
+    );
   }
 
   /// Bewertet ein Rezept: Hat es den Kindern geschmeckt?
@@ -341,11 +394,11 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   /// Mappt einen Sprachcode auf die (deutsche) Bezeichnung für den KI-Prompt,
   /// damit Gemini in der aktiven App-Sprache antwortet.
   static String _outputLanguage(String languageCode) => switch (languageCode) {
-        'de' => 'Deutsch',
-        'tr' => 'Türkisch',
-        'ku' => 'Kurmandschi (lateinische Schrift)',
-        _ => 'Englisch',
-      };
+    'de' => 'Deutsch',
+    'tr' => 'Türkisch',
+    'ku' => 'Kurmandschi (lateinische Schrift)',
+    _ => 'Englisch',
+  };
 
   String _currentSeason() {
     final month = DateTime.now().month;
