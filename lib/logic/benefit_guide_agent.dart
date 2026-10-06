@@ -12,8 +12,8 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 /// Der "Familien-Leistungs-Wegweiser".
 ///
 /// Orientierungs- und Vorbereitungshelfer — KEINE Rechts- oder Finanzberatung.
-/// Nutzt die kuratierten [CountryFinanceConfig]-Daten als harte Faktenbasis und
-/// lässt Gemini nur personalisieren/erklären. Erfindet bewusst KEINE Beträge.
+/// Nutzt die teilweise verifizierten [CountryFinanceConfig]-Daten zur Orientierung.
+/// Gemini soll keine Beträge oder garantierten Ansprüche erfinden.
 class BenefitGuideAgent {
   BenefitGuideAgent({GeminiAIService? aiService, BenefitGuideConsent? consent})
     : _ai = aiService ?? GeminiAIService(modelName: _model),
@@ -96,7 +96,7 @@ class BenefitGuideAgent {
 Du bist ein einfühlsamer Familien-Leistungs-WEGWEISER für das Land: ${country.name} (${country.currency}).
 Du gibst ORIENTIERUNG, KEINE Rechts- oder Finanzberatung.
 
-KURATIERTE LEISTUNGEN (das ist deine WAHRHEIT — bevorzuge diese Fakten):
+KURATIERTE ORIENTIERUNG (nur teilweise amtlich verifiziert, keine vollständigen Anspruchsregeln; bei Unsicherheit zuständige Stelle nennen):
 ${jsonEncode(facts)}
 
 SITUATION DER FAMILIE (in eigenen Worten):

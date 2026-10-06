@@ -46,10 +46,10 @@ class SocialBenefit {
   final String id;
   final String name;
   final String description;
-  final String? amount; // z.B. "250€/Kind" oder "bis 292€"
+  final String? amount;
   final String? eligibility; // Kurze Beschreibung wer Anspruch hat
   final String? url; // Link zum offiziellen Rechner/Antrag
-  final BenefitStatus status; // Fuer alle, einkommenabhaengig, etc.
+  final BenefitStatus status; // Orientierung, keine Anspruchsgarantie.
 
   const SocialBenefit({
     required this.id,
@@ -63,7 +63,7 @@ class SocialBenefit {
 }
 
 enum BenefitStatus {
-  universal, // Jeder bekommt es (z.B. Kindergeld)
+  universal, // Allgemeine Leistung; individuelle Voraussetzungen gelten.
   incomeDependent, // Einkommensabhaengig
   checkRequired, // Muss individuell geprueft werden
 }
