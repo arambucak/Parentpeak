@@ -10,6 +10,7 @@ import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/logic/allergen_guard.dart';
 import 'package:parentpeak/logic/fallback_recipes.dart';
 import 'package:parentpeak/logic/family_recipe_consent.dart';
+import 'package:parentpeak/logic/family_hub_store.dart';
 
 /// KI-Rezept-Service — generiert kinderfreundliche Rezepte via Gemini.
 ///
@@ -55,7 +56,10 @@ class FamilyRecipeService {
     // laden. Der alte Key 'familyküche.allergies' wird zusätzlich gelesen,
     // falls dort je etwas gesetzt wurde — beides zusammengeführt.
     final prefs = await SharedPreferences.getInstance();
-    final legacy = prefs.getStringList('familyküche.allergies') ?? [];
+    final hub = await FamilyHubStore.instance.read(
+      expectedScope: FamilyHubStore.instance.scope,
+    );
+    final legacy = List<String>.from(hub[FamilyHubStore.allergyKey] as List? ?? []);
     final dossierAllergies = await _loadDossierAllergies();
     _allergies = {...dossierAllergies, ...legacy}.toList();
     // Kanonische Allergen-Keys für die clientseitige Rezept-Prüfung.
@@ -94,7 +98,6 @@ class FamilyRecipeService {
 
   /// Sammelt die (rohen) Allergie-Begriffe aus allen Kind-Dossiers.
   Future<List<String>> _loadDossierAllergies() async {
-    try {
       await KindDossierService.instance.load();
       final all = <String>{};
       for (final d in KindDossierService.instance.dossiers) {
@@ -104,9 +107,6 @@ class FamilyRecipeService {
         }
       }
       return all.toList();
-    } catch (_) {
-      return const [];
-    }
   }
 
   /// Generiert ein neues Rezept via Gemini.
@@ -186,6 +186,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
                 'Du bist ein mehrsprachiger Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
                 'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
           );
+          await _consent.require(requestScope);
       await AIRateLimiter.recordRequest();
       debugPrint('FamilyRecipeService: Gemini Antwort (${raw.length} Zeichen)');
 
@@ -299,6 +300,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
                 'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
                 'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
           );
+          await _consent.require(requestScope);
       await AIRateLimiter.recordRequest();
       if (raw.isEmpty) return null;
       return _parseRecipeStrict(raw);
@@ -384,9 +386,13 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
   /// Setzt Allergien (einmal im Profil).
   Future<void> setAllergies(List<String> allergies) async {
+    final scope = _requireContext();
+    await FamilyHubStore.instance.write(
+      {FamilyHubStore.allergyKey: allergies},
+      expectedScope: FamilyHubStore.instance.scope,
+    );
+    if (_consent.scope != scope) throw const RecipeAiConsentRequiredException();
     _allergies = allergies;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('familyküche.allergies', allergies);
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────

@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/family_hub_store.dart';
 
 /// Ein Einkaufslisten-Item mit Menge, Kategorie und Lerneffekt.
 class ShoppingItem {
@@ -165,8 +164,12 @@ class ShoppingItem {
 
 /// Persistenz-Service für die Einkaufsliste.
 class ShoppingListService {
-  static final ShoppingListService instance = ShoppingListService._();
-  ShoppingListService._();
+  static final ShoppingListService instance = ShoppingListService();
+  ShoppingListService({FamilyHubStore? store})
+      : _store = store ?? FamilyHubStore.instance;
+  final FamilyHubStore _store;
+  String? _loadedScope;
+  int _loadRevision = 0;
 
   static const _activeKey = 'shopping.active';
   static const _doneKey = 'shopping.done';
@@ -176,15 +179,50 @@ class ShoppingListService {
   List<ShoppingItem> _done = [];
   List<String> _frequent = [];
 
-  List<ShoppingItem> get activeItems => List.unmodifiable(_active);
-  List<ShoppingItem> get doneItems => List.unmodifiable(_done);
-  List<String> get frequentItems => List.unmodifiable(_frequent);
+  void _clearIfChanged() {
+    if (_loadedScope == _store.scope) return;
+    _active = [];
+    _done = [];
+    _frequent = [];
+  }
+
+  String _requireLoaded() {
+    final scope = _loadedScope;
+    if (scope == null) throw StateError('Load account shopping before editing');
+    _store.requireScope(scope);
+    return scope;
+  }
+
+  List<ShoppingItem> get activeItems {
+    _clearIfChanged();
+    return List.unmodifiable(_active);
+  }
+  List<ShoppingItem> get doneItems {
+    _clearIfChanged();
+    return List.unmodifiable(_done);
+  }
+  List<String> get frequentItems {
+    _clearIfChanged();
+    return List.unmodifiable(_frequent);
+  }
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    _active = _loadList(prefs, _activeKey);
-    _done = _loadList(prefs, _doneKey);
-    _frequent = prefs.getStringList(_frequentKey) ?? [];
+    final scope = _store.scope;
+    final revision = ++_loadRevision;
+    _active = [];
+    _done = [];
+    _frequent = [];
+    _loadedScope = null;
+    final data = await _store.read(expectedScope: scope);
+    final active = _loadList(data, _activeKey);
+    final done = _loadList(data, _doneKey);
+    final frequent = List<String>.from(data[_frequentKey] as List? ?? []);
+    _store.requireScope(scope);
+    if (revision != _loadRevision) throw const FamilyHubAccountChanged();
+    _active = active;
+    _done = done;
+    _frequent = frequent;
+    _loadedScope = scope;
     // Erledigt-Items aelter als 7 Tage entfernen
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
     _done.removeWhere(
@@ -192,12 +230,14 @@ class ShoppingListService {
   }
 
   Future<void> addItem(ShoppingItem item) async {
+    _requireLoaded();
     _active.insert(0, item);
     _trackFrequent(item.name);
     await _persist();
   }
 
   Future<void> addItemsFromRecipe(List<String> ingredients) async {
+    _requireLoaded();
     for (final ing in ingredients) {
       // Duplikat-Check: nicht hinzufuegen wenn Name schon auf der Liste
       final parsed = ShoppingItem.fromInput(ing);
@@ -214,7 +254,7 @@ class ShoppingListService {
   /// Prueft ob ein Item (nach Name) schon auf der aktiven Liste steht.
   bool isAlreadyOnList(String name) {
     final lower = name.toLowerCase().trim();
-    return _active.any((a) => a.name.toLowerCase().trim() == lower);
+    return activeItems.any((a) => a.name.toLowerCase().trim() == lower);
   }
 
   /// Basis-Zutaten die fast jeder zuhause hat.
@@ -246,6 +286,7 @@ class ShoppingListService {
   }
 
   Future<void> toggleDone(String id) async {
+    _requireLoaded();
     final idx = _active.indexWhere((i) => i.id == id);
     if (idx != -1) {
       final item = _active.removeAt(idx);
@@ -261,6 +302,7 @@ class ShoppingListService {
   }
 
   Future<void> removeItem(String id) async {
+    _requireLoaded();
     _active.removeWhere((i) => i.id == id);
     _done.removeWhere((i) => i.id == id);
     await _persist();
@@ -275,23 +317,17 @@ class ShoppingListService {
   }
 
   Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-        _activeKey, jsonEncode(_active.map((i) => i.toJson()).toList()));
-    await prefs.setString(
-        _doneKey, jsonEncode(_done.map((i) => i.toJson()).toList()));
-    await prefs.setStringList(_frequentKey, _frequent);
+    final scope = _requireLoaded();
+    await _store.write({
+      _activeKey: _active.map((i) => i.toJson()).toList(),
+      _doneKey: _done.map((i) => i.toJson()).toList(),
+      _frequentKey: _frequent,
+    }, expectedScope: scope);
   }
 
-  List<ShoppingItem> _loadList(SharedPreferences prefs, String key) {
-    final raw = prefs.getString(key);
-    if (raw == null || raw.isEmpty) return [];
-    try {
-      return (jsonDecode(raw) as List)
-          .map((e) => ShoppingItem.fromJson(e))
-          .toList();
-    } catch (_) {
-      return [];
-    }
+  List<ShoppingItem> _loadList(Map<String, dynamic> data, String key) {
+    return (data[key] as List? ?? [])
+        .map((e) => ShoppingItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 }

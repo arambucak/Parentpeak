@@ -16,6 +16,7 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
 import 'package:parentpeak/ui/widgets/family_recipe_consent_dialog.dart';
+import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 
 /// Phase 3a: Familien-Rezepte teilen.
 ///
@@ -23,17 +24,28 @@ import 'package:parentpeak/ui/widgets/family_recipe_consent_dialog.dart';
 /// Rezepte von verbundenen Freunden entdecken. Suche nach Gericht oder Zutat,
 /// schnelle Filter und herzliche Reaktionen ("Das kochen wir nach!" /
 /// "Hat geschmeckt!").
-class FamilyRecipesScreen extends StatefulWidget {
+class FamilyRecipesScreen extends StatelessWidget {
   /// Optionaler vorausgefüllter Suchbegriff (z. B. vom Küchen-Hauptscreen).
   final String? initialQuery;
 
   const FamilyRecipesScreen({super.key, this.initialQuery});
 
   @override
-  State<FamilyRecipesScreen> createState() => _FamilyRecipesScreenState();
+  Widget build(BuildContext context) => FamilyHubAccountBoundary(
+    builder: (_) => _ScopedFamilyRecipesScreen(initialQuery: initialQuery),
+  );
 }
 
-class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
+class _ScopedFamilyRecipesScreen extends StatefulWidget {
+  const _ScopedFamilyRecipesScreen({this.initialQuery});
+  final String? initialQuery;
+
+  @override
+  State<_ScopedFamilyRecipesScreen> createState() =>
+      _FamilyRecipesScreenState();
+}
+
+class _FamilyRecipesScreenState extends State<_ScopedFamilyRecipesScreen> {
   static const _accent = Color(0xFFE8543A);
 
   String _t(String key) => AppLocalizations.of(context).t(key);
@@ -103,10 +115,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
 
   // Schnell-Filter: Label -> Suchbegriff, der an die Server-Suche geht.
   Map<String, String> get _filters => {
-        _filterLabel('quick', 'Schnell (< 20 Min)'): 'schnell',
-        _filterLabel('vegetarian', 'Vegetarisch'): 'vegetarisch',
-        _filterLabel('blw', 'BLW / Beikost'): 'blw',
-      };
+    _filterLabel('quick', 'Schnell (< 20 Min)'): 'schnell',
+    _filterLabel('vegetarian', 'Vegetarisch'): 'vegetarisch',
+    _filterLabel('blw', 'BLW / Beikost'): 'blw',
+  };
 
   @override
   void initState() {
@@ -129,10 +141,13 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     // Wenn ein Filter aktiv ist, fliesst dessen Begriff mit in die Suche.
-    final filterTerm =
-        _activeFilter != null ? (_filters[_activeFilter] ?? '') : '';
-    final effectiveQuery =
-        [_query, filterTerm].where((s) => s.trim().isNotEmpty).join(' ');
+    final filterTerm = _activeFilter != null
+        ? (_filters[_activeFilter] ?? '')
+        : '';
+    final effectiveQuery = [
+      _query,
+      filterTerm,
+    ].where((s) => s.trim().isNotEmpty).join(' ');
     final list = await _service.loadRecipes(query: effectiveQuery);
     if (!mounted) return;
     setState(() {
@@ -163,30 +178,38 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         _generatingAi = false;
       });
       if (recipe == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text('Ich konnte gerade kein Rezept erstellen. Bitte versuche es '
-                  'gleich noch einmal.'),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Ich konnte gerade kein Rezept erstellen. Bitte versuche es '
+              'gleich noch einmal.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } on AiRateLimitException catch (e) {
       if (!mounted) return;
       setState(() => _generatingAi = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.message),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 5),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _generatingAi = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
             'Ich konnte gerade kein Rezept erstellen. Bitte versuche es gleich '
-            'noch einmal.'),
-        behavior: SnackBarBehavior.floating,
-      ));
+            'noch einmal.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -208,11 +231,13 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         _aiShared = created != null;
       });
       if (created != null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Rezept mit deinen Freunden geteilt. 🍳'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Color(0xFF16A34A),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rezept mit deinen Freunden geteilt. 🍳'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Color(0xFF16A34A),
+          ),
+        );
         _load();
       }
     } on SuspendedAccountException {
@@ -259,16 +284,21 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(_t('family_recipe_delete_title')),
-        content: Text(_t('family_recipe_delete_confirm')
-            .replaceAll('{title}', recipe.title)),
+        content: Text(
+          _t(
+            'family_recipe_delete_confirm',
+          ).replaceAll('{title}', recipe.title),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(_t('cancel'))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('cancel')),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: FilledButton.styleFrom(backgroundColor: _accent),
-              child: Text(_t('delete_action'))),
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: _accent),
+            child: Text(_t('delete_action')),
+          ),
         ],
       ),
     );
@@ -276,10 +306,12 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
     final ok = await _service.deleteRecipe(recipe.id);
     if (ok && mounted) {
       setState(() => _recipes.removeWhere((r) => r.id == recipe.id));
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_t('family_recipe_deleted')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_t('family_recipe_deleted')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -317,13 +349,12 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _recipes.isEmpty
-                      ? _emptyState(theme)
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                          itemCount: _recipes.length,
-                          itemBuilder: (_, i) =>
-                              _recipeCard(theme, _recipes[i]),
-                        ),
+                  ? _emptyState(theme)
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                      itemCount: _recipes.length,
+                      itemBuilder: (_, i) => _recipeCard(theme, _recipes[i]),
+                    ),
             ),
           ),
         ],
@@ -342,8 +373,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
             onChanged: _onSearchChanged,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: _recipeCopy('search',
-                  'Wonach ist euch heute? (z. B. Kartoffelsalat, Nudeln)'),
+              hintText: _recipeCopy(
+                'search',
+                'Wonach ist euch heute? (z. B. Kartoffelsalat, Nudeln)',
+              ),
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
@@ -361,8 +394,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               isDense: true,
             ),
           ),
@@ -387,8 +422,9 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                       fontSize: 12,
                     ),
                     side: BorderSide(
-                      color:
-                          active ? _accent : theme.colorScheme.outlineVariant,
+                      color: active
+                          ? _accent
+                          : theme.colorScheme.outlineVariant,
                     ),
                     backgroundColor: theme.colorScheme.surface,
                   ),
@@ -407,18 +443,22 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
       children: [
         const SizedBox(height: 24),
-        Icon(Icons.restaurant_menu_rounded,
-            size: 52, color: theme.colorScheme.outline),
+        Icon(
+          Icons.restaurant_menu_rounded,
+          size: 52,
+          color: theme.colorScheme.outline,
+        ),
         const SizedBox(height: 16),
         Text(
           hasQuery
               ? 'Noch kein Community-Rezept für „$_query“.'
               : (_activeFilter != null
-                  ? 'Noch kein passendes Rezept gefunden.'
-                  : 'Noch keine Rezepte.'),
+                    ? 'Noch kein passendes Rezept gefunden.'
+                    : 'Noch keine Rezepte.'),
           textAlign: TextAlign.center,
-          style:
-              theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 16),
         // KI-Fallback: Blitz-Rezept auf Knopfdruck (nur bei aktiver Suche).
@@ -431,8 +471,9 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
             child: Text(
               'Teile dein erstes Familien-Rezept – ein Tap unten rechts genügt.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -473,16 +514,22 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.auto_awesome_rounded),
-              label: Text(_generatingAi
-                  ? _recipeCopy('magic', 'Zaubere …')
-                  : _recipeCopy('magic', 'Blitz-Rezept zaubern')),
+              label: Text(
+                _generatingAi
+                    ? _recipeCopy('magic', 'Zaubere …')
+                    : _recipeCopy('magic', 'Blitz-Rezept zaubern'),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: _accent,
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ),
@@ -503,103 +550,153 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            const Text('✨', style: TextStyle(fontSize: 18)),
-            const SizedBox(width: 6),
-            Text(_recipeCopy('ai_recipe', 'KI-Blitz-Rezept'),
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(fontWeight: FontWeight.w700, color: _accent)),
-          ]),
+          Row(
+            children: [
+              const Text('✨', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
+              Text(
+                _recipeCopy('ai_recipe', 'KI-Blitz-Rezept'),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: _accent,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
-          Text(r.title,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            r.title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           if (r.description.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(r.description,
-                style: theme.textTheme.bodySmall?.copyWith(height: 1.4)),
+            Text(
+              r.description,
+              style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+            ),
           ],
-          Row(children: [
-            Icon(Icons.schedule_rounded,
-                size: 13, color: theme.colorScheme.outline),
-            const SizedBox(width: 4),
-            Text(
-                context
-                    .tr('kitchen_minutes', values: {'minutes': r.prepMinutes}),
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
-            const SizedBox(width: 12),
-            Icon(Icons.child_care_rounded,
-                size: 13, color: theme.colorScheme.outline),
-            const SizedBox(width: 4),
-            Text(
+          Row(
+            children: [
+              Icon(
+                Icons.schedule_rounded,
+                size: 13,
+                color: theme.colorScheme.outline,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                context.tr(
+                  'kitchen_minutes',
+                  values: {'minutes': r.prepMinutes},
+                ),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.child_care_rounded,
+                size: 13,
+                color: theme.colorScheme.outline,
+              ),
+              const SizedBox(width: 4),
+              Text(
                 r.minChildAge == 0
                     ? context.tr('kitchen_age_months')
-                    : context.tr('kitchen_age_years',
-                        values: {'age': r.minChildAge}),
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
-          ]),
+                    : context.tr(
+                        'kitchen_age_years',
+                        values: {'age': r.minChildAge},
+                      ),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ],
+          ),
           if (r.ingredients.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(_recipeCopy('ingredients', 'Zutaten'),
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              _recipeCopy('ingredients', 'Zutaten'),
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 4),
-            ...r.ingredients.map((ing) => Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('• '),
-                        Expanded(
-                            child: Text(ing, style: theme.textTheme.bodySmall)),
-                      ]),
-                )),
+            ...r.ingredients.map(
+              (ing) => Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('• '),
+                    Expanded(
+                      child: Text(ing, style: theme.textTheme.bodySmall),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
           if (r.steps.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(_recipeCopy('preparation', 'Zubereitung'),
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              _recipeCopy('preparation', 'Zubereitung'),
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 4),
             ...List.generate(
-                r.steps.length,
-                (i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${i + 1}. ',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: _accent)),
-                            Expanded(
-                                child: Text(r.steps[i],
-                                    style: theme.textTheme.bodySmall
-                                        ?.copyWith(height: 1.4))),
-                          ]),
-                    )),
+              r.steps.length,
+              (i) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${i + 1}. ',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: _accent,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        r.steps[i],
+                        style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed:
-                  _generatingAi || _aiShared ? null : () => _shareAiRecipe(r),
+              onPressed: _generatingAi || _aiShared
+                  ? null
+                  : () => _shareAiRecipe(r),
               icon: Icon(
-                  _aiShared ? Icons.check_rounded : Icons.bookmark_add_rounded),
-              label: Text(_aiShared
-                  ? 'In Familien-Rezepten gespeichert'
-                  : 'In Familien-Rezepten teilen'),
+                _aiShared ? Icons.check_rounded : Icons.bookmark_add_rounded,
+              ),
+              label: Text(
+                _aiShared
+                    ? 'In Familien-Rezepten gespeichert'
+                    : 'In Familien-Rezepten teilen',
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: _aiShared ? const Color(0xFF16A34A) : _accent,
-                disabledBackgroundColor:
-                    _aiShared ? const Color(0xFF16A34A) : null,
+                disabledBackgroundColor: _aiShared
+                    ? const Color(0xFF16A34A)
+                    : null,
                 disabledForegroundColor: _aiShared ? Colors.white : null,
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ),
@@ -615,7 +712,8 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -629,8 +727,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   color: theme.colorScheme.surfaceContainerHighest,
-                  child: Icon(Icons.image_not_supported_rounded,
-                      color: theme.colorScheme.outline),
+                  child: Icon(
+                    Icons.image_not_supported_rounded,
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
               ),
             ),
@@ -642,14 +742,19 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(r.title,
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w800)),
+                      child: Text(
+                        r.title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                     if (r.isMine)
                       IconButton(
-                        icon: Icon(Icons.more_vert_rounded,
-                            color: theme.colorScheme.outline),
+                        icon: Icon(
+                          Icons.more_vert_rounded,
+                          color: theme.colorScheme.outline,
+                        ),
                         onPressed: () => _showOwnerMenu(r),
                         tooltip: context.tr('tooltip_options'),
                       ),
@@ -665,62 +770,82 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                             ? r.authorName[0].toUpperCase()
                             : '?',
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700),
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
-                        r.isMine
-                            ? _recipeCopy('from_you', 'Von dir')
-                            : r.authorName,
-                        style: theme.textTheme.labelSmall
-                            ?.copyWith(color: theme.colorScheme.outline)),
+                      r.isMine
+                          ? _recipeCopy('from_you', 'Von dir')
+                          : r.authorName,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
                     if (r.prepMinutes > 0) ...[
                       const SizedBox(width: 10),
-                      Icon(Icons.schedule_rounded,
-                          size: 13, color: theme.colorScheme.outline),
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 13,
+                        color: theme.colorScheme.outline,
+                      ),
                       const SizedBox(width: 3),
-                      Text('${r.prepMinutes} Min',
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: theme.colorScheme.outline)),
+                      Text(
+                        '${r.prepMinutes} Min',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
                     ],
                   ],
                 ),
                 if (r.description.isNotEmpty) ...[
                   const SizedBox(height: 10),
-                  Text(r.description,
-                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.4)),
+                  Text(
+                    r.description,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                  ),
                 ],
                 if (r.ingredients.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text(_recipeCopy('ingredients', 'Zutaten'),
-                      style: theme.textTheme.labelMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    _recipeCopy('ingredients', 'Zutaten'),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
                     children: r.ingredients
-                        .map((ing) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child:
-                                  Text(ing, style: theme.textTheme.labelSmall),
-                            ))
+                        .map(
+                          (ing) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(ing, style: theme.textTheme.labelSmall),
+                          ),
+                        )
                         .toList(),
                   ),
                 ],
                 if (r.steps.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text(_recipeCopy('preparation', 'Zubereitung'),
-                      style: theme.textTheme.labelMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    _recipeCopy('preparation', 'Zubereitung'),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   ...List.generate(r.steps.length, (i) {
                     return Padding(
@@ -728,13 +853,21 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${i + 1}. ',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w700, color: _accent)),
+                          Text(
+                            '${i + 1}. ',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: _accent,
+                            ),
+                          ),
                           Expanded(
-                              child: Text(r.steps[i],
-                                  style: theme.textTheme.bodySmall
-                                      ?.copyWith(height: 1.4))),
+                            child: Text(
+                              r.steps[i],
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -795,8 +928,10 @@ class _FamilyRecipesScreenState extends State<FamilyRecipesScreen> {
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             child: Column(
               children: [
-                Text('$emoji ${count > 0 ? count : ''}'.trim(),
-                    style: const TextStyle(fontSize: 14)),
+                Text(
+                  '$emoji ${count > 0 ? count : ''}'.trim(),
+                  style: const TextStyle(fontSize: 14),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   label,
@@ -896,10 +1031,12 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
       if (img != null && mounted) setState(() => _photo = img);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_t('family_recipe_photo_pick_failed')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_t('family_recipe_photo_pick_failed')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -910,10 +1047,12 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
   Future<void> _save() async {
     final title = _titleCtrl.text.trim();
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_t('family_recipe_name_required')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_t('family_recipe_name_required')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
     setState(() => _saving = true);
@@ -935,17 +1074,21 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
       if (!mounted) return;
       if (recipe != null) {
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_t('family_recipe_share_success')),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF16A34A),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_t('family_recipe_share_success')),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF16A34A),
+          ),
+        );
       } else {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_t('family_recipe_save_failed')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_t('family_recipe_save_failed')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } on SuspendedAccountException {
       if (mounted) {
@@ -955,10 +1098,12 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
     } catch (_) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_t('family_recipe_save_failed')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_t('family_recipe_save_failed')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -967,8 +1112,9 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         decoration: BoxDecoration(
@@ -991,9 +1137,12 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                 ),
               ),
               const SizedBox(height: 18),
-              Text(_t('family_recipe_share_title'),
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800)),
+              Text(
+                _t('family_recipe_share_title'),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Foto
@@ -1007,8 +1156,10 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                     color: theme.colorScheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.6)),
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.6,
+                      ),
+                    ),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: _photo != null
@@ -1021,54 +1172,84 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_a_photo_rounded,
-                                size: 30, color: theme.colorScheme.outline),
+                            Icon(
+                              Icons.add_a_photo_rounded,
+                              size: 30,
+                              color: theme.colorScheme.outline,
+                            ),
                             const SizedBox(height: 8),
-                            Text(_t('family_recipe_photo_optional'),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.outline)),
+                            Text(
+                              _t('family_recipe_photo_optional'),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
                           ],
                         ),
                 ),
               ),
               const SizedBox(height: 16),
 
-              _field(_titleCtrl, _t('family_recipe_name_label'),
-                  hint: _t('family_recipe_name_hint')),
+              _field(
+                _titleCtrl,
+                _t('family_recipe_name_label'),
+                hint: _t('family_recipe_name_hint'),
+              ),
               const SizedBox(height: 12),
-              _field(_descCtrl, _t('family_recipe_description_label'),
-                  hint: _t('family_recipe_description_hint'), maxLines: 2),
+              _field(
+                _descCtrl,
+                _t('family_recipe_description_label'),
+                hint: _t('family_recipe_description_hint'),
+                maxLines: 2,
+              ),
               const SizedBox(height: 12),
-              _field(_ingredientsCtrl, _t('family_recipe_ingredients_label'),
-                  hint: _t('family_recipe_ingredients_hint'), maxLines: 4),
+              _field(
+                _ingredientsCtrl,
+                _t('family_recipe_ingredients_label'),
+                hint: _t('family_recipe_ingredients_hint'),
+                maxLines: 4,
+              ),
               const SizedBox(height: 12),
-              _field(_stepsCtrl, _t('family_recipe_steps_label'),
-                  hint: _t('family_recipe_steps_hint'), maxLines: 4),
+              _field(
+                _stepsCtrl,
+                _t('family_recipe_steps_label'),
+                hint: _t('family_recipe_steps_hint'),
+                maxLines: 4,
+              ),
               const SizedBox(height: 12),
-              _field(_minutesCtrl, _t('family_recipe_minutes_label'),
-                  hint: _t('family_recipe_minutes_hint'),
-                  keyboardType: TextInputType.number),
+              _field(
+                _minutesCtrl,
+                _t('family_recipe_minutes_label'),
+                hint: _t('family_recipe_minutes_hint'),
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 18),
 
-              Text(_t('family_recipe_visibility_title'),
-                  style: theme.textTheme.labelLarge
-                      ?.copyWith(fontWeight: FontWeight.w700)),
+              Text(
+                _t('family_recipe_visibility_title'),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 8),
               _visibilityOption(
-                  'friends',
-                  _t('family_recipe_visibility_friends'),
-                  _t('family_recipe_visibility_friends_hint'),
-                  Icons.group_rounded),
+                'friends',
+                _t('family_recipe_visibility_friends'),
+                _t('family_recipe_visibility_friends_hint'),
+                Icons.group_rounded,
+              ),
               _visibilityOption(
-                  'public',
-                  _t('family_recipe_visibility_public'),
-                  _t('family_recipe_visibility_public_hint'),
-                  Icons.public_rounded),
+                'public',
+                _t('family_recipe_visibility_public'),
+                _t('family_recipe_visibility_public_hint'),
+                Icons.public_rounded,
+              ),
               _visibilityOption(
-                  'private',
-                  _t('family_recipe_visibility_private'),
-                  _t('family_recipe_visibility_private_hint'),
-                  Icons.lock_outline_rounded),
+                'private',
+                _t('family_recipe_visibility_private'),
+                _t('family_recipe_visibility_private_hint'),
+                Icons.lock_outline_rounded,
+              ),
               const SizedBox(height: 20),
 
               SizedBox(
@@ -1079,17 +1260,25 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
                     backgroundColor: _accent,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   child: _saving
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : Text(_t('family_recipe_share_action'),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _t('family_recipe_share_action'),
                           style: const TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 15)),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -1099,8 +1288,13 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label,
-      {String? hint, int maxLines = 1, TextInputType? keyboardType}) {
+  Widget _field(
+    TextEditingController ctrl,
+    String label, {
+    String? hint,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+  }) {
     final theme = Theme.of(context);
     return TextField(
       controller: ctrl,
@@ -1124,7 +1318,11 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
   }
 
   Widget _visibilityOption(
-      String value, String title, String subtitle, IconData icon) {
+    String value,
+    String title,
+    String subtitle,
+    IconData icon,
+  ) {
     final theme = Theme.of(context);
     final active = _visibility == value;
     return Padding(
@@ -1141,21 +1339,29 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
-                Icon(icon,
-                    color: active ? _accent : theme.colorScheme.outline,
-                    size: 22),
+                Icon(
+                  icon,
+                  color: active ? _accent : theme.colorScheme.outline,
+                  size: 22,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: active ? _accent : null)),
-                      Text(subtitle,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        title,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: active ? _accent : null,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),

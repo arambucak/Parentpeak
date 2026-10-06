@@ -10,18 +10,30 @@ import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/widgets/family_recipe_consent_dialog.dart';
+import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
+import 'package:parentpeak/logic/family_hub_store.dart';
 
 /// Familien-Küche — 1-Tap Rezept-Inspiration + Eltern-Tipps.
 ///
 /// Kein Formular, kein Tippen. App oeffnen → sofort Vorschlag sehen.
-class FamilienKuecheScreen extends StatefulWidget {
+class FamilienKuecheScreen extends StatelessWidget {
   const FamilienKuecheScreen({super.key});
 
   @override
-  State<FamilienKuecheScreen> createState() => _FamilienKuecheScreenState();
+  Widget build(BuildContext context) => FamilyHubAccountBoundary(
+        builder: (_) => const _ScopedFamilienKuecheScreen(),
+      );
 }
 
-class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
+class _ScopedFamilienKuecheScreen extends StatefulWidget {
+  const _ScopedFamilienKuecheScreen();
+
+  @override
+  State<_ScopedFamilienKuecheScreen> createState() => _FamilienKuecheScreenState();
+}
+
+class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
+  final _scope = FamilyHubStore.instance.scope;
   final _service = FamilyRecipeService.instance;
   final _searchCtrl = TextEditingController();
   FamilyRecipe? _currentRecipe;
@@ -1056,11 +1068,14 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
 
   // ─── Zutaten-Auswahl für Einkaufsliste ───────────────────────────────────
 
-  void _showIngredientPicker(BuildContext context) {
+  void _showIngredientPicker(BuildContext context) async {
     if (_currentRecipe == null) return;
     final recipe = _currentRecipe!;
     final theme = Theme.of(context);
     final shopping = ShoppingListService.instance;
+    await shopping.load();
+    if (!context.mounted || !mounted) return;
+    FamilyHubStore.instance.requireScope(_scope);
 
     // Fuer jedes Item: ist es ein Basis-Item? Ist es schon auf der Liste?
     final selections = recipe.ingredients.map((ing) {
@@ -1080,12 +1095,16 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _IngredientPickerSheet(
+      builder: (ctx) => FamilyHubAccountModal(
+        expectedScope: _scope,
+        builder: (ctx) => _IngredientPickerSheet(
         selections: selections,
         theme: theme,
         onConfirm: (selected) async {
           try {
+            FamilyHubStore.instance.requireScope(_scope);
             await shopping.load();
+            FamilyHubStore.instance.requireScope(_scope);
             await shopping.addItemsFromRecipe(selected);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1103,6 +1122,7 @@ class _FamilienKuecheScreenState extends State<FamilienKuecheScreen> {
             }
           }
         },
+        ),
       ),
     );
   }

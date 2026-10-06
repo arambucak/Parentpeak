@@ -9,6 +9,7 @@ import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
+import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 
 /// Extrahiert ein JSON-Objekt aus einer KI-Antwort. Preview-Modelle liefern
 /// die JSON oft in ```json … ``` Codefences oder mit umgebendem Text — ein
@@ -80,14 +81,23 @@ String ritualStepCopy(String language, String text) {
   return steps[text] ?? text;
 }
 
-class RitualRuheScreen extends StatefulWidget {
+class RitualRuheScreen extends StatelessWidget {
   const RitualRuheScreen({super.key});
 
   @override
-  State<RitualRuheScreen> createState() => _RitualRuheScreenState();
+  Widget build(BuildContext context) => FamilyHubAccountBoundary(
+        builder: (_) => const _ScopedRitualRuheScreen(),
+      );
 }
 
-class _RitualRuheScreenState extends State<RitualRuheScreen> {
+class _ScopedRitualRuheScreen extends StatefulWidget {
+  const _ScopedRitualRuheScreen();
+
+  @override
+  State<_ScopedRitualRuheScreen> createState() => _RitualRuheScreenState();
+}
+
+class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
   String get _localeCode => Localizations.localeOf(context).languageCode;
   String _t(String key) => AppStringsManager.getString(_localeCode, key);
   static const _quietModeKey = 'ritual_ruhe.quiet_mode';
@@ -98,6 +108,7 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
   Set<String> _completed = <String>{};
   bool _quietMode = false;
   bool _loading = true;
+  bool _loadError = false;
   bool _storyLoading = false;
   String? _story;
   String? _ageNotice;
@@ -153,8 +164,24 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
   }
 
   Future<void> _load() async {
+    try {
+      await _loadForAccount();
+    } catch (error) {
+      debugPrint('RitualRuhe dossier load: $error');
+      if (!mounted) return;
+      setState(() {
+        _children = [];
+        _loading = false;
+        _loadError = true;
+      });
+    }
+  }
+
+  Future<void> _loadForAccount() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     await KindDossierService.instance.load();
+    if (!mounted) return;
     var children = KindDossierService.instance.dossiers;
     if (children.isEmpty) {
       final profile = await FamilyMatchProfile.load();
@@ -564,6 +591,8 @@ class _RitualRuheScreenState extends State<RitualRuheScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
+          : _loadError
+              ? Center(child: Text(_t('family_hub_load_error')))
           : child == null
               ? _EmptyChildState(onOpenProfile: () => Navigator.pop(context))
               : ListView(
