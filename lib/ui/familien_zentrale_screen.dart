@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:parentpeak/logic/family_hub_store.dart';
 import 'package:parentpeak/logic/family_hub_migration.dart';
+import 'package:parentpeak/logic/family_hub_todos.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
@@ -41,6 +42,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
   bool _loadError = false;
   int _activeTabIndex = 0;
   final _store = FamilyHubStore.instance;
+  final _todoService = FamilyHubTodos();
   late final String _scope = _store.scope;
   bool _hasLegacy = false;
 
@@ -106,18 +108,32 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
 
   Future<void> _loadTodos() async {
     _todos = [];
-    final data = await _store.read(expectedScope: _scope);
-    _todos = (data[FamilyHubStore.todoKey] as List? ?? [])
-        .map((entry) => Map<String, dynamic>.from(entry as Map))
-        .toList();
+    _todos = await _todoService.load(_scope);
   }
 
-  Future<void> _saveTodos() async {
+  Future<bool> _performWrite(Future<void> Function() operation) async {
     try {
-      await _store.write({FamilyHubStore.todoKey: _todos}, expectedScope: _scope);
-    } catch (e) {
-      debugPrint('FamilienZentrale._saveTodos() Fehler: $e');
+      _store.requireScope(_scope);
+      await operation();
+      _store.requireScope(_scope);
+      if (!mounted) return false;
+      setState(() {});
+      return true;
+    } catch (error) {
+      debugPrint('FamilienZentrale write failed: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('family_hub_save_error'))),
+        );
+      }
+      return false;
     }
+  }
+
+  Future<void> _replaceTodos(Future<List<Map<String, dynamic>>> result) async {
+    final todos = await result;
+    _store.requireScope(_scope);
+    if (mounted) _todos = todos;
   }
 
     Future<void> _claimLegacy() async {
@@ -371,9 +387,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
                   return ActionChip(
                     label: Text(name, style: const TextStyle(fontSize: 11)),
                     onPressed: () async {
-                      _store.requireScope(_scope);
-                      await _shopping.addItem(ShoppingItem.fromInput(name));
-                      setState(() {});
+                      await _performWrite(() => _shopping.addItem(ShoppingItem.fromInput(name)));
                     },
                     avatar: const Icon(Icons.add_rounded, size: 14),
                     visualDensity: VisualDensity.compact,
@@ -474,9 +488,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
             dense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 4),
             onTap: () async {
-              _store.requireScope(_scope);
-              await _shopping.toggleDone(item.id);
-              setState(() {});
+              await _performWrite(() => _shopping.toggleDone(item.id));
             },
             leading: Container(
               width: 28,
@@ -522,9 +534,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () async {
-                  _store.requireScope(_scope);
-                  await _shopping.removeItem(item.id);
-                  setState(() {});
+                  await _performWrite(() => _shopping.removeItem(item.id));
                 },
                 child: Icon(Icons.close_rounded,
                     size: 16, color: theme.colorScheme.outline),
@@ -538,11 +548,9 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
     final text = _inputCtrl.text.trim();
     if (text.isEmpty) return;
     final item = ShoppingItem.fromInput(text);
-    _store.requireScope(_scope);
-    await _shopping.addItem(item);
+    if (!await _performWrite(() => _shopping.addItem(item))) return;
     _inputCtrl.clear();
     HapticFeedback.lightImpact();
-    setState(() {});
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -612,10 +620,8 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       leading: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
-          todo['done'] = !(todo['done'] ?? false);
-          _saveTodos();
-          setState(() {});
+        onTap: () async {
+          await _performWrite(() => _replaceTodos(_todoService.toggle(_scope, todo['id'])));
         },
         child: Container(
           width: 28,
@@ -648,27 +654,19 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
       trailing: IconButton(
         icon: Icon(Icons.close_rounded,
             size: 16, color: theme.colorScheme.outline),
-        onPressed: () {
-          _todos.remove(todo);
-          _saveTodos();
-          setState(() {});
+        onPressed: () async {
+          await _performWrite(() => _replaceTodos(_todoService.remove(_scope, todo['id'])));
         },
       ),
     );
   }
 
-  void _addTodo() {
+  void _addTodo() async {
     final text = _todoCtrl.text.trim();
     if (text.isEmpty) return;
-    _todos.insert(0, {
-      'text': text,
-      'done': false,
-      'id': DateTime.now().millisecondsSinceEpoch
-    });
+    if (!await _performWrite(() => _replaceTodos(_todoService.add(_scope, text)))) return;
     _todoCtrl.clear();
-    _saveTodos();
     HapticFeedback.lightImpact();
-    setState(() {});
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -936,10 +934,12 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
   }
 
   Future<void> _toggleUExam(KindDossier dossier, UExamination exam) async {
-    _store.requireScope(_scope);
-    await _dossierService.setUExamDone(dossier.id, exam.id, !exam.isDone);
+    if (!await _performWrite(() async {
+      await _dossierService.setUExamDone(dossier.id, exam.id, !exam.isDone);
+    })) {
+      return;
+    }
     HapticFeedback.selectionClick();
-    if (mounted) setState(() {});
   }
 
   Widget _infoChip(String text, Color color) {
@@ -1152,7 +1152,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
                     notes: trimOrNull(notesCtrl.text),
                     uExams: dossier.uExams,
                   );
-                  await _dossierService.addOrUpdate(updated, expectedScope: _scope);
+                  if (!await _performWrite(() => _dossierService.addOrUpdate(updated, expectedScope: _scope))) return;
                   if (mounted) {
                     Navigator.pop(ctx);
                     setState(() {});

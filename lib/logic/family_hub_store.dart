@@ -87,9 +87,15 @@ class FamilyHubStore {
     requireScope(expected);
     final encoded = jsonEncode(root);
     final persist = _persist;
-    final written = persist == null
-        ? await prefs.setString(storageKey, encoded)
-        : await persist(storageKey, encoded);
+    bool written;
+    try {
+      written = persist == null
+          ? await prefs.setString(storageKey, encoded)
+          : await persist(storageKey, encoded);
+    } catch (error) {
+      await prefs.reload();
+      rethrow;
+    }
     if (!written) {
       // SharedPreferences updates its cache before the platform acknowledges.
       await prefs.reload();
@@ -101,17 +107,26 @@ class FamilyHubStore {
   Future<void> write(Map<String, dynamic> changes,
       {required String expectedScope}) {
     final snapshot = jsonDecode(jsonEncode(changes)) as Map<String, dynamic>;
+    return update((data) => data..addAll(snapshot),
+      expectedScope: expectedScope).then((_) {});
+  }
+
+  Future<Map<String, dynamic>> update(
+    Map<String, dynamic> Function(Map<String, dynamic>) mutation, {
+    required String expectedScope,
+  }) {
     return _serialize(() async {
       requireScope(expectedScope);
       final prefs = await SharedPreferences.getInstance();
       requireScope(expectedScope);
       final root = _decode(prefs);
-      final data = _account(root, expectedScope)..addAll(snapshot);
+      final data = mutation(_account(root, expectedScope));
       (root['accounts'] as Map<String, dynamic>)[expectedScope] = {
         'owner': expectedScope,
         'data': data,
       };
       await _commit(prefs, root, expectedScope);
+      return data;
     });
   }
 

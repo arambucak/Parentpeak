@@ -225,6 +225,7 @@ class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
   }
 
   Future<void> _addMissingToShoppingList() async {
+    try {
     if (_missing.isEmpty) return;
     HapticFeedback.lightImpact();
     await ShoppingListService.instance.load();
@@ -246,6 +247,13 @@ class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
         backgroundColor: const Color(0xFF16A34A),
       ),
     );
+    } catch (error) {
+      debugPrint('Fridge shopping write failed: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('family_hub_save_error'))),
+      );
+    }
   }
 
   void _restart() {
