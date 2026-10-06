@@ -18,7 +18,6 @@ import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/friendship_service.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
-import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
@@ -1341,16 +1340,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           return;
         }
         try {
-          final loc = LocationService.instance;
           final result = await PlaymateProfileService(matchingService: _matching)
               .publishProfile(
             p,
             uid,
-            confirmPublication: () => confirmPlaymatePublication(context),
-            city: loc.city,
-            latitude: loc.latitude,
-            longitude: loc.longitude,
-          );
+            confirmPublication: () => confirmPlaymatePublication(context));
           if (!mounted || result == PlaymatePublicationResult.cancelled) return;
           if (result == PlaymatePublicationResult.failed) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -2510,6 +2504,7 @@ class _ProfileFormState extends State<_ProfileForm> {
   // Schritt 1: Grundinfos
   final _nameCtrl = TextEditingController();
   final _districtCtrl = TextEditingController();
+  PickedLocation? _pickedLocation;
   String _familyForm = 'kernfamilie';
   final _familyFormCustomCtrl = TextEditingController();
 
@@ -2604,6 +2599,9 @@ class _ProfileFormState extends State<_ProfileForm> {
       final profile = FamilyMatchProfile(
         displayName: _nameCtrl.text.trim(),
         district: _districtCtrl.text.trim(),
+        city: _pickedLocation?.city,
+        latitude: coarseCoordinate(_pickedLocation?.lat),
+        longitude: coarseCoordinate(_pickedLocation?.lon),
         children: children,
         languages: _langs.toList(),
         familyForm: _familyForm,
@@ -2771,10 +2769,8 @@ class _ProfileFormState extends State<_ProfileForm> {
           const SizedBox(height: 14),
           LocationPickerWidget(
             hint: _networkCopy('location_hint', 'Euer Stadtteil / PLZ wählen'),
-            // Bewusst nur der Anzeigename (Stadtteil/PLZ) ins Profil. Die
-            // Position fuer das Matching wird vor dem Upload grob gerundet — so
-            // speichert das Profil selbst keine Koordinaten.
             onLocationPicked: (loc) {
+              _pickedLocation = loc;
               _districtCtrl.text = loc.displayName;
             },
           ),

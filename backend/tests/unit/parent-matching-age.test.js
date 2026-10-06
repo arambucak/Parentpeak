@@ -7,6 +7,8 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../../server.js'), 'utf8');
 const parserStart = source.indexOf('function parseOptionalParentAge(');
 const parser = source.slice(parserStart, source.indexOf('\n}', parserStart) + 2);
+const coordinateStart = source.indexOf('function parseOptionalParentCoordinate(');
+const coordinateParser = source.slice(coordinateStart, source.indexOf('\n}', coordinateStart) + 2);
 
 function fixture(routePath, persistenceFails = false) {
   const start = source.indexOf(`app.post('${routePath}',`);
@@ -14,7 +16,7 @@ function fixture(routePath, persistenceFails = false) {
   let handler;
   const writes = [];
   const fallbackWrites = [];
-  vm.runInNewContext(`${parser}\n${route}`, {
+  vm.runInNewContext(`${parser}\n${coordinateParser}\n${route}`, {
     app: { post: (_path, callback) => { handler = callback; } },
     prisma: {
       parentMatchingProfile: {
@@ -60,6 +62,43 @@ function fixture(routePath, persistenceFails = false) {
 }
 
 for (const route of ['/parent-matching/my-profile', '/api/parent-matching/profiles']) {
+  test(`${route}: missing coordinates remain null, not zero`, async () => {
+    for (const values of [{}, { latitude: null, longitude: null },
+      { latitude: '', longitude: '' }]) {
+      const app = fixture(route);
+      const result = await app.request(values);
+      assert.ok(result.code >= 200 && result.code < 300);
+      for (const data of [app.writes[0].create, app.writes[0].update]) {
+        assert.equal(data.latitude, null);
+        assert.equal(data.longitude, null);
+      }
+    }
+  });
+
+  test(`${route}: valid zero and southern/western coordinates are preserved`, async () => {
+    for (const [latitude, longitude] of [[0, 0], [-23.55, -46.63], [90, 180], ['0', '0']]) {
+      const app = fixture(route);
+      await app.request({ latitude, longitude });
+      for (const data of [app.writes[0].create, app.writes[0].update]) {
+        assert.equal(data.latitude, Number(latitude));
+        assert.equal(data.longitude, Number(longitude));
+      }
+    }
+  });
+
+  test(`${route}: invalid or partial coordinates reject before persistence`, async () => {
+    for (const values of [
+      { latitude: 91, longitude: 0 }, { latitude: 0, longitude: 181 },
+      { latitude: 'bad', longitude: 0 }, { latitude: true, longitude: 0 },
+      { latitude: ' ', longitude: 0 }, { latitude: [], longitude: 0 },
+      { latitude: 52.52 }, { longitude: 13.4 },
+    ]) {
+      const app = fixture(route);
+      assert.equal((await app.request(values)).code, 400);
+      assert.equal(app.writes.length, 0);
+    }
+  });
+
   test(`${route}: missing, null and empty age persist as null`, async () => {
     for (const overrides of [{}, { age: null }, { age: '' }]) {
       const app = fixture(route);
@@ -94,6 +133,8 @@ test('my-profile: in-memory fallback also preserves absent age as null', async (
   const result = await app.request();
   assert.equal(result.code, 201);
   assert.equal(app.fallbackWrites[0].age, null);
+  assert.equal(app.fallbackWrites[0].latitude, null);
+  assert.equal(app.fallbackWrites[0].longitude, null);
 });
 
 test('schema, migration and runtime schema allow null adult age', () => {

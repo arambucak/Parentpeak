@@ -20,9 +20,6 @@ class PlaymateProfileService {
     FamilyMatchProfile profile,
     String userId, {
     required Future<bool> Function() confirmPublication,
-    String? city,
-    double? latitude,
-    double? longitude,
   }) async {
     if (!await confirmPublication()) return PlaymatePublicationResult.cancelled;
     if (userId.trim().isEmpty) {
@@ -32,9 +29,11 @@ class PlaymateProfileService {
     final saved = await matchingService.createProfile(
       userId: userId,
       name: profile.displayName,
-      city: city?.trim().isNotEmpty == true ? city!.trim() : profile.district,
-      latitude: coarseCoordinate(latitude),
-      longitude: coarseCoordinate(longitude),
+      city: profile.city?.trim().isNotEmpty == true
+          ? profile.city!.trim()
+          : profile.district,
+      latitude: coarseCoordinate(profile.latitude),
+      longitude: coarseCoordinate(profile.longitude),
       interests: profile.lookingFor.where((v) => v.trim().isNotEmpty).toList(),
       languages: profile.languages,
       valuesFocus: profile.values,

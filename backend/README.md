@@ -105,8 +105,17 @@ und passender Eigentuemer-UID fuehrt zur lokalen Speicherung. Abbrechen oder
 Backend-Fehler erzeugen kein neues lokal als aktiv dargestelltes Profil.
 Beim Speichern wird nicht mehr automatisch GPS angefordert.
 
+Ort und Koordinaten stammen ausschliesslich aus der Auswahl im Profil-Wizard;
+ein abweichender appweiter Standort wird nicht uebernommen. Die lokale Profilkopie
+speichert diese Koordinaten bereits grob gerundet, der Upload rundet erneut.
+Alte Profile ohne Koordinaten verwenden nur ihren Ortstext. Beide Backend-
+Profil-Endpunkte unterscheiden fehlende/null-Koordinaten von gueltigem `0,0`
+und lehnen ungueltige, ausserhalb des Wertebereichs liegende oder unvollstaendige
+Koordinatenpaare mit HTTP 400 ab.
+
 ```bash
 flutter test --no-pub test/playmate_profile_publication_test.dart
+flutter test --no-pub test/playmate_profile_location_test.dart
 ```
 
 ## Produktions-Hardening
