@@ -1,12 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:parentpeak/logic/event_geocoder.dart';
 
 /// Autocomplete für Orte via OpenStreetMap Nominatim (kostenlos, kein API-Key).
 class LocationAutocompleteService {
   static final LocationAutocompleteService instance =
-      LocationAutocompleteService._();
-  LocationAutocompleteService._();
+      LocationAutocompleteService();
+  LocationAutocompleteService({http.Client? client})
+      : _client = client ?? http.Client();
+
+  final http.Client _client;
 
   Timer? _debounce;
   String _lastQuery = '';
@@ -39,7 +43,28 @@ class LocationAutocompleteService {
     return _fetchSuggestions(query.trim());
   }
 
+  Future<List<LocationSuggestion>> searchCoordinates(
+      double latitude, double longitude) {
+    return searchImmediate(_coarseCoordinateQuery(latitude, longitude));
+  }
+
+  String _coarseCoordinateQuery(double latitude, double longitude) {
+    if (!latitude.isFinite || !longitude.isFinite ||
+        latitude.abs() > 90 || longitude.abs() > 180) {
+      throw ArgumentError('Invalid Nominatim search coordinates');
+    }
+    return '${roundCoordinate(latitude)},${roundCoordinate(longitude)}';
+  }
+
   Future<List<LocationSuggestion>> _fetchSuggestions(String query) async {
+    final coordinates = RegExp(
+      r'^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*,\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)$',
+    ).firstMatch(query);
+    if (coordinates != null) {
+      final latitude = double.parse(coordinates[1]!);
+      final longitude = double.parse(coordinates[2]!);
+      query = _coarseCoordinateQuery(latitude, longitude);
+    }
     final uri = Uri.parse(
       'https://nominatim.openstreetmap.org/search'
       '?q=${Uri.encodeQueryComponent(query)}'
@@ -49,7 +74,7 @@ class LocationAutocompleteService {
       '&accept-language=de',
     );
 
-    final response = await http.get(uri, headers: {
+    final response = await _client.get(uri, headers: {
       'User-Agent': 'ParentPeak-App/1.0',
     });
 
@@ -105,6 +130,7 @@ class LocationAutocompleteService {
 
   void dispose() {
     _debounce?.cancel();
+    _client.close();
   }
 }
 

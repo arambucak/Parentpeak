@@ -250,6 +250,17 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
               ),
             ]),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+            child: Text(
+              AppStringsManager.getString(
+                languageService.currentLanguage, 'location_osm_notice',
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
           // GPS Button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -457,12 +468,16 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
     }
     _debounce = Timer(const Duration(milliseconds: 400), () async {
       if (!mounted) return;
-      final results = await LocationAutocompleteService.instance
-          .searchImmediate(text.trim());
-      if (mounted) {
-        setState(() {
-          _suggestions = results;
-        });
+      try {
+        final results = await LocationAutocompleteService.instance
+            .searchImmediate(text.trim());
+        if (mounted) {
+          setState(() {
+            _suggestions = results;
+          });
+        }
+      } catch (e) {
+        _showSearchFailure(e);
       }
     });
   }
@@ -534,7 +549,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
   Future<void> _reverseGeocode(LatLng pos) async {
     try {
       final results = await LocationAutocompleteService.instance
-          .searchImmediate('${pos.latitude},${pos.longitude}');
+          .searchCoordinates(pos.latitude, pos.longitude);
       if (results.isNotEmpty && mounted) {
         setState(() {
           _currentLabel = results.first.shortLabel;
@@ -542,7 +557,19 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
           _currentPostcode = results.first.postcode;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      _showSearchFailure(e);
+    }
+  }
+
+  void _showSearchFailure(Object error) {
+    debugPrint('LocationPicker geocoding failed: $error');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(AppStringsManager.getString(
+        languageService.currentLanguage, 'location_search_failed',
+      )),
+    ));
   }
 
   void _confirm() {
