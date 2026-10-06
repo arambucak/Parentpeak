@@ -89,7 +89,19 @@ defektem Gesundheits-/Profilkontext ab, statt fehlende Allergien vorzutäuschen.
 flutter test --no-pub test/family_hub_persistence_test.dart test/family_hub_account_test.dart test/kind_dossier_uexam_test.dart test/family_recipe_consent_test.dart test/localization_audit_verification_test.dart
 ```
 
-Alterskorrektur und Sharing/Lifecycle-Nachbesserungen bleiben getrennte Folge-PRs.
+### Geburtsdatum und Altersanzeige
+
+Der lokale Profilimport uebernimmt fuer neue Dossiers das genaue Geburtsdatum,
+nicht ein aus dem Monatsalter neu geschaetztes Datum. Bereits vorhandene Dossiers
+bleiben beim Abgleich unveraendert. Karten zeigen vollendete Lebensjahre aus dem
+taggenauen Monatsalter; vor dem Geburtstag wird nicht aufgerundet. Alle zwoelf
+U-Untersuchungen bleiben absichtlich auch fuer rueckwirkende Eintraege verfuegbar.
+
+```bash
+flutter test --no-pub test/family_hub_age_test.dart test/child_age_calculation_test.dart test/kind_dossier_identity_test.dart test/kind_dossier_uexam_test.dart
+```
+
+Sharing/Lifecycle-Nachbesserungen bleiben ein getrennter Folge-PR.
 
 ## Installation
 

@@ -98,7 +98,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
       await _dossierService.addOrUpdate(
         KindDossier(
           childName: name,
-          ageMonths: child.ageMonths,
+          birthDate: child.birthDate,
           uExams: UExaminationData.generateForChild(child.ageMonths),
         ),
         expectedScope: _scope,
@@ -843,7 +843,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
   }
 
   Widget _dossierCard(ThemeData theme, KindDossier dossier) {
-    final ageYears = (dossier.ageMonths / 12).round();
+    final ageYears = dossier.ageYears;
     final nextExam = dossier.uExams
         .where((u) => !u.isDone && u.dueAtMonths <= dossier.ageMonths + 6)
         .toList();
@@ -1039,13 +1039,12 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
     return Theme(
       // ExpansionTile-Divider ausblenden, damit es sich in die Card einfügt.
       data: theme.copyWith(dividerColor: Colors.transparent),
-      child: Container(
-        decoration: BoxDecoration(
-          color: hasDue
-              ? const Color(0xFFFEF3C7)
-              : theme.colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(10),
-        ),
+      child: Material(
+        color: hasDue
+            ? const Color(0xFFFEF3C7)
+            : theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 10),
           childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
