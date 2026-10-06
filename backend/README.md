@@ -359,6 +359,30 @@ ohne pauschales "Stand 2026".
 - Monatskategorien und Meilensteinkosten bleiben **Schaetzwerte**, keine
   amtlichen Leistungsbetraege. AT-Familienbonus-Hinweis nicht neu verifiziert.
 
+### Verschenkmarkt: oeffentliche Detailprojektion
+
+`GET /api/treasures` und `GET /api/treasures/:id` verwenden dieselbe
+explizite `publicTreasure`-Projektion. Koordinaten werden auf zwei
+Nachkommastellen gerundet; `approximateLocation` ist immer `true`.
+Der Feed behaelt die serverseitig berechnete Entfernung. Die gespeicherte
+Position und die geografische Auswahl werden dadurch nicht veraendert.
+
+Die oeffentliche Detailantwort liefert keine rohen `handovers`,
+Interessenten-IDs, privaten Uebergabenotizen/-orte, individuellen
+Bewertungsprofile oder zukuenftig hinzugefuegten internen DB-Felder.
+Aggregierte Reservierungs-/Bewertungszahlen bleiben verfuegbar.
+Eigene Angebote und private Uebergaben bleiben im bereits
+kontogeschuetzten `GET /api/treasures/mine`; dessen Vertrag ist unveraendert.
+Oeffentliche Anzeigen-/Foto-/Abholbereichsfelder bleiben absichtlich
+sichtbar. In Titel, Beschreibung oder Ortslabel gehoeren keine privaten
+Adressen/Kontaktdaten; die Projektion anonymisiert keinen Freitext.
+
+Lokale, nicht mutierende Regressionen:
+`node --test backend/tests/unit/treasure-public-view.test.js`.
+Sie pruefen sowohl den Helper als auch die tatsaechlichen List-/Detailhandler
+mit einem DB-Double. Die bestehende CI nimmt die Datei im Backend-Unit-Schritt
+des `analyze`-Jobs auf; kein produktiver HTTP-Smoke erforderlich.
+
 ### Familien-Geld: lokalisierte Orientierung, Links und Sharing
 
 Der Wegweiser uebernimmt die aktuelle UI-Sprache fuer Chips, Fallback und
