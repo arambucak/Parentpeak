@@ -153,9 +153,9 @@ nicht im neuen Kontokontext angezeigt. Dies ist ein Client-Vertrag, kein
 serverseitiger Consentnachweis fuer den allgemeinen KI-Endpunkt.
 
 Defekter Profil-/Wegweiserkontext wird sichtbar gemeldet und blockiert die
-Anfrage. Der noch globale Alleinerziehendenstatus des Geldscreens wird bis zur
-separaten Kontomigration nicht automatisch weitergegeben. Die Finanzspeicher
-und alten Checklisten sind mit diesem PR noch nicht migriert.
+Anfrage. Der Wegweiser verwendet ausschliesslich den bestaetigten,
+kontobezogenen Alleinerziehendenstatus des aktuell ausgewaehlten Landes;
+unzugeordnete globale Altwerte werden nicht automatisch weitergegeben.
 
 ```bash
 flutter test --no-pub test/benefit_guide_consent_test.dart test/family_recipe_consent_test.dart test/family_hub_account_test.dart test/localization_audit_verification_test.dart
@@ -192,7 +192,7 @@ Bei bereits abweichendem Kontoland werden globale Altbetraege,
 Einkommensstufe und Sparwerte nicht in die neue Waehrung uebernommen;
 sie bleiben im unveraenderten Originalbackup erhalten. Der Claimdialog
 erklaert dieses Verhalten. Die allgemeine Laender-/Waehrungstrennung
-beim spaeteren Landwechsel folgt als eigener Fix.
+beim spaeteren Landwechsel ist im folgenden Abschnitt beschrieben.
 
 Der Hauptscreen wird beim Kontowechsel neu erstellt. Offene Wegweiser- und
 Antragshelfer-Routen entfernen den vorherigen Stateful-Inhalt; Controller,
@@ -202,11 +202,56 @@ wartende Writes pruefen ihn erneut. Das ist lokale Kontotrennung, keine
 Verschluesselung, Server-Synchronisierung oder Veroeffentlichung.
 
 Typfehler/defekte Envelopes sind explizite Fehler ohne globalen Fallback.
-Fachliche Zahlbereiche, Dezimalkomma, ehrlicher transaktionaler UI-Zustand
-aller Finanzfelder und laenderbezogene Waehrungswerte folgen getrennt.
+Zahlenvalidierung, Dezimalkomma, transaktionaler UI-Zustand aller Finanzfelder
+und laenderbezogene Waehrungswerte sind im folgenden Abschnitt beschrieben.
 
 ```bash
 flutter test --no-pub --reporter expanded test/family_finance_account_test.dart test/family_finance_ui_test.dart test/benefit_guide_consent_test.dart test/family_hub_account_test.dart test/localization_audit_verification_test.dart
+```
+
+### Finanzpersistenz, Zahlen und laenderbezogene Waehrungswerte
+
+Der Finanz-Envelope enthaelt unter `famgeld.countries.v1` pro Laendercode
+die Betragskategorien, Sparwerte und Schnellcheck-Angaben. Die ausgewaehlte
+Laenderkennung bleibt accountbezogen. Alte kontobezogene flache Werte werden
+beim Lesen ihrem bisherigen Land zugeordnet und beim naechsten bestaetigten
+Write in diese Struktur uebernommen. Fehlte eine Landauswahl, gilt das zuvor
+im Screen verwendete DE-Default. Der globale Altbestand bleibt weiterhin nur
+nach explizitem Eigentumsclaim importierbar; der separate Finanz-Owner und
+die originalen Backupkeys bleiben erhalten.
+
+Ein Landwechsel schreibt zuerst die Auswahl bestaetigt und laedt danach nur
+die Werte des Ziel-Landes. Ein neues Land startet ohne uebernommene Zahlen;
+Rueckwechsel/Wiederoeffnen erhaelt die urspruenglichen Werte. Es gibt keinerlei
+automatische Waehrungsumrechnung, auch nicht zwischen zwei EUR-Laendern.
+
+Zahlenfelder behalten Eingabetext als Entwurf, aber Berechnungen und Teilen
+verwenden nur bestaetigte Werte. Schnellcheck-Abschluss und Auswahl werden
+ebenfalls erst nach Speicher-Ack aktiv. Fehlgeschlagene Writes sind sichtbar;
+die vorige bestaetigte Zahl bleibt erhalten. Die Tastaturbestaetigung kann
+dieselbe Eingabe erneut speichern. Einzelne Kategorien werden innerhalb der
+Store-Writequeue zusammengefuehrt, damit schnelle unabhaengige Feldwrites
+nichts ueberschreiben und ein fehlgeschlagener Entwurf nicht durch ein anderes
+Feld versehentlich mitgespeichert wird.
+
+Gueltig sind nichtnegative endliche Betraege bis 9.007.199.254.740.991
+(technische sichere Integergrenze fuer Web/native, keine fachliche
+Anspruchsgrenze). Freie Eingaben erlauben hoechstens zwei Nachkommastellen
+mit Punkt oder Komma; Gruppierung, Exponenten, negative Werte, NaN/Infinity
+und unvollstaendige/ungueltige Zahlen zeigen einen Feldfehler statt still 0.
+Ein bewusst leeres Feld entspricht weiterhin 0. JSON-Typen, Zahlenbereiche,
+Einkommensstufen 0/1/2 und bekannte Laendercodes werden vor Writes und beim
+Lesen geprueft. Defekte Daten werden nicht geloescht oder leer umgedeutet.
+Antragshelfer-Dokumentindizes muessen innerhalb der vorhandenen Liste liegen;
+Ladefehler bleiben sichtbar, mounted-/Scope-Pruefungen sind weiterhin aktiv.
+Beide Checklistentypen setzen Haken erst nach bestaetigtem Write.
+
+`CountryFinanceConfig.formatAmount`, die bestehenden Disclaimer und der
+AT-Familienbonus-Hinweis sind unveraendert. Die locale-neutrale Ganzzahl-
+Anzeige ist keine Eingabevalidierung; Eingabecontroller behalten Dezimalwerte.
+
+```bash
+flutter test --no-pub --reporter expanded test/finance_persistence_test.dart test/finance_persistence_ui_test.dart test/family_finance_account_test.dart test/family_finance_ui_test.dart test/benefit_guide_consent_test.dart test/localization_audit_verification_test.dart
 ```
 
 ## Installation

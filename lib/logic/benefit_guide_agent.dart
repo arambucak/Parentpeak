@@ -16,8 +16,8 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 /// lässt Gemini nur personalisieren/erklären. Erfindet bewusst KEINE Beträge.
 class BenefitGuideAgent {
   BenefitGuideAgent({GeminiAIService? aiService, BenefitGuideConsent? consent})
-      : _ai = aiService ?? GeminiAIService(modelName: _model),
-        _consent = consent ?? BenefitGuideConsent.instance;
+    : _ai = aiService ?? GeminiAIService(modelName: _model),
+      _consent = consent ?? BenefitGuideConsent.instance;
 
   final GeminiAIService _ai;
   final BenefitGuideConsent _consent;
@@ -75,15 +75,17 @@ class BenefitGuideAgent {
   }) {
     // Kuratierte Leistungen als Faktenbasis serialisieren.
     final facts = country.benefits
-        .map((b) => {
-              'id': b.id,
-              'name': b.name,
-              'description': b.description,
-              if (b.amount != null) 'amount': b.amount,
-              if (b.eligibility != null) 'eligibility': b.eligibility,
-              if (b.url != null) 'url': b.url,
-              'status': b.status.name,
-            })
+        .map(
+          (b) => {
+            'id': b.id,
+            'name': b.name,
+            'description': b.description,
+            if (b.amount != null) 'amount': b.amount,
+            if (b.eligibility != null) 'eligibility': b.eligibility,
+            if (b.url != null) 'url': b.url,
+            'status': b.status.name,
+          },
+        )
         .toList();
 
     final ages = childAgesYears.isEmpty
@@ -124,7 +126,10 @@ Antworte NUR mit gültigem JSON (kein Markdown, kein Text davor/danach):
   // ─── Parsing ────────────────────────────────────────────────────────────
 
   BenefitGuideResult _parse(
-      String raw, CountryFinanceConfig country, List<String> groundingUrls) {
+    String raw,
+    CountryFinanceConfig country,
+    List<String> groundingUrls,
+  ) {
     try {
       final jsonStr = _extractJsonObject(raw);
       if (jsonStr == null) return const BenefitGuideResult();
@@ -164,7 +169,9 @@ Antworte NUR mit gültigem JSON (kein Markdown, kein Text davor/danach):
   /// falls die benefitId zu einer bekannten Leistung passt. So bleibt der Link
   /// verlässlich, auch wenn die KI etwas anderes vorschlägt.
   GuideBenefit _enrichFromCurated(
-      GuideBenefit b, CountryFinanceConfig country) {
+    GuideBenefit b,
+    CountryFinanceConfig country,
+  ) {
     if (b.benefitId.isEmpty) return b;
     SocialBenefit? curated;
     for (final c in country.benefits) {
@@ -201,12 +208,14 @@ Antworte NUR mit gültigem JSON (kein Markdown, kein Text davor/danach):
   /// Landes als Orientierung — ehrlich, ohne erfundene Beträge.
   BenefitGuideResult _fallback(CountryFinanceConfig country) {
     final matched = country.benefits
-        .map((b) => GuideBenefit(
-              benefitId: b.id,
-              name: b.name,
-              why: b.description,
-              url: b.url ?? '',
-            ))
+        .map(
+          (b) => GuideBenefit(
+            benefitId: b.id,
+            name: b.name,
+            why: b.description,
+            url: b.url ?? '',
+          ),
+        )
         .toList();
     return BenefitGuideResult(
       matched: matched,
@@ -223,17 +232,23 @@ Antworte NUR mit gültigem JSON (kein Markdown, kein Text davor/danach):
 /// Rein lokaler Speicher für die abgehakten Checklisten-Punkte (pro Land).
 /// Kein Backend — bleibt auf dem Gerät.
 class BenefitChecklistStore {
-  static Future<Set<String>> loadChecked(String countryCode,
-      {required String expectedScope}) =>
-    FamilyFinanceStore.instance.loadChecklist(
-      FamilyFinanceStore.guideKey(countryCode), expectedScope: expectedScope,
-    );
+  static Future<Set<String>> loadChecked(
+    String countryCode, {
+    required String expectedScope,
+    FamilyFinanceStore? store,
+  }) => (store ?? FamilyFinanceStore.instance).loadChecklist(
+    FamilyFinanceStore.guideKey(countryCode),
+    expectedScope: expectedScope,
+  );
 
   static Future<void> saveChecked(
-      String countryCode, Set<String> checkedItems,
-      {required String expectedScope}) =>
-    FamilyFinanceStore.instance.saveChecklist(
-      FamilyFinanceStore.guideKey(countryCode), checkedItems,
-      expectedScope: expectedScope,
-    );
+    String countryCode,
+    Set<String> checkedItems, {
+    required String expectedScope,
+    FamilyFinanceStore? store,
+  }) => (store ?? FamilyFinanceStore.instance).saveChecklist(
+    FamilyFinanceStore.guideKey(countryCode),
+    checkedItems,
+    expectedScope: expectedScope,
+  );
 }

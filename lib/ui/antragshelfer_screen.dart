@@ -18,8 +18,9 @@ import 'package:parentpeak/main.dart';
 /// Schritt 3: KI-Textvorlage + Erinnerung (Premium)
 class AntragshelferScreen extends StatefulWidget {
   final BenefitApplicationData benefit;
+  final FamilyFinanceStore? store;
 
-  const AntragshelferScreen({super.key, required this.benefit});
+  const AntragshelferScreen({super.key, required this.benefit, this.store});
 
   @override
   State<AntragshelferScreen> createState() => _AntragshelferRouteState();
@@ -31,13 +32,14 @@ class _AntragshelferRouteState extends State<AntragshelferScreen> {
   @override
   Widget build(BuildContext context) => FamilyHubAccountModal(
     expectedScope: _scope,
-    builder: (_) => _ScopedAntragshelferScreen(benefit: widget.benefit),
+    builder: (_) => _ScopedAntragshelferScreen(benefit: widget.benefit, store: widget.store),
   );
 }
 
 class _ScopedAntragshelferScreen extends StatefulWidget {
-  const _ScopedAntragshelferScreen({required this.benefit});
+  const _ScopedAntragshelferScreen({required this.benefit, this.store});
   final BenefitApplicationData benefit;
+  final FamilyFinanceStore? store;
 
   @override
   State<_ScopedAntragshelferScreen> createState() =>
@@ -54,7 +56,7 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
   bool _aiLoading = false;
   String? _aiText;
   String? _aiError;
-  final _store = FamilyFinanceStore.instance;
+  late final _store = widget.store ?? FamilyFinanceStore.instance;
   late final String _scope = _store.scope;
   bool _loaded = false;
   bool _loadError = false;
@@ -82,6 +84,9 @@ class _AntragshelferScreenState extends State<_ScopedAntragshelferScreen>
         expectedScope: _scope,
       );
       final checked = saved.map(int.parse).toSet();
+      if (checked.any((index) => index < 0 || index >= _b.documents.length)) {
+        throw const FormatException('Invalid application document index');
+      }
       _store.requireScope(_scope);
       if (!mounted) return;
       setState(() {

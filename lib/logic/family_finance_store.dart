@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/family_hub_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/config/country_finance_data.dart';
+import 'package:parentpeak/logic/finance_number.dart';
 
 /// Financial ownership is independent of the family hub's legacy claim.
 /// The envelope provides account isolation, not encryption or synchronization.
@@ -24,6 +26,11 @@ class FamilyFinanceStore {
   static const incomeKey = 'famgeld.income_level';
   static const savingsGoalKey = 'famgeld.monthly_savings_goal';
   static const savedKey = 'famgeld.total_saved';
+  static const countriesKey = 'famgeld.countries.v1';
+  static const countryValueKeys = [
+    amountsKey, eligibilityKey, employeeKey, singleParentKey,
+    incomeKey, savingsGoalKey, savedKey,
+  ];
   static const valueKeys = [
     countryKey, amountsKey, eligibilityKey, employeeKey, singleParentKey,
     incomeKey, savingsGoalKey, savedKey,
@@ -48,6 +55,8 @@ class FamilyFinanceStore {
       RegExp(r'^benefitguide\.checklist\.[^.]+\.v1$').hasMatch(key) ||
       RegExp(r'^antragshelfer\.[^.]+\.docs$').hasMatch(key);
   static bool _isDataKey(String key) => valueKeys.contains(key) || _isChecklist(key);
+  static bool isCountry(Object? value) => value is String &&
+      CountryFinanceData.availableCountries.any((country) => country.code == value);
 
   Map<String, dynamic> _decode(SharedPreferences prefs) {
     final raw = prefs.getString(storageKey);
@@ -66,12 +75,17 @@ class FamilyFinanceStore {
       final key = entry.key;
       final value = entry.value;
       final valid = switch (key) {
-        countryKey => value is String,
+        countryKey => isCountry(value),
+        countriesKey => value is Map<String, dynamic> &&
+            value.entries.every((entry) => isCountry(entry.key) &&
+                entry.value is Map<String, dynamic> &&
+                (entry.value as Map<String, dynamic>).keys.every(countryValueKeys.contains) &&
+                _validCountryValues(entry.value as Map<String, dynamic>)),
         amountsKey => value is Map<String, dynamic> &&
-            value.values.every((amount) => amount is num && amount.isFinite),
+            value.values.every(FinanceNumber.isValid),
         eligibilityKey || employeeKey || singleParentKey => value is bool,
-        incomeKey => value is int,
-        savingsGoalKey || savedKey => value is num && value.isFinite,
+        incomeKey => value is int && value >= 0 && value <= 2,
+        savingsGoalKey || savedKey => FinanceNumber.isValid(value),
         _ => _isChecklist(key) && value is List &&
             value.every((item) => item is String),
       };
@@ -79,6 +93,41 @@ class FamilyFinanceStore {
     }
     return data;
   }
+
+  bool _validCountryValues(Map<String, dynamic> values) {
+    _validate(values);
+    return true;
+  }
+
+    Map<String, dynamic> _group(Map<String, dynamic> data) {
+      final grouped = Map<String, dynamic>.from(data);
+      final countries = Map<String, dynamic>.from(
+        grouped[countriesKey] as Map<String, dynamic>? ?? {});
+      final flat = <String, dynamic>{};
+      for (final key in countryValueKeys) {
+        if (grouped.containsKey(key)) flat[key] = grouped.remove(key);
+      }
+      if (flat.isNotEmpty) {
+        // Old account values without a selection used the screen's DE default.
+        final country = grouped[countryKey] as String? ?? 'de';
+        grouped[countryKey] = country;
+        countries[country] = {
+          ...?countries[country] as Map<String, dynamic>?, ...flat,
+        };
+      }
+      if (countries.isNotEmpty) grouped[countriesKey] = countries;
+      return grouped;
+    }
+
+    Map<String, dynamic> _view(Map<String, dynamic> data) {
+      final grouped = _group(data);
+      final country = grouped[countryKey] as String? ?? 'de';
+      return {
+        ...grouped,
+        ...?(grouped[countriesKey] as Map<String, dynamic>?)?[country]
+            as Map<String, dynamic>?,
+      };
+    }
 
   Map<String, dynamic> _account(Map<String, dynamic> root, String expected) {
     final account = (root['accounts'] as Map<String, dynamic>)[expected];
@@ -95,7 +144,7 @@ class FamilyFinanceStore {
     requireScope(expectedScope);
     final prefs = await SharedPreferences.getInstance();
     requireScope(expectedScope);
-    return _account(_decode(prefs), expectedScope);
+    return _view(_account(_decode(prefs), expectedScope));
   }
 
   Future<T> _serialize<T>(Future<T> Function() operation) {
@@ -126,8 +175,11 @@ class FamilyFinanceStore {
     requireScope(expected);
   }
 
-  Future<void> write(Map<String, dynamic> changes, {required String expectedScope}) {
+  Future<void> write(Map<String, dynamic> changes, {
+    required String expectedScope, bool mergeAmounts = false,
+  }) {
     requireScope(expectedScope);
+    _validate(changes);
     final snapshot = _validate(
       jsonDecode(jsonEncode(changes)) as Map<String, dynamic>,
     );
@@ -136,7 +188,32 @@ class FamilyFinanceStore {
       final prefs = await SharedPreferences.getInstance();
       requireScope(expectedScope);
       final root = _decode(prefs);
-      final data = _account(root, expectedScope)..addAll(snapshot);
+      final data = _group(_account(root, expectedScope));
+      final country = snapshot[countryKey] as String? ??
+          data[countryKey] as String? ?? 'de';
+      final countryChanges = <String, dynamic>{
+        for (final key in countryValueKeys)
+          if (snapshot.containsKey(key)) key: snapshot[key],
+      };
+      if (countryChanges.isNotEmpty) {
+        final countries = Map<String, dynamic>.from(
+          data[countriesKey] as Map<String, dynamic>? ?? {});
+        final values = <String, dynamic>{
+          ...?countries[country] as Map<String, dynamic>?,
+        };
+        if (mergeAmounts && countryChanges.containsKey(amountsKey)) {
+          countryChanges[amountsKey] = <String, dynamic>{
+            ...?values[amountsKey] as Map<String, dynamic>?,
+            ...countryChanges[amountsKey] as Map<String, dynamic>,
+          };
+        }
+        countries[country] = values..addAll(countryChanges);
+        data[countriesKey] = countries;
+      }
+      data.addAll({
+        for (final entry in snapshot.entries)
+          if (!countryValueKeys.contains(entry.key)) entry.key: entry.value,
+      });
       (root['accounts'] as Map<String, dynamic>)[expectedScope] = {
         'owner': expectedScope, 'data': data,
       };
@@ -167,7 +244,7 @@ class FamilyFinanceStore {
       legacy[key] = key == amountsKey && value is String ? jsonDecode(value) : value;
     }
     _validate(legacy);
-    final data = _account(root, expectedScope);
+    final data = _view(_account(root, expectedScope));
     final differentCountry = data.containsKey(countryKey) &&
         legacy.containsKey(countryKey) && data[countryKey] != legacy[countryKey];
     for (final entry in legacy.entries) {
@@ -190,7 +267,7 @@ class FamilyFinanceStore {
       }
     }
     (root['accounts'] as Map<String, dynamic>)[expectedScope] = {
-      'owner': expectedScope, 'data': data,
+      'owner': expectedScope, 'data': _group(data),
     };
     root['legacyOwner'] = expectedScope;
     await _commit(prefs, root, expectedScope);

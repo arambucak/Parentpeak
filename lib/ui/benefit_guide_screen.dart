@@ -6,6 +6,7 @@ import 'package:parentpeak/config/benefit_application_de.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/benefit_guide_agent.dart';
 import 'package:parentpeak/logic/benefit_guide_consent.dart';
+import 'package:parentpeak/logic/family_finance_store.dart';
 import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:parentpeak/models/benefit_guide_result.dart';
@@ -23,12 +24,14 @@ class BenefitGuideScreen extends StatefulWidget {
   final CountryFinanceConfig country;
   final bool isSingleParent;
   final BenefitGuideAgent? agent;
+  final FamilyFinanceStore? store;
 
   const BenefitGuideScreen({
     super.key,
     required this.country,
     this.isSingleParent = false,
     this.agent,
+    this.store,
   });
 
   @override
@@ -104,7 +107,7 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
           .toList();
       final checked =
         await BenefitChecklistStore.loadChecked(widget.screen.country.code,
-          expectedScope: _scope);
+          expectedScope: _scope, store: widget.screen.store);
       _consent.requireScope(_scope);
       if (mounted) {
         setState(() {
@@ -199,7 +202,7 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
     setState(() => _savingChecklist = true);
     try {
       await BenefitChecklistStore.saveChecked(widget.screen.country.code, checked,
-        expectedScope: _scope);
+        expectedScope: _scope, store: widget.screen.store);
       _consent.requireScope(_scope);
       if (mounted) setState(() => _checked = checked);
     } catch (error) {
