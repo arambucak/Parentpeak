@@ -113,9 +113,18 @@ Profil-Endpunkte unterscheiden fehlende/null-Koordinaten von gueltigem `0,0`
 und lehnen ungueltige, ausserhalb des Wertebereichs liegende oder unvollstaendige
 Koordinatenpaare mit HTTP 400 ab.
 
+Beim Bearbeiten wird der Wizard mit der bestehenden lokalen Kopie vorbelegt.
+Abbrechen, eine abgelehnte Veroeffentlichung oder ein Backend-Fehler erhalten
+die gespeicherte Kopie. Die App speichert auch Aenderungen erst nach dem
+transparenten Dialog und der Serverbestaetigung. Unveraenderte Geburtsdaten,
+lokale Freitexte und das urspruengliche Erstellungsdatum bleiben erhalten.
+Die Kontozuordnung alter lokaler Profile und die Verifikation des Aktivstatus
+beim App-Start sind noch separate offene Audit-Punkte.
+
 ```bash
 flutter test --no-pub test/playmate_profile_publication_test.dart
 flutter test --no-pub test/playmate_profile_location_test.dart
+flutter test --no-pub test/playmate_profile_edit_test.dart
 ```
 
 ## Produktions-Hardening

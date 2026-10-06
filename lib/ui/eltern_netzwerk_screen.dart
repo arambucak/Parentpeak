@@ -361,6 +361,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   final _matching = ParentMatchingBackendService(
       apiClient: BackendServiceFactory.createApiClient());
   FamilyMatchProfile? _profile;
+  bool _editingProfile = false;
   bool _deletingProfile = false;
   Set<String> _dismissedSuggestions = {};
   List<_SuggestedParent> _suggestedProfiles = [];
@@ -1292,7 +1293,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _spielfreundeTab(ThemeData theme) {
-    if (_profile == null) return _profileSetup(theme);
+    if (_profile == null|| _editingProfile) return _profileSetup(theme);
     return _discoveryView(theme);
   }
 
@@ -1326,7 +1327,11 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             textAlign: TextAlign.center),
       ),
       const SizedBox(height: 16),
-      Expanded(child: _ProfileForm(onSave: (p) async {
+      Expanded(child: PlaymateProfileForm(initialProfile: _profile,
+            onCancel: _editingProfile
+                ? () => setState(() => _editingProfile = false)
+                : null,
+            onSave: (p) async {
         final uid = AuthService.instance.currentUser?.uid;
         if (uid == null || uid.isEmpty) {
           if (mounted) {
@@ -1357,6 +1362,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           if (mounted) await showAccountSuspendedNotice(context);
           return;
         }
+        setState(() => _editingProfile = false);
         await _init();
         await _loadMatches();
       })),
@@ -1434,11 +1440,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 Row(mainAxisSize: MainAxisSize.min, children: [
                   GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: _deletingProfile ? null : () async {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.remove('spielfreunde.profile');
-                        setState(() => _profile = null);
-                      },
+                      onTap: _deletingProfile ? null : () => setState(() => _editingProfile = true),
                       child: Text(
                           AppStringsManager.getString(
                               languageService.currentLanguage, 'edit_btn'),
@@ -2488,14 +2490,20 @@ class _SuggestedParent {
 // PROFIL-WIZARD (5 Schritte)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class _ProfileForm extends StatefulWidget {
+class PlaymateProfileForm extends StatefulWidget {
   final Future<void> Function(FamilyMatchProfile) onSave;
-  const _ProfileForm({required this.onSave});
+  final FamilyMatchProfile? initialProfile;
+  final VoidCallback? onCancel;
+  const PlaymateProfileForm({super.key,
+    required this.onSave,
+    this.initialProfile,
+    this.onCancel,
+  });
   @override
-  State<_ProfileForm> createState() => _ProfileFormState();
+  State<PlaymateProfileForm> createState() => _ProfileFormState();
 }
 
-class _ProfileFormState extends State<_ProfileForm> {
+class _ProfileFormState extends State<PlaymateProfileForm> {
   final _pageCtrl = PageController();
   int _step = 0;
   static const _totalSteps = 5;
@@ -2509,7 +2517,7 @@ class _ProfileFormState extends State<_ProfileForm> {
   final _familyFormCustomCtrl = TextEditingController();
 
   // Schritt 2: Kinder
-  final List<_ChildData> _children = [_ChildData()];
+  final List<_ChildData> _children = [];
 
   // Schritt 3: Werte
   final Set<String> _values = {};
@@ -2531,6 +2539,38 @@ class _ProfileFormState extends State<_ProfileForm> {
   @override
   void initState() {
     super.initState();
+    final initial = widget.initialProfile;
+    if (initial != null) {
+      _nameCtrl.text = initial.displayName;
+      _districtCtrl.text = initial.district;
+      if (initial.latitude != null && initial.longitude != null) {
+        _pickedLocation = PickedLocation(
+          displayName: initial.district,
+          city: initial.city ?? initial.district,
+          postcode: '',
+          lat: initial.latitude!,
+          lon: initial.longitude!,
+        );
+      }
+      _familyForm = initial.familyForm;
+      _familyFormCustomCtrl.text = initial.familyFormCustom ?? '';
+      _children.addAll(initial.children.map((c) => _ChildData(initial: c)));
+      _values.addAll(initial.values);
+      _valuesCustomCtrl.text = initial.valuesCustom ?? '';
+      _lookingFor.addAll(initial.lookingFor);
+      _lookingForCustomCtrl.text = initial.lookingForCustom ?? '';
+      _availDays.addAll(initial.availDays);
+      _availTimes.addAll(initial.availTimes);
+      _availCustomCtrl.text = initial.availCustom ?? '';
+      _langs
+        ..clear()
+        ..addAll(initial.languages);
+      _bioCtrl.text = initial.bio;
+      _specials.addAll(initial.specials);
+      _specialsCustomCtrl.text = initial.specialsCustom ?? '';
+      return;
+    }
+    _children.add(_ChildData());
     // Anzeigename aus dem Konto vorbelegen — Eltern tippen ihn nicht erneut.
     final accountName =
         AuthService.instance.currentUser?.displayName.trim() ?? '';
@@ -2587,6 +2627,7 @@ class _ProfileFormState extends State<_ProfileForm> {
       final children = _children
           .map((c) => ChildEntry(
                 name: c.nameCtrl.text.trim(),
+                birthDate: c.birthDate,
                 ageMonths: c.ageMonths,
                 gender: c.gender,
                 interests: c.interests.toList(),
@@ -2599,7 +2640,7 @@ class _ProfileFormState extends State<_ProfileForm> {
       final profile = FamilyMatchProfile(
         displayName: _nameCtrl.text.trim(),
         district: _districtCtrl.text.trim(),
-        city: _pickedLocation?.city,
+        city: _pickedLocation?.city?? widget.initialProfile?.city,
         latitude: coarseCoordinate(_pickedLocation?.lat),
         longitude: coarseCoordinate(_pickedLocation?.lon),
         children: children,
@@ -2626,7 +2667,8 @@ class _ProfileFormState extends State<_ProfileForm> {
             ? null
             : _specialsCustomCtrl.text.trim(),
         bio: _bioCtrl.text.trim(),
-        createdAt: DateTime.now(),
+        hasPhoto: widget.initialProfile?.hasPhoto ?? false,
+        createdAt: widget.initialProfile?.createdAt ?? DateTime.now(),
       );
       await widget.onSave(profile);
     } catch (e) {
@@ -2704,7 +2746,12 @@ class _ProfileFormState extends State<_ProfileForm> {
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: Row(children: [
-          if (_step > 0)
+          if (widget.onCancel != null)
+                TextButton(
+                  onPressed: _saving ? null : widget.onCancel,
+                  child: Text(_t('cancel')),
+                ),
+              if (_step > 0)
             TextButton.icon(
                 onPressed: _saving ? null : _prev,
                 icon: const Icon(Icons.arrow_back_rounded, size: 18),
@@ -2733,7 +2780,9 @@ class _ProfileFormState extends State<_ProfileForm> {
                   : const Icon(Icons.check_rounded, size: 18),
               label: Text(_saving
                   ? _networkCopy('save', 'Speichern...')
-                  : _networkCopy('create_profile', 'Profil erstellen')),
+                  : widget.initialProfile != null
+                        ? _t('save')
+                        : _networkCopy('create_profile', 'Profil erstellen')),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),
                   shape: RoundedRectangleBorder(
@@ -2768,12 +2817,15 @@ class _ProfileFormState extends State<_ProfileForm> {
               Icons.person_rounded),
           const SizedBox(height: 14),
           LocationPickerWidget(
+            initialLocation: _pickedLocation,
             hint: _networkCopy('location_hint', 'Euer Stadtteil / PLZ wählen'),
-            onLocationPicked: (loc) {
+            onLocationPicked: (loc) => setState(() {
               _pickedLocation = loc;
               _districtCtrl.text = loc.displayName;
             },
-          ),
+          )),
+          if (_pickedLocation == null && _districtCtrl.text.isNotEmpty)
+            Text(_districtCtrl.text),
           const SizedBox(height: 20),
           _sectionTitle(theme,
               '\u{1F46A} ${_networkCopy('family_form', 'Familienform')}'),
@@ -2886,8 +2938,7 @@ class _ProfileFormState extends State<_ProfileForm> {
           Expanded(
               child: Slider(
             value: child.ageMonths.toDouble(),
-            min: 0, max: 216, // 0 bis 18 Jahre
-            divisions: 216,
+            min: 0, max: child.maxAgeMonths.toDouble(), divisions: child.maxAgeMonths,
             label: _ageLabel(child.ageMonths),
             onChanged: (v) => setState(() => child.ageMonths = v.round()),
           )),
@@ -3348,9 +3399,26 @@ class _ProfileFormState extends State<_ProfileForm> {
 class _ChildData {
   final nameCtrl = TextEditingController();
   final interestsCustomCtrl = TextEditingController();
-  int ageMonths = 36; // default 3 Jahre
-  String? gender;
+  late int _ageMonths;
+  final int maxAgeMonths;
+  DateTime? birthDate; String? gender;
   final Set<String> interests = {};
+
+  _ChildData({ChildEntry? initial})
+    : maxAgeMonths = (initial?.ageMonths ?? 36).clamp(216, 240) {
+    _ageMonths = initial?.ageMonths ?? 36;
+    birthDate = initial?.birthDate;
+    nameCtrl.text = initial?.name ?? '';
+    interestsCustomCtrl.text = initial?.interestsCustom ?? '';
+    gender = initial?.gender;
+    interests.addAll(initial?.interests ?? []);
+  }
+
+  int get ageMonths => _ageMonths;
+  set ageMonths(int value) {
+    _ageMonths = value;
+    birthDate = null;
+  }
 
   void dispose() {
     nameCtrl.dispose();
