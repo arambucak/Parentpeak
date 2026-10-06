@@ -5,6 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/benefit_application_de.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/benefit_guide_agent.dart';
+import 'package:parentpeak/logic/benefit_guide_consent.dart';
+import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
+import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:parentpeak/models/benefit_guide_result.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
@@ -19,11 +22,13 @@ import 'package:parentpeak/ui/antragshelfer_screen.dart';
 class BenefitGuideScreen extends StatefulWidget {
   final CountryFinanceConfig country;
   final bool isSingleParent;
+  final BenefitGuideAgent? agent;
 
   const BenefitGuideScreen({
     super.key,
     required this.country,
     this.isSingleParent = false,
+    this.agent,
   });
 
   @override
@@ -33,7 +38,9 @@ class BenefitGuideScreen extends StatefulWidget {
 class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
   static const _accent = Color(0xFF8B5CF6);
 
-  final _agent = BenefitGuideAgent();
+  late final BenefitGuideAgent _agent;
+  final _consent = BenefitGuideConsent.instance;
+  late final String _scope;
   final _situationCtrl = TextEditingController();
 
   // Schnell-Impuls-Chips, die den Freitext ergänzen.
@@ -48,13 +55,18 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
   final Set<String> _selectedChips = {};
 
   bool _loading = false;
+  bool _awaitingConsent = false;
   BenefitGuideResult? _result;
   Set<String> _checked = {};
   List<int> _childAges = const [];
+  bool _contextReady = false;
+  bool _contextError = false;
 
   @override
   void initState() {
     super.initState();
+    _agent = widget.agent ?? BenefitGuideAgent();
+    _scope = _consent.scope;
     _loadContext();
   }
 
@@ -66,18 +78,29 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
 
   Future<void> _loadContext() async {
     try {
-      final profile = await FamilyMatchProfile.load();
+      final profile = await FamilyMatchProfile.load(throwOnError: true);
+      _consent.requireScope(_scope);
       final ages = (profile?.children ?? [])
           .map((c) => (c.ageMonths / 12).round())
           .toList();
-      if (mounted) setState(() => _childAges = ages);
-    } catch (_) {}
-    final checked =
+      final checked =
         await BenefitChecklistStore.loadChecked(widget.country.code);
-    if (mounted) setState(() => _checked = checked);
+      _consent.requireScope(_scope);
+      if (mounted) {
+        setState(() {
+          _childAges = ages;
+          _checked = checked;
+          _contextReady = true;
+        });
+      }
+    } catch (error) {
+      debugPrint('BenefitGuideScreen._loadContext: $error');
+      if (mounted) setState(() => _contextError = true);
+    }
   }
 
   Future<void> _ask() async {
+    if (!_contextReady || _loading) return;
     final base = _situationCtrl.text.trim();
     final chips = _selectedChips.join(', ');
     final situation = [base, chips].where((s) => s.isNotEmpty).join('. ');
@@ -89,15 +112,39 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
       return;
     }
     FocusScope.of(context).unfocus();
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _awaitingConsent = true;
+    });
     try {
+      _consent.requireScope(_scope);
+      final granted = await ensureAccountAiConsent(
+        context,
+        consent: _consent,
+        titleKey: 'benefit_ai_consent_title',
+        bodyKey: 'benefit_ai_consent_body',
+        acceptKey: 'benefit_ai_consent_accept',
+        failedKey: 'benefit_ai_consent_failed',
+      );
+      if (!mounted) return;
+      setState(() => _awaitingConsent = false);
+      if (!granted) {
+        setState(() {
+          _loading = false;
+          _awaitingConsent = false;
+        });
+        return;
+      }
+      _consent.requireScope(_scope);
       final result = await _agent.guide(
+        expectedScope: _scope,
         country: widget.country,
         situation: situation,
         childAgesYears: _childAges,
         isSingleParent:
             widget.isSingleParent || _selectedChips.contains('Alleinerziehend'),
       );
+      _consent.requireScope(_scope);
       if (!mounted) return;
       setState(() {
         _result = result;
@@ -105,13 +152,17 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
       });
     } on AiRateLimitException catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _awaitingConsent = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(e.message),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 5),
       ));
-    } catch (_) {
+    } catch (error) {
+      debugPrint('BenefitGuideScreen._ask: $error');
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -151,7 +202,9 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    return FamilyHubAccountModal(
+      expectedScope: _scope,
+      builder: (context) => Scaffold(
       appBar: AppBar(
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(widget.country.flag, style: const TextStyle(fontSize: 18)),
@@ -168,7 +221,9 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
             _disclaimer(theme),
             const SizedBox(height: 16),
             _inputSection(theme),
-            if (_loading) ...[
+            if (_contextError)
+              Text(context.tr('benefit_request_failed')),
+            if (_loading && !_awaitingConsent) ...[
               const SizedBox(height: 30),
               const Center(child: CircularProgressIndicator(color: _accent)),
               const SizedBox(height: 12),
@@ -184,6 +239,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
             ],
           ],
         ),
+      ),
       ),
     );
   }
@@ -270,7 +326,7 @@ class _BenefitGuideScreenState extends State<BenefitGuideScreen> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: _loading ? null : _ask,
+            onPressed: _loading || !_contextReady ? null : _ask,
             icon: const Icon(Icons.auto_awesome_rounded),
             label: Text(context.tr('benefit_ask_action')),
             style: FilledButton.styleFrom(

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/logic/benefit_guide_consent.dart';
 import 'package:parentpeak/models/benefit_guide_result.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
@@ -14,6 +15,12 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 /// Nutzt die kuratierten [CountryFinanceConfig]-Daten als harte Faktenbasis und
 /// lässt Gemini nur personalisieren/erklären. Erfindet bewusst KEINE Beträge.
 class BenefitGuideAgent {
+  BenefitGuideAgent({GeminiAIService? aiService, BenefitGuideConsent? consent})
+      : _ai = aiService ?? GeminiAIService(modelName: _model),
+        _consent = consent ?? BenefitGuideConsent.instance;
+
+  final GeminiAIService _ai;
+  final BenefitGuideConsent _consent;
   static const _model = 'gemini-3.5-flash'; // stabil für Grounding
 
   /// Ermittelt passende Leistungen + Checkliste für die geschilderte Situation.
@@ -22,10 +29,13 @@ class BenefitGuideAgent {
   Future<BenefitGuideResult> guide({
     required CountryFinanceConfig country,
     required String situation,
+    required String expectedScope,
     List<int> childAgesYears = const [],
     bool isSingleParent = false,
   }) async {
+    await _consent.require(expectedScope);
     await AIRateLimiter.initialize();
+    await _consent.require(expectedScope);
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('BenefitGuideAgent: Rate limit erreicht');
       throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
@@ -39,15 +49,18 @@ class BenefitGuideAgent {
     );
 
     try {
-      final response = await GeminiAIService(modelName: _model)
+      final response = await _ai
           .generate(prompt, useGoogleSearch: true)
           .timeout(const Duration(seconds: 35));
+      await _consent.require(expectedScope);
       await AIRateLimiter.recordRequest();
+      await _consent.require(expectedScope);
       final result = _parse(response.text, country, response.groundingUrls);
       if (result.isEmpty) return _fallback(country);
       return result;
     } catch (e) {
       debugPrint('BenefitGuideAgent.guide: $e');
+      await _consent.require(expectedScope);
       return _fallback(country);
     }
   }
