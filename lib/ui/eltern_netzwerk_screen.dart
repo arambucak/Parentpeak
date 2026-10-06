@@ -23,6 +23,7 @@ import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/ui/widgets/playmate_publication_dialog.dart';
+import 'package:parentpeak/ui/widgets/playmate_profile_status.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -363,6 +364,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   FamilyMatchProfile? _profile;
   bool _editingProfile = false;
   bool _deletingProfile = false;
+  bool _profileLoading = true;
+  bool _assigningDraft = false;
+  bool _hasUnassignedDraft = false;
+  String? _profileAccount;
+  int _profileRequest = 0;
+  PlaymateProfileStatus _profileStatus = PlaymateProfileStatus.unavailable;
   Set<String> _dismissedSuggestions = {};
   List<_SuggestedParent> _suggestedProfiles = [];
   bool _loadingSuggestions = true;
@@ -384,6 +391,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     _tabs = TabController(
         length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
     FriendshipService.instance.addListener(_rebuild);
+    _profileAccount = AuthService.instance.currentUser?.uid;
+    AuthService.instance.addListener(_onAccountChanged);
     _chatSearchCtrl.addListener(() {
       setState(() => _chatQuery = _chatSearchCtrl.text.trim().toLowerCase());
     });
@@ -409,11 +418,92 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     _tabs.dispose();
     _chatSearchCtrl.dispose();
     FriendshipService.instance.removeListener(_rebuild);
+    AuthService.instance.removeListener(_onAccountChanged);
     super.dispose();
   }
 
   void _rebuild() {
     if (mounted) setState(() {});
+  }
+
+  void _onAccountChanged() {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == _profileAccount) return;
+    setState(() {
+      _profileAccount = uid;
+      _profile = null;
+      _editingProfile = false;
+      _hasUnassignedDraft = false;
+      _matches = [];
+      _loadingMatches = false;
+      _profileStatus = PlaymateProfileStatus.unavailable;
+    });
+    unawaited(_refreshProfile());
+  }
+
+  Future<void> _refreshProfile() async {
+    final request = ++_profileRequest;
+    final uid = AuthService.instance.currentUser?.uid;
+    if (mounted) {
+      setState(() {
+        _profileLoading = true;
+        _profileStatus = PlaymateProfileStatus.unavailable;
+      });
+    }
+    try {
+      final state = uid == null || uid.isEmpty
+          ? const PlaymateProfileState(status: PlaymateProfileStatus.unavailable)
+          : await PlaymateProfileService(matchingService: _matching).loadState(uid);
+      if (!mounted || request != _profileRequest ||
+          AuthService.instance.currentUser?.uid != uid) {
+        return;
+      }
+      setState(() {
+        _profile = state.profile;
+        _profileStatus = state.status;
+        _hasUnassignedDraft = state.hasUnassignedDraft;
+        _profileLoading = false;
+        _matches = [];
+      });
+      if (state.status == PlaymateProfileStatus.active && state.profile != null) {
+        unawaited(_loadMatches());
+      }
+    } catch (e) {
+      debugPrint('ElternNetzwerkScreen profile verification failed: $e');
+      if (!mounted || request != _profileRequest ||
+          AuthService.instance.currentUser?.uid != uid) {
+        return;
+      }
+      setState(() {
+        _profileStatus = PlaymateProfileStatus.unavailable;
+        _profileLoading = false;
+      });
+    }
+  }
+
+  Future<void> _assignDraft() async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null || _assigningDraft) return;
+    setState(() => _assigningDraft = true);
+    try {
+      final assigned = await PlaymateProfileService(matchingService: _matching)
+          .adoptUnassignedDraft(uid, confirmOwnership: () async {
+        final confirmed = await confirmPlaymateDraftOwnership(context,
+            AuthService.instance.currentUser?.displayName ?? uid);
+        return mounted && AuthService.instance.currentUser?.uid == uid && confirmed;
+      });
+      if (!mounted || AuthService.instance.currentUser?.uid != uid) return;
+      if (assigned) await _refreshProfile();
+    } catch (e) {
+      debugPrint('ElternNetzwerkScreen draft assignment failed: $e');
+      if (mounted && AuthService.instance.currentUser?.uid == uid) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('network_draft_assign_failed')),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _assigningDraft = false);
+    }
   }
 
   /// Lädt die Messenger-Übersicht (alle Unterhaltungen) für den Chats-Tab.
@@ -553,11 +643,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final prefs = await SharedPreferences.getInstance();
     final dismissed = prefs.getStringList('friends.dismissed') ?? [];
     if (mounted) setState(() => _dismissedSuggestions = dismissed.toSet());
-    final p = await FamilyMatchProfile.load();
-    if (mounted) setState(() => _profile = p);
-    if (p != null) {
-      unawaited(_loadMatches());
-    }
+    await _refreshProfile();
 
     // NEUES FUNDAMENT: den app-weiten Anzeigenamen serverseitig sichern
     // (uid -> displayName). Kommt aus der Registrierung; hier nur gespiegelt.
@@ -1293,12 +1379,44 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _spielfreundeTab(ThemeData theme) {
+    if (_profileLoading) return const Center(child: CircularProgressIndicator());
+    if (_profileAccount == null) {
+      return Center(child: Text(_networkCopy('login_required',
+          'Bitte melde dich an, um dein Spielfreunde-Profil zu veröffentlichen.')));
+    }
+    if (_profile != null && !_editingProfile &&
+        _profileStatus != PlaymateProfileStatus.active) {
+      return Column(children: [
+        _profileStatusPanel(),
+        TextButton(
+          onPressed: () => setState(() => _editingProfile = true),
+          child: Text(_t('edit_btn')),
+        ),
+        TextButton(
+          onPressed: _deletingProfile ? null : () => _confirmDeleteProfile(theme),
+          child: Text(_t('delete')),
+        ),
+      ]);
+    }
     if (_profile == null|| _editingProfile) return _profileSetup(theme);
     return _discoveryView(theme);
   }
 
+  Widget _profileStatusPanel() => PlaymateProfileStatusPanel(
+    status: _profileStatus,
+    hasUnassignedDraft: _hasUnassignedDraft,
+    onRetry: _refreshProfile,
+    onAssignDraft: _assigningDraft ? null : _assignDraft,
+  );
+
   Widget _profileSetup(ThemeData theme) {
     return Column(children: [
+      _profileStatusPanel(),
+      if (_profile == null && _profileStatus == PlaymateProfileStatus.active)
+        TextButton(
+          onPressed: _deletingProfile ? null : () => _confirmDeleteProfile(theme),
+          child: Text(_t('delete')),
+        ),
       const SizedBox(height: 16),
       Container(
           width: 60,
@@ -1327,7 +1445,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             textAlign: TextAlign.center),
       ),
       const SizedBox(height: 16),
-      Expanded(child: PlaymateProfileForm(initialProfile: _profile,
+      Expanded(child: PlaymateProfileForm(
+            key: ValueKey(_profileAccount),
+            initialProfile: _profile,
             onCancel: _editingProfile
                 ? () => setState(() => _editingProfile = false)
                 : null,
@@ -1349,8 +1469,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               .publishProfile(
             p,
             uid,
-            confirmPublication: () => confirmPlaymatePublication(context));
+            confirmPublication: () async {
+              final confirmed = await confirmPlaymatePublication(context);
+              return mounted && AuthService.instance.currentUser?.uid == uid && confirmed;
+            });
           if (!mounted || result == PlaymatePublicationResult.cancelled) return;
+          if (AuthService.instance.currentUser?.uid != uid) return;
           if (result == PlaymatePublicationResult.failed) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(_t('network_publish_failed')),
@@ -1364,14 +1488,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         }
         setState(() => _editingProfile = false);
         await _init();
-        await _loadMatches();
       })),
     ]);
   }
 
   /// Laedt echte Familien in der Naehe ueber das bestehende Matching-Backend.
   Future<void> _loadMatches() async {
-    if (_profile == null) return;
+    if (_profile == null || _profileStatus != PlaymateProfileStatus.active) return;
+    final request = _profileRequest;
     if (mounted) setState(() => _loadingMatches = true);
     final uid = AuthService.instance.currentUser?.uid ?? 'guest';
     final childAges = _profile!.children.map((c) {
@@ -1391,7 +1515,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         if (ownerId == null || ownerId.isEmpty) return true;
         return !BlockReportService.instance.isBlocked(ownerId);
       }).toList();
-      if (mounted && _profile != null) {
+      if (mounted && _profile != null && request == _profileRequest &&
+          AuthService.instance.currentUser?.uid == uid &&
+          _profileStatus == PlaymateProfileStatus.active) {
         setState(() {
           _matches = visible;
           _matchScope = result.scope;
@@ -1399,7 +1525,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _loadingMatches = false);
+      if (mounted && request == _profileRequest &&
+          AuthService.instance.currentUser?.uid == uid) {
+        setState(() => _loadingMatches = false);
+    }
     }
   }
 
@@ -1410,6 +1539,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _profileStatusPanel(),
           // ── Eigenes Profil (Header) ──────────────────────────────────────
           Container(
               padding: const EdgeInsets.all(14),
@@ -1431,7 +1561,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                       Text(
                           _profile!.bio.isNotEmpty
                               ? _profile!.bio
-                              : 'Profil aktiv \u{2714}',
+                              : _t('network_profile_active'),
                           style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant),
                           maxLines: 1,
@@ -2419,6 +2549,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   Future<void> _confirmDeleteProfile(ThemeData theme) async {
     if (_deletingProfile) return;
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -2439,12 +2571,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       ),
     );
     if (confirmed != true || !mounted || _deletingProfile) return;
+    if (AuthService.instance.currentUser?.uid != uid) return;
     setState(() => _deletingProfile = true);
     try {
-      final uid = AuthService.instance.currentUser?.uid ?? '';
       final deleted = await PlaymateProfileService(matchingService: _matching)
           .deleteProfile(uid);
-      if (!mounted) return;
+      if (!mounted || AuthService.instance.currentUser?.uid != uid) return;
       if (!deleted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(_t('network_delete_failed')),
@@ -2454,6 +2586,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       }
       setState(() {
         _profile = null;
+        _profileStatus = PlaymateProfileStatus.draft;
+        _editingProfile = false;
+        _profileRequest++;
         _matches = [];
         _loadingMatches = false;
       });

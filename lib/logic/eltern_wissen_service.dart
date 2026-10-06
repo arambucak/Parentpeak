@@ -13,6 +13,7 @@ class ElternWissenService {
   int _childAge = 3;
 
   Future<void> initialize() async {
+    _childAge = 3;
     final profile = await FamilyMatchProfile.load();
     if (profile != null && profile.children.isNotEmpty) {
       _childAge = (profile.children.first.ageMonths / 12).round().clamp(0, 18);

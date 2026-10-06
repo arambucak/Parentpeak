@@ -127,6 +127,58 @@ flutter test --no-pub test/playmate_profile_location_test.dart
 flutter test --no-pub test/playmate_profile_edit_test.dart
 ```
 
+### Kontozuordnung und verifizierter Profilstatus
+
+Lokale Spielfreunde-Profile werden pro Konto unter
+`spielfreunde.profile.account.<URI-kodierte UID>` gespeichert. Der JSON-Umschlag
+enthaelt dieselbe `ownerUserId` und das lokale `profile`; eine abweichende
+Eigentuemer-UID wird nicht geladen. `FamilyMatchProfile.load()` verwendet zentral
+das aktuelle AuthService-Konto. Ohne Anmeldung, ohne zugeordnetes Profil oder
+waehrend eines Kontowechsels wird kein fremdes Profil als Fallback gelesen.
+
+Der alte globale Key `spielfreunde.profile` bleibt ein unzugeordneter Entwurf.
+Nur ein eigener Bestaetigungsdialog kann ihn dem aktuellen Konto zuordnen;
+dies verschiebt ihn lokal, ueberschreibt kein vorhandenes Kontoprofil und
+sendet keine HTTP-Anfrage. Erst die separate Veroeffentlichungsbestaetigung
+erlaubt den Upload. Die Profil-Loeschung entfernt nach Server-Ack nur die lokale
+Kopie des betreffenden Kontos, nicht andere Konten oder unzugeordnete Entwuerfe.
+
+`GET /parent-matching/my-profile` verifiziert den Firebase-Token auch bei
+Lesezugriffen und verlangt die passende Eigentuemer-UID. HTTP 404 bedeutet kein
+aktives Profil; Datenbankfehler liefern HTTP 503 statt In-Memory-Fallback.
+Auch der POST auf demselben Pfad verlangt die passende Firebase-UID.
+Die App zeigt Aktivitaet erst nach einer Antwort mit Profil-ID und passender
+Eigentuemer-UID. Auth-, Transport- und Parsingfehler zeigen einen ungeprueften
+Status mit Wiederholen, niemals eine bestaetigte Sichtbarkeit.
+
+Alle 13 produktiven `FamilyMatchProfile.load`-Aufrufer verwenden diese zentrale
+Kontogrenze (keine zweite Legacy-Leselogik):
+
+- `lib/ui/eltern_netzwerk_screen.dart`
+- `lib/ui/calendar_screen.dart`
+- `lib/ui/widgets/home/events_carousel_widget.dart`
+- `lib/ui/widgets/home/context_home_card.dart`
+- `lib/logic/family_recipe_service.dart`
+- `lib/logic/fridge_recipe_service.dart`
+- `lib/logic/eltern_wissen_service.dart`
+- `lib/ui/tischmoment_screen.dart`
+- `lib/ui/familien_zentrale_screen.dart`
+- `lib/ui/familien_geld_screen.dart`
+- `lib/ui/benefit_guide_screen.dart`
+- `lib/ui/ritual_ruhe_screen.dart`
+- `lib/ui/chat_screen.dart`
+
+Alters-Caches der drei betroffenen Singleton-Services werden beim Neuladen
+zurueckgesetzt. Die Profil-Lesepfade verwenden die bisherigen neutralen
+Fallbacks, solange noch kein Entwurf uebernommen wurde. Andere eigenstaendige
+Speicher (z.B. Kind-Dossiers, Kalender, Chats) werden durch diese Migration nicht
+kontobezogen migriert; sie bleiben Teil ihrer jeweiligen Kachel-Audits.
+
+```bash
+flutter test --no-pub test/playmate_profile_state_test.dart
+node --test backend/tests/unit/parent-matching-state.test.js
+```
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:

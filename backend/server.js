@@ -6871,6 +6871,16 @@ app.get('/parent-matching/my-profile', async (req, res) => {
   if (!userId) {
     return res.status(400).json({ error: 'userId fehlt' });
   }
+  if (!req.firebaseUid) {
+    const { uid, verified } = await verifyFirebaseIdToken(req);
+    if (verified) req.firebaseUid = uid;
+  }
+  if (!req.firebaseUid) {
+    return res.status(401).json({ error: 'Firebase sign-in required' });
+  }
+  if (req.firebaseUid !== userId) {
+    return res.status(403).json({ error: 'Own profile only' });
+  }
 
   try {
     const profile = await getMyParentMatchingProfile(userId);
@@ -6879,14 +6889,8 @@ app.get('/parent-matching/my-profile', async (req, res) => {
     }
     return res.json({ item: mapParentMatchingProfileForClient(profile) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/my-profile', error)) {
-      return;
-    }
-    const profile = getMyParentMatchingProfileInMemory(userId);
-    if (!profile) {
-      return res.status(404).json({ error: 'Matching-Profil nicht gefunden' });
-    }
-    return res.json({ item: mapParentMatchingProfileForClient(profile) });
+    console.error('[parent-matching/my-profile] Verification failed:', error);
+    return res.status(503).json({ error: 'Profile verification unavailable' });
   }
 });
 
@@ -6911,6 +6915,16 @@ app.post('/parent-matching/my-profile', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   if (!userId) {
     return res.status(400).json({ error: 'userId fehlt' });
+  }
+  if (!req.firebaseUid) {
+    const { uid, verified } = await verifyFirebaseIdToken(req);
+    if (verified) req.firebaseUid = uid;
+  }
+  if (!req.firebaseUid) {
+    return res.status(401).json({ error: 'Firebase sign-in required' });
+  }
+  if (req.firebaseUid !== userId) {
+    return res.status(403).json({ error: 'Own profile only' });
   }
 
   const name = (req.body.name || '').toString().trim();

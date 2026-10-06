@@ -1249,6 +1249,15 @@ class AppStringsManager {
       'network_publish_body':
           'Dein Anzeigename, Ort, grob gerundeter Standort (falls vorhanden), ungefähre Kinderalter, Sprachen, Familienform, Werte, gewünschte Aktivitäten und deine Bio werden auf unserem Backend gespeichert und anderen Familien im Netzwerk angezeigt. Kindnamen, Geburtsdaten und Besonderheiten bleiben auf diesem Gerät. Trage keine Kindnamen, Adresse oder Gesundheitsdaten in deine öffentliche Bio ein. Das Matching verwendet keine KI. Du kannst dein Profil jederzeit löschen.',
       'network_publish_accept': 'Profil veröffentlichen',
+      'network_profile_active': 'Profil vom Server als aktiv bestätigt.',
+      'network_profile_draft': 'Kein aktives Profil auf dem Server bestätigt. Lokale Entwürfe werden nicht automatisch veröffentlicht.',
+      'network_profile_unverified': 'Profilstatus konnte nicht geprüft werden. Sichtbarkeit ist nicht bestätigt.',
+      'network_profile_retry': 'Status erneut prüfen',
+      'network_draft_unassigned': 'Auf diesem Gerät liegt ein altes Profil ohne Kontozuordnung. Es wird nicht automatisch verwendet oder veröffentlicht.',
+      'network_draft_assign_title': 'Lokalen Entwurf diesem Konto zuordnen?',
+      'network_draft_assign_body': 'Bestätige, dass der alte lokale Familienentwurf zu deinem Konto „{account}“ gehört. Er wird nur lokal diesem Konto zugeordnet und steht danach auch Kalender, Küche und den anderen Familienfunktionen zur Verfügung. Es werden keine Daten hochgeladen. Eine Veröffentlichung erfordert eine separate Bestätigung.',
+      'network_draft_assign': 'Entwurf meinem Konto zuordnen',
+      'network_draft_assign_failed': 'Der Entwurf konnte nicht zugeordnet werden. Bitte versuche es erneut.',
       'network_child_name_local': 'Name / Spitzname (nur auf diesem Gerät)',
       'network_specials_hint': 'Notiz zu Besonderheiten (nur auf diesem Gerät)',
       'network_publish_failed':
@@ -4559,6 +4568,15 @@ class AppStringsManager {
       'network_publish_body':
           'Your display name, area, coarsely rounded location (if available), approximate child ages, languages, family type, values, activities you are looking for and bio will be stored on our backend and shown to other families in the network. Child names, dates of birth and special circumstances stay on this device. Do not include child names, your address or health details in your public bio. Matching does not use AI. You can delete your profile at any time.',
       'network_publish_accept': 'Publish profile',
+      'network_profile_active': 'Server confirmed that the profile is active.',
+      'network_profile_draft': 'No active server profile confirmed. Local drafts are not published automatically.',
+      'network_profile_unverified': 'Could not check profile status. Visibility is not confirmed.',
+      'network_profile_retry': 'Check status again',
+      'network_draft_unassigned': 'This device has an old profile without an account assignment. It is not used or published automatically.',
+      'network_draft_assign_title': 'Assign the local draft to this account?',
+      'network_draft_assign_body': 'Confirm that the old local family draft belongs to your account "{account}". It will only be assigned locally and will then be available to the calendar, kitchen and other family features. No data is uploaded. Publishing requires a separate confirmation.',
+      'network_draft_assign': 'Assign draft to my account',
+      'network_draft_assign_failed': 'Could not assign the draft. Please try again.',
       'network_child_name_local': 'Name / nickname (only on this device)',
       'network_specials_hint': 'Note about special circumstances (device only)',
       'network_publish_failed':
@@ -11714,6 +11732,15 @@ class AppStringsManager {
       'network_publish_body':
           'Navê te yê xuyangê, herêm, cihê nêzîk (heke hebe), temenê nêzîk yê zarokan, ziman, cureya malbatê, nirx, çalakiyên ku hûn dixwazin û biyografiya te li ser backendê me tên tomarkirin û ji malbatên din re tên nîşandan. Navên zarokan, rojên jidayikbûnê û taybetmendî li ser vê amûrê dimînin. Navên zarokan, navnîşan an agahiyên tenduristiyê di biyografiya gelemperî de nenivîse. Lihevkirin AI bi kar nayîne. Tu dikarî profîla xwe her dem jê bibî.',
       'network_publish_accept': 'Profîlê biweşîne',
+      'network_profile_active': 'Serverê piştrast kir ku profîl çalak e.',
+      'network_profile_draft': 'Profîleke çalak li ser serverê nehat piştrastkirin. Reşnivîsên herêmî bixweber nayên belavkirin.',
+      'network_profile_unverified': 'Rewşa profîlê nehat kontrolkirin. Xuyabûn nehat piştrastkirin.',
+      'network_profile_retry': 'Rewşê dîsa kontrol bike',
+      'network_draft_unassigned': 'Li ser vê cîhazê profîleke kevn heye ku bi hesabekê ve ne girêdayî ye. Ew bixweber nayê bikaranîn an belavkirin.',
+      'network_draft_assign_title': 'Reşnivîsa herêmî bi vî hesabî ve were girêdan?',
+      'network_draft_assign_body': 'Piştrast bike ku reşnivîsa malbatê ya kevn a herêmî ya hesabê te "{account}" ye. Ew tenê li ser cîhazê bi hesabî ve tê girêdan û paşê di salname, metbex û taybetmendiyên din ên malbatê de tê bikaranîn. Tu dane nayên şandin. Belavkirin piştrastkirineke cuda dixwaze.',
+      'network_draft_assign': 'Reşnivîsê bi hesabê min ve girêde',
+      'network_draft_assign_failed': 'Reşnivîs nehat girêdan. Ji kerema xwe dîsa biceribîne.',
       'network_child_name_local': 'Nav / navê nasnav (tenê li ser vê amûrê)',
       'network_specials_hint': 'Nîşe li ser taybetmendiyan (tenê li ser amûrê)',
       'network_publish_failed':
@@ -17250,6 +17277,15 @@ class AppStringsManager {
       'network_publish_body':
           'Görünen adınız, bölgeniz, kabaca yuvarlanmış konumunuz (varsa), çocukların yaklaşık yaşları, diller, aile türü, değerler, aradığınız etkinlikler ve biyografiniz sunucumuzda saklanır ve ağdaki diğer ailelere gösterilir. Çocuk adları, doğum tarihleri ve özel durumlar bu cihazda kalır. Herkese açık biyografinize çocuk adları, adres veya sağlık bilgileri yazmayın. Eşleştirmede yapay zekâ kullanılmaz. Profilinizi istediğiniz zaman silebilirsiniz.',
       'network_publish_accept': 'Profili yayınla',
+      'network_profile_active': 'Sunucu profilin aktif olduğunu doğruladı.',
+      'network_profile_draft': 'Sunucuda aktif bir profil doğrulanmadı. Yerel taslaklar otomatik olarak yayınlanmaz.',
+      'network_profile_unverified': 'Profil durumu kontrol edilemedi. Görünürlük doğrulanmadı.',
+      'network_profile_retry': 'Durumu tekrar kontrol et',
+      'network_draft_unassigned': 'Bu cihazda bir hesaba atanmamış eski bir profil var. Otomatik olarak kullanılmaz veya yayınlanmaz.',
+      'network_draft_assign_title': 'Yerel taslak bu hesaba atansın mı?',
+      'network_draft_assign_body': 'Eski yerel aile taslağının "{account}" hesabına ait olduğunu doğrula. Yalnızca yerel olarak atanır ve ardından takvim, mutfak ve diğer aile özelliklerinde kullanılabilir. Hiçbir veri yüklenmez. Yayınlamak için ayrı bir onay gerekir.',
+      'network_draft_assign': 'Taslağı hesabıma ata',
+      'network_draft_assign_failed': 'Taslak atanamadı. Lütfen tekrar dene.',
       'network_child_name_local': 'Ad / takma ad (yalnızca bu cihazda)',
       'network_specials_hint': 'Özel durumlar hakkında not (yalnızca cihazda)',
       'network_publish_failed':

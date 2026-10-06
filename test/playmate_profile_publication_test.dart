@@ -65,6 +65,7 @@ void main() {
     expect(calls, 0);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.containsKey('spielfreunde.profile'), isFalse);
+    expect(prefs.containsKey(FamilyMatchProfile.storageKey('owner')), isFalse);
   });
 
   test('publishes only the allowed matching fields after explicit consent',
@@ -105,12 +106,16 @@ void main() {
       expect(raw, isNot(contains(sensitive)), reason: sensitive);
     }
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.containsKey('spielfreunde.profile'), isFalse);
+      expect(prefs.containsKey('spielfreunde.profile'), isFalse);
+      expect(
+        prefs.containsKey(FamilyMatchProfile.storageKey('owner')),
+        isFalse,
+      );
     response.complete(http.Response(
         jsonEncode({'item': {'id': 'self-owner', 'ownerUserId': 'owner',
           'name': body['name'], 'city': body['city']}}), 201));
     expect(await publishing, PlaymatePublicationResult.published);
-    final local = await FamilyMatchProfile.load();
+      final local = await FamilyMatchProfile.load(userId: 'owner');
     expect(local!.children.first.name, 'Local child');
     expect(local.specials, ['allergien', 'chronisch_krank']);
     expect(local.specialsCustom, 'local health note');
@@ -119,7 +124,10 @@ void main() {
   test('failed or unacknowledged publication preserves an existing local copy',
       () async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('spielfreunde.profile', 'existing-profile');
+      await prefs.setString(
+        FamilyMatchProfile.storageKey('owner'),
+        'existing-profile',
+      );
     for (final response in [
       http.Response('{"error":"unavailable"}', 503),
       http.Response('{}', 201),
@@ -131,7 +139,10 @@ void main() {
           await profiles.publishProfile(profile(), 'owner',
               confirmPublication: () async => true),
           PlaymatePublicationResult.failed);
-      expect(prefs.getString('spielfreunde.profile'), 'existing-profile');
+        expect(
+          prefs.getString(FamilyMatchProfile.storageKey('owner')),
+          'existing-profile',
+        );
     }
   });
 
@@ -145,6 +156,7 @@ void main() {
         PlaymatePublicationResult.failed);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.containsKey('spielfreunde.profile'), isFalse);
+    expect(prefs.containsKey(FamilyMatchProfile.storageKey('owner')), isFalse);
   });
 
   test('all publication and local-only messages exist in de/en/tr/ku', () {

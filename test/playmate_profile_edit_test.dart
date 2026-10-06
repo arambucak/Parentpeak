@@ -129,7 +129,7 @@ void main() {
     tester,
   ) async {
     final original = existingProfile();
-    await original.save();
+    await original.save(userId: 'owner');
     var saved = false;
     var cancelled = false;
     await openForm(
@@ -148,7 +148,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(cancelled, isTrue);
     expect(saved, isFalse);
-    expect((await FamilyMatchProfile.load())!.toJson(), original.toJson());
+    expect((await FamilyMatchProfile.load(userId: 'owner'))!.toJson(), original.toJson());
   });
 
   for (final consent in [false, true]) {
@@ -156,7 +156,7 @@ void main() {
       tester,
     ) async {
       final original = existingProfile();
-      await original.save();
+      await original.save(userId: 'owner');
       var requests = 0;
       final profiles = PlaymateProfileService(
         matchingService: ParentMatchingBackendService(
@@ -199,7 +199,7 @@ void main() {
       expect(requests, consent ? 1 : 0);
       final prefs = await SharedPreferences.getInstance();
       expect(
-        jsonDecode(prefs.getString('spielfreunde.profile')!),
+        (jsonDecode(prefs.getString(FamilyMatchProfile.storageKey('owner'))!) as Map)['profile'],
         original.toJson(),
       );
       expect(find.byType(PlaymateProfileForm), findsOneWidget);
@@ -248,7 +248,7 @@ void main() {
     'confirmed edit persists all fields after server acknowledgement',
     (tester) async {
       final original = existingProfile();
-      await original.save();
+      await original.save(userId: 'owner');
       final profiles = PlaymateProfileService(
         matchingService: ParentMatchingBackendService(
           apiClient: BackendApiClient(
@@ -288,7 +288,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(result, PlaymatePublicationResult.published);
-      expect((await FamilyMatchProfile.load())!.toJson(), {
+      expect((await FamilyMatchProfile.load(userId: 'owner'))!.toJson(), {
         ...original.toJson(),
         'displayName': 'Edited family',
       });

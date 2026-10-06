@@ -8,13 +8,17 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/logic/playmate_profile_service.dart';
+import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({'spielfreunde.profile': 'keep-me'});
+    SharedPreferences.setMockInitialValues({
+      FamilyMatchProfile.storageKey('owner'): 'keep-me',
+      'spielfreunde.profile': 'unassigned-draft',
+    });
   });
 
   PlaymateProfileService service(http.Client client) => PlaymateProfileService(
@@ -42,13 +46,16 @@ void main() {
           return response.future;
         }),
       );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(FamilyMatchProfile.storageKey('owner&name=test'), 'keep-me');
       final deleting = profiles.deleteProfile('owner&name=test');
       await sent.future;
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('spielfreunde.profile'), 'keep-me');
+      expect(prefs.getString(FamilyMatchProfile.storageKey('owner&name=test')), 'keep-me');
       response.complete(http.Response(jsonEncode({'success': true}), 200));
       expect(await deleting, isTrue);
-      expect(prefs.containsKey('spielfreunde.profile'), isFalse);
+      expect(prefs.containsKey(FamilyMatchProfile.storageKey('owner&name=test')), isFalse);
+      expect(prefs.getString('spielfreunde.profile'), 'unassigned-draft');
+      expect(prefs.getString(FamilyMatchProfile.storageKey('owner')), 'keep-me');
     },
   );
 
@@ -63,7 +70,7 @@ void main() {
       final profiles = service(MockClient((_) async => response));
       expect(await profiles.deleteProfile('owner'), isFalse);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('spielfreunde.profile'), 'keep-me');
+      expect(prefs.getString(FamilyMatchProfile.storageKey('owner')), 'keep-me');
       expect(profiles.matchingService.lastSyncError, isNotNull);
     }
   });
@@ -76,7 +83,7 @@ void main() {
     );
     expect(await profiles.deleteProfile('owner'), isFalse);
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString('spielfreunde.profile'), 'keep-me');
+    expect(prefs.getString(FamilyMatchProfile.storageKey('owner')), 'keep-me');
   });
 
   test(
@@ -96,7 +103,7 @@ void main() {
       expect(await withBackend.deleteProfile(''), isFalse);
       expect(calls, 0);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('spielfreunde.profile'), 'keep-me');
+      expect(prefs.getString(FamilyMatchProfile.storageKey('owner')), 'keep-me');
     },
   );
 
