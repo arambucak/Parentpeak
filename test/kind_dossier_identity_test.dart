@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
+import 'package:parentpeak/logic/family_hub_store.dart';
+import 'package:parentpeak/logic/family_hub_migration.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -81,7 +83,11 @@ void main() {
       SharedPreferences.setMockInitialValues(
           {'kinddossier.data': jsonEncode(legacy)});
 
-      final service = KindDossierService.instance;
+      final store = FamilyHubStore(userIdProvider: () => 'legacy-owner');
+      final service = KindDossierService(store: store);
+      await service.load();
+      expect(service.dossiers, isEmpty);
+      await claimFamilyHubLegacy(expectedScope: store.scope, store: store);
       await service.load();
       expect(service.dossiers.length, 1);
       final id = service.dossiers.first.id;

@@ -12,22 +12,34 @@ import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
+import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
+import 'package:parentpeak/logic/family_hub_store.dart';
 
 /// Phase 3b: KI-Kühlschrank-Foto.
 ///
 /// Ablauf: Foto machen/auswählen → Gemini erkennt Zutaten (editierbare Chips)
 /// → kindgerechtes Rezept generieren → fehlende Zutaten mit einem Tap auf die
 /// Einkaufsliste setzen.
-class FridgeRecipeScreen extends StatefulWidget {
+class FridgeRecipeScreen extends StatelessWidget {
   const FridgeRecipeScreen({super.key});
 
   @override
-  State<FridgeRecipeScreen> createState() => _FridgeRecipeScreenState();
+  Widget build(BuildContext context) => FamilyHubAccountBoundary(
+    builder: (_) => const _ScopedFridgeRecipeScreen(),
+  );
+}
+
+class _ScopedFridgeRecipeScreen extends StatefulWidget {
+  const _ScopedFridgeRecipeScreen();
+
+  @override
+  State<_ScopedFridgeRecipeScreen> createState() => _FridgeRecipeScreenState();
 }
 
 enum _Phase { start, detecting, ingredients, generating, recipe }
 
-class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
+class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
+  final _scope = FamilyHubStore.instance.scope;
   static const _accent = Color(0xFFE8543A);
 
   final _service = FridgeRecipeService.instance;
@@ -63,8 +75,10 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(context.tr('fridge_consent_title')),
-        content: Text(context.tr('fridge_consent_body'),
-            style: theme.textTheme.bodyMedium),
+        content: Text(
+          context.tr('fridge_consent_body'),
+          style: theme.textTheme.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -110,27 +124,33 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
         _phase = _Phase.ingredients;
       });
       if (detected.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.tr('fridge_no_ingredients_detected')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('fridge_no_ingredients_detected')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } on AiRateLimitException catch (e) {
       if (mounted) {
         setState(() => _phase = _Phase.start);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.message),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 5),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } catch (_) {
       if (mounted) {
         setState(() => _phase = _Phase.start);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.tr('fridge_photo_processing_failed')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('fridge_photo_processing_failed')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -150,10 +170,12 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
 
   Future<void> _generate() async {
     if (_ingredients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr('fridge_ingredients_required')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('fridge_ingredients_required')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
     final languageCode = Localizations.localeOf(context).languageCode;
@@ -167,20 +189,32 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
     } on AiRateLimitException catch (e) {
       if (!mounted) return;
       setState(() => _phase = _Phase.ingredients);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.message),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 5),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+      return;
+    } catch (error) {
+      debugPrint('Fridge recipe context: $error');
+      if (!mounted) return;
+      setState(() => _phase = _Phase.ingredients);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('fridge_recipe_generation_failed'))),
+      );
       return;
     }
     if (!mounted) return;
     if (recipe == null) {
       setState(() => _phase = _Phase.ingredients);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tr('fridge_recipe_generation_failed')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('fridge_recipe_generation_failed')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
     setState(() {
@@ -194,16 +228,24 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
     if (_missing.isEmpty) return;
     HapticFeedback.lightImpact();
     await ShoppingListService.instance.load();
+    if (!mounted) return;
+    FamilyHubStore.instance.requireScope(_scope);
     await ShoppingListService.instance.addItemsFromRecipe(_missing);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(_missing.length == 1
-          ? context.tr('fridge_shopping_added_one')
-          : context.tr('fridge_shopping_added_many',
-              values: {'count': _missing.length})),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: const Color(0xFF16A34A),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _missing.length == 1
+              ? context.tr('fridge_shopping_added_one')
+              : context.tr(
+                  'fridge_shopping_added_many',
+                  values: {'count': _missing.length},
+                ),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF16A34A),
+      ),
+    );
   }
 
   void _restart() {
@@ -242,20 +284,28 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
         final destination = visibility == 'private'
             ? context.tr('fridge_saved_private')
             : visibility == 'public'
-                ? context.tr('fridge_saved_public')
-                : context.tr('fridge_saved_friends');
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context
-              .tr('fridge_save_success', values: {'destination': destination})),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF16A34A),
-        ));
+            ? context.tr('fridge_saved_public')
+            : context.tr('fridge_saved_friends');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.tr(
+                'fridge_save_success',
+                values: {'destination': destination},
+              ),
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF16A34A),
+          ),
+        );
       } else {
         setState(() => _sharing = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.tr('family_recipe_save_failed')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('family_recipe_save_failed')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } on SuspendedAccountException {
       if (mounted) {
@@ -265,10 +315,12 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
     } catch (_) {
       if (mounted) {
         setState(() => _sharing = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.tr('family_recipe_save_failed')),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('family_recipe_save_failed')),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -281,11 +333,17 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
       builder: (ctx) {
         final theme = Theme.of(ctx);
         Widget option(
-            String value, String title, String subtitle, IconData icon) {
+          String value,
+          String title,
+          String subtitle,
+          IconData icon,
+        ) {
           return ListTile(
             leading: Icon(icon, color: _accent),
-            title: Text(title,
-                style: const TextStyle(fontWeight: FontWeight.w700)),
+            title: Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
             subtitle: Text(subtitle, style: theme.textTheme.labelSmall),
             onTap: () => Navigator.pop(ctx, value),
           );
@@ -298,25 +356,31 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                child: Text(context.tr('family_recipe_visibility_title'),
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
+                child: Text(
+                  context.tr('family_recipe_visibility_title'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
               option(
-                  'friends',
-                  context.tr('family_recipe_visibility_friends'),
-                  context.tr('family_recipe_visibility_friends_hint'),
-                  Icons.group_rounded),
+                'friends',
+                context.tr('family_recipe_visibility_friends'),
+                context.tr('family_recipe_visibility_friends_hint'),
+                Icons.group_rounded,
+              ),
               option(
-                  'public',
-                  context.tr('family_recipe_visibility_public'),
-                  context.tr('family_recipe_visibility_public_hint'),
-                  Icons.public_rounded),
+                'public',
+                context.tr('family_recipe_visibility_public'),
+                context.tr('family_recipe_visibility_public_hint'),
+                Icons.public_rounded,
+              ),
               option(
-                  'private',
-                  context.tr('family_recipe_visibility_private'),
-                  context.tr('family_recipe_visibility_private_hint'),
-                  Icons.lock_outline_rounded),
+                'private',
+                context.tr('family_recipe_visibility_private'),
+                context.tr('family_recipe_visibility_private_hint'),
+                Icons.lock_outline_rounded,
+              ),
               const SizedBox(height: 8),
             ],
           ),
@@ -370,7 +434,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: _photo != null
@@ -386,9 +451,12 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
                 children: [
                   const Text('📸🥕', style: TextStyle(fontSize: 34)),
                   const SizedBox(height: 8),
-                  Text(context.tr('fridge_photo_question'),
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    context.tr('fridge_photo_question'),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -415,7 +483,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
                   backgroundColor: _accent,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),
@@ -430,7 +499,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
                   side: const BorderSide(color: _accent),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),
@@ -448,9 +518,12 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
           children: [
             const CircularProgressIndicator(color: _accent),
             const SizedBox(height: 16),
-            Text(label,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -461,32 +534,45 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(context.tr('fridge_detected_ingredients'),
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          context.tr('fridge_detected_ingredients'),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(context.tr('fridge_edit_ingredients_hint'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        Text(
+          context.tr('fridge_edit_ingredients_hint'),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 14),
         if (_ingredients.isEmpty)
-          Text(context.tr('fridge_no_ingredients'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline))
+          Text(
+            context.tr('fridge_no_ingredients'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          )
         else
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: _ingredients
-                .map((ing) => Chip(
-                      label: Text(ing),
-                      onDeleted: () => _removeIngredient(ing),
-                      deleteIcon: const Icon(Icons.close_rounded, size: 16),
-                      backgroundColor: _accent.withValues(alpha: 0.10),
-                      side: BorderSide(color: _accent.withValues(alpha: 0.4)),
-                      labelStyle: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 13),
-                    ))
+                .map(
+                  (ing) => Chip(
+                    label: Text(ing),
+                    onDeleted: () => _removeIngredient(ing),
+                    deleteIcon: const Icon(Icons.close_rounded, size: 16),
+                    backgroundColor: _accent.withValues(alpha: 0.10),
+                    side: BorderSide(color: _accent.withValues(alpha: 0.4)),
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         const SizedBox(height: 14),
@@ -528,7 +614,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
               backgroundColor: _accent,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ),
@@ -540,57 +627,81 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(r.title,
-            style: theme.textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          r.title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: 4),
         Row(
           children: [
-            Icon(Icons.schedule_rounded,
-                size: 14, color: theme.colorScheme.outline),
+            Icon(
+              Icons.schedule_rounded,
+              size: 14,
+              color: theme.colorScheme.outline,
+            ),
             const SizedBox(width: 4),
             Text(
-                context
-                    .tr('kitchen_minutes', values: {'minutes': r.prepMinutes}),
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
+              context.tr('kitchen_minutes', values: {'minutes': r.prepMinutes}),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
             const SizedBox(width: 12),
-            Icon(Icons.child_care_rounded,
-                size: 14, color: theme.colorScheme.outline),
+            Icon(
+              Icons.child_care_rounded,
+              size: 14,
+              color: theme.colorScheme.outline,
+            ),
             const SizedBox(width: 4),
             Text(
-                r.minChildAge == 0
-                    ? context.tr('kitchen_age_months')
-                    : context.tr('kitchen_age_years',
-                        values: {'age': r.minChildAge}),
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
+              r.minChildAge == 0
+                  ? context.tr('kitchen_age_months')
+                  : context.tr(
+                      'kitchen_age_years',
+                      values: {'age': r.minChildAge},
+                    ),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
           ],
         ),
         if (r.description.isNotEmpty) ...[
           const SizedBox(height: 10),
-          Text(r.description,
-              style: theme.textTheme.bodyMedium?.copyWith(height: 1.4)),
+          Text(
+            r.description,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+          ),
         ],
         const SizedBox(height: 16),
-        Text(context.tr('fridge_ingredients_title'),
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          context.tr('fridge_ingredients_title'),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: 6),
-        ...r.ingredients.map((ing) => Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('• '),
-                  Expanded(child: Text(ing, style: theme.textTheme.bodyMedium)),
-                ],
-              ),
-            )),
+        ...r.ingredients.map(
+          (ing) => Padding(
+            padding: const EdgeInsets.only(bottom: 3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('• '),
+                Expanded(child: Text(ing, style: theme.textTheme.bodyMedium)),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
-        Text(context.tr('fridge_preparation_title'),
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          context.tr('fridge_preparation_title'),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: 6),
         ...List.generate(r.steps.length, (i) {
           return Padding(
@@ -598,13 +709,19 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${i + 1}. ',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700, color: _accent)),
+                Text(
+                  '${i + 1}. ',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: _accent,
+                  ),
+                ),
                 Expanded(
-                    child: Text(r.steps[i],
-                        style:
-                            theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
+                  child: Text(
+                    r.steps[i],
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                  ),
+                ),
               ],
             ),
           );
@@ -622,9 +739,14 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
               children: [
                 const Text('💡 '),
                 Expanded(
-                    child: Text(r.tip,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            height: 1.4, fontStyle: FontStyle.italic))),
+                  child: Text(
+                    r.tip,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      height: 1.4,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -640,25 +762,33 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(context.tr('fridge_missing_title'),
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  context.tr('fridge_missing_title'),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: _missing
-                      .map((m) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                  color: theme.colorScheme.outlineVariant),
+                      .map(
+                        (m) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
                             ),
-                            child: Text(m, style: theme.textTheme.labelSmall),
-                          ))
+                          ),
+                          child: Text(m, style: theme.textTheme.labelSmall),
+                        ),
+                      )
                       .toList(),
                 ),
                 const SizedBox(height: 14),
@@ -667,14 +797,17 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
                   child: FilledButton.icon(
                     onPressed: _addMissingToShoppingList,
                     icon: const Icon(Icons.add_shopping_cart_rounded),
-                    label: Text(_missing.length == 1
-                        ? context.tr('fridge_add_missing_one')
-                        : context.tr('fridge_add_missing_many')),
+                    label: Text(
+                      _missing.length == 1
+                          ? context.tr('fridge_add_missing_one')
+                          : context.tr('fridge_add_missing_many'),
+                    ),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF16A34A),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                 ),
@@ -688,26 +821,34 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed:
-                _sharing || _shared ? null : () => _saveToFamilyRecipes(r),
+            onPressed: _sharing || _shared
+                ? null
+                : () => _saveToFamilyRecipes(r),
             icon: _sharing
                 ? const SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : Icon(
-                    _shared ? Icons.check_rounded : Icons.bookmark_add_rounded),
-            label: Text(_shared
-                ? context.tr('fridge_shared_to_family')
-                : context.tr('fridge_share_to_family')),
+                    _shared ? Icons.check_rounded : Icons.bookmark_add_rounded,
+                  ),
+            label: Text(
+              _shared
+                  ? context.tr('fridge_shared_to_family')
+                  : context.tr('fridge_share_to_family'),
+            ),
             style: FilledButton.styleFrom(
               backgroundColor: _shared ? const Color(0xFF16A34A) : _accent,
               disabledBackgroundColor: _shared ? const Color(0xFF16A34A) : null,
               disabledForegroundColor: _shared ? Colors.white : null,
               padding: const EdgeInsets.symmetric(vertical: 13),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ),
@@ -723,7 +864,8 @@ class _FridgeRecipeScreenState extends State<FridgeRecipeScreen> {
               side: const BorderSide(color: _accent),
               padding: const EdgeInsets.symmetric(vertical: 13),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ),

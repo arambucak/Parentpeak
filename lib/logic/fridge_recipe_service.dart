@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/family_hub_store.dart';
 
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
@@ -18,16 +18,20 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 /// Alter und Allergien aus dem Kind-Dossier. Das Foto wird NICHT gespeichert,
 /// sondern nur zur Analyse an den KI-Dienst gesendet.
 class FridgeRecipeService {
-  static final FridgeRecipeService instance = FridgeRecipeService._();
-  FridgeRecipeService._();
+  static final FridgeRecipeService instance = FridgeRecipeService();
+  FridgeRecipeService({GeminiAIService? aiService}) : _aiService = aiService;
+  final GeminiAIService? _aiService;
 
   int _childAgeYears = 3;
   List<String> _allergies = [];
   Set<String> _allergenKeys = {};
 
   /// Lädt Alter (jüngstes Kind) + Allergien aus Profil/Einstellungen.
-  Future<void> _ensureContext() async {
+  Future<String> _ensureContext() async {
+    final scope = FamilyHubStore.instance.scope;
     _childAgeYears = 3;
+    _allergies = [];
+    _allergenKeys = {};
     try {
       final profile = await FamilyMatchProfile.load();
       if (profile != null && profile.children.isNotEmpty) {
@@ -38,22 +42,22 @@ class FridgeRecipeService {
       }
     } catch (_) {}
     // SICHERHEIT: Allergien aus dem Kind-Dossier (echte Quelle) + Legacy-Key.
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final legacy = prefs.getStringList('familyküche.allergies') ?? [];
-      final fromDossiers = <String>{};
-      try {
-        await KindDossierService.instance.load();
-        for (final d in KindDossierService.instance.dossiers) {
-          for (final a in d.allergies) {
-            final clean = a.trim();
-            if (clean.isNotEmpty) fromDossiers.add(clean);
-          }
-        }
-      } catch (_) {}
-      _allergies = {...fromDossiers, ...legacy}.toList();
-      _allergenKeys = _allergies.map(AllergenGuard.canonicalAllergen).toSet();
-    } catch (_) {}
+    final data = await FamilyHubStore.instance.read(expectedScope: scope);
+    final legacy = List<String>.from(
+      data[FamilyHubStore.allergyKey] as List? ?? [],
+    );
+    final fromDossiers = <String>{};
+    await KindDossierService.instance.load();
+    for (final d in KindDossierService.instance.dossiers) {
+      for (final a in d.allergies) {
+        final clean = a.trim();
+        if (clean.isNotEmpty) fromDossiers.add(clean);
+      }
+    }
+    FamilyHubStore.instance.requireScope(scope);
+    _allergies = {...fromDossiers, ...legacy}.toList();
+    _allergenKeys = _allergies.map(AllergenGuard.canonicalAllergen).toSet();
+    return scope;
   }
 
   String _ageText() {
@@ -73,9 +77,12 @@ class FridgeRecipeService {
 
   /// Erkennt Zutaten auf einem Foto. Gibt eine Liste erkannter Lebensmittel
   /// zurück (leere Liste bei Fehler). Nicht-essbare Objekte werden ignoriert.
-  Future<List<String>> detectIngredients(Uint8List imageBytes,
-      {String mimeType = 'image/jpeg', String languageCode = 'de'}) async {
-    await _ensureContext();
+  Future<List<String>> detectIngredients(
+    Uint8List imageBytes, {
+    String mimeType = 'image/jpeg',
+    String languageCode = 'de',
+  }) async {
+    final scope = await _ensureContext();
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('FridgeRecipeService: Rate limit erreicht');
@@ -83,7 +90,8 @@ class FridgeRecipeService {
     }
 
     final outputLanguage = _outputLanguage(languageCode);
-    final prompt = '''
+    final prompt =
+        '''
 Auf diesem Foto sind Lebensmittel (z. B. aus einem Kühlschrank oder einer Vorratskammer).
 Erkenne NUR die essbaren Lebensmittel/Zutaten, die du sicher siehst.
 
@@ -99,7 +107,8 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
 
     try {
       final modelName = APIConfig.getGeminiModelName();
-      final raw = await GeminiAIService(modelName: modelName).generateText(
+      FamilyHubStore.instance.requireScope(scope);
+      final raw = await (_aiService ?? GeminiAIService(modelName: modelName)).generateText(
         prompt,
         systemInstruction:
             'Du erkennst Lebensmittel auf Fotos. Antworte IMMER NUR mit einem '
@@ -107,8 +116,11 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
         imageBytes: imageBytes,
         imageMimeType: mimeType,
       );
+      FamilyHubStore.instance.requireScope(scope);
       await AIRateLimiter.recordRequest();
       return _parseIngredientList(raw);
+    } on FamilyHubAccountChanged {
+      rethrow;
     } catch (e) {
       debugPrint('FridgeRecipeService.detectIngredients: $e');
       return [];
@@ -117,11 +129,15 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
 
   /// Generiert ein kindgerechtes Rezept aus den (vom Nutzer bestätigten)
   /// Zutaten. Gibt null zurück, wenn nichts erzeugt werden konnte.
-  Future<FamilyRecipe?> generateFromIngredients(List<String> ingredients,
-      {String languageCode = 'de'}) async {
-    await _ensureContext();
-    final clean =
-        ingredients.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  Future<FamilyRecipe?> generateFromIngredients(
+    List<String> ingredients, {
+    String languageCode = 'de',
+  }) async {
+    final scope = await _ensureContext();
+    final clean = ingredients
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
     if (clean.isEmpty) return null;
 
     await AIRateLimiter.initialize();
@@ -131,7 +147,8 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
     }
 
     final outputLanguage = _outputLanguage(languageCode);
-    final prompt = '''
+    final prompt =
+        '''
 Erstelle EIN kinderfreundliches Familien-Rezept auf $outputLanguage, das möglichst viele
 dieser vorhandenen Zutaten nutzt:
 ${clean.join(", ")}
@@ -166,12 +183,14 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
     try {
       final modelName = APIConfig.getGeminiModelName();
-      final raw = await GeminiAIService(modelName: modelName).generateText(
+      FamilyHubStore.instance.requireScope(scope);
+      final raw = await (_aiService ?? GeminiAIService(modelName: modelName)).generateText(
         prompt,
         systemInstruction:
             'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
             'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
       );
+      FamilyHubStore.instance.requireScope(scope);
       await AIRateLimiter.recordRequest();
       final recipe = _parseRecipe(raw);
       if (recipe == null) return null;
@@ -182,6 +201,8 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
         return null;
       }
       return recipe;
+    } on FamilyHubAccountChanged {
+      rethrow;
     } catch (e) {
       debugPrint('FridgeRecipeService.generateFromIngredients: $e');
       return null;
@@ -208,16 +229,18 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   /// Mappt einen Sprachcode auf die (deutsche) Bezeichnung für den KI-Prompt,
   /// damit Gemini in der aktiven App-Sprache antwortet.
   static String _outputLanguage(String languageCode) => switch (languageCode) {
-        'de' => 'Deutsch',
-        'tr' => 'Türkisch',
-        'ku' => 'Kurmandschi (lateinische Schrift)',
-        _ => 'Englisch',
-      };
+    'de' => 'Deutsch',
+    'tr' => 'Türkisch',
+    'ku' => 'Kurmandschi (lateinische Schrift)',
+    _ => 'Englisch',
+  };
 
   // Grobes Kernwort einer Zutatenzeile (letztes Wort, oft der Zutatenname).
   String _coreWord(String s) {
-    final parts =
-        s.replaceAll(RegExp(r'[0-9]'), '').trim().split(RegExp(r'\s+'));
+    final parts = s
+        .replaceAll(RegExp(r'[0-9]'), '')
+        .trim()
+        .split(RegExp(r'\s+'));
     return parts.isEmpty ? s : parts.last;
   }
 

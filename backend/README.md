@@ -28,6 +28,49 @@ Regressionen:
 flutter test --no-pub test/family_recipe_consent_test.dart test/fallback_recipes_test.dart test/allergen_guard_test.dart test/localization_audit_verification_test.dart
 ```
 
+## Lokale Kontotrennung der Familien-Zentrale
+
+`FamilyHubStore` verwaltet Kind-Dossiers, aktive/erledigte Einkaeufe, haeufige
+Artikel, To-dos und die zusaetzlichen Kuechen-Allergien in
+`familyhub.accounts.v1`. Jeder Kontobereich besitzt einen geprueften
+Eigentuemer-Umschlag. Der nicht angemeldete Modus hat einen eigenen leeren
+Gastbereich; Gastdaten werden nie automatisch einem Konto zugeordnet.
+Dies ist lokale Kontotrennung, keine Verschluesselung oder Geraetesynchronisierung.
+
+Die bisherigen globalen Keys bleiben als unzugeordneter Altbestand erhalten.
+Sie werden von den produktiven Verbrauchern nicht automatisch gelesen. Die
+Familien-Zentrale bietet angemeldeten Nutzern eine ausdrueckliche
+Eigentumsbestaetigung an, bevor sie diesen Bestand lokal uebernimmt. Daten und
+Uebernahme-Eigentuemer werden in einem einzigen bestaetigten Schreibvorgang
+gespeichert. Bei Fehlern bleibt die Uebernahme wiederholbar; nach Erfolg kann
+kein zweites Konto denselben Altbestand beanspruchen. Originalkeys bleiben
+als Backup erhalten, werden aber nach dem Claim nicht weiter benutzt.
+Existierende Kontodaten bleiben erhalten; ID-Kollisionen werden durch neue
+Legacy-IDs getrennt, nicht nach Namen zusammengefuehrt. Es findet kein Upload
+und keine Profil-Veroeffentlichung statt.
+
+Verifizierte Aufrufer:
+
+- Dossiers: Familien-Zentrale, FamilyRecipeService, FridgeRecipeService,
+  Ritual & Ruhe. AllergenGuard wertet die geladenen Dossiers lokal aus.
+- Einkauf: Familien-Zentrale, Familien-Kueche, FridgeRecipeScreen.
+- To-dos: Familien-Zentrale.
+- Zusaetzliche Kuechen-Allergien: beide Rezeptservices; ein globaler Fallback
+  wuerde die Dossier-Kontotrennung umgehen und ist deshalb entfernt.
+
+Offene Verbraucherscreens werden bei Konto-/Logoutwechsel neu aufgebaut;
+offene Dossier- und Einkaufsmodals blenden bisherige Kontoinhalte aus.
+Verspaetete Writes bleiben an ihr Ausgangskonto gebunden und werden nach
+Kontowechsel abgewiesen. Fehlende/defekte Dossierdaten leeren den Singleton,
+statt alte Gesundheitsangaben als aktuellen Bestand weiterzugeben.
+
+```bash
+flutter test --no-pub test/family_hub_account_test.dart test/kind_dossier_identity_test.dart test/kind_dossier_uexam_test.dart test/family_recipe_consent_test.dart test/localization_audit_verification_test.dart
+```
+
+Allgemeine Mutations-/UI-Fehlerbehandlung, Alterskorrektur und Sharing/
+Lifecycle-Nachbesserungen sind getrennte Folge-PRs.
+
 ## Installation
 
 1. **Node.js installieren** (falls nicht vorhanden)

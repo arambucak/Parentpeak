@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/family_hub_store.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 /// Kind-Dossier — alle wichtigen Infos zu einem Kind an einem Ort.
@@ -255,25 +254,38 @@ class UExaminationData {
   ];
 }
 
-/// Persistenz für Kind-Dossiers (lokal, verschluesselt).
+/// Lokale, kontogetrennte Persistenz (keine appseitige Verschluesselung).
 class KindDossierService {
-  static final KindDossierService instance = KindDossierService._();
-  KindDossierService._();
+  static final KindDossierService instance = KindDossierService();
+  KindDossierService({FamilyHubStore? store})
+      : _store = store ?? FamilyHubStore.instance;
 
-  static const _key = 'kinddossier.data';
+  final FamilyHubStore _store;
+  String? _loadedScope;
+  int _loadRevision = 0;
   List<KindDossier> _dossiers = [];
 
-  List<KindDossier> get dossiers => List.unmodifiable(_dossiers);
+  List<KindDossier> get dossiers {
+    if (_loadedScope != _store.scope) _dossiers = [];
+    return List.unmodifiable(_dossiers);
+  }
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null && raw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is! List) return;
+    final scope = _store.scope;
+    final revision = ++_loadRevision;
+    _dossiers = [];
+    _loadedScope = null;
+    try {
+        final data = await _store.read(expectedScope: scope);
+        final decoded = data[FamilyHubStore.dossierKey] ?? [];
+        if (decoded is! List) {
+          throw const FormatException('Invalid account dossier list');
+        }
         var migrated = false;
-        _dossiers = decoded.whereType<Map>().map((entry) {
+        final dossiers = decoded.map((entry) {
+          if (entry is! Map) {
+            throw const FormatException('Invalid account dossier entry');
+          }
           final data = Map<String, dynamic>.from(entry);
           final birthDate =
               DateTime.tryParse(data['birthDate']?.toString() ?? '');
@@ -287,34 +299,47 @@ class KindDossierService {
           return KindDossier.fromJson(data);
         }).toList();
         if (migrated) {
-          await prefs.setString(
-            _key,
-            jsonEncode(_dossiers.map((dossier) => dossier.toJson()).toList()),
-          );
+          await _store.write({
+            FamilyHubStore.dossierKey:
+                dossiers.map((dossier) => dossier.toJson()).toList(),
+          }, expectedScope: scope);
         }
-      } catch (_) {}
+        _store.requireScope(scope);
+        if (revision != _loadRevision) throw const FamilyHubAccountChanged();
+        _dossiers = dossiers;
+        _loadedScope = scope;
+    } catch (error) {
+      if (revision == _loadRevision) _dossiers = [];
+      rethrow;
     }
   }
 
-  Future<void> save(List<KindDossier> dossiers) async {
-    _dossiers = dossiers;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-        _key, jsonEncode(_dossiers.map((d) => d.toJson()).toList()));
+  Future<void> save(List<KindDossier> dossiers, {String? expectedScope}) async {
+    final scope = expectedScope ?? _loadedScope ?? _store.scope;
+    _store.requireScope(scope);
+    await _store.write({
+      FamilyHubStore.dossierKey: dossiers.map((d) => d.toJson()).toList(),
+    }, expectedScope: scope);
+    _store.requireScope(scope);
+    _dossiers = List.of(dossiers);
+    _loadedScope = scope;
   }
 
   /// Fügt ein Dossier hinzu oder aktualisiert ein bestehendes. Die Zuordnung
   /// erfolgt über die stabile [KindDossier.id] — so bleibt ein Kind auch nach
   /// einer Umbenennung dasselbe Dossier, und gleichnamige Kinder kollidieren
   /// nicht mehr.
-  Future<void> addOrUpdate(KindDossier dossier) async {
+  Future<void> addOrUpdate(KindDossier dossier, {String? expectedScope}) async {
+    final scope = expectedScope ?? _loadedScope;
+    if (scope == null) throw StateError('Load account dossiers before editing');
+    _store.requireScope(scope);
     final idx = _dossiers.indexWhere((d) => d.id == dossier.id);
     if (idx != -1) {
       _dossiers[idx] = dossier;
     } else {
       _dossiers.add(dossier);
     }
-    await save(_dossiers);
+    await save(_dossiers, expectedScope: scope);
   }
 
   /// Findet ein Dossier anhand des Kindnamens (für das Nachziehen aus dem
@@ -322,7 +347,7 @@ class KindDossierService {
   /// wenn kein Dossier mit diesem Namen existiert.
   KindDossier? findByName(String childName) {
     final name = childName.trim();
-    for (final d in _dossiers) {
+    for (final d in dossiers) {
       if (d.childName.trim() == name) return d;
     }
     return null;
@@ -337,6 +362,9 @@ class KindDossierService {
     String examId,
     bool done,
   ) async {
+    final scope = _loadedScope;
+    if (scope == null) throw StateError('Load account dossiers before editing');
+    _store.requireScope(scope);
     final idx = _dossiers.indexWhere((d) => d.id == dossierId);
     if (idx == -1) return null;
     final dossier = _dossiers[idx];
@@ -352,7 +380,7 @@ class KindDossierService {
     if (!found) return null;
     final updated = dossier.copyWith(uExams: updatedExams);
     _dossiers[idx] = updated;
-    await save(_dossiers);
+    await save(_dossiers, expectedScope: scope);
     return updated;
   }
 }

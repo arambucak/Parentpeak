@@ -1,9 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/family_hub_store.dart';
+import 'package:parentpeak/logic/family_hub_migration.dart';
+import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -12,14 +13,23 @@ import 'package:parentpeak/main.dart';
 
 /// Familien-Zentrale — Einkauf + To-do + Kind-Dossier.
 /// Besser als FamilyWall: Mengenangabe, Erledigt-Bereich, Kind-Infos.
-class FamilienZentraleScreen extends StatefulWidget {
+class FamilienZentraleScreen extends StatelessWidget {
   const FamilienZentraleScreen({super.key});
 
   @override
-  State<FamilienZentraleScreen> createState() => _FamilienZentraleScreenState();
+  Widget build(BuildContext context) => FamilyHubAccountBoundary(
+        builder: (_) => const _ScopedFamilienZentraleScreen(),
+      );
 }
 
-class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
+class _ScopedFamilienZentraleScreen extends StatefulWidget {
+  const _ScopedFamilienZentraleScreen();
+
+  @override
+  State<_ScopedFamilienZentraleScreen> createState() => _FamilienZentraleScreenState();
+}
+
+class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   final _shopping = ShoppingListService.instance;
@@ -30,6 +40,9 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   bool _loaded = false;
   bool _loadError = false;
   int _activeTabIndex = 0;
+  final _store = FamilyHubStore.instance;
+  late final String _scope = _store.scope;
+  bool _hasLegacy = false;
 
   @override
   void initState() {
@@ -52,11 +65,15 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   Future<void> _load() async {
     try {
       await _shopping.load();
+      _store.requireScope(_scope);
       await _dossierService.load();
+      _store.requireScope(_scope);
       // Kinder aus dem Eltern-Netzwerk-Profil nachziehen (auch wenn schon
       // Dossiers existieren) — so landen neu angelegte Kinder zuverlässig hier.
       await _syncDossiersFromProfile();
       await _loadTodos();
+      _hasLegacy = await _store.hasUnassignedLegacy();
+      _store.requireScope(_scope);
       _loadError = false;
     } catch (e) {
       debugPrint('FamilienZentrale._load() Fehler: $e');
@@ -71,6 +88,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   Future<void> _syncDossiersFromProfile() async {
     try {
       final profile = await FamilyMatchProfile.load();
+      _store.requireScope(_scope);
       if (profile == null || profile.children.isEmpty) return;
       for (final child in profile.children) {
         final name = child.name.isNotEmpty ? child.name : 'Kind';
@@ -79,7 +97,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
           childName: name,
           ageMonths: child.ageMonths,
           uExams: UExaminationData.generateForChild(child.ageMonths),
-        ));
+        ), expectedScope: _scope);
       }
     } catch (e) {
       debugPrint('FamilienZentrale._syncDossiersFromProfile() Fehler: $e');
@@ -87,24 +105,56 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   }
 
   Future<void> _loadTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('zentrale.todos');
-    if (raw != null && raw.isNotEmpty) {
-      try {
-        _todos = List<Map<String, dynamic>>.from(
-            (jsonDecode(raw) as List).map((e) => Map<String, dynamic>.from(e)));
-      } catch (_) {}
-    }
+    _todos = [];
+    final data = await _store.read(expectedScope: _scope);
+    _todos = (data[FamilyHubStore.todoKey] as List? ?? [])
+        .map((entry) => Map<String, dynamic>.from(entry as Map))
+        .toList();
   }
 
   Future<void> _saveTodos() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('zentrale.todos', jsonEncode(_todos));
+      await _store.write({FamilyHubStore.todoKey: _todos}, expectedScope: _scope);
     } catch (e) {
       debugPrint('FamilienZentrale._saveTodos() Fehler: $e');
     }
   }
+
+    Future<void> _claimLegacy() async {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => FamilyHubAccountModal(
+          expectedScope: _scope,
+          builder: (ctx) => AlertDialog(
+            title: Text(context.tr('family_hub_legacy_title')),
+            content: Text(context.tr('family_hub_legacy_confirm')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(context.tr('cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(context.tr('family_hub_legacy_claim')),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      try {
+        await claimFamilyHubLegacy(expectedScope: _scope);
+        if (!mounted) return;
+        setState(() => _loaded = false);
+        await _load();
+      } catch (error) {
+        debugPrint('FamilienZentrale legacy claim: $error');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('family_hub_legacy_failed'))),
+        );
+      }
+    }
 
   /// Anzahl fälliger oder überfälliger U-Untersuchungen über alle Kinder.
   int get _urgentExamCount {
@@ -179,6 +229,12 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             languageService.currentLanguage, 'familien_zentrale_title')),
         elevation: 0,
         actions: [
+          if (_hasLegacy && _store.userId != null)
+            IconButton(
+              icon: const Icon(Icons.inventory_2_outlined),
+              tooltip: context.tr('family_hub_legacy_title'),
+              onPressed: _claimLegacy,
+            ),
           if (_activeTabIndex == 0 && _shopping.activeItems.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.ios_share_rounded),
@@ -230,12 +286,26 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabs,
+      body: Column(
         children: [
-          _einkaufTab(theme),
-          _todoTab(theme),
-          _kinderTab(theme),
+          if (_hasLegacy)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Column(children: [
+                Text(context.tr('family_hub_legacy_notice')),
+                if (_store.userId != null)
+                  TextButton(
+                    onPressed: _claimLegacy,
+                    child: Text(context.tr('family_hub_legacy_title')),
+                  ),
+              ]),
+            ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabs,
+              children: [_einkaufTab(theme), _todoTab(theme), _kinderTab(theme)],
+            ),
+          ),
         ],
       ),
     );
@@ -301,6 +371,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                   return ActionChip(
                     label: Text(name, style: const TextStyle(fontSize: 11)),
                     onPressed: () async {
+                      _store.requireScope(_scope);
                       await _shopping.addItem(ShoppingItem.fromInput(name));
                       setState(() {});
                     },
@@ -403,6 +474,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             dense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 4),
             onTap: () async {
+              _store.requireScope(_scope);
               await _shopping.toggleDone(item.id);
               setState(() {});
             },
@@ -450,6 +522,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () async {
+                  _store.requireScope(_scope);
                   await _shopping.removeItem(item.id);
                   setState(() {});
                 },
@@ -465,6 +538,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     final text = _inputCtrl.text.trim();
     if (text.isEmpty) return;
     final item = ShoppingItem.fromInput(text);
+    _store.requireScope(_scope);
     await _shopping.addItem(item);
     _inputCtrl.clear();
     HapticFeedback.lightImpact();
@@ -862,6 +936,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
   }
 
   Future<void> _toggleUExam(KindDossier dossier, UExamination exam) async {
+    _store.requireScope(_scope);
     await _dossierService.setUExamDone(dossier.id, exam.id, !exam.isDone);
     HapticFeedback.selectionClick();
     if (mounted) setState(() {});
@@ -885,7 +960,9 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => FamilyHubAccountModal(
+        expectedScope: _scope,
+        builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
@@ -923,6 +1000,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                     languageService.currentLanguage, 'close_btn')),
               )),
         ]),
+        ),
       ),
     );
   }
@@ -968,7 +1046,9 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
+      builder: (ctx) => FamilyHubAccountModal(
+        expectedScope: _scope,
+        builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.85,
         minChildSize: 0.5,
         maxChildSize: 0.95,
@@ -1072,7 +1152,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
                     notes: trimOrNull(notesCtrl.text),
                     uExams: dossier.uExams,
                   );
-                  await _dossierService.addOrUpdate(updated);
+                  await _dossierService.addOrUpdate(updated, expectedScope: _scope);
                   if (mounted) {
                     Navigator.pop(ctx);
                     setState(() {});
@@ -1090,6 +1170,7 @@ class _FamilienZentraleScreenState extends State<FamilienZentraleScreen>
             ],
           ),
         ),
+      ),
       ),
     );
   }
