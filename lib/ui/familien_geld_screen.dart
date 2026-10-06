@@ -650,7 +650,6 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           MaterialPageRoute(
             builder: (_) => BenefitGuideScreen(
               country: _country,
-              isSingleParent: _isSingleParent,
             ),
           ),
         ),

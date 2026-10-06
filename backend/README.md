@@ -129,6 +129,38 @@ zeigt Plattformfehler sichtbar an. Es werden nur aktive Einkaeufe geteilt.
 flutter test --no-pub test/family_hub_shopping_ui_test.dart test/family_hub_editor_i18n_test.dart test/family_hub_age_test.dart test/family_hub_account_test.dart test/family_hub_persistence_test.dart test/localization_audit_verification_test.dart
 ```
 
+## Familien-Geld: Einwilligung fuer den persoenlichen KI-Wegweiser
+
+Der Flutter-Wegweiser verlangt vor der ersten persoenlichen Anfrage eine
+ausdrueckliche Einwilligung. Der Hinweis nennt Freitext, ausgewaehlte Situation,
+Land, Kinderalter und Elternstatus sowie die Verarbeitung ueber den
+ParentPeak-Server durch Google Gemini, gegebenenfalls mit Websuche. Die
+Kontaktredaktion im gemeinsamen KI-Client ist keine vollstaendige
+Anonymisierung. Ohne Zustimmung wird keine Wegweiser-KI-Anfrage gestartet;
+allgemeine kuratierte Leistungsinformationen bleiben verfuegbar.
+
+Die lokale Freigabe liegt unter `famgeld.ai_guide_consent.v1.<account scope>`
+und ist fuer jedes Konto beziehungsweise den Gastbereich getrennt. Bestehende
+Rezeptfreigaben unter `familykueche.ai_recipe_consent.v1` werden durch die
+gemeinsame Implementierung unveraendert erhalten, geben aber den Finanzwegweiser
+nicht frei. Eine Freigabe gilt erst nach positiv bestaetigtem Speicherwrite.
+
+Sowohl UI als auch Agent pruefen den Ursprungskontext vor dem Request und nach
+asynchronen Schritten. Kontowechsel oder fehlende Zustimmung duerfen nicht als
+erfolgreicher allgemeiner KI-Fallback erscheinen. Bereits gestartete Requests
+lassen sich dadurch nicht rueckgaengig machen; ihre Antworten werden jedoch
+nicht im neuen Kontokontext angezeigt. Dies ist ein Client-Vertrag, kein
+serverseitiger Consentnachweis fuer den allgemeinen KI-Endpunkt.
+
+Defekter Profil-/Wegweiserkontext wird sichtbar gemeldet und blockiert die
+Anfrage. Der noch globale Alleinerziehendenstatus des Geldscreens wird bis zur
+separaten Kontomigration nicht automatisch weitergegeben. Die Finanzspeicher
+und alten Checklisten sind mit diesem PR noch nicht migriert.
+
+```bash
+flutter test --no-pub test/benefit_guide_consent_test.dart test/family_recipe_consent_test.dart test/family_hub_account_test.dart test/localization_audit_verification_test.dart
+```
+
 ## Installation
 
 1. **Node.js installieren** (falls nicht vorhanden)
