@@ -6898,6 +6898,15 @@ function parseOptionalParentAge(value, min = 16, max = 99) {
   return Number.isInteger(age) && age >= min && age <= max ? age : undefined;
 }
 
+function parseOptionalParentCoordinate(value, maxAbsolute) {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'number' && typeof value !== 'string') return undefined;
+  if (typeof value === 'string' && !value.trim()) return undefined;
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) && Math.abs(coordinate) <= maxAbsolute
+    ? coordinate : undefined;
+}
+
 app.post('/parent-matching/my-profile', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   if (!userId) {
@@ -6913,10 +6922,12 @@ app.post('/parent-matching/my-profile', async (req, res) => {
   const city = (req.body.city || '').toString().trim();
   const familyForm = (req.body.familyForm || '').toString().trim();
   const bio = (req.body.bio || '').toString().trim();
-  const latitudeRaw = Number(req.body.latitude);
-  const longitudeRaw = Number(req.body.longitude);
-  const latitude = Number.isFinite(latitudeRaw) ? latitudeRaw : null;
-  const longitude = Number.isFinite(longitudeRaw) ? longitudeRaw : null;
+  const latitude = parseOptionalParentCoordinate(req.body.latitude, 90);
+  const longitude = parseOptionalParentCoordinate(req.body.longitude, 180);
+  if (latitude === undefined || longitude === undefined ||
+      (latitude === null) !== (longitude === null)) {
+    return res.status(400).json({ error: 'Koordinaten sind ungueltig oder unvollstaendig' });
+  }
 
   const toList = value => Array.isArray(value)
     ? value.map(item => item?.toString().trim()).filter(Boolean)
@@ -11777,8 +11788,14 @@ function jaccardSimilarity(arr1, arr2) {
  * Create or update user's matching profile
  */
 app.post('/api/parent-matching/profiles', async (req, res) => {
-  const { userId, name, city, latitude, longitude, interests, languages, valuesFocus, childAges, familyForm, bio } = req.body;
+  const { userId, name, city, interests, languages, valuesFocus, childAges, familyForm, bio } = req.body;
   const age = parseOptionalParentAge(req.body.age, 18, 120);
+  const latitude = parseOptionalParentCoordinate(req.body.latitude, 90);
+  const longitude = parseOptionalParentCoordinate(req.body.longitude, 180);
+  if (latitude === undefined || longitude === undefined ||
+      (latitude === null) !== (longitude === null)) {
+    return res.status(400).json({ error: 'Koordinaten sind ungueltig oder unvollstaendig' });
+  }
 
   if (!userId || !name || !city) {
     return res.status(400).json({ error: 'userId, name, city erforderlich' });
@@ -11798,8 +11815,8 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
         name: String(name).slice(0, 100),
         age,
         city: String(city).slice(0, 50),
-        latitude: latitude ? parseFloat(latitude) : null,
-        longitude: longitude ? parseFloat(longitude) : null,
+        latitude,
+        longitude,
         bio: bio ? String(bio).slice(0, 500) : null,
         interests: Array.isArray(interests) ? interests.map(i => String(i).slice(0, 50)) : [],
         languages: Array.isArray(languages) ? languages.map(l => String(l).slice(0, 30)) : [],
@@ -11813,8 +11830,8 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
         name: String(name).slice(0, 100),
         age,
         city: String(city).slice(0, 50),
-        latitude: latitude ? parseFloat(latitude) : null,
-        longitude: longitude ? parseFloat(longitude) : null,
+        latitude,
+        longitude,
         bio: bio ? String(bio).slice(0, 500) : null,
         interests: Array.isArray(interests) ? interests.map(i => String(i).slice(0, 50)) : [],
         languages: Array.isArray(languages) ? languages.map(l => String(l).slice(0, 30)) : [],

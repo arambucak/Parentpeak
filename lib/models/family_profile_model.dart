@@ -5,6 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class FamilyMatchProfile {
   final String displayName;
   final String district;
+  final String? city;
+  final double? latitude;
+  final double? longitude;
   final List<ChildEntry> children;
   final List<String> languages;
   final String familyForm;
@@ -25,6 +28,9 @@ class FamilyMatchProfile {
   const FamilyMatchProfile({
     required this.displayName,
     required this.district,
+    this.city,
+    this.latitude,
+    this.longitude,
     required this.children,
     required this.languages,
     required this.familyForm,
@@ -52,6 +58,9 @@ class FamilyMatchProfile {
   Map<String, dynamic> toJson() => {
         'displayName': displayName,
         'district': district,
+        'city': city,
+        'latitude': latitude,
+        'longitude': longitude,
         'children': children.map((c) => c.toJson()).toList(),
         'languages': languages,
         'familyForm': familyForm,
@@ -74,6 +83,9 @@ class FamilyMatchProfile {
       FamilyMatchProfile(
         displayName: j['displayName'] ?? '',
         district: j['district'] ?? '',
+        city: j['city'],
+        latitude: (j['latitude'] as num?)?.toDouble(),
+        longitude: (j['longitude'] as num?)?.toDouble(),
         children: ((j['children'] as List?) ?? [])
             .map((c) => ChildEntry.fromJson(c))
             .toList(),

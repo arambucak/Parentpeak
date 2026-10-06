@@ -16,6 +16,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 FamilyMatchProfile profile() => FamilyMatchProfile(
       displayName: 'Test family',
       district: 'Berlin',
+      city: 'Berlin',
+      latitude: 52.521987,
+      longitude: 13.404954,
       children: [
         ChildEntry(
             name: 'Local child',
@@ -79,10 +82,7 @@ void main() {
       return response.future;
     }));
     final publishing = profiles.publishProfile(profile(), 'owner',
-        confirmPublication: () => consent.future,
-        city: 'Berlin',
-        latitude: 52.521987,
-        longitude: 13.404954);
+        confirmPublication: () => consent.future);
     await Future<void>.delayed(Duration.zero);
     expect(uploaded, isNull);
     consent.complete(true);
