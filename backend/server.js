@@ -12,6 +12,7 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
 const { changeParticipation, updateOwnedEvent, validateEventMode, CONFIRMED } = require('./event_participation_policy');
+const { publicTreasure } = require('./treasure_public_view');
 
 // Firebase Admin — initialised lazily so the server starts without credentials
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
@@ -13714,45 +13715,11 @@ app.get('/api/treasures', async (req, res) => {
     // Karten-/Umkreisdarstellung reicht eine stark gerundete Position
     // (~1 km Raster bei 2 Dezimalstellen). Die genaue Distanz wird separat
     // serverseitig berechnet und verrät keine Position.
-    const coarse = (value) => {
-      const num = Number(value);
-      if (!Number.isFinite(num)) return null;
-      return Math.round(num * 100) / 100;
-    };
-    const formattedTreasures = treasures.map(t => ({
-      id: t.id,
-      userId: t.userId,
-      ownerUserId: t.userId,
-      title: t.title,
-      description: t.description,
-      location: t.location,
-      // Nur grob gerundete Position ausliefern (keine punktgenaue Adresse).
-      latitude: coarse(t.latitude),
-      longitude: coarse(t.longitude),
-      approximateLocation: true,
-      category: t.category,
-      condition: t.condition,
-      visibility: t.visibility,
-      shareRadiusKm: t.shareRadiusKm,
-      isFree: t.isFree,
-      price: t.price,
-      photoUrl: t.photoUrl,
-      photoUrls: Array.isArray(t.photoUrls) ? t.photoUrls : [],
-      pickupSlots: Array.isArray(t.pickupSlots) ? t.pickupSlots : [],
-      status: t.status,
-      views: t.views,
-      rating: t.rating,
-      ratingCount: t.ratingCount,
-      // Reservierungs-Zähler (offene Reservierungen)
-      reservedCount: Array.isArray(t.handovers)
-        ? t.handovers.filter(h => h.status === 'pending' || h.status === 'reserved').length
-        : 0,
+    const formattedTreasures = treasures.map(t => publicTreasure(t, {
       // Echte Distanz in km (falls Betrachter-Koordinaten vorhanden)
       distanceKm: (latitude !== undefined && longitude !== undefined && t.latitude && t.longitude)
         ? Math.round(haversineDistance(parseFloat(latitude), parseFloat(longitude), t.latitude, t.longitude) * 10) / 10
         : null,
-      createdAt: t.createdAt,
-      expiresAt: t.expiresAt,
     }));
 
     res.json({ treasures: formattedTreasures, total: formattedTreasures.length });
@@ -14522,10 +14489,7 @@ app.get('/api/treasures/:id', async (req, res) => {
   try {
     const treasure = await prisma.treasureItem.findUnique({
       where: { id },
-      include: {
-        ratings: { include: { fromUser: { select: { id: true, firstName: true, lastName: true, avatar: true } } } },
-        handovers: true
-      }
+      include: { handovers: { select: { status: true } } }
     });
 
     if (!treasure) {
@@ -14538,11 +14502,7 @@ app.get('/api/treasures/:id', async (req, res) => {
       data: { views: { increment: 1 } }
     });
 
-    const formattedTreasure = {
-      ...treasure,
-      availableHandovers: treasure.handovers.filter(h => h.status === 'pending').length,
-      claimedCount: treasure.handovers.filter(h => h.status === 'confirmed' || h.status === 'completed').length
-    };
+    const formattedTreasure = publicTreasure(treasure);
 
     res.json({ treasure: formattedTreasure });
   } catch (err) {
