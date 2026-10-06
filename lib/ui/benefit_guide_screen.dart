@@ -7,6 +7,7 @@ import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/benefit_guide_agent.dart';
 import 'package:parentpeak/logic/benefit_guide_consent.dart';
 import 'package:parentpeak/logic/family_finance_store.dart';
+import 'package:parentpeak/logic/finance_milestone_timeline.dart';
 import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:parentpeak/models/benefit_guide_result.dart';
@@ -25,6 +26,7 @@ class BenefitGuideScreen extends StatefulWidget {
   final bool isSingleParent;
   final BenefitGuideAgent? agent;
   final FamilyFinanceStore? store;
+  final DateTime Function()? now;
 
   const BenefitGuideScreen({
     super.key,
@@ -32,6 +34,7 @@ class BenefitGuideScreen extends StatefulWidget {
     this.isSingleParent = false,
     this.agent,
     this.store,
+    this.now,
   });
 
   @override
@@ -102,8 +105,9 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
     try {
       final profile = await FamilyMatchProfile.load(throwOnError: true);
       _consent.requireScope(_scope);
+      final now = widget.screen.now?.call() ?? DateTime.now();
       final ages = (profile?.children ?? [])
-          .map((c) => (c.ageMonths / 12).round())
+          .map((c) => FinanceMilestoneTimeline.completedYears(c.birthDate, now))
           .toList();
       final checked =
         await BenefitChecklistStore.loadChecked(widget.screen.country.code,
