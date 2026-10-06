@@ -25,324 +25,40 @@ import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/ui/widgets/playmate_publication_dialog.dart';
 import 'package:parentpeak/ui/widgets/playmate_profile_status.dart';
 import 'package:parentpeak/ui/widgets/playmate_discovery_error.dart';
+import 'package:parentpeak/ui/widgets/playmate_discovery_empty_state.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
 String networkWizardOptionLabel(
-    String language, String group, String key, String fallback) {
-  if (language != 'ku') return fallback;
-  const options = <String, Map<String, String>>{
-    'family': {
-      'kernfamilie': 'Malbata biçûk',
-      'alleinerziehend': 'Tenê dêûbav',
-      'patchwork': 'Malbata tevlihev',
-      'regenbogen': 'Malbata rengîn',
-      'grossfamilie': 'Malbata mezin',
-      'co_parenting': 'Dêûbaviya hevpar',
-      'pflegefamilie': 'Malbata xwedîkirinê',
-      'grosseltern': 'Malbata dapîr û bapîr',
-      'wg_familie': 'Malbata bi hev re dijîn',
-    },
-    'gender': {'maennlich': 'Kur', 'weiblich': 'Keç', 'divers': 'Cihêreng'},
-    'child': {
-      'spielplatz': 'Lîstikgeh',
-      'basteln': 'Destkariyê',
-      'malen': 'Wênekirin',
-      'natur': 'Keşifkirina xwezayê',
-      'sport': 'Werziş',
-      'musik': 'Muzîk',
-      'tanzen': 'Govd',
-      'tiere': 'Heywan',
-      'bücher': 'Pirtûk',
-      'bauen': 'Avakirin',
-      'rollenspiel': 'Lîstika rolan',
-      'kochen_backen': 'Xwarin çêkirin û nanpêjî',
-      'wasser': 'Lîstina bi avê',
-      'fahrrad': 'Bisîklet û skuter',
-      'theater': 'Şano û cilguhertin',
-      'experimente': 'Ceribandin',
-    },
-    'values': {
-      'gfk': 'Axaftina bê tundî',
-      'bedürfnisorientiert': 'Li gorî hewcedariyan',
-      'attachment_parenting': 'Dêûbaviya bi girêdanê',
-      'unerzogen': 'Perwerdehiya azad',
-      'montessori': 'Montessori',
-      'waldorf': 'Waldorf',
-      'freilernend': 'Fêrbûna azad',
-      'pikler': 'Pikler',
-      'respektvoll': 'Bi rêz',
-      'strukturiert': 'Bi rêk û pêk',
-      'demokratisch': 'Demokratîk',
-      'religioes': 'Olî / ruhanî',
-      'interkulturell': 'Pirçandî',
-      'feministisch': 'Femînîst',
-      'naturverbunden': 'Girêdayî xwezayê',
-      'offen': 'Ji her tiştî re vekirî',
-    },
-    'looking': {
-      'spielplatz': 'Hevdîtina lîstikgehê',
-      'natur': 'Daristan û xweza',
-      'sport': 'Werziş û hereket',
-      'kreativ': 'Hevdîtina afirîner',
-      'kochen': 'Bi hev re xwarin çêkirin',
-      'musik': 'Muzîk û stran',
-      'vorlesen': 'Xwendin û çîrok',
-      'eltern_austausch': 'Axaftina dêûbavan',
-      'babysitting_tausch': 'Alîkariya hevpar a lênihêrînê',
-      'kita_fahrgemeinschaft': 'Rêwîtiya hevpar a dibistanê',
-      'kindergeburtstage': 'Rojbûnên zarokan',
-      'ausflug': 'Ger û rêwîtî',
-      'indoor_treffen': 'Hevdîtina hundir',
-      'regelmaessig': 'Koma birêkûpêk',
-      'spontan': 'Hevdîtina bêplan',
-      'online_austausch': 'Axaftina serhêl',
-    },
-    'days': {
-      'montag': 'Du',
-      'dienstag': 'Sê',
-      'mittwoch': 'Çar',
-      'donnerstag': 'Pênc',
-      'freitag': 'În',
-      'samstag': 'Şem',
-      'sonntag': 'Yek'
-    },
-    'times': {
-      'morgens': 'Sibe (6–9)',
-      'vormittags': 'Berî nîvro (9–12)',
-      'nachmittags': 'Piştî nîvro (12–17)',
-      'abends': 'Êvar (17–21)',
-      'nach_kita': 'Piştî baxçeyê zarokan / dibistanê',
-      'flexibel': 'Guhêrbar'
-    },
-    'specials': {
-      'behinderung': 'Zarokê bi astengiyê',
-      'neurodivergent': 'Cihêrengiya mejî (ADHD/otîzm)',
-      'hochsensibel': 'Pir hestiyar',
-      'fruehchen': 'Dêûbavên zarokên zûdayikbûyî',
-      'mehrlinge': 'Cêwî an zarokên pirjimar',
-      'chronisch_krank': 'Nexweşiya demdirêj',
-      'allergien': 'Alerjî',
-      'schreibaby': 'Pitikê pir digirî',
-      'pflegekind': 'Zarokê xwedîkirî'
-    },
-    'language': {
-      'de': 'Almanî',
-      'en': 'Îngilîzî',
-      'tr': 'Tirkî',
-      'ku': 'Kurdî',
-      'ar': 'Erebî',
-      'fr': 'Fransî',
-      'es': 'Spanî',
-      'ru': 'Rûsî',
-      'pl': 'Polonî',
-      'it': 'Îtalî',
-      'pt': 'Portekîzî',
-      'nl': 'Holendî',
-      'uk': 'Ukraynî',
-      'ro': 'Romenî',
-      'bg': 'Bulgarî',
-      'sr': 'Sirbî',
-      'hr': 'Xirwatî',
-      'bs': 'Bosnayî',
-      'sq': 'Albanî',
-      'el': 'Yewnanî',
-      'fa': 'Farisî',
-      'hi': 'Hindî',
-      'zh': 'Çînî',
-      'ja': 'Japonî',
-      'ko': 'Koreyî',
-      'vi': 'Viyetnamî',
-      'sw': 'Swahilî'
-    },
-  };
-  return options[group]?[key] ?? fallback;
+  String language,
+  String group,
+  String key,
+  String fallback,
+) {
+  final translationKey = 'network_option_${group}_$key';
+  final label = AppStringsManager.getString(language, translationKey);
+  return label == translationKey ? fallback : label;
 }
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
-String _networkCopy(String key, String fallback) {
-  const copies = {
-    'en': {
-      'friends': 'Friends',
-      'playmates': 'Playmates',
-      'invite': 'Invite',
-      'invite_hero_title': 'Invite friends',
-      'invite_hero_description':
-          'Share your personal link or QR code - one tap and you are connected.',
-      'share': 'Share',
-      'setup_hint':
-          'In 5 short steps, you will find families who are a good fit for you.',
-      'empty_title': 'Be the first family in your area',
-      'empty_description':
-          'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
-      'invite_playmates': 'Invite playmates',
-      'values_tip':
-          'Tip: Families with similar values understand each other best. Choose what matters to you.',
-      'bio_hint':
-          'Tell us about yourselves: What makes your family special? What are you looking for?',
-      'step_1': 'Step 1: Your family',
-      'step_2': 'Step 2: Your children',
-      'step_3': 'Step 3: Values and style',
-      'step_4': 'Step 4: What are you looking for?',
-      'step_5': 'Step 5: Languages and more',
-      'bio_title': 'Short bio',
-      'login_required': 'Please sign in to publish your playmate profile.',
-      'same_city': 'In your city',
-      'reason_nearby': 'Nearby',
-      'reason_shared_interests': 'Shared interests',
-      'reason_similar_child_age': 'Children of a similar age',
-      'reason_shared_languages': 'Shared languages',
-      'reason_shared_values': 'Similar parenting values',
-      'reason_shared_family_form': 'Similar family setup',
-      'request_sent': 'Your request was sent to {name}.',
-      'request_failed':
-          'Your request could not be sent. Please try again later.',
-      'no_gender': 'Prefer not to say',
-      'gender_maennlich': 'Boy',
-      'gender_weiblich': 'Girl',
-      'gender_divers': 'Diverse',
-      'invite_share': 'Share invitation',
-      'invite_share_hint': 'WhatsApp, SMS, email',
-      'qr_show': 'Show QR code',
-      'qr_hint': 'Scan at the playground',
-      'link_copy': 'Copy link',
-      'connect': 'Connect?',
-      'cancel': 'Cancel',
-      'connect_button': 'Connect',
-      'save': 'Save...',
-      'create_profile': 'Create profile',
-      'step_family': 'Step 1: Your family',
-      'name_hint': 'Your first name / nickname',
-      'name_example': 'e.g. Sarah, The Muellers',
-      'location_hint': 'Choose your district / ZIP code',
-      'family_form': 'Family type',
-      'custom': 'Custom',
-      'custom_family': 'Your family type',
-      'custom_example': 'e.g. chosen family, multigenerational...',
-    },
-    'ku': {
-      'friends': 'Heval',
-      'playmates': 'Hevalên lîstikê',
-      'invite': 'Vexwendin',
-      'invite_hero_title': 'Hevalan vexwîne',
-      'invite_hero_description':
-          'Girêdana xwe ya kesane an koda QR parve bike - bi yek pêlê hûn tên girêdan.',
-      'share': 'Parve bike',
-      'setup_hint':
-          'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
-      'empty_title': 'Di herêma xwe de malbata yekem bibe',
-      'empty_description':
-          'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
-      'invite_playmates': 'Hevalên lîstikê vexwîne',
-      'values_tip':
-          'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
-      'bio_hint':
-          'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
-      'step_1': 'Gav 1: Malbata we',
-      'step_2': 'Gav 2: Zarokên we',
-      'step_3': 'Gav 3: Nirx û şêwaz',
-      'step_4': 'Gav 4: Hûn li çi digerin?',
-      'step_5': 'Gav 5: Ziman û zêdetir',
-      'bio_title': 'Bioya kurt',
-      'login_required':
-          'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
-      'same_city': 'Di bajarê te de',
-      'reason_nearby': 'Li nêzîkê',
-      'reason_shared_interests': 'Berjewendiyên hevpar',
-      'reason_similar_child_age': 'Zarokên bi temenê nêzîk',
-      'reason_shared_languages': 'Zimanên hevpar',
-      'reason_shared_values': 'Nirxên perwerdehiyê yên wekhev',
-      'reason_shared_family_form': 'Şêwaza malbatê ya wekhev',
-      'request_sent': 'Daxwaza te ji {name} re hat şandin.',
-      'request_failed':
-          'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
-      'no_gender': 'Naxwazim bibêjim',
-      'gender_maennlich': 'Kur',
-      'gender_weiblich': 'Keç',
-      'gender_divers': 'Cûda',
-      'invite_share': 'Vexwendinê parve bike',
-      'invite_share_hint': 'WhatsApp, SMS, e-name',
-      'qr_show': 'Koda QR nîşan bide',
-      'qr_hint': 'Li parka lîstikê bixwîne',
-      'link_copy': 'Girêdanê kopî bike',
-      'connect': 'Girêdan?',
-      'cancel': 'Betal bike',
-      'connect_button': 'Girêde',
-      'save': 'Tê tomarkirin...',
-      'create_profile': 'Profîlê çêbike',
-      'step_family': 'Gav 1: Malbata we',
-      'name_hint': 'Navê te / navê kurt',
-      'name_example': 'mînak: Sarah, Müller',
-      'location_hint': 'Navçeya / koda postê hilbijêre',
-      'family_form': 'Şêwaza malbatê',
-      'custom': 'Taybet',
-      'custom_family': 'Şêwaza malbata we',
-      'custom_example': 'mînak: malbata hilbijartî, çend-neslî...',
-    },
-    'tr': {
-      'friends': 'Arkadaşlar',
-      'playmates': 'Oyun arkadaşları',
-      'invite': 'Davet et',
-      'invite_hero_title': 'Arkadaşlarını davet et',
-      'invite_hero_description':
-          'Kişisel bağlantını veya QR kodunu paylaş - tek dokunuşla bağlantı kurun.',
-      'share': 'Paylaş',
-      'setup_hint': '5 kısa adımda size uygun aileleri bulun.',
-      'empty_title': 'Bölgenizdeki ilk aile siz olun',
-      'empty_description':
-          'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
-      'invite_playmates': 'Oyun arkadaşlarını davet et',
-      'values_tip':
-          'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
-      'bio_hint':
-          'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
-      'step_1': '1. Adım: Aileniz',
-      'step_2': '2. Adım: Çocuklarınız',
-      'step_3': '3. Adım: Değerler ve yaklaşım',
-      'step_4': '4. Adım: Ne arıyorsunuz?',
-      'step_5': '5. Adım: Diller ve daha fazlası',
-      'bio_title': 'Kısa biyografi',
-      'login_required':
-          'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
-      'same_city': 'Şehrinizde',
-      'reason_nearby': 'Yakınınızda',
-      'reason_shared_interests': 'Ortak ilgi alanları',
-      'reason_similar_child_age': 'Benzer yaşta çocuklar',
-      'reason_shared_languages': 'Ortak diller',
-      'reason_shared_values': 'Benzer ebeveynlik değerleri',
-      'reason_shared_family_form': 'Benzer aile yapısı',
-      'request_sent': '{name} için isteğiniz gönderildi.',
-      'request_failed':
-          'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
-      'no_gender': 'Belirtmek istemiyorum',
-      'gender_maennlich': 'Erkek',
-      'gender_weiblich': 'Kız',
-      'gender_divers': 'Diğer',
-      'invite_share': 'Daveti paylaş',
-      'invite_share_hint': 'WhatsApp, SMS, e-posta',
-      'qr_show': 'QR kodunu göster',
-      'qr_hint': 'Parkta okut',
-      'link_copy': 'Bağlantıyı kopyala',
-      'connect': 'Bağlan?',
-      'cancel': 'İptal',
-      'connect_button': 'Bağlan',
-      'save': 'Kaydediliyor...',
-      'create_profile': 'Profil oluştur',
-      'step_family': '1. Adım: Aileniz',
-      'name_hint': 'Adınız / takma adınız',
-      'name_example': 'örn. Sarah, Müller ailesi',
-      'location_hint': 'Mahallenizi / posta kodunuzu seçin',
-      'family_form': 'Aile biçimi',
-      'custom': 'Özel',
-      'custom_family': 'Aile biçiminiz',
-      'custom_example': 'örn. seçilmiş aile, çok kuşaklı aile...',
-    },
-  };
-  return copies[languageService.currentLanguage]?[key] ?? fallback;
+String networkMatchReasonLabel(String language, String code) {
+  final key = 'network_copy_reason_$code';
+  final label = AppStringsManager.getString(language, key);
+  return label == key ? code : label;
+}
+
+String networkChildAgeLabel(String language, String tag) {
+  final match = RegExp(r'^(\d+)([JM])$').firstMatch(tag);
+  if (match == null) return tag;
+  final years = match[2] == 'J';
+  return AppStringsManager.getString(
+    language,
+    years ? 'network_age_years' : 'network_age_months',
+  ).replaceAll(years ? '{years}' : '{months}', match[1]!);
 }
 
 class ElternNetzwerkScreen extends StatefulWidget {
@@ -350,8 +66,11 @@ class ElternNetzwerkScreen extends StatefulWidget {
 
   /// 0 = Chats, 1 = Netzwerk, 2 = Spielfreunde
   final int initialTab;
-  const ElternNetzwerkScreen(
-      {super.key, this.initialFriendCode, this.initialTab = 0});
+  const ElternNetzwerkScreen({
+    super.key,
+    this.initialFriendCode,
+    this.initialTab = 0,
+  });
   @override
   State<ElternNetzwerkScreen> createState() => _ScreenState();
 }
@@ -360,7 +79,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   final _matching = ParentMatchingBackendService(
-      apiClient: BackendServiceFactory.createApiClient());
+    apiClient: BackendServiceFactory.createApiClient(),
+  );
   FamilyMatchProfile? _profile;
   bool _editingProfile = false;
   bool _deletingProfile = false;
@@ -389,7 +109,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   void initState() {
     super.initState();
     _tabs = TabController(
-        length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTab.clamp(0, 2),
+    );
     FriendshipService.instance.addListener(_rebuild);
     _profileAccount = AuthService.instance.currentUser?.uid;
     AuthService.instance.addListener(_onAccountChanged);
@@ -454,9 +177,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     }
     try {
       final state = uid == null || uid.isEmpty
-          ? const PlaymateProfileState(status: PlaymateProfileStatus.unavailable)
-          : await PlaymateProfileService(matchingService: _matching).loadState(uid);
-      if (!mounted || request != _profileRequest ||
+          ? const PlaymateProfileState(
+              status: PlaymateProfileStatus.unavailable,
+            )
+          : await PlaymateProfileService(
+              matchingService: _matching,
+            ).loadState(uid);
+      if (!mounted ||
+          request != _profileRequest ||
           AuthService.instance.currentUser?.uid != uid) {
         return;
       }
@@ -467,12 +195,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         _profileLoading = false;
         _matches = [];
       });
-      if (state.status == PlaymateProfileStatus.active && state.profile != null) {
+      if (state.status == PlaymateProfileStatus.active &&
+          state.profile != null) {
         unawaited(_loadMatches());
       }
     } catch (e) {
       debugPrint('ElternNetzwerkScreen profile verification failed: $e');
-      if (!mounted || request != _profileRequest ||
+      if (!mounted ||
+          request != _profileRequest ||
           AuthService.instance.currentUser?.uid != uid) {
         return;
       }
@@ -489,19 +219,26 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     setState(() => _assigningDraft = true);
     try {
       final assigned = await PlaymateProfileService(matchingService: _matching)
-          .adoptUnassignedDraft(uid, confirmOwnership: () async {
-        final confirmed = await confirmPlaymateDraftOwnership(context,
-            AuthService.instance.currentUser?.displayName ?? uid);
-        return mounted && AuthService.instance.currentUser?.uid == uid && confirmed;
-      });
+          .adoptUnassignedDraft(
+            uid,
+            confirmOwnership: () async {
+              final confirmed = await confirmPlaymateDraftOwnership(
+                context,
+                AuthService.instance.currentUser?.displayName ?? uid,
+              );
+              return mounted &&
+                  AuthService.instance.currentUser?.uid == uid &&
+                  confirmed;
+            },
+          );
       if (!mounted || AuthService.instance.currentUser?.uid != uid) return;
       if (assigned) await _refreshProfile();
     } catch (e) {
       debugPrint('ElternNetzwerkScreen draft assignment failed: $e');
       if (mounted && AuthService.instance.currentUser?.uid == uid) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_t('network_draft_assign_failed')),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('network_draft_assign_failed'))),
+        );
       }
     } finally {
       if (mounted) setState(() => _assigningDraft = false);
@@ -537,7 +274,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       MaterialPageRoute(
         builder: (_) => isGroup
             ? GroupChatScreen(
-                roomId: roomId, groupName: title, photoUrl: photoUrl)
+                roomId: roomId,
+                groupName: title,
+                photoUrl: photoUrl,
+              )
             : MatchConversationScreen(
                 profileId: roomId,
                 profileName: title,
@@ -558,41 +298,49 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final resolved = await FriendshipService.instance.resolveInvite(token);
     if (!mounted) return;
     if (resolved == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_t('network_invalid_invite')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_t('network_invalid_invite')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
     final name = resolved['name']?.isNotEmpty == true
         ? resolved['name']!
-        : 'diese Familie';
+        : _t('network_family_fallback');
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_networkCopy('connect', 'Verbinden?')),
+        title: Text(_t('network_copy_connect')),
         content: Text(_t('network_connect_confirm').replaceAll('{name}', name)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(_networkCopy('cancel', 'Abbrechen'))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('network_copy_cancel')),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(_networkCopy('connect_button', 'Verbinden'))),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(_t('network_copy_connect_button')),
+          ),
         ],
       ),
     );
     if (ok != true) return;
     final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(sent
-          ? 'Anfrage an $name gesendet. 👋'
-          : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: sent ? const Color(0xFF16A34A) : null,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          sent
+              ? _t('network_copy_request_sent').replaceAll('{name}', name)
+              : _t('network_copy_request_failed'),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: sent ? const Color(0xFF16A34A) : null,
+      ),
+    );
   }
 
   /// Alter Freund-Link (parentpeak.de/freund/<CODE>): den Code ueber die noch
@@ -602,43 +350,49 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final resolved = await FriendshipService.instance.resolveCode(code);
     if (!mounted) return;
     if (resolved == null || (resolved['uid'] ?? '').isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-            'Dieser Link ist nicht mehr aktiv. Bitte nutze den Einladungslink '
-            'der anderen Familie.'),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_t('network_legacy_link_inactive')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
     final name = resolved['name']?.isNotEmpty == true
         ? resolved['name']!
-        : 'diese Familie';
+        : _t('network_family_fallback');
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_networkCopy('connect', 'Verbinden?')),
+        title: Text(_t('network_copy_connect')),
         content: Text(_t('network_connect_confirm').replaceAll('{name}', name)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(_networkCopy('cancel', 'Abbrechen'))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('network_copy_cancel')),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(_networkCopy('connect_button', 'Verbinden'))),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(_t('network_copy_connect_button')),
+          ),
         ],
       ),
     );
     if (ok != true) return;
     final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(sent
-          ? 'Anfrage an $name gesendet. 👋'
-          : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: sent ? const Color(0xFF16A34A) : null,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          sent
+              ? _t('network_copy_request_sent').replaceAll('{name}', name)
+              : _t('network_copy_request_failed'),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: sent ? const Color(0xFF16A34A) : null,
+      ),
+    );
   }
 
   Future<void> _init() async {
@@ -649,7 +403,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
     // NEUES FUNDAMENT: den app-weiten Anzeigenamen serverseitig sichern
     // (uid -> displayName). Kommt aus der Registrierung; hier nur gespiegelt.
-    final myName = AuthService.instance.currentUser?.displayName ??
+    final myName =
+        AuthService.instance.currentUser?.displayName ??
         _profile?.displayName ??
         'Familie';
     unawaited(UserProfileService.instance.setDisplayName(myName));
@@ -662,15 +417,19 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'eltern_netzwerk_title')),
+        title: Text(
+          AppStringsManager.getString(
+            languageService.currentLanguage,
+            'eltern_netzwerk_title',
+          ),
+        ),
         elevation: 0,
         bottom: TabBar(
           controller: _tabs,
           tabs: [
             Tab(text: _t('network_tab_chats')),
             Tab(text: _t('network_tab_network')),
-            Tab(text: _networkCopy('playmates', 'Spielfreunde')),
+            Tab(text: _t('network_copy_playmates')),
           ],
         ),
       ),
@@ -713,62 +472,66 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           c.lastMessage.toLowerCase().contains(_chatQuery);
     }).toList();
 
-    return Column(children: [
-      // Suchleiste
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-        child: TextField(
-          controller: _chatSearchCtrl,
-          decoration: InputDecoration(
-            hintText: _t('network_search_hint'),
-            prefixIcon: const Icon(Icons.search_rounded),
-            isDense: true,
-            filled: true,
-            fillColor: theme.colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.4),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
+    return Column(
+      children: [
+        // Suchleiste
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: TextField(
+            controller: _chatSearchCtrl,
+            decoration: InputDecoration(
+              hintText: _t('network_search_hint'),
+              prefixIcon: const Icon(Icons.search_rounded),
+              isDense: true,
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
         ),
-      ),
-      Expanded(
-        child: RefreshIndicator(
-          onRefresh: _loadConversations,
-          child: _loadingConversations
-              ? _chatsLoadingSkeleton(theme)
-              : filtered.isEmpty
-                  ? _chatsEmptyState(theme)
-                  : ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 90),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) => Divider(
-                        height: 1,
-                        indent: 76,
-                        color: theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.3),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadConversations,
+            child: _loadingConversations
+                ? _chatsLoadingSkeleton(theme)
+                : filtered.isEmpty
+                ? _chatsEmptyState(theme)
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 90),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      indent: 76,
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.3,
                       ),
-                      itemBuilder: (_, i) =>
-                          _conversationTile(theme, filtered[i]),
                     ),
+                    itemBuilder: (_, i) =>
+                        _conversationTile(theme, filtered[i]),
+                  ),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   Widget _conversationTile(ThemeData theme, ConversationSummary c) {
     final title = c.isGroup
         ? (c.name ?? _t('network_group'))
         : (c.lastAuthorName.isNotEmpty && c.lastAuthorUserId != _myUid
-            ? c.lastAuthorName
-            : (c.name ?? _t('network_chat')));
+              ? c.lastAuthorName
+              : (c.name ?? _t('network_chat')));
     final preview = c.lastMessage.isEmpty
         ? _t('network_no_messages_yet')
         : (c.lastAuthorUserId == _myUid
-            ? '${_t('network_you_prefix')} ${c.lastMessage}'
-            : c.lastMessage);
+              ? '${_t('network_you_prefix')} ${c.lastMessage}'
+              : c.lastMessage);
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -824,9 +587,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 c.unreadCount > 99 ? '99+' : '${c.unreadCount}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800),
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             )
           else
@@ -854,73 +618,93 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetCtx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-            child: Row(children: [
-              UserAvatar(
-                name: c.isGroup ? (c.name ?? 'G') : title,
-                photoUrl: c.photoUrl.isNotEmpty ? c.photoUrl : null,
-                isGroup: c.isGroup,
-                radius: 18,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Row(
+                children: [
+                  UserAvatar(
+                    name: c.isGroup ? (c.name ?? 'G') : title,
+                    photoUrl: c.photoUrl.isNotEmpty ? c.photoUrl : null,
+                    isGroup: c.isGroup,
+                    radius: 18,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(title,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+            ),
+            ListTile(
+              leading: const Icon(Icons.visibility_off_rounded),
+              title: Text(_t('chat_delete_for_me')),
+              subtitle: Text(_t('chat_delete_for_me_hint')),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _confirmChatDelete(c, title, forAll: false);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.delete_forever_rounded,
+                color: theme.colorScheme.error,
               ),
-            ]),
-          ),
-          ListTile(
-            leading: const Icon(Icons.visibility_off_rounded),
-            title: Text(_t('chat_delete_for_me')),
-            subtitle: Text(_t('chat_delete_for_me_hint')),
-            onTap: () {
-              Navigator.pop(sheetCtx);
-              _confirmChatDelete(c, title, forAll: false);
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.delete_forever_rounded,
-                color: theme.colorScheme.error),
-            title: Text(_t('chat_delete_for_all'),
-                style: TextStyle(color: theme.colorScheme.error)),
-            subtitle: Text(_t('chat_delete_for_all_hint')),
-            onTap: () {
-              Navigator.pop(sheetCtx);
-              _confirmChatDelete(c, title, forAll: true);
-            },
-          ),
-          const SizedBox(height: 8),
-        ]),
+              title: Text(
+                _t('chat_delete_for_all'),
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+              subtitle: Text(_t('chat_delete_for_all_hint')),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _confirmChatDelete(c, title, forAll: true);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _confirmChatDelete(ConversationSummary c, String title,
-      {required bool forAll}) async {
+  Future<void> _confirmChatDelete(
+    ConversationSummary c,
+    String title, {
+    required bool forAll,
+  }) async {
     final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title:
-            Text(forAll ? _t('chat_delete_for_all') : _t('chat_delete_for_me')),
-        content: Text(forAll
-            ? _t('chat_delete_for_all_confirm')
-            : _t('chat_delete_for_me_confirm')),
+        title: Text(
+          forAll ? _t('chat_delete_for_all') : _t('chat_delete_for_me'),
+        ),
+        content: Text(
+          forAll
+              ? _t('chat_delete_for_all_confirm')
+              : _t('chat_delete_for_me_confirm'),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(_t('cancel'))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('cancel')),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: forAll
                 ? FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.error)
+                    backgroundColor: theme.colorScheme.error,
+                  )
                 : null,
             child: Text(_t('delete')),
           ),
@@ -934,10 +718,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ? await FriendChatService.instance.deleteForAll(c.roomId, uid)
         : await FriendChatService.instance.clearForMe(c.roomId, uid);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(ok ? _t('chat_deleted') : _t('chat_delete_failed')),
-      behavior: SnackBarBehavior.floating,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? _t('chat_deleted') : _t('chat_delete_failed')),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
     await _loadConversations();
   }
 
@@ -948,32 +734,40 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         6,
         (_) => Padding(
           padding: const EdgeInsets.only(bottom: 14),
-          child: Row(children: [
-            CircleAvatar(
+          child: Row(
+            children: [
+              CircleAvatar(
                 radius: 26,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                        height: 12,
-                        width: 140,
-                        decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(6))),
+                      height: 12,
+                      width: 140,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Container(
-                        height: 10,
-                        width: 220,
-                        decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(6))),
-                  ]),
-            ),
-          ]),
+                      height: 10,
+                      width: 220,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -992,23 +786,29 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.chat_bubble_outline_rounded,
-                size: 34, color: Color(0xFF8B5CF6)),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 34,
+              color: Color(0xFF8B5CF6),
+            ),
           ),
         ),
         const SizedBox(height: 18),
         Text(
           _t('network_chats_empty_title'),
           textAlign: TextAlign.center,
-          style:
-              theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           _t('network_chats_empty_desc'),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant, height: 1.4),
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.4,
+          ),
         ),
         const SizedBox(height: 20),
         Center(
@@ -1017,11 +817,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             icon: const Icon(Icons.add_comment_rounded, size: 18),
             label: Text(_t('network_new_chat')),
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF7C3AED),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12))),
+              backgroundColor: const Color(0xFF7C3AED),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
         ),
       ],
@@ -1055,35 +856,42 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetCtx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: Color(0xFF7C3AED),
-              child: Icon(Icons.person_rounded, color: Colors.white),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF7C3AED),
+                child: Icon(Icons.person_rounded, color: Colors.white),
+              ),
+              title: Text(
+                _t('network_start_direct_chat'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(_t('network_start_direct_chat_hint')),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _tabs.animateTo(1); // Zum Netzwerk-Tab (dort Freunde anchatten)
+              },
             ),
-            title: Text(_t('network_start_direct_chat'),
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: Text(_t('network_start_direct_chat_hint')),
-            onTap: () {
-              Navigator.pop(sheetCtx);
-              _tabs.animateTo(1); // Zum Netzwerk-Tab (dort Freunde anchatten)
-            },
-          ),
-          ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: Color(0xFF0EA5A4),
-              child: Icon(Icons.groups_rounded, color: Colors.white),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF0EA5A4),
+                child: Icon(Icons.groups_rounded, color: Colors.white),
+              ),
+              title: Text(
+                _t('network_create_group'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(_t('network_create_group_hint')),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _showCreateGroupSheet();
+              },
             ),
-            title: Text(_t('network_create_group'),
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: Text(_t('network_create_group_hint')),
-            onTap: () {
-              Navigator.pop(sheetCtx);
-              _showCreateGroupSheet();
-            },
-          ),
-          const SizedBox(height: 12),
-        ]),
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
@@ -1092,10 +900,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   Future<void> _showCreateGroupSheet() async {
     final friends = FriendshipService.instance.friends;
     if (friends.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_t('network_group_needs_friends')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_t('network_group_needs_friends')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
     final nameCtrl = TextEditingController();
@@ -1116,18 +926,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           final source = await showModalBottomSheet<ImageSource>(
             context: sheetCtx,
             builder: (pickCtx) => SafeArea(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_camera_rounded),
-                  title: Text(_t('network_photo_camera')),
-                  onTap: () => Navigator.pop(pickCtx, ImageSource.camera),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.image_outlined),
-                  title: Text(_t('network_photo_gallery')),
-                  onTap: () => Navigator.pop(pickCtx, ImageSource.gallery),
-                ),
-              ]),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera_rounded),
+                    title: Text(_t('network_photo_camera')),
+                    onTap: () => Navigator.pop(pickCtx, ImageSource.camera),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.image_outlined),
+                    title: Text(_t('network_photo_gallery')),
+                    onTap: () => Navigator.pop(pickCtx, ImageSource.gallery),
+                  ),
+                ],
+              ),
             ),
           );
           if (source == null) return;
@@ -1142,154 +955,193 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           setSheet(() => photoBytes = bytes);
         }
 
-        return StatefulBuilder(builder: (sheetCtx, setSheet) {
-          final theme = Theme.of(sheetCtx);
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              top: 4,
-              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-            ),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text(_t('network_create_group'),
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 14),
-              // Gruppen-Foto (optional) — tippen zum Auswählen/Ändern.
-              Center(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: saving ? null : () => pickGroupPhoto(setSheet),
-                  child: Stack(children: [
-                    CircleAvatar(
-                      radius: 36,
-                      backgroundColor:
-                          const Color(0xFF0EA5A4).withValues(alpha: 0.15),
-                      backgroundImage:
-                          photoBytes != null ? MemoryImage(photoBytes!) : null,
-                      child: photoBytes == null
-                          ? const Icon(Icons.groups_rounded,
-                              size: 32, color: Color(0xFF0EA5A4))
-                          : null,
+        return StatefulBuilder(
+          builder: (sheetCtx, setSheet) {
+            final theme = Theme.of(sheetCtx);
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 4,
+                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _t('network_create_group'),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF0EA5A4),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.camera_alt_rounded,
-                            size: 14, color: Colors.white),
+                  ),
+                  const SizedBox(height: 14),
+                  // Gruppen-Foto (optional) — tippen zum Auswählen/Ändern.
+                  Center(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: saving ? null : () => pickGroupPhoto(setSheet),
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 36,
+                            backgroundColor: const Color(
+                              0xFF0EA5A4,
+                            ).withValues(alpha: 0.15),
+                            backgroundImage: photoBytes != null
+                                ? MemoryImage(photoBytes!)
+                                : null,
+                            child: photoBytes == null
+                                ? const Icon(
+                                    Icons.groups_rounded,
+                                    size: 32,
+                                    color: Color(0xFF0EA5A4),
+                                  )
+                                : null,
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0EA5A4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt_rounded,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ]),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(_t('network_group_photo_hint'),
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 14),
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: _t('network_group_name'),
-                  hintText: _t('network_group_name_hint'),
-                  prefixIcon: const Icon(Icons.groups_rounded),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(_t('network_choose_members'),
-                    style: theme.textTheme.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-              ),
-              const SizedBox(height: 8),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: friends.map((f) {
-                    final isSel = selected.contains(f.uid);
-                    return CheckboxListTile(
-                      value: isSel,
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      secondary: UserAvatar(name: f.name, radius: 20),
-                      title: Text(f.name),
-                      onChanged: (v) => setSheet(() {
-                        if (v == true) {
-                          selected.add(f.uid);
-                        } else {
-                          selected.remove(f.uid);
-                        }
-                      }),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: saving
-                      ? null
-                      : () async {
-                          if (nameCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(sheetCtx)
-                                .showSnackBar(SnackBar(
-                              content: Text(_t('network_group_name_required')),
-                            ));
-                            return;
-                          }
-                          if (selected.isEmpty) {
-                            ScaffoldMessenger.of(sheetCtx)
-                                .showSnackBar(SnackBar(
-                              content: Text(_t('network_group_select_member')),
-                            ));
-                            return;
-                          }
-                          setSheet(() => saving = true);
-                          final ok = await _createGroup(
-                            nameCtrl.text.trim(),
-                            selected.toList(),
-                            friends,
-                            photoBytes,
-                          );
-                          if (sheetCtx.mounted) Navigator.pop(sheetCtx, ok);
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF0EA5A4),
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : Text(_t('network_create_group')),
-                ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _t('network_group_photo_hint'),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: _t('network_group_name'),
+                      hintText: _t('network_group_name_hint'),
+                      prefixIcon: const Icon(Icons.groups_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _t('network_choose_members'),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: friends.map((f) {
+                        final isSel = selected.contains(f.uid);
+                        return CheckboxListTile(
+                          value: isSel,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          secondary: UserAvatar(name: f.name, radius: 20),
+                          title: Text(f.name),
+                          onChanged: (v) => setSheet(() {
+                            if (v == true) {
+                              selected.add(f.uid);
+                            } else {
+                              selected.remove(f.uid);
+                            }
+                          }),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: saving
+                          ? null
+                          : () async {
+                              if (nameCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      _t('network_group_name_required'),
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (selected.isEmpty) {
+                                ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      _t('network_group_select_member'),
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              setSheet(() => saving = true);
+                              final ok = await _createGroup(
+                                nameCtrl.text.trim(),
+                                selected.toList(),
+                                friends,
+                                photoBytes,
+                              );
+                              if (sheetCtx.mounted) Navigator.pop(sheetCtx, ok);
+                            },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0EA5A4),
+                        minimumSize: const Size.fromHeight(50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(_t('network_create_group')),
+                    ),
+                  ),
+                ],
               ),
-            ]),
-          );
-        });
+            );
+          },
+        );
       },
     );
     nameCtrl.dispose();
     if (created == true) await _loadConversations();
   }
 
-  Future<bool> _createGroup(String name, List<String> memberUids,
-      List<Friend> friends, Uint8List? photoBytes) async {
+  Future<bool> _createGroup(
+    String name,
+    List<String> memberUids,
+    List<Friend> friends,
+    Uint8List? photoBytes,
+  ) async {
     final uid = AuthService.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) return false;
     final ownerName =
@@ -1315,10 +1167,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     );
     if (!mounted) return false;
     if (group == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_t('network_group_create_failed')),
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_t('network_group_create_failed')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return false;
     }
     // Direkt in die neue Gruppe springen.
@@ -1336,26 +1190,32 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _spielfreundeTab(ThemeData theme) {
-    if (_profileLoading) return const Center(child: CircularProgressIndicator());
+    if (_profileLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (_profileAccount == null) {
-      return Center(child: Text(_networkCopy('login_required',
-          'Bitte melde dich an, um dein Spielfreunde-Profil zu veröffentlichen.')));
+      return Center(child: Text(_t('network_copy_login_required')));
     }
-    if (_profile != null && !_editingProfile &&
+    if (_profile != null &&
+        !_editingProfile &&
         _profileStatus != PlaymateProfileStatus.active) {
-      return Column(children: [
-        _profileStatusPanel(),
-        TextButton(
-          onPressed: () => setState(() => _editingProfile = true),
-          child: Text(_t('edit_btn')),
-        ),
-        TextButton(
-          onPressed: _deletingProfile ? null : () => _confirmDeleteProfile(theme),
-          child: Text(_t('delete')),
-        ),
-      ]);
+      return Column(
+        children: [
+          _profileStatusPanel(),
+          TextButton(
+            onPressed: () => setState(() => _editingProfile = true),
+            child: Text(_t('edit_btn')),
+          ),
+          TextButton(
+            onPressed: _deletingProfile
+                ? null
+                : () => _confirmDeleteProfile(theme),
+            child: Text(_t('delete')),
+          ),
+        ],
+      );
     }
-    if (_profile == null|| _editingProfile) return _profileSetup(theme);
+    if (_profile == null || _editingProfile) return _profileSetup(theme);
     return _discoveryView(theme);
   }
 
@@ -1367,91 +1227,118 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   );
 
   Widget _profileSetup(ThemeData theme) {
-    return Column(children: [
-      _profileStatusPanel(),
-      if (_profile == null && _profileStatus == PlaymateProfileStatus.active)
-        TextButton(
-          onPressed: _deletingProfile ? null : () => _confirmDeleteProfile(theme),
-          child: Text(_t('delete')),
-        ),
-      const SizedBox(height: 16),
-      Container(
+    return Column(
+      children: [
+        _profileStatusPanel(),
+        if (_profile == null && _profileStatus == PlaymateProfileStatus.active)
+          TextButton(
+            onPressed: _deletingProfile
+                ? null
+                : () => _confirmDeleteProfile(theme),
+            child: Text(_t('delete')),
+          ),
+        const SizedBox(height: 16),
+        Container(
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)]),
-              borderRadius: BorderRadius.circular(18)),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+          ),
           child: const Center(
-              child: Text('\u{1F46A}', style: TextStyle(fontSize: 28)))),
-      const SizedBox(height: 12),
-      Text(
+            child: Text('\u{1F46A}', style: TextStyle(fontSize: 28)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
           AppStringsManager.getString(
-              languageService.currentLanguage, 'find_playmates'),
-          style: theme.textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.w800),
-          textAlign: TextAlign.center),
-      const SizedBox(height: 4),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Text(
-            _networkCopy('setup_hint',
-                'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.'),
+            languageService.currentLanguage,
+            'find_playmates',
+          ),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Text(
+            _t('network_copy_setup_hint'),
             style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant, height: 1.3),
-            textAlign: TextAlign.center),
-      ),
-      const SizedBox(height: 16),
-      Expanded(child: PlaymateProfileForm(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.3,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: PlaymateProfileForm(
             key: ValueKey(_profileAccount),
             initialProfile: _profile,
             onCancel: _editingProfile
                 ? () => setState(() => _editingProfile = false)
                 : null,
             onSave: (p) async {
-        final uid = AuthService.instance.currentUser?.uid;
-        if (uid == null || uid.isEmpty) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(_networkCopy(
-                'login_required',
-                'Bitte melde dich an, um dein Spielfreunde-Profil zu veröffentlichen.',
-              )),
-            ));
-          }
-          return;
-        }
-        try {
-          final result = await PlaymateProfileService(matchingService: _matching)
-              .publishProfile(
-            p,
-            uid,
-            confirmPublication: () async {
-              final confirmed = await confirmPlaymatePublication(context);
-              return mounted && AuthService.instance.currentUser?.uid == uid && confirmed;
-            });
-          if (!mounted || result == PlaymatePublicationResult.cancelled) return;
-          if (AuthService.instance.currentUser?.uid != uid) return;
-          if (result == PlaymatePublicationResult.failed) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(_t('network_publish_failed')),
-              backgroundColor: theme.colorScheme.error,
-            ));
-            return;
-          }
-        } on SuspendedAccountException {
-          if (mounted) await showAccountSuspendedNotice(context);
-          return;
-        }
-        setState(() => _editingProfile = false);
-        await _init();
-      })),
-    ]);
+              final uid = AuthService.instance.currentUser?.uid;
+              if (uid == null || uid.isEmpty) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(_t('network_copy_login_required'))),
+                  );
+                }
+                return;
+              }
+              try {
+                final result =
+                    await PlaymateProfileService(
+                      matchingService: _matching,
+                    ).publishProfile(
+                      p,
+                      uid,
+                      confirmPublication: () async {
+                        final confirmed = await confirmPlaymatePublication(
+                          context,
+                        );
+                        return mounted &&
+                            AuthService.instance.currentUser?.uid == uid &&
+                            confirmed;
+                      },
+                    );
+                if (!mounted || result == PlaymatePublicationResult.cancelled) {
+                  return;
+                }
+                if (AuthService.instance.currentUser?.uid != uid) return;
+                if (result == PlaymatePublicationResult.failed) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(_t('network_publish_failed')),
+                      backgroundColor: theme.colorScheme.error,
+                    ),
+                  );
+                  return;
+                }
+              } on SuspendedAccountException {
+                if (mounted) await showAccountSuspendedNotice(context);
+                return;
+              }
+              setState(() => _editingProfile = false);
+              await _init();
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   /// Laedt echte Familien in der Naehe ueber das bestehende Matching-Backend.
   Future<void> _loadMatches() async {
-    if (_profile == null || _profileStatus != PlaymateProfileStatus.active) return;
+    if (_profile == null || _profileStatus != PlaymateProfileStatus.active) {
+      return;
+    }
     final request = _profileRequest;
     final matchRequest = ++_matchRequest;
     if (mounted) setState(() => _loadingMatches = true);
@@ -1473,7 +1360,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         if (ownerId == null || ownerId.isEmpty) return true;
         return !BlockReportService.instance.isBlocked(ownerId);
       }).toList();
-      if (mounted && _profile != null && request == _profileRequest &&
+      if (mounted &&
+          _profile != null &&
+          request == _profileRequest &&
           matchRequest == _matchRequest &&
           AuthService.instance.currentUser?.uid == uid &&
           _profileStatus == PlaymateProfileStatus.active) {
@@ -1486,17 +1375,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       }
     } catch (e) {
       debugPrint('ElternNetzwerkScreen discovery failed: $e');
-      if (mounted && request == _profileRequest &&
+      if (mounted &&
+          request == _profileRequest &&
           matchRequest == _matchRequest &&
           AuthService.instance.currentUser?.uid == uid) {
         setState(() {
           _loadingMatches = false;
-          _matchesErrorKey = e is BackendApiException &&
-                  (e.isUnauthorized || e.isForbidden)
+          _matchesErrorKey =
+              e is BackendApiException && (e.isUnauthorized || e.isForbidden)
               ? 'network_discovery_auth_failed'
               : 'network_discovery_failed';
         });
-    }
+      }
     }
   }
 
@@ -1506,177 +1396,177 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _profileStatusPanel(),
-          // ── Eigenes Profil (Header) ──────────────────────────────────────
-          Container(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _profileStatusPanel(),
+            // ── Eigenes Profil (Header) ──────────────────────────────────────
+            Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.12))),
-              child: Row(children: [
-                const Text('\u{1F46A}', style: TextStyle(fontSize: 24)),
-                const SizedBox(width: 12),
-                Expanded(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Text('\u{1F46A}', style: TextStyle(fontSize: 24)),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Text('Familie ${_profile!.displayName}',
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w700)),
-                      Text(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _t(
+                            'network_family_name',
+                          ).replaceAll('{name}', _profile!.displayName),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
                           _profile!.bio.isNotEmpty
                               ? _profile!.bio
                               : _t('network_profile_active'),
                           style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant),
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis)
-                    ])),
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _deletingProfile ? null : () => setState(() => _editingProfile = true),
-                      child: Text(
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _deletingProfile
+                            ? null
+                            : () => setState(() => _editingProfile = true),
+                        child: Text(
                           AppStringsManager.getString(
-                              languageService.currentLanguage, 'edit_btn'),
+                            languageService.currentLanguage,
+                            'edit_btn',
+                          ),
                           style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.primary))),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _deletingProfile
-                          ? null
-                          : () => _confirmDeleteProfile(theme),
-                      child: Text(_t('delete'),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _deletingProfile
+                            ? null
+                            : () => _confirmDeleteProfile(theme),
+                        child: Text(
+                          _t('delete'),
                           style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.error))),
-                ])
-              ])),
-          const SizedBox(height: 20),
-
-          // ── Titelzeile Discovery ─────────────────────────────────────────
-          Row(children: [
-            const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(_t('network_families_nearby'),
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w800)),
-            ),
-            if (_loadingMatches)
-              const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-            else
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _loadMatches,
-                child: Icon(Icons.refresh_rounded,
-                    size: 20, color: theme.colorScheme.primary),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-          ]),
-          if (!_loadingMatches && _matchesErrorKey == null && _matches.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-                _matchScope == '10km'
-                    ? 'Im Umkreis von ~10 km'
-                    : _matchScope == '50km'
-                        ? 'Im Umkreis von ~50 km'
-                        : _matchScope == '100km'
-                            ? 'Im Umkreis von ~100 km'
-                            : 'Deutschlandweit',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
-          ],
-          const SizedBox(height: 12),
+            ),
+            const SizedBox(height: 20),
 
-          // ── Ergebnis: Liste, Loading oder ehrlicher Empty-State ──────────
-          if (_loadingMatches)
-            _matchesLoadingSkeleton(theme)
-          else if (_matchesErrorKey != null)
-            PlaymateDiscoveryError(
-              messageKey: _matchesErrorKey!,
-              onRetry: _loadMatches,
-            )
-          else if (_matches.isEmpty)
-            _emptyDiscoveryState(theme)
-          else
-            ..._matches.map((m) => Padding(
+            // ── Titelzeile Discovery ─────────────────────────────────────────
+            Row(
+              children: [
+                const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _t('network_families_nearby'),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                if (_loadingMatches)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _loadMatches,
+                    child: Icon(
+                      Icons.refresh_rounded,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+              ],
+            ),
+            if (!_loadingMatches &&
+                _matchesErrorKey == null &&
+                _matches.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                _matchScope == '10km'
+                    ? _t('network_radius').replaceAll('{distance}', '10')
+                    : _matchScope == '50km'
+                    ? _t('network_radius').replaceAll('{distance}', '50')
+                    : _matchScope == '100km'
+                    ? _t('network_radius').replaceAll('{distance}', '100')
+                    : _t('network_wide_radius'),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+
+            // ── Ergebnis: Liste, Loading oder ehrlicher Empty-State ──────────
+            if (_loadingMatches)
+              _matchesLoadingSkeleton(theme)
+            else if (_matchesErrorKey != null)
+              PlaymateDiscoveryError(
+                messageKey: _matchesErrorKey!,
+                onRetry: _loadMatches,
+              )
+            else if (_matches.isEmpty)
+              PlaymateDiscoveryEmptyState(tabs: _tabs)
+            else
+              ..._matches.map(
+                (m) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: _matchCard(theme, m),
-                )),
-        ]),
+                ),
+              ),
+          ],
+        ),
       ),
     );
-  }
-
-  /// Ehrlicher Empty-State: keine Fake-Familien, echter Aufruf zum Mitmachen.
-  Widget _emptyDiscoveryState(ThemeData theme) {
-    return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color:
-                    theme.colorScheme.outlineVariant.withValues(alpha: 0.5))),
-        child: Column(children: [
-          const Text('\u{1F331}', style: TextStyle(fontSize: 40)),
-          const SizedBox(height: 14),
-          Text(
-              _networkCopy(
-                  'empty_title', 'Sei die erste Familie in deiner Gegend'),
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          Text(
-              _networkCopy(
-                  'empty_description',
-                  'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in '
-                      'deiner Nähe dabei sind, erscheinen sie hier automatisch. '
-                      'Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant, height: 1.4),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => _tabs.animateTo(2),
-              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-              label: Text(
-                  _networkCopy('invite_playmates', 'Spielkameraden einladen')),
-              style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
-            ),
-          ),
-        ]));
   }
 
   Widget _matchesLoadingSkeleton(ThemeData theme) {
     return Column(
       children: List.generate(
-          2,
-          (_) => Container(
-                height: 120,
-                margin: const EdgeInsets.only(bottom: 10),
-                decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(18)),
-              )),
+        2,
+        (_) => Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1685,7 +1575,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final p = m.profile;
     final kids = p.childAges.isEmpty
         ? ''
-        : '\u{1F9D2} ${p.childAges.join(' \u{2022} ')}';
+        : '\u{1F9D2} ${p.childAges.map((tag) => networkChildAgeLabel(languageService.currentLanguage, tag)).join(' \u{2022} ')}';
     final distanceKm = m.breakdown['distanceKm'];
     final reasonCodes = (m.breakdown['reasons'] as List? ?? const [])
         .map((reason) => reason.toString())
@@ -1693,136 +1583,210 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final meta = <String>[
       if (distanceKm != null) '\u{1F4CD} $distanceKm km',
       if (distanceKm == null && m.breakdown['locationLabel'] == 'same_city')
-        _networkCopy('same_city', 'In deiner Stadt'),
+        _t('network_copy_same_city'),
       if (p.languages.isNotEmpty)
         p.languages
             .take(3)
-            .map((code) => networkWizardOptionLabel(
-                languageService.currentLanguage, 'language', code, code))
+            .map(
+              (code) => networkWizardOptionLabel(
+                languageService.currentLanguage,
+                'language',
+                code,
+                code,
+              ),
+            )
             .join(', '),
     ].join('  \u{2022}  ');
     final tags = <String>[
-      ...p.valuesFocus.take(2).map((code) => networkWizardOptionLabel(
-          languageService.currentLanguage, 'values', code, code)),
-      ...p.interests.take(2).map((code) => networkWizardOptionLabel(
-          languageService.currentLanguage, 'looking', code, code)),
+      ...p.valuesFocus
+          .take(2)
+          .map(
+            (code) => networkWizardOptionLabel(
+              languageService.currentLanguage,
+              'values',
+              code,
+              code,
+            ),
+          ),
+      ...p.interests
+          .take(2)
+          .map(
+            (code) => networkWizardOptionLabel(
+              languageService.currentLanguage,
+              'looking',
+              code,
+              code,
+            ),
+          ),
     ];
 
     return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3))
-            ]),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(11)),
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(11),
+                ),
                 child: const Center(
-                    child: Text('\u{1F46A}', style: TextStyle(fontSize: 18)))),
-            const SizedBox(width: 12),
-            Expanded(
+                  child: Text('\u{1F46A}', style: TextStyle(fontSize: 18)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text(p.name,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
-                  if (p.city.isNotEmpty)
-                    Text(p.city,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.name,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (p.city.isNotEmpty)
+                      Text(
+                        p.city,
                         style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant))
-                ])),
-            if (m.score > 0)
-              Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (m.score > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                      color: const Color(0xFF16A34A).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Text('${m.score}% Match',
-                      style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF16A34A)))),
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded,
-                  size: 18, color: theme.colorScheme.outline),
-              padding: EdgeInsets.zero,
-              onSelected: (v) {
-                if (v == 'report') {
-                  showReportSheet(
-                    context,
-                    userId: m.profile.userId ?? m.profile.id,
-                    userName: m.profile.name,
-                    contentType: 'profile',
-                  );
-                } else if (v == 'block') {
-                  _blockMatch(m);
-                }
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
+                    color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _t(
+                      'network_match_score',
+                    ).replaceAll('{score}', '${m.score}'),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF16A34A),
+                    ),
+                  ),
+                ),
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  size: 18,
+                  color: theme.colorScheme.outline,
+                ),
+                padding: EdgeInsets.zero,
+                onSelected: (v) {
+                  if (v == 'report') {
+                    showReportSheet(
+                      context,
+                      userId: m.profile.userId ?? m.profile.id,
+                      userName: m.profile.name,
+                      contentType: 'profile',
+                    );
+                  } else if (v == 'block') {
+                    _blockMatch(m);
+                  }
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
                     value: 'report',
-                    child: Row(children: [
-                      Icon(Icons.flag_outlined, size: 18),
-                      SizedBox(width: 10),
-                      Text('Melden'),
-                    ])),
-                PopupMenuItem(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.flag_outlined, size: 18),
+                        const SizedBox(width: 10),
+                        Text(_t('network_report')),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
                     value: 'block',
-                    child: Row(children: [
-                      Icon(Icons.block_rounded, size: 18),
-                      SizedBox(width: 10),
-                      Text('Blockieren'),
-                    ])),
-              ],
-            ),
-          ]),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.block_rounded, size: 18),
+                        const SizedBox(width: 10),
+                        Text(_t('network_block')),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           if (kids.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(kids,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              kids,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
           if (p.bio != null && p.bio!.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(p.bio!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
+            Text(
+              p.bio!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.3,
+              ),
+            ),
           ],
           if (tags.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: tags
-                    .map((t) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                            color:
-                                const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(6)),
-                        child: Text(t,
-                            style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF7C3AED)))))
-                    .toList()),
+              spacing: 6,
+              runSpacing: 6,
+              children: tags
+                  .map(
+                    (t) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        t,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF7C3AED),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
           ],
           if (reasonCodes.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -1830,21 +1794,29 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               spacing: 6,
               runSpacing: 6,
               children: reasonCodes
-                  .map((code) => Text(
-                        _networkCopy('reason_$code', code),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF0E7F77),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ))
+                  .map(
+                    (code) => Text(
+                      networkMatchReasonLabel(
+                        languageService.currentLanguage,
+                        code,
+                      ),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: const Color(0xFF0E7F77),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ],
           if (meta.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(meta,
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
+            Text(
+              meta,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
           ],
           const SizedBox(height: 12),
           SizedBox(
@@ -1852,16 +1824,20 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             child: OutlinedButton.icon(
               onPressed: () => _connectWithMatch(m),
               icon: const Icon(Icons.waving_hand_rounded, size: 16),
-              label: const Text('Hallo sagen'),
+              label: Text(_t('network_say_hello')),
               style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF7C3AED),
-                  side: const BorderSide(color: Color(0xFF8B5CF6)),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
+                foregroundColor: const Color(0xFF7C3AED),
+                side: const BorderSide(color: Color(0xFF8B5CF6)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
-        ]));
+        ],
+      ),
+    );
   }
 
   /// Verbindungswunsch senden (echte Aktion im Matching-Backend).
@@ -1873,17 +1849,20 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ? await FriendshipService.instance.sendRequest(targetUserId)
         : false;
     if (!mounted) return;
-    messenger.showSnackBar(SnackBar(
-      content: Text(ok
-          ? _networkCopy(
-                  'request_sent', 'Deine Anfrage wurde an {name} gesendet.')
-              .replaceAll('{name}', m.profile.name)
-          : _networkCopy('request_failed',
-              'Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.')),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: ok ? const Color(0xFF16A34A) : errorColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? _t(
+                  'network_copy_request_sent',
+                ).replaceAll('{name}', m.profile.name)
+              : _t('network_copy_request_failed'),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: ok ? const Color(0xFF16A34A) : errorColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   /// Familie blockieren (lokal + serverseitig) und sofort ausblenden.
@@ -1897,11 +1876,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           .where((x) => (x.profile.userId ?? x.profile.id) != ownerId)
           .toList();
     });
-    messenger.showSnackBar(SnackBar(
-      content: Text('${m.profile.name} wurde blockiert.'),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          _t('network_blocked').replaceAll('{name}', m.profile.name),
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1911,102 +1894,132 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   Widget _netzwerkTab(ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ── Einladungs-Karte: verbinden per Link/QR (1 Tap) ────────────────
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF5B21B6), Color(0xFF7C3AED), Color(0xFF8B5CF6)],
-              stops: [0.0, 0.55, 1.0],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Einladungs-Karte: verbinden per Link/QR (1 Tap) ────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF5B21B6),
+                  Color(0xFF7C3AED),
+                  Color(0xFF8B5CF6),
+                ],
+                stops: [0.0, 0.55, 1.0],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
                   color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
                   blurRadius: 28,
-                  offset: const Offset(0, 10)),
-            ],
-          ),
-          child: Column(children: [
-            const Icon(Icons.group_add_rounded, color: Colors.white, size: 34),
-            const SizedBox(height: 12),
-            Text(
-              _networkCopy('invite_hero_title', 'Freunde einladen'),
-              style: const TextStyle(
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.group_add_rounded,
                   color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900),
+                  size: 34,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _t('network_copy_invite_hero_title'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _t('network_copy_invite_hero_description'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _shareActionBtn(
+                        Icons.ios_share_rounded,
+                        _t('network_copy_share'),
+                        () async {
+                          final box = context.findRenderObject() as RenderBox?;
+                          // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
+                          final link = await FriendshipService.instance
+                              .createInviteLink();
+                          if (link == null) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    _t('network_link_create_failed'),
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                            return;
+                          }
+                          await Share.share(
+                            _t(
+                              'network_share_message',
+                            ).replaceAll('{link}', link),
+                            sharePositionOrigin: box != null
+                                ? box.localToGlobal(Offset.zero) & box.size
+                                : null,
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _shareActionBtn(
+                        Icons.qr_code_2_rounded,
+                        _t('network_qr_code'),
+                        () async {
+                          final link = await FriendshipService.instance
+                              .createInviteLink();
+                          if (!mounted) return;
+                          if (link == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(_t('network_qr_create_failed')),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            return;
+                          }
+                          _showFriendQR(theme, link);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              _networkCopy(
-                'invite_hero_description',
-                'Teile deinen persönlichen Link oder QR-Code - ein Tap und '
-                    'ihr seid verbunden.',
-              ),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 12,
-                  height: 1.4),
-            ),
-            const SizedBox(height: 18),
-            Row(children: [
-              Expanded(
-                  child: _shareActionBtn(
-                      Icons.ios_share_rounded, _networkCopy('share', 'Teilen'),
-                      () async {
-                final box = context.findRenderObject() as RenderBox?;
-                // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
-                final link =
-                    await FriendshipService.instance.createInviteLink();
-                if (link == null) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(_t('network_link_create_failed')),
-                      behavior: SnackBarBehavior.floating,
-                    ));
-                  }
-                  return;
-                }
-                await Share.share(
-                    _t('network_share_message').replaceAll('{link}', link),
-                    sharePositionOrigin: box != null
-                        ? box.localToGlobal(Offset.zero) & box.size
-                        : null);
-              })),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: _shareActionBtn(Icons.qr_code_2_rounded, 'QR-Code',
-                      () async {
-                final link =
-                    await FriendshipService.instance.createInviteLink();
-                if (!mounted) return;
-                if (link == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(_t('network_qr_create_failed')),
-                    behavior: SnackBarBehavior.floating,
-                  ));
-                  return;
-                }
-                _showFriendQR(theme, link);
-              })),
-            ]),
-          ]),
-        ),
-        const SizedBox(height: 32),
+          ),
+          const SizedBox(height: 32),
 
-        _suggestedParentsSection(theme),
-        const SizedBox(height: 32),
+          _suggestedParentsSection(theme),
+          const SizedBox(height: 32),
 
-        // NEUES UID-Fundament: offene Anfragen + Freundesliste vom Server.
-        _friendRequestsSection(theme),
-        _uidFriendsSection(theme),
-      ]),
+          // NEUES UID-Fundament: offene Anfragen + Freundesliste vom Server.
+          _friendRequestsSection(theme),
+          _uidFriendsSection(theme),
+        ],
+      ),
     );
   }
 
@@ -2014,108 +2027,158 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   Widget _friendRequestsSection(ThemeData theme) {
     final incoming = FriendshipService.instance.incoming;
     if (incoming.isEmpty) return const SizedBox.shrink();
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(
-          _t('network_requests_count')
-              .replaceAll('{count}', '${incoming.length}'),
-          style: theme.textTheme.titleSmall
-              ?.copyWith(fontWeight: FontWeight.w800)),
-      const SizedBox(height: 12),
-      ...incoming.map((f) => Container(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _t(
+            'network_requests_count',
+          ).replaceAll('{count}', '${incoming.length}'),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...incoming.map(
+          (f) => Container(
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.15)),
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+              ),
             ),
-            child: Row(children: [
-              CircleAvatar(
+            child: Row(
+              children: [
+                CircleAvatar(
                   backgroundColor: _avatarColor(f.name),
-                  backgroundImage:
-                      f.avatarUrl != null ? NetworkImage(f.avatarUrl!) : null,
+                  backgroundImage: f.avatarUrl != null
+                      ? NetworkImage(f.avatarUrl!)
+                      : null,
                   child: f.avatarUrl == null
                       ? Text(
                           f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
                           style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.w800),
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                         )
-                      : null),
-              const SizedBox(width: 12),
-              Expanded(
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Text(
-                      _t('network_wants_to_connect')
-                          .replaceAll('{name}', f.name),
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w600))),
-              IconButton(
-                icon: const Icon(Icons.check_circle_rounded,
-                    color: Color(0xFF16A34A)),
-                tooltip: context.tr('tooltip_accept'),
-                onPressed: () async {
-                  await FriendshipService.instance.accept(f.uid);
-                },
-              ),
-              IconButton(
-                icon: Icon(Icons.cancel_rounded,
-                    color: theme.colorScheme.outline),
-                tooltip: context.tr('tooltip_reject'),
-                onPressed: () async {
-                  await FriendshipService.instance.remove(f.uid);
-                },
-              ),
-            ]),
-          )),
-      const SizedBox(height: 20),
-    ]);
+                    _t('network_wants_to_connect').replaceAll('{name}', f.name),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF16A34A),
+                  ),
+                  tooltip: context.tr('tooltip_accept'),
+                  onPressed: () async {
+                    await FriendshipService.instance.accept(f.uid);
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.cancel_rounded,
+                    color: theme.colorScheme.outline,
+                  ),
+                  tooltip: context.tr('tooltip_reject'),
+                  onPressed: () async {
+                    await FriendshipService.instance.remove(f.uid);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
   }
 
   // ── Bestätigte Freunde (UID-basiert) ──────────────────────────────────────
   Widget _uidFriendsSection(ThemeData theme) {
     final friends = FriendshipService.instance.friends;
     final outgoing = FriendshipService.instance.outgoing;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'my_friends'),
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w800)),
-        if (friends.isNotEmpty)
-          Text('${friends.length} verbunden',
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: const Color(0xFF7C3AED))),
-      ]),
-      const SizedBox(height: 12),
-      if (friends.isEmpty)
-        _emptyFriendsState(theme)
-      else
-        ...friends.map((f) => _uidFriendCard(theme, f)),
-      if (outgoing.isNotEmpty) ...[
-        const SizedBox(height: 16),
-        Text('Gesendete Anfragen',
-            style: theme.textTheme.labelMedium
-                ?.copyWith(color: theme.colorScheme.outline)),
-        const SizedBox(height: 8),
-        ...outgoing.map((f) => Padding(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              AppStringsManager.getString(
+                languageService.currentLanguage,
+                'my_friends',
+              ),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            if (friends.isNotEmpty)
+              Text(
+                _t(
+                  'network_connected_count',
+                ).replaceAll('{count}', '${friends.length}'),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: const Color(0xFF7C3AED),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (friends.isEmpty)
+          _emptyFriendsState(theme)
+        else
+          ...friends.map((f) => _uidFriendCard(theme, f)),
+        if (outgoing.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            _t('network_outgoing_requests'),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...outgoing.map(
+            (f) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Row(children: [
-                Icon(Icons.hourglass_top_rounded,
-                    size: 16, color: theme.colorScheme.outline),
-                const SizedBox(width: 8),
-                Expanded(
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.hourglass_top_rounded,
+                    size: 16,
+                    color: theme.colorScheme.outline,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
                     child: Text(
-                        _t('network_waiting_confirmation')
-                            .replaceAll('{name}', f.name),
-                        style: theme.textTheme.bodySmall)),
-                TextButton(
+                      _t(
+                        'network_waiting_confirmation',
+                      ).replaceAll('{name}', f.name),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                  TextButton(
                     onPressed: () => FriendshipService.instance.remove(f.uid),
-                    child: Text(_t('network_withdraw'))),
-              ]),
-            )),
+                    child: Text(_t('network_withdraw')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
-    ]);
+    );
   }
 
   // Freundes-Karte (UID-basiert) mit Chat, Melden, Entfernen.
@@ -2127,79 +2190,107 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
-      child: Row(children: [
-        CircleAvatar(
+      child: Row(
+        children: [
+          CircleAvatar(
             radius: 23,
             backgroundColor: _avatarColor(f.name),
-            backgroundImage:
-                f.avatarUrl != null ? NetworkImage(f.avatarUrl!) : null,
+            backgroundImage: f.avatarUrl != null
+                ? NetworkImage(f.avatarUrl!)
+                : null,
             child: f.avatarUrl == null
                 ? Text(
                     f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800),
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
                   )
-                : null),
-        const SizedBox(width: 12),
-        Expanded(
-            child: Text(f.name,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w700))),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MatchConversationScreen(
-                profileId: f.roomId,
-                profileName: f.name,
-                isFriendChat: true,
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              f.name,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
-          label: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'chat_btn')),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF8B5CF6),
-            side: const BorderSide(color: Color(0xFF8B5CF6)),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            textStyle:
-                const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MatchConversationScreen(
+                  profileId: f.roomId,
+                  profileName: f.name,
+                  isFriendChat: true,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+            label: Text(
+              AppStringsManager.getString(
+                languageService.currentLanguage,
+                'chat_btn',
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF8B5CF6),
+              side: const BorderSide(color: Color(0xFF8B5CF6)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-        ),
-        PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert_rounded,
-              size: 18, color: theme.colorScheme.outline),
-          onSelected: (v) async {
-            if (v == 'remove') {
-              await FriendshipService.instance.remove(f.uid);
-            } else if (v == 'block') {
-              await BlockReportService.instance.blockUser(f.uid, f.name);
-              await FriendshipService.instance.remove(f.uid);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('${f.name} wurde blockiert.'),
-                  behavior: SnackBarBehavior.floating,
-                ));
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert_rounded,
+              size: 18,
+              color: theme.colorScheme.outline,
+            ),
+            onSelected: (v) async {
+              if (v == 'remove') {
+                await FriendshipService.instance.remove(f.uid);
+              } else if (v == 'block') {
+                await BlockReportService.instance.blockUser(f.uid, f.name);
+                await FriendshipService.instance.remove(f.uid);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        _t('network_blocked').replaceAll('{name}', f.name),
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              } else if (v == 'report') {
+                showReportSheet(
+                  context,
+                  userId: f.uid,
+                  userName: f.name,
+                  contentType: 'profile',
+                );
               }
-            } else if (v == 'report') {
-              showReportSheet(context,
-                  userId: f.uid, userName: f.name, contentType: 'profile');
-            }
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'report', child: Text('Melden')),
-            PopupMenuItem(value: 'block', child: Text('Blockieren')),
-            PopupMenuItem(value: 'remove', child: Text('Entfernen')),
-          ],
-        ),
-      ]),
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'report', child: Text(_t('network_report'))),
+              PopupMenuItem(value: 'block', child: Text(_t('network_block'))),
+              PopupMenuItem(value: 'remove', child: Text(_t('remove_btn'))),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -2211,32 +2302,47 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      child: Column(children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-            shape: BoxShape.circle,
-          ),
-          child: const Center(
-              child: Icon(Icons.group_add_rounded,
-                  size: 28, color: Color(0xFF8B5CF6))),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
-        const SizedBox(height: 14),
-        Text(
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.group_add_rounded,
+                size: 28,
+                color: Color(0xFF8B5CF6),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
             AppStringsManager.getString(
-                languageService.currentLanguage, 'no_friends_yet'),
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 6),
-        Text(_t('network_share_code_hint'),
+              languageService.currentLanguage,
+              'no_friends_yet',
+            ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _t('network_share_code_hint'),
             style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant, height: 1.5),
-            textAlign: TextAlign.center),
-      ]),
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -2250,15 +2356,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         splashColor: Colors.white.withValues(alpha: 0.2),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 11),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(height: 5),
-            Text(label,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(height: 5),
+              Text(
+                label,
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600)),
-          ]),
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2273,10 +2385,14 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     }
     if (_loadingMatches) {
       return const Center(
-          child: Padding(
-              padding: EdgeInsets.all(24),
-              child: CircularProgressIndicator(
-                  color: Color(0xFF8B5CF6), strokeWidth: 2)));
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(
+            color: Color(0xFF8B5CF6),
+            strokeWidth: 2,
+          ),
+        ),
+      );
     }
     if (_matchesErrorKey != null) {
       return PlaymateDiscoveryError(
@@ -2293,7 +2409,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     );
     if (suggestions.isEmpty) return const SizedBox.shrink();
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -2301,40 +2419,50 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'maybe_you_know'),
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          Text(
-              AppStringsManager.getString(
+                  Text(
+                    AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'maybe_you_know',
+                    ),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    AppStringsManager.getString(
                       languageService.currentLanguage,
                       'network_matching_suggestions',
                     ),
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.outline)),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-        Text(
+            Text(
               _t(
                 'network_suggestions_count',
               ).replaceAll('{count}', '${suggestions.length}'),
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: const Color(0xFF8B5CF6))),
-      ]),
-      const SizedBox(height: 14),
-      SizedBox(
-        height: 240,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.zero,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: const Color(0xFF8B5CF6),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 240,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
             itemCount: suggestions.length,
             itemBuilder: (ctx, i) => _suggestionCard(theme, suggestions[i]),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   Widget _suggestionCard(ThemeData theme, PlaymateSuggestion s) {
@@ -2349,63 +2477,87 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 4)),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Center(
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            child: Center(
-              child: Text(initial,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Center(
+                child: Text(
+                  initial,
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800)),
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Text(s.name,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
+          const SizedBox(height: 10),
+          Text(
+            s.name,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
             maxLines: 1,
-            overflow: TextOverflow.ellipsis),
+            overflow: TextOverflow.ellipsis,
+          ),
           if (s.childAgeTags.isNotEmpty) ...[
-          const SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
-              s.childAgeTags.join(' · '),
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              s.childAgeTags
+                  .map(
+                    (tag) => networkChildAgeLabel(
+                      languageService.currentLanguage,
+                      tag,
+                    ),
+                  )
+                  .join(' · '),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               maxLines: 2,
-              overflow: TextOverflow.ellipsis),
-        ],
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
           const SizedBox(height: 8),
           if (s.city.isNotEmpty)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Text(
                 s.city,
-              style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w600, color: color),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-        ),
-        const Spacer(),
-        Row(children: [
-          Expanded(
-            child: FilledButton(
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
                   onPressed: () async {
                     final account = AuthService.instance.currentUser?.uid;
                     final ok = await FriendshipService.instance.sendRequest(
@@ -2416,56 +2568,76 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                       if (ok) {
                         setState(() => _dismissedSuggestions.add(s.userId));
                       }
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(ok
-                        ? 'Anfrage an ${s.name} gesendet. 👋'
-                        : 'Konnte nicht verbinden — bitte später erneut versuchen.'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: ok ? const Color(0xFF16A34A) : null,
-                  ));
-                }
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF7C3AED),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                textStyle:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            ok
+                                ? _t(
+                                    'network_copy_request_sent',
+                                  ).replaceAll('{name}', s.name)
+                                : _t('network_copy_request_failed'),
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: ok ? const Color(0xFF16A34A) : null,
+                        ),
+                      );
+                    }
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: Text(
+                    AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'connect_btn',
+                    ),
+                  ),
+                ),
               ),
-              child: Text(AppStringsManager.getString(
-                  languageService.currentLanguage, 'connect_btn')),
-            ),
-          ),
-          const SizedBox(width: 6),
-          GestureDetector(
-            onTap: () async {
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () async {
                   final account = AuthService.instance.currentUser?.uid;
                   final prefs = await SharedPreferences.getInstance();
                   if (mounted &&
                       AuthService.instance.currentUser?.uid == account) {
-                setState(() {
+                    setState(() {
                       _dismissedSuggestions.add(s.userId);
-                });
-                await prefs.setStringList(
-                    'friends.dismissed', _dismissedSuggestions.toList());
-              }
+                    });
+                    await prefs.setStringList(
+                      'friends.dismissed',
+                      _dismissedSuggestions.toList(),
+                    );
+                  }
                 },
                 behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                shape: BoxShape.circle,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
               ),
-              child: Icon(Icons.close_rounded,
-                  size: 16, color: theme.colorScheme.outline),
-            ),
+            ],
           ),
-        ]),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -2493,64 +2665,89 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           color: theme.colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
                 color: theme.colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2)),
-          ),
-          const SizedBox(height: 20),
-          Text(
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
               AppStringsManager.getString(
-                  languageService.currentLanguage, 'show_this_code'),
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(_t('network_scan_to_connect'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline, height: 1.4),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
+                languageService.currentLanguage,
+                'show_this_code',
+              ),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _t('network_scan_to_connect'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 20,
-                    offset: const Offset(0, 6)),
-              ],
-            ),
-            child:
-                QrImageView(data: qrData, version: QrVersions.auto, size: 200),
-          ),
-          const SizedBox(height: 16),
-          Text(_t('network_scan_to_connect'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline)),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF7C3AED),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              child: Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'done_btn'),
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
+              child: QrImageView(
+                data: qrData,
+                version: QrVersions.auto,
+                size: 200,
+              ),
             ),
-          ),
-        ]),
+            const SizedBox(height: 16),
+            Text(
+              _t('network_scan_to_connect'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF7C3AED),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'done_btn',
+                  ),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2563,18 +2760,25 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(AppStringsManager.getString(
-            languageService.currentLanguage, 'delete_profile')),
+        title: Text(
+          AppStringsManager.getString(
+            languageService.currentLanguage,
+            'delete_profile',
+          ),
+        ),
         content: Text(_t('network_delete_profile_confirm')),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(_t('cancel'))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('cancel')),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: FilledButton.styleFrom(
-                  backgroundColor: theme.colorScheme.error),
-              child: Text(_t('delete'))),
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+            ),
+            child: Text(_t('delete')),
+          ),
         ],
       ),
     );
@@ -2582,14 +2786,17 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     if (AuthService.instance.currentUser?.uid != uid) return;
     setState(() => _deletingProfile = true);
     try {
-      final deleted = await PlaymateProfileService(matchingService: _matching)
-          .deleteProfile(uid);
+      final deleted = await PlaymateProfileService(
+        matchingService: _matching,
+      ).deleteProfile(uid);
       if (!mounted || AuthService.instance.currentUser?.uid != uid) return;
       if (!deleted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_t('network_delete_failed')),
-          backgroundColor: theme.colorScheme.error,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_t('network_delete_failed')),
+            backgroundColor: theme.colorScheme.error,
+          ),
+        );
         return;
       }
       setState(() {
@@ -2603,10 +2810,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     } catch (e) {
       debugPrint('ElternNetzwerkScreen profile deletion failed: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_t('network_delete_failed')),
-          backgroundColor: theme.colorScheme.error,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_t('network_delete_failed')),
+            backgroundColor: theme.colorScheme.error,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _deletingProfile = false);
@@ -2622,7 +2831,8 @@ class PlaymateProfileForm extends StatefulWidget {
   final Future<void> Function(FamilyMatchProfile) onSave;
   final FamilyMatchProfile? initialProfile;
   final VoidCallback? onCancel;
-  const PlaymateProfileForm({super.key,
+  const PlaymateProfileForm({
+    super.key,
     required this.onSave,
     this.initialProfile,
     this.onCancel,
@@ -2727,7 +2937,9 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   void _next() {
     if (_step < _totalSteps - 1) {
       _pageCtrl.nextPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
       setState(() => _step++);
     }
   }
@@ -2735,7 +2947,9 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   void _prev() {
     if (_step > 0) {
       _pageCtrl.previousPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
       setState(() => _step--);
     }
   }
@@ -2753,22 +2967,24 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
     setState(() => _saving = true);
     try {
       final children = _children
-          .map((c) => ChildEntry(
-                name: c.nameCtrl.text.trim(),
-                birthDate: c.birthDate,
-                ageMonths: c.ageMonths,
-                gender: c.gender,
-                interests: c.interests.toList(),
-                interestsCustom: c.interestsCustomCtrl.text.trim().isEmpty
-                    ? null
-                    : c.interestsCustomCtrl.text.trim(),
-              ))
+          .map(
+            (c) => ChildEntry(
+              name: c.nameCtrl.text.trim(),
+              birthDate: c.birthDate,
+              ageMonths: c.ageMonths,
+              gender: c.gender,
+              interests: c.interests.toList(),
+              interestsCustom: c.interestsCustomCtrl.text.trim().isEmpty
+                  ? null
+                  : c.interestsCustomCtrl.text.trim(),
+            ),
+          )
           .toList();
 
       final profile = FamilyMatchProfile(
         displayName: _nameCtrl.text.trim(),
         district: _districtCtrl.text.trim(),
-        city: _pickedLocation?.city?? widget.initialProfile?.city,
+        city: _pickedLocation?.city ?? widget.initialProfile?.city,
         latitude: coarseCoordinate(_pickedLocation?.lat),
         longitude: coarseCoordinate(_pickedLocation?.lon),
         children: children,
@@ -2803,8 +3019,8 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content:
-                  Text(_t('network_save_error').replaceAll('{error}', '$e'))),
+            content: Text(_t('network_save_error').replaceAll('{error}', '$e')),
+          ),
         );
       }
     } finally {
@@ -2826,11 +3042,12 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(children: [
-      // Progress dots
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Row(
+    return Column(
+      children: [
+        // Progress dots
+        Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(_totalSteps, (i) {
               final active = i == _step;
@@ -2843,181 +3060,227 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
                   color: done
                       ? const Color(0xFF16A34A)
                       : active
-                          ? const Color(0xFF8B5CF6)
-                          : theme.colorScheme.outlineVariant
-                              .withValues(alpha: 0.4),
+                      ? const Color(0xFF8B5CF6)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(5),
                 ),
               );
-            })),
-      ),
-      // Step label
-      Text(_stepLabel(_step),
-          style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6))),
-      const SizedBox(height: 16),
-      // Pages
-      Expanded(
-        child: PageView(
-          controller: _pageCtrl,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            _step1(theme),
-            _step2(theme),
-            _step3(theme),
-            _step4(theme),
-            _step5(theme)
-          ],
+            }),
+          ),
         ),
-      ),
-      // Navigation
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Row(children: [
-          if (widget.onCancel != null)
+        // Step label
+        Text(
+          _stepLabel(_step),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF8B5CF6),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Pages
+        Expanded(
+          child: PageView(
+            controller: _pageCtrl,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _step1(theme),
+              _step2(theme),
+              _step3(theme),
+              _step4(theme),
+              _step5(theme),
+            ],
+          ),
+        ),
+        // Navigation
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            children: [
+              if (widget.onCancel != null)
                 TextButton(
                   onPressed: _saving ? null : widget.onCancel,
                   child: Text(_t('cancel')),
                 ),
               if (_step > 0)
-            TextButton.icon(
-                onPressed: _saving ? null : _prev,
-                icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: Text(_t('network_back')))
-          else
-            const Spacer(),
-          const Spacer(),
-          if (_step < _totalSteps - 1)
-            FilledButton.icon(
-                onPressed: _saving ? null : _next,
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: Text(AppStringsManager.getString(
-                    languageService.currentLanguage, 'next_btn_wizard')),
-                style: FilledButton.styleFrom(
+                TextButton.icon(
+                  onPressed: _saving ? null : _prev,
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: Text(_t('network_back')),
+                )
+              else
+                const Spacer(),
+              const Spacer(),
+              if (_step < _totalSteps - 1)
+                FilledButton.icon(
+                  onPressed: _saving ? null : _next,
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: Text(
+                    AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'next_btn_wizard',
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14))))
-          else
-            FilledButton.icon(
-              onPressed: _saving ? null : _submit,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.check_rounded, size: 18),
-              label: Text(_saving
-                  ? _networkCopy('save', 'Speichern...')
-                  : widget.initialProfile != null
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: _saving ? null : _submit,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.check_rounded, size: 18),
+                  label: Text(
+                    _saving
+                        ? _t('network_copy_save')
+                        : widget.initialProfile != null
                         ? _t('save')
-                        : _networkCopy('create_profile', 'Profil erstellen')),
-              style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF16A34A),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14))),
-            ),
-        ]),
-      ),
-    ]);
+                        : _t('network_copy_create_profile'),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
-  static const _stepLabels = [
-    'Schritt 1: Eure Familie',
-    'Schritt 2: Eure Kinder',
-    'Schritt 3: Werte & Stil',
-    'Schritt 4: Was sucht ihr?',
-    'Schritt 5: Sprachen & Mehr',
-  ];
-
-  String _stepLabel(int step) =>
-      _networkCopy('step_${step + 1}', _stepLabels[step]);
+  String _stepLabel(int step) => _t('network_copy_step_${step + 1}');
 
   // ─── SCHRITT 1: Grundinfos ─────────────────────────────────────────────────
   Widget _step1(ThemeData theme) {
     return SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const SizedBox(height: 8),
           _inputField(
-              _nameCtrl,
-              _networkCopy('name_hint', 'Euer Vorname / Spitzname'),
-              _networkCopy('name_example', 'z.B. Sarah, Die Muellers'),
-              Icons.person_rounded),
+            _nameCtrl,
+            _t('network_copy_name_hint'),
+            _t('network_copy_name_example'),
+            Icons.person_rounded,
+          ),
           const SizedBox(height: 14),
           LocationPickerWidget(
             initialLocation: _pickedLocation,
-            hint: _networkCopy('location_hint', 'Euer Stadtteil / PLZ wählen'),
+            hint: _t('network_copy_location_hint'),
             onLocationPicked: (loc) => setState(() {
               _pickedLocation = loc;
               _districtCtrl.text = loc.displayName;
-            },
-          )),
+            }),
+          ),
           if (_pickedLocation == null && _districtCtrl.text.isNotEmpty)
             Text(_districtCtrl.text),
           const SizedBox(height: 20),
-          _sectionTitle(theme,
-              '\u{1F46A} ${_networkCopy('family_form', 'Familienform')}'),
+          _sectionTitle(theme, '\u{1F46A} ${_t('network_copy_family_form')}'),
           const SizedBox(height: 8),
-          Text(_t('network_wizard_choose'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            _t('network_wizard_choose'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 10),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            ...MatchOptions.familyForms.map((f) => ChoiceChip(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ...MatchOptions.familyForms.map(
+                (f) => ChoiceChip(
                   label: Text(
-                      networkWizardOptionLabel(languageService.currentLanguage,
-                          'family', f, MatchOptions.familyFormLabels[f] ?? f),
-                      style: const TextStyle(fontSize: 12)),
+                    networkWizardOptionLabel(
+                      languageService.currentLanguage,
+                      'family',
+                      f,
+                      MatchOptions.familyFormLabels[f] ?? f,
+                    ),
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   selected: _familyForm == f,
                   onSelected: (_) => setState(() => _familyForm = f),
                   avatar: null,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                )),
-            ActionChip(
-              label: Text('\u{2795} ${_networkCopy('custom', 'Eigene')}',
-                  style: const TextStyle(fontSize: 12)),
-              onPressed: () => setState(() => _familyForm = 'custom'),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              side: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
-            ),
-          ]),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              ActionChip(
+                label: Text(
+                  '\u{2795} ${_t('network_copy_custom')}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                onPressed: () => setState(() => _familyForm = 'custom'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                side: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
+              ),
+            ],
+          ),
           if (_familyForm == 'custom') ...[
             const SizedBox(height: 10),
             _inputField(
-                _familyFormCustomCtrl,
-                _networkCopy('custom_family', 'Eure Familienform'),
-                _networkCopy(
-                    'custom_example', 'z.B. Wahlfamilie, Mehrgenerationen...'),
-                Icons.edit_rounded),
+              _familyFormCustomCtrl,
+              _t('network_copy_custom_family'),
+              _t('network_copy_custom_example'),
+              Icons.edit_rounded,
+            ),
           ],
-        ]));
+        ],
+      ),
+    );
   }
 
   // ─── SCHRITT 2: Kinder ─────────────────────────────────────────────────────
   Widget _step2(ThemeData theme) {
     return SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const SizedBox(height: 8),
-          Text(_t('network_wizard_for_whom'),
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            _t('network_wizard_for_whom'),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 14),
-          ..._children
-              .asMap()
-              .entries
-              .map((entry) => _childCard(theme, entry.key, entry.value)),
+          ..._children.asMap().entries.map(
+            (entry) => _childCard(theme, entry.key, entry.value),
+          ),
           const SizedBox(height: 12),
           Center(
-              child: TextButton.icon(
-            onPressed: () => setState(() => _children.add(_ChildData())),
-            icon: const Icon(Icons.add_rounded),
-            label: Text(AppStringsManager.getString(
-                languageService.currentLanguage, 'add_child_btn')),
-          )),
-        ]));
+            child: TextButton.icon(
+              onPressed: () => setState(() => _children.add(_ChildData())),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'add_child_btn',
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _childCard(ThemeData theme, int index, _ChildData child) {
@@ -3028,480 +3291,739 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text('\u{1F476} Kind ${index + 1}',
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          const Spacer(),
-          if (_children.length > 1)
-            IconButton(
-                icon: Icon(Icons.close_rounded,
-                    size: 18, color: theme.colorScheme.error),
-                onPressed: () => setState(() {
-                      _children[index].dispose();
-                      _children.removeAt(index);
-                    })),
-        ]),
-        const SizedBox(height: 10),
-        TextField(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '\u{1F476} ${_t('network_child_number').replaceAll('{number}', '${index + 1}')}',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              if (_children.length > 1)
+                IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: theme.colorScheme.error,
+                  ),
+                  onPressed: () => setState(() {
+                    _children[index].dispose();
+                    _children.removeAt(index);
+                  }),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextField(
             controller: child.nameCtrl,
             decoration: InputDecoration(
-                labelText: _t('network_child_name_local'),
-                hintText: 'z.B. Mia',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                isDense: true)),
-        const SizedBox(height: 12),
-        // Alter Slider
-        Row(children: [
-          Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'age_label'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(width: 8),
-          Expanded(
-              child: Slider(
-            value: child.ageMonths.toDouble(),
-            min: 0, max: child.maxAgeMonths.toDouble(), divisions: child.maxAgeMonths,
-            label: _ageLabel(child.ageMonths),
-            onChanged: (v) => setState(() => child.ageMonths = v.round()),
-          )),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8)),
-            child: Text(_ageLabel(child.ageMonths),
-                style: const TextStyle(
+              labelText: _t('network_child_name_local'),
+              hintText: _t('network_child_example'),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Alter Slider
+          Row(
+            children: [
+              Text(
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'age_label',
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Slider(
+                  value: child.ageMonths.toDouble(),
+                  min: 0,
+                  max: child.maxAgeMonths.toDouble(),
+                  divisions: child.maxAgeMonths,
+                  label: _ageLabel(child.ageMonths),
+                  onChanged: (v) => setState(() => child.ageMonths = v.round()),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _ageLabel(child.ageMonths),
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF8B5CF6))),
+                    color: Color(0xFF8B5CF6),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ]),
-        const SizedBox(height: 10),
-        // Geschlecht
-        Text(
+          const SizedBox(height: 10),
+          // Geschlecht
+          Text(
             AppStringsManager.getString(
-                languageService.currentLanguage, 'gender_optional'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        Wrap(
+              languageService.currentLanguage,
+              'gender_optional',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
             spacing: 8,
             children: [null, ...MatchOptions.genderLabels.keys]
-                .map((g) => ChoiceChip(
-                      label: Text(
-                          g == null
-                              ? _networkCopy('no_gender', 'Keine Angabe')
-                              : _networkCopy(
-                                  'gender_$g',
-                                  MatchOptions.genderLabels[g]!,
-                                ),
-                          style: const TextStyle(fontSize: 11)),
-                      selected: child.gender == g,
-                      onSelected: (_) => setState(() => child.gender = g),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                    ))
-                .toList()),
-        const SizedBox(height: 12),
-        // Interessen
-        Text(
-            AppStringsManager.getString(
-                languageService.currentLanguage, 'interests_label'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        Wrap(spacing: 6, runSpacing: 6, children: [
-          ...MatchOptions.childInterests.map((i) => FilterChip(
-                label: Text(
-                    networkWizardOptionLabel(languageService.currentLanguage,
-                        'child', i, MatchOptions.childInterestLabels[i] ?? i),
-                    style: const TextStyle(fontSize: 10)),
-                selected: child.interests.contains(i),
-                onSelected: (s) => setState(() =>
-                    s ? child.interests.add(i) : child.interests.remove(i)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                visualDensity: VisualDensity.compact,
-              )),
-          ActionChip(
-            label:
-                const Text('\u{2795} Eigenes', style: TextStyle(fontSize: 10)),
-            onPressed: () => _showCustomInput(
-                child.interestsCustomCtrl, 'Was mag dein Kind noch?'),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            side: const BorderSide(color: Color(0xFF8B5CF6)),
-            visualDensity: VisualDensity.compact,
+                .map(
+                  (g) => ChoiceChip(
+                    label: Text(
+                      g == null
+                          ? _t('network_copy_no_gender')
+                          : networkWizardOptionLabel(
+                              languageService.currentLanguage,
+                              'gender',
+                              g,
+                              g,
+                            ),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    selected: child.gender == g,
+                    onSelected: (_) => setState(() => child.gender = g),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
-        ]),
-        if (child.interestsCustomCtrl.text.isNotEmpty)
-          Padding(
+          const SizedBox(height: 12),
+          // Interessen
+          Text(
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'interests_label',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ...MatchOptions.childInterests.map(
+                (i) => FilterChip(
+                  label: Text(
+                    networkWizardOptionLabel(
+                      languageService.currentLanguage,
+                      'child',
+                      i,
+                      MatchOptions.childInterestLabels[i] ?? i,
+                    ),
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                  selected: child.interests.contains(i),
+                  onSelected: (s) => setState(
+                    () =>
+                        s ? child.interests.add(i) : child.interests.remove(i),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              ActionChip(
+                label: Text(
+                  '\u{2795} ${_t('network_custom_add')}',
+                  style: const TextStyle(fontSize: 10),
+                ),
+                onPressed: () => _showCustomInput(
+                  child.interestsCustomCtrl,
+                  _t('network_child_custom_hint'),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                side: const BorderSide(color: Color(0xFF8B5CF6)),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          if (child.interestsCustomCtrl.text.isNotEmpty)
+            Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text('\u{2728} ${child.interestsCustomCtrl.text}',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: theme.colorScheme.primary,
-                      fontStyle: FontStyle.italic))),
-      ]),
+              child: Text(
+                '\u{2728} ${child.interestsCustomCtrl.text}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: theme.colorScheme.primary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
   String _ageLabel(int months) {
-    if (months < 12) return '$months Mon.';
+    if (months < 12) {
+      return _t('network_age_months').replaceAll('{months}', '$months');
+    }
     final y = months ~/ 12;
     final m = months % 12;
-    return m == 0 ? '$y Jahre' : '$y J. $m M.';
+    return m == 0
+        ? _t('network_age_years').replaceAll('{years}', '$y')
+        : _t(
+            'network_age_mixed',
+          ).replaceAll('{years}', '$y').replaceAll('{months}', '$m');
   }
 
   // ─── SCHRITT 3: Werte & Erziehungsstil ─────────────────────────────────────
   Widget _step3(ThemeData theme) {
     return SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-                color: const Color(0xFF16A34A).withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: const Color(0xFF16A34A).withValues(alpha: 0.15))),
-            child: Row(children: [
-              const Text('\u{1F49A}', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 10),
-              Expanded(
+              color: const Color(0xFF16A34A).withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Text('\u{1F49A}', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
                   child: Text(
-                      _networkCopy('values_tip',
-                          'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.'),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF16A34A),
-                          fontWeight: FontWeight.w500,
-                          height: 1.3)))
-            ]),
+                    _t('network_copy_values_tip'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF16A34A),
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
-          _sectionTitle(theme, '\u{2728} Was lebt ihr?'),
+          _sectionTitle(theme, '\u{2728} ${_t('network_values_heading')}'),
           const SizedBox(height: 10),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            ...MatchOptions.valueOptions.map((v) => FilterChip(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ...MatchOptions.valueOptions.map(
+                (v) => FilterChip(
                   label: Text(
-                      networkWizardOptionLabel(languageService.currentLanguage,
-                          'values', v, MatchOptions.valueLabels[v] ?? v),
-                      style: const TextStyle(fontSize: 11)),
+                    networkWizardOptionLabel(
+                      languageService.currentLanguage,
+                      'values',
+                      v,
+                      MatchOptions.valueLabels[v] ?? v,
+                    ),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   selected: _values.contains(v),
                   onSelected: (s) =>
                       setState(() => s ? _values.add(v) : _values.remove(v)),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   selectedColor: v == 'gfk'
                       ? const Color(0xFF16A34A).withValues(alpha: 0.15)
                       : null,
                   checkmarkColor: v == 'gfk' ? const Color(0xFF16A34A) : null,
-                )),
-            ActionChip(
-              label: Text(
+                ),
+              ),
+              ActionChip(
+                label: Text(
                   AppStringsManager.getString(
-                      languageService.currentLanguage, 'custom_value'),
-                  style: const TextStyle(fontSize: 11)),
-              onPressed: () => _showCustomInput(
-                  _valuesCustomCtrl, 'Was ist euch noch wichtig?'),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              side: const BorderSide(color: Color(0xFF8B5CF6)),
-            ),
-          ]),
+                    languageService.currentLanguage,
+                    'custom_value',
+                  ),
+                  style: const TextStyle(fontSize: 11),
+                ),
+                onPressed: () => _showCustomInput(
+                  _valuesCustomCtrl,
+                  _t('network_values_custom_hint'),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                side: const BorderSide(color: Color(0xFF8B5CF6)),
+              ),
+            ],
+          ),
           if (_valuesCustomCtrl.text.isNotEmpty)
             Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Text('\u{2728} ${_valuesCustomCtrl.text}',
-                        style: TextStyle(
-                            fontSize: 12, color: theme.colorScheme.primary)))),
-        ]));
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '\u{2728} ${_valuesCustomCtrl.text}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   // ─── SCHRITT 4: Aktivitaeten + Verfügbarkeit ──────────────────────────────
   Widget _step4(ThemeData theme) {
     return SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const SizedBox(height: 8),
-          _sectionTitle(theme, '\u{1F3AF} Was sucht ihr?'),
+          _sectionTitle(theme, '\u{1F3AF} ${_t('network_looking_heading')}'),
           const SizedBox(height: 6),
-          Text(_t('network_wizard_activities'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            _t('network_wizard_activities'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 10),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            ...MatchOptions.lookingForOptions.map((l) => FilterChip(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ...MatchOptions.lookingForOptions.map(
+                (l) => FilterChip(
                   label: Text(
-                      networkWizardOptionLabel(languageService.currentLanguage,
-                          'looking', l, MatchOptions.lookingForLabels[l] ?? l),
-                      style: const TextStyle(fontSize: 11)),
+                    networkWizardOptionLabel(
+                      languageService.currentLanguage,
+                      'looking',
+                      l,
+                      MatchOptions.lookingForLabels[l] ?? l,
+                    ),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   selected: _lookingFor.contains(l),
                   onSelected: (s) => setState(
-                      () => s ? _lookingFor.add(l) : _lookingFor.remove(l)),
+                    () => s ? _lookingFor.add(l) : _lookingFor.remove(l),
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                )),
-            ActionChip(
-              label: Text(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              ActionChip(
+                label: Text(
                   AppStringsManager.getString(
-                      languageService.currentLanguage, 'custom_idea'),
-                  style: const TextStyle(fontSize: 11)),
-              onPressed: () => _showCustomInput(
-                  _lookingForCustomCtrl, 'Was wünscht ihr euch noch?'),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              side: const BorderSide(color: Color(0xFF8B5CF6)),
-            ),
-          ]),
+                    languageService.currentLanguage,
+                    'custom_idea',
+                  ),
+                  style: const TextStyle(fontSize: 11),
+                ),
+                onPressed: () => _showCustomInput(
+                  _lookingForCustomCtrl,
+                  _t('network_looking_custom_hint'),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                side: const BorderSide(color: Color(0xFF8B5CF6)),
+              ),
+            ],
+          ),
           if (_lookingForCustomCtrl.text.isNotEmpty)
             Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Text('\u{2728} ${_lookingForCustomCtrl.text}',
-                        style: TextStyle(
-                            fontSize: 12, color: theme.colorScheme.primary)))),
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '\u{2728} ${_lookingForCustomCtrl.text}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: 22),
-          _sectionTitle(theme, '\u{1F4C5} Wann habt ihr Zeit?'),
+          _sectionTitle(
+            theme,
+            '\u{1F4C5} ${_t('network_availability_heading')}',
+          ),
           const SizedBox(height: 10),
           Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'days_label'),
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'days_label',
+            ),
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 6),
           Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: MatchOptions.dayOptions
-                  .map((d) => FilterChip(
-                        label: Text(
-                            networkWizardOptionLabel(
-                                languageService.currentLanguage,
-                                'days',
-                                d,
-                                MatchOptions.dayLabels[d] ?? d),
-                            style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w600)),
-                        selected: _availDays.contains(d),
-                        onSelected: (s) => setState(
-                            () => s ? _availDays.add(d) : _availDays.remove(d)),
-                        shape: const CircleBorder(),
-                        showCheckmark: false,
-                        padding: const EdgeInsets.all(4),
-                      ))
-                  .toList()),
+            spacing: 8,
+            runSpacing: 8,
+            children: MatchOptions.dayOptions
+                .map(
+                  (d) => FilterChip(
+                    label: Text(
+                      networkWizardOptionLabel(
+                        languageService.currentLanguage,
+                        'days',
+                        d,
+                        MatchOptions.dayLabels[d] ?? d,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    selected: _availDays.contains(d),
+                    onSelected: (s) => setState(
+                      () => s ? _availDays.add(d) : _availDays.remove(d),
+                    ),
+                    shape: const CircleBorder(),
+                    showCheckmark: false,
+                    padding: const EdgeInsets.all(4),
+                  ),
+                )
+                .toList(),
+          ),
           const SizedBox(height: 14),
           Text(
-              AppStringsManager.getString(
-                  languageService.currentLanguage, 'times_label'),
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
+            AppStringsManager.getString(
+              languageService.currentLanguage,
+              'times_label',
+            ),
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 6),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            ...MatchOptions.timeOptions.map((t) => FilterChip(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ...MatchOptions.timeOptions.map(
+                (t) => FilterChip(
                   label: Text(
-                      networkWizardOptionLabel(languageService.currentLanguage,
-                          'times', t, MatchOptions.timeLabels[t] ?? t),
-                      style: const TextStyle(fontSize: 11)),
+                    networkWizardOptionLabel(
+                      languageService.currentLanguage,
+                      'times',
+                      t,
+                      MatchOptions.timeLabels[t] ?? t,
+                    ),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   selected: _availTimes.contains(t),
                   onSelected: (s) => setState(
-                      () => s ? _availTimes.add(t) : _availTimes.remove(t)),
+                    () => s ? _availTimes.add(t) : _availTimes.remove(t),
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                )),
-            ActionChip(
-              label: Text(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              ActionChip(
+                label: Text(
                   AppStringsManager.getString(
-                      languageService.currentLanguage, 'other_time'),
-                  style: const TextStyle(fontSize: 11)),
-              onPressed: () => _showCustomInput(
-                  _availCustomCtrl, 'z.B. Nur in Ferien, Nur Feiertage...'),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              side: const BorderSide(color: Color(0xFF8B5CF6)),
-            ),
-          ]),
+                    languageService.currentLanguage,
+                    'other_time',
+                  ),
+                  style: const TextStyle(fontSize: 11),
+                ),
+                onPressed: () => _showCustomInput(
+                  _availCustomCtrl,
+                  _t('network_availability_hint'),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                side: const BorderSide(color: Color(0xFF8B5CF6)),
+              ),
+            ],
+          ),
           if (_availCustomCtrl.text.isNotEmpty)
             Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Text('\u{2728} ${_availCustomCtrl.text}',
-                        style: TextStyle(
-                            fontSize: 12, color: theme.colorScheme.primary)))),
-        ]));
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '\u{2728} ${_availCustomCtrl.text}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   // ─── SCHRITT 5: Sprachen + Bio + Besonderheiten ────────────────────────────
   Widget _step5(ThemeData theme) {
     return SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const SizedBox(height: 8),
-          _sectionTitle(theme, '\u{1F30D} Welche Sprachen sprecht ihr?'),
+          _sectionTitle(theme, '\u{1F30D} ${_t('network_languages_heading')}'),
           const SizedBox(height: 6),
-          Text(_t('network_wizard_languages'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            _t('network_wizard_languages'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 10),
           Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: MatchOptions.languageLabels.entries
-                  .map((e) => FilterChip(
-                        label: Text(
-                            networkWizardOptionLabel(
-                                languageService.currentLanguage,
-                                'language',
-                                e.key,
-                                e.value),
-                            style: const TextStyle(fontSize: 11)),
-                        selected: _langs.contains(e.key),
-                        onSelected: (s) => setState(
-                            () => s ? _langs.add(e.key) : _langs.remove(e.key)),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        avatar: e.key == 'ku'
-                            ? const AlaRenginFlag(width: 20, height: 14)
-                            : null,
-                      ))
-                  .toList()),
+            spacing: 8,
+            runSpacing: 8,
+            children: MatchOptions.languageLabels.entries
+                .map(
+                  (e) => FilterChip(
+                    label: Text(
+                      networkWizardOptionLabel(
+                        languageService.currentLanguage,
+                        'language',
+                        e.key,
+                        e.value,
+                      ),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    selected: _langs.contains(e.key),
+                    onSelected: (s) => setState(
+                      () => s ? _langs.add(e.key) : _langs.remove(e.key),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    avatar: e.key == 'ku'
+                        ? const AlaRenginFlag(width: 20, height: 14)
+                        : null,
+                  ),
+                )
+                .toList(),
+          ),
           const SizedBox(height: 22),
-          _sectionTitle(
-              theme, '\u{1F4AC} ${_networkCopy('bio_title', 'Kurze Bio')}'),
+          _sectionTitle(theme, '\u{1F4AC} ${_t('network_copy_bio_title')}'),
           const SizedBox(height: 6),
           TextField(
-              controller: _bioCtrl,
-              maxLength: 200,
-              maxLines: 3,
-              decoration: InputDecoration(
-                  hintText: _networkCopy('bio_hint',
-                      'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?'),
-                  hintStyle:
-                      TextStyle(fontSize: 13, color: theme.colorScheme.outline),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(
-                          color: Color(0xFF8B5CF6), width: 1.5)))),
+            controller: _bioCtrl,
+            maxLength: 200,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: _t('network_copy_bio_hint'),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.outline,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: Color(0xFF8B5CF6),
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 22),
-          _sectionTitle(theme, '\u{1F49C} Besonderheiten (optional)'),
+          _sectionTitle(theme, '\u{1F49C} ${_t('network_specials_heading')}'),
           const SizedBox(height: 6),
-          Text(_t('network_specials_local'),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            _t('network_specials_local'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 10),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            ...MatchOptions.specialOptions.map((s) => FilterChip(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ...MatchOptions.specialOptions.map(
+                (s) => FilterChip(
                   label: Text(
-                      networkWizardOptionLabel(languageService.currentLanguage,
-                          'specials', s, MatchOptions.specialLabels[s] ?? s),
-                      style: const TextStyle(fontSize: 11)),
+                    networkWizardOptionLabel(
+                      languageService.currentLanguage,
+                      'specials',
+                      s,
+                      MatchOptions.specialLabels[s] ?? s,
+                    ),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   selected: _specials.contains(s),
                   onSelected: (sel) => setState(
-                      () => sel ? _specials.add(s) : _specials.remove(s)),
+                    () => sel ? _specials.add(s) : _specials.remove(s),
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                )),
-            ActionChip(
-              label: Text(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              ActionChip(
+                label: Text(
                   AppStringsManager.getString(
-                      languageService.currentLanguage, 'custom_entry'),
-                  style: const TextStyle(fontSize: 11)),
-              onPressed: () => _showCustomInput(_specialsCustomCtrl,
-                  _t('network_specials_hint')),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              side: const BorderSide(color: Color(0xFF8B5CF6)),
-            ),
-          ]),
+                    languageService.currentLanguage,
+                    'custom_entry',
+                  ),
+                  style: const TextStyle(fontSize: 11),
+                ),
+                onPressed: () => _showCustomInput(
+                  _specialsCustomCtrl,
+                  _t('network_specials_hint'),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                side: const BorderSide(color: Color(0xFF8B5CF6)),
+              ),
+            ],
+          ),
           if (_specialsCustomCtrl.text.isNotEmpty)
             Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Text('\u{2728} ${_specialsCustomCtrl.text}',
-                        style: TextStyle(
-                            fontSize: 12, color: theme.colorScheme.primary)))),
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '\u{2728} ${_specialsCustomCtrl.text}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: 20),
-        ]));
+        ],
+      ),
+    );
   }
 
   // ─── Hilfsmethoden ─────────────────────────────────────────────────────────
   Widget _sectionTitle(ThemeData theme, String text) {
-    return Text(text,
-        style:
-            theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800));
+    return Text(
+      text,
+      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+    );
   }
 
   Widget _inputField(
-      TextEditingController ctrl, String label, String hint, IconData icon) {
+    TextEditingController ctrl,
+    String label,
+    String hint,
+    IconData icon,
+  ) {
     return TextField(
-        controller: ctrl,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          prefixIcon: Icon(icon, size: 20),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFF8B5CF6), width: 1.5)),
-        ));
+      controller: ctrl,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, size: 20),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
+        ),
+      ),
+    );
   }
 
   void _showCustomInput(TextEditingController ctrl, String hint) {
     showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (ctx) {
-          return Padding(
-            padding:
-                EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                  color: Theme.of(ctx).colorScheme.surface,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(24))),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(ctx).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 TextField(
                   controller: ctrl,
                   autofocus: true,
                   maxLength: 60,
                   decoration: InputDecoration(
-                      hintText: hint,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14))),
+                    hintText: hint,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
                   onSubmitted: (_) {
                     Navigator.pop(ctx);
                     setState(() {});
@@ -3509,17 +4031,21 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          setState(() {});
-                        },
-                        child: Text(_t('done')))),
-              ]),
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      setState(() {});
+                    },
+                    child: Text(_t('done')),
+                  ),
+                ),
+              ],
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -3529,7 +4055,8 @@ class _ChildData {
   final interestsCustomCtrl = TextEditingController();
   late int _ageMonths;
   final int maxAgeMonths;
-  DateTime? birthDate; String? gender;
+  DateTime? birthDate;
+  String? gender;
   final Set<String> interests = {};
 
   _ChildData({ChildEntry? initial})
@@ -3619,96 +4146,118 @@ class _LocationAutocompleteFieldState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      TextField(
-        controller: widget.controller,
-        decoration: InputDecoration(
-          labelText: 'Stadtteil oder PLZ',
-          hintText: 'Tippe z.B. Kreuzberg, 10997...',
-          prefixIcon: const Icon(Icons.location_on_rounded, size: 20),
-          suffixIcon: _isLoading
-              ? const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: SizedBox(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: widget.controller,
+          decoration: InputDecoration(
+            labelText: _t('network_district_label'),
+            hintText: _t('network_district_hint'),
+            prefixIcon: const Icon(Icons.location_on_rounded, size: 20),
+            suffixIcon: _isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2)))
-              : widget.controller.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                      onPressed: () {
-                        widget.controller.clear();
-                        setState(() {
-                          _suggestions = [];
-                          _showSuggestions = false;
-                        });
-                      })
-                  : null,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : widget.controller.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    onPressed: () {
+                      widget.controller.clear();
+                      setState(() {
+                        _suggestions = [];
+                        _showSuggestions = false;
+                      });
+                    },
+                  )
+                : null,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                color: Color(0xFF8B5CF6),
+                width: 1.5,
+              ),
+            ),
           ),
         ),
-      ),
-      if (_showSuggestions) ...[
-        const SizedBox(height: 4),
-        Container(
-          constraints: const BoxConstraints(maxHeight: 200),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
+        if (_showSuggestions) ...[
+          const SizedBox(height: 4),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+              boxShadow: [
+                BoxShadow(
                   color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 12,
-                  offset: const Offset(0, 4))
-            ],
-          ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: _suggestions.length,
-            separatorBuilder: (_, __) => Divider(
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              itemCount: _suggestions.length,
+              separatorBuilder: (_, __) => Divider(
                 height: 1,
                 indent: 44,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
-            itemBuilder: (ctx, i) {
-              final s = _suggestions[i];
-              return ListTile(
-                dense: true,
-                leading: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+              itemBuilder: (ctx, i) {
+                final s = _suggestions[i];
+                return ListTile(
+                  dense: true,
+                  leading: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.place_rounded,
+                      size: 16,
+                      color: Color(0xFF8B5CF6),
+                    ),
                   ),
-                  child: const Icon(Icons.place_rounded,
-                      size: 16, color: Color(0xFF8B5CF6)),
-                ),
-                title: Text(s.shortLabel,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                subtitle: s.postcode.isNotEmpty
-                    ? Text(s.postcode,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.colorScheme.outline))
-                    : null,
-                onTap: () {
-                  widget.controller.text = s.shortLabel;
-                  widget.controller.selection = TextSelection.fromPosition(
-                      TextPosition(offset: s.shortLabel.length));
-                  setState(() => _showSuggestions = false);
-                  widget.onSelected(s);
-                },
-              );
-            },
+                  title: Text(
+                    s.shortLabel,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: s.postcode.isNotEmpty
+                      ? Text(
+                          s.postcode,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                          ),
+                        )
+                      : null,
+                  onTap: () {
+                    widget.controller.text = s.shortLabel;
+                    widget.controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: s.shortLabel.length),
+                    );
+                    setState(() => _showSuggestions = false);
+                    widget.onSelected(s);
+                  },
+                );
+              },
+            ),
           ),
-        ),
+        ],
       ],
-    ]);
+    );
   }
 }
