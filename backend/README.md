@@ -20,7 +20,7 @@ Kindesalter gefilterten Rezeptbestand; die Gerichtsuche startet keine KI.
 Weder die Ablehnung noch ein lokales Rezept verbraucht KI-Anfragen.
 
 Die Kontotrennung der bisherigen globalen Dossiers, Einkaufslisten und To-dos
-ist ein eigener nachfolgender Audit-Fix; diese Einwilligung migriert keine Daten.
+ist separat umgesetzt (siehe unten); diese Einwilligung migriert keine Daten.
 
 Regressionen:
 
@@ -101,7 +101,33 @@ U-Untersuchungen bleiben absichtlich auch fuer rueckwirkende Eintraege verfuegba
 flutter test --no-pub test/family_hub_age_test.dart test/child_age_calculation_test.dart test/kind_dossier_identity_test.dart test/kind_dossier_uexam_test.dart
 ```
 
-Sharing/Lifecycle-Nachbesserungen bleiben ein getrennter Folge-PR.
+### UI-Lifecycle, Datumsanzeige und Teilen
+
+Einkaufs-/To-do-Schreibcallbacks pruefen den aktiven Kontokontext und mounted,
+bevor sie UI oder Eingabecontroller aktualisieren. Das Dossier-Editformular hat
+einen eigenen StatefulWidget-Lifecycle und gibt alle dreizehn Textcontroller
+erst beim tatsaechlichen Entfernen des Formularwidgets frei, nicht bereits beim
+Start der Schliessanimation. Auch nach manuellem Schliessen waehrend eines Saves
+wird kein veralteter Navigationskontext benutzt.
+
+Erledigte Untersuchungen zeigen das Datum mit MaterialLocalizations der aktiven
+App-Locale; Kurdisch verwendet den vorhandenen Plattform-Locale-Fallback. Neue
+unbenannte Profilkinder erhalten einen lokalisierten Anzeigenamen (de/en/tr/ku).
+Ihre lokale Import-ID bleibt beim Sprachwechsel stabil, damit kein weiteres
+generisches Dossier entsteht. Bestehende Kind-Fallback-Dossiers bleiben gemaess
+dem bisherigen Namensabgleich unveraendert, auch wenn ein historisch geschaetztes
+Geburtsdatum vom Profil abweicht. Dies ersetzt nicht den dokumentierten
+Namensabgleich fuer benannte Kinder.
+
+Beim Wiederoeffnen eines Einkaufsartikels wird doneAt explizit geloescht,
+einschliesslich Persistenz. Erneutes Erledigen setzt ein neues Datum; die
+Sieben-Tage-Bereinigung erfasst weiterhin ausschliesslich erledigte Artikel.
+Die Share-Anfrage enthaelt den echten Share-Button-Rect als iPad-Anker und
+zeigt Plattformfehler sichtbar an. Es werden nur aktive Einkaeufe geteilt.
+
+```bash
+flutter test --no-pub test/family_hub_shopping_ui_test.dart test/family_hub_editor_i18n_test.dart test/family_hub_age_test.dart test/family_hub_account_test.dart test/family_hub_persistence_test.dart test/localization_audit_verification_test.dart
+```
 
 ## Installation
 
