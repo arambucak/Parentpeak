@@ -91,12 +91,24 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
   Future<void> _syncDossiersFromProfile() async {
     final profile = await FamilyMatchProfile.load(throwOnError: true);
     _store.requireScope(_scope);
+    if (!mounted) return;
     if (profile == null || profile.children.isEmpty) return;
+    final fallbackName = context.tr('family_hub_child_fallback');
     for (final child in profile.children) {
-      final name = child.name.isNotEmpty ? child.name : 'Kind';
+      final unnamed = child.name.isEmpty;
+      final name = unnamed ? fallbackName : child.name;
+      final importId = unnamed
+          ? 'profile_unnamed_${child.birthDate.toIso8601String()}'
+          : null;
+      if (unnamed && _dossierService.dossiers.any((dossier) =>
+          dossier.id == importId ||
+          dossier.childName == 'Kind')) {
+        continue;
+      }
       if (_dossierService.findByName(name) != null) continue;
       await _dossierService.addOrUpdate(
         KindDossier(
+          id: importId,
           childName: name,
           birthDate: child.birthDate,
           uExams: UExaminationData.generateForChild(child.ageMonths),
@@ -183,7 +195,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
     });
   }
 
-  void _shareShoppingList() {
+  Future<void> _shareShoppingList(BuildContext anchorContext) async {
     final items = _shopping.activeItems;
     if (items.isEmpty) return;
     final lines = items
@@ -194,7 +206,23 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
         )
         .join('\n');
     final title = context.tr('family_hub_shopping_list');
-    Share.share('🛒 $title\n\n$lines', subject: title);
+    try {
+      final box = anchorContext.findRenderObject();
+      if (box is! RenderBox || !box.hasSize || box.size.isEmpty) {
+        throw StateError('Missing shopping share anchor');
+      }
+      await Share.share(
+        '🛒 $title\n\n$lines',
+        subject: title,
+        sharePositionOrigin: box.localToGlobal(Offset.zero) & box.size,
+      );
+    } catch (error) {
+      debugPrint('FamilienZentrale share failed: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('share_failed'))),
+      );
+    }
   }
 
   @override
@@ -276,10 +304,12 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
               onPressed: _claimLegacy,
             ),
           if (_activeTabIndex == 0 && _shopping.activeItems.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.ios_share_rounded),
-              tooltip: context.tr('tooltip_share_list'),
-              onPressed: _shareShoppingList,
+            Builder(
+              builder: (anchorContext) => IconButton(
+                icon: const Icon(Icons.ios_share_rounded),
+                tooltip: context.tr('tooltip_share_list'),
+                onPressed: () => _shareShoppingList(anchorContext),
+              ),
             ),
         ],
         bottom: TabBar(
@@ -647,7 +677,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
     final text = _inputCtrl.text.trim();
     if (text.isEmpty) return;
     final item = ShoppingItem.fromInput(text);
-    if (!await _performWrite(() => _shopping.addItem(item))) return;
+    if (!await _performWrite(() => _shopping.addItem(item)) || !mounted) return;
     _inputCtrl.clear();
     HapticFeedback.lightImpact();
   }
@@ -789,7 +819,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
     if (text.isEmpty) return;
     if (!await _performWrite(
       () => _replaceTodos(_todoService.add(_scope, text)),
-    )) {
+    ) || !mounted) {
       return;
     }
     _todoCtrl.clear();
@@ -1084,8 +1114,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
       final parsed = DateTime.tryParse(exam.doneDate!);
       if (parsed != null) {
         final d = parsed.toLocal();
-        final dateStr =
-            '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+        final dateStr = MaterialLocalizations.of(context).formatShortDate(d);
         doneLabel = context.tr(
           'family_hub_uexam_done_on',
           values: {'date': dateStr},
@@ -1261,39 +1290,96 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
   // ─── Dossier bearbeiten ───────────────────────────────────────────────────
 
   void _editDossier(KindDossier dossier) {
-    final nameCtrl = TextEditingController(text: dossier.childName);
-    final clothingCtrl = TextEditingController(
-      text: dossier.clothingSize ?? '',
-    );
-    final shoeCtrl = TextEditingController(text: dossier.shoeSize ?? '');
-    final allergiesCtrl = TextEditingController(
-      text: dossier.allergies.join(', '),
-    );
-    final doctorCtrl = TextEditingController(text: dossier.doctorName ?? '');
-    final doctorPhoneCtrl = TextEditingController(
-      text: dossier.doctorPhone ?? '',
-    );
-    final bloodCtrl = TextEditingController(text: dossier.bloodType ?? '');
-    final emergCtrl = TextEditingController(
-      text: dossier.emergencyContact ?? '',
-    );
-    final emergPhoneCtrl = TextEditingController(
-      text: dossier.emergencyPhone ?? '',
-    );
-    final kitaCtrl = TextEditingController(text: dossier.kitaSchool ?? '');
-    final kitaGroupCtrl = TextEditingController(text: dossier.kitaGroup ?? '');
-    final kitaTeacherCtrl = TextEditingController(
-      text: dossier.kitaTeacher ?? '',
-    );
-    final notesCtrl = TextEditingController(text: dossier.notes ?? '');
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => FamilyHubAccountModal(
         expectedScope: _scope,
-        builder: (ctx) => DraggableScrollableSheet(
+        builder: (_) => _DossierEditor(
+          dossier: dossier,
+          onSave: (updated) => _performWrite(
+            () => _dossierService.addOrUpdate(updated, expectedScope: _scope),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DossierEditor extends StatefulWidget {
+  const _DossierEditor({required this.dossier, required this.onSave});
+
+  final KindDossier dossier;
+  final Future<bool> Function(KindDossier dossier) onSave;
+
+  @override
+  State<_DossierEditor> createState() => _DossierEditorState();
+}
+
+class _DossierEditorState extends State<_DossierEditor> {
+  late final TextEditingController nameCtrl;
+  late final TextEditingController clothingCtrl;
+  late final TextEditingController shoeCtrl;
+  late final TextEditingController allergiesCtrl;
+  late final TextEditingController doctorCtrl;
+  late final TextEditingController doctorPhoneCtrl;
+  late final TextEditingController bloodCtrl;
+  late final TextEditingController emergCtrl;
+  late final TextEditingController emergPhoneCtrl;
+  late final TextEditingController kitaCtrl;
+  late final TextEditingController kitaGroupCtrl;
+  late final TextEditingController kitaTeacherCtrl;
+  late final TextEditingController notesCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final dossier = widget.dossier;
+    nameCtrl = TextEditingController(text: dossier.childName);
+    clothingCtrl = TextEditingController(
+      text: dossier.clothingSize ?? '',
+    );
+    shoeCtrl = TextEditingController(text: dossier.shoeSize ?? '');
+    allergiesCtrl = TextEditingController(
+      text: dossier.allergies.join(', '),
+    );
+    doctorCtrl = TextEditingController(text: dossier.doctorName ?? '');
+    doctorPhoneCtrl = TextEditingController(
+      text: dossier.doctorPhone ?? '',
+    );
+    bloodCtrl = TextEditingController(text: dossier.bloodType ?? '');
+    emergCtrl = TextEditingController(
+      text: dossier.emergencyContact ?? '',
+    );
+    emergPhoneCtrl = TextEditingController(
+      text: dossier.emergencyPhone ?? '',
+    );
+    kitaCtrl = TextEditingController(text: dossier.kitaSchool ?? '');
+    kitaGroupCtrl = TextEditingController(text: dossier.kitaGroup ?? '');
+    kitaTeacherCtrl = TextEditingController(
+      text: dossier.kitaTeacher ?? '',
+    );
+    notesCtrl = TextEditingController(text: dossier.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    for (final controller in [
+      nameCtrl, clothingCtrl, shoeCtrl, allergiesCtrl, doctorCtrl, doctorPhoneCtrl,
+      bloodCtrl, emergCtrl, emergPhoneCtrl, kitaCtrl, kitaGroupCtrl,
+      kitaTeacherCtrl, notesCtrl,
+    ]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dossier = widget.dossier;
+    final ctx = context;
+    return DraggableScrollableSheet(
           initialChildSize: 0.85,
           minChildSize: 0.5,
           maxChildSize: 0.95,
@@ -1435,18 +1521,11 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
                       notes: trimOrNull(notesCtrl.text),
                       uExams: dossier.uExams,
                     );
-                    if (!await _performWrite(
-                      () => _dossierService.addOrUpdate(
-                        updated,
-                        expectedScope: _scope,
-                      ),
-                    )) {
+                    if (!await widget.onSave(updated) || !context.mounted) {
                       return;
                     }
-                    if (mounted) {
-                      Navigator.pop(ctx);
-                      setState(() {});
-                    }
+                    if (ModalRoute.of(context)?.isCurrent != true) return;
+                    Navigator.pop(context);
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF16A34A),
@@ -1465,8 +1544,6 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
               ],
             ),
           ),
-        ),
-      ),
     );
   }
 
