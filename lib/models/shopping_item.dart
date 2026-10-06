@@ -40,7 +40,15 @@ class ShoppingItem {
         'doneAt': doneAt?.toIso8601String(),
       };
 
-  factory ShoppingItem.fromJson(Map<String, dynamic> j) => ShoppingItem(
+  factory ShoppingItem.fromJson(Map<String, dynamic> j) {
+    if (j['name'] is! String) throw const FormatException('Invalid shopping name');
+    for (final key in ['createdAt', 'doneAt']) {
+      final value = j[key];
+      if (value != null && (value is! String || DateTime.tryParse(value) == null)) {
+        throw FormatException('Invalid shopping date: $key');
+      }
+    }
+    return ShoppingItem(
         id: j['id'] as String? ?? '',
         name: j['name'] as String? ?? '',
         quantity: j['quantity'] as String?,
@@ -52,6 +60,7 @@ class ShoppingItem {
             ? DateTime.tryParse(j['doneAt'] as String)
             : null,
       );
+  }
 
   static int _idCounter = 0;
 
@@ -229,27 +238,23 @@ class ShoppingListService {
         (item) => item.doneAt != null && item.doneAt!.isBefore(cutoff));
   }
 
-  Future<void> addItem(ShoppingItem item) async {
-    _requireLoaded();
-    _active.insert(0, item);
-    _trackFrequent(item.name);
-    await _persist();
-  }
+  Future<void> addItem(ShoppingItem item) => _mutate((active, done, frequent) {
+    active.insert(0, item);
+    _trackFrequent(frequent, item.name);
+  });
 
-  Future<void> addItemsFromRecipe(List<String> ingredients) async {
-    _requireLoaded();
+  Future<void> addItemsFromRecipe(List<String> ingredients) => _mutate((active, done, frequent) {
     for (final ing in ingredients) {
       // Duplikat-Check: nicht hinzufuegen wenn Name schon auf der Liste
       final parsed = ShoppingItem.fromInput(ing);
-      final alreadyExists = _active.any((a) =>
+      final alreadyExists = active.any((a) =>
           a.name.toLowerCase().trim() == parsed.name.toLowerCase().trim());
       if (!alreadyExists) {
-        _active.insert(0, parsed);
-        _trackFrequent(parsed.name);
+        active.insert(0, parsed);
+        _trackFrequent(frequent, parsed.name);
       }
     }
-    await _persist();
-  }
+  });
 
   /// Prueft ob ein Item (nach Name) schon auf der aktiven Liste steht.
   bool isAlreadyOnList(String name) {
@@ -285,44 +290,56 @@ class ShoppingListService {
     return basicPantryItems.any((b) => lower.contains(b));
   }
 
-  Future<void> toggleDone(String id) async {
-    _requireLoaded();
-    final idx = _active.indexWhere((i) => i.id == id);
+  Future<void> toggleDone(String id) => _mutate((active, done, frequent) {
+    final idx = active.indexWhere((i) => i.id == id);
     if (idx != -1) {
-      final item = _active.removeAt(idx);
-      _done.insert(0, item.copyWith(isDone: true, doneAt: DateTime.now()));
+      final item = active.removeAt(idx);
+      done.insert(0, item.copyWith(isDone: true, doneAt: DateTime.now()));
     } else {
-      final dIdx = _done.indexWhere((i) => i.id == id);
+      final dIdx = done.indexWhere((i) => i.id == id);
       if (dIdx != -1) {
-        final item = _done.removeAt(dIdx);
-        _active.insert(0, item.copyWith(isDone: false));
+        final item = done.removeAt(dIdx);
+        active.insert(0, item.copyWith(isDone: false));
+      } else {
+        throw StateError('Unknown shopping item');
       }
     }
-    await _persist();
-  }
+  });
 
-  Future<void> removeItem(String id) async {
-    _requireLoaded();
-    _active.removeWhere((i) => i.id == id);
-    _done.removeWhere((i) => i.id == id);
-    await _persist();
-  }
+  Future<void> removeItem(String id) => _mutate((active, done, frequent) {
+    if (!active.any((i) => i.id == id) && !done.any((i) => i.id == id)) {
+      throw StateError('Unknown shopping item');
+    }
+    active.removeWhere((i) => i.id == id);
+    done.removeWhere((i) => i.id == id);
+  });
 
-  void _trackFrequent(String name) {
+  void _trackFrequent(List<String> frequent, String name) {
     final lower = name.toLowerCase().trim();
-    if (!_frequent.contains(lower)) {
-      _frequent.insert(0, lower);
-      if (_frequent.length > 20) _frequent = _frequent.take(20).toList();
+    if (!frequent.contains(lower)) {
+      frequent.insert(0, lower);
+      if (frequent.length > 20) frequent.removeRange(20, frequent.length);
     }
   }
 
-  Future<void> _persist() async {
+  Future<void> _mutate(void Function(List<ShoppingItem>, List<ShoppingItem>, List<String>) mutate) async {
     final scope = _requireLoaded();
-    await _store.write({
-      _activeKey: _active.map((i) => i.toJson()).toList(),
-      _doneKey: _done.map((i) => i.toJson()).toList(),
-      _frequentKey: _frequent,
+    final data = await _store.update((data) {
+      final active = _loadList(data, _activeKey);
+      final done = _loadList(data, _doneKey);
+      final frequent = List<String>.from(data[_frequentKey] as List? ?? []);
+      final cutoff = DateTime.now().subtract(const Duration(days: 7));
+      done.removeWhere((item) => item.doneAt != null && item.doneAt!.isBefore(cutoff));
+      mutate(active, done, frequent);
+      data[_activeKey] = active.map((i) => i.toJson()).toList();
+      data[_doneKey] = done.map((i) => i.toJson()).toList();
+      data[_frequentKey] = frequent;
+      return data;
     }, expectedScope: scope);
+    _store.requireScope(scope);
+    _active = _loadList(data, _activeKey);
+    _done = _loadList(data, _doneKey);
+    _frequent = List<String>.from(data[_frequentKey] as List? ?? []);
   }
 
   List<ShoppingItem> _loadList(Map<String, dynamic> data, String key) {

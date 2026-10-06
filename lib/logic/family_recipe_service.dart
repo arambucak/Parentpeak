@@ -47,7 +47,7 @@ class FamilyRecipeService {
     final scope = _consent.scope;
     _contextScope = null;
     _childAge = 3;
-    final profile = await FamilyMatchProfile.load();
+    final profile = await FamilyMatchProfile.load(throwOnError: true);
     if (profile != null && profile.children.isNotEmpty) {
       _childAge = (profile.children.first.ageMonths / 12).round().clamp(0, 16);
     }
@@ -392,7 +392,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       expectedScope: FamilyHubStore.instance.scope,
     );
     if (_consent.scope != scope) throw const RecipeAiConsentRequiredException();
-    _allergies = allergies;
+    await initialize();
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────

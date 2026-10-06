@@ -68,8 +68,28 @@ statt alte Gesundheitsangaben als aktuellen Bestand weiterzugeben.
 flutter test --no-pub test/family_hub_account_test.dart test/kind_dossier_identity_test.dart test/kind_dossier_uexam_test.dart test/family_recipe_consent_test.dart test/localization_audit_verification_test.dart
 ```
 
-Allgemeine Mutations-/UI-Fehlerbehandlung, Alterskorrektur und Sharing/
-Lifecycle-Nachbesserungen sind getrennte Folge-PRs.
+### Bestaetigte Persistenz und Fehlerbehandlung
+
+Dossier-, Einkaufs- und To-do-Mutationen lesen innerhalb derselben Write-Queue
+den aktuellen Kontostand, wenden die Aenderung an und veroeffentlichen den neuen
+RAM-/UI-Zustand erst nach Speicherbestaetigung. Auch unabhaengige
+Service-Instanzen verlieren deshalb keine konkurrierenden Add-/Toggle-Aktionen.
+To-dos werden nicht mehr fire-and-forget als erfolgreich behandelt.
+Speicherfehler bleiben sichtbar; Eingaben werden bei Fehlern nicht geleert.
+SharedPreferences-Caches werden nach negativem Ack oder Plattformfehler neu
+geladen. Unbekannte Untersuchungs-/Artikel-/To-do-IDs werden explizit als Fehler
+gemeldet statt erfolgsgleich ignoriert.
+
+Falsche Typen in To-do-Daten und ungueltige vorhandene Geburts-/Einkaufsdaten
+werden abgewiesen. Fehlende Legacy-Geburtsdaten koennen weiterhin bewusst aus
+dem vorhandenen Monatsalter migriert werden. Beide Rezeptservices brechen bei
+defektem Gesundheits-/Profilkontext ab, statt fehlende Allergien vorzutäuschen.
+
+```bash
+flutter test --no-pub test/family_hub_persistence_test.dart test/family_hub_account_test.dart test/kind_dossier_uexam_test.dart test/family_recipe_consent_test.dart test/localization_audit_verification_test.dart
+```
+
+Alterskorrektur und Sharing/Lifecycle-Nachbesserungen bleiben getrennte Folge-PRs.
 
 ## Installation
 

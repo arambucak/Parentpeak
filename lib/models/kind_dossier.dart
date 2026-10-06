@@ -122,7 +122,14 @@ class KindDossier {
         'notes': notes,
       };
 
-  factory KindDossier.fromJson(Map<String, dynamic> j) => KindDossier(
+  factory KindDossier.fromJson(Map<String, dynamic> j) {
+    if (j['childName'] is! String) throw const FormatException('Invalid child name');
+    final birthDate = j['birthDate'];
+    if (birthDate != null &&
+        (birthDate is! String || DateTime.tryParse(birthDate) == null)) {
+      throw const FormatException('Invalid child birth date');
+    }
+    return KindDossier(
         // Alt-Daten ohne 'id' bekommen beim Laden automatisch eine neue ID
         // (Konstruktor-Default) und werden einmalig migriert zurückgeschrieben.
         id: j['id'] as String?,
@@ -145,6 +152,7 @@ class KindDossier {
             .toList(),
         notes: j['notes'] as String?,
       );
+  }
 }
 
 /// U-Untersuchung (Vorsorge) mit automatischer Faelligkeit.
@@ -333,13 +341,19 @@ class KindDossierService {
     final scope = expectedScope ?? _loadedScope;
     if (scope == null) throw StateError('Load account dossiers before editing');
     _store.requireScope(scope);
-    final idx = _dossiers.indexWhere((d) => d.id == dossier.id);
-    if (idx != -1) {
-      _dossiers[idx] = dossier;
-    } else {
-      _dossiers.add(dossier);
-    }
-    await save(_dossiers, expectedScope: scope);
+    final data = await _store.update((data) {
+      final current = _decodeList(data);
+      final idx = current.indexWhere((d) => d.id == dossier.id);
+      if (idx != -1) {
+        current[idx] = dossier;
+      } else {
+        current.add(dossier);
+      }
+      data[FamilyHubStore.dossierKey] = current.map((d) => d.toJson()).toList();
+      return data;
+    }, expectedScope: scope);
+    _store.requireScope(scope);
+    _dossiers = _decodeList(data);
   }
 
   /// Findet ein Dossier anhand des Kindnamens (für das Nachziehen aus dem
@@ -365,9 +379,12 @@ class KindDossierService {
     final scope = _loadedScope;
     if (scope == null) throw StateError('Load account dossiers before editing');
     _store.requireScope(scope);
-    final idx = _dossiers.indexWhere((d) => d.id == dossierId);
-    if (idx == -1) return null;
-    final dossier = _dossiers[idx];
+    KindDossier? updated;
+    final data = await _store.update((data) {
+    final current = _decodeList(data);
+    final idx = current.indexWhere((d) => d.id == dossierId);
+    if (idx == -1) throw StateError('Unknown child dossier');
+    final dossier = current[idx];
     var found = false;
     final updatedExams = dossier.uExams.map((e) {
       if (e.id != examId) return e;
@@ -377,10 +394,19 @@ class KindDossierService {
         doneDate: done ? DateTime.now().toIso8601String() : null,
       );
     }).toList();
-    if (!found) return null;
-    final updated = dossier.copyWith(uExams: updatedExams);
-    _dossiers[idx] = updated;
-    await save(_dossiers, expectedScope: scope);
+    if (!found) throw StateError('Unknown child examination');
+    updated = dossier.copyWith(uExams: updatedExams);
+    current[idx] = updated!;
+    data[FamilyHubStore.dossierKey] = current.map((d) => d.toJson()).toList();
+    return data;
+    }, expectedScope: scope);
+    _store.requireScope(scope);
+    _dossiers = _decodeList(data);
     return updated;
   }
+
+  List<KindDossier> _decodeList(Map<String, dynamic> data) =>
+      (data[FamilyHubStore.dossierKey] as List? ?? [])
+          .map((entry) => KindDossier.fromJson(Map<String, dynamic>.from(entry as Map)))
+          .toList();
 }

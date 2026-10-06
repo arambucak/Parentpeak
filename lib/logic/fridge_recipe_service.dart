@@ -32,15 +32,13 @@ class FridgeRecipeService {
     _childAgeYears = 3;
     _allergies = [];
     _allergenKeys = {};
-    try {
-      final profile = await FamilyMatchProfile.load();
+      final profile = await FamilyMatchProfile.load(throwOnError: true);
       if (profile != null && profile.children.isNotEmpty) {
         final youngest = profile.children
             .map((c) => c.ageMonths)
             .reduce((a, b) => a < b ? a : b);
         _childAgeYears = (youngest / 12).round().clamp(0, 16);
       }
-    } catch (_) {}
     // SICHERHEIT: Allergien aus dem Kind-Dossier (echte Quelle) + Legacy-Key.
     final data = await FamilyHubStore.instance.read(expectedScope: scope);
     final legacy = List<String>.from(

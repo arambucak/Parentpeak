@@ -110,12 +110,12 @@ void main() {
       expect(u3.isDone, isTrue);
     });
 
-    test('gibt null bei unbekanntem Kind oder unbekannter Untersuchung',
+    test('meldet unbekanntes Kind oder unbekannte Untersuchung als Fehler',
         () async {
       final service = KindDossierService.instance;
       await service.save([mila()]);
-      expect(await service.setUExamDone('id_unbekannt', 'u3', true), isNull);
-      expect(await service.setUExamDone('id_mila', 'u999', true), isNull);
+      await expectLater(service.setUExamDone('id_unbekannt', 'u3', true), throwsStateError);
+      await expectLater(service.setUExamDone('id_mila', 'u999', true), throwsStateError);
     });
   });
 }

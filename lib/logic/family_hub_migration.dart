@@ -30,13 +30,15 @@ Future<void> claimFamilyHubLegacy({
                 }
                 return ShoppingItem.fromJson(item).toJson();
               }).toList(),
-            FamilyHubStore.todoKey => list.map((item) {
+            FamilyHubStore.todoKey => list.asMap().entries.map((entry) {
+                final item = entry.value;
                 if (item is! Map<String, dynamic> ||
                     item['text'] is! String ||
                     (item['done'] != null && item['done'] is! bool)) {
                   throw const FormatException('Invalid legacy todo');
                 }
-                return Map<String, dynamic>.from(item);
+                return Map<String, dynamic>.from(item)
+                  ..putIfAbsent('id', () => 'legacy_todo_${entry.key}');
               }).toList(),
             _ => List<String>.from(list),
           };

@@ -1073,7 +1073,17 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
     final recipe = _currentRecipe!;
     final theme = Theme.of(context);
     final shopping = ShoppingListService.instance;
-    await shopping.load();
+    try {
+      await shopping.load();
+    } catch (error) {
+      debugPrint('Kitchen shopping load failed: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('family_hub_load_error'))),
+        );
+      }
+      return;
+    }
     if (!context.mounted || !mounted) return;
     FamilyHubStore.instance.requireScope(_scope);
 
