@@ -224,6 +224,19 @@ SpielfreundeBackendService-Klasse wurde entfernt.
 flutter test --no-pub test/playmate_suggestions_test.dart
 ```
 
+### Eltern-Netzwerk: zentrale UI-Uebersetzungen
+
+Die Spielfreunde-Formularoptionen und restlichen UI-Texte werden zentral ueber
+AppStringsManager/context.tr fuer de/en/tr/ku uebersetzt. Die gespeicherten
+Optionscodes bleiben unveraendert; unbekannte individuelle Optionen behalten
+ihren eigenen Text. Auch oeffentliche Altersgruppen werden nur fuer die Anzeige
+uebersetzt. Der Einladen-Button im leeren Spielfreunde-Tab wechselt in den
+Netzwerk-Tab mit Link-/QR-Einladung statt erneut denselben Tab auszuwaehlen.
+
+```bash
+flutter test --no-pub test/network_i18n_navigation_test.dart test/localization_audit_verification_test.dart
+```
+
 ## Produktions-Hardening
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:
