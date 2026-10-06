@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/family_finance_store.dart';
+import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/country_finance_data.dart';
 import 'package:parentpeak/config/benefit_application_de.dart';
@@ -20,14 +20,23 @@ import 'package:parentpeak/main.dart';
 /// 1. Schnellcheck — Monatliche Fixkosten-Übersicht
 /// 2. Leistungen — Was steht euch zu? (Laender-spezifisch)
 /// 3. Meilensteine — Was kommt auf euch zu? (Kind-Alter-basiert)
-class FamilienGeldScreen extends StatefulWidget {
+class FamilienGeldScreen extends StatelessWidget {
   const FamilienGeldScreen({super.key});
 
   @override
-  State<FamilienGeldScreen> createState() => _FamilienGeldScreenState();
+  Widget build(BuildContext context) => FamilyHubAccountBoundary(
+    builder: (_) => const _ScopedFamilienGeldScreen(),
+  );
 }
 
-class _FamilienGeldScreenState extends State<FamilienGeldScreen>
+class _ScopedFamilienGeldScreen extends StatefulWidget {
+  const _ScopedFamilienGeldScreen();
+
+  @override
+  State<_ScopedFamilienGeldScreen> createState() => _FamilienGeldScreenState();
+}
+
+class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   CountryFinanceConfig _country = CountryFinanceData.germany;
@@ -53,6 +62,12 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
 
   // Persistente TextField-Controller (verhindert Reset beim setState)
   final Map<String, TextEditingController> _controllers = {};
+  final _store = FamilyFinanceStore.instance;
+  late final String _scope = _store.scope;
+  bool _loaded = false;
+  bool _loadError = false;
+  bool _hasLegacy = false;
+  bool _claiming = false;
 
   TextEditingController _controllerFor(String id, double amount) {
     if (!_controllers.containsKey(id)) {
@@ -79,56 +94,113 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
   }
 
   Future<void> _loadSavedData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString('famgeld.country');
-    if (code != null) {
-      _country = CountryFinanceData.getByCode(code);
-      _countrySelected = true;
+    try {
+      final data = await _store.read(expectedScope: _scope);
+      final profile = await FamilyMatchProfile.load(throwOnError: true);
+      final hasLegacy = await _store.hasUnassignedLegacy(expectedScope: _scope);
+      _store.requireScope(_scope);
+      if (!mounted) return;
+      final code = data[FamilyFinanceStore.countryKey] as String?;
+      final amounts = data[FamilyFinanceStore.amountsKey] as Map<String, dynamic>?;
+      setState(() {
+        _country = code == null ? CountryFinanceData.germany
+          : CountryFinanceData.getByCode(code);
+        _countrySelected = code != null;
+        _monthlyAmounts = amounts?.map((key, value) =>
+          MapEntry(key, (value as num).toDouble())) ?? {};
+        _children = profile?.children ?? [];
+        _eligibilityDone = data[FamilyFinanceStore.eligibilityKey] as bool? ?? false;
+        _isEmployee = data[FamilyFinanceStore.employeeKey] as bool? ?? true;
+        _isSingleParent = data[FamilyFinanceStore.singleParentKey] as bool? ?? false;
+        _incomeLevel = data[FamilyFinanceStore.incomeKey] as int? ?? 1;
+        _monthlySavingsGoal = (data[FamilyFinanceStore.savingsGoalKey] as num?)?.toDouble() ?? 0;
+        _totalSaved = (data[FamilyFinanceStore.savedKey] as num?)?.toDouble() ?? 0;
+        _hasLegacy = hasLegacy;
+        _loaded = true;
+        _loadError = false;
+      });
+    } catch (error) {
+      debugPrint('FamilienGeld load: $error');
+      if (mounted) {
+        setState(() {
+          _loadError = true;
+          _loaded = true;
+        });
+      }
     }
-    final amountsRaw = prefs.getString('famgeld.amounts');
-    if (amountsRaw != null) {
-      _monthlyAmounts = Map<String, double>.from((jsonDecode(amountsRaw) as Map)
-          .map((k, v) => MapEntry(k, (v as num).toDouble())));
+  }
+
+  Future<void> _write(Map<String, dynamic> values) async {
+    try {
+      await _store.write(values, expectedScope: _scope);
+    } catch (error) {
+      debugPrint('FamilienGeld write: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('family_hub_save_error'))));
+      }
     }
-    // Kinder aus Profil laden
-    final profile = await FamilyMatchProfile.load();
-    if (profile != null) _children = profile.children;
-
-    // Feature 2: Eligibility Quick-Check
-    _eligibilityDone = prefs.getBool('famgeld.eligibility_done') ?? false;
-    _isEmployee = prefs.getBool('famgeld.is_employee') ?? true;
-    _isSingleParent = prefs.getBool('famgeld.is_single_parent') ?? false;
-    _incomeLevel = prefs.getInt('famgeld.income_level') ?? 1;
-
-    // Feature 3: Spar-Ziel
-    _monthlySavingsGoal = prefs.getDouble('famgeld.monthly_savings_goal') ?? 0;
-    _totalSaved = prefs.getDouble('famgeld.total_saved') ?? 0;
-
-    if (mounted) setState(() {});
   }
 
-  Future<void> _saveCountry(String code) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('famgeld.country', code);
-  }
+  Future<void> _saveCountry(String code) =>
+    _write({FamilyFinanceStore.countryKey: code});
 
-  Future<void> _saveAmounts() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('famgeld.amounts', jsonEncode(_monthlyAmounts));
-  }
+  Future<void> _saveAmounts() =>
+    _write({FamilyFinanceStore.amountsKey: Map<String, double>.from(_monthlyAmounts)});
 
-  Future<void> _saveEligibility() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('famgeld.eligibility_done', _eligibilityDone);
-    await prefs.setBool('famgeld.is_employee', _isEmployee);
-    await prefs.setBool('famgeld.is_single_parent', _isSingleParent);
-    await prefs.setInt('famgeld.income_level', _incomeLevel);
-  }
+  Future<void> _saveEligibility() => _write({
+    FamilyFinanceStore.eligibilityKey: _eligibilityDone,
+    FamilyFinanceStore.employeeKey: _isEmployee,
+    FamilyFinanceStore.singleParentKey: _isSingleParent,
+    FamilyFinanceStore.incomeKey: _incomeLevel,
+  });
 
-  Future<void> _saveSavingsGoal() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('famgeld.monthly_savings_goal', _monthlySavingsGoal);
-    await prefs.setDouble('famgeld.total_saved', _totalSaved);
+  Future<void> _saveSavingsGoal() => _write({
+    FamilyFinanceStore.savingsGoalKey: _monthlySavingsGoal,
+    FamilyFinanceStore.savedKey: _totalSaved,
+  });
+
+  Future<void> _claimLegacy() async {
+    final confirmed = await showDialog<bool>(context: context,
+      builder: (ctx) => FamilyHubAccountModal(expectedScope: _scope,
+        builder: (ctx) => AlertDialog(
+          title: Text(context.tr('finance_legacy_title')),
+          content: Text(context.tr('finance_legacy_confirm')),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.tr('cancel'))),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.tr('family_hub_legacy_claim'))),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _claiming = true);
+    try {
+      await _store.claimLegacy(expectedScope: _scope);
+      _store.requireScope(_scope);
+      if (!mounted) return;
+      for (final controller in _controllers.values) {
+        controller.clear();
+      }
+      await _loadSavedData();
+      if (!mounted) return;
+      for (final entry in _controllers.entries) {
+        final amount = entry.key == 'savings_total' ? _totalSaved
+          : entry.key == 'savings_goal' ? _monthlySavingsGoal
+          : _monthlyAmounts[entry.key] ?? 0;
+        entry.value.text = amount > 0 ? amount.toStringAsFixed(0) : '';
+      }
+    } catch (error) {
+      debugPrint('FamilienGeld legacy claim: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('family_hub_legacy_failed'))));
+      }
+    } finally {
+      if (mounted) setState(() => _claiming = false);
+    }
   }
 
   Future<void> _openUrl(String url) async {
@@ -241,8 +313,35 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (!_countrySelected) return _countrySelector(context);
-    return _mainScreen(context);
+    if (!_loaded) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_loadError) {
+      return Scaffold(body: Center(child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(context.tr('finance_load_failed')),
+        TextButton(onPressed: _loadSavedData,
+          child: Text(context.tr('family_hub_retry'))),
+      ],
+      )));
+    }
+    return Column(children: [
+      if (_hasLegacy) Material(
+        child: SafeArea(bottom: false, child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(children: [
+            Text(context.tr('finance_legacy_notice')),
+            if (_store.userId != null) TextButton(
+              onPressed: _claiming ? null : _claimLegacy,
+              child: Text(context.tr('finance_legacy_title')),
+            ),
+          ]),
+        )),
+      ),
+      Expanded(child: AbsorbPointer(absorbing: _claiming,
+        child: _countrySelected ? _mainScreen(context) : _countrySelector(context))),
+    ]);
   }
 
   // ─── Country Selector (erster Besuch) ─────────────────────────────────────
@@ -650,6 +749,7 @@ class _FamilienGeldScreenState extends State<FamilienGeldScreen>
           MaterialPageRoute(
             builder: (_) => BenefitGuideScreen(
               country: _country,
+              isSingleParent: _isSingleParent,
             ),
           ),
         ),

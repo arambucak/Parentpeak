@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/family_finance_store.dart';
 
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/benefit_guide_consent.dart';
@@ -223,17 +223,17 @@ Antworte NUR mit gültigem JSON (kein Markdown, kein Text davor/danach):
 /// Rein lokaler Speicher für die abgehakten Checklisten-Punkte (pro Land).
 /// Kein Backend — bleibt auf dem Gerät.
 class BenefitChecklistStore {
-  static String _key(String countryCode) =>
-      'benefitguide.checklist.$countryCode.v1';
-
-  static Future<Set<String>> loadChecked(String countryCode) async {
-    final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList(_key(countryCode)) ?? const []).toSet();
-  }
+  static Future<Set<String>> loadChecked(String countryCode,
+      {required String expectedScope}) =>
+    FamilyFinanceStore.instance.loadChecklist(
+      FamilyFinanceStore.guideKey(countryCode), expectedScope: expectedScope,
+    );
 
   static Future<void> saveChecked(
-      String countryCode, Set<String> checkedItems) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_key(countryCode), checkedItems.toList());
-  }
+      String countryCode, Set<String> checkedItems,
+      {required String expectedScope}) =>
+    FamilyFinanceStore.instance.saveChecklist(
+      FamilyFinanceStore.guideKey(countryCode), checkedItems,
+      expectedScope: expectedScope,
+    );
 }

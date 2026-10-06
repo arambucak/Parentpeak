@@ -161,6 +161,54 @@ und alten Checklisten sind mit diesem PR noch nicht migriert.
 flutter test --no-pub test/benefit_guide_consent_test.dart test/family_recipe_consent_test.dart test/family_hub_account_test.dart test/localization_audit_verification_test.dart
 ```
 
+## Familien-Geld: lokale Kontotrennung und Altbestands-Claim
+
+Finanzwerte und beide Checklisten liegen im eigenen lokalen Envelope
+`famgeld.accounts.v1`. Dessen `legacyOwner` ist unabhaengig vom
+`familyhub.accounts.v1`-Owner: Ein bereits bestaetigter Zentralen-Claim gibt
+Finanzdaten weder frei noch sperrt er ihren separaten Finanz-Claim.
+
+Betroffene Aufrufer sind vollstaendig auf diesen Store umgestellt:
+
+- `FamilienGeldScreen`: `famgeld.country`, `famgeld.amounts`,
+  `famgeld.eligibility_done`, `famgeld.is_employee`, `famgeld.is_single_parent`,
+  `famgeld.income_level`, `famgeld.monthly_savings_goal`, `famgeld.total_saved`.
+- `BenefitGuideScreen` ueber `BenefitChecklistStore`:
+  `benefitguide.checklist.<country>.v1`, weiterhin pro Land getrennt.
+- `AntragshelferScreen`: `antragshelfer.<benefit>.docs`, weiterhin pro Leistung.
+
+Die bisherigen Keys sind nur nach ausdruecklicher Eigentumsbestaetigung durch
+ein angemeldetes Konto importierbar. Normales Lesen und Gastbetrieb lesen
+keinen Altbestand. Der Claim schreibt Finanzdaten und Finanz-Owner atomar
+nach positivem Speicher-Ack; negative oder geworfene Schreibfehler lassen ihn
+wiederholbar. Die Originalkeys bleiben als Backup unveraendert. Auch
+Checklisten frueherer, aktuell nicht mehr angezeigter Leistungen bleiben
+erhalten. Ein weiterer Account darf den beanspruchten Altbestand nicht
+erneut importieren. Die separaten KI-Consentkeys werden nicht mitmigriert.
+
+Vorhandene Kontowerte haben Vorrang, gleichnamige Betragskategorien werden
+bei gleichem Land zusammengefuehrt und beide Checklistentypen dedupliziert.
+Bei bereits abweichendem Kontoland werden globale Altbetraege,
+Einkommensstufe und Sparwerte nicht in die neue Waehrung uebernommen;
+sie bleiben im unveraenderten Originalbackup erhalten. Der Claimdialog
+erklaert dieses Verhalten. Die allgemeine Laender-/Waehrungstrennung
+beim spaeteren Landwechsel folgt als eigener Fix.
+
+Der Hauptscreen wird beim Kontowechsel neu erstellt. Offene Wegweiser- und
+Antragshelfer-Routen entfernen den vorherigen Stateful-Inhalt; Controller,
+Kindkontext, Eingaben, KI-Antworten und Haken bleiben damit nicht im aktiven
+Screen-State. Alle Speicheroperationen verlangen den Ursprungsscope, auch
+wartende Writes pruefen ihn erneut. Das ist lokale Kontotrennung, keine
+Verschluesselung, Server-Synchronisierung oder Veroeffentlichung.
+
+Typfehler/defekte Envelopes sind explizite Fehler ohne globalen Fallback.
+Fachliche Zahlbereiche, Dezimalkomma, ehrlicher transaktionaler UI-Zustand
+aller Finanzfelder und laenderbezogene Waehrungswerte folgen getrennt.
+
+```bash
+flutter test --no-pub --reporter expanded test/family_finance_account_test.dart test/family_finance_ui_test.dart test/benefit_guide_consent_test.dart test/family_hub_account_test.dart test/localization_audit_verification_test.dart
+```
+
 ## Installation
 
 1. **Node.js installieren** (falls nicht vorhanden)
