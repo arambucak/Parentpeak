@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/logic/auth_service.dart';
-import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/logic/treasure_photo_analysis_service.dart';
+import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
@@ -15,7 +15,14 @@ import 'package:parentpeak/models/treasure_listing.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
 
 class TreasureUploadScreen extends StatefulWidget {
-  const TreasureUploadScreen({super.key});
+  const TreasureUploadScreen({
+    super.key,
+    this.photoAnalysisService,
+    this.imagePicker,
+  });
+
+  final TreasurePhotoAnalysisService? photoAnalysisService;
+  final ImagePicker? imagePicker;
 
   @override
   State<TreasureUploadScreen> createState() => _TreasureUploadScreenState();
@@ -38,7 +45,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   double _distanceMeters = _defaultDistanceMeters;
   bool _draftHydrated = false;
   Timer? _draftDebounce;
-  final ImagePicker _imagePicker = ImagePicker();
+  late final ImagePicker _imagePicker = widget.imagePicker ?? ImagePicker();
+  late final TreasurePhotoAnalysisService _photoAnalysis =
+      widget.photoAnalysisService ?? TreasurePhotoAnalysisService();
+  int _analysisRequest = 0;
   final TextEditingController _titleController = TextEditingController(
     text: _defaultTitle,
   );
@@ -53,6 +63,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   @override
   void initState() {
     super.initState();
+    AuthService.instance.addListener(_onAnalysisAccountChanged);
     _titleController.addListener(_onDraftChanged);
     _colorController.addListener(_onDraftChanged);
     _noteController.addListener(_onDraftChanged);
@@ -62,6 +73,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
 
   @override
   void dispose() {
+    AuthService.instance.removeListener(_onAnalysisAccountChanged);
+    _analysisRequest++;
     _draftDebounce?.cancel();
     _titleController.removeListener(_onDraftChanged);
     _colorController.removeListener(_onDraftChanged);
@@ -74,6 +87,16 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
     super.dispose();
   }
 
+  void _invalidateAnalysis() {
+    _analysisRequest++;
+    _isAnalyzingImage = false;
+    _imageAnalysisFailed = false;
+  }
+
+  void _onAnalysisAccountChanged() {
+    if (mounted) setState(_invalidateAnalysis);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -81,31 +104,37 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
     final contentMaxWidth = viewportWidth >= 1200
         ? 920.0
         : viewportWidth >= 900
-            ? 820.0
-            : double.infinity;
+        ? 820.0
+        : double.infinity;
     final horizontalPadding = viewportWidth >= 900 ? 24.0 : 16.0;
     final hasSelectedImages = _selectedImages.isNotEmpty;
     final conditions = [
       (
         l10n.t('treasureConditionLikeNew', fallback: 'Studio-Zustand'),
-        l10n.t('treasureConditionLikeNewHint',
-            fallback: 'Sehr gepflegt, fast wie neu.'),
+        l10n.t(
+          'treasureConditionLikeNewHint',
+          fallback: 'Sehr gepflegt, fast wie neu.',
+        ),
         const Color(0xFFE8F1FF),
         const Color(0xFF2D62F0),
         Icons.diamond_rounded,
       ),
       (
         l10n.t('treasureConditionGood', fallback: 'Runde 2'),
-        l10n.t('treasureConditionGoodHint',
-            fallback: 'Sichtbar genutzt, voll einsatzbereit.'),
+        l10n.t(
+          'treasureConditionGoodHint',
+          fallback: 'Sichtbar genutzt, voll einsatzbereit.',
+        ),
         const Color(0xFFEAF7EF),
         const Color(0xFF1F9C5D),
         Icons.autorenew_rounded,
       ),
       (
         l10n.t('treasureConditionRaider', fallback: 'Wildnis-Modus'),
-        l10n.t('treasureConditionRaiderHint',
-            fallback: 'Mit Spuren, aber bereit fürs nächste Abenteuer.'),
+        l10n.t(
+          'treasureConditionRaiderHint',
+          fallback: 'Mit Spuren, aber bereit fürs nächste Abenteuer.',
+        ),
         const Color(0xFFFFF1E5),
         const Color(0xFFD96C2F),
         Icons.park_rounded,
@@ -118,7 +147,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       ('books', l10n.t('treasureCategoryBooks', fallback: 'Bücher')),
       (
         'equipment',
-        l10n.t('treasureCategoryEquipment', fallback: 'Ausstattung')
+        l10n.t('treasureCategoryEquipment', fallback: 'Ausstattung'),
       ),
     ];
 
@@ -140,7 +169,11 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
           constraints: BoxConstraints(maxWidth: contentMaxWidth),
           child: ListView(
             padding: EdgeInsets.fromLTRB(
-                horizontalPadding, 8, horizontalPadding, 24),
+              horizontalPadding,
+              8,
+              horizontalPadding,
+              24,
+            ),
             children: [
               _buildCameraStage(l10n),
               if (_selectedImages.isNotEmpty) ...[
@@ -169,7 +202,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                   minimumSize: const Size.fromHeight(50),
                   backgroundColor: const Color(0xFF1E5CD7),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 onPressed: () async {
                   final messenger = ScaffoldMessenger.of(context);
@@ -208,22 +242,30 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     messenger.hideCurrentSnackBar();
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text(l10n.t('treasureImageUploadFailed',
+                        content: Text(
+                          l10n.t(
+                            'treasureImageUploadFailed',
                             fallback:
-                                'Bild-Upload fehlgeschlagen. Bitte versuch es erneut.')),
+                                'Bild-Upload fehlgeschlagen. Bitte versuch es erneut.',
+                          ),
+                        ),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
                     return;
                   }
 
-                  final categoryLabel =
-                      _categoryLabelForKey(l10n, _selectedCategoryKey);
+                  final categoryLabel = _categoryLabelForKey(
+                    l10n,
+                    _selectedCategoryKey,
+                  );
                   final locationLabel = loc.city ?? l10n.t('location');
                   final locationCoords = (loc.latitude!, loc.longitude!);
                   final title = _titleController.text.trim().isEmpty
-                      ? l10n.t('treasureTitlePlaceholder',
-                          fallback: 'Rotes Laufrad')
+                      ? l10n.t(
+                          'treasureTitlePlaceholder',
+                          fallback: 'Rotes Laufrad',
+                        )
                       : _titleController.text.trim();
                   final color = _colorController.text.trim().isEmpty
                       ? 'Neutral'
@@ -234,8 +276,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     title: title,
                     category: categoryLabel,
                     sizeAge: _sizeAgeController.text.trim().isEmpty
-                        ? l10n.t('treasureSizeAgePlaceholder',
-                            fallback: '2 bis 3 Jahre')
+                        ? l10n.t(
+                            'treasureSizeAgePlaceholder',
+                            fallback: '2 bis 3 Jahre',
+                          )
                         : _sizeAgeController.text.trim(),
                     conditionKey: _conditionKeyForIndex(_conditionIndex),
                     distanceMeters: _distanceMeters.round(),
@@ -248,21 +292,23 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     imagePaths: uploadedUrls,
                     createdAt: DateTime.now(),
                   );
-                  final createdListing =
-                      await TreasureListingService.instance.createListing(
-                    listing,
-                    userId: AuthService.instance.currentUser?.uid,
-                  );
+                  final createdListing = await TreasureListingService.instance
+                      .createListing(
+                        listing,
+                        userId: AuthService.instance.currentUser?.uid,
+                      );
                   if (createdListing == null) {
                     if (!mounted) return;
                     messenger.hideCurrentSnackBar();
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text(l10n.t(
-                          'treasureUploadFailed',
-                          fallback:
-                              'Das Veröffentlichen hat gerade nicht geklappt. Dein Entwurf bleibt erhalten.',
-                        )),
+                        content: Text(
+                          l10n.t(
+                            'treasureUploadFailed',
+                            fallback:
+                                'Das Veröffentlichen hat gerade nicht geklappt. Dein Entwurf bleibt erhalten.',
+                          ),
+                        ),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -275,8 +321,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                   messenger.showSnackBar(
                     SnackBar(
                       content: Text(
-                        l10n.t('treasureUploadSuccess',
-                            fallback: 'Dein Schatz ist jetzt sichtbar.'),
+                        l10n.t(
+                          'treasureUploadSuccess',
+                          fallback: 'Dein Schatz ist jetzt sichtbar.',
+                        ),
                       ),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -285,21 +333,24 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                 },
                 icon: const Icon(Icons.auto_awesome_rounded),
                 label: Text(
-                    l10n.t('treasurePublishNow', fallback: 'Jetzt teilen')),
+                  l10n.t('treasurePublishNow', fallback: 'Jetzt teilen'),
+                ),
               ),
               const SizedBox(height: 10),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 onPressed: () {
                   unawaited(_persistDraft(showFeedback: true));
                 },
                 icon: const Icon(Icons.bookmark_border_rounded),
                 label: Text(
-                    l10n.t('treasureSaveDraft', fallback: 'Entwurf speichern')),
+                  l10n.t('treasureSaveDraft', fallback: 'Entwurf speichern'),
+                ),
               ),
               const SizedBox(height: 10),
               TextButton.icon(
@@ -336,10 +387,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
             Positioned.fill(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: SafeXFileImage(
-                  file: primaryImage,
-                  fit: BoxFit.cover,
-                ),
+                child: SafeXFileImage(file: primaryImage, fit: BoxFit.cover),
               ),
             ),
           Positioned.fill(
@@ -366,8 +414,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    l10n.t('treasureUploadSubtitle',
-                        fallback: 'Ein Foto reicht für den Start'),
+                    l10n.t(
+                      'treasureUploadSubtitle',
+                      fallback: 'Ein Foto reicht für den Start',
+                    ),
                     style: const TextStyle(
                       color: Colors.white70,
                       fontWeight: FontWeight.w700,
@@ -375,9 +425,11 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    l10n.t('treasurePhotoSectionHint',
-                        fallback:
-                            'Zeig den Gegenstand einfach so, wie er gerade ist.'),
+                    l10n.t(
+                      'treasurePhotoSectionHint',
+                      fallback:
+                          'Zeig den Gegenstand einfach so, wie er gerade ist.',
+                    ),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -393,10 +445,14 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                             ? Icons.add_a_photo_rounded
                             : Icons.photo_camera_back_rounded,
                         label: hasSelectedImages
-                            ? l10n.t('treasureAddMorePhotos',
-                                fallback: 'Mehr Fotos')
-                            : l10n.t('treasureTakePhoto',
-                                fallback: 'Foto machen'),
+                            ? l10n.t(
+                                'treasureAddMorePhotos',
+                                fallback: 'Mehr Fotos',
+                              )
+                            : l10n.t(
+                                'treasureTakePhoto',
+                                fallback: 'Foto machen',
+                              ),
                         onTap: _pickCameraImage,
                       ),
                       const SizedBox(width: 8),
@@ -410,8 +466,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                                 {'count': '${_selectedImages.length}'},
                                 fallback: '${_selectedImages.length} Fotos',
                               )
-                            : l10n.t('treasureChooseFromLibrary',
-                                fallback: 'Aus Mediathek'),
+                            : l10n.t(
+                                'treasureChooseFromLibrary',
+                                fallback: 'Aus Mediathek',
+                              ),
                         onTap: _pickGalleryImages,
                       ),
                     ],
@@ -428,11 +486,16 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.6), width: 1.4),
+                    color: Colors.white.withValues(alpha: 0.6),
+                    width: 1.4,
+                  ),
                 ),
                 child: const Center(
-                  child:
-                      Icon(Icons.toys_rounded, size: 42, color: Colors.white70),
+                  child: Icon(
+                    Icons.toys_rounded,
+                    size: 42,
+                    color: Colors.white70,
+                  ),
                 ),
               ),
             ),
@@ -441,8 +504,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
               right: 16,
               top: 16,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.32),
                   borderRadius: BorderRadius.circular(999),
@@ -475,8 +540,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
         : _sizeAgeController.text.trim();
     return _SectionFrame(
       title: l10n.t('treasureAiTitle', fallback: 'Schnell erkannt'),
-      subtitle: l10n.t('treasureAiHelper',
-          fallback: 'Wir schlagen dir Kategorie und Farbe direkt vor.'),
+      subtitle: l10n.t(
+        'treasureAiHelper',
+        fallback: 'Wir schlagen dir Kategorie und Farbe direkt vor.',
+      ),
       child: _isAnalyzingImage
           ? Row(
               children: [
@@ -490,37 +557,36 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
               ],
             )
           : _imageAnalysisFailed
-              ? Row(
-                  children: [
-                    Expanded(
-                        child: Text(l10n.t('fridge_photo_processing_failed'))),
-                    TextButton.icon(
-                      onPressed: _primarySelectedImage == null
-                          ? null
-                          : () => _analyzeImageWithAI(_primarySelectedImage!),
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: Text(l10n.t('try_again')),
-                    ),
-                  ],
-                )
-              : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _TagChip(label: categoryLabel),
-                    _TagChip(label: colorLabel),
-                    _TagChip(label: sizeAgeLabel),
-                    _TagChip(
-                      label: _selectedImages.isEmpty
-                          ? l10n.t('treasureAiAccept', fallback: 'Übernehmen')
-                          : l10n.tFormat(
-                              'treasurePhotoCount',
-                              {'count': '${_selectedImages.length}'},
-                              fallback: '${_selectedImages.length} Fotos',
-                            ),
-                    ),
-                  ],
+          ? Row(
+              children: [
+                Expanded(child: Text(l10n.t('treasure_photo_analysis_failed'))),
+                TextButton.icon(
+                  onPressed: _primarySelectedImage == null
+                      ? null
+                      : () => _analyzeImageWithAI(_primarySelectedImage!),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(l10n.t('try_again')),
                 ),
+              ],
+            )
+          : Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _TagChip(label: categoryLabel),
+                _TagChip(label: colorLabel),
+                _TagChip(label: sizeAgeLabel),
+                _TagChip(
+                  label: _selectedImages.isEmpty
+                      ? l10n.t('treasureAiAccept', fallback: 'Übernehmen')
+                      : l10n.tFormat(
+                          'treasurePhotoCount',
+                          {'count': '${_selectedImages.length}'},
+                          fallback: '${_selectedImages.length} Fotos',
+                        ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -555,10 +621,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(17),
-                      child: SafeXFileImage(
-                        file: image,
-                        fit: BoxFit.cover,
-                      ),
+                      child: SafeXFileImage(file: image, fit: BoxFit.cover),
                     ),
                   ),
                 ),
@@ -568,7 +631,9 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     top: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E5CD7),
                         borderRadius: BorderRadius.circular(999),
@@ -595,8 +660,11 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                         color: Colors.black.withValues(alpha: 0.58),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Icon(Icons.close_rounded,
-                          size: 16, color: Colors.white),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -615,10 +683,14 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
     List<(String, String)> categoryOptions,
   ) {
     return _SectionFrame(
-      title: l10n.t('treasureUploadHeadline',
-          fallback: 'Teile, was bei euch nicht mehr gebraucht wird'),
-      subtitle: l10n.t('treasureUploadSubline',
-          fallback: 'Ein Foto, kurzer Check, fertig'),
+      title: l10n.t(
+        'treasureUploadHeadline',
+        fallback: 'Teile, was bei euch nicht mehr gebraucht wird',
+      ),
+      subtitle: l10n.t(
+        'treasureUploadSubline',
+        fallback: 'Ein Foto, kurzer Check, fertig',
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -626,8 +698,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
             controller: _titleController,
             decoration: InputDecoration(
               labelText: l10n.t('treasureTitleLabel', fallback: 'Titel'),
-              hintText: l10n.t('treasureTitlePlaceholder',
-                  fallback: 'z. B. Rotes Laufrad'),
+              hintText: l10n.t(
+                'treasureTitlePlaceholder',
+                fallback: 'z. B. Rotes Laufrad',
+              ),
               filled: true,
               fillColor: const Color(0xFFF4F7FC),
               border: OutlineInputBorder(
@@ -669,8 +743,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
             controller: _colorController,
             decoration: InputDecoration(
               labelText: l10n.t('treasureColorLabel', fallback: 'Farbe'),
-              hintText: l10n.t('treasureColorPlaceholder',
-                  fallback: 'z. B. Rot, Salbei, Naturholz'),
+              hintText: l10n.t(
+                'treasureColorPlaceholder',
+                fallback: 'z. B. Rot, Salbei, Naturholz',
+              ),
               filled: true,
               fillColor: const Color(0xFFF4F7FC),
               border: OutlineInputBorder(
@@ -685,19 +761,24 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
     );
   }
 
-  Widget _buildConditionCarousel(AppLocalizations l10n,
-      List<(String, String, Color, Color, IconData)> conditions) {
+  Widget _buildConditionCarousel(
+    AppLocalizations l10n,
+    List<(String, String, Color, Color, IconData)> conditions,
+  ) {
     return _SectionFrame(
       title: l10n.t('treasureConditionLabel', fallback: 'Zustand'),
-      subtitle:
-          l10n.t('treasureConditionHelper', fallback: 'Ehrlich ist perfekt.'),
+      subtitle: l10n.t(
+        'treasureConditionHelper',
+        fallback: 'Ehrlich ist perfekt.',
+      ),
       child: Column(
         children: List.generate(conditions.length, (index) {
           final item = conditions[index];
           final selected = index == _conditionIndex;
           return Padding(
             padding: EdgeInsets.only(
-                bottom: index == conditions.length - 1 ? 0 : 10),
+              bottom: index == conditions.length - 1 ? 0 : 10,
+            ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -708,8 +789,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: selected
@@ -782,8 +865,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
-                                      l10n.t('treasureSelectedForHandover',
-                                          fallback: 'Ausgewählt'),
+                                      l10n.t(
+                                        'treasureSelectedForHandover',
+                                        fallback: 'Ausgewählt',
+                                      ),
                                       style: TextStyle(
                                         color: item.$4,
                                         fontSize: 11,
@@ -859,8 +944,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
             children: [
               Expanded(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF4F7FC),
                     borderRadius: BorderRadius.circular(14),
@@ -880,8 +967,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                       Expanded(
                         child: Text(
                           _voiceCaptured && notePreview.isNotEmpty
-                              ? l10n.t('treasureVoiceNoteSaved',
-                                  fallback: 'Notiz übernommen.')
+                              ? l10n.t(
+                                  'treasureVoiceNoteSaved',
+                                  fallback: 'Notiz übernommen.',
+                                )
                               : l10n.t(
                                   'treasureVoiceAutofillHint',
                                   fallback:
@@ -903,10 +992,13 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF1E5CD7),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 onPressed: () {
                   final suggestedNote = _defaultVoiceNote(l10n);
@@ -921,7 +1013,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                 },
                 icon: const Icon(Icons.mic_none_rounded),
                 label: Text(
-                    l10n.t('treasureRecordVoiceNote', fallback: 'Einsprechen')),
+                  l10n.t('treasureRecordVoiceNote', fallback: 'Einsprechen'),
+                ),
               ),
             ],
           ),
@@ -933,15 +1026,19 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   Widget _buildSizeAgeCard(AppLocalizations l10n) {
     return _SectionFrame(
       title: l10n.t('treasureSizeAgeLabel', fallback: 'Größe oder Alter'),
-      subtitle: l10n.t('treasureSizeAgePlaceholder',
-          fallback: 'z. B. Größe 92 oder 2 bis 3 Jahre'),
+      subtitle: l10n.t(
+        'treasureSizeAgePlaceholder',
+        fallback: 'z. B. Größe 92 oder 2 bis 3 Jahre',
+      ),
       child: TextField(
         controller: _sizeAgeController,
         decoration: InputDecoration(
           filled: true,
           fillColor: const Color(0xFFF4F7FC),
-          hintText: l10n.t('treasureSizeAgePlaceholder',
-              fallback: 'z. B. Größe 92 oder 2 bis 3 Jahre'),
+          hintText: l10n.t(
+            'treasureSizeAgePlaceholder',
+            fallback: 'z. B. Größe 92 oder 2 bis 3 Jahre',
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -990,8 +1087,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF1FF),
                   borderRadius: BorderRadius.circular(999),
@@ -1075,12 +1174,20 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   }
 
   Future<void> _pickCameraImage() async {
+    setState(_invalidateAnalysis);
+    final request = _analysisRequest;
+    final scope = _photoAnalysis.consent.scope;
     final pickedImage = await _imagePicker.pickImage(
       source: ImageSource.camera,
       imageQuality: 82,
       maxWidth: 1800,
     );
-    if (!mounted || pickedImage == null) return;
+    if (!mounted ||
+        pickedImage == null ||
+        request != _analysisRequest ||
+        _photoAnalysis.consent.scope != scope) {
+      return;
+    }
     setState(() {
       _selectedImages = [
         pickedImage,
@@ -1089,56 +1196,53 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
     });
     _onDraftChanged();
     // KI-Analyse: Objekt erkennen und Beschreibung generieren
-    _analyzeImageWithAI(pickedImage);
+    await _analyzeImageWithAI(pickedImage);
   }
 
   Future<void> _analyzeImageWithAI(XFile image) async {
+    final request = ++_analysisRequest;
+    final scope = _photoAnalysis.consent.scope;
+    bool current() =>
+        mounted &&
+        request == _analysisRequest &&
+        _photoAnalysis.consent.scope == scope &&
+        _primarySelectedImage?.path == image.path;
+    void requireCurrent() {
+      if (!current()) {
+        throw StateError('Treasure photo analysis is no longer current');
+      }
+    }
+
+    final originalCategory = _selectedCategoryKey;
+    final originalCondition = _conditionIndex;
     try {
       setState(() {
-        _isAnalyzingImage = true;
+        _isAnalyzingImage = false;
         _imageAnalysisFailed = false;
       });
-      final bytes = await image.readAsBytes();
-      final text = await GeminiAIService().generateText(
-        'Du siehst ein Foto eines Gegenstands, den eine Familie verschenken möchte. '
-        'Analysiere das Bild genau und antworte NUR mit einem JSON-Objekt (kein Markdown):\n'
-        '{'
-        '"title": "Kurzer Titel (max 5 Wörter)", '
-        '"description": "Freundliche Beschreibung zum Verschenken (2 Sätze, elternfreundlich)", '
-        '"category": "vehicles|clothing|toys|books|equipment", '
-        '"color": "Hauptfarbe(n) des Gegenstands, z.B. Blau oder Rot-Weiß", '
-        '"sizeAge": "Passende Größe oder Altersempfehlung, z.B. Gr. 98 oder ab 3 Jahre", '
-        '"condition": "new|good|used"'
-        '}\n'
-        'Kategorie-Hilfe: vehicles=Fahrzeuge/Laufrad/Roller, clothing=Kleidung, '
-        'toys=Spielzeug, books=Bücher, equipment=Ausstattung/Möbel/Zubehör.\n'
-        'condition: new=wie neu, good=gut erhalten, used=gebraucht mit Spuren.\n'
-        'Beispiel: {"title":"Rotes Laufrad","description":"Gut erhaltenes Laufrad für erste Fahrversuche. Perfekt für den Park!","category":"vehicles","color":"Rot","sizeAge":"ab 2 Jahre","condition":"good"}',
-        imageBytes: bytes,
+      final accepted = await ensureAccountAiConsent(
+        context,
+        consent: _photoAnalysis.consent,
+        titleKey: 'treasure_photo_consent_title',
+        bodyKey: 'treasure_photo_consent_body',
+        acceptKey: 'treasure_photo_consent_accept',
+        failedKey: 'treasure_photo_consent_failed',
       );
-      if (!mounted) return;
-      final parsed = _extractJson(text);
-      if (parsed == null) {
-        setState(() => _imageAnalysisFailed = true);
-        return;
-      }
-
-      final title = parsed['title']?.toString().trim() ?? '';
-      final description = parsed['description']?.toString().trim() ?? '';
-      final category =
-          parsed['category']?.toString().trim().toLowerCase() ?? '';
-      final color = parsed['color']?.toString().trim() ?? '';
-      final sizeAge = parsed['sizeAge']?.toString().trim() ?? '';
-      final condition =
-          parsed['condition']?.toString().trim().toLowerCase() ?? '';
-
-      const validCategories = {
-        'vehicles',
-        'clothing',
-        'toys',
-        'books',
-        'equipment'
-      };
+      if (!accepted || !mounted || !current()) return;
+      setState(() => _isAnalyzingImage = true);
+      final parsed = await _photoAnalysis.analyze(
+        image,
+        expectedScope: scope,
+        languageCode: Localizations.localeOf(context).languageCode,
+        requireCurrentRequest: requireCurrent,
+      );
+      if (!current()) return;
+      final title = parsed.title;
+      final description = parsed.description;
+      final category = parsed.category;
+      final color = parsed.color;
+      final sizeAge = parsed.sizeAge;
+      final condition = parsed.condition;
 
       setState(() {
         // Titel nur überschreiben wenn noch Default
@@ -1152,7 +1256,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
           _noteController.text = description;
         }
         // Kategorie setzen wenn gültig
-        if (validCategories.contains(category)) {
+        if (_selectedCategoryKey == originalCategory) {
           _selectedCategoryKey = category;
         }
         // Farbe nur wenn noch Default
@@ -1168,6 +1272,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
           _sizeAgeController.text = sizeAge;
         }
         // Zustand
+        if (_conditionIndex != originalCondition) return;
         if (condition == 'new') {
           _conditionIndex = 0;
         } else if (condition == 'good') {
@@ -1178,24 +1283,9 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       });
     } catch (e) {
       debugPrint('Image analysis failed: $e');
-      if (mounted) setState(() => _imageAnalysisFailed = true);
+      if (current()) setState(() => _imageAnalysisFailed = true);
     } finally {
-      if (mounted) setState(() => _isAnalyzingImage = false);
-    }
-  }
-
-  /// Extrahiert das erste vollständige JSON-Objekt aus dem KI-Text.
-  Map<String, dynamic>? _extractJson(String raw) {
-    try {
-      final start = raw.indexOf('{');
-      final end = raw.lastIndexOf('}');
-      if (start == -1 || end == -1 || end <= start) return null;
-      final chunk = raw.substring(start, end + 1);
-      final decoded = jsonDecode(chunk);
-      if (decoded is Map<String, dynamic>) return decoded;
-      return null;
-    } catch (_) {
-      return null;
+      if (current()) setState(() => _isAnalyzingImage = false);
     }
   }
 
@@ -1212,6 +1302,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       }
     }
     setState(() {
+      _invalidateAnalysis();
       _selectedImages = mergedImages;
     });
     _onDraftChanged();
@@ -1222,6 +1313,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       return;
     }
     setState(() {
+      _invalidateAnalysis();
       final selected = _selectedImages[index];
       final reordered = [..._selectedImages]..removeAt(index);
       _selectedImages = [selected, ...reordered];
@@ -1234,6 +1326,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       return;
     }
     setState(() {
+      _invalidateAnalysis();
       final updated = [..._selectedImages]..removeAt(index);
       _selectedImages = updated;
     });
@@ -1260,9 +1353,9 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
       final rawImagePaths = draft['imagePaths'];
       final imagePaths = rawImagePaths is List
           ? rawImagePaths
-              .map((item) => item.toString())
-              .where((path) => path.isNotEmpty)
-              .toList()
+                .map((item) => item.toString())
+                .where((path) => path.isNotEmpty)
+                .toList()
           : <String>[];
       final fallbackImagePath = draft['imagePath']?.toString();
       if (imagePaths.isEmpty &&
@@ -1282,10 +1375,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
               draft['categoryKey']?.toString() ?? _defaultCategoryKey;
           _distanceMeters =
               double.tryParse(draft['distanceMeters']?.toString() ?? '') ??
-                  _defaultDistanceMeters;
+              _defaultDistanceMeters;
           _conditionIndex =
               int.tryParse(draft['conditionIndex']?.toString() ?? '') ??
-                  _defaultConditionIndex;
+              _defaultConditionIndex;
           _voiceCaptured = _noteController.text.trim().isNotEmpty;
           _selectedImages = imagePaths
               .where((path) => kIsWeb || File(path).existsSync())
@@ -1305,8 +1398,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              l10n.t('treasureDraftRestored',
-                  fallback: 'Dein letzter Entwurf ist wieder da.'),
+              l10n.t(
+                'treasureDraftRestored',
+                fallback: 'Dein letzter Entwurf ist wieder da.',
+              ),
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -1330,8 +1425,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          l10n.t('treasureDraftSaved',
-              fallback: 'Entwurf gespeichert. Du kannst später weitermachen.'),
+          l10n.t(
+            'treasureDraftSaved',
+            fallback: 'Entwurf gespeichert. Du kannst später weitermachen.',
+          ),
         ),
         behavior: SnackBarBehavior.floating,
       ),
@@ -1410,6 +1507,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
 
   Future<void> _discardDraft() async {
     _draftDebounce?.cancel();
+    _invalidateAnalysis();
     _runWithoutDraftAutosave(() {
       setState(() {
         _titleController.text = _defaultTitle;
@@ -1462,7 +1560,9 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
           Text(
             l10n.t('treasurePreviewTitle', fallback: 'Aero-Feed Vorschau'),
             style: const TextStyle(
-                fontWeight: FontWeight.w800, color: Color(0xFF152B42)),
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF152B42),
+            ),
           ),
           const SizedBox(height: 10),
           Container(
@@ -1511,15 +1611,20 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                   const Positioned(
                     right: 14,
                     top: 14,
-                    child: Icon(Icons.toys_rounded,
-                        size: 72, color: Color(0x22D96C2F)),
+                    child: Icon(
+                      Icons.toys_rounded,
+                      size: 72,
+                      color: Color(0x22D96C2F),
+                    ),
                   ),
                 Positioned(
                   left: 14,
                   top: 14,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: currentCondition.$3,
                       borderRadius: BorderRadius.circular(999),
@@ -1527,8 +1632,11 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(currentCondition.$5,
-                            size: 14, color: currentCondition.$4),
+                        Icon(
+                          currentCondition.$5,
+                          size: 14,
+                          color: currentCondition.$4,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           currentCondition.$1,
@@ -1548,7 +1656,9 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     top: 14,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(999),
@@ -1614,8 +1724,10 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    l10n.t('treasurePreviewNoteLabel',
-                        fallback: 'Familien-Hinweis'),
+                    l10n.t(
+                      'treasurePreviewNoteLabel',
+                      fallback: 'Familien-Hinweis',
+                    ),
                     style: const TextStyle(
                       color: Color(0xFF152B42),
                       fontWeight: FontWeight.w800,

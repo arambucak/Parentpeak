@@ -359,6 +359,41 @@ ohne pauschales "Stand 2026".
 - Monatskategorien und Meilensteinkosten bleiben **Schaetzwerte**, keine
   amtlichen Leistungsbetraege. AT-Familienbonus-Hinweis nicht neu verifiziert.
 
+### Verschenkmarkt: Foto-KI-Einwilligung
+
+Kameraaufnahme und Analyse-Retry verwenden denselben
+`TreasurePhotoAnalysisService`. Vor der ersten Analyse erscheint ein
+transparenter Dialog in de/en/tr/ku: Bildbytes gehen ueber das ParentPeak-
+Backend an Google Gemini; Bildinhalte werden nicht anonymisiert. Nur
+Gegenstandsfotos ohne Personen, private Dokumente oder erkennbare Adressen
+verwenden. Ablehnung belaesst Foto und manuelle Anzeigenbearbeitung lokal;
+Galerieauswahl startet weiterhin keine automatische KI-Analyse.
+
+Die separate Zustimmung liegt unter
+`treasure.ai_photo_consent.v1.account.<encoded-user-id>` in SharedPreferences.
+Ein nicht angemeldeter Kontext ist getrennt unter `.guest`; er autorisiert
+kein spaeteres Konto. Rezept-/Wegweiser-Consents und andere Versionen geben
+die Treasure-Fotoanalyse nicht frei. Nur ein positiver Speicher-Ack aktiviert
+die Analyse. Der Service prueft Zustimmung und Ursprungskontext vor dem
+Lesen der Bildbytes, erneut vor dem HTTP-Aufruf und nach der Antwort.
+
+JSON-Schema und Antwortsprache stehen im `systemInstruction`. Der Request
+enthaelt Bildbytes und eine statische Gegenstandsaufgabe, keine lokalen
+Kind-/Finanz-/Gesundheitsprofile. Bildpixel selbst bleiben unredigiert:
+Promptregeln sind kein Ersatz fuer Bildanonymisierung. Ungueltige Antworten
+oder KI-Ausfall zeigen einen lokalisierten Fehler und behalten Foto und
+manuelle Eingaben; keine erfundene Bildanalyse als Fallback.
+
+Kontobenachrichtigungen, neuere Kamera-/Analyseanfragen, Entfernen/Wechsel
+des Fotos, Verwerfen und Dispose machen alte Ergebnisse ungueltig. Der
+Service prueft auch den aktuellen Request nach dem Lesen und der Antwort.
+Bereits abgesandte HTTP-Anfragen werden damit **nicht rueckgaengig gemacht**;
+ihre Ergebnisse werden nicht in einen neuen Kontext uebernommen.
+
+Consent veroeffentlicht weder Foto noch Anzeige. Firebase-Fotoveroeffentlichung,
+Kontomigration der vorhandenen Entwuerfe/Reservierungen und deren Persistenz
+bleiben separate Audit-Fixes, keine Gesamtfreigabe durch diesen Consent.
+
 ### Verschenkmarkt: oeffentliche Detailprojektion
 
 `GET /api/treasures` und `GET /api/treasures/:id` verwenden dieselbe
