@@ -4,6 +4,7 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 void main() {
   // Alle neuen i18n-Keys für PDF-Export + KI-Report-Labels.
   const requiredKeys = <String>[
+    'development_consent_save_failed',
     'development_report_special_needs',
     'dev_answer_yes',
     'dev_answer_sometimes',

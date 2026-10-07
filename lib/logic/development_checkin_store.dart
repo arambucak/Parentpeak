@@ -28,8 +28,9 @@ class DevelopmentCheckinStore {
   static String _answersKey(String ageGroupId) => 'dev.answers.v4.$ageGroupId';
 
   // Verlauf (vorheriger Score-Snapshot) pro Altersgruppe.
-  static String _historyKey(String ageGroupId) =>
-      'dev.score_history.v1.$ageGroupId';
+  static String _historyKey(String ageGroupId, String? scope) => scope == null
+      ? 'dev.score_history.v1.$ageGroupId'
+      : 'dev.score_history.v2.$scope.$ageGroupId';
 
   /// Lädt die gespeicherten Antworten für genau diese Altersgruppe.
   /// Rückgabe: Map von Frage-Key ("domainId_index") -> Antwortwert (0/1/2).
@@ -64,9 +65,9 @@ class DevelopmentCheckinStore {
   /// Liefert den zuletzt gespeicherten Score-Snapshot für diese Altersgruppe
   /// (für den Vorher-Nachher-Vergleich) — oder null, wenn es noch keinen gibt.
   Future<DevelopmentScoreSnapshot?> loadPreviousSnapshot(
-      String ageGroupId) async {
+      String ageGroupId, {String? scope}) async {
     final prefs = await _prefs;
-    final raw = prefs.getString(_historyKey(ageGroupId));
+    final raw = prefs.getString(_historyKey(ageGroupId, scope));
     if (raw == null || raw.trim().isEmpty) return null;
     try {
       final decoded = jsonDecode(raw);
@@ -83,10 +84,13 @@ class DevelopmentCheckinStore {
   /// Altersgruppe. Wird beim Erstellen eines Berichts aufgerufen, DAMIT der
   /// NÄCHSTE Check einen echten Vergleich zeigen kann.
   Future<void> saveSnapshot(
-      String ageGroupId, DevelopmentScoreSnapshot snapshot) async {
+      String ageGroupId, DevelopmentScoreSnapshot snapshot,
+      {String? scope, void Function()? requestGuard}) async {
     final prefs = await _prefs;
+    requestGuard?.call();
     await prefs.setString(
-        _historyKey(ageGroupId), jsonEncode(snapshot.toJson()));
+        _historyKey(ageGroupId, scope), jsonEncode(snapshot.toJson()));
+    requestGuard?.call();
   }
 }
 

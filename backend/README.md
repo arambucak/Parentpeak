@@ -8,14 +8,29 @@ englischen Hinweis. Die Berichtsantworten gehen ueber `/ai/generate` an den
 Backend-Proxy; der Kindname wird im Prompt durch `[KIND]` ersetzt und erst lokal
 wieder eingesetzt.
 
-Diese Textkorrektur aendert keine bestehende Zustimmung und ist keine
-Rechts-/Launchfreigabe. Der globale Legacy-Key `dev.ai_report_consent`,
-sein ungepruefter Schreib-Ack und die fehlende dienstseitige Consent-Grenze
-bleiben ein gesonderter offener Datenschutzpunkt. Auch vorhandene Aussagen
-zur Speicherung ersetzen keinen Nachweis der realen Provider-Aufbewahrung.
+`DevelopmentReportConsent` speichert eine neue, ausdrueckliche Zustimmung unter
+`dev.ai_report_consent.v1.account.<encoded-user-id>`; Gastmodus ist separat
+unter `.guest`. Der globale Legacy-Key bleibt erhalten, gibt aber keine
+KI-Verarbeitung frei. Nur ein positiver Schreib-Ack aktiviert den Bericht;
+Fehler und Kontowechsel im Dialog zeigen einen lokalisierten Hinweis.
+
+`DevelopmentReportService` prueft Zustimmung und Ursprungskonto vor und nach
+dem KI-Aufruf. Sein HTTP-Guard greift auch bei Token-Aufloesung und 401-Retry;
+Widerruf oder Kontowechsel verwerfen Ergebnisse. Der Screen invalidiert
+laufende Requests auch bei Wechsel weg vom und zurueck zum gleichen Konto.
+Neue Berichte/Historien und zugehoerige Score-Snapshots liegen kontobezogen;
+unzugeordnete Legacy-Berichte werden nicht automatisch einem Konto zugewiesen
+und bleiben unveraendert lokal erhalten. Antworten und lokale Kindprofile
+werden durch diesen begrenzten Consent-Fix nicht insgesamt migriert.
+Report-Limit und Score-Speicherung pruefen den Ursprung vor weiteren Writes.
+
+Bereits abgesandte Anfragen werden nicht rueckgaengig gemacht. Die lokale
+Consent-Grenze ist keine unabhaengige Backend-Sperre fuer fremde Clients und
+keine Rechts-/Launchfreigabe. Bestehende Aussagen zur Speicherung ersetzen
+keinen Nachweis der realen Provider-Aufbewahrung.
 
 ```bash
-flutter test --no-pub test/development_pdf_i18n_test.dart test/localization_audit_verification_test.dart
+flutter test --no-pub test/development_report_consent_test.dart test/development_checkin_store_test.dart test/development_pdf_i18n_test.dart test/gemini_ai_service_test.dart test/localization_audit_verification_test.dart
 ```
 
 ## Einwilligung fuer KI-Elternberatung
