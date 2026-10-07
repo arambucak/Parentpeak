@@ -80,6 +80,10 @@ Vorbereitete Datenschutz-PRs, **nicht live und nicht gemergt**:
   Service-Grenze und Google-Gemini-Texten; `analyze: SUCCESS`.
 - #158: Google-Gemini-Empfaenger im Entwicklungsbericht de/en/tr/ku,
   eigene Sprach-/Fallbackregressionen; `analyze: SUCCESS`.
+- #159: sichtbarer Hinweis auf ueberwiegend deutsche FAQ-Inhalte/Suchbegriffe
+  und englischen Fallback fehlender UI-Texte. 15 gezielte und 9 Chrome-Tests
+  bestanden; volle lokale Suite 910 bestanden / 1 Skip / nur 12 bekannte
+  Events-Firebasefehler, Analyzer 11 Infos. CI separat am aktuellen PR pruefen.
 - Neu verifizierter offener Entwicklungsbericht-Legacypunkt:
   `dev.ai_report_consent` ist ebenfalls global, Ack ungeprueft, keine
   dienstseitige Consent-Grenze. #158 ist nur die beauftragte Empfaenger-
@@ -304,7 +308,7 @@ Release-Verantwortliche die Bedingung und Restrisiken dokumentieren.
 | Rohe `hostUserId` | [Events-Screen](lib/ui/events_activities_screen.dart) setzt in `events_invitation_from` direkt `invitation.hostUserId` ein; [Modell](lib/models/event_invitation.dart) hat keinen Host-Anzeigenamen. | **Kann Post-Launch**, wenn technische IDs fuer diese Sichtbarkeit bewusst akzeptiert und als solche erklaert werden. Kein Anzeigename erfinden, keine Auth-ID aendern. Backend-/UI-Anzeigename separat planen; bei internen Identifikatoren mit unerwuenschter Offenlegung vor Launch loesen. |
 | Lokale Verschluesselung | [Zentralenstore](lib/logic/family_hub_store.dart), [Finanzstore](lib/logic/family_finance_store.dart) und [Chatstore](lib/logic/chat_account_store.dart) nutzen JSON/SharedPreferences; Kontoskope sind keine Verschluesselung. [SecureStorage](lib/logic/secure_storage.dart) existiert fuer andere Verbraucher, schuetzt diese Stores aber nicht automatisch. | **Vor Launch noetig:** dokumentierte Schutzbedarfs-/Backup-/Geraetezugriffsentscheidung fuer Kind-/Gesundheits-/Finanzdaten. Zusaetzliche App-Verschluesselung **kann Post-Launch** nur bei begruendet akzeptiertem Restrisiko, passender Offenlegung und kontrolliertem Releaseumfang; bei notwendigem Schutz dieser Daten vor lokalem Zugriff ist Umsetzung vorher Pflicht. OS-Schutz nicht als App-Verschluesselung ausgeben. |
 | Entwicklungsfragen | [Question-Localization](lib/l10n/development_question_localizations.dart) hat EN/TR/KU; DE kommt aus dem Original. Andere Sprachen erhalten unveraendert deutsche Domains. | Grossprojekt **kann Post-Launch** fuer weitere Sprachen, wenn Launch-Sprachen/Inhaltsumfang ehrlich begrenzt oder der DE-Fallback sichtbar erklaert sind. Kein Volluebersetzungsversprechen fuer alle 16 auswaehlbaren Sprachen. |
-| FAQ: Planpraezisierung | Entgegen der pauschalen Restlistenformulierung sind die [FAQ-Rohdaten](lib/data/eltern_wissen_data.dart) deutsch. [Service](lib/logic/eltern_wissen_service.dart) sucht darin; [aktives Widget](lib/ui/widgets/eltern_wissen_widget.dart) ersetzt nur den einzelnen TR-Eintrag `klein_04`, nicht alle EN/TR/KU-FAQ. | **Vor Launch noetig:** diesen realen Inhaltsfallback in den Launch-Sprachen kenntlich machen oder den betroffenen Inhalt begrenzen/uebersetzen. Vollstaendige FAQ-Uebersetzung kann danach folgen, aber die Behauptung "FAQ voll de/en/tr/ku" ist nicht belegt. Der Auditplan wurde hier nicht veraendert. |
+| FAQ: Planpraezisierung | Entgegen der pauschalen Restlistenformulierung sind die 32 [FAQ-Rohdaten](lib/data/eltern_wissen_data.dart) ueberwiegend deutsch. [Service](lib/logic/eltern_wissen_service.dart) sucht darin; [aktives Widget](lib/ui/widgets/eltern_wissen_widget.dart) ersetzt nur den einzelnen TR-Eintrag `klein_04`, nicht alle EN/TR/KU-FAQ. | **Vor Launch noetig:** den vorbereiteten Fallback-Hinweis aus #159 freigeben/ausliefern und manuell pruefen; noch nicht live. Bewusste Entscheidung fuer C: fachlich gepruefte Volluebersetzung plus lokalisierte Suche **Post-Launch**, nicht als bereits vier-sprachige FAQ bewerben. Der Auditplan bleibt unveraendert. |
 | "EN-Fallback ueberall ehrlich?" | **Nein, nicht belegt und in geprueften Pfaden nicht einheitlich.** [AppStringsManager](lib/l10n/app_localizations_all.dart) und [AppLocalizations](lib/l10n/app_localizations.dart) fallen fuer fehlende UI-Keys auf EN zurueck; Entwicklungs-/FAQ-Inhalte auf DE. [Profilpicker](lib/ui/profile_safety_screen.dart) und [Familienprofilpicker](lib/ui/family_profile_screen.dart) zeigen keinen entsprechenden Vollstaendigkeits-/Fallbackhinweis. [Rechtliches](lib/ui/legal_info_screen.dart) enthaelt deutsche Festtexte. | **Vor Launch noetig:** Sprachumfang und EN-/DE-Inhaltsfallback ehrlich kommunizieren; sicherheitsrelevante Consent-/Rechtstexte muessen fuer die tatsaechlich adressierten Nutzer verstaendlich sein. Keine pauschale vier-/16-sprachige Freigabe aus Key-Tests ableiten. |
 | Release-QA | CI belegt Tests, aber Apple-Jobs am Release-SHA sind uebersprungen; kein physisches Geraeteprotokoll. [Aelterer Releaseguide](docs/release/RELEASE_EXECUTION_GUIDE_v1.0.0.md) behauptet noch "NO ISSUES/READY", Stand Juli. | **Vor Launch noetig:** Abschnitt 3 mit signierten aktuellen Builds. Alte gruen markierte Dokumente sind kein aktueller Nachweis. JS-Web ist geprueft; Wasm-/TTS-Warnungen nicht als behoben ausgeben. Wasm-Auslieferung nur nach eigener Abnahme. |
 | Finanzdaten/Links | [Audit-Restliste](AUDIT_PLAN.md) dokumentiert TR-"Cocuk Parasi", Wohngeld-HTTP403 und Quellenpflege. | **Vor Launch noetig:** [Quellenmatrix vom 06.10.2026](backend/README.md#familien-geld-einzelpruefung-amtlicher-leistungsdaten) konkret gegen die aktuellen Inhalte pruefen, nicht nur Disclaimer lesen. Bekannten 403 nicht ohne amtlichen Beleg durch eine erfundene URL ersetzen; unbestaetigtes TR-Programm nicht als amtlich bestaetigt vermarkten. Danach laufende Pflege. |
@@ -445,6 +449,76 @@ Auftragsverarbeitung und Drittlandtransfer fachlich pruefen und abnehmen.
 Eine fehlende Einwilligung nicht durch blosses Aktualisieren der Privacy
 Policy als geheilt betrachten.
 
+#### 4.1.1 Unveroeffentlichter Textentwurf zur fachlichen/rechtlichen Pruefung
+
+**Vom Nutzer nur zur Vorbereitung freigegeben, nicht zur Veroeffentlichung.**
+Dies sind vorgeschlagene Bausteine, keine vollstaendige oder rechtlich
+abgenommene Datenschutzerklaerung. `web/privacy` und Store-Konsolen wurden
+nicht geaendert. Vor Verwendung muss der tatsaechliche Releaseumfang stimmen;
+insbesondere #157/#158 sind noch nicht live und die Entwicklungsbericht-
+Consent-Grenze ist weiterhin Legacy. Eckige Pruefmarker sind Stop-Kriterien,
+kein veroeffentlichungsfertiger Text.
+
+**Lokale Daten und optionale Backend-Speicherung**
+
+> ParentPeak verarbeitet Familieninformationen fuer die von dir gewaehlten
+> Funktionen. Bestimmte Kind-, Gesundheits- und Finanzangaben sowie lokale
+> Entwuerfe werden auf deinem Geraet gespeichert. Diese lokalen Speicher
+> haben derzeit keine zusaetzliche App-seitige Verschluesselung. Lokal
+> gespeicherte Daten sind von Informationen zu unterscheiden, die du fuer
+> Synchronisation, Veroeffentlichung oder optionale KI-Funktionen uebermittelst.
+> Beim optionalen KI-Gedaechtnis werden Kindprofile und von dir bestaetigte
+> Familieninformationen kontobezogen in unserem Backend gespeichert.
+> Neue Memory-Kindprofile verwenden neutrale Bezeichnungen; die dazugehoerigen
+> Klarname-Zuordnungen bleiben lokal. Bereits bestehende Memory-Daten werden
+> durch diese Umstellung nicht automatisch geloescht oder nachtraeglich
+> anonymisiert.
+
+**Optionale KI-Verarbeitung und Empfaenger**
+
+> Fuer optionale KI-Funktionen nutzen wir Google Gemini ueber unser Backend.
+> Je nach ausgewaehlter Funktion koennen deine Nachrichten und benoetigter
+> Gespraechskontext, Entwicklungsantworten, Alters-/Allergieangaben,
+> Wegweiserangaben oder ausgewaehlte Fotos uebermittelt werden.
+> Bestaetigte Memory-Werte koennen bei aktivem KI-Gedaechtnis den Kontext
+> ergaenzen; dazu koennen Gesundheitsinformationen gehoeren.
+> Automatische Datenminimierung und neutrale Kindbezeichnungen verhindern
+> nicht jede personenbezogene Angabe in Freitext oder Bildern. Fotos werden
+> fuer die Analyse nicht vollstaendig anonymisiert. Eine KI-Analyse ist
+> keine Zustimmung zur Veroeffentlichung eines Fotos oder Beitrags.
+> [PRUEFEN: separate, versionierte Einwilligungen und ihre technischen
+> Grenzen fuer alle im Release aktivierten Flows; Rechtsgrundlagen,
+> insbesondere fuer Gesundheits-/Kinddaten, fachlich festlegen.]
+
+**Weitere Empfaenger und Zwecke**
+
+> Firebase-Dienste werden fuer Anmeldung, Benachrichtigungen und auf
+> unterstuetzten Release-Plattformen fuer Fehlerdiagnose verwendet.
+> Dazu gehoeren Kontokennungen, Benachrichtigungstokens und technische
+> Fehler-/Diagnosedaten. Render stellt das Backend bereit.
+> Standortsuche und Karten koennen Anfragen an Nominatim/OpenStreetMap
+> ausloesen. Fuer bewusst veroeffentlichte Community-Inhalte oder von dir
+> ausgewaehlte Share-Ziele gelten gesonderte Datenfluesse.
+> [ERGAENZEN: tatsaechliche Vertragspartner/Verarbeitungsrollen,
+> aktivierte Zahlungs-/E-Mail-Dienste, Zwecke und Datenarten je Dienst,
+> Hosting-/Transferlaender und nachgewiesene Transfergarantien.]
+
+**Aufbewahrung, Deaktivierung und Loeschung**
+
+> Das Deaktivieren des KI-Gedaechtnisses beendet nicht automatisch die
+> Speicherung bereits bestaetigter Memory-Werte. Die Loeschung gespeicherter
+> Daten ist ein eigener Vorgang. Keine Speicherung der Gespraechshistorie
+> durch die App bedeutet nicht, dass Backend-Logs oder Dienstleister Daten
+> niemals oder nur waehrend einer Anfrage aufbewahren.
+> [ERGAENZEN: nachgewiesene Fristen fuer lokale Speicher, Memory-DB,
+> Backend-/Diagnoselogs, Backups und jeden Dienstleister; konkretes
+> Widerrufs-/Loesch-/Exportverfahren einschliesslich Altdaten und
+> Kontoloeschung. Kein pauschales 30-Tage-Versprechen ohne Betriebsnachweis.]
+
+Die bisherigen Abschnitte zu Verantwortlichem, Kontakt, Rechtsgrundlagen,
+Betroffenenrechten, Aufsichtsbehoerde und Drittlandtransfer sind ebenfalls
+fachlich abzustimmen; diese Bausteine ersetzen sie nicht.
+
 ### 4.2 Nennen die Consent-Texte Google Gemini?
 
 Beleg: [de/en/tr/ku-Keys](lib/l10n/app_localizations_all.dart) und die in
@@ -457,13 +531,16 @@ Abschnitt 3 verlinkten aktiven Dialoge.
 | Verschenkmarkt-Foto | Google Gemini explizit; Backendweg, nicht anonymisierte Bildinhalte und optionale Analyse benannt. |
 | Chat | Google Gemini explizit; Nachricht/Verlauf, begrenzte Anonymisierung und separates Memory benannt. |
 | Memory | Google Gemini explizit; accountbezogene Backendspeicherung, Gesundheitswerte, neutrale Namen, Altersminimierung, Aus vs. Loeschung und fehlende App-Verschluesselung benannt. |
-| Kuehlschrank-Foto | **Nein**, nur "unseren KI-Dienst"; in EN/TR/KU ebenfalls generisch. Persistenz-/Service-Grenze noch Legacy (Abschnitt 3). |
-| Entwicklungsbericht | **Nein**, nur "unseren KI-Dienst"; Kindname lokal zugesagt. Empfaengertransparenz separat nachziehen. |
+| Kuehlschrank-Foto | **Live/main weiterhin nein**. #157 bereitet Google Gemini in de/en/tr/ku und die neue Konto-/Ack-/Service-Grenze vor, ist aber ungemergt. |
+| Entwicklungsbericht | **Live/main weiterhin nein**. #158 bereitet Google Gemini in de/en/tr/ku vor, ist aber ungemergt. Globaler Consent-/Ack-/Service-Legacypunkt separat offen. |
 
 Die letzten beiden sind **vor Launch zu klaeren/zu korrigieren oder die
 entsprechenden KI-Flows vom Release auszunehmen**. Insbesondere ist das
 globale Kuehlschrank-Opt-in kein Nachweis, dass Konto B eingewilligt hat.
 Diese Befunde wurden nicht im Produktivcode behoben.
+
+Genauer: in separaten Code-PRs vorbereitet, aber weder gemergt noch im
+Produktionsrelease ausgerollt. Ein gruener PR ist keine Live-Behebung.
 
 ### 4.3 Apple App Privacy / Google Data Safety
 
@@ -479,6 +556,26 @@ Die folgende Matrix ist der **Pruefumfang**, keine fertig ausgefuellte
 Storedeklaration. "Collected/shared", linked, ephemeral und Zwecke muessen
 nach den jeweiligen Storedefinitionen und realen Dienstvertraegen bewertet
 werden; kein pauschales "wir sammeln nichts"/"nichts wird geteilt".
+
+Am 7. Oktober gegengepruefte offizielle Definitionen:
+[Apple App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/)
+und [Google Play Data Safety FAQ](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en).
+Apple bewertet insbesondere den Zugriff ausserhalb des Geraets ueber die
+Echtzeitanfrage hinaus, auch bei Partnern. Ein lokaler Chat-RAM-Verlauf beweist
+keine entsprechende Provider-Aufbewahrungsausnahme. Google bewertet alle
+aktuell ausgelieferten Versionen gemeinsam; eine reine Verarbeitung im
+Auftrag kann unter die Service-Provider-Ausnahme fuer "sharing" fallen,
+muss aber durch die echte Dienstkonfiguration/Vertraege belegt sein.
+Pseudonymisierung und freiwilliges Opt-in allein heben Deklarationspflichten
+nicht auf. Keine Apple-Antworten ungeprueft in Google-Felder kopieren.
+
+| Store-Prueffeld | Nachzuweisende Einordnung vor Einreichung |
+|---|---|
+| Kontakt / Kennungen | Apple Contact Info / User ID; Google Personal Info / User IDs sowie Device or Other IDs soweit SDK-/FCM-Daten betroffen sind. Kontozuordnung und Zwecke pruefen. |
+| Gesundheits-/Memory-Inhalt | Apple Health und je nach Werten weitere User-Content-/Sensitive-Info-Kategorien; Google Health Info und relevante Personal-Info-/Content-Kategorien. Recipe-Allergien und Memory nicht nur als generischen Chattext abtun. |
+| Chat / Fotos / Standort | Freitext-/Nachrichten- und Photo-Kategorien; Standortgenauigkeit nach jedem aktiven Flow, nicht nur Matching-Rundung, bewerten. Optionen "optional", "linked", "ephemeral" anhand realer Nutzung und Logs belegen. |
+| Diagnose | Crash Data/Diagnostics bzw. App Info and Performance, plus zugehoerige Kennungen. Crashlytics ist auf Mobil-Release aktiv; Web-Ausschluss macht die globale Store-Angabe nicht entbehrlich. |
+| Finanzen | Rein lokale Budgetwerte nicht als automatische Servercollection darstellen. Tatsaechliche KI-Freitext-/Zahlungs-/Exportpfade und danach passende Financial-Info-Kategorien pruefen. |
 
 | Tatsachlich erreichbarer Datenpfad | Mit den Store-/Rechtstexten abzugleichen |
 |---|---|
