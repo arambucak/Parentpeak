@@ -3,6 +3,7 @@ import 'package:parentpeak/logic/chat_ai_consent.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/chat_memory_consent.dart';
 import 'package:parentpeak/logic/privacy_sanitizer.dart';
+import 'package:parentpeak/logic/chat_context_policy.dart';
 import 'package:parentpeak/logic/crisis_support.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 
@@ -282,12 +283,20 @@ class PedagogicalChatBackend {
       return;
     }
 
+    final inputHistory = _prepareHistory(history);
+    if (inputHistory.isNotEmpty &&
+        inputHistory.last['role'] == 'user' &&
+        inputHistory.last['content'] == message) {
+      inputHistory.removeLast();
+    }
     final safeConversation = PrivacySanitizer.sanitizeHistoryForAi([
-      ..._prepareHistory(history),
+      ...inputHistory,
       {'role': 'user', 'content': message},
     ]);
     final safeMessage = safeConversation.last['content']!;
-    final preparedHistory = safeConversation.sublist(0, safeConversation.length - 1);
+    final preparedHistory = ChatContextPolicy.limitHistory(
+      safeConversation.sublist(0, safeConversation.length - 1),
+    );
     final topicMode = _classifyTopicMode(lower);
     final contextAnchors = _extractContextAnchors(safeMessage);
     final historyAnchors = _extractHistoryAnchors(preparedHistory);
@@ -409,7 +418,10 @@ class PedagogicalChatBackend {
     await consent.require(expectedScope);
     guard();
     final response = await _geminiService!.chatWithHistory(
-      history, childProfileId: childProfileId, requestGuard: guard,
+      [
+        ...ChatContextPolicy.limitHistory(history.sublist(0, history.length - 1)),
+        history.last,
+      ], childProfileId: childProfileId, requestGuard: guard,
     );
     guard();
     await consent.require(expectedScope);

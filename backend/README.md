@@ -153,7 +153,33 @@ andere freie Identifikatoren sind keine garantiert vollstaendige Anonymisierung.
 flutter test --no-pub test/chat_privacy_payload_test.dart test/privacy_sanitizer_test.dart
 ```
 
-Weitere Chat-Auditbefunde (Tipp-/Historygrenzen,
+### Chat-Verlaufbudget und Tipp-Erweiterungen
+
+Fuer Chat-KI-Requests gelten hoechstens sechs aktuelle Gespraechsrunden
+und 12.000 Zeichen vorheriger Inhalte. Ganze Runden werden von hinten
+ausgewaehlt; kein Abschneiden einzelner Nachrichten und kein Ueberspringen
+einer zu grossen aktuellen Runde zugunsten veralteter Inhalte. Die aktuelle
+Frage ist getrennt davon genau einmal im ersten Coachingrequest enthalten.
+Die Anzeige behält alle RAM-Nachrichten bis Loeschen/Kontowechsel; das
+begrenzte KI-Kontextfenster wird im Chat sichtbar erlaeutert.
+
+Erkannte Namen werden lokal vor der Fensterauswahl ueber die gesamte
+Conversation neutralisiert, damit blosse Referenzen im aktuellen Fenster
+nicht durch den Wegfall ihrer urspruenglichen Vorstellung entmaskiert werden.
+Auch Qualitaets-/Repairrequests begrenzen den vorherigen Verlauf; aktuelle
+Coaching-/Repairanweisungen sind nicht Bestandteil des Verlaufzeichenbudgets.
+
+Tipp-Erweiterungen pruefen und verbuchen denselben bewusst geraetebezogenen
+AIRateLimiter wie normale Nachrichten. Alterskontext verwendet nur
+vollendete Jahre; ohne Profil/bei zukuenftigem Geburtstag ist das Alter
+ausdruecklich unbekannt. Keine Namen/Geburtstagsdaten aus dem Profil in
+Tipp-Prompts; de/en/tr/ku-Anweisungen statt deutschem festem Prompt.
+
+```bash
+flutter test --no-pub test/chat_context_policy_test.dart test/chat_account_ui_test.dart
+```
+
+Weitere Chat-Auditbefunde (
 Fallback-/Memory-UI-i18n und Send-Web-Tap) bleiben separate Arbeiten;
 keine pauschale Launch-, Produktions- oder Datenschutzfreigabe.
 

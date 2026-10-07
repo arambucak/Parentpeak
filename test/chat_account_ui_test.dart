@@ -17,6 +17,8 @@ import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
+import 'package:parentpeak/services/ai_rate_limiter.dart';
+import 'package:parentpeak/logic/chat_context_policy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _question = 'Wie begleiten wir das Einschlafen abends?';
@@ -132,6 +134,40 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
     }
   }
+
+  for (final tip in [false, true]) {
+    testWidgets('${tip ? 'tip' : 'normal'} initial message respects the same daily limit', (tester) async {
+      final now = DateTime.now();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('ai_rate.date', '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}');
+      await prefs.setInt('ai_rate.daily_count', AIRateLimiter.dailyLimit);
+      await consent.grant(store.scope);
+      await mount(tester, ChatScreen(
+        chatBackend: backend, memoryService: memory,
+        initialMessage: tip ? '___TIP_EXPAND___$_question' : _question,
+      ));
+      expect(calls, isEmpty);
+      expect(find.text(AppStringsManager.getString('en', 'chat_daily_limit').replaceAll('{limit}', '${AIRateLimiter.dailyLimit}'), findRichText: true), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+    });
+  }
+
+  testWidgets('tip expansion records exactly one request and invents no age', (tester) async {
+    await consent.grant(store.scope);
+    await mount(tester, ChatScreen(
+      chatBackend: backend, memoryService: memory,
+      initialMessage: '___TIP_EXPAND___$_question',
+    ));
+    expect(calls, hasLength(1));
+    expect(AIRateLimiter.todayCount(), 1);
+    final payload = calls.single.body;
+    expect(payload, isNot(contains('3 Jahre')));
+    expect(payload, contains('Alter ist nicht bekannt'));
+    expect(payload.split(_question).length - 1, 1);
+    expect(find.text(AppStringsManager.getString('en', 'chat_history_budget')
+      .replaceAll('{rounds}', '${ChatContextPolicy.maxHistoryRounds}')
+      .replaceAll('{characters}', '${ChatContextPolicy.maxHistoryCharacters}')), findsOneWidget);
+  });
 
   testWidgets(
     'logout clears history, input, feedback, topics and does not restore RAM',
