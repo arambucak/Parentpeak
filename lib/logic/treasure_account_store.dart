@@ -66,8 +66,10 @@ class TreasureAccountStore {
         final draft = entry.value as Map<String, dynamic>;
         final condition = draft['conditionIndex'];
         final distance = draft['distanceMeters'];
+        final radius = draft['shareRadiusKm'];
         if ((condition != null && (condition is! int || condition < 0 || condition > 2)) ||
-            (distance != null && (distance is! num || !distance.isFinite || distance < 50 || distance > 800))) {
+            (distance != null && (distance is! num || !distance.isFinite || distance < 50 || distance > 800)) ||
+            (radius != null && (radius is! num || !radius.isFinite || radius < 1 || radius > 25))) {
           throw const FormatException('Invalid treasure draft range');
         }
         for (final key in ['title', 'colorLabel', 'note', 'sizeAge', 'categoryKey', 'imagePath']) {

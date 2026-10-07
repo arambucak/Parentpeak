@@ -1,6 +1,8 @@
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
+import 'package:parentpeak/models/treasure_category.dart';
+import 'package:parentpeak/models/treasure_geometry.dart';
 
 class TreasureHandoverSummary {
   const TreasureHandoverSummary({
@@ -113,17 +115,21 @@ class TreasureBackendService {
     if (_apiClient == null) return [];
 
     try {
+      if ((latitude != null || longitude != null) &&
+          !TreasureGeometry.validPosition(latitude, longitude)) {
+        throw const FormatException('Invalid treasure coordinates');
+      }
       final query = <String, String>{
         'status': status,
         'visibility': visibility,
         if (category != null && category.trim().isNotEmpty)
-          'category': category.trim(),
+          'category': TreasureCategory.normalize(category),
         if (condition != null && condition.trim().isNotEmpty)
           'condition': condition.trim(),
         'maxResults': limit.toString(),
         'offset': offset.toString(),
-        if (latitude != null) 'latitude': latitude.toString(),
-        if (longitude != null) 'longitude': longitude.toString(),
+        if (latitude != null) 'latitude': TreasureGeometry.coarse(latitude).toString(),
+        if (longitude != null) 'longitude': TreasureGeometry.coarse(longitude).toString(),
         'radiusKm': radiusKm.toString(),
       };
 
@@ -154,6 +160,9 @@ class TreasureBackendService {
     if (_apiClient == null) return null;
 
     try {
+      if (!TreasureGeometry.validPosition(latitude, longitude)) {
+        throw const FormatException('Invalid treasure coordinates');
+      }
       String? uploadedImageUrl;
       final primaryImagePath = listing.primaryImagePath;
       if (primaryImagePath != null && primaryImagePath.isNotEmpty) {
@@ -176,13 +185,13 @@ class TreasureBackendService {
         'title': listing.title,
         'description': listing.note,
         'location': location,
-        'latitude': latitude,
-        'longitude': longitude,
-        'category': _mapCategoryForBackend(listing.category),
+        'latitude': TreasureGeometry.coarse(latitude),
+        'longitude': TreasureGeometry.coarse(longitude),
+        'category': TreasureCategory.normalize(listing.category),
         'condition': _mapConditionForBackend(listing.conditionKey),
         'isFree': true,
         'visibility': 'nearby',
-        'shareRadiusKm': (listing.distanceMeters / 1000).clamp(1, 100),
+        'shareRadiusKm': TreasureGeometry.radius(listing.shareRadiusKm),
         if (uploadedImageUrl != null && uploadedImageUrl.isNotEmpty)
           'photoUrl': uploadedImageUrl,
         if (allImageUrls.isNotEmpty) 'photoUrls': allImageUrls,
@@ -332,10 +341,8 @@ class TreasureBackendService {
     Map<String, dynamic> treasure, {
     TreasureListing? fallbackListing,
   }) {
-    final rawRadiusKm =
-        double.tryParse(treasure['shareRadiusKm']?.toString() ?? '');
     final rawCondition = treasure['condition']?.toString() ?? '';
-    final categoryRaw = treasure['category']?.toString() ?? '';
+    final categoryRaw = treasure['category']?.toString() ?? fallbackListing?.category ?? 'other';
     final createdAt =
         DateTime.tryParse(treasure['createdAt']?.toString() ?? '');
     final imageUrl = treasure['photoUrl']?.toString();
@@ -349,20 +356,17 @@ class TreasureBackendService {
     return TreasureListing(
       id: treasure['id']?.toString() ?? fallbackListing?.id ?? '',
       title: treasure['title']?.toString() ?? fallbackListing?.title ?? '',
-      category: _mapCategoryForUi(categoryRaw),
+      category: TreasureCategory.normalize(categoryRaw),
       sizeAge: fallbackListing?.sizeAge ?? 'Flexible Größe',
       conditionKey: _mapConditionForUi(rawCondition),
-      // Echte Distanz vom Backend (distanceKm) bevorzugen; sonst Fallback.
       distanceMeters: () {
         final realKm =
             double.tryParse(treasure['distanceKm']?.toString() ?? '');
-        if (realKm != null) return (realKm * 1000).round();
-        return ((rawRadiusKm ??
-                    (fallbackListing?.distanceMeters.toDouble() ?? 10000) /
-                        1000) *
-                1000)
-            .round();
+        if (realKm != null && realKm.isFinite && realKm >= 0) return (realKm * 1000).round();
+        return null;
       }(),
+      shareRadiusKm: TreasureGeometry.readRadius(
+        treasure['shareRadiusKm'], fallback: fallbackListing?.shareRadiusKm ?? 1),
       colorLabel: fallbackListing?.colorLabel ?? 'Neutral',
       note: treasure['description']?.toString() ?? fallbackListing?.note ?? '',
       locationLabel:
@@ -391,33 +395,6 @@ class TreasureBackendService {
     if (query.isEmpty) return path;
     final uri = Uri(path: path, queryParameters: query);
     return uri.toString();
-  }
-
-  String _mapCategoryForBackend(String uiCategory) {
-    final value = uiCategory.trim().toLowerCase();
-    if (value.contains('fahr')) return 'vehicles';
-    if (value.contains('kleidung')) return 'clothing';
-    if (value.contains('spiel')) return 'toys';
-    if (value.contains('buch')) return 'books';
-    if (value.contains('ausstatt')) return 'equipment';
-    return 'other';
-  }
-
-  String _mapCategoryForUi(String backendCategory) {
-    final value = backendCategory.trim().toLowerCase();
-    switch (value) {
-      case 'vehicles':
-        return 'Fahrzeuge';
-      case 'clothing':
-        return 'Kleidung';
-      case 'books':
-        return 'Bücher';
-      case 'equipment':
-        return 'Ausstattung';
-      case 'toys':
-      default:
-        return 'Spielzeug';
-    }
   }
 
   String _mapConditionForBackend(String uiCondition) {

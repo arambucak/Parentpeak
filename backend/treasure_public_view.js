@@ -38,4 +38,4 @@ function publicTreasure(treasure, { distanceKm = null } = {}) {
   };
 }
 
-module.exports = { publicTreasure };
+module.exports = { publicTreasure, coarseCoordinate };

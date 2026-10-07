@@ -460,16 +460,54 @@ fehlende Bilder werden gemeldet, kein automatisches Ueberschreiben.
 Die lokalen Bilddaten sind nicht verschluesselt. Ein Entwurf oder dessen
 Speichern veroeffentlicht nichts; erst Teilen laedt Fotos hoch.
 
-Kategorien, Entfernung/Reichweite und verbleibende UI-/Lifecyclefragen
-bleiben separate Auditpunkte. Keine Deployment- oder Launchfreigabe.
+Verbleibende UI-/Lifecyclefragen bleiben separate Auditpunkte.
+Keine Deployment- oder Launchfreigabe.
+
+### Verschenkmarkt: Kategorien und ungefaehre Reichweite
+
+Auswahl, `TreasureListing`, lokaler Cache und HTTP verwenden die stabilen IDs
+`vehicles`, `clothing`, `toys`, `books`, `equipment`, `other`. Uebersetzungen
+finden nur fuer die Anzeige statt. Bekannte alte Labels in de/en/tr/ku werden
+beim Lesen zugeordnet; unbekannte Kategorien bleiben `other`, nicht erfundene
+Spielzeuge. Bereits auf dem Server als `other` verlorene Kategorien lassen sich
+nicht ohne neue Nutzerangabe rekonstruieren; keine automatische DB-Umschreibung.
+
+Der Upload-Slider waehlt ausdruecklich den **ungefaehren Veroeffentlichungsradius
+1–25 km**, nicht eine Entfernung zum Betrachter. `shareRadiusKm` ist im Modell,
+Draft und HTTP von der nullable Betrachterentfernung `distanceMeters` getrennt.
+Alte 50–800-m-Draftwerte hatten effektiv immer 1 km Reichweite; Wiederherstellung
+behaelt diesen wirksamen Wert, ohne den Altentwurf beim Laden umzuschreiben.
+
+Treasure-Requests runden Positionen auf zwei Nachkommastellen. Discovery,
+Sortierung und sichtbare Entfernung beruhen auf demselben groben Gitter fuer
+Anbieter **und** Betrachter, nicht auf exakten Privatkoordinaten. Die numerische
+Distanz wird auf Meter gerundet, ist aber ausdruecklich nur eine Schaetzung.
+0 m bedeutet gegebenenfalls dieselbe Gitterzelle, nicht dieselbe Adresse.
+Serverfilter verwenden inklusiv das Minimum aus Such- und Anzeigenradius
+(weiterhin maximal 25 km); UI-Distanzfilter und Karten verwenden denselben
+ungefaehren Wert. Auch bekannte Entfernungen aus dem Offlinecache werden
+gegen den Anzeigenradius geprueft. Ohne berechenbare Entfernung wird kein Radius als Distanz
+ausgegeben. Alte Cache-Distanzen ohne `distanceBasis: coarse-v1` sind nicht
+vertrauenswuerdig und werden aus Positionen neu berechnet oder als unbekannt
+angezeigt; Originaldaten werden dadurch nicht geloescht.
+
+Geografische Discovery scannt passende Datensaetze in DB-Batches von 200,
+filtert/sortiert zuerst und wendet erst dann Ergebnislimit/Offset an.
+Das verhindert, dass aeltere nahe Angebote hinter einer ersten Seite ferner
+Angebote verschwinden. Gesamter Scanaufwand waechst mit dem Datenbestand;
+eine spaetere datenbankseitige Geo-Indexierung ist damit nicht ersetzt.
+Nicht-geografische Abfragen behalten ihre DB-Pagination.
+Ungueltige Koordinaten/Radien werden explizit abgewiesen, Nullkoordinaten sind
+gueltig. Keine Standortpraezisierung oder globaler Marktmodus eingefuehrt.
 
 ### Verschenkmarkt: oeffentliche Detailprojektion
 
 `GET /api/treasures` und `GET /api/treasures/:id` verwenden dieselbe
 explizite `publicTreasure`-Projektion. Koordinaten werden auf zwei
 Nachkommastellen gerundet; `approximateLocation` ist immer `true`.
-Der Feed behaelt die serverseitig berechnete Entfernung. Die gespeicherte
-Position und die geografische Auswahl werden dadurch nicht veraendert.
+Der Feed liefert eine ungefaehre Entfernung aus denselben grob gerundeten
+Positionen, wie oben beschrieben. Die oeffentliche Projektion bleibt unveraendert;
+alte gespeicherte Positionen werden nicht nachtraeglich praezisiert oder migriert.
 
 Die oeffentliche Detailantwort liefert keine rohen `handovers`,
 Interessenten-IDs, privaten Uebergabenotizen/-orte, individuellen

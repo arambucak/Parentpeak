@@ -27,15 +27,26 @@ class _Photo extends XFile {
 class _Picker extends ImagePicker {
   @override
   Future<List<XFile>> pickMultiImage({
-    double? maxWidth, double? maxHeight, int? imageQuality,
-    int? limit, bool requestFullMetadata = true,
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
+    int? limit,
+    bool requestFullMetadata = true,
   }) async => [_Photo('/fake-one.png'), _Photo('/fake-two.png')];
 }
 
 TreasureListing _listing() => TreasureListing(
-  id: 'item', title: 'Test offer', category: 'Vehicles', sizeAge: '3 years',
-  conditionKey: 'good', distanceMeters: 120, colorLabel: 'red', note: '',
-  latitude: 50, longitude: 8, createdAt: DateTime(2026),
+  id: 'item',
+  title: 'Test offer',
+  category: 'Vehicles',
+  sizeAge: '3 years',
+  conditionKey: 'good',
+  distanceMeters: 120,
+  colorLabel: 'red',
+  note: '',
+  latitude: 50,
+  longitude: 8,
+  createdAt: DateTime(2026),
 );
 
 class _Backend extends TreasureBackendService {
@@ -44,33 +55,68 @@ class _Backend extends TreasureBackendService {
   int creates = 0;
   int reservations = 0;
   int cancellations = 0;
+  TreasureListing? createdListing;
+  List<TreasureListing>? offers;
   @override
   bool get isEnabled => enabled;
   @override
   Future<TreasureListing?> createTreasure({
-    required TreasureListing listing, required String userId, required String location,
-    required double latitude, required double longitude,
-  }) async { creates++; return createConfirmed ? listing : null; }
+    required TreasureListing listing,
+    required String userId,
+    required String location,
+    required double latitude,
+    required double longitude,
+  }) async {
+    creates++;
+    createdListing = listing;
+    return createConfirmed ? listing : null;
+  }
+
   @override
   Future<List<TreasureListing>> fetchTreasures({
-    String status = 'available', String visibility = 'nearby', String? category,
-    String? condition, int limit = 50, int offset = 0,
-    double? latitude, double? longitude, double radiusKm = 25,
-  }) async => [_listing()];
+    String status = 'available',
+    String visibility = 'nearby',
+    String? category,
+    String? condition,
+    int limit = 50,
+    int offset = 0,
+    double? latitude,
+    double? longitude,
+    double radiusKm = 25,
+  }) async => offers ?? [_listing()];
   @override
   Future<TreasureMineOverview?> fetchMine({required String userId}) async =>
-      const TreasureMineOverview(offers: [], reservedByMe: [
-        TreasureHandoverSummary(id: 'handover', treasureId: 'item',
-          status: 'pending', location: '', treasureTitle: 'Test offer'),
-      ]);
+      const TreasureMineOverview(
+        offers: [],
+        reservedByMe: [
+          TreasureHandoverSummary(
+            id: 'handover',
+            treasureId: 'item',
+            status: 'pending',
+            location: '',
+            treasureTitle: 'Test offer',
+          ),
+        ],
+      );
   @override
   Future<bool> reserveTreasure({
-    required String treasureId, required String requesterUserId,
-    String? preferredSlot, String? handoverMode, String? message,
-  }) async { reservations++; return true; }
+    required String treasureId,
+    required String requesterUserId,
+    String? preferredSlot,
+    String? handoverMode,
+    String? message,
+  }) async {
+    reservations++;
+    return true;
+  }
+
   @override
-  Future<bool> cancelReservation({required String treasureId, required String requesterUserId}) async {
-    cancellations++; return true;
+  Future<bool> cancelReservation({
+    required String treasureId,
+    required String requesterUserId,
+  }) async {
+    cancellations++;
+    return true;
   }
 }
 
@@ -106,87 +152,307 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pumpAndSettle();
   }
-  Future<void> mount(WidgetTester tester, Widget screen) async {
+
+  Future<void> mount(
+    WidgetTester tester,
+    Widget screen, {
+    String language = 'en',
+  }) async {
     await tester.runAsync(() async {
       await AuthService.instance.debugSeedSessionForTesting();
       await LocationService.instance.setCoordinates(50, 8, city: 'Test city');
     });
-    await tester.pumpWidget(MaterialApp(
-      locale: const Locale('en'), supportedLocales: AppLanguages.supportedLocales,
-      localizationsDelegates: const [
-        AppLocalizations.delegate, AppLanguages.materialLocalizationsDelegate,
-        AppLanguages.widgetsLocalizationsDelegate, AppLanguages.cupertinoLocalizationsDelegate,
-      ], home: screen,
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: Locale(language),
+        supportedLocales: AppLanguages.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          AppLanguages.materialLocalizationsDelegate,
+          AppLanguages.widgetsLocalizationsDelegate,
+          AppLanguages.cupertinoLocalizationsDelegate,
+        ],
+        home: screen,
+      ),
+    );
     await settle(tester);
   }
-  Future<void> tapKey(WidgetTester tester, String key, {double delta = 350}) async {
+
+  Future<void> tapKey(
+    WidgetTester tester,
+    String key, {
+    double delta = 350,
+  }) async {
     final text = find.text(l10n.t(key));
-    await tester.scrollUntilVisible(text, delta, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(
+      text,
+      delta,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(text.first);
+    await tester.pumpAndSettle();
     await tester.tap(text.first);
     await settle(tester);
   }
-  Future<void> photos(WidgetTester tester, {TreasureDraftImages codec = const TreasureDraftImages()}) async {
-    await mount(tester, TreasureUploadScreen(listingService: service, imagePicker: _Picker(),
-      imageUploadService: uploader, draftImages: codec));
+
+  Future<void> photos(
+    WidgetTester tester, {
+    TreasureDraftImages codec = const TreasureDraftImages(),
+  }) async {
+    await mount(
+      tester,
+      TreasureUploadScreen(
+        listingService: service,
+        imagePicker: _Picker(),
+        imageUploadService: uploader,
+        draftImages: codec,
+      ),
+    );
     await tapKey(tester, 'treasureChooseFromLibrary');
   }
 
-  for (final cleanupFails in [false, true]) {
-    testWidgets('partial photo upload is visible; cleanup failure = $cleanupFails', (tester) async {
-      uploader = ImageUploadService(
-        upload: (_, __) async {
-          if (++uploads == 2) throw StateError('second image failed');
-          return 'https://example.invalid/one.png';
-        },
-        remove: (url) async {
-          removed.add(url);
-          if (cleanupFails) throw StateError('cleanup denied');
-        },
+  for (final language in ['de', 'en', 'tr', 'ku']) {
+    testWidgets(
+      'selected book category and 25 km radius reach publication in $language',
+      (tester) async {
+        final strings = AppLocalizations(Locale(language));
+        await mount(
+          tester,
+          TreasureUploadScreen(
+            listingService: service,
+            imagePicker: _Picker(),
+            imageUploadService: uploader,
+          ),
+          language: language,
+        );
+        Future<void> tap(String key) async {
+          final text = find.text(strings.t(key));
+          await tester.scrollUntilVisible(
+            text,
+            350,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.ensureVisible(text.first);
+          await tester.pumpAndSettle();
+          await tester.tap(text.first);
+          await settle(tester);
+        }
+
+        await tap('treasureChooseFromLibrary');
+        await tap('treasureCategoryBooks');
+        final slider = find.byType(Slider);
+        await tester.scrollUntilVisible(
+          slider,
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.drag(slider, const Offset(600, 0));
+        await settle(tester);
+        expect(tester.widget<Slider>(slider).value, 25);
+        await tap('treasureSaveDraft');
+        final draft = await service.loadDraft();
+        expect(draft!['categoryKey'], 'books');
+        expect(draft['shareRadiusKm'], 25);
+        expect(draft.containsKey('distanceMeters'), isFalse);
+        await tap('treasurePublishNow');
+        expect(backend.createdListing!.category, 'books');
+        expect(backend.createdListing!.shareRadiusKm, 25);
+        expect(backend.createdListing!.distanceMeters, isNull);
+        expect(
+          find.text(strings.t('treasure_published_local_failed')),
+          findsNothing,
+        );
+      },
+    );
+  }
+
+  testWidgets(
+    'old metre draft restores its effective 1 km radius without rewriting on load',
+    (tester) async {
+      await tester.runAsync(() async {
+        await AuthService.instance.debugSeedSessionForTesting();
+        await service.saveDraft({
+          'title': 'Old draft',
+          'distanceMeters': 800,
+          'categoryKey': 'books',
+        });
+      });
+      await mount(tester, TreasureUploadScreen(listingService: service));
+      final slider = find.byType(Slider);
+      await tester.scrollUntilVisible(
+        slider,
+        300,
+        scrollable: find.byType(Scrollable).first,
       );
-      await photos(tester);
-      await tapKey(tester, 'treasurePublishNow');
-      expect(find.text(l10n.t(cleanupFails ? 'treasure_upload_cleanup_failed' : 'treasure_upload_batch_failed')), findsOneWidget);
-      expect(backend.creates, 0);
-      expect(removed.length, 1);
-      expect(find.text(l10n.t('treasureUploadSuccess')), findsNothing);
-    });
+      expect(tester.widget<Slider>(slider).value, 1);
+      expect((await service.loadDraft())!['distanceMeters'], 800);
+      expect(
+        (await service.loadDraft())!.containsKey('shareRadiusKm'),
+        isFalse,
+      );
+    },
+  );
+
+  testWidgets(
+    'distance filter and displayed estimate agree, including exact thresholds and unknowns',
+    (tester) async {
+      TreasureListing at(String id, int? metres) => TreasureListing(
+        id: id,
+        title: 'Offer $id',
+        category: 'books',
+        sizeAge: '',
+        conditionKey: 'round2',
+        distanceMeters: metres,
+        colorLabel: '',
+        note: '',
+        createdAt: DateTime(2026),
+      );
+      backend.offers = [
+        at('501', 501),
+        at('500', 500),
+        at('251', 251),
+        at('250', 250),
+        at('unknown', null),
+        _listing().copyWith(
+          id: 'coarse',
+          title: 'Offer coarse',
+          distanceMeters: 9000,
+        ),
+      ];
+      await mount(tester, TreasureHandoverScreen(listingService: service));
+      await tapKey(tester, 'treasureFilterDistance250');
+      expect(find.textContaining('Offer 250'), findsWidgets);
+      expect(find.textContaining('Offer 251'), findsNothing);
+      expect(find.textContaining('Offer unknown'), findsNothing);
+      await tester.scrollUntilVisible(
+        find.textContaining('Offer coarse'),
+        350,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('Offer coarse'), findsWidgets);
+      expect(
+        find.text(
+          l10n.tFormat('treasureDistanceApproximate', {'distance': '0 m'}),
+        ),
+        findsWidgets,
+      );
+      await tapKey(tester, 'treasureFilterDistance500', delta: -350);
+      await tester.scrollUntilVisible(
+        find.textContaining('Offer 500'),
+        350,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('Offer 500'), findsWidgets);
+      expect(find.textContaining('Offer 501'), findsNothing);
+    },
+  );
+
+  for (final cleanupFails in [false, true]) {
+    testWidgets(
+      'partial photo upload is visible; cleanup failure = $cleanupFails',
+      (tester) async {
+        uploader = ImageUploadService(
+          upload: (_, __) async {
+            if (++uploads == 2) throw StateError('second image failed');
+            return 'https://example.invalid/one.png';
+          },
+          remove: (url) async {
+            removed.add(url);
+            if (cleanupFails) throw StateError('cleanup denied');
+          },
+        );
+        await photos(tester);
+        await tapKey(tester, 'treasurePublishNow');
+        expect(
+          find.text(
+            l10n.t(
+              cleanupFails
+                  ? 'treasure_upload_cleanup_failed'
+                  : 'treasure_upload_batch_failed',
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(backend.creates, 0);
+        expect(removed.length, 1);
+        expect(find.text(l10n.t('treasureUploadSuccess')), findsNothing);
+      },
+    );
   }
 
   for (final failCache in [true, false]) {
-    testWidgets('confirmed publish is not presented as failed when ${failCache ? 'cache' : 'draft clear'} fails', (tester) async {
-      store = TreasureAccountStore(persist: (key, value) async {
-        final root = jsonDecode(value) as Map<String, dynamic>;
-        final accounts = root['accounts'] as Map;
-        final data = (accounts.values.first as Map)['data'] as Map;
-        if (failCache && data.containsKey(TreasureAccountStore.feedKey)) return false;
-        if (!failCache && data.containsKey(TreasureAccountStore.draftKey) && data[TreasureAccountStore.draftKey] == null) return false;
-        return (await SharedPreferences.getInstance()).setString(key, value);
-      });
-      service.dispose();
-      service = TreasureListingService(store: store, backend: backend);
-      await photos(tester);
-      await tapKey(tester, 'treasurePublishNow');
-      expect(backend.creates, 1);
-      expect(find.text(l10n.t('treasure_published_local_failed')), findsWidgets);
-      expect(find.text(l10n.t('treasure_publish_uncertain')), findsNothing);
-      final button = tester.widget<FilledButton>(find.widgetWithText(FilledButton, l10n.t('treasurePublishNow')));
-      expect(button.onPressed, isNull);
-      expect(removed, isEmpty, reason: 'Confirmed listing photos must not be deleted');
-    });
+    testWidgets(
+      'confirmed publish is not presented as failed when ${failCache ? 'cache' : 'draft clear'} fails',
+      (tester) async {
+        store = TreasureAccountStore(
+          persist: (key, value) async {
+            final root = jsonDecode(value) as Map<String, dynamic>;
+            final accounts = root['accounts'] as Map;
+            final data = (accounts.values.first as Map)['data'] as Map;
+            if (failCache && data.containsKey(TreasureAccountStore.feedKey)) {
+              return false;
+            }
+            if (!failCache &&
+                data.containsKey(TreasureAccountStore.draftKey) &&
+                data[TreasureAccountStore.draftKey] == null) {
+              return false;
+            }
+            return (await SharedPreferences.getInstance()).setString(
+              key,
+              value,
+            );
+          },
+        );
+        service.dispose();
+        service = TreasureListingService(store: store, backend: backend);
+        await photos(tester);
+        await tapKey(tester, 'treasurePublishNow');
+        expect(backend.creates, 1);
+        expect(
+          find.text(l10n.t('treasure_published_local_failed')),
+          findsWidgets,
+        );
+        expect(find.text(l10n.t('treasure_publish_uncertain')), findsNothing);
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, l10n.t('treasurePublishNow')),
+        );
+        expect(button.onPressed, isNull);
+        expect(
+          removed,
+          isEmpty,
+          reason: 'Confirmed listing photos must not be deleted',
+        );
+      },
+    );
   }
 
-  testWidgets('uncertain creation warns about uploaded photos and blocks blind duplicate publish', (tester) async {
-    backend.createConfirmed = false;
-    await photos(tester);
-    await tapKey(tester, 'treasurePublishNow');
-    expect(find.text(l10n.t('treasure_publish_uncertain')), findsWidgets);
-    expect(backend.creates, 1);
-    expect(removed, isEmpty, reason: 'Timeout might have committed the listing');
-    expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, l10n.t('treasurePublishNow'))).onPressed, isNull);
-  });
+  testWidgets(
+    'uncertain creation warns about uploaded photos and blocks blind duplicate publish',
+    (tester) async {
+      backend.createConfirmed = false;
+      await photos(tester);
+      await tapKey(tester, 'treasurePublishNow');
+      expect(find.text(l10n.t('treasure_publish_uncertain')), findsWidgets);
+      expect(backend.creates, 1);
+      expect(
+        removed,
+        isEmpty,
+        reason: 'Timeout might have committed the listing',
+      );
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, l10n.t('treasurePublishNow')),
+            )
+            .onPressed,
+        isNull,
+      );
+    },
+  );
 
-  testWidgets('backend unavailable publishes nothing and uploads no photos', (tester) async {
+  testWidgets('backend unavailable publishes nothing and uploads no photos', (
+    tester,
+  ) async {
     backend.enabled = false;
     await photos(tester);
     await tapKey(tester, 'treasurePublishNow');
@@ -195,7 +461,28 @@ void main() {
     expect(backend.creates, 0);
   });
 
-  testWidgets('web photo bytes survive actual draft save and screen reopen', (tester) async {
+  testWidgets('offline cache uses current coarse position and publication radii', (tester) async {
+    backend.enabled = false;
+    await tester.runAsync(() async {
+      await AuthService.instance.debugSeedSessionForTesting();
+      await store.update((data) => data[TreasureAccountStore.feedKey] = [
+        _listing().copyWith(id: 'outside', title: 'Outside radius', latitude: 50.02).toMap(),
+        _listing().copyWith(id: 'market', title: 'Outside market', latitude: 50.24, shareRadiusKm: 25).toMap(),
+        _listing().copyWith(id: 'near', title: 'Near offer').toMap(),
+      ], expectedScope: store.scope);
+    });
+    await mount(tester, TreasureHandoverScreen(listingService: service));
+    final near = find.textContaining('Near offer');
+    await tester.scrollUntilVisible(near, 350, scrollable: find.byType(Scrollable).first);
+    expect(near, findsWidgets);
+    expect(find.textContaining('Outside radius'), findsNothing);
+    expect(find.textContaining('Outside market'), findsNothing);
+    expect(backend.reservations, 0);
+  });
+
+  testWidgets('web photo bytes survive actual draft save and screen reopen', (
+    tester,
+  ) async {
     const codec = TreasureDraftImages(web: true);
     await photos(tester, codec: codec);
     await tapKey(tester, 'treasureSaveDraft');
@@ -204,13 +491,18 @@ void main() {
     expect(draft.containsKey('imagePaths'), isFalse);
     expect((draft['images'] as List).length, 2);
     await tester.pumpWidget(const SizedBox.shrink());
-    await mount(tester, TreasureUploadScreen(listingService: service, draftImages: codec));
+    await mount(
+      tester,
+      TreasureUploadScreen(listingService: service, draftImages: codec),
+    );
     expect(find.text(l10n.t('treasureDraftRestored')), findsOneWidget);
     expect((await service.loadDraft())!['images'], draft['images']);
     expect(await codec.decode(draft)!.first.readAsBytes(), [1, 2, 3]);
   });
 
-  testWidgets('failed web draft acknowledgement never displays saved', (tester) async {
+  testWidgets('failed web draft acknowledgement never displays saved', (
+    tester,
+  ) async {
     store = TreasureAccountStore(persist: (_, __) async => false);
     service.dispose();
     service = TreasureListingService(store: store, backend: backend);
@@ -221,72 +513,150 @@ void main() {
     expect(await service.loadDraft(), isNull);
   });
 
-  testWidgets('missing old web photo is visible and does not auto-overwrite the old draft', (tester) async {
-    await tester.runAsync(() => AuthService.instance.debugSeedSessionForTesting());
-    final old = {'title': 'Retained draft', 'imagePaths': ['blob:no-longer-available']};
-    await tester.runAsync(() => service.saveDraft(old));
-    await mount(tester, TreasureUploadScreen(listingService: service, draftImages: const TreasureDraftImages(web: true)));
-    expect(find.text(l10n.t('treasure_draft_images_missing')), findsOneWidget);
-    expect(find.text(l10n.t('treasureDraftRestored')), findsNothing);
-    await tester.pump(const Duration(seconds: 1));
-    expect(await service.loadDraft(), old);
-  });
+  testWidgets(
+    'missing old web photo is visible and does not auto-overwrite the old draft',
+    (tester) async {
+      await tester.runAsync(
+        () => AuthService.instance.debugSeedSessionForTesting(),
+      );
+      final old = {
+        'title': 'Retained draft',
+        'imagePaths': ['blob:no-longer-available'],
+      };
+      await tester.runAsync(() => service.saveDraft(old));
+      await mount(
+        tester,
+        TreasureUploadScreen(
+          listingService: service,
+          draftImages: const TreasureDraftImages(web: true),
+        ),
+      );
+      expect(
+        find.text(l10n.t('treasure_draft_images_missing')),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.t('treasureDraftRestored')), findsNothing);
+      await tester.pump(const Duration(seconds: 1));
+      expect(await service.loadDraft(), old);
+    },
+  );
 
   for (final ack in [true, false]) {
-    testWidgets('cancel flow mirrors server commit and local marker acknowledgement = $ack', (tester) async {
-      await tester.runAsync(() => AuthService.instance.debugSeedSessionForTesting());
-      await tester.runAsync(() => store.update((data) => data[TreasureAccountStore.reservedKey] = ['item'],
-        expectedScope: store.scope));
-      if (!ack) {
-        store = TreasureAccountStore(persist: (_, __) async => false);
-        service.dispose();
-        service = TreasureListingService(store: store, backend: backend);
-      }
-      await mount(tester, TreasureHandoverScreen(listingService: service, openMyListings: true));
-      await tester.tap(find.text(l10n.t('treasureCancelReservation')));
-      await settle(tester);
-      expect(backend.cancellations, 1);
-      expect(await service.loadReservedIds(), ack ? isEmpty : {'item'});
-      expect(find.text(l10n.t(ack ? 'treasureHandoverUpdated' : 'treasure_cancel_local_failed')), findsWidgets);
-    });
+    testWidgets(
+      'cancel flow mirrors server commit and local marker acknowledgement = $ack',
+      (tester) async {
+        await tester.runAsync(
+          () => AuthService.instance.debugSeedSessionForTesting(),
+        );
+        await tester.runAsync(
+          () => store.update(
+            (data) => data[TreasureAccountStore.reservedKey] = ['item'],
+            expectedScope: store.scope,
+          ),
+        );
+        if (!ack) {
+          store = TreasureAccountStore(persist: (_, __) async => false);
+          service.dispose();
+          service = TreasureListingService(store: store, backend: backend);
+        }
+        await mount(
+          tester,
+          TreasureHandoverScreen(listingService: service, openMyListings: true),
+        );
+        await tester.tap(find.text(l10n.t('treasureCancelReservation')));
+        await settle(tester);
+        expect(backend.cancellations, 1);
+        expect(await service.loadReservedIds(), ack ? isEmpty : {'item'});
+        expect(
+          find.text(
+            l10n.t(
+              ack ? 'treasureHandoverUpdated' : 'treasure_cancel_local_failed',
+            ),
+          ),
+          findsWidgets,
+        );
+      },
+    );
   }
 
-  for (final outcome in ['offline', 'failed local acknowledgement', 'success']) {
+  for (final outcome in [
+    'offline',
+    'failed local acknowledgement',
+    'success',
+  ]) {
     testWidgets('reserve flow reflects $outcome', (tester) async {
       final offline = outcome == 'offline';
       final success = outcome == 'success';
-      await tester.runAsync(() => AuthService.instance.debugSeedSessionForTesting());
-      await tester.runAsync(() => store.update((data) =>
-        data[TreasureAccountStore.feedKey] = [_listing().toMap()], expectedScope: store.scope));
+      await tester.runAsync(
+        () => AuthService.instance.debugSeedSessionForTesting(),
+      );
+      await tester.runAsync(
+        () => store.update(
+          (data) => data[TreasureAccountStore.feedKey] = [_listing().toMap()],
+          expectedScope: store.scope,
+        ),
+      );
       if (offline) {
         backend.enabled = false;
       } else if (!success) {
-        store = TreasureAccountStore(persist: (key, value) async {
-          final root = jsonDecode(value) as Map<String, dynamic>;
-          final data = ((root['accounts'] as Map).values.first as Map)['data'] as Map;
-          if ((data[TreasureAccountStore.reservedKey] as List?)?.contains('item') ?? false) return false;
-          return (await SharedPreferences.getInstance()).setString(key, value);
-        });
+        store = TreasureAccountStore(
+          persist: (key, value) async {
+            final root = jsonDecode(value) as Map<String, dynamic>;
+            final data =
+                ((root['accounts'] as Map).values.first as Map)['data'] as Map;
+            if ((data[TreasureAccountStore.reservedKey] as List?)?.contains(
+                  'item',
+                ) ??
+                false) {
+              return false;
+            }
+            return (await SharedPreferences.getInstance()).setString(
+              key,
+              value,
+            );
+          },
+        );
         service.dispose();
         service = TreasureListingService(store: store, backend: backend);
       }
       await mount(tester, TreasureHandoverScreen(listingService: service));
       final title = find.textContaining('Test offer');
-      await tester.scrollUntilVisible(title, 350, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(
+        title,
+        350,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(title.first);
       await settle(tester);
-      await tester.scrollUntilVisible(find.text(l10n.t('treasureSelectForHandover')), 350,
-        scrollable: find.byType(Scrollable).last);
+      await tester.scrollUntilVisible(
+        find.text(l10n.t('treasureSelectForHandover')),
+        350,
+        scrollable: find.byType(Scrollable).last,
+      );
       await tester.tap(find.text(l10n.t('treasureSelectForHandover')));
       await settle(tester);
       await tapKey(tester, 'treasureSlotSunday', delta: -350);
       await tester.tap(find.text(l10n.t('treasureReserveCoffeeMode')));
       await settle(tester);
       if (success) {
-        expect(find.descendant(of: find.byType(SnackBar),
-          matching: find.textContaining('Test offer')), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(SnackBar),
+            matching: find.textContaining('Test offer'),
+          ),
+          findsOneWidget,
+        );
       } else {
-        expect(find.text(l10n.t(offline ? 'treasure_reservation_offline' : 'treasure_reserve_local_failed')), findsWidgets);
+        expect(
+          find.text(
+            l10n.t(
+              offline
+                  ? 'treasure_reservation_offline'
+                  : 'treasure_reserve_local_failed',
+            ),
+          ),
+          findsWidgets,
+        );
       }
       expect(await service.loadReservedIds(), success ? {'item'} : isEmpty);
       expect(backend.reservations, offline ? 0 : 1);
