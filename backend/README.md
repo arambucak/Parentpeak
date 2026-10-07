@@ -1,5 +1,24 @@
 # Parentpeak Marktplatz Backend
 
+## Release-Nachweis fuer Pages (noch separat auszurollen)
+
+`GET /release/readiness` ist ein read-only, nicht gecachter Release-Nachweis.
+Er liefert nur Commit-/Kompatibilitaets- und Schemametadaten, keine Kontodaten.
+Die Identitaet kommt ausschliesslich aus Render `RENDER_GIT_COMMIT`; fehlt sie,
+antwortet die Route mit 503. Die Route prueft beide erforderlichen Migrationen
+(finished, nicht rolled back), nullable TEXT-Consent-Spalten und eine echte
+SELECT-Abfrage ueber den laufenden generierten Prisma-Client.
+Ein nicht verfuegbares Schema/DB/Client liefert 503, nicht einen Health-Fallback.
+
+Dies ist kein Memory-Opt-in-Test, kein Nachweis aller Backendmigrationen und
+keine Rechts-/Launchfreigabe. Die Kompatibilitaetskennung muss bei kuenftigen
+API-/Schema-Anforderungen bewusst versioniert werden. Bis zur gesonderten
+Freigabe fuer Merge/Render-Deploy existiert dieser Nachweis nicht live.
+
+```bash
+node --test backend/tests/unit/release-readiness.test.js
+```
+
 ## Einwilligung fuer KI-Elternberatung
 
 Der aktive `ChatScreen` wartet auf die geladene, explizite Zustimmung, bevor
