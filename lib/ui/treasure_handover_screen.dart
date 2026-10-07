@@ -1297,7 +1297,8 @@ class _TreasureHandoverScreenState
           .toList();
       _syncError = _listingService.lastSyncError;
       _selectedListing =
-          _listings.where((item) => item.id == result.id).firstOrNull ?? result;
+          _listings.where((item) => item.id == result.id).firstOrNull ??
+          (result.isAvailable ? result : null);
     });
   }
 

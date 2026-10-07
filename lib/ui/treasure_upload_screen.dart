@@ -392,7 +392,11 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                     SnackBar(
                       content: Text(
                         l10n.t(
-                          'treasureUploadSuccess',
+                          createdListing.isAvailable
+                              ? 'treasureUploadSuccess'
+                              : createdListing.status == 'archived'
+                                  ? 'treasure_created_archived'
+                                  : 'treasure_created_not_available',
                           fallback: 'Dein Schatz ist jetzt sichtbar.',
                         ),
                       ),
@@ -409,7 +413,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
               const SizedBox(height: 10),
               Text(l10n.t('treasure_photos_public_info')),
               if (_publishedLocalFailed)
-                Text(l10n.t('treasure_published_local_failed')),
+                Text(l10n.t(_publishedFailureKey)),
               if (_publishOutcomeUnknown)
                 Text(l10n.t('treasure_publish_uncertain')),
               OutlinedButton.icon(
@@ -1690,6 +1694,10 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
         messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).t(key))));
       }
 
+  String get _publishedFailureKey => _publishedListing?.isAvailable == true
+      ? 'treasure_published_local_failed'
+      : 'treasure_created_local_failed';
+
       Future<void> _runPublish(Future<void> Function() operation) async {
         if (_publishing || _publishOutcomeUnknown || _publishedListing != null) return;
         setState(() => _publishing = true);
@@ -1708,14 +1716,14 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
             _publishOutcomeUnknown = false;
             _publishedListing = error.listing;
             _publishedLocalFailed = true;
-            _showPersistenceMessage('treasure_published_local_failed');
+            _showPersistenceMessage(_publishedFailureKey);
           }
         } catch (error) {
           debugPrint('Treasure publish: $error');
           if (mounted) {
             _publishedLocalFailed = _publishedListing != null;
             _showPersistenceMessage(_publishedListing != null
-                ? 'treasure_published_local_failed' : 'treasure_publish_uncertain');
+                ? _publishedFailureKey : 'treasure_publish_uncertain');
           }
         } finally {
           if (mounted) setState(() => _publishing = false);

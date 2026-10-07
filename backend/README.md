@@ -467,8 +467,16 @@ Nutzereingaben bleiben beim Laden unveraendert. Bekannte interne Zeit-/Abholcode
 und der vom Server vorangestellte Uebergabemodus werden bei der Anzeige
 uebersetzt; angehaengter Freitext bleibt erhalten. Fehlende Anbieterangaben
 werden nicht als erfundene Farbe oder Groesse ergaenzt.
-Keine Deployment- oder Launchfreigabe: archivierte Create-Ergebnisse und
-wiederholte Reservierungen bleiben separate Auditpunkte.
+Ein Create mit HTTP 201 bestaetigt das Speichern, nicht automatisch die
+Verfuegbarkeit. `status: archived` bleibt bewusst die Moderationsentscheidung.
+Die App traegt diesen Status durch Modell/Cache und zeigt keine Sichtbarkeits-
+oder Verfuegbarkeitsbestaetigung; nur `available` gelangt in den verfuegbaren
+Feed oder die Uebergabeauswahl. Fehlender Serverstatus gilt als unbekannt,
+nicht als verfuegbar. Bei lokalen Nachfehlern bleiben bestaetigte Fotos erhalten.
+Alte Cacheeintraege ohne Status behalten ihren bisherigen available-Default;
+ein frueher verlorener Serverstatus wird nicht nachtraeglich erfunden.
+Keine Deployment- oder Launchfreigabe: wiederholte Reservierungen bleiben
+ein separater Auditpunkt.
 
 ### Verschenkmarkt: Kategorien und ungefaehre Reichweite
 
