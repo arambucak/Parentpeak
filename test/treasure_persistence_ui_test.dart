@@ -55,6 +55,7 @@ TreasureListing _listing() => TreasureListing(
 class _Backend extends TreasureBackendService {
   bool enabled = true;
   bool createConfirmed = true;
+  String createStatus = 'available';
   int creates = 0;
   int reservations = 0;
   int cancellations = 0;
@@ -73,7 +74,7 @@ class _Backend extends TreasureBackendService {
   }) async {
     creates++;
     createdListing = listing;
-    return createConfirmed ? listing : null;
+    return createConfirmed ? listing.copyWith(status: createStatus) : null;
   }
 
   @override
@@ -479,10 +480,37 @@ void main() {
     );
   }
 
+  testWidgets('archived create is saved but never announced as visible', (tester) async {
+    backend.createStatus = 'archived';
+    TreasureListing? result;
+    await mount(tester, Scaffold(body: Builder(builder: (context) => FilledButton(
+      onPressed: () async {
+        result = await Navigator.of(context).push<TreasureListing>(MaterialPageRoute(
+          builder: (_) => TreasureUploadScreen(
+            listingService: service, imagePicker: _Picker(), imageUploadService: uploader),
+        ));
+      },
+      child: const Text('Open upload'),
+    ))));
+    await tester.tap(find.text('Open upload'));
+    await settle(tester);
+    await tapKey(tester, 'treasureChooseFromLibrary');
+    await tapKey(tester, 'treasurePublishNow');
+    expect(result!.status, 'archived');
+    expect(backend.creates, 1);
+    expect(find.text(l10n.t('treasure_created_archived')), findsOneWidget);
+    expect(find.text(l10n.t('treasureUploadSuccess')), findsNothing);
+    final cached = await store.read(expectedScope: store.scope);
+    expect(cached[TreasureAccountStore.feedKey], isEmpty);
+    expect(removed, isEmpty);
+  });
+
+  for (final createStatus in ['available', 'archived']) {
   for (final failCache in [true, false]) {
     testWidgets(
-      'confirmed publish is not presented as failed when ${failCache ? 'cache' : 'draft clear'} fails',
+      '$createStatus create is honest when ${failCache ? 'cache' : 'draft clear'} fails',
       (tester) async {
+        backend.createStatus = createStatus;
         store = TreasureAccountStore(
           persist: (key, value) async {
             final root = jsonDecode(value) as Map<String, dynamic>;
@@ -508,7 +536,8 @@ void main() {
         await tapKey(tester, 'treasurePublishNow');
         expect(backend.creates, 1);
         expect(
-          find.text(l10n.t('treasure_published_local_failed')),
+          find.text(l10n.t(createStatus == 'available'
+              ? 'treasure_published_local_failed' : 'treasure_created_local_failed')),
           findsWidgets,
         );
         expect(find.text(l10n.t('treasure_publish_uncertain')), findsNothing);
@@ -523,6 +552,7 @@ void main() {
         );
       },
     );
+  }
   }
 
   testWidgets(

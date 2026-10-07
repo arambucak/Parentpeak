@@ -363,6 +363,7 @@ class TreasureBackendService {
 
     return TreasureListing(
       id: treasure['id']?.toString() ?? fallbackListing?.id ?? '',
+      status: treasure['status']?.toString() ?? 'unknown',
       title: treasure['title']?.toString() ?? fallbackListing?.title ?? '',
       category: TreasureCategory.normalize(categoryRaw),
       sizeAge: fallbackListing?.sizeAge ?? '',

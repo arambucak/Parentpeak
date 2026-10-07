@@ -4,6 +4,7 @@ import 'treasure_geometry.dart';
 class TreasureListing {
   const TreasureListing({
     required this.id,
+    this.status = 'available',
     required this.title,
     required this.category,
     required this.sizeAge,
@@ -25,6 +26,8 @@ class TreasureListing {
   });
 
   final String id;
+  final String status;
+  bool get isAvailable => status == 'available';
   final String title;
   final String category;
   final String sizeAge;
@@ -72,6 +75,7 @@ class TreasureListing {
 
   TreasureListing copyWith({
     String? id,
+    String? status,
     String? title,
     String? category,
     String? sizeAge,
@@ -93,6 +97,7 @@ class TreasureListing {
   }) {
     return TreasureListing(
       id: id ?? this.id,
+      status: status ?? this.status,
       title: title ?? this.title,
       category: category ?? this.category,
       sizeAge: sizeAge ?? this.sizeAge,
@@ -121,6 +126,7 @@ class TreasureListing {
         : <String>[];
     return TreasureListing(
       id: map['id']?.toString() ?? '',
+      status: map['status']?.toString() ?? 'available',
       title: map['title']?.toString() ?? '',
       category: TreasureCategory.normalize(map['category']?.toString() ?? ''),
       sizeAge: map['sizeAge']?.toString() ?? '',
@@ -149,6 +155,7 @@ class TreasureListing {
     final resolvedPaths = resolvedImagePaths;
     return {
       'id': id,
+      'status': status,
       'title': title,
       'category': TreasureCategory.normalize(category),
       'sizeAge': sizeAge,

@@ -12,7 +12,7 @@ const item = (id, latitude, shareRadiusKm = 25) => ({
   title: 'A book', status: 'available', createdAt: new Date(2026),
 });
 
-function app(rows = []) {
+function app(rows = [], severe = false) {
   const handlers = {};
   const calls = [];
   let created;
@@ -25,7 +25,7 @@ function app(rows = []) {
     resolveVerifiedUserId: () => 'owner',
     hasExplicitUserMismatch: () => false,
     isUserSuspended: async () => false,
-    isTreasureContentSevere: () => false,
+    isTreasureContentSevere: () => severe,
     console: { error: () => {} },
     prisma: { treasureItem: {
       findMany: async args => {
@@ -55,6 +55,17 @@ function app(rows = []) {
     },
   };
 }
+
+test('real create confirms archived save without claiming availability', async () => {
+  const fixture = app([], true);
+  const result = await fixture.request('post', {
+    title: 'An item', location: 'Test city', latitude: 50, longitude: 8,
+  });
+  assert.equal(result.status, 201);
+  assert.equal(result.body.treasure.status, 'archived');
+  assert.equal(result.body.moderation.autoArchivedOnCreate, true);
+  assert.equal(fixture.created.status, 'archived');
+});
 
 test('coarse geometry preserves public rounding and admits valid zero coordinates', () => {
   assert.deepEqual(treasureGeometry.position(-0.125, 0), { latitude: -0.12, longitude: 0 });

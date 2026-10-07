@@ -52,6 +52,32 @@ void main() {
     );
   });
 
+  for (final status in ['archived', 'reserved', 'unknown']) {
+    test('$status HTTP create retains outcome but excludes unavailable cache entries', () async {
+      final backend = TreasureBackendService(apiClient: BackendApiClient(
+        baseUrl: 'https://example.invalid',
+        authToken: 'test',
+        httpClient: MockClient((request) async => http.Response(jsonEncode({
+          'treasure': {
+            ...jsonDecode(request.body) as Map<String, dynamic>,
+            'id': 'created',
+            if (status != 'unknown') 'status': status,
+          },
+        }), 201)),
+      ));
+      final store = TreasureAccountStore(userIdProvider: () => 'owner');
+      final service = TreasureListingService(store: store, backend: backend);
+      final created = await service.createListing(listing('books'));
+      expect(created!.status, status);
+      expect(TreasureListing.fromMap(created.toMap()).status, status);
+      expect(created.copyWith(title: 'Edited').status, status);
+      expect(await service.loadListings(), isEmpty);
+      final cache = await store.read(expectedScope: store.scope);
+      expect(cache[TreasureAccountStore.feedKey], isEmpty);
+      service.dispose();
+    });
+  }
+
   test(
     'all selected categories survive real HTTP create, cache persist and reopen',
     () async {
@@ -68,6 +94,7 @@ void main() {
                   'treasure': {
                     ...sent!,
                     'id': id,
+                    'status': 'available',
                     'createdAt': DateTime(2026).toIso8601String(),
                   },
                 }),
