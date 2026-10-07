@@ -7,6 +7,9 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/logic/account_ai_consent.dart';
+import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/chat_ai_consent.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/ai_memory_service.dart';
@@ -16,8 +19,9 @@ import 'package:parentpeak/main.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? initialMessage;
+  final PedagogicalChatBackend? chatBackend;
 
-  const ChatScreen({super.key, this.initialMessage});
+  const ChatScreen({super.key, this.initialMessage, this.chatBackend});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -107,8 +111,13 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isStreaming = false;
   String? _initError;
   String _currentResponse = '';
-  bool _termsAccepted = true; // wird in initState geladen
+  bool _termsAccepted = false;
   bool _termsLoading = true;
+  bool _termsSaving = false;
+  bool _initialMessageHandled = false;
+  String? _termsErrorKey;
+  late final ChatAiConsent _consent;
+  late String _consentScope;
   // Land des Nutzers (aus Onboarding) für länderrichtige Notrufnummern im
   // Krisenfall. Default DE; wird in initState aus den Prefs geladen.
   String? _countryCode;
@@ -121,19 +130,59 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _consent = widget.chatBackend?.consent ?? ChatAiConsent.instance;
+    _consentScope = _consent.scope;
+    AuthService.instance.addListener(_onConsentScopeChanged);
     _loadTopicInsights();
     _checkTermsAcceptance();
     _loadCountryCode();
     _loadActiveChildProfile();
     _initializeGemini();
-    // Wenn mit initialMessage geöffnet, automatisch senden
-    if (widget.initialMessage != null &&
-        widget.initialMessage!.trim().isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_termsAccepted && _chatBackend != null) {
-          _handleInitialMessage(widget.initialMessage!);
-        }
-      });
+    _maybeSendInitialMessage();
+  }
+
+  void _onConsentScopeChanged() {
+    if (!mounted || _consent.scope == _consentScope) return;
+    setState(() {
+      _consentScope = _consent.scope;
+      _termsAccepted = false;
+      _termsLoading = true;
+      _termsErrorKey = null;
+      _initialMessageHandled = true;
+    });
+    _checkTermsAcceptance();
+  }
+
+  void _maybeSendInitialMessage() {
+    final initial = widget.initialMessage;
+    if (_initialMessageHandled || initial == null || initial.trim().isEmpty ||
+        _termsLoading || !_termsAccepted || _chatBackend == null) {
+      return;
+    }
+    _initialMessageHandled = true;
+    final scope = _consentScope;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_termsLoading && _termsAccepted &&
+          _consentScope == scope && _consent.scope == scope) {
+        _handleInitialMessage(initial);
+      }
+    });
+  }
+
+  Future<bool> _canSendWithConsent() async {
+    if (!mounted || _termsLoading || !_termsAccepted) return false;
+    try {
+      await _consent.require(_consentScope);
+      return mounted;
+    } catch (error) {
+      debugPrint('Chat consent verification failed: $error');
+      if (mounted) {
+        setState(() {
+          _termsAccepted = false;
+          _termsErrorKey = 'chat_consent_load_failed';
+        });
+      }
+      return false;
     }
   }
 
@@ -171,21 +220,46 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _checkTermsAcceptance() async {
-    final prefs = await SharedPreferences.getInstance();
-    final accepted = prefs.getBool('chat.terms_accepted') ?? false;
-    if (mounted) {
+    final scope = _consentScope;
+    try {
+      final accepted = await _consent.hasConsent();
+      if (!mounted || scope != _consentScope || scope != _consent.scope) return;
       setState(() {
         _termsAccepted = accepted;
         _termsLoading = false;
+        _termsErrorKey = null;
+      });
+      _maybeSendInitialMessage();
+    } catch (error) {
+      debugPrint('Chat consent load failed: $error');
+      if (!mounted || scope != _consentScope) return;
+      setState(() {
+        _termsAccepted = false;
+        _termsLoading = false;
+        _termsErrorKey = 'chat_consent_load_failed';
       });
     }
   }
 
   Future<void> _acceptTerms() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('chat.terms_accepted', true);
-    if (mounted) {
+    if (_termsSaving) return;
+    final scope = _consentScope;
+    setState(() {
+      _termsSaving = true;
+      _termsErrorKey = null;
+    });
+    try {
+      await _consent.grant(scope);
+      if (!mounted || scope != _consentScope || scope != _consent.scope) return;
       setState(() => _termsAccepted = true);
+      _maybeSendInitialMessage();
+    } catch (error) {
+      debugPrint('Chat consent save failed: $error');
+      if (mounted && scope == _consentScope) {
+        setState(() => _termsErrorKey = 'chat_consent_save_failed');
+      }
+    } finally {
+      if (mounted) setState(() => _termsSaving = false);
     }
   }
 
@@ -237,8 +311,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _initializeGemini() {
     try {
-      _geminiService = GeminiAIService();
-      _chatBackend = PedagogicalChatBackend(geminiService: _geminiService);
+      if (widget.chatBackend != null) {
+        _chatBackend = widget.chatBackend;
+      } else {
+        _geminiService = GeminiAIService();
+        _chatBackend = PedagogicalChatBackend(
+          geminiService: _geminiService, consent: _consent,
+        );
+      }
       setState(() {
         _initError = null;
       });
@@ -254,6 +334,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    AuthService.instance.removeListener(_onConsentScopeChanged);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -264,6 +345,8 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Kontext-Nachricht ersetzt und der KI ein spezieller Prompt gesendet.
   Future<void> _handleInitialMessage(String raw) async {
     if (_isStreaming || _chatBackend == null) return;
+    if (!await _canSendWithConsent()) return;
+    final scope = _consentScope;
 
     const tipPrefix = '___TIP_EXPAND___';
     if (raw.startsWith(tipPrefix)) {
@@ -309,6 +392,7 @@ class _ChatScreenState extends State<ChatScreen> {
           languageCode: languageService.currentLanguage,
           countryCode: _countryCode,
           childProfileId: _activeChildProfileId,
+          expectedScope: scope,
         );
 
         await for (final chunk in stream) {
@@ -335,7 +419,13 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       } catch (e) {
         if (mounted) {
-          setState(() => _isStreaming = false);
+          setState(() {
+            _isStreaming = false;
+            if (e is AccountAiConsentRequiredException) {
+              _termsAccepted = false;
+              _termsErrorKey = 'chat_consent_load_failed';
+            }
+          });
         }
       }
       _scrollToBottom();
@@ -350,9 +440,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.trim().isEmpty || _isStreaming || _chatBackend == null) {
       return;
     }
+    if (!await _canSendWithConsent()) return;
+    final scope = _consentScope;
 
     // Rate limit check
     await AIRateLimiter.initialize();
+    if (!mounted || scope != _consent.scope) return;
     if (!AIRateLimiter.canMakeRequest()) {
       setState(() {
         _messages.add({
@@ -366,6 +459,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     await _trackTopic(text);
+    if (!mounted || scope != _consent.scope) return;
 
     setState(() {
       _messages.add({
@@ -387,6 +481,7 @@ class _ChatScreenState extends State<ChatScreen> {
         languageCode: languageService.currentLanguage,
         countryCode: _countryCode,
         childProfileId: _activeChildProfileId,
+        expectedScope: scope,
       );
 
       await for (final chunk in stream) {
@@ -415,7 +510,13 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isStreaming = false);
+        setState(() {
+          _isStreaming = false;
+          if (e is AccountAiConsentRequiredException) {
+            _termsAccepted = false;
+            _termsErrorKey = 'chat_consent_load_failed';
+          }
+        });
       }
       debugPrint('Error calling Gemini: $e');
     }
@@ -1021,11 +1122,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              if (_termsErrorKey != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    context.tr(_termsErrorKey!),
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                ),
               // Akzeptieren Button
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _acceptTerms,
+                  onPressed: _termsSaving ? null : _acceptTerms,
                   style: FilledButton.styleFrom(
                     backgroundColor: _kBrand,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1089,6 +1198,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_termsLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     // Nutzungsbedingungen beim ersten Mal zeigen
     if (!_termsLoading && !_termsAccepted) {
       return _buildTermsScreen(context);

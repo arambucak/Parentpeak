@@ -2577,16 +2577,20 @@ class AppStringsManager {
       'chat_terms_no_diagnosis_title': 'Keine Diagnosen',
       'chat_terms_no_diagnosis_text':
           'Die KI stellt keine medizinischen oder psychologischen Diagnosen. Bei ernsthaften Sorgen wende dich an Fachpersonal.',
-      'chat_terms_privacy_title': 'Deine Daten bleiben privat',
+      'chat_terms_privacy_title': 'Verarbeitung durch Google Gemini',
       'chat_terms_privacy_text':
-          'Gespräche werden lokal auf deinem Gerät gespeichert. Wir teilen keine Inhalte mit Dritten.',
+          'Deine Nachricht und der bisherige Chatverlauf werden über das ParentPeak-Backend an Google Gemini zur Antworterstellung gesendet. Freitext kann Namen und Gesundheitsangaben enthalten; die automatische Anonymisierung ist nicht vollständig. Wenn das optionale KI-Gedächtnis aktiviert ist, ergänzt das Backend gespeicherte Kinderprofile (einschließlich Name und Geburtsdatum) und bestätigte Familieninformationen, auch Gesundheitsangaben. Sende nur Daten, deren Verarbeitung du zustimmst. Der Chat liegt vorübergehend im Arbeitsspeicher, nicht als dauerhaft gespeicherter Gesprächsverlauf. Themenhäufigkeiten und deine Zustimmung werden lokal gespeichert. Diese Zustimmung gilt für dieses Konto auf diesem Gerät; sie veröffentlicht keine Daten.',
       'chat_terms_respect_title': 'Respektvoll & wertschätzend',
       'chat_terms_respect_text':
           'Die KI urteilt nie über dich oder dein Kind. Sie begleitet ohne Schuldzuweisung und ohne Druck.',
-      'chat_terms_accept': 'Verstanden, los geht’s',
+      'chat_terms_accept': 'Der KI-Verarbeitung zustimmen',
+      'chat_consent_load_failed':
+          'Die KI-Zustimmung konnte nicht geprüft werden. Ohne bestätigte Zustimmung wird nichts an die KI gesendet.',
+      'chat_consent_save_failed':
+          'Die Zustimmung konnte nicht gespeichert werden. Es wurde keine KI-Anfrage gestartet. Bitte versuche es erneut.',
       'chat_retry_later': 'Du kannst es später erneut versuchen.',
       'chat_always_here': 'Immer für dich da',
-      'chat_privacy_footer': 'Keine Diagnosen · Deine Fragen bleiben privat',
+      'chat_privacy_footer': 'Keine Diagnosen · Verarbeitung durch Google Gemini',
       'chat_init_error': 'Fehler: {error}',
       'chat_tip_message': '💡 Tipp: „{tip}“',
       'chat_insight_autonomy': 'Autonomiephase',
@@ -4947,16 +4951,20 @@ class AppStringsManager {
       'chat_terms_no_diagnosis_title': 'No diagnoses',
       'chat_terms_no_diagnosis_text':
           'The AI does not provide medical or psychological diagnoses. Contact a professional if you have serious concerns.',
-      'chat_terms_privacy_title': 'Your data stays private',
+      'chat_terms_privacy_title': 'Processing by Google Gemini',
       'chat_terms_privacy_text':
-          'Conversations are stored locally on your device. We do not share content with third parties.',
+          'Your message and the preceding chat history are sent through the ParentPeak backend to Google Gemini to generate a reply. Free text may contain names and health details; automatic anonymization is incomplete. If optional AI memory is enabled, the backend adds stored child profiles (including names and birth dates) and confirmed family information, including health details. Only send data whose processing you agree to. The chat is temporarily held in memory, not stored as a permanent conversation history. Topic counts and your consent are stored locally. This consent applies to this account on this device; it does not publish data.',
       'chat_terms_respect_title': 'Respectful and supportive',
       'chat_terms_respect_text':
           'The AI never judges you or your child. It supports you without blame or pressure.',
-      'chat_terms_accept': 'Understood, let’s start',
+      'chat_terms_accept': 'Agree to AI processing',
+      'chat_consent_load_failed':
+          'AI consent could not be verified. Nothing is sent to the AI without confirmed consent.',
+      'chat_consent_save_failed':
+          'Consent could not be saved. No AI request was started. Please try again.',
       'chat_retry_later': 'You can try again later.',
       'chat_always_here': 'Always here for you',
-      'chat_privacy_footer': 'No diagnoses · Your questions stay private',
+      'chat_privacy_footer': 'No diagnoses · Processing by Google Gemini',
       'chat_init_error': 'Error: {error}',
       'chat_tip_message': '💡 Tip: “{tip}”',
       'chat_insight_autonomy': 'Independence phase',
@@ -14050,16 +14058,20 @@ class AppStringsManager {
       'chat_terms_no_diagnosis_title': 'Teşxîs tune ye',
       'chat_terms_no_diagnosis_text':
           'AI teşxîsa bijîşkî an derûnî nade. Heke fikarên te girîng in, bi pispor re têkilî bike.',
-      'chat_terms_privacy_title': 'Daneyên te taybet dimînin',
+      'chat_terms_privacy_title': 'Pêvajokirin ji aliyê Google Gemini ve',
       'chat_terms_privacy_text':
-          'Sohbet li ser amûra te tên tomarkirin. Em naverokê bi kesên din re parve nakin.',
+          'Peyama te û dîroka sohbetê bi backendê ParentPeak re ji bo amadekirina bersivê ji Google Gemini re tên şandin. Nivîsa azad dikare nav û agahiyên tenduristiyê dihewîne; anonîmkirina otomatîk ne temam e. Heke bîra AI ya bijartî çalak be, backend profîlên zarokan ên tomarkirî (nav û roja jidayikbûnê jî) û agahiyên malbatê yên pejirandî, agahiyên tenduristiyê jî, lê zêde dike. Tenê daneyên ku tu bi pêvajokirina wan razî yî bişîne. Sohbet demkî di bîra amûrê de ye, ne wek dîroka sohbetê ya mayînde. Hejmara mijaran û razîbûna te li ser amûrê tên tomarkirin. Ev razîbûn ji bo vî hesabî li ser vê amûrê ye; daneyan weşan nake.',
       'chat_terms_respect_title': 'Bi rêz û piştgirî',
       'chat_terms_respect_text':
           'AI te an zaroka te daraz nake. Bê sûcdarkirin û zextê piştgiriyê dide.',
-      'chat_terms_accept': 'Min fam kir, dest pê bikin',
+      'chat_terms_accept': 'Bi pêvajokirina AI razî bibim',
+      'chat_consent_load_failed':
+          'Razîbûna AI nehat kontrolkirin. Bê razîbûna pejirandî tiştek ji AI re nayê şandin.',
+      'chat_consent_save_failed':
+          'Razîbûn nehat tomarkirin. Daxwazeke AI nehat destpêkirin. Ji kerema xwe dîsa biceribîne.',
       'chat_retry_later': 'Tu dikarî paşê dîsa biceribînî.',
       'chat_always_here': 'Her dem ji bo te li vir e',
-      'chat_privacy_footer': 'Teşxîs tune · Pirsên te taybet dimînin',
+      'chat_privacy_footer': 'Teşxîs tune · Pêvajokirin bi Google Gemini',
       'chat_init_error': 'Çewtî: {error}',
       'chat_tip_message': '💡 Şîret: “{tip}”',
       'chat_insight_autonomy': 'Dema serxwebûnê',
@@ -20122,16 +20134,20 @@ class AppStringsManager {
       'chat_terms_no_diagnosis_title': 'Tanı koymaz',
       'chat_terms_no_diagnosis_text':
           'Yapay zeka tıbbi veya psikolojik tanı koymaz. Ciddi endişelerinde bir uzmana başvur.',
-      'chat_terms_privacy_title': 'Verilerin gizli kalır',
+      'chat_terms_privacy_title': 'Google Gemini tarafından işleme',
       'chat_terms_privacy_text':
-          'Sohbetler cihazında yerel olarak saklanır. İçerikleri üçüncü taraflarla paylaşmayız.',
+          'Mesajın ve önceki sohbet geçmişin yanıt oluşturmak için ParentPeak arka ucu üzerinden Google Gemini’ye gönderilir. Serbest metin isim ve sağlık bilgileri içerebilir; otomatik anonimleştirme eksiksiz değildir. İsteğe bağlı yapay zeka belleği etkinse arka uç kayıtlı çocuk profillerini (isim ve doğum tarihi dahil) ve onaylanmış aile bilgilerini, sağlık bilgileri dahil, ekler. Yalnızca işlenmesine onay verdiğin verileri gönder. Sohbet geçici olarak bellekte tutulur, kalıcı sohbet geçmişi olarak saklanmaz. Konu sayıları ve onayın cihazda saklanır. Bu onay bu cihazdaki bu hesap için geçerlidir; verileri yayımlamaz.',
       'chat_terms_respect_title': 'Saygılı ve destekleyici',
       'chat_terms_respect_text':
           'Yapay zeka seni veya çocuğunu yargılamaz. Suçlamadan ve baskı kurmadan yanında olur.',
-      'chat_terms_accept': 'Anladım, başlayalım',
+      'chat_terms_accept': 'Yapay zeka işlemesini onayla',
+      'chat_consent_load_failed':
+          'Yapay zeka onayı doğrulanamadı. Onay doğrulanmadan yapay zekaya hiçbir şey gönderilmez.',
+      'chat_consent_save_failed':
+          'Onay kaydedilemedi. Yapay zeka isteği başlatılmadı. Lütfen yeniden dene.',
       'chat_retry_later': 'Daha sonra tekrar deneyebilirsin.',
       'chat_always_here': 'Her zaman yanında',
-      'chat_privacy_footer': 'Tanı koymaz · Soruların gizli kalır',
+      'chat_privacy_footer': 'Tanı koymaz · Google Gemini tarafından işleme',
       'chat_init_error': 'Hata: {error}',
       'chat_tip_message': '💡 İpucu: “{tip}”',
       'chat_insight_autonomy': 'Özerklik dönemi',

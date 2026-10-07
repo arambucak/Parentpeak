@@ -1,5 +1,30 @@
 # Parentpeak Marktplatz Backend
 
+## Einwilligung fuer KI-Elternberatung
+
+Der aktive `ChatScreen` wartet auf die geladene, explizite Zustimmung, bevor
+Nachrichten oder Tages-Tipp-Erweiterungen starten. `ChatAiConsent` speichert
+sie in `chat.ai_consent.v1.<Kontobereich>` (Gast separat); der alte globale
+`chat.terms_accepted` bleibt erhalten, autorisiert aber keine KI-Verarbeitung.
+Nur bestaetigte Schreib-Acks aktivieren den Chat. Fehler bleiben sichtbar.
+`PedagogicalChatBackend` prueft Zustimmung und Ursprungskonto vor und nach
+jedem Gemini-Aufruf, einschliesslich Qualitaets-/Kontext-/Reparaturversuchen.
+Lokale Krisenhilfe kann ohne externen Aufruf weiter funktionieren.
+
+Die Informationen in de/en/tr/ku benennen Google Gemini, den ueber das Backend
+gesendeten Verlauf und die Grenzen der automatischen Anonymisierung.
+Gespraeche liegen derzeit nur im RAM; Themenhaeufigkeiten werden lokal
+gespeichert. Aktiviertes optionales KI-Gedaechtnis ergaenzt derzeit serverseitig
+echte Kinderprofile und bestaetigte Familieninformationen; dies wird
+ausdruecklich offengelegt. Datenminimierung und gesonderter Memory-Consent
+sowie vollstaendige Chat-RAM-/Themen-Kontotrennung folgen separat.
+Dieser Consent-PR ist keine vollstaendige Datenschutz-/Launchfreigabe und
+keine serverseitige Einwilligungspruefung fuer beliebige direkte Proxyaufrufe.
+
+```bash
+flutter test --no-pub test/chat_ai_consent_test.dart test/pedagogical_chat_backend_test.dart test/pedagogical_prompt_breadth_test.dart test/privacy_sanitizer_test.dart test/localization_audit_verification_test.dart
+```
+
 ## Einwilligung fuer KI-Familienrezepte
 
 Die Familien-Kueche fragt vor der ersten KI-Rezepterstellung transparent nach
