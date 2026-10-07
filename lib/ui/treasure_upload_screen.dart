@@ -10,25 +10,50 @@ import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
+import 'package:parentpeak/ui/widgets/treasure_account_boundary.dart';
+import 'package:parentpeak/ui/widgets/treasure_legacy_card.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
 
-class TreasureUploadScreen extends StatefulWidget {
+class TreasureUploadScreen extends StatelessWidget {
   const TreasureUploadScreen({
     super.key,
     this.photoAnalysisService,
     this.imagePicker,
+    this.listingService,
   });
 
   final TreasurePhotoAnalysisService? photoAnalysisService;
   final ImagePicker? imagePicker;
+  final TreasureListingService? listingService;
 
   @override
-  State<TreasureUploadScreen> createState() => _TreasureUploadScreenState();
+  Widget build(BuildContext context) {
+    final service = listingService ?? TreasureListingService.instance;
+    return TreasureAccountBoundary(
+      store: service.store,
+      builder: (_) => _ScopedTreasureUploadScreen(
+        imagePicker: imagePicker, photoAnalysisService: photoAnalysisService,
+        listingService: service,
+      ),
+    );
+  }
 }
 
-class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
+class _ScopedTreasureUploadScreen extends StatefulWidget {
+  const _ScopedTreasureUploadScreen({
+    this.imagePicker, this.photoAnalysisService, required this.listingService,
+  });
+  final ImagePicker? imagePicker;
+  final TreasurePhotoAnalysisService? photoAnalysisService;
+  final TreasureListingService listingService;
+
+  @override
+  State<_ScopedTreasureUploadScreen> createState() => _TreasureUploadScreenState();
+}
+
+class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   static const String _defaultCategoryKey = 'vehicles';
   static const double _defaultDistanceMeters = 120;
   static const int _defaultConditionIndex = 1;
@@ -49,6 +74,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   late final TreasurePhotoAnalysisService _photoAnalysis =
       widget.photoAnalysisService ?? TreasurePhotoAnalysisService();
   int _analysisRequest = 0;
+  late final TreasureListingService _listingService =
+      widget.listingService.forScope(widget.listingService.store.scope);
   final TextEditingController _titleController = TextEditingController(
     text: _defaultTitle,
   );
@@ -73,6 +100,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
 
   @override
   void dispose() {
+    _listingService.dispose();
     AuthService.instance.removeListener(_onAnalysisAccountChanged);
     _analysisRequest++;
     _draftDebounce?.cancel();
@@ -80,6 +108,11 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
     _colorController.removeListener(_onDraftChanged);
     _noteController.removeListener(_onDraftChanged);
     _sizeAgeController.removeListener(_onDraftChanged);
+    _selectedImages = const [];
+    _titleController.clear();
+    _colorController.clear();
+    _noteController.clear();
+    _sizeAgeController.clear();
     _titleController.dispose();
     _colorController.dispose();
     _noteController.dispose();
@@ -176,6 +209,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
             ),
             children: [
               _buildCameraStage(l10n),
+              TreasureLegacyCard(store: _listingService.store, onClaimed: _restoreDraft),
               if (_selectedImages.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 _buildSelectedPhotosStrip(l10n),
@@ -205,7 +239,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onPressed: () async {
+                onPressed: () => _attempt(() async {
+                  final owner = _listingService.scope;
                   final messenger = ScaffoldMessenger.of(context);
                   final navigator = Navigator.of(context);
                   if (!hasSelectedImages) {
@@ -227,6 +262,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                   final loc = LocationService.instance;
                   if (!loc.hasLocation) {
                     final located = await loc.requestGPSLocation();
+                    if (!mounted) return;
+                    _listingService.store.requireScope(owner);
                     if (!located || !loc.hasLocation) {
                       messenger.hideCurrentSnackBar();
                       messenger.showSnackBar(
@@ -238,6 +275,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                   // Bilder JETZT hochladen (XFiles sind hier frisch/gültig)
                   final uploadedUrls = await ImageUploadService.instance
                       .uploadImages(_selectedImages);
+                  if (!mounted) return;
+                  _listingService.store.requireScope(owner);
                   if (uploadedUrls.isEmpty) {
                     messenger.hideCurrentSnackBar();
                     messenger.showSnackBar(
@@ -292,11 +331,11 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     imagePaths: uploadedUrls,
                     createdAt: DateTime.now(),
                   );
-                  final createdListing = await TreasureListingService.instance
+                  final createdListing = await _attempt(() => _listingService
                       .createListing(
                         listing,
-                        userId: AuthService.instance.currentUser?.uid,
-                      );
+                        userId: _listingService.store.userId,
+                      ));
                   if (createdListing == null) {
                     if (!mounted) return;
                     messenger.hideCurrentSnackBar();
@@ -315,7 +354,11 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     return;
                   }
                   _draftDebounce?.cancel();
-                  await TreasureListingService.instance.clearDraft();
+                  final cleared = await _attempt(() async {
+                    await _listingService.clearDraft();
+                    return true;
+                  });
+                  if (cleared != true) return;
                   if (!mounted) return;
                   messenger.hideCurrentSnackBar();
                   messenger.showSnackBar(
@@ -330,7 +373,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
                     ),
                   );
                   navigator.pop(createdListing);
-                },
+                }),
                 icon: const Icon(Icons.auto_awesome_rounded),
                 label: Text(
                   l10n.t('treasurePublishNow', fallback: 'Jetzt teilen'),
@@ -1344,7 +1387,7 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   }
 
   Future<void> _restoreDraft() async {
-    final draft = await TreasureListingService.instance.loadDraft();
+    final draft = await _attempt(_listingService.loadDraft);
     if (!mounted) {
       return;
     }
@@ -1411,11 +1454,15 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
   }
 
   Future<void> _persistDraft({bool showFeedback = false}) async {
-    if (_hasMeaningfulDraft()) {
-      await TreasureListingService.instance.saveDraft(_buildDraftPayload());
-    } else {
-      await TreasureListingService.instance.clearDraft();
-    }
+    final saved = await _attempt(() async {
+      if (_hasMeaningfulDraft()) {
+        await _listingService.saveDraft(_buildDraftPayload());
+      } else {
+        await _listingService.clearDraft();
+      }
+      return true;
+    });
+    if (saved != true) return;
     if (!mounted || !showFeedback) {
       return;
     }
@@ -1472,9 +1519,12 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
 
   Future<void> _confirmDiscardDraft() async {
     final l10n = AppLocalizations.of(context);
+    final scope = _listingService.scope;
     final shouldDiscard = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
+      builder: (dialogContext) => TreasureAccountModal(
+        store: _listingService.store, scope: scope,
+        builder: (dialogContext) {
         return AlertDialog(
           title: Text(
             l10n.t('treasureDiscardDraftTitle', fallback: 'Entwurf verwerfen?'),
@@ -1497,7 +1547,8 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
             ),
           ],
         );
-      },
+        },
+      ),
     );
     if (shouldDiscard != true || !mounted) {
       return;
@@ -1507,6 +1558,11 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
 
   Future<void> _discardDraft() async {
     _draftDebounce?.cancel();
+    final cleared = await _attempt(() async {
+      await _listingService.clearDraft();
+      return true;
+    });
+    if (!mounted || cleared != true) return;
     _invalidateAnalysis();
     _runWithoutDraftAutosave(() {
       setState(() {
@@ -1521,7 +1577,6 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
         _selectedImages = const [];
       });
     });
-    await TreasureListingService.instance.clearDraft();
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
@@ -1534,6 +1589,21 @@ class _TreasureUploadScreenState extends State<TreasureUploadScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<T?> _attempt<T>(Future<T> Function() operation) async {
+    if (!mounted) return null;
+    try {
+      return await operation();
+    } catch (error) {
+      debugPrint('Treasure upload storage: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).t('treasure_storage_failed'))),
+        );
+      }
+      return null;
+    }
   }
 
   Widget _buildPreviewCard(

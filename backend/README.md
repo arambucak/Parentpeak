@@ -390,9 +390,48 @@ Service prueft auch den aktuellen Request nach dem Lesen und der Antwort.
 Bereits abgesandte HTTP-Anfragen werden damit **nicht rueckgaengig gemacht**;
 ihre Ergebnisse werden nicht in einen neuen Kontext uebernommen.
 
-Consent veroeffentlicht weder Foto noch Anzeige. Firebase-Fotoveroeffentlichung,
-Kontomigration der vorhandenen Entwuerfe/Reservierungen und deren Persistenz
-bleiben separate Audit-Fixes, keine Gesamtfreigabe durch diesen Consent.
+Consent veroeffentlicht weder Foto noch Anzeige. Firebase-Fotoveroeffentlichung
+und weitere Persistenzfragen bleiben separate Audit-Fixes, keine
+Gesamtfreigabe durch diesen Consent.
+
+### Verschenkmarkt: lokale Kontotrennung und Altbestands-Claim
+
+`TreasureAccountStore` speichert Entwurf, Reservierungs-, Blockierungs- und
+Meldemarkierungen sowie den Discoverycache im separaten Envelope
+`treasure.accounts.v1`, unter `account.<encoded-user-id>` beziehungsweise
+`guest`. Das ist lokale Kontotrennung, keine Verschluesselung oder
+geraeteuebergreifende Synchronisation. Zentralen-/Finanz-Owner und
+Foto-KI-Einwilligungen werden weder wiederverwendet noch importiert.
+
+Die bisherigen globalen Originalkeys bleiben unveraendert erhalten:
+`treasure_upload_draft.v1`, `treasure_reserved_ids.v1`,
+`treasure_blocked_listing_ids.v1`, `treasure_reported_listing_ids.v1`.
+Ohne ausdrueckliche Eigentumsbestaetigung in einem angemeldeten Konto
+werden sie nicht gelesen oder automatisch zugeordnet. Der eigene
+`legacyOwner` wird mit dem Import atomisch gespeichert, nur nach positivem
+Speicher-Ack. Vorhandene Kontoentwuerfe haben Vorrang, auch ein bewusst
+verworfener Entwurf; Sicherheits-/Reservierungsmarkierungen werden
+dedupliziert zusammengefuehrt. Ein Claim veroeffentlicht nichts.
+Der globale `treasure_listings.v1`-Discoverycache ist kein Eigentumsbeleg
+und wird nicht importiert; auch sein Original bleibt erhalten.
+
+Upload- und Handover-Screen werden bei Kontowechsel neu aufgebaut:
+Controller, ausgewaehlte Fotos, Auswahl und accountgebundene Caches werden
+verworfen. Operationen behalten ihren Ursprungsscope, pruefen ihn nach
+asynchronen Antworten und schreiben niemals in den neuen Kontokontext.
+Dialogs/Sheets blenden Daten und Aktionen des vorherigen Kontos aus und
+schliessen ihre eigene Route beim Kontowechsel.
+Ein bereits gesendeter Backendaufruf oder Foto-Upload wird damit nicht
+rueckgaengig gemacht. Fehler beim Laden, Claim oder Schreiben werden
+sichtbar gemeldet; keine Speicherbestaetigung bei fehlendem Ack.
+
+Betroffene Leser/Schreiber: `TreasureListingService` (Entwurf, Feedcache,
+Reservierungen), `TreasureUploadScreen` (Restore, Autosave, Verwerfen,
+Publish-Clear), `TreasureHandoverScreen` (Reservierungen, Sicherheitsflags,
+Mine-/Uebergabeansichten). Andere direkte Leser der Originalkeys gibt es
+im aktuellen Fluttercode nicht. Weitere Upload-Teilfehler, dauerhafte
+Web-Draftbilder und serverseitige Reservierungs-/Storno-Semantik bleiben
+separate Auditpunkte.
 
 ### Verschenkmarkt: oeffentliche Detailprojektion
 
