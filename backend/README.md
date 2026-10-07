@@ -179,8 +179,23 @@ Tipp-Prompts; de/en/tr/ku-Anweisungen statt deutschem festem Prompt.
 flutter test --no-pub test/chat_context_policy_test.dart test/chat_account_ui_test.dart
 ```
 
-Weitere Chat-Auditbefunde (
-Fallback-/Memory-UI-i18n und Send-Web-Tap) bleiben separate Arbeiten;
+### Chat-Providerfehler
+
+Der aktive Chat verwendet typisierte Fehler statt als Antwort getarnter
+Fehlerstrings. HTTP-Status (nicht Ziffern im Beratungstext), Timeout und
+Client-Netzwerkfehler entscheiden ueber de/en/tr/ku-Ausfallhinweise.
+Leere/nicht-stringfoermige Antworttexte und ungueltige JSON-Antworten
+werden nicht als persoenliche Antwort angezeigt. Auch ein ausgefallener
+Repairrequest ergibt einen ehrlichen Ausfallhinweis statt Erfolg mit einem
+unvollstaendigen Fragment. Keine rohen Server-/Debugtexte im Nutzerfallback.
+Consent-, Memory- und Kontowechselfehler bleiben separate Grenzen.
+
+```bash
+flutter test --no-pub test/chat_provider_fallback_test.dart
+```
+
+Weitere Chat-Auditbefunde (restliche Prompt-/Qualitaets-/Memory-UI-i18n,
+Beratungsgrenzen/Rueckfrageregeln und Send-Web-Tap) bleiben separate Arbeiten;
 keine pauschale Launch-, Produktions- oder Datenschutzfreigabe.
 
 ## Einwilligung fuer KI-Familienrezepte
