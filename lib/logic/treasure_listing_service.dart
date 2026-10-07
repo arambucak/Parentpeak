@@ -19,6 +19,13 @@ class TreasureDiscoveryResult {
   });
 }
 
+class TreasureRemoteCommitException implements Exception {
+  const TreasureRemoteCommitException({required this.action, required this.cause, this.listing});
+  final String action;
+  final Object cause;
+  final TreasureListing? listing;
+}
+
 class TreasureListingService {
   TreasureListingService({
     TreasureAccountStore? store,
@@ -167,7 +174,13 @@ class TreasureListingService {
         return null;
       }
       _cache = [created, ...?_cache?.where((item) => item.id != created.id)];
-      await _persist(owner);
+      try {
+        await _persist(owner);
+      } on TreasureAccountChanged {
+        rethrow;
+      } catch (error) {
+        throw TreasureRemoteCommitException(action: 'create', cause: error, listing: created);
+      }
       lastSyncError = null;
       return created;
     });
@@ -185,6 +198,10 @@ class TreasureListingService {
       lastSyncError = 'Bitte melde dich an, um ein Angebot zu reservieren.';
       return false;
     }
+    if (!_backendService.isEnabled) {
+      lastSyncError = 'treasure_reservation_offline';
+      return false;
+    }
     if (_backendService.isEnabled) {
       final ok = await _backendService.reserveTreasure(
         treasureId: listingId, requesterUserId: uid,
@@ -194,11 +211,17 @@ class TreasureListingService {
       lastSyncError = ok ? null : _backendService.lastSyncError;
       if (!ok) return false;
     }
-    await store.update((data) {
-      data[TreasureAccountStore.reservedKey] = {
-        ...?data[TreasureAccountStore.reservedKey] as List?, listingId,
-      }.toList();
-    }, expectedScope: owner);
+    try {
+      await store.update((data) {
+        data[TreasureAccountStore.reservedKey] = {
+          ...?data[TreasureAccountStore.reservedKey] as List?, listingId,
+        }.toList();
+      }, expectedScope: owner);
+    } on TreasureAccountChanged {
+      rethrow;
+    } catch (error) {
+      throw TreasureRemoteCommitException(action: 'reserve', cause: error);
+    }
     return true;
   });
 
@@ -244,6 +267,19 @@ class TreasureListingService {
     final ok = await _backendService.cancelReservation(treasureId: listingId, requesterUserId: uid);
     guard();
     lastSyncError = ok ? null : _backendService.lastSyncError;
+    if (ok) {
+      try {
+        await store.update((data) {
+          final ids = Set<String>.from(data[TreasureAccountStore.reservedKey] as List? ?? []);
+          ids.remove(listingId);
+          data[TreasureAccountStore.reservedKey] = ids.toList();
+        }, expectedScope: owner);
+      } on TreasureAccountChanged {
+        rethrow;
+      } catch (error) {
+        throw TreasureRemoteCommitException(action: 'cancel', cause: error);
+      }
+    }
     return ok;
   });
 

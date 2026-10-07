@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/treasure_photo_analysis_service.dart';
+import 'package:parentpeak/logic/treasure_draft_images.dart';
 import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/services/location_service.dart';
@@ -22,11 +23,15 @@ class TreasureUploadScreen extends StatelessWidget {
     this.photoAnalysisService,
     this.imagePicker,
     this.listingService,
+    this.imageUploadService,
+    this.draftImages = const TreasureDraftImages(),
   });
 
   final TreasurePhotoAnalysisService? photoAnalysisService;
   final ImagePicker? imagePicker;
   final TreasureListingService? listingService;
+  final ImageUploadService? imageUploadService;
+  final TreasureDraftImages draftImages;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +41,7 @@ class TreasureUploadScreen extends StatelessWidget {
       builder: (_) => _ScopedTreasureUploadScreen(
         imagePicker: imagePicker, photoAnalysisService: photoAnalysisService,
         listingService: service,
+        imageUploadService: imageUploadService, draftImages: draftImages,
       ),
     );
   }
@@ -44,10 +50,13 @@ class TreasureUploadScreen extends StatelessWidget {
 class _ScopedTreasureUploadScreen extends StatefulWidget {
   const _ScopedTreasureUploadScreen({
     this.imagePicker, this.photoAnalysisService, required this.listingService,
+    this.imageUploadService, required this.draftImages,
   });
   final ImagePicker? imagePicker;
   final TreasurePhotoAnalysisService? photoAnalysisService;
   final TreasureListingService listingService;
+  final ImageUploadService? imageUploadService;
+  final TreasureDraftImages draftImages;
 
   @override
   State<_ScopedTreasureUploadScreen> createState() => _TreasureUploadScreenState();
@@ -69,6 +78,11 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   String _selectedCategoryKey = _defaultCategoryKey;
   double _distanceMeters = _defaultDistanceMeters;
   bool _draftHydrated = false;
+  bool _publishing = false;
+  bool _publishOutcomeUnknown = false;
+  TreasureListing? _publishedListing;
+  bool _publishedLocalFailed = false;
+  int _draftRevision = 0;
   Timer? _draftDebounce;
   late final ImagePicker _imagePicker = widget.imagePicker ?? ImagePicker();
   late final TreasurePhotoAnalysisService _photoAnalysis =
@@ -239,10 +253,14 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onPressed: () => _attempt(() async {
+                onPressed: _publishing || _publishOutcomeUnknown || _publishedListing != null ? null : () => _runPublish(() async {
                   final owner = _listingService.scope;
                   final messenger = ScaffoldMessenger.of(context);
                   final navigator = Navigator.of(context);
+                  if (_listingService.store.userId == null || !_listingService.isBackendEnabled) {
+                    messenger.showSnackBar(SnackBar(content: Text(l10n.t('treasure_publish_unavailable'))));
+                    return;
+                  }
                   if (!hasSelectedImages) {
                     messenger.hideCurrentSnackBar();
                     messenger.showSnackBar(
@@ -273,8 +291,11 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                     }
                   }
                   // Bilder JETZT hochladen (XFiles sind hier frisch/gültig)
-                  final uploadedUrls = await ImageUploadService.instance
-                      .uploadImages(_selectedImages);
+                  final uploadedUrls = await (widget.imageUploadService ?? ImageUploadService.instance)
+                      .uploadImages(List.of(_selectedImages), requireCurrent: () {
+                        if (!mounted) throw StateError('Upload screen closed');
+                        _listingService.store.requireScope(owner);
+                      });
                   if (!mounted) return;
                   _listingService.store.requireScope(owner);
                   if (uploadedUrls.isEmpty) {
@@ -331,11 +352,12 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                     imagePaths: uploadedUrls,
                     createdAt: DateTime.now(),
                   );
-                  final createdListing = await _attempt(() => _listingService
+                  _publishOutcomeUnknown = true;
+                  final createdListing = await _listingService
                       .createListing(
                         listing,
                         userId: _listingService.store.userId,
-                      ));
+                      );
                   if (createdListing == null) {
                     if (!mounted) return;
                     messenger.hideCurrentSnackBar();
@@ -343,7 +365,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                       SnackBar(
                         content: Text(
                           l10n.t(
-                            'treasureUploadFailed',
+                            'treasure_publish_uncertain',
                             fallback:
                                 'Das Veröffentlichen hat gerade nicht geklappt. Dein Entwurf bleibt erhalten.',
                           ),
@@ -353,12 +375,10 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                     );
                     return;
                   }
+                  _publishOutcomeUnknown = false;
+                  _publishedListing = createdListing;
                   _draftDebounce?.cancel();
-                  final cleared = await _attempt(() async {
-                    await _listingService.clearDraft();
-                    return true;
-                  });
-                  if (cleared != true) return;
+                  await _listingService.clearDraft();
                   if (!mounted) return;
                   messenger.hideCurrentSnackBar();
                   messenger.showSnackBar(
@@ -380,6 +400,11 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                 ),
               ),
               const SizedBox(height: 10),
+              Text(l10n.t('treasure_photos_public_info')),
+              if (_publishedLocalFailed)
+                Text(l10n.t('treasure_published_local_failed')),
+              if (_publishOutcomeUnknown)
+                Text(l10n.t('treasure_publish_uncertain')),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
@@ -387,7 +412,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onPressed: () {
+                onPressed: _publishing || _publishedListing != null ? null : () {
                   unawaited(_persistDraft(showFeedback: true));
                 },
                 icon: const Icon(Icons.bookmark_border_rounded),
@@ -397,7 +422,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
               ),
               const SizedBox(height: 10),
               TextButton.icon(
-                onPressed: _confirmDiscardDraft,
+                onPressed: _publishing ? null : _confirmDiscardDraft,
                 icon: const Icon(Icons.delete_outline_rounded),
                 label: Text(l10n.t('treasureDiscard', fallback: 'Verwerfen')),
               ),
@@ -1377,7 +1402,8 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   }
 
   void _onDraftChanged() {
-    if (!_draftHydrated) {
+    _draftRevision++;
+    if (!_draftHydrated || _publishing || _publishedListing != null) {
       return;
     }
     _draftDebounce?.cancel();
@@ -1387,11 +1413,21 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   }
 
   Future<void> _restoreDraft() async {
-    final draft = await _attempt(_listingService.loadDraft);
+    Map<String, dynamic>? loaded;
+    try {
+      loaded = await _listingService.loadDraft();
+    } catch (error) {
+      debugPrint('Treasure draft load: $error');
+      if (mounted) _showPersistenceMessage('treasure_storage_failed');
+      return;
+    }
+    final draft = loaded;
     if (!mounted) {
       return;
     }
     var restoredDraft = false;
+    var missingImages = false;
+    var restoredImages = <XFile>[];
     if (draft != null && draft.isNotEmpty) {
       final rawImagePaths = draft['imagePaths'];
       final imagePaths = rawImagePaths is List
@@ -1406,6 +1442,26 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
           fallbackImagePath.isNotEmpty) {
         imagePaths.add(fallbackImagePath);
       }
+      final durable = widget.draftImages.decode(draft);
+      if (durable != null) {
+        restoredImages = durable;
+      } else {
+        for (final path in imagePaths) {
+          try {
+            final image = XFile(path);
+            if (kIsWeb || widget.draftImages.web) {
+              if ((await image.readAsBytes()).isEmpty) throw StateError('Empty legacy photo');
+            } else if (!File(path).existsSync()) {
+              throw StateError('Legacy draft photo missing');
+            }
+            restoredImages.add(image);
+          } catch (error) {
+            debugPrint('Treasure draft photo unavailable: $error');
+            missingImages = true;
+          }
+        }
+      }
+      if (!mounted) return;
       _runWithoutDraftAutosave(() {
         setState(() {
           _titleController.text = draft['title']?.toString() ?? _defaultTitle;
@@ -1423,10 +1479,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
               int.tryParse(draft['conditionIndex']?.toString() ?? '') ??
               _defaultConditionIndex;
           _voiceCaptured = _noteController.text.trim().isNotEmpty;
-          _selectedImages = imagePaths
-              .where((path) => kIsWeb || File(path).existsSync())
-              .map(XFile.new)
-              .toList();
+          _selectedImages = restoredImages;
         });
       });
       restoredDraft = true;
@@ -1442,7 +1495,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
           SnackBar(
             content: Text(
               l10n.t(
-                'treasureDraftRestored',
+                missingImages ? 'treasure_draft_images_missing' : 'treasureDraftRestored',
                 fallback: 'Dein letzter Entwurf ist wieder da.',
               ),
             ),
@@ -1454,9 +1507,20 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   }
 
   Future<void> _persistDraft({bool showFeedback = false}) async {
+    if (_publishing || _publishedListing != null) return;
+    if (!_draftHydrated) {
+      if (showFeedback) _showPersistenceMessage('treasure_storage_failed');
+      return;
+    }
+    final revision = _draftRevision;
+    final payload = _buildDraftPayload();
+    final images = List<XFile>.of(_selectedImages);
+    final meaningful = _hasMeaningfulDraft();
     final saved = await _attempt(() async {
-      if (_hasMeaningfulDraft()) {
-        await _listingService.saveDraft(_buildDraftPayload());
+      if (meaningful) {
+        final storedImages = await widget.draftImages.encode(images);
+        if (!mounted || revision != _draftRevision || _publishing || _publishedListing != null) return false;
+        await _listingService.saveDraft({...payload, ...storedImages});
       } else {
         await _listingService.clearDraft();
       }
@@ -1491,8 +1555,6 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
       'categoryKey': _selectedCategoryKey,
       'distanceMeters': _distanceMeters.round(),
       'conditionIndex': _conditionIndex,
-      'imagePath': _primarySelectedImage?.path,
-      'imagePaths': _selectedImages.map((image) => image.path).toList(),
     };
   }
 
@@ -1563,6 +1625,8 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
       return true;
     });
     if (!mounted || cleared != true) return;
+    _draftHydrated = true;
+    _draftRevision++;
     _invalidateAnalysis();
     _runWithoutDraftAutosave(() {
       setState(() {
@@ -1605,6 +1669,44 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
       return null;
     }
   }
+
+  void _showPersistenceMessage(String key) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).t(key))));
+      }
+
+      Future<void> _runPublish(Future<void> Function() operation) async {
+        if (_publishing || _publishOutcomeUnknown || _publishedListing != null) return;
+        setState(() => _publishing = true);
+        _draftRevision++;
+        _draftDebounce?.cancel();
+        try {
+          await operation();
+        } on ImageBatchUploadException catch (error) {
+          if (mounted) {
+            _showPersistenceMessage(error.remainingUploads > 0
+                ? 'treasure_upload_cleanup_failed' : 'treasure_upload_batch_failed');
+          }
+        } on TreasureRemoteCommitException catch (error) {
+          debugPrint('Treasure publish local follow-up failed: ${error.cause}');
+          if (mounted) {
+            _publishOutcomeUnknown = false;
+            _publishedListing = error.listing;
+            _publishedLocalFailed = true;
+            _showPersistenceMessage('treasure_published_local_failed');
+          }
+        } catch (error) {
+          debugPrint('Treasure publish: $error');
+          if (mounted) {
+            _publishedLocalFailed = _publishedListing != null;
+            _showPersistenceMessage(_publishedListing != null
+                ? 'treasure_published_local_failed' : 'treasure_publish_uncertain');
+          }
+        } finally {
+          if (mounted) setState(() => _publishing = false);
+        }
+      }
 
   Widget _buildPreviewCard(
     AppLocalizations l10n,

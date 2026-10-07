@@ -429,9 +429,39 @@ Betroffene Leser/Schreiber: `TreasureListingService` (Entwurf, Feedcache,
 Reservierungen), `TreasureUploadScreen` (Restore, Autosave, Verwerfen,
 Publish-Clear), `TreasureHandoverScreen` (Reservierungen, Sicherheitsflags,
 Mine-/Uebergabeansichten). Andere direkte Leser der Originalkeys gibt es
-im aktuellen Fluttercode nicht. Weitere Upload-Teilfehler, dauerhafte
-Web-Draftbilder und serverseitige Reservierungs-/Storno-Semantik bleiben
-separate Auditpunkte.
+im aktuellen Fluttercode nicht.
+
+### Verschenkmarkt: ehrliche Persistenz und Foto-Teilfehler
+
+Ohne aktiviertes Backend wird keine Reservierung bestaetigt oder lokal
+vorgemerkt; es gibt keine Offline-Reservierungsqueue. Nach Server-Ack muss
+auch der lokale Reservierungsmarker bestaetigt gespeichert sein.
+Storno entfernt nach Server-Ack nur den zugehoerigen Marker. Scheitert der
+lokale Ack nach einer bestaetigten Serveraktion, meldet die UI diesen
+Teilerfolg ausdruecklich statt eine vollstaendige lokale Aktualisierung.
+
+Ein Fotobatch liefert alle URLs oder einen Fehler, niemals eine teilweise
+erfolgreiche Liste. Vor dem Anzeigenrequest werden bekannte Uploads bei
+Fehler best-effort bereinigt; gescheiterte Bereinigung wird sichtbar
+gemeldet. Nach bestaetigtem Create bleiben Anzeigenfotos erhalten, auch
+wenn Feedcache oder Entwurfsloeschung scheitern. Bei unbestaetigtem Create
+(etwa Timeout) bleiben Fotos ebenfalls erhalten: Der Server koennte die
+Anzeige bereits erstellt haben. Die UI warnt vor oeffentlich erreichbaren
+Fotos und sperrt blindes Wiederholen in derselben Screeninstanz.
+Das ist keine serverseitige Idempotenz oder garantierte Rueckabwicklung;
+vor einem erneuten Versuch sind die eigenen Anzeigen zu pruefen.
+
+Web-Entwuerfe speichern Bildbytes als Base64 mit Name/MIME im
+kontogetrennten lokalen Envelope statt temporaerer Blobpfade. Native
+Entwuerfe behalten ihren Pfadvertrag. Browserquoten und Schreibfehler
+werden sichtbar gemeldet, ohne eine Speicherbestaetigung. Nicht mehr
+lesbare Legacybilder sind nicht rekonstruierbar: Texte bleiben erhalten,
+fehlende Bilder werden gemeldet, kein automatisches Ueberschreiben.
+Die lokalen Bilddaten sind nicht verschluesselt. Ein Entwurf oder dessen
+Speichern veroeffentlicht nichts; erst Teilen laedt Fotos hoch.
+
+Kategorien, Entfernung/Reichweite und verbleibende UI-/Lifecyclefragen
+bleiben separate Auditpunkte. Keine Deployment- oder Launchfreigabe.
 
 ### Verschenkmarkt: oeffentliche Detailprojektion
 

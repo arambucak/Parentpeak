@@ -1,6 +1,3 @@
-import 'package:image_picker/image_picker.dart';
-import 'package:parentpeak/services/image_upload_service.dart';
-
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
@@ -165,9 +162,7 @@ class TreasureBackendService {
             primaryImagePath.startsWith('https://')) {
           uploadedImageUrl = primaryImagePath;
         } else {
-          final imageFile = XFile(primaryImagePath);
-          uploadedImageUrl =
-              await ImageUploadService.instance.uploadImage(imageFile);
+          throw StateError('Treasure images must be uploaded before creating a listing');
         }
       }
 
@@ -235,8 +230,7 @@ class TreasureBackendService {
   }
 
   /// Reserviert einen Schatz für den anfragenden Nutzer.
-  /// Der Backend-Endpoint /api/treasures/{id}/reserve ist optional —
-  /// schlägt er fehl, wird die Reservierung lokal gehalten (siehe Service).
+  /// Eine Reservierung braucht eine ausdrueckliche Serverbestaetigung.
   Future<bool> reserveTreasure({
     required String treasureId,
     required String requesterUserId,
