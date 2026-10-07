@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/logic/ai_memory_service.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/models/ai_memory.dart';
+import 'package:parentpeak/logic/chat_memory_consent.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Stub-Client, der die aufgerufenen Endpunkte/Bodies aufzeichnet und
 /// vorbereitete JSON-Antworten liefert.
@@ -55,9 +57,16 @@ class _StubApiClient extends BackendApiClient {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   group('AiMemoryService', () {
     test('getSettings liest /ai/settings und parst enabled', () async {
-      final client = _StubApiClient()..getResponse = {'enabled': true};
+      await ChatMemoryConsent.instance.grant(ChatMemoryConsent.instance.scope);
+      final client = _StubApiClient()
+        ..getResponse = {
+          'enabled': true,
+          'consentVersion': ChatMemoryConsent.version,
+        };
       final service = AiMemoryService(apiClient: client);
 
       final settings = await service.getSettings();
@@ -110,22 +119,31 @@ void main() {
       expect(children.first.memoryItems.single.key, 'schlaf');
     });
 
-    test('createChild sendet POST /ai/children mit getrimmtem Namen', () async {
-      final client = _StubApiClient()
-        ..postResponse = {
-          'item': {'id': 'c2', 'userId': 'u1', 'name': 'Ben'}
-        };
-      final service = AiMemoryService(apiClient: client);
+    test(
+      'createChild sends neutral profile and retains display name locally',
+      () async {
+        await ChatMemoryConsent.instance.grant(
+          ChatMemoryConsent.instance.scope,
+        );
+        final client = _StubApiClient()
+          ..postResponse = {
+            'item': {'id': 'c2', 'userId': 'u1', 'name': 'Ben'},
+          };
+        final service = AiMemoryService(apiClient: client);
 
-      final child = await service.createChild(name: '  Ben  ');
+        final child = await service.createChild(name: '  Ben  ');
 
-      expect(client.postPaths, ['/ai/children']);
-      expect(client.bodies.single['name'], 'Ben');
-      expect(child.id, 'c2');
-    });
+        expect(client.postPaths, ['/ai/children']);
+        expect(client.bodies.single['name'], '[CHILD_1]');
+        expect(child.name, 'Ben');
+        expect(child.id, 'c2');
+      },
+    );
 
     test('saveMemory sendet POST an das richtige Kind + Felder', () async {
+      await ChatMemoryConsent.instance.grant(ChatMemoryConsent.instance.scope);
       final client = _StubApiClient()
+        ..getResponse = {'items': []}
         ..postResponse = {
           'item': {
             'id': 'm9',
@@ -134,7 +152,7 @@ void main() {
             'key': 'schlaf',
             'value': 'Routine hilft',
             'status': 'confirmed',
-          }
+          },
         };
       final service = AiMemoryService(apiClient: client);
 
@@ -158,8 +176,10 @@ void main() {
       await service.deleteChild('c1');
       await service.deleteMemory('c1', 'm1');
 
-      expect(
-          client.deletePaths, ['/ai/children/c1', '/ai/children/c1/memory/m1']);
+      expect(client.deletePaths, [
+        '/ai/children/c1',
+        '/ai/children/c1/memory/m1',
+      ]);
     });
   });
 

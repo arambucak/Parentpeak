@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
+import 'package:parentpeak/logic/chat_memory_consent.dart';
 import 'package:parentpeak/logic/crisis_support.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 
@@ -217,9 +218,14 @@ class PedagogicalChatBackend {
   }) async* {
     final scope = expectedScope ?? consent.scope;
     final ticket = accountStore.ticket;
+    final memoryConsent = _geminiService?.memoryConsent ?? ChatMemoryConsent.instance;
+    final memoryOwner = memoryConsent.scope;
+    final usingMemory = childProfileId != null && await memoryConsent.hasConsent();
+    final memoryRevision = memoryConsent.revision(memoryOwner);
     void guard() {
       accountStore.require(ticket);
       consent.requireScope(scope);
+      if (usingMemory) memoryConsent.requireRevision(memoryOwner, memoryRevision);
       requireCurrentRequest?.call();
     }
     final message = userMessage.trim();

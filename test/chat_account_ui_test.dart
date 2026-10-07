@@ -12,6 +12,7 @@ import 'package:parentpeak/logic/ai_memory_service.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
+import 'package:parentpeak/logic/chat_memory_consent.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
@@ -31,6 +32,7 @@ void main() {
   late ChatAiConsent consent;
   late PedagogicalChatBackend backend;
   late AiMemoryService memory;
+  late ChatMemoryConsent memoryConsent;
   late List<http.Request> calls;
   late List<http.Request> memoryCalls;
   late Future<http.Response> Function(http.Request) aiResponse;
@@ -38,10 +40,12 @@ void main() {
 
   void configure() {
     consent = ChatAiConsent(scopeProvider: () => store.scope);
+    memoryConsent = ChatMemoryConsent(scopeProvider: () => store.scope);
     backend = PedagogicalChatBackend(
       accountStore: store,
       consent: consent,
       geminiService: GeminiAIService(
+        memoryConsent: memoryConsent,
         apiClient: BackendApiClient(
           baseUrl: 'https://example.invalid',
           httpClient: MockClient((request) {
@@ -52,6 +56,7 @@ void main() {
       ),
     );
     memory = AiMemoryService(
+      consent: memoryConsent,
       accountStore: store,
       apiClient: BackendApiClient(
         baseUrl: 'https://example.invalid',
@@ -370,6 +375,11 @@ void main() {
   testWidgets(
     'memory child edit closes on logout and clears its private controllers',
     (tester) async {
+      await memoryConsent.grant(store.scope);
+      memoryResponse = (request) async => http.Response(
+        request.url.path == '/ai/settings'
+            ? '{"enabled":true,"consentVersion":"chat-memory-v1"}'
+            : '{"items":[{"id":"child-a","name":"Private child","memoryItems":[]}]}', 200);
       await mount(tester, AiMemorySettingsScreen(service: memory));
       expect(find.text('Private child'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.add_circle_outline));
@@ -421,11 +431,12 @@ void main() {
   testWidgets(
     'late old active memory profile is never included in the new chat',
     (tester) async {
+      await memoryConsent.grant(store.scope);
       final oldChildren = Completer<http.Response>();
       memoryResponse = (request) async {
         if (request.url.path == '/ai/settings') {
           return http.Response(
-            uid == 'a' ? '{"enabled":true}' : '{"enabled":false}',
+            uid == 'a' ? '{"enabled":true,"consentVersion":"chat-memory-v1"}' : '{"enabled":false}',
             200,
           );
         }

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/logic/chat_memory_consent.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _RecordingApiClient extends BackendApiClient {
   _RecordingApiClient() : super(baseUrl: 'https://example.invalid');
@@ -9,6 +11,12 @@ class _RecordingApiClient extends BackendApiClient {
   Map<String, dynamic>? body;
 
   Duration? timeout;
+
+  @override
+  BackendApiClient withRequestGuard(void Function() guard) {
+    guard();
+    return this;
+  }
 
   @override
   Future<Map<String, dynamic>> postJson(
@@ -27,6 +35,8 @@ class _RecordingApiClient extends BackendApiClient {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   test('sends AI requests through the backend without an API key', () async {
     final client = _RecordingApiClient();
     final service = GeminiAIService(
@@ -47,16 +57,20 @@ void main() {
     expect(response.groundingUrls, ['https://example.com/source']);
   });
 
-  test('passes childProfileId through to the backend when set', () async {
+  test('passes childProfileId only with additional versioned memory consent', () async {
     final client = _RecordingApiClient();
+    final consent = ChatMemoryConsent(scopeProvider: () => 'account.test');
+    await consent.grant(consent.scope);
     final service = GeminiAIService(
       modelName: 'gemini-3.5-flash',
       apiClient: client,
+      memoryConsent: consent,
     );
 
     await service.generate('Frage', childProfileId: 'child-123');
 
     expect(client.body?['childProfileId'], 'child-123');
+    expect(client.body?['memoryConsentVersion'], ChatMemoryConsent.version);
   });
 
   test('omits childProfileId when not provided (privacy by default)', () async {

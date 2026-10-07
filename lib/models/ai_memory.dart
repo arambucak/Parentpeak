@@ -1,4 +1,4 @@
-/// Datenmodelle für das DSGVO-konforme KI-Gedächtnis der Elternberatung.
+/// Datenmodelle für das optionale KI-Gedächtnis der Elternberatung.
 ///
 /// Das Gedächtnis ist standardmäßig AUS (opt-in) und speichert nur, was Eltern
 /// bewusst bestätigt haben. Die Daten liegen im Backend und werden serverseitig
@@ -7,7 +7,10 @@ class AiMemorySettings {
   const AiMemorySettings({required this.enabled});
   final bool enabled;
   factory AiMemorySettings.fromJson(Map<String, dynamic> json) {
-    return AiMemorySettings(enabled: json['enabled'] == true);
+    return AiMemorySettings(
+      enabled: json['enabled'] == true &&
+          json['consentVersion'] == 'chat-memory-v1',
+    );
   }
 }
 

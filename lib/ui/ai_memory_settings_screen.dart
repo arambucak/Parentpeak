@@ -3,6 +3,7 @@ import 'package:parentpeak/logic/ai_memory_service.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/ui/widgets/chat_account_modal.dart';
 import 'package:parentpeak/models/ai_memory.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 
 class AiMemorySettingsScreen extends StatefulWidget {
   const AiMemorySettingsScreen({super.key, this.service});
@@ -98,23 +99,51 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
     final ticket = _ticket;
     setState(() => _saving = true);
     try {
+      if (value && !await _service.consent.hasConsent()) {
+        if (!mounted || !_current(ticket)) return;
+        final accepted = await showDialog<bool>(
+          context: context,
+          builder: (_) => ChatAccountModal(
+            store: _store,
+            ticket: ticket,
+            builder: (context) => AlertDialog(
+              title: Text(context.tr('memory_consent_title')),
+              content: SingleChildScrollView(child: Text(context.tr('memory_consent_body'))),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context, false),
+                  child: Text(context.tr('cancel'))),
+                FilledButton(onPressed: () => Navigator.pop(context, true),
+                  child: Text(context.tr('memory_consent_accept'))),
+              ],
+            ),
+          ),
+        );
+        if (accepted != true || !_current(ticket)) return;
+        await _service.consent.grant(ticket.scope);
+        if (!_current(ticket)) return;
+      }
       final settings = await _service.setEnabled(value);
       if (_current(ticket)) setState(() => _enabled = settings.enabled);
     } catch (error) {
-      if (!_current(ticket)) return;
-      _showMessage('$error');
+      if (!mounted || !_current(ticket)) return;
+      _showMessage(context.tr('memory_operation_failed'));
+      await _load();
     } finally {
       if (_current(ticket)) setState(() => _saving = false);
     }
   }
 
   Future<void> _editChild([AiChildProfile? child]) async {
+    if (!_enabled) {
+      _showMessage(context.tr('memory_consent_required'));
+      return;
+    }
     final ticket = _ticket;
     final nameController = TextEditingController(text: child?.name ?? '');
     final genderController = TextEditingController(text: child?.gender ?? '');
     _privateControllers.addAll([nameController, genderController]);
     final formKey = GlobalKey<FormState>();
-    final saved = await showDialog<bool>(
+    final route = DialogRoute<bool>(
       context: context,
       builder: (_) => ChatAccountModal(
         store: _store,
@@ -135,7 +164,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                 TextFormField(
                   controller: nameController,
                   autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Name'),
+                  decoration: InputDecoration(labelText: context.tr('memory_local_name')),
                   validator: (value) => value == null || value.trim().isEmpty
                       ? 'Bitte einen Namen eingeben.'
                       : null,
@@ -175,9 +204,11 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                     Navigator.pop(context, true);
                   }
                 } catch (error) {
-                  if (_current(ticket)) {
+                  if (mounted && _current(ticket)) {
                     if (context.mounted) Navigator.pop(context, false);
-                    _showMessage('$error');
+                    _showMessage(error is MemoryLocalNameWriteException
+                        ? this.context.tr('memory_name_save_failed') : '$error');
+                    _load();
                   }
                 }
               },
@@ -187,6 +218,8 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
         ),
       ),
     );
+    final saved = await Navigator.of(context).push(route);
+    await route.completed;
     _privateControllers.remove(nameController);
     _privateControllers.remove(genderController);
     nameController.dispose();
@@ -251,9 +284,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Bestätigte Informationen, die die KI verwenden darf.',
-                  ),
+                  Text(context.tr('memory_transfer_info')),
                   const SizedBox(height: 12),
                   if (items.isEmpty)
                     const Padding(
@@ -263,8 +294,8 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                   else
                     ...items.map(
                       (item) => ListTile(
-                        title: Text(item.key),
-                        subtitle: Text(item.value),
+                        title: Text(item.key.replaceAll('[THIS_CHILD]', child.name)),
+                        subtitle: Text(item.value.replaceAll('[THIS_CHILD]', child.name)),
                         leading: const Icon(Icons.verified_user_outlined),
                         trailing: IconButton(
                           tooltip: 'Löschen',
@@ -329,10 +360,8 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                     ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('KI-Gedächtnis aktivieren'),
-                    subtitle: const Text(
-                      'Bestätigte Familieninformationen können die Beratung persönlicher machen.',
-                    ),
+                    title: Text(context.tr('memory_enable')),
+                    subtitle: Text(context.tr('memory_transfer_info')),
                     value: _enabled,
                     onChanged: _saving
                         ? null
@@ -340,11 +369,11 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                             if (_current(ticket)) _toggleEnabled(value);
                           },
                   ),
-                  const Card(
+                  Card(
                     child: Padding(
-                      padding: EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(14),
                       child: Text(
-                        'Diese Daten werden ausschließlich genutzt, um die KI-Beratung für deine Familie persönlicher zu machen.',
+                        context.tr('memory_storage_info'),
                       ),
                     ),
                   ),

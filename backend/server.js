@@ -14,6 +14,7 @@ const multer = require('multer');
 const { changeParticipation, updateOwnedEvent, validateEventMode, CONFIRMED } = require('./event_participation_policy');
 const { publicTreasure } = require('./treasure_public_view');
 const treasureGeometry = require('./treasure_geometry');
+const { MEMORY_CONSENT_VERSION, hasMemoryConsent, buildMemoryContext, minimizeMemoryText } = require('./ai_memory_policy');
 
 // Firebase Admin — initialised lazily so the server starts without credentials
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
@@ -2714,7 +2715,7 @@ function validateAiMemoryPayload(body, { partial = false } = {}) {
 
 async function getAiMemoryContext(userId, childProfileId) {
   const settings = await prisma.aiMemorySettings.findUnique({ where: { userId } });
-  if (!settings?.enabled) return '';
+  if (!hasMemoryConsent(settings)) return '';
 
   const children = await prisma.aiChildProfile.findMany({
     where: {
@@ -2731,25 +2732,37 @@ async function getAiMemoryContext(userId, childProfileId) {
   });
   if (!children.length) return '';
 
-  const lines = ['BESTAETIGTER FAMILIENKONTEXT (nur passend zur Frage verwenden):'];
-  for (const child of children) {
-    const birthDate = child.birthDate
-      ? `, Geburtsdatum: ${child.birthDate.toISOString().slice(0, 10)}`
-      : '';
-    lines.push(`Kind: ${child.name}${birthDate}${child.gender ? `, Geschlecht: ${child.gender}` : ''}`);
-    for (const item of child.memoryItems) {
-      lines.push(`- ${item.category}/${item.key}: ${item.value}`);
-    }
+  const otherChildren = childProfileId ? await prisma.aiChildProfile.findMany({
+    where: { userId, id: { not: childProfileId } },
+    select: { name: true, birthDate: true },
+  }) : [];
+  return buildMemoryContext(children, new Date(), [...children, ...otherChildren]).slice(0, AI_MEMORY_MAX_CONTEXT_CHARS);
+}
+
+async function minimizeAiMemoryData(userId, childId, data) {
+  const children = await prisma.aiChildProfile.findMany({
+    where: { userId }, select: { id: true, name: true, birthDate: true },
+  });
+  for (const key of ['category', 'key', 'value']) {
+    if (data[key] !== undefined) data[key] = minimizeMemoryText(data[key], children,
+      child => child.id === childId ? '[THIS_CHILD]' : '[OTHER_CHILD]');
   }
-  lines.push('Regeln: Nichts aus diesem Kontext als Diagnose behandeln. Bei Widerspruechen nachfragen.');
-  return lines.join('\n').slice(0, AI_MEMORY_MAX_CONTEXT_CHARS);
+}
+
+async function requireAiMemoryConsent(userId, req, res) {
+  const settings = await prisma.aiMemorySettings.findUnique({ where: { userId } });
+  if (req.body?.memoryConsentVersion !== MEMORY_CONSENT_VERSION || !hasMemoryConsent(settings)) {
+    res.status(403).json({ error: 'Memory consent required', code: 'MEMORY_CONSENT_REQUIRED' });
+    return false;
+  }
+  return true;
 }
 
 app.get('/ai/settings', async (req, res) => {
   const userId = await requireAiMemoryUser(req, res);
   if (!userId) return;
   const settings = await prisma.aiMemorySettings.findUnique({ where: { userId } });
-  return res.json({ enabled: settings?.enabled === true });
+  return res.json({ enabled: hasMemoryConsent(settings), consentVersion: settings?.consentVersion ?? null });
 });
 
 app.put('/ai/settings', async (req, res) => {
@@ -2758,12 +2771,17 @@ app.put('/ai/settings', async (req, res) => {
   if (typeof req.body?.enabled !== 'boolean') {
     return res.status(400).json({ error: 'enabled muss boolean sein' });
   }
+  if (req.body.enabled && req.body.memoryConsentVersion !== MEMORY_CONSENT_VERSION) {
+    return res.status(403).json({ error: 'Memory consent required', code: 'MEMORY_CONSENT_REQUIRED' });
+  }
+  const consentVersion = req.body.enabled ? MEMORY_CONSENT_VERSION : null;
+  const consentRevision = crypto.randomUUID();
   const settings = await prisma.aiMemorySettings.upsert({
     where: { userId },
-    create: { userId, enabled: req.body.enabled },
-    update: { enabled: req.body.enabled },
+    create: { userId, enabled: req.body.enabled, consentVersion, consentRevision },
+    update: { enabled: req.body.enabled, consentVersion, consentRevision },
   });
-  return res.json({ enabled: settings.enabled });
+  return res.json({ enabled: hasMemoryConsent(settings), consentVersion: settings.consentVersion });
 });
 
 app.get('/ai/children', async (req, res) => {
@@ -2780,8 +2798,11 @@ app.get('/ai/children', async (req, res) => {
 app.post('/ai/children', async (req, res) => {
   const userId = await requireAiMemoryUser(req, res);
   if (!userId) return;
+  if (!await requireAiMemoryConsent(userId, req, res)) return;
   const validated = validateAiChildPayload(req.body || {});
   if (validated.error) return res.status(400).json({ error: validated.error });
+  validated.data.name = '[CHILD_1]';
+  if (!await requireAiMemoryConsent(userId, req, res)) return;
   const child = await prisma.aiChildProfile.create({
     data: { userId, ...validated.data },
   });
@@ -2791,12 +2812,15 @@ app.post('/ai/children', async (req, res) => {
 app.put('/ai/children/:id', async (req, res) => {
   const userId = await requireAiMemoryUser(req, res);
   if (!userId) return;
+  if (!await requireAiMemoryConsent(userId, req, res)) return;
   const validated = validateAiChildPayload(req.body || {}, { partial: true });
   if (validated.error) return res.status(400).json({ error: validated.error });
+  if (validated.data.name !== undefined) validated.data.name = '[CHILD_1]';
   const existing = await prisma.aiChildProfile.findFirst({
     where: { id: req.params.id, userId },
   });
   if (!existing) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  if (!await requireAiMemoryConsent(userId, req, res)) return;
   const child = await prisma.aiChildProfile.update({
     where: { id: existing.id },
     data: validated.data,
@@ -2828,6 +2852,7 @@ app.get('/ai/children/:id/memory', async (req, res) => {
 app.post('/ai/children/:id/memory', async (req, res) => {
   const userId = await requireAiMemoryUser(req, res);
   if (!userId) return;
+  if (!await requireAiMemoryConsent(userId, req, res)) return;
   const validated = validateAiMemoryPayload(req.body || {});
   if (validated.error) return res.status(400).json({ error: validated.error });
   const child = await prisma.aiChildProfile.findFirst({
@@ -2835,6 +2860,8 @@ app.post('/ai/children/:id/memory', async (req, res) => {
     select: { id: true },
   });
   if (!child) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  await minimizeAiMemoryData(userId, child.id, validated.data);
+  if (!await requireAiMemoryConsent(userId, req, res)) return;
   const item = await prisma.aiMemoryItem.upsert({
     where: {
       childId_category_key: {
@@ -2860,12 +2887,15 @@ app.post('/ai/children/:id/memory', async (req, res) => {
 app.put('/ai/children/:id/memory/:itemId', async (req, res) => {
   const userId = await requireAiMemoryUser(req, res);
   if (!userId) return;
+  if (!await requireAiMemoryConsent(userId, req, res)) return;
   const validated = validateAiMemoryPayload(req.body || {}, { partial: true });
   if (validated.error) return res.status(400).json({ error: validated.error });
   const item = await prisma.aiMemoryItem.findFirst({
     where: { id: req.params.itemId, child: { id: req.params.id, userId } },
   });
   if (!item) return res.status(404).json({ error: 'Memory-Eintrag nicht gefunden' });
+  await minimizeAiMemoryData(userId, req.params.id, validated.data);
+  if (!await requireAiMemoryConsent(userId, req, res)) return;
   const updated = await prisma.aiMemoryItem.update({
     where: { id: item.id },
     data: {
@@ -3050,11 +3080,34 @@ app.post('/ai/generate', async (req, res) => {
   // Firebase-Token verifiziert ist, serverseitig den bestätigten Familien-
   // kontext (opt-in) in die System-Instruktion einspeisen.
   let aiMemoryContext = '';
-  if (childProfileId) {
-    const { uid, verified } = await verifyFirebaseIdToken(req);
-    if (verified && uid) {
+  let memoryOwner = null;
+  let memoryRevision = null;
+  try {
+    if (childProfileId) {
+      const { uid, verified } = await verifyFirebaseIdToken(req);
+      if (!verified || !uid) return res.status(401).json({ error: 'Memory authentication required' });
+      if (!await requireAiMemoryConsent(uid, req, res)) return;
+      memoryOwner = uid;
+      const settings = await prisma.aiMemorySettings.findUnique({ where: { userId: uid } });
+      if (!hasMemoryConsent(settings)) {
+        return res.status(403).json({ error: 'Memory consent changed', code: 'MEMORY_CONSENT_REQUIRED' });
+      }
+      memoryRevision = settings.consentRevision;
       req.firebaseUid = uid;
       aiMemoryContext = await getAiMemoryContext(uid, childProfileId);
+    }
+  } catch (error) {
+    console.error(`Memory lookup failed: ${error.message}`);
+    return res.status(503).json({ error: 'Memory context could not be verified' });
+  }
+
+  async function checkMemoryTransfer() {
+    if (!memoryOwner) return;
+    const settings = await prisma.aiMemorySettings.findUnique({ where: { userId: memoryOwner } });
+    if (!hasMemoryConsent(settings) || settings.consentRevision !== memoryRevision) {
+      const error = new Error('Memory consent changed during request');
+      error.code = 'MEMORY_CONSENT_REQUIRED';
+      throw error;
     }
   }
 
@@ -3095,12 +3148,15 @@ app.post('/ai/generate', async (req, res) => {
         : baseUrl;
       const headers = { 'Content-Type': 'application/json' };
       if (!useQueryParam) headers['x-goog-api-key'] = geminiApiKey;
-      return fetch(url, {
+      await checkMemoryTransfer();
+      const response = await fetch(url, {
         method: 'POST',
         headers,
         body: jsonBody,
         signal: AbortSignal.timeout(35000),
       });
+      await checkMemoryTransfer();
+      return response;
     }
 
     let upstream = await attempt(false);
@@ -3110,6 +3166,7 @@ app.post('/ai/generate', async (req, res) => {
     }
 
     const payload = await upstream.json().catch(() => ({}));
+    await checkMemoryTransfer();
     if (!upstream.ok) {
       const detail = payload?.error?.message || `HTTP ${upstream.status}`;
       throw new Error(detail);
@@ -3131,6 +3188,7 @@ app.post('/ai/generate', async (req, res) => {
     try {
       result = await callGemini(requestBody);
     } catch (groundingError) {
+      if (groundingError.code === 'MEMORY_CONSENT_REQUIRED') throw groundingError;
       // Wenn Grounding fehlschlägt: automatisch OHNE Grounding erneut versuchen.
       if (useGoogleSearch) {
         console.warn(`Grounding failed (${groundingError.message}) — retry without grounding`);
@@ -3158,8 +3216,12 @@ app.post('/ai/generate', async (req, res) => {
     if (!result.text) {
       return res.status(502).json({ error: 'KI-Dienst lieferte keine Antwort' });
     }
+    await checkMemoryTransfer();
     return res.json({ text: result.text, groundingUrls: result.groundingUrls });
   } catch (error) {
+    if (error.code === 'MEMORY_CONSENT_REQUIRED') {
+      return res.status(403).json({ error: 'Memory consent changed', code: error.code });
+    }
     console.error(`Gemini proxy failed: ${error.message}`);
     return res.status(502).json({ error: 'KI-Dienst vorübergehend nicht verfügbar' });
   }

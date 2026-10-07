@@ -10,6 +10,7 @@ import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/account_ai_consent.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
+import 'package:parentpeak/logic/chat_memory_consent.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/ui/widgets/chat_account_modal.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
@@ -143,6 +144,8 @@ class _ChatScreenState extends State<ChatScreen> {
   // (kein Kontext, Datenschutz by default). Wird an streamReply übergeben,
   // damit der Server den bestätigten Familienkontext einspeisen kann.
   String? _activeChildProfileId;
+  String? _activeChildName;
+  String? _replyChildName;
 
   @override
   void initState() {
@@ -194,6 +197,7 @@ class _ChatScreenState extends State<ChatScreen> {
       debugPrint('Chat reply cancellation: $error');
       if (error is! ChatAccountChanged &&
           error is! AccountAiConsentRequiredException &&
+          error is! ChatMemoryConsentRequiredException &&
           _isCurrent(ticket, generation)) {
         _showError('chat_request_failed');
       }
@@ -212,6 +216,8 @@ class _ChatScreenState extends State<ChatScreen> {
       _assistantFeedbackByIndex.clear();
       _topicCounts.clear();
       _activeChildProfileId = null;
+      _activeChildName = null;
+      _replyChildName = null;
       _countryCode = null;
       _hasLegacy = false;
       _topicsLoading = true;
@@ -296,8 +302,7 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Ermittelt das aktive Kind-Profil fürs KI-Gedächtnis. Läuft nur, wenn das
   /// Gedächtnis aktiviert ist; wählt bei einem Kind dieses, bei mehreren das
   /// zuletzt aktualisierte (Server liefert bereits updatedAt-absteigend).
-  /// Eine null-ID sperrt serverseitiges Memory nicht; dessen Opt-in bleibt
-  /// eine eigene Grenze. Ladefehler werden sichtbar behandelt.
+  /// Die Service-/Servergrenze prueft den zusaetzlichen Memory-Consent.
   Future<void> _loadActiveChildProfile() async {
     final ticket = _ticket;
     final service = _memoryService;
@@ -313,12 +318,18 @@ class _ChatScreenState extends State<ChatScreen> {
         children: children,
       );
       if (_isCurrent(ticket)) {
-        setState(() => _activeChildProfileId = activeId);
+        setState(() {
+          _activeChildProfileId = activeId;
+          _activeChildName = activeId == null ? null : children.firstWhere((child) => child.id == activeId).name;
+        });
       }
     } catch (error) {
       debugPrint('Chat memory load failed: $error');
       if (_isCurrent(ticket)) {
-        setState(() => _activeChildProfileId = null);
+        setState(() {
+          _activeChildProfileId = null;
+          _activeChildName = null;
+        });
         _showError('chat_memory_load_failed');
       }
     }
@@ -643,10 +654,12 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     guard();
+    final childName = _activeChildName;
+    _replyChildName = childName;
     final iterator = StreamIterator(
       _chatBackend!.streamReply(
         history: _messages
-            .map((entry) => Map<String, dynamic>.from(entry))
+            .map((entry) => <String, dynamic>{'role': entry['role'], 'content': entry['content']})
             .toList(),
         userMessage: text,
         languageCode: languageService.currentLanguage,
@@ -669,6 +682,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _messages.add({
             'role': 'assistant',
             'content': _currentResponse,
+            'displayChildName': childName,
             'timestamp': DateTime.now(),
           });
         }
@@ -687,7 +701,13 @@ class _ChatScreenState extends State<ChatScreen> {
   ) {
     debugPrint('Chat request failed: $error');
     if (!_isCurrent(ticket, request)) return;
-    if (error is AccountAiConsentRequiredException) {
+    if (error is ChatMemoryConsentRequiredException) {
+      setState(() {
+        _activeChildProfileId = null;
+        _activeChildName = null;
+      });
+      _showError('memory_consent_required');
+    } else if (error is AccountAiConsentRequiredException) {
       setState(() {
         _termsAccepted = false;
         _termsErrorKey = 'chat_consent_load_failed';
@@ -1234,7 +1254,11 @@ class _ChatScreenState extends State<ChatScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     )
-                  : _buildFormattedText(message['content'] as String),
+                  : _buildFormattedText(
+                      (message['content'] as String).replaceAll(
+                        '[CHILD_1]', message['displayChildName'] as String? ?? '[CHILD_1]',
+                      ),
+                    ),
             ),
           ),
         ],
@@ -1678,6 +1702,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             return _buildMessageBubble({
                               'role': 'assistant',
                               'content': _currentResponse,
+                              'displayChildName': _replyChildName,
                             });
                           }
                           return const Padding(
