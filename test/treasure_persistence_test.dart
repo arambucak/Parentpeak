@@ -123,6 +123,22 @@ void main() {
     expect(await service.loadReservedIds(), isEmpty);
   });
 
+  test('HTTP cancellation error preserves existing reservation marker', () async {
+    final remote = TreasureBackendService(apiClient: BackendApiClient(
+      baseUrl: 'https://example.invalid',
+      authToken: 'test',
+      httpClient: MockClient((request) async => request.url.path.endsWith('/cancel-reservation')
+          ? http.Response('{"error":"Status write failed"}', 500)
+          : http.Response('{"handover":{"id":"saved"}}', 201)),
+    ));
+    final actual = TreasureListingService(store: store, backend: remote);
+    addTearDown(actual.dispose);
+    expect(await actual.reserveListing(listingId: 'item'), isTrue);
+    expect(await actual.cancelReservation(listingId: 'item'), isFalse);
+    expect(await actual.loadReservedIds(), {'item'});
+    expect(actual.lastSyncError, 'treasureNetworkError');
+  });
+
   test('reservation requires both server and local acknowledgement', () async {
     expect(await service.reserveListing(listingId: 'item'), isTrue);
     final reopened = TreasureListingService(store: store, backend: backend);
