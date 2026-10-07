@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'widgets/treasure_handover_text.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
@@ -86,7 +87,9 @@ class _TreasureHandoverScreenState
 
   Future<void> _initializeScreen() async {
     await _restoreSafetyState();
+    if (!mounted) return;
     await _loadListings();
+    if (!mounted) return;
     await _loadOwnedListingIds();
     if (!mounted) return;
     if (widget.openMyListings) {
@@ -841,6 +844,7 @@ class _TreasureHandoverScreenState
     final isFreshToday = _isFreshToday(listing.createdAt);
     final freshnessTimeLabel = _freshnessTimeLabel(l10n, listing.createdAt);
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => _openListingDetail(listing),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
@@ -1166,6 +1170,7 @@ class _TreasureHandoverScreenState
                   right: entry.key == items.length - 1 ? 0 : 8,
                 ),
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => onSelected(entry.value.$1),
                   child: Container(
                     padding: EdgeInsets.symmetric(
@@ -1262,8 +1267,8 @@ class _TreasureHandoverScreenState
           Expanded(
             child: Text(
               _globalDigitalMode
-                  ? '🎁 Kein lokal verfügbar? Stöber jetzt im globalen Schatz-Pool — oder teile deine eigenen Schätze!'
-                  : '📍 Aktuelle Reichweite: $_discoveryScope | Mehr Schätze in deiner Nähe? Lade Freunde ein!',
+                  ? l10n.t('treasureDiscoveryInvite')
+                  : l10n.tFormat('treasureDiscoveryScopeInvite', {'radius': _discoveryScope}),
               style: const TextStyle(
                 color: Color(0xFF74420D),
                 fontWeight: FontWeight.w700,
@@ -1374,7 +1379,7 @@ class _TreasureHandoverScreenState
                     subtitle: Text(
                       reservation.status == 'confirmed'
                           ? l10n.t('treasureReservationConfirmed')
-                          : reservation.location,
+                          : treasureHandoverLocation(l10n, reservation.location)!,
                     ),
                     trailing: reservation.status == 'confirmed'
                         ? null
@@ -1864,7 +1869,7 @@ class _TreasureHandoverScreenState
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              _syncError ??
+              (_syncError == null ? null : l10n.t(_syncError!)) ??
                   l10n.t(
                     'treasureSyncHintFallback',
                     fallback:
@@ -1961,6 +1966,7 @@ class _TreasureHandoverScreenState
                                   },
                                   itemBuilder: (context, index) {
                                     return GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
                                       onTap: () => _openFullscreenGallery(
                                         galleryPaths: galleryPaths,
                                         initialIndex: index,
@@ -2032,6 +2038,7 @@ class _TreasureHandoverScreenState
                                   right: 16,
                                   bottom: 16,
                                   child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
                                     onTap: () => _openFullscreenGallery(
                                       galleryPaths: galleryPaths,
                                       initialIndex: currentIndex,
@@ -2119,6 +2126,7 @@ class _TreasureHandoverScreenState
                             itemBuilder: (context, index) {
                               final isSelected = index == currentIndex;
                               return GestureDetector(
+                                behavior: HitTestBehavior.opaque,
                                 onTap: () {
                                   if (isSelected) {
                                     _openFullscreenGallery(
@@ -2835,23 +2843,11 @@ class _TreasureHandoverScreenState
   }
 
   String? _slotLabel(AppLocalizations l10n, String? id) {
-    const keys = {
-      'sunday_morning': 'treasureSlotSunday',
-      'monday_evening': 'treasureSlotMonday',
-      'tuesday_morning': 'treasureSlotTuesday',
-    };
-    final key = keys[id];
-    return key == null ? null : l10n.t(key);
+    return treasureHandoverLocation(l10n, id);
   }
 
   String? _dropPointLabel(AppLocalizations l10n, String? id) {
-    const keys = {
-      'front_door_box': 'treasureDropRetterBox',
-      'daycare_locker': 'treasureDropKitaLocker',
-      'entrance_mailbox': 'treasureDropMailbox',
-    };
-    final key = keys[id];
-    return key == null ? null : l10n.t(key);
+    return treasureHandoverLocation(l10n, id);
   }
 
   String _categoryLabel(AppLocalizations l10n, String category) {
@@ -3329,6 +3325,7 @@ class _TreasureFullscreenGalleryState
                     itemBuilder: (context, index) {
                       final isSelected = index == _currentIndex;
                       return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
                         onTap: () {
                           _pageController.animateToPage(
                             index,

@@ -144,7 +144,7 @@ void main() {
         await backend.fetchTreasures(latitude: 90.001, longitude: 8),
         isEmpty,
       );
-      expect(backend.lastSyncError, contains('Invalid treasure coordinates'));
+      expect(backend.lastSyncError, 'treasureNetworkError');
     },
   );
 

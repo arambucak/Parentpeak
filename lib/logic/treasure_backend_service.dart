@@ -54,11 +54,13 @@ class TreasureOfferSummary {
       status: json['status']?.toString() ?? '',
       reservations: rawReservations is List
           ? rawReservations
-              .whereType<Map>()
-              .map((item) => TreasureHandoverSummary.fromJson(
+                .whereType<Map>()
+                .map(
+                  (item) => TreasureHandoverSummary.fromJson(
                     Map<String, dynamic>.from(item),
-                  ))
-              .toList()
+                  ),
+                )
+                .toList()
           : const [],
     );
   }
@@ -84,15 +86,17 @@ class TreasureMineOverview {
 
     return TreasureMineOverview(
       offers: parseList(json['offers'], TreasureOfferSummary.fromJson),
-      reservedByMe:
-          parseList(json['reservedByMe'], TreasureHandoverSummary.fromJson),
+      reservedByMe: parseList(
+        json['reservedByMe'],
+        TreasureHandoverSummary.fromJson,
+      ),
     );
   }
 }
 
 class TreasureBackendService {
   TreasureBackendService({BackendApiClient? apiClient})
-      : _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
+    : _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
 
   final BackendApiClient? _apiClient;
   String? lastSyncError;
@@ -128,15 +132,19 @@ class TreasureBackendService {
           'condition': condition.trim(),
         'maxResults': limit.toString(),
         'offset': offset.toString(),
-        if (latitude != null) 'latitude': TreasureGeometry.coarse(latitude).toString(),
-        if (longitude != null) 'longitude': TreasureGeometry.coarse(longitude).toString(),
+        if (latitude != null)
+          'latitude': TreasureGeometry.coarse(latitude).toString(),
+        if (longitude != null)
+          'longitude': TreasureGeometry.coarse(longitude).toString(),
         'radiusKm': radiusKm.toString(),
       };
 
-      final payload =
-          await _apiClient!.getJson(_appendQuery(_treasuresPath, query));
-      final data =
-          payload is Map<String, dynamic> ? payload['treasures'] : payload;
+      final payload = await _apiClient!.getJson(
+        _appendQuery(_treasuresPath, query),
+      );
+      final data = payload is Map<String, dynamic>
+          ? payload['treasures']
+          : payload;
       if (data is! List) {
         return [];
       }
@@ -145,7 +153,7 @@ class TreasureBackendService {
           .map((item) => _mapTreasureToListing(Map<String, dynamic>.from(item)))
           .toList();
     } catch (e) {
-      lastSyncError = 'Verschenkmarkt konnte nicht geladen werden: $e';
+      lastSyncError = 'treasureNetworkError';
       return [];
     }
   }
@@ -171,7 +179,9 @@ class TreasureBackendService {
             primaryImagePath.startsWith('https://')) {
           uploadedImageUrl = primaryImagePath;
         } else {
-          throw StateError('Treasure images must be uploaded before creating a listing');
+          throw StateError(
+            'Treasure images must be uploaded before creating a listing',
+          );
         }
       }
 
@@ -209,7 +219,7 @@ class TreasureBackendService {
         fallbackListing: listing,
       );
     } catch (e) {
-      lastSyncError = 'Treasure konnte nicht erstellt werden: $e';
+      lastSyncError = 'treasureNetworkError';
       return null;
     }
   }
@@ -223,17 +233,14 @@ class TreasureBackendService {
     if (_apiClient == null) return false;
 
     try {
-      await _apiClient!.postJsonAny(
-        '$_treasuresPath/$treasureId/report',
-        {
-          'reporterUserId': reporterUserId,
-          'reason': reason,
-          if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
-        },
-      );
+      await _apiClient!.postJsonAny('$_treasuresPath/$treasureId/report', {
+        'reporterUserId': reporterUserId,
+        'reason': reason,
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      });
       return true;
     } catch (e) {
-      lastSyncError = 'Meldung konnte nicht an den Server gesendet werden: $e';
+      lastSyncError = 'treasureNetworkError';
       return false;
     }
   }
@@ -250,19 +257,16 @@ class TreasureBackendService {
     if (_apiClient == null) return false;
 
     try {
-      await _apiClient!.postJsonAny(
-        '$_treasuresPath/$treasureId/reserve',
-        {
-          'requesterUserId': requesterUserId,
-          if (preferredSlot != null) 'preferredSlot': preferredSlot,
-          if (handoverMode != null) 'handoverMode': handoverMode,
-          if (message != null && message.trim().isNotEmpty)
-            'message': message.trim(),
-        },
-      );
+      await _apiClient!.postJsonAny('$_treasuresPath/$treasureId/reserve', {
+        'requesterUserId': requesterUserId,
+        if (preferredSlot != null) 'preferredSlot': preferredSlot,
+        if (handoverMode != null) 'handoverMode': handoverMode,
+        if (message != null && message.trim().isNotEmpty)
+          'message': message.trim(),
+      });
       return true;
     } catch (e) {
-      lastSyncError = 'Reservierung konnte nicht gesendet werden: $e';
+      lastSyncError = 'treasureNetworkError';
       return false;
     }
   }
@@ -279,7 +283,7 @@ class TreasureBackendService {
       );
       return true;
     } catch (e) {
-      lastSyncError = 'Anzeige konnte nicht gelöscht werden: $e';
+      lastSyncError = 'treasureNetworkError';
       return false;
     }
   }
@@ -294,7 +298,7 @@ class TreasureBackendService {
       if (payload is! Map) return null;
       return TreasureMineOverview.fromJson(Map<String, dynamic>.from(payload));
     } catch (e) {
-      lastSyncError = 'Eigene Anzeigen konnten nicht geladen werden: $e';
+      lastSyncError = 'treasureNetworkError';
       return null;
     }
   }
@@ -314,7 +318,7 @@ class TreasureBackendService {
       );
       return true;
     } catch (e) {
-      lastSyncError = 'Übergabe konnte nicht aktualisiert werden: $e';
+      lastSyncError = 'treasureNetworkError';
       return false;
     }
   }
@@ -332,7 +336,7 @@ class TreasureBackendService {
       );
       return true;
     } catch (e) {
-      lastSyncError = 'Reservierung konnte nicht storniert werden: $e';
+      lastSyncError = 'treasureNetworkError';
       return false;
     }
   }
@@ -342,9 +346,13 @@ class TreasureBackendService {
     TreasureListing? fallbackListing,
   }) {
     final rawCondition = treasure['condition']?.toString() ?? '';
-    final categoryRaw = treasure['category']?.toString() ?? fallbackListing?.category ?? 'other';
-    final createdAt =
-        DateTime.tryParse(treasure['createdAt']?.toString() ?? '');
+    final categoryRaw =
+        treasure['category']?.toString() ??
+        fallbackListing?.category ??
+        'other';
+    final createdAt = DateTime.tryParse(
+      treasure['createdAt']?.toString() ?? '',
+    );
     final imageUrl = treasure['photoUrl']?.toString();
     final latitude = double.tryParse(treasure['latitude']?.toString() ?? '');
     final longitude = double.tryParse(treasure['longitude']?.toString() ?? '');
@@ -357,17 +365,22 @@ class TreasureBackendService {
       id: treasure['id']?.toString() ?? fallbackListing?.id ?? '',
       title: treasure['title']?.toString() ?? fallbackListing?.title ?? '',
       category: TreasureCategory.normalize(categoryRaw),
-      sizeAge: fallbackListing?.sizeAge ?? 'Flexible Größe',
+      sizeAge: fallbackListing?.sizeAge ?? '',
       conditionKey: _mapConditionForUi(rawCondition),
       distanceMeters: () {
-        final realKm =
-            double.tryParse(treasure['distanceKm']?.toString() ?? '');
-        if (realKm != null && realKm.isFinite && realKm >= 0) return (realKm * 1000).round();
+        final realKm = double.tryParse(
+          treasure['distanceKm']?.toString() ?? '',
+        );
+        if (realKm != null && realKm.isFinite && realKm >= 0) {
+          return (realKm * 1000).round();
+        }
         return null;
       }(),
       shareRadiusKm: TreasureGeometry.readRadius(
-        treasure['shareRadiusKm'], fallback: fallbackListing?.shareRadiusKm ?? 1),
-      colorLabel: fallbackListing?.colorLabel ?? 'Neutral',
+        treasure['shareRadiusKm'],
+        fallback: fallbackListing?.shareRadiusKm ?? 1,
+      ),
+      colorLabel: fallbackListing?.colorLabel ?? '',
       note: treasure['description']?.toString() ?? fallbackListing?.note ?? '',
       locationLabel:
           treasure['location']?.toString() ?? fallbackListing?.locationLabel,

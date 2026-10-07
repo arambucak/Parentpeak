@@ -129,7 +129,7 @@ class TreasureListingService {
     if (_backendService.isEnabled) {
       final loc = LocationService.instance;
       if (!loc.hasLocation) {
-        lastSyncError = 'Standort benötigt, um Angebote in deiner Nähe zu zeigen.';
+        lastSyncError = 'treasure_location_required';
         return [];
       }
       final listings = await _backendService.fetchTreasures(
@@ -151,16 +151,16 @@ class TreasureListingService {
   Future<TreasureListing?> createListing(TreasureListing listing, {String? userId}) =>
     _run((owner, guard) async {
       if (listing.latitude == null || listing.longitude == null) {
-        lastSyncError = 'Standort benötigt, um ein Angebot zu veröffentlichen.';
+        lastSyncError = 'treasure_location_required';
         return null;
       }
       if (!_backendService.isEnabled) {
-        lastSyncError = 'Verschenkmarkt ist gerade nicht verfügbar.';
+        lastSyncError = 'treasure_market_unavailable';
         return null;
       }
       final uid = store.userId;
       if (uid == null || (userId != null && userId != uid)) {
-        lastSyncError = 'Bitte melde dich an, um ein Angebot zu veröffentlichen.';
+        lastSyncError = 'treasure_signin_required';
         return null;
       }
       final created = await _backendService.createTreasure(
@@ -195,7 +195,7 @@ class TreasureListingService {
   }) => _run((owner, guard) async {
     final uid = store.userId;
     if (uid == null) {
-      lastSyncError = 'Bitte melde dich an, um ein Angebot zu reservieren.';
+      lastSyncError = 'treasure_signin_required';
       return false;
     }
     if (!_backendService.isEnabled) {
@@ -228,7 +228,7 @@ class TreasureListingService {
   Future<bool> deleteListing({required String listingId}) => _run((owner, guard) async {
     final uid = store.userId;
     if (uid == null) {
-      lastSyncError = 'Bitte melde dich an, um deine Anzeige zu löschen.';
+      lastSyncError = 'treasure_signin_required';
       return false;
     }
     if (_backendService.isEnabled) {
@@ -247,7 +247,7 @@ class TreasureListingService {
   Future<TreasureMineOverview?> loadMine() => _run((owner, guard) async {
     final uid = store.userId;
     if (uid == null) {
-      lastSyncError = 'Bitte melde dich an, um deine Anzeigen zu sehen.';
+      lastSyncError = 'treasure_signin_required';
       return null;
     }
     final overview = await _backendService.fetchMine(userId: uid);
@@ -299,7 +299,7 @@ class TreasureListingService {
     required String listingId, required String reason, String? note, String? reporterUserId,
   }) => _run((owner, guard) async {
     if (!_backendService.isEnabled) {
-      lastSyncError = 'Backend nicht verfügbar. Meldung lokal markiert.';
+      lastSyncError = 'treasureReportLocalOnly';
       return false;
     }
     final uid = store.userId;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -16,6 +17,7 @@ import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/treasure_upload_screen.dart';
+import 'package:parentpeak/ui/widgets/treasure_handover_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Photo extends XFile {
@@ -25,6 +27,7 @@ class _Photo extends XFile {
 }
 
 class _Picker extends ImagePicker {
+  Completer<List<XFile>>? pending;
   @override
   Future<List<XFile>> pickMultiImage({
     double? maxWidth,
@@ -32,7 +35,7 @@ class _Picker extends ImagePicker {
     int? imageQuality,
     int? limit,
     bool requestFullMetadata = true,
-  }) async => [_Photo('/fake-one.png'), _Photo('/fake-two.png')];
+  }) async => pending != null ? await pending!.future : [_Photo('/fake-one.png'), _Photo('/fake-two.png')];
 }
 
 TreasureListing _listing() => TreasureListing(
@@ -57,6 +60,7 @@ class _Backend extends TreasureBackendService {
   int cancellations = 0;
   TreasureListing? createdListing;
   List<TreasureListing>? offers;
+  Completer<List<TreasureListing>>? pendingFetch;
   @override
   bool get isEnabled => enabled;
   @override
@@ -83,7 +87,7 @@ class _Backend extends TreasureBackendService {
     double? latitude,
     double? longitude,
     double radiusKm = 25,
-  }) async => offers ?? [_listing()];
+  }) async => pendingFetch != null ? await pendingFetch!.future : offers ?? [_listing()];
   @override
   Future<TreasureMineOverview?> fetchMine({required String userId}) async =>
       const TreasureMineOverview(
@@ -157,6 +161,7 @@ void main() {
     WidgetTester tester,
     Widget screen, {
     String language = 'en',
+    bool settleAfter = true,
   }) async {
     await tester.runAsync(() async {
       await AuthService.instance.debugSeedSessionForTesting();
@@ -175,8 +180,102 @@ void main() {
         home: screen,
       ),
     );
-    await settle(tester);
+    if (settleAfter) await settle(tester);
   }
+
+  for (final language in ['de', 'en', 'tr', 'ku']) {
+    testWidgets('$language defaults and honest editable note suggestion', (tester) async {
+      final strings = AppLocalizations(Locale(language));
+      await mount(tester, TreasureUploadScreen(
+        listingService: service,
+        imagePicker: _Picker(),
+      ), language: language);
+      final title = find.byWidgetPredicate((widget) =>
+          widget is TextField && widget.controller?.text == strings.t('treasureDefaultTitle'));
+      await tester.scrollUntilVisible(title, 250, scrollable: find.byType(Scrollable).first);
+      await tester.enterText(title, 'My own title');
+      final button = find.text(strings.t('treasureInsertNoteSuggestion'));
+      await tester.scrollUntilVisible(button, 250, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await tester.pump();
+      final expected = strings.tFormat('treasureNoteSuggestion', {
+        'title': 'My own title',
+        'sizeAge': strings.t('treasureDefaultSizeAge'),
+      });
+      await tester.scrollUntilVisible(find.text(expected).first, -200,
+          scrollable: find.byType(Scrollable).first);
+      expect(find.text(expected), findsWidgets);
+      expect(find.byIcon(Icons.mic_none_rounded), findsNothing);
+      final note = find.byWidgetPredicate((widget) =>
+          widget is TextField && widget.controller?.text == expected);
+      await tester.ensureVisible(note);
+      await tester.pumpAndSettle();
+      await tester.enterText(note, 'My private handwritten note');
+      await tester.pump();
+      expect(find.text('My private handwritten note'), findsWidgets);
+      expect(backend.creates, 0);
+      expect(uploads, 0);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+    });
+
+    test('$language handover codes and mode prefix localized; user text preserved', () {
+      final strings = AppLocalizations(Locale(language));
+      for (final entry in {
+        'sunday_morning': 'treasureSlotSunday',
+        'monday_evening': 'treasureSlotMonday',
+        'tuesday_morning': 'treasureSlotTuesday',
+        'front_door_box': 'treasureDropRetterBox',
+        'daycare_locker': 'treasureDropKitaLocker',
+        'entrance_mailbox': 'treasureDropMailbox',
+      }.entries) {
+        expect(treasureHandoverLocation(strings, entry.key), strings.t(entry.value));
+      }
+      expect(treasureHandoverLocation(strings, 'My chosen place'), 'My chosen place');
+      expect(treasureHandoverNotes(strings, 'Kurz treffen · Do not translate my text'),
+          '${strings.t('treasureHandoverCoffeeMode')} · Do not translate my text');
+      expect(treasureHandoverNotes(strings, 'Stiller Tausch'),
+          strings.t('treasureHandoverFlyingSwap'));
+      expect(treasureHandoverNotes(strings, 'My handwritten note'), 'My handwritten note');
+    });
+  }
+
+  testWidgets('late gallery response after disposal cannot update state or save photos', (tester) async {
+    final picker = _Picker()..pending = Completer<List<XFile>>();
+    await mount(tester, TreasureUploadScreen(listingService: service, imagePicker: picker));
+    await tester.tap(find.text(l10n.t('treasureChooseFromLibrary')));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    picker.pending!.complete([_Photo('/late.png')]);
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    expect((await store.read(expectedScope: store.scope))['draft'], isNull);
+  });
+
+  testWidgets('late feed response after disposal stops initialization', (tester) async {
+    backend.pendingFetch = Completer<List<TreasureListing>>();
+    await mount(tester, TreasureHandoverScreen(listingService: service), settleAfter: false);
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    backend.pendingFetch!.complete([_listing()]);
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('upload photo hit targets are opaque', (tester) async {
+    await mount(tester, TreasureUploadScreen(listingService: service, imagePicker: _Picker()));
+    await tester.tap(find.text(l10n.t('treasureChooseFromLibrary')));
+    await settle(tester);
+    final gestures = tester.widgetList<GestureDetector>(
+      find.descendant(of: find.byType(TreasureUploadScreen), matching: find.byType(GestureDetector)),
+    ).where((widget) => widget.onTap != null);
+    expect(gestures.length, greaterThanOrEqualTo(4));
+    expect(gestures.every((widget) => widget.behavior == HitTestBehavior.opaque), isTrue);
+  });
 
   Future<void> tapKey(
     WidgetTester tester,

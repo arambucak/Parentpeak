@@ -252,7 +252,7 @@ void main() {
     final owner = store.scope;
     await open(tester, TreasureUploadScreen(listingService: service));
     final title = find.byWidgetPredicate((widget) =>
-        widget is TextField && widget.controller?.text == 'Rotes Laufrad');
+        widget is TextField && widget.controller?.text == 'Red balance bike');
     await tester.scrollUntilVisible(title, 250,
       scrollable: find.byType(Scrollable).first);
     await tester.enterText(title, 'Pending account-only edit');

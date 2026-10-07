@@ -460,8 +460,15 @@ fehlende Bilder werden gemeldet, kein automatisches Ueberschreiben.
 Die lokalen Bilddaten sind nicht verschluesselt. Ein Entwurf oder dessen
 Speichern veroeffentlicht nichts; erst Teilen laedt Fotos hoch.
 
-Verbleibende UI-/Lifecyclefragen bleiben separate Auditpunkte.
-Keine Deployment- oder Launchfreigabe.
+Die Notizvorlage ist ausdruecklich ein bearbeitbarer Textvorschlag und ersetzt
+den vorhandenen Notiztext; sie nimmt keinen Ton auf und startet keine KI-Anfrage.
+Formulardefaults und Vorlage sind in de/en/tr/ku lokalisiert. Gespeicherte
+Nutzereingaben bleiben beim Laden unveraendert. Bekannte interne Zeit-/Abholcodes
+und der vom Server vorangestellte Uebergabemodus werden bei der Anzeige
+uebersetzt; angehaengter Freitext bleibt erhalten. Fehlende Anbieterangaben
+werden nicht als erfundene Farbe oder Groesse ergaenzt.
+Keine Deployment- oder Launchfreigabe: archivierte Create-Ergebnisse und
+wiederholte Reservierungen bleiben separate Auditpunkte.
 
 ### Verschenkmarkt: Kategorien und ungefaehre Reichweite
 
