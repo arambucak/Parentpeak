@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/logic/chat_provider_exception.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/chat_memory_consent.dart';
@@ -163,26 +164,9 @@ class PedagogicalChatBackend {
       'beißen',
       'beissen',
     ],
-    'Schlaf': [
-      'schlaf',
-      'einschlafen',
-      'durchschlafen',
-      'nacht',
-    ],
-    'Medien': [
-      'medien',
-      'handy',
-      'tablet',
-      'youtube',
-      'bildschirm',
-    ],
-    'Kita und Schule': [
-      'kita',
-      'schule',
-      'lehrer',
-      'lehrerin',
-      'hausaufgaben',
-    ],
+    'Schlaf': ['schlaf', 'einschlafen', 'durchschlafen', 'nacht'],
+    'Medien': ['medien', 'handy', 'tablet', 'youtube', 'bildschirm'],
+    'Kita und Schule': ['kita', 'schule', 'lehrer', 'lehrerin', 'hausaufgaben'],
     'Lernen und Selbststaendigkeit': [
       'selbststaendig',
       'selbststandig',
@@ -220,16 +204,21 @@ class PedagogicalChatBackend {
   }) async* {
     final scope = expectedScope ?? consent.scope;
     final ticket = accountStore.ticket;
-    final memoryConsent = _geminiService?.memoryConsent ?? ChatMemoryConsent.instance;
+    final memoryConsent =
+        _geminiService?.memoryConsent ?? ChatMemoryConsent.instance;
     final memoryOwner = memoryConsent.scope;
-    final usingMemory = childProfileId != null && await memoryConsent.hasConsent();
+    final usingMemory =
+        childProfileId != null && await memoryConsent.hasConsent();
     final memoryRevision = memoryConsent.revision(memoryOwner);
     void guard() {
       accountStore.require(ticket);
       consent.requireScope(scope);
-      if (usingMemory) memoryConsent.requireRevision(memoryOwner, memoryRevision);
+      if (usingMemory) {
+        memoryConsent.requireRevision(memoryOwner, memoryRevision);
+      }
       requireCurrentRequest?.call();
     }
+
     final message = userMessage.trim();
     if (message.isEmpty) {
       return;
@@ -277,9 +266,7 @@ class PedagogicalChatBackend {
     }
 
     if (_geminiService == null) {
-      yield _providerUnavailableResponse(
-        rawError: 'Gemini service not initialized',
-      );
+      yield _providerUnavailableResponse(languageCode);
       return;
     }
 
@@ -310,103 +297,119 @@ class PedagogicalChatBackend {
     );
     preparedHistory.add({'role': 'user', 'content': coachingPrompt});
 
-    var response = await _chatWithConsent(
-      preparedHistory, scope, guard, childProfileId: childProfileId,
-    );
-    if (_looksLikeProviderError(response)) {
-      yield _providerUnavailableResponse(rawError: response);
-      return;
-    }
-
-    if (_looksLikeDefensiveBoundaryResponse(response)) {
-      final retryHistory = List<Map<String, String>>.from(preparedHistory)
-        ..add({'role': 'assistant', 'content': response})
-        ..add({
-          'role': 'user',
-          'content': 'Bitte antworte nicht mit einer allgemeinen Grenzformel. '
-              'Antworte stattdessen konkret, empathisch und loesungsorientiert für Eltern im Alltag.',
-        });
-      final retryResponse = await _chatWithConsent(
-        retryHistory, scope, guard, childProfileId: childProfileId,
-      );
-      if (!_looksLikeProviderError(retryResponse) &&
-          retryResponse.trim().isNotEmpty) {
-        response = retryResponse;
-      }
-    }
-
-    if (!_preservesCriticalContext(response, contextAnchors)) {
-      final retryHistory = List<Map<String, String>>.from(preparedHistory)
-        ..add({'role': 'assistant', 'content': response})
-        ..add({
-          'role': 'user',
-          'content': _contextRetentionRetryInstruction(contextAnchors),
-        });
-      final retryResponse = await _chatWithConsent(
-        retryHistory, scope, guard, childProfileId: childProfileId,
-      );
-      if (!_looksLikeProviderError(retryResponse) &&
-          retryResponse.trim().isNotEmpty) {
-        response = retryResponse;
-      }
-    }
-
-    if (_needsQualityRetry(response)) {
-      final retryHistory = List<Map<String, String>>.from(preparedHistory)
-        ..add({'role': 'assistant', 'content': response})
-        ..add({'role': 'user', 'content': _qualityRetryInstruction(topicMode)});
-      final retryResponse = await _chatWithConsent(
-        retryHistory, scope, guard, childProfileId: childProfileId,
-      );
-      if (!_looksLikeProviderError(retryResponse) &&
-          retryResponse.trim().isNotEmpty) {
-        response = retryResponse;
-      }
-    }
-
-    if (_containsAny(response.toLowerCase(), _diagnosisIntentKeywords)) {
-      yield _diagnosisBoundaryResponse();
-      return;
-    }
-    if (_containsAny(response.toLowerCase(), _medicalTreatmentIntentKeywords)) {
-      yield _medicalBoundaryResponse();
-      return;
-    }
-    if (_shouldBlockViolenceIntent(response.toLowerCase())) {
-      yield _violentBoundaryResponse();
-      return;
-    }
-
-    if (_violatesCorePedagogicalValues(response.toLowerCase())) {
-      final repaired = await _repairToPedagogicalResponse(
-        preparedHistory: preparedHistory,
-        originalResponse: response,
-        topicMode: topicMode,
+    try {
+      var response = await _chatWithConsent(
+        preparedHistory,
+        scope,
+        guard,
         childProfileId: childProfileId,
-        expectedScope: scope,
-        requestGuard: guard,
+        languageCode: languageCode,
       );
 
-      if (_looksLikeProviderError(repaired)) {
-        yield _providerUnavailableResponse(rawError: repaired);
+      if (_looksLikeDefensiveBoundaryResponse(response)) {
+        final retryHistory = List<Map<String, String>>.from(preparedHistory)
+          ..add({'role': 'assistant', 'content': response})
+          ..add({
+            'role': 'user',
+            'content':
+                'Bitte antworte nicht mit einer allgemeinen Grenzformel. '
+                'Antworte stattdessen konkret, empathisch und loesungsorientiert für Eltern im Alltag.',
+          });
+        final retryResponse = await _chatWithConsent(
+          retryHistory,
+          scope,
+          guard,
+          childProfileId: childProfileId,
+          languageCode: languageCode,
+        );
+        if (retryResponse.trim().isNotEmpty) {
+          response = retryResponse;
+        }
+      }
+
+      if (!_preservesCriticalContext(response, contextAnchors)) {
+        final retryHistory = List<Map<String, String>>.from(preparedHistory)
+          ..add({'role': 'assistant', 'content': response})
+          ..add({
+            'role': 'user',
+            'content': _contextRetentionRetryInstruction(contextAnchors),
+          });
+        final retryResponse = await _chatWithConsent(
+          retryHistory,
+          scope,
+          guard,
+          childProfileId: childProfileId,
+          languageCode: languageCode,
+        );
+        if (retryResponse.trim().isNotEmpty) {
+          response = retryResponse;
+        }
+      }
+
+      if (_needsQualityRetry(response)) {
+        final retryHistory = List<Map<String, String>>.from(preparedHistory)
+          ..add({'role': 'assistant', 'content': response})
+          ..add({
+            'role': 'user',
+            'content': _qualityRetryInstruction(topicMode),
+          });
+        final retryResponse = await _chatWithConsent(
+          retryHistory,
+          scope,
+          guard,
+          childProfileId: childProfileId,
+          languageCode: languageCode,
+        );
+        if (retryResponse.trim().isNotEmpty) {
+          response = retryResponse;
+        }
+      }
+
+      if (_containsAny(response.toLowerCase(), _diagnosisIntentKeywords)) {
+        yield _diagnosisBoundaryResponse();
+        return;
+      }
+      if (_containsAny(
+        response.toLowerCase(),
+        _medicalTreatmentIntentKeywords,
+      )) {
+        yield _medicalBoundaryResponse();
+        return;
+      }
+      if (_shouldBlockViolenceIntent(response.toLowerCase())) {
+        yield _violentBoundaryResponse();
         return;
       }
 
-      if (_violatesCorePedagogicalValues(repaired.toLowerCase())) {
-        yield _pedagogicalFallbackResponse(topicMode);
+      if (_violatesCorePedagogicalValues(response.toLowerCase())) {
+        final repaired = await _repairToPedagogicalResponse(
+          preparedHistory: preparedHistory,
+          originalResponse: response,
+          topicMode: topicMode,
+          childProfileId: childProfileId,
+          expectedScope: scope,
+          requestGuard: guard,
+          languageCode: languageCode,
+        );
+
+        if (_violatesCorePedagogicalValues(repaired.toLowerCase())) {
+          yield _pedagogicalFallbackResponse(topicMode);
+          return;
+        }
+
+        if (_looksLikeDefensiveBoundaryResponse(repaired)) {
+          yield _pedagogicalFallbackResponse(topicMode);
+          return;
+        }
+
+        yield repaired;
         return;
       }
 
-      if (_looksLikeDefensiveBoundaryResponse(repaired)) {
-        yield _pedagogicalFallbackResponse(topicMode);
-        return;
-      }
-
-      yield repaired;
-      return;
+      yield response;
+    } on ChatProviderException catch (error) {
+      yield _providerUnavailableResponse(languageCode, issue: error.issue);
     }
-
-    yield response;
   }
 
   Future<String> _chatWithConsent(
@@ -414,15 +417,29 @@ class PedagogicalChatBackend {
     String expectedScope,
     void Function() guard, {
     String? childProfileId,
+    required String languageCode,
   }) async {
     await consent.require(expectedScope);
     guard();
-    final response = await _geminiService!.chatWithHistory(
-      [
-        ...ChatContextPolicy.limitHistory(history.sublist(0, history.length - 1)),
-        history.last,
-      ], childProfileId: childProfileId, requestGuard: guard,
-    );
+    final String response;
+    try {
+      response = await _geminiService!.chatWithHistory(
+        [
+          ...ChatContextPolicy.limitHistory(
+            history.sublist(0, history.length - 1),
+          ),
+          history.last,
+        ],
+        childProfileId: childProfileId,
+        requestGuard: guard,
+        languageCode: languageCode,
+      );
+    } on ChatProviderException {
+      guard();
+      await consent.require(expectedScope);
+      guard();
+      rethrow;
+    }
     guard();
     await consent.require(expectedScope);
     guard();
@@ -445,12 +462,14 @@ class PedagogicalChatBackend {
     }
 
     final lower = compact.toLowerCase();
-    final hasAge = RegExp(r'\b\d{1,2}\b').hasMatch(lower) ||
+    final hasAge =
+        RegExp(r'\b\d{1,2}\b').hasMatch(lower) ||
         lower.contains('jahr') ||
         lower.contains('monate') ||
         lower.contains('kindergartenalter') ||
         lower.contains('grundschule');
-    final hasTriggerContext = lower.contains('weil') ||
+    final hasTriggerContext =
+        lower.contains('weil') ||
         lower.contains('wenn') ||
         lower.contains('situation') ||
         lower.contains('passiert');
@@ -584,8 +603,9 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
     final lower = message.toLowerCase();
     final anchors = <String>[];
 
-    final ageMatch =
-        RegExp(r'\b\d{1,2}\s*(jahre?|jahr|monate?|monat)\b').firstMatch(lower);
+    final ageMatch = RegExp(
+      r'\b\d{1,2}\s*(jahre?|jahr|monate?|monat)\b',
+    ).firstMatch(lower);
     if (ageMatch != null) {
       anchors.add(ageMatch.group(0)!);
     }
@@ -717,7 +737,8 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
       'keine ratschläge zu',
     ];
     final hasGeneric = _containsAny(lower, genericMarkers);
-    final hasEmpathySignal = lower.contains('kann es sein') ||
+    final hasEmpathySignal =
+        lower.contains('kann es sein') ||
         lower.contains('ich hoere heraus') ||
         lower.contains('das klingt');
     final questionCount = RegExp(r'\?').allMatches(response).length;
@@ -766,43 +787,12 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
     return false;
   }
 
-  bool _looksLikeProviderError(String input) {
-    final lower = input.toLowerCase();
-    const markers = [
-      'fehler:',
-      'not found for api version',
-      'quota exceeded',
-      'exceeded your current quota',
-      'rate-limit',
-      'rate limit',
-      'resource has been exhausted',
-      'generate_content_free_tier',
-      'billing details',
-      'api key',
-      'permission_denied',
-      'unauthenticated',
-      'failed host lookup',
-      'socketexception',
-      'network is unreachable',
-      'deadline exceeded',
-      'timed out',
-      '403',
-      '401',
-      '429',
-    ];
-    for (final marker in markers) {
-      if (lower.contains(marker)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   bool _shouldBlockViolenceIntent(String input) {
     final hasViolenceTerms = _containsAny(input, _violentKeywords);
     if (!hasViolenceTerms) return false;
 
-    final hasSafeContext = _containsAny(input, _nonViolentContextKeywords) ||
+    final hasSafeContext =
+        _containsAny(input, _nonViolentContextKeywords) ||
         _containsAny(input, _helpSeekingViolenceContextKeywords);
     if (hasSafeContext) return false;
 
@@ -834,6 +824,7 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
     required String topicMode,
     required String expectedScope,
     required void Function() requestGuard,
+    required String languageCode,
     String? childProfileId,
   }) async {
     final retryHistory = List<Map<String, String>>.from(preparedHistory)
@@ -842,13 +833,17 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
         'role': 'user',
         'content':
             'Bitte formuliere die Antwort neu: rein gewaltfrei, bindungsorientiert und nach GfK. '
-                'Kein Schimpfen, keine Drohung, keine Strafe. '
-                'Gib stattdessen 3 konkrete alltagstaugliche Schritte plus 2 direkte Beispielsätze für Eltern. '
-                'Themenmodus: $topicMode.',
+            'Kein Schimpfen, keine Drohung, keine Strafe. '
+            'Gib stattdessen 3 konkrete alltagstaugliche Schritte plus 2 direkte Beispielsätze für Eltern. '
+            'Themenmodus: $topicMode.',
       });
 
     return _chatWithConsent(
-      retryHistory, expectedScope, requestGuard, childProfileId: childProfileId,
+      retryHistory,
+      expectedScope,
+      requestGuard,
+      childProfileId: childProfileId,
+      languageCode: languageCode,
     );
   }
 
@@ -878,7 +873,8 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
   }
 
   List<Map<String, String>> _prepareHistory(
-      List<Map<String, dynamic>> history) {
+    List<Map<String, dynamic>> history,
+  ) {
     final prepared = <Map<String, String>>[];
     for (final item in history) {
       final role = item['role']?.toString();
@@ -922,61 +918,18 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
   // Hinweis: Krisen- und Überlastungs-Antworten sind in CrisisSupport
   // ausgelagert (mehrsprachig + länderabhängige Notrufnummern).
 
-  String _providerUnavailableResponse({String? rawError}) {
-    final reason = _providerIssueReason(rawError);
-    const base = 'Die KI-Beratung ist aktuell nicht verfügbar. '
-        'Bitte versuche es gleich erneut.';
-
-    final withReason =
-        reason == null ? base : '$base\n\nMoeglicher Grund: $reason';
-
-    if (kDebugMode && rawError != null && rawError.trim().isNotEmpty) {
-      final compact = rawError.replaceAll(RegExp(r'\s+'), ' ').trim();
-      final shortened =
-          compact.length > 240 ? '${compact.substring(0, 240)}...' : compact;
-      return '$withReason\n\nDebug: $shortened';
-    }
-
-    return withReason;
-  }
-
-  String? _providerIssueReason(String? rawError) {
-    if (rawError == null || rawError.trim().isEmpty) {
-      return null;
-    }
-
-    final lower = rawError.toLowerCase();
-
-    if (lower.contains('api key') ||
-        lower.contains('unauthenticated') ||
-        lower.contains('401')) {
-      return 'API-Schluessel ungueltig oder nicht autorisiert.';
-    }
-
-    if (lower.contains('quota exceeded') ||
-        lower.contains('resource has been exhausted') ||
-        lower.contains('429') ||
-        lower.contains('rate limit')) {
-      return 'Kontingent/Rate-Limit erreicht.';
-    }
-
-    if (lower.contains('permission_denied') || lower.contains('403')) {
-      return 'Berechtigung für dieses Modell fehlt.';
-    }
-
-    if (lower.contains('not found for api version') ||
-        lower.contains('model') && lower.contains('not found')) {
-      return 'Konfiguriertes Modell ist nicht verfügbar.';
-    }
-
-    if (lower.contains('failed host lookup') ||
-        lower.contains('socketexception') ||
-        lower.contains('network is unreachable') ||
-        lower.contains('timed out') ||
-        lower.contains('deadline exceeded')) {
-      return 'Netzwerkproblem oder Timeout.';
-    }
-
-    return 'Externer Dienst antwortet aktuell nicht stabil.';
+  String _providerUnavailableResponse(
+    String languageCode, {
+    ChatProviderIssue? issue,
+  }) {
+    final base = AppStringsManager.getString(
+      languageCode,
+      'chat_provider_unavailable',
+    );
+    if (issue == null) return base;
+    final key = issue == ChatProviderIssue.unavailable
+        ? 'chat_provider_unavailable_reason'
+        : 'chat_provider_${issue.name}';
+    return '$base\n\n${AppStringsManager.getString(languageCode, key)}';
   }
 }

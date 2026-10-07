@@ -1,6 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:parentpeak/logic/account_ai_consent.dart';
+import 'package:parentpeak/logic/chat_account_store.dart';
+import 'package:parentpeak/logic/chat_provider_exception.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -104,12 +109,13 @@ class GeminiAIService {
       }
       rethrow;
     }
-    final text = response['text']?.toString().trim();
+    final rawText = response['text'];
+    final text = rawText is String ? rawText.trim() : null;
     guard();
     if (useMemory) await memoryConsent.require(owner);
     guard();
     if (text == null || text.isEmpty) {
-      throw Exception('KI-Dienst lieferte keine Antwort.');
+      throw const FormatException('AI response text must be a non-empty string');
     }
     final groundingUrls =
         (response['groundingUrls'] as List<dynamic>?)
@@ -136,6 +142,7 @@ class GeminiAIService {
     List<Map<String, String>> messages, {
     String? childProfileId,
     void Function()? requestGuard,
+    String? languageCode,
   }) async {
     try {
       return await generateText(
@@ -143,11 +150,31 @@ class GeminiAIService {
         systemInstruction: APIConfig.parentAssistantSystemPrompt,
         childProfileId: childProfileId,
         requestGuard: requestGuard,
+        appLanguage: languageCode,
       );
     } on ChatMemoryConsentRequiredException {
       rethrow;
-    } catch (error) {
-      return 'Fehler: $error';
+    } on AccountAiConsentRequiredException {
+      rethrow;
+    } on ChatAccountChanged {
+      rethrow;
+    } on BackendApiException catch (error) {
+      final issue = error.statusCode == 401 || error.statusCode == 403
+          ? ChatProviderIssue.authorization
+          : error.statusCode == 429
+          ? ChatProviderIssue.quota
+          : ChatProviderIssue.unavailable;
+      debugPrint('Chat provider HTTP failure: ${error.statusCode}');
+      throw ChatProviderException(issue);
+    } on TimeoutException {
+      debugPrint('Chat provider request timed out');
+      throw const ChatProviderException(ChatProviderIssue.network);
+    } on http.ClientException {
+      debugPrint('Chat provider network request failed');
+      throw const ChatProviderException(ChatProviderIssue.network);
+    } on Exception catch (error) {
+      debugPrint('Chat provider failure: ${error.runtimeType}');
+      throw const ChatProviderException(ChatProviderIssue.unavailable);
     }
   }
 
