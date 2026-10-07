@@ -609,7 +609,11 @@ nicht auf. Keine Apple-Antworten ungeprueft in Google-Felder kopieren.
 3. **P0 - Einwilligungsluecken:** Kuehlschrank-Foto-/Rezept-Legacypfad mit
    generischem Empfaenger, globaler Zustimmung, ungeprueftem Ack und fehlendem
    Service-Consent adressieren; Entwicklungsbericht-Empfaenger transparent
-   benennen. Alternativ diese KI-Flows nachweislich vom Release ausschliessen.
+   benennen. #157/#158 sind vorbereitet, nicht live. Auch den inzwischen
+   verifizierten globalen Entwicklungsbericht-Consent, dessen ungeprueften
+   Schreib-Ack und fehlende Service-Grenze gesondert beheben; eine reine
+   Empfaenger-Textkorrektur erledigt das nicht. Alternativ diese KI-Flows
+   nachweislich vom Release ausschliessen.
 4. **P0 - Recht/Stores:** veraltete bzw. widerspruechliche Privacy-Aussagen,
    Impressumszugang, Gesundheits-/Memory-/Foto-/OSM-/Diagnoseverarbeitung,
    Drittland-/Retention-/Loeschgrenzen und Storeangaben fachlich abstimmen.
