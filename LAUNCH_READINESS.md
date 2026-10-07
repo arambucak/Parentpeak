@@ -23,17 +23,19 @@ Statusbegriffe:
 | Gemergter Code / CI | `analyze: SUCCESS` auch fuer den Merge-SHA: [Run 37651530250](https://github.com/arambucak/Parentpeak/actions/runs/37651530250), volle Fluttertests, Backendunits, Analyzer-/Baselinepruefung. |
 | Physische Apple-/Android-Abnahme | Nicht nachgewiesen. `apple-prepare`, `ios-smoke-build`, `macos-smoke-build` sind in diesem Lauf **SKIPPED**. |
 | Web-Auslieferung | **Bereits erfolgt:** Pages-`build` und `deploy` fuer `cfae2a2` sind erfolgreich: [Run 37651530082](https://github.com/arambucak/Parentpeak/actions/runs/37651530082). Das beweist weder die aktuell sichtbare Custom-Domain-Version noch einen passenden Render-/DB-Stand. |
-| #151-Produktionsmigration | Weiterhin nicht direkt fuer Render nachgewiesen. Neue Read-only-Diagnose [Run 37668027342](https://github.com/arambucak/Parentpeak/actions/runs/37668027342) liest die DB im GitHub-Secret: `20261001000000_add_ai_memory` erfolgreich registriert, **kein** Eintrag fuer `20261007000000_ai_memory_consent`. Gleichheit mit Render-DB und beide Consent-Spalten noch separat nachweisen (Abschnitt 0.1). |
+| #151-Produktionsmigration | **Schema-Mismatch behoben:** nach ausdruecklicher Nutzerfreigabe am 7. Oktober 2026 um 22:37:53 MESZ erfolgreich gegen die Render-DB angewandt. Beide nullable TEXT-Spalten, erfolgreicher Migrationseintrag und keine ausstehenden Migrationen unmittelbar read-only bestaetigt (Abschnitt 0.2). |
+| Backup vor Migration | Nutzer bestaetigt: PITR 3 Tage aktiv, vollstaendiger Render-Export `completed`, Sicherungspunkt 7. Oktober 2026, 22:32 Uhr (als MESZ gefuehrt). Kein unabhaengiger Restore-Test nachgewiesen. |
 | Laufende Render-Version | Im freigegebenen Dashboard **belegt**: Service `Parentpeak`, Live-Deploy `dep-db373js9v7es73cfm83g`, SHA `cfae2a2786736be6aa7f6e1ebccaed5defe00df1`. `/health` liefert weiterhin keine Commit-ID. Dashboard-Pre-Deploy ist leer, entgegen dem Blueprint. |
 | Audit-Testnachweise | Lokaler Abschlussplan: 134 gezielte Tests, 29 Chrome-Tests, Web-JS-Release gruen; volle lokale Suite 902 bestanden / 1 Skip / nur 12 bekannte Events-Firebasefehler; Analyzer 11 Infos. Nicht als neu ausgefuehrte Tests dieses Dokumentationsauftrags ausgeben. |
 
 Fuer dieses Dokument wurden Repo-Dateien, GitHub-Metadaten/Logs und das
 freigegebene Render-Dashboard gelesen. Der vorhandene Read-only-Diagnoseworkflow
 wurde ausgefuehrt; er liest ausschliesslich Schema-/Migrationsmetadaten.
-Keine Migration, kein Deployment, keine Store-Einreichung, keine
-Nutzerdaten-/Google-Anfrage und keine Produktivcode-Aenderung in diesem PR.
+Dieser Dokumentations-PR aendert keinen Produktivcode. Die spaeter gesondert
+freigegebene Produktionsmigration ist in Abschnitt 0.2 dokumentiert.
+Kein Deployment, keine Store-Einreichung und keine KI-Testanfrage ausgefuehrt.
 
-### 0.1 Nachpruefung des Live-Zustands am 7. Oktober
+### 0.1 Historische Erstdiagnose am 7. Oktober (vor Konsolidierung)
 
 - [Render-Service](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0):
   Anzeigename `Parentpeak` (nicht der Blueprint-Name `parentpeak-backend`),
@@ -73,6 +75,81 @@ Render-DB die Spalten nicht hat, ist stattdessen ein neuer Prisma-Client auf
 altem Schema zu untersuchen: insbesondere Settings-/Memory-Zugriffe koennen
 scheitern. Ein erfolgreicher statischer Healthcheck schliesst das nicht aus.
 Eine Nutzerzahl oder Live-Fehlerquote wurde nicht ermittelt.
+Diese Erstdiagnose ist durch die direkte DB-Pruefung und Konsolidierung
+aus Abschnitt 0.2 ergaenzt; die Schemaluecke ist nicht mehr offen.
+
+### 0.2 Freigegebene Konsolidierung und verbleibende Abnahme
+
+- Direkte psql-SELECTs gegen die Render-DB bestaetigten vor der Migration:
+  beide Consent-Spalten fehlen und kein #151-Migrationseintrag vorhanden.
+- `prisma migrate status` gegen genau dieses Ziel, read-only: 12 Repo-
+  Migrationen, genau zwei ausstehend: `20261006000000_optional_parent_matching_age`
+  und `20261007000000_ai_memory_consent`. Erstere lockert `age` auf nullable;
+  letztere fuegt nur nullable TEXT-Spalten hinzu. Beide wurden freigegeben.
+- Backup laut Nutzer: PITR 3 Tage und Render-Export `completed`;
+  Sicherungspunkt 7. Oktober, 22:32 Uhr. Kein Restore-Test behauptet.
+- `prisma migrate deploy` genau einmal ausgefuehrt: Beginn 22:37:47 MESZ,
+  beide Migrationen erfolgreich, Exit 0. Erfolgreiche `finished_at`-Werte:
+  Altersmigration `2026-10-07T20:37:52.761214Z`, Consentmigration
+  `2026-10-07T20:37:53.776619Z`; beide `rolled_back_at` leer, je ein Schritt.
+- Unmittelbare Read-only-SELECTs: `consentRevision` und `consentVersion`
+  jeweils `text` / nullable `YES`; `ParentMatchingProfile.age` nullable `YES`.
+  Anschliessend read-only `prisma migrate status`: 12 Migrationen,
+  `Database schema is up to date!`, Exit 0. Pruefung beendet 22:37:59 MESZ.
+- DB-Zugangsdaten nur intern verwendet; keine Werte ins Dokument/Repo
+  uebernommen. Keine weitere Migration, kein Deploy, kein Merge und keine
+  Render-Einstellungsaenderung nach dieser Freigabe.
+
+**Funktionale Abnahme bleibt offen:** Schema-Nachweis ist kein erfolgreicher
+authentifizierter Backend-GET oder vollstaendiger Opt-in-Test.
+Nach der Migration ausgefuehrte Live-GETs: `/health` HTTP 200 mit
+`status: OK`; `/ai/settings` ohne Token HTTP 401 mit Firebase-ID-Token-
+Hinweis. Erreichbarkeit und Auth-Gate sind damit bestaetigt, nicht die
+authentifizierte Prisma-Abfrage. Kein gueltiger Nutzer-Token verwendet.
+
+Read-only-Abnahme ohne neue Consent-/Memory-Daten:
+
+1. Web-Service `Parentpeak` -> Logs: Zeitraum **nach 22:38 MESZ** filtern.
+   Auf `Prisma`, `P2022`, `P2021`, `consentVersion`, `consentRevision`,
+   `does not exist`, `Unknown column`, SQLSTATE `42703` und HTTP-500-Fehler
+   achten. Historische Fehler vor Migration getrennt behandeln.
+   Keine Fehler ohne tatsaechliche Requests sind kein Funktionsnachweis;
+   Logtexte koennen Nutzerdaten enthalten und sollen nicht ungefiltert geteilt werden.
+2. Mit bereits vorhandenem gueltigem Firebase-ID-Token eines eigenen Kontos
+   ausschliesslich `GET /ai/settings` ausfuehren: erwartet HTTP 200 und
+   JSON mit boolean `enabled` und nullable `consentVersion`.
+   Die Route verwendet `findUnique`, keine Erstellung/Upsert.
+   `enabled: false` ist ohne passende Zustimmung korrekt; kein Opt-in erzwingen.
+   Ohne Token HTTP 401: Auth-Gate erreicht, aber Prisma-Abfrage nicht getestet.
+3. Optional `GET /ai/children`: ebenfalls DB-Read, keine Erzeugung;
+   Antwort kann sensible Bestandsdaten enthalten. Nur lokal pruefen,
+   nach aussen ausschliesslich HTTP-Status/Erfolg berichten.
+4. Kein PUT/POST/DELETE und kein `/ai/generate`: der echte Memory-Kontext-
+   Transfer und Versions-/Revision-Widerrufstest bleiben separat freizugebende
+   funktionale Tests. `/health` allein prueft das Schema nicht.
+
+**Dauerhafte Ursache noch offen:** Dashboard-Pre-Deploy zuletzt leer,
+keine neue Nutzerbestaetigung zur Einrichtung. **Reihenfolge verbindlich:
+erst Dokumentation sichern, dann A durch den Nutzer abnehmen; B erst nach
+erfolgreicher A-Abnahme.** Der Assistent wertet nur redigierte
+Nutzerrueckmeldungen aus und startet keine weiteren Live-Checks.
+Anleitung fuer den spaeteren Schritt B:
+Render -> Web-Service `Parentpeak` -> Settings -> Deploy ->
+Pre-Deploy Command -> Edit -> `npm run migrate:deploy` -> Save.
+Root Directory muss `backend` sein. Speichern als potentiell Deploy-ausloesende
+Aenderung behandeln, nicht als read-only Schritt. Kein garantiertes
+"Save only" fuer dieses Settingsfeld behaupten; Environment-Saveoptionen
+sind ein anderer Dialog.
+
+Vor Speichern Branch `main`, freizugebenden SHA `cfae2a2`, dessen gruene CI,
+keine neueren ungeprueften main-Commits/Deployqueue und dasselbe DB-Ziel
+pruefen. Danach Dashboardwert, Pre-Deploy-Log und Live-SHA kontrollieren.
+Wenn ein Deploy startet, darf er keine ungeprueften neuen Migrationen mitnehmen.
+Beim unveraenderten SHA und demselben DB-Ziel findet der Befehl nach unserer
+erfolgreichen Migration keine ausstehenden Migrationen vor. Das gilt nicht
+automatisch fuer einen spaeteren SHA oder eine andere Datenbank.
+Der korrigierte Pre-Deploy-Schritt ersetzt das weiterhin fehlende
+App-Migration-/Backend-Gate nicht.
 
 Vorbereitete Datenschutz-PRs, **nicht live und nicht gemergt**:
 
@@ -126,9 +203,10 @@ Memory-Freigabe und betroffene Nutzung betrieblich begrenzen.
 
 ### 1.2 Vorhandene Prisma-Workflows und konkrete Befehle
 
-**Die mutierenden Befehle sind ein Runbook fuer eine spaeter ausdruecklich
-freigegebene Ausfuehrung. Sie wurden hier nicht gestartet.** Ausschliesslich
-die Read-only-Diagnose aus Schritt 2 wurde inzwischen ausgefuehrt (Abschnitt 0.1).
+**Die folgenden Befehle bleiben ein Runbook, keine neue Ausfuehrungsfreigabe.**
+Die Read-only-GitHub-Diagnose wurde ausgefuehrt (Abschnitt 0.1).
+Die Produktionskonsolidierung erfolgte separat lokal gegen die Render-DB
+(Abschnitt 0.2), nicht durch Starten des GitHub-Deployworkflows.
 Von der Repo-Wurzel; `main` waehrend des Rollouts auf dem freigegebenen SHA
 halten. Die Workflows haben keinen eigenen Release-SHA-Input.
 
@@ -599,8 +677,11 @@ nicht auf. Keine Apple-Antworten ungeprueft in Google-Felder kopieren.
 
 ## 5. Priorisiert: Vor dem Launch zwingend
 
-1. **P0 - Produktions-Transfergrenze:** DB-Ziel/Backup, #151-Migration und
-   Prisma-Client, Render-SHA und Consent-/Revision-Guards nachweisen.
+1. **P0 - Produktions-Transfergrenze:** #151-Schema-Mismatch am 7. Oktober
+   22:37:53 MESZ behoben, unmittelbare DB-Verifikation gruen; Nutzer-Backup-
+   Punkt 22:32. Noch offen: authentifizierte funktionale Backend-Abnahme,
+   Consent-/Revision-Verhalten und Restore-Test. Pre-Deploy dauerhaft
+   einrichten und App-Deploy-Gate mit Schema-/Backend-Nachweis umsetzen.
    Bereits deployten Web-Stand abgleichen; ohne Nachweis keine weitere
    Memory-/App-Freigabe. CI/Health allein genuegen nicht.
 2. **P0 - Sicherer Stop/Rollback:** consent-faehigen Rollback und betriebliches
