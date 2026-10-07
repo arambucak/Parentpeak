@@ -1836,6 +1836,10 @@ class AppStringsManager {
       'development_report_special_needs':
           '- WICHTIG: Dieses Kind hat besondere Beduerfnisse. Vergleiche NICHT mit Altersnormen. Beschreibe nur den individuellen Fortschritt. Statt "Foerderbedarf" sage "waechst in eigenem Tempo". Sei besonders wertschaetzend und staerkend.',
       'development_consent_title': 'Bericht mit KI erstellen',
+      'knowledge_content_language_notice':
+          'Eltern-Wissen ist noch nicht vollständig übersetzt. Fragen, Antworten und Suchbegriffe sind überwiegend auf Deutsch. Suche mit deutschen Wörtern oder wähle eine Themenkarte.',
+      'knowledge_ui_language_notice':
+          'Fehlende Übersetzungen der Bedienelemente werden auf Englisch angezeigt.',
       'development_consent_body':
           'Für den Bericht werden die Antworten dieses Entwicklungs-Checks an unseren KI-Dienst gesendet. Der Name deines Kindes bleibt dabei auf deinem Gerät und wird nicht übertragen. Deine Angaben werden nur zur Erstellung des Berichts verarbeitet, nicht gespeichert, um dich zu identifizieren.',
       'development_consent_accept': 'Einverstanden, Bericht erstellen',
@@ -4280,6 +4284,10 @@ class AppStringsManager {
       'development_report_special_needs':
           '- IMPORTANT: This child has special needs. Do NOT compare to age norms. Describe only individual progress. Instead of "needs support" say "grows at their own pace". Be especially appreciative and encouraging.',
       'development_consent_title': 'Create report with AI',
+      'knowledge_content_language_notice':
+          'Parent knowledge is not fully translated yet. Questions, answers and search terms are mostly in German. Search using German words or select a topic card.',
+      'knowledge_ui_language_notice':
+          'Missing interface translations are shown in English.',
       'development_consent_body':
           'To create the report, the answers from this development check are sent to our AI service. Your child\'s name stays on your device and is not transmitted. Your input is only processed to create the report and is not stored to identify you.',
       'development_consent_accept': 'Agree and create report',
@@ -13455,6 +13463,10 @@ class AppStringsManager {
       'development_report_special_needs':
           '- GIRÎNG: Ev zarok xwedî pêdiviyên taybet e. Bi normên temen RE neqiyase. Tenê pêşketina kesane rave bike. Li şûna "pêdiviya piştgiriyê" bibêje "bi leza xwe mezin dibe". Bi taybetî bihapîne û hêzdar be.',
       'development_consent_title': 'Bi AI\'yê rapor çêbike',
+      'knowledge_content_language_notice':
+          'Zanîna dêûbavan hîn bi tevahî nehatiye wergerandin. Pirs, bersiv û peyvên lêgerînê bi piranî bi Almanî ne. Bi peyvên Almanî bigere an kartek mijarê hilbijêre.',
+      'knowledge_ui_language_notice':
+          'Wergerên kontrolên sepanê yên ku kêm in bi Îngilîzî tên nîşandan.',
       'development_consent_body':
           'Ji bo raporê, bersivên vê kontrola pêşketinê ji xizmeta me ya AI\'yê re tên şandin. Navê zaroka te li ser cîhaza te dimîne û nayê veguhastin. Agahiyên te tenê ji bo çêkirina raporê têne pêvajokirin, ji bo nasîna te nayên tomarkirin.',
       'development_consent_accept': 'Razî me, raporê çêbike',
@@ -19600,6 +19612,10 @@ class AppStringsManager {
       'development_report_special_needs':
           '- ÖNEMLİ: Bu çocuğun özel gereksinimleri var. Yaş normlarıyla KARŞILAŞTIRMA. Yalnızca bireysel ilerlemeyi anlat. "Destek gerekli" yerine "kendi hızında büyüyor" de. Özellikle takdir edici ve güçlendirici ol.',
       'development_consent_title': 'Yapay zekâ ile rapor oluştur',
+      'knowledge_content_language_notice':
+          'Ebeveyn bilgileri henüz tamamen çevrilmedi. Sorular, yanıtlar ve arama terimleri çoğunlukla Almancadır. Almanca kelimelerle arayın veya bir konu kartı seçin.',
+      'knowledge_ui_language_notice':
+          'Eksik arayüz çevirileri İngilizce gösterilir.',
       'development_consent_body':
           'Rapor için bu gelişim kontrolünün yanıtları yapay zekâ hizmetimize gönderilir. Çocuğunuzun adı cihazınızda kalır ve aktarılmaz. Bilgileriniz yalnızca raporu oluşturmak için işlenir, sizi tanımlamak için saklanmaz.',
       'development_consent_accept': 'Kabul ediyorum, raporu oluştur',
