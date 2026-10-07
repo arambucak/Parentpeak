@@ -545,7 +545,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.add_circle_outline));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField), 'Ada');
-      await tester.tap(find.text('Speichern'));
+      await tester.tap(find.text(AppStringsManager.getString('en', 'save')));
       await tester.pumpAndSettle();
       expect(
         find.text(AppStringsManager.getString('en', 'memory_name_save_failed')),

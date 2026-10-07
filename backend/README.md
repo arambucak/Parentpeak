@@ -184,7 +184,7 @@ flutter test --no-pub test/chat_context_policy_test.dart test/chat_account_ui_te
 Der aktive Chat verwendet typisierte Fehler statt als Antwort getarnter
 Fehlerstrings. HTTP-Status (nicht Ziffern im Beratungstext), Timeout und
 Client-Netzwerkfehler entscheiden ueber de/en/tr/ku-Ausfallhinweise.
-Leere/nicht-stringfoermige Antworttexte und ungueltige JSON-Antworten
+Leere/nicht-stringfoermige Antworttexte, ungueltige Grounding-Listen und JSON-Antworten
 werden nicht als persoenliche Antwort angezeigt. Auch ein ausgefallener
 Repairrequest ergibt einen ehrlichen Ausfallhinweis statt Erfolg mit einem
 unvollstaendigen Fragment. Keine rohen Server-/Debugtexte im Nutzerfallback.
@@ -194,9 +194,40 @@ Consent-, Memory- und Kontowechselfehler bleiben separate Grenzen.
 flutter test --no-pub test/chat_provider_fallback_test.dart
 ```
 
-Weitere Chat-Auditbefunde (restliche Prompt-/Qualitaets-/Memory-UI-i18n,
-Beratungsgrenzen/Rueckfrageregeln und Send-Web-Tap) bleiben separate Arbeiten;
-keine pauschale Launch-, Produktions- oder Datenschutzfreigabe.
+### Chat-Sprachen, Beratung und Web
+
+Der aktive Chat-System-/Coaching-/Quality-/Context-/Repairprompt und alle
+lokalen Beratungsgrenzen/Fallbacks sind fuer de/en/tr/ku lokalisiert.
+Die acht bestehenden paedagogischen Grundlagen bleiben im aktiven
+Systemprompt; die Situationshinweise bewahren Montessori, Reggio, Froebel,
+Freinet, Juul und Situationsansatz. Eine gemeinsame Rueckfrageregel gilt
+im ersten Request UND Qualityretry: bei fehlenden Angaben eine Frage,
+sonst keine. Kein widerspruechliches zusaetzliches Immer-eine-Frage.
+
+Der Qualitaetscheck erkennt Empathiesignale in vier Sprachen. Deutsche
+Kontextanker werden nicht als wortwoertlicher Nachweis in fremdsprachigen
+Antworten erzwungen; die lokalisierte Anweisung fordert die inhaltliche
+Kontexterhaltung. Medizinische/Diagnosebegriffe fuer vier Sprachen sind
+ergaenzt. Der lokale medizinische Hinweis nennt 116117 nur fuer explizit
+bekanntes DE, ansonsten den oertlichen Dienst. Der aktive Systemprompt
+enthaelt keine pauschale deutsche Krisennummer; mehrsprachiges,
+laenderbezogenes CrisisSupport-Routing bleibt vorgeschaltet.
+
+Kuratierten Qualitaetsfallback als allgemeine Orientierung kennzeichnen,
+nicht als personalisierte Modellantwort. Memory-Listen/Modaltexte/
+Validierungsfehler de/en/tr/ku, keine raw Servertexte in Nutzerfehlern.
+Sendetap mit HitTestBehavior.opaque; kein erfundener Tokenstream oder
+JSON-Parsingpfad. Tests verwenden echte serialisierte HTTP-Payloads und
+aktive vier-sprachige Memory-/Chatwidgets.
+
+```bash
+flutter test --no-pub test/chat_localization_test.dart test/localization_audit_verification_test.dart
+```
+
+Heuristische Intent-/Qualitaets-/Namenschecks sind keine Garantie
+vollstaendiger semantischer Modellvalidierung oder Freitextanonymisierung.
+Kein echter Google-/Produktionsaufruf oder ausgefuehrte Produktionsmigration
+durch diese Nachweise, keine pauschale Launch-/Datenschutzfreigabe.
 
 ## Einwilligung fuer KI-Familienrezepte
 

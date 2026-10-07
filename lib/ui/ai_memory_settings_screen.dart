@@ -87,10 +87,11 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
         _error = null;
       });
     } catch (error) {
+      debugPrint('Chat memory load failed: ${error.runtimeType}');
       if (!_current(ticket)) return;
       setState(() {
         _loading = false;
-        _error = '$error';
+        _error = 'memory_load_failed';
       });
     }
   }
@@ -154,7 +155,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
         },
         builder: (context) => AlertDialog(
           title: Text(
-            child == null ? 'Kind hinzufügen' : 'Kinderprofil bearbeiten',
+            context.tr(child == null ? 'memory_add_child' : 'memory_edit_child'),
           ),
           content: Form(
             key: formKey,
@@ -166,13 +167,13 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                   autofocus: true,
                   decoration: InputDecoration(labelText: context.tr('memory_local_name')),
                   validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Bitte einen Namen eingeben.'
+                      ? context.tr('memory_name_required')
                       : null,
                 ),
                 TextField(
                   controller: genderController,
-                  decoration: const InputDecoration(
-                    labelText: 'Geschlecht (optional)',
+                  decoration: InputDecoration(
+                    labelText: context.tr('memory_gender'),
                   ),
                 ),
               ],
@@ -181,7 +182,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Abbrechen'),
+              child: Text(context.tr('cancel')),
             ),
             FilledButton(
               onPressed: () async {
@@ -207,12 +208,13 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                   if (mounted && _current(ticket)) {
                     if (context.mounted) Navigator.pop(context, false);
                     _showMessage(error is MemoryLocalNameWriteException
-                        ? this.context.tr('memory_name_save_failed') : '$error');
+                        ? this.context.tr('memory_name_save_failed') : this.context.tr('memory_operation_failed'));
+                    debugPrint('Chat memory save failed: ${error.runtimeType}');
                     _load();
                   }
                 }
               },
-              child: const Text('Speichern'),
+              child: Text(context.tr('save')),
             ),
           ],
         ),
@@ -235,18 +237,18 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
         store: _store,
         ticket: ticket,
         builder: (context) => AlertDialog(
-          title: const Text('Kinderprofil löschen?'),
+          title: Text(context.tr('memory_delete_title')),
           content: Text(
-            'Alle gespeicherten KI-Informationen zu ${child.name} werden gelöscht.',
+            context.tr('memory_delete_body', values: {'name': child.name}),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Abbrechen'),
+              child: Text(context.tr('cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Löschen'),
+              child: Text(context.tr('delete')),
             ),
           ],
         ),
@@ -258,7 +260,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
       if (!_current(ticket)) return;
       await _load();
     } catch (error) {
-      if (_current(ticket)) _showMessage('$error');
+      if (_current(ticket)) _showFailure(error);
     }
   }
 
@@ -287,9 +289,9 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                   Text(context.tr('memory_transfer_info')),
                   const SizedBox(height: 12),
                   if (items.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text('Noch keine gespeicherten Informationen.'),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(context.tr('memory_empty_info')),
                     )
                   else
                     ...items.map(
@@ -298,7 +300,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                         subtitle: Text(item.value.replaceAll('[THIS_CHILD]', child.name)),
                         leading: const Icon(Icons.verified_user_outlined),
                         trailing: IconButton(
-                          tooltip: 'Löschen',
+                          tooltip: context.tr('delete'),
                           icon: const Icon(Icons.delete_outline),
                           onPressed: () async {
                             if (!_current(ticket)) return;
@@ -308,7 +310,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                               if (context.mounted) Navigator.pop(context);
                               _showChildDetails(child);
                             } catch (error) {
-                              if (_current(ticket)) _showMessage('$error');
+                              if (_current(ticket)) _showFailure(error);
                             }
                           },
                         ),
@@ -321,7 +323,7 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
         ),
       );
     } catch (error) {
-      if (_current(ticket)) _showMessage('$error');
+      if (_current(ticket)) _showFailure(error);
     }
   }
 
@@ -332,11 +334,16 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _showFailure(Object error) {
+    debugPrint('Chat memory operation failed: ${error.runtimeType}');
+    _showMessage(context.tr('memory_operation_failed'));
+  }
+
   @override
   Widget build(BuildContext context) {
     final ticket = _ticket;
     return Scaffold(
-      appBar: AppBar(title: const Text('KI-Gedächtnis & Kinder')),
+      appBar: AppBar(title: Text(context.tr('memory_title'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -348,11 +355,9 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                     Card(
                       child: ListTile(
                         leading: const Icon(Icons.error_outline),
-                        title: const Text(
-                          'Daten konnten nicht geladen werden.',
-                        ),
-                        subtitle: Text(_error!),
+                        title: Text(context.tr(_error!)),
                         trailing: IconButton(
+                          tooltip: context.tr('retry'),
                           icon: const Icon(Icons.refresh),
                           onPressed: _load,
                         ),
@@ -382,20 +387,20 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Kinderprofile',
+                        context.tr('memory_children'),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       IconButton(
-                        tooltip: 'Kind hinzufügen',
+                        tooltip: context.tr('memory_add_child'),
                         onPressed: () => _editChild(),
                         icon: const Icon(Icons.add_circle_outline),
                       ),
                     ],
                   ),
                   if (_children.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Text('Noch kein Kinderprofil angelegt.'),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(context.tr('memory_no_children')),
                     )
                   else
                     ..._children.map(
@@ -404,8 +409,8 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                           title: Text(child.name),
                           subtitle: Text(
                             child.memoryItems.isEmpty
-                                ? 'Keine bestätigten Informationen'
-                                : '${child.memoryItems.length} bestätigte Informationen',
+                                ? context.tr('memory_none_confirmed')
+                                : context.tr('memory_confirmed_count', values: {'count': '${child.memoryItems.length}'}),
                           ),
                           onTap: () {
                             if (_current(ticket)) _showChildDetails(child);
@@ -416,14 +421,14 @@ class _AiMemorySettingsScreenState extends State<AiMemorySettingsScreen> {
                               if (value == 'edit') _editChild(child);
                               if (value == 'delete') _deleteChild(child);
                             },
-                            itemBuilder: (context) => const [
+                            itemBuilder: (context) => [
                               PopupMenuItem(
                                 value: 'edit',
-                                child: Text('Bearbeiten'),
+                                child: Text(context.tr('edit')),
                               ),
                               PopupMenuItem(
                                 value: 'delete',
-                                child: Text('Löschen'),
+                                child: Text(context.tr('delete')),
                               ),
                             ],
                           ),

@@ -1804,6 +1804,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(width: 10),
                   GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: _isStreaming || _controller.text.trim().isEmpty
                         ? null
                         : () => _sendMessage(_controller.text),

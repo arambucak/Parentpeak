@@ -110,6 +110,15 @@ void main() {
     },
   );
 
+  test('malformed grounding metadata gives safe visible failure, never a cast error or success', () async {
+    for (final urls in [42, {'url': 'https://example.invalid'}, [42]]) {
+      respond = (_) async => http.Response(
+        jsonEncode({'text': _answer, 'groundingUrls': urls}), 200,
+      );
+      expect(await reply(language: 'en'), contains('No valid personal reply'));
+    }
+  });
+
   test('network and timeout give localized safe fallback', () async {
     for (final error in [
       http.ClientException('PRIVATE_NETWORK_DATA'),
