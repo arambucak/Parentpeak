@@ -23,6 +23,7 @@ class GeminiAIService {
     String imageMimeType = 'image/jpeg',
     String? appLanguage,
     String? childProfileId,
+    void Function()? requestGuard,
   }) async {
     final response = await generate(
       prompt,
@@ -32,6 +33,7 @@ class GeminiAIService {
       imageMimeType: imageMimeType,
       appLanguage: appLanguage,
       childProfileId: childProfileId,
+      requestGuard: requestGuard,
     );
     return response.text;
   }
@@ -44,8 +46,11 @@ class GeminiAIService {
     String imageMimeType = 'image/jpeg',
     String? appLanguage,
     String? childProfileId,
+    void Function()? requestGuard,
   }) async {
-    final client = _apiClient;
+    final client = requestGuard == null
+        ? _apiClient
+        : _apiClient?.withRequestGuard(requestGuard);
     if (client == null) {
       throw Exception('Backend-URL nicht konfiguriert.');
     }
@@ -71,6 +76,7 @@ class GeminiAIService {
           : const Duration(seconds: 30),
     );
     final text = response['text']?.toString().trim();
+    requestGuard?.call();
     if (text == null || text.isEmpty) {
       throw Exception('KI-Dienst lieferte keine Antwort.');
     }
@@ -97,12 +103,14 @@ class GeminiAIService {
   Future<String> chatWithHistory(
     List<Map<String, String>> messages, {
     String? childProfileId,
+    void Function()? requestGuard,
   }) async {
     try {
       return await generateText(
         _historyPrompt(messages),
         systemInstruction: APIConfig.parentAssistantSystemPrompt,
         childProfileId: childProfileId,
+        requestGuard: requestGuard,
       );
     } catch (error) {
       return 'Fehler: $error';

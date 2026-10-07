@@ -10,6 +10,7 @@ import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/logic/account_ai_consent.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/ai_memory_service.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
@@ -221,7 +222,12 @@ void main() {
           AppLanguages.widgetsLocalizationsDelegate,
           AppLanguages.cupertinoLocalizationsDelegate,
         ],
-        home: ChatScreen(chatBackend: backend, initialMessage: initial),
+        home: ChatScreen(chatBackend: backend, initialMessage: initial,
+          memoryService: AiMemoryService(apiClient: BackendApiClient(
+            baseUrl: 'https://example.invalid',
+            httpClient: MockClient((_) async => http.Response('{"enabled":false}', 200)),
+          )),
+        ),
       ),
     );
     if (settle) await tester.pumpAndSettle();
@@ -274,6 +280,10 @@ void main() {
                   builder: (_) => ChatScreen(
                     chatBackend: backend,
                     initialMessage: _question,
+                    memoryService: AiMemoryService(apiClient: BackendApiClient(
+                      baseUrl: 'https://example.invalid',
+                      httpClient: MockClient((_) async => http.Response('{"enabled":false}', 200)),
+                    )),
                   ),
                 ),
               ),

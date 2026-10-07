@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
+import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/crisis_support.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 
@@ -7,11 +8,14 @@ class PedagogicalChatBackend {
   PedagogicalChatBackend({
     GeminiAIService? geminiService,
     ChatAiConsent? consent,
+    ChatAccountStore? accountStore,
   }) : _geminiService = geminiService,
-       consent = consent ?? ChatAiConsent.instance;
+       consent = consent ?? ChatAiConsent.instance,
+       accountStore = accountStore ?? ChatAccountStore.instance;
 
   final GeminiAIService? _geminiService;
   final ChatAiConsent consent;
+  final ChatAccountStore accountStore;
 
   static const List<String> _violentKeywords = [
     'schlagen',
@@ -209,8 +213,15 @@ class PedagogicalChatBackend {
     String? countryCode,
     String? childProfileId,
     String? expectedScope,
+    void Function()? requireCurrentRequest,
   }) async* {
     final scope = expectedScope ?? consent.scope;
+    final ticket = accountStore.ticket;
+    void guard() {
+      accountStore.require(ticket);
+      consent.requireScope(scope);
+      requireCurrentRequest?.call();
+    }
     final message = userMessage.trim();
     if (message.isEmpty) {
       return;
@@ -279,7 +290,7 @@ class PedagogicalChatBackend {
     preparedHistory.add({'role': 'user', 'content': coachingPrompt});
 
     var response = await _chatWithConsent(
-      preparedHistory, scope, childProfileId: childProfileId,
+      preparedHistory, scope, guard, childProfileId: childProfileId,
     );
     if (_looksLikeProviderError(response)) {
       yield _providerUnavailableResponse(rawError: response);
@@ -295,7 +306,7 @@ class PedagogicalChatBackend {
               'Antworte stattdessen konkret, empathisch und loesungsorientiert für Eltern im Alltag.',
         });
       final retryResponse = await _chatWithConsent(
-        retryHistory, scope, childProfileId: childProfileId,
+        retryHistory, scope, guard, childProfileId: childProfileId,
       );
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
@@ -311,7 +322,7 @@ class PedagogicalChatBackend {
           'content': _contextRetentionRetryInstruction(contextAnchors),
         });
       final retryResponse = await _chatWithConsent(
-        retryHistory, scope, childProfileId: childProfileId,
+        retryHistory, scope, guard, childProfileId: childProfileId,
       );
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
@@ -324,7 +335,7 @@ class PedagogicalChatBackend {
         ..add({'role': 'assistant', 'content': response})
         ..add({'role': 'user', 'content': _qualityRetryInstruction(topicMode)});
       final retryResponse = await _chatWithConsent(
-        retryHistory, scope, childProfileId: childProfileId,
+        retryHistory, scope, guard, childProfileId: childProfileId,
       );
       if (!_looksLikeProviderError(retryResponse) &&
           retryResponse.trim().isNotEmpty) {
@@ -352,6 +363,7 @@ class PedagogicalChatBackend {
         topicMode: topicMode,
         childProfileId: childProfileId,
         expectedScope: scope,
+        requestGuard: guard,
       );
 
       if (_looksLikeProviderError(repaired)) {
@@ -378,14 +390,18 @@ class PedagogicalChatBackend {
 
   Future<String> _chatWithConsent(
     List<Map<String, String>> history,
-    String expectedScope, {
+    String expectedScope,
+    void Function() guard, {
     String? childProfileId,
   }) async {
     await consent.require(expectedScope);
+    guard();
     final response = await _geminiService!.chatWithHistory(
-      history, childProfileId: childProfileId,
+      history, childProfileId: childProfileId, requestGuard: guard,
     );
+    guard();
     await consent.require(expectedScope);
+    guard();
     return response;
   }
 
@@ -800,6 +816,7 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
     required String originalResponse,
     required String topicMode,
     required String expectedScope,
+    required void Function() requestGuard,
     String? childProfileId,
   }) async {
     final retryHistory = List<Map<String, String>>.from(preparedHistory)
@@ -814,7 +831,7 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
       });
 
     return _chatWithConsent(
-      retryHistory, expectedScope, childProfileId: childProfileId,
+      retryHistory, expectedScope, requestGuard, childProfileId: childProfileId,
     );
   }
 

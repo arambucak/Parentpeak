@@ -20,6 +20,7 @@ class _FakeGemini extends GeminiAIService {
     String imageMimeType = 'image/jpeg',
     String? appLanguage,
     String? childProfileId,
+    void Function()? requestGuard,
   }) async {
     lastPrompt = prompt;
     return GeminiProxyResponse(text: result, groundingUrls: const []);

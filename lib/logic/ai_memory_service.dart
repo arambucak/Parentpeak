@@ -1,32 +1,43 @@
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/models/ai_memory.dart';
 
 /// Client für das KI-Gedächtnis (Settings, Kinderprofile, Memory-Items).
 /// Alle Endpunkte verlangen serverseitig einen gültigen Firebase-Token.
 class AiMemoryService {
-  AiMemoryService({BackendApiClient? apiClient})
-      : _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
+  AiMemoryService({BackendApiClient? apiClient, ChatAccountStore? accountStore})
+      : _apiClient = apiClient ?? BackendServiceFactory.createApiClient(),
+        accountStore = accountStore ?? ChatAccountStore.instance;
   final BackendApiClient? _apiClient;
+  final ChatAccountStore accountStore;
+
+  Future<T> _request<T>(Future<T> Function(BackendApiClient) operation) async {
+    final ticket = accountStore.ticket;
+    final client = _requireClient().withRequestGuard(() => accountStore.require(ticket));
+    final result = await operation(client);
+    accountStore.require(ticket);
+    return result;
+  }
 
   bool get isEnabled => _apiClient != null;
 
   Future<AiMemorySettings> getSettings() async {
-    final response = await _requireClient().getJson('/ai/settings');
+    final response = await _request((client) => client.getJson('/ai/settings'));
     return AiMemorySettings.fromJson(
         Map<String, dynamic>.from(response as Map));
   }
 
   Future<AiMemorySettings> setEnabled(bool enabled) async {
-    final response = await _requireClient().putJson('/ai/settings', {
+    final response = await _request((client) => client.putJson('/ai/settings', {
       'enabled': enabled,
-    });
+    }));
     return AiMemorySettings.fromJson(
         Map<String, dynamic>.from(response as Map));
   }
 
   Future<List<AiChildProfile>> getChildren() async {
-    final response = await _requireClient().getJson('/ai/children');
+    final response = await _request((client) => client.getJson('/ai/children'));
     return _parseItems(response, 'items', AiChildProfile.fromJson);
   }
 
@@ -35,11 +46,11 @@ class AiMemoryService {
     DateTime? birthDate,
     String? gender,
   }) async {
-    final response = await _requireClient().postJson('/ai/children', {
+    final response = await _request((client) => client.postJson('/ai/children', {
       'name': name.trim(),
       if (birthDate != null) 'birthDate': birthDate.toIso8601String(),
       if (gender != null && gender.trim().isNotEmpty) 'gender': gender.trim(),
-    });
+    }));
     return AiChildProfile.fromJson(
         Map<String, dynamic>.from(response['item'] as Map));
   }
@@ -50,22 +61,22 @@ class AiMemoryService {
     DateTime? birthDate,
     String? gender,
   }) async {
-    final response = await _requireClient().putJson('/ai/children/$childId', {
+    final response = await _request((client) => client.putJson('/ai/children/$childId', {
       if (name != null) 'name': name.trim(),
       if (birthDate != null) 'birthDate': birthDate.toIso8601String(),
       if (gender != null) 'gender': gender.trim(),
-    });
+    }));
     return AiChildProfile.fromJson(
         Map<String, dynamic>.from(response['item'] as Map));
   }
 
   Future<void> deleteChild(String childId) {
-    return _requireClient().delete('/ai/children/$childId');
+    return _request((client) => client.delete('/ai/children/$childId'));
   }
 
   Future<List<AiMemoryItem>> getMemory(String childId) async {
     final response =
-        await _requireClient().getJson('/ai/children/$childId/memory');
+        await _request((client) => client.getJson('/ai/children/$childId/memory'));
     return _parseItems(response, 'items', AiMemoryItem.fromJson);
   }
 
@@ -76,7 +87,7 @@ class AiMemoryService {
     required String value,
     String status = 'confirmed',
   }) async {
-    final response = await _requireClient().postJson(
+    final response = await _request((client) => client.postJson(
       '/ai/children/$childId/memory',
       {
         'category': category,
@@ -84,13 +95,13 @@ class AiMemoryService {
         'value': value,
         'status': status,
       },
-    );
+    ));
     return AiMemoryItem.fromJson(
         Map<String, dynamic>.from(response['item'] as Map));
   }
 
   Future<void> deleteMemory(String childId, String itemId) {
-    return _requireClient().delete('/ai/children/$childId/memory/$itemId');
+    return _request((client) => client.delete('/ai/children/$childId/memory/$itemId'));
   }
 
   /// Wählt das aktive Kind-Profil für den Chat: null, wenn das Gedächtnis AUS

@@ -8,9 +8,10 @@ import 'package:http/http.dart' as http;
 /// code 'account_suspended'). Erlaubt der UI, einen ruhigen Hinweis zu zeigen.
 class SuspendedAccountException implements Exception {
   final String message;
-  const SuspendedAccountException(
-      [this.message =
-          'Dein Konto wurde vorübergehend eingeschränkt. Bei Fragen wende dich an unseren Support.']);
+  const SuspendedAccountException([
+    this.message =
+        'Dein Konto wurde vorübergehend eingeschränkt. Bei Fragen wende dich an unseren Support.',
+  ]);
   @override
   String toString() => message;
 }
@@ -67,6 +68,7 @@ class BackendApiClient {
     this.authToken,
     this.authTokenProvider,
     this.forceRefreshTokenProvider,
+    this.requestGuard,
     http.Client? httpClient,
   }) : _httpClient = httpClient ?? http.Client();
 
@@ -79,6 +81,19 @@ class BackendApiClient {
   /// zu verlangsamen.
   final Future<String?> Function()? forceRefreshTokenProvider;
   final http.Client _httpClient;
+  final void Function()? requestGuard;
+
+  BackendApiClient withRequestGuard(void Function() guard) => BackendApiClient(
+    baseUrl: baseUrl,
+    authToken: authToken,
+    authTokenProvider: authTokenProvider,
+    forceRefreshTokenProvider: forceRefreshTokenProvider,
+    httpClient: _httpClient,
+    requestGuard: () {
+      requestGuard?.call();
+      guard();
+    },
+  );
 
   Future<String?> _resolveAuthToken() async {
     // Prefer per-user Firebase token. Static fallback tokens are shared secrets
@@ -105,8 +120,11 @@ class BackendApiClient {
     return null;
   }
 
-  Future<Map<String, String>> _headers(
-      {bool includeContentType = true, bool forceRefresh = false}) async {
+  Future<Map<String, String>> _headers({
+    bool includeContentType = true,
+    bool forceRefresh = false,
+  }) async {
+    requestGuard?.call();
     final headers = <String, String>{
       if (includeContentType) 'Content-Type': 'application/json',
     };
@@ -120,6 +138,7 @@ class BackendApiClient {
       headers['Authorization'] = 'Bearer $token';
     }
 
+    requestGuard?.call();
     return headers;
   }
 
@@ -136,9 +155,11 @@ class BackendApiClient {
       final decoded = jsonDecode(response.body);
       if (decoded is Map && decoded['code'] == 'account_suspended') {
         final msg = decoded['error'];
-        throw SuspendedAccountException(msg is String && msg.isNotEmpty
-            ? msg
-            : const SuspendedAccountException().message);
+        throw SuspendedAccountException(
+          msg is String && msg.isNotEmpty
+              ? msg
+              : const SuspendedAccountException().message,
+        );
       }
     } on SuspendedAccountException {
       rethrow;
@@ -148,16 +169,22 @@ class BackendApiClient {
   }
 
   Future<dynamic> getJson(String path) async {
+    var headers = await _headers();
+    requestGuard?.call();
     var response = await _httpClient
-        .get(_uri(path), headers: await _headers())
+        .get(_uri(path), headers: headers)
         .timeout(const Duration(seconds: 20));
+    requestGuard?.call();
 
     // Bei 401 einmal mit frisch erzwungenem Token wiederholen (abgelaufener
     // gecachter Token). Vermeidet Force-Refresh auf jedem normalen Call.
     if (response.statusCode == 401 && forceRefreshTokenProvider != null) {
+      headers = await _headers(forceRefresh: true);
+      requestGuard?.call();
       response = await _httpClient
-          .get(_uri(path), headers: await _headers(forceRefresh: true))
+          .get(_uri(path), headers: headers)
           .timeout(const Duration(seconds: 20));
+      requestGuard?.call();
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -199,16 +226,21 @@ class BackendApiClient {
   }) async {
     final effectiveTimeout = timeout ?? const Duration(seconds: 30);
     final encoded = jsonEncode(body);
+    var headers = await _headers();
+    requestGuard?.call();
     var response = await _httpClient
-        .post(_uri(path), headers: await _headers(), body: encoded)
+        .post(_uri(path), headers: headers, body: encoded)
         .timeout(effectiveTimeout);
+    requestGuard?.call();
 
     // Bei 401 einmal mit frisch erzwungenem Token wiederholen.
     if (response.statusCode == 401 && forceRefreshTokenProvider != null) {
+      headers = await _headers(forceRefresh: true);
+      requestGuard?.call();
       response = await _httpClient
-          .post(_uri(path),
-              headers: await _headers(forceRefresh: true), body: encoded)
+          .post(_uri(path), headers: headers, body: encoded)
           .timeout(effectiveTimeout);
+      requestGuard?.call();
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -226,13 +258,11 @@ class BackendApiClient {
 
   Future<dynamic> putJson(String path, Map<String, dynamic> body) async {
     final headers = await _headers();
+    requestGuard?.call();
     final response = await _httpClient
-        .put(
-          _uri(path),
-          headers: headers,
-          body: jsonEncode(body),
-        )
+        .put(_uri(path), headers: headers, body: jsonEncode(body))
         .timeout(const Duration(seconds: 8));
+    requestGuard?.call();
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _throwIfSuspended(response);
@@ -244,12 +274,11 @@ class BackendApiClient {
 
   Future<void> delete(String path) async {
     final headers = await _headers();
+    requestGuard?.call();
     final response = await _httpClient
-        .delete(
-          _uri(path),
-          headers: headers,
-        )
+        .delete(_uri(path), headers: headers)
         .timeout(const Duration(seconds: 8));
+    requestGuard?.call();
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('DELETE $path failed: ${response.statusCode}');
@@ -259,11 +288,7 @@ class BackendApiClient {
   Future<dynamic> deleteJson(String path, Map<String, dynamic> body) async {
     final headers = await _headers();
     final response = await _httpClient
-        .delete(
-          _uri(path),
-          headers: headers,
-          body: jsonEncode(body),
-        )
+        .delete(_uri(path), headers: headers, body: jsonEncode(body))
         .timeout(const Duration(seconds: 8));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -275,17 +300,15 @@ class BackendApiClient {
 
   /// Uploads an image file via multipart POST to [path] (field name: 'image').
   /// Returns the decoded JSON response or throws on failure.
-  Future<Map<String, dynamic>> uploadImageFile(
-    String path,
-    File file,
-  ) async {
+  Future<Map<String, dynamic>> uploadImageFile(String path, File file) async {
     final uri = _uri(path);
     final request = http.MultipartRequest('POST', uri);
     final uploadHeaders = await _headers(includeContentType: false);
     request.headers.addAll(uploadHeaders);
     request.files.add(await http.MultipartFile.fromPath('image', file.path));
-    final streamed =
-        await _httpClient.send(request).timeout(const Duration(seconds: 30));
+    final streamed = await _httpClient
+        .send(request)
+        .timeout(const Duration(seconds: 30));
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
       throw Exception('POST $path (multipart) failed: ${streamed.statusCode}');
@@ -306,13 +329,12 @@ class BackendApiClient {
     final request = http.MultipartRequest('POST', uri);
     final uploadHeaders = await _headers(includeContentType: false);
     request.headers.addAll(uploadHeaders);
-    request.files.add(http.MultipartFile.fromBytes(
-      'image',
-      bytes,
-      filename: filename,
-    ));
-    final streamed =
-        await _httpClient.send(request).timeout(const Duration(seconds: 30));
+    request.files.add(
+      http.MultipartFile.fromBytes('image', bytes, filename: filename),
+    );
+    final streamed = await _httpClient
+        .send(request)
+        .timeout(const Duration(seconds: 30));
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
       throw Exception('POST $path (multipart) failed: ${streamed.statusCode}');
@@ -328,10 +350,11 @@ class BackendApiClient {
     required String token,
     String platform = 'flutter',
   }) async {
-    await postJsonAny(
-      '/devices/register-token',
-      {'userId': userId, 'token': token, 'platform': platform},
-    );
+    await postJsonAny('/devices/register-token', {
+      'userId': userId,
+      'token': token,
+      'platform': platform,
+    });
   }
 
   /// Unregisters an FCM token (e.g. on logout).
@@ -349,7 +372,8 @@ class BackendApiClient {
         .timeout(const Duration(seconds: 8));
     if (response.statusCode >= 400) {
       throw Exception(
-          'DELETE /devices/register-token failed: ${response.statusCode}');
+        'DELETE /devices/register-token failed: ${response.statusCode}',
+      );
     }
   }
 
@@ -361,7 +385,8 @@ class BackendApiClient {
       return jsonDecode(rawBody);
     } catch (e) {
       debugPrint(
-          'BackendApiClient._decodeResponse(): non-JSON response fallback: $e');
+        'BackendApiClient._decodeResponse(): non-JSON response fallback: $e',
+      );
       return <String, dynamic>{'raw': rawBody};
     }
   }
