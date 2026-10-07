@@ -1,5 +1,6 @@
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/chat_provider_exception.dart';
+import 'package:parentpeak/logic/chat_prompt_policy.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/chat_memory_consent.dart';
@@ -122,6 +123,12 @@ class PedagogicalChatBackend {
     'hat mein kind autismus',
     'ist mein kind autistisch',
     'hat mein kind depression',
+    'diagnosis',
+    'does my child have',
+    'is my child autistic',
+    'çocuğum otistik mi',
+    'teşhis',
+    'teşxîs',
   ];
 
   static const List<String> _medicalTreatmentIntentKeywords = [
@@ -134,6 +141,14 @@ class PedagogicalChatBackend {
     'wie viel',
     'wie oft geben',
     'einnahme',
+    'medication',
+    'dosage',
+    'medicine',
+    'antibiotic',
+    'ilaç',
+    'reçete',
+    'derman',
+    'antîbiyotîk',
   ];
 
   static const List<String> _offTopicKeywords = [
@@ -246,22 +261,22 @@ class PedagogicalChatBackend {
     }
 
     if (_containsAny(lower, _diagnosisIntentKeywords)) {
-      yield _diagnosisBoundaryResponse();
+      yield ChatPromptPolicy.text(languageCode, 'chat_boundary_diagnosis');
       return;
     }
 
     if (_containsAny(lower, _medicalTreatmentIntentKeywords)) {
-      yield _medicalBoundaryResponse();
+      yield ChatPromptPolicy.medical(languageCode, countryCode);
       return;
     }
 
     if (_shouldBlockViolenceIntent(lower)) {
-      yield _violentBoundaryResponse();
+      yield ChatPromptPolicy.text(languageCode, 'chat_boundary_violence');
       return;
     }
 
     if (_containsAny(lower, _offTopicKeywords)) {
-      yield _offTopicResponse();
+      yield ChatPromptPolicy.text(languageCode, 'chat_boundary_topic');
       return;
     }
 
@@ -288,12 +303,13 @@ class PedagogicalChatBackend {
     final contextAnchors = _extractContextAnchors(safeMessage);
     final historyAnchors = _extractHistoryAnchors(preparedHistory);
     final needsFollowUpQuestion = _shouldAskSingleFollowUpQuestion(message);
-    final coachingPrompt = _buildCoachingPrompt(
-      userMessage: safeMessage,
-      topicMode: topicMode,
-      needsFollowUpQuestion: needsFollowUpQuestion,
-      contextAnchors: contextAnchors,
-      historyAnchors: historyAnchors,
+    final coachingPrompt = ChatPromptPolicy.coaching(
+      language: languageCode,
+      message: safeMessage,
+      topic: topicMode,
+      needsFollowUp: needsFollowUpQuestion,
+      context: contextAnchors,
+      history: historyAnchors,
     );
     preparedHistory.add({'role': 'user', 'content': coachingPrompt});
 
@@ -311,9 +327,7 @@ class PedagogicalChatBackend {
           ..add({'role': 'assistant', 'content': response})
           ..add({
             'role': 'user',
-            'content':
-                'Bitte antworte nicht mit einer allgemeinen Grenzformel. '
-                'Antworte stattdessen konkret, empathisch und loesungsorientiert für Eltern im Alltag.',
+            'content': ChatPromptPolicy.text(languageCode, 'chat_boundary_retry'),
           });
         final retryResponse = await _chatWithConsent(
           retryHistory,
@@ -327,12 +341,12 @@ class PedagogicalChatBackend {
         }
       }
 
-      if (!_preservesCriticalContext(response, contextAnchors)) {
+      if (languageCode == 'de' && !_preservesCriticalContext(response, contextAnchors)) {
         final retryHistory = List<Map<String, String>>.from(preparedHistory)
           ..add({'role': 'assistant', 'content': response})
           ..add({
             'role': 'user',
-            'content': _contextRetentionRetryInstruction(contextAnchors),
+            'content': ChatPromptPolicy.text(languageCode, 'chat_context_retry', {'context': contextAnchors.join(', ')}),
           });
         final retryResponse = await _chatWithConsent(
           retryHistory,
@@ -346,12 +360,12 @@ class PedagogicalChatBackend {
         }
       }
 
-      if (_needsQualityRetry(response)) {
+      if (_needsQualityRetry(response, languageCode, needsFollowUpQuestion)) {
         final retryHistory = List<Map<String, String>>.from(preparedHistory)
           ..add({'role': 'assistant', 'content': response})
           ..add({
             'role': 'user',
-            'content': _qualityRetryInstruction(topicMode),
+            'content': ChatPromptPolicy.quality(languageCode, topicMode, needsFollowUpQuestion),
           });
         final retryResponse = await _chatWithConsent(
           retryHistory,
@@ -366,18 +380,18 @@ class PedagogicalChatBackend {
       }
 
       if (_containsAny(response.toLowerCase(), _diagnosisIntentKeywords)) {
-        yield _diagnosisBoundaryResponse();
+        yield ChatPromptPolicy.text(languageCode, 'chat_boundary_diagnosis');
         return;
       }
       if (_containsAny(
         response.toLowerCase(),
         _medicalTreatmentIntentKeywords,
       )) {
-        yield _medicalBoundaryResponse();
+        yield ChatPromptPolicy.medical(languageCode, countryCode);
         return;
       }
       if (_shouldBlockViolenceIntent(response.toLowerCase())) {
-        yield _violentBoundaryResponse();
+        yield ChatPromptPolicy.text(languageCode, 'chat_boundary_violence');
         return;
       }
 
@@ -393,12 +407,12 @@ class PedagogicalChatBackend {
         );
 
         if (_violatesCorePedagogicalValues(repaired.toLowerCase())) {
-          yield _pedagogicalFallbackResponse(topicMode);
+          yield ChatPromptPolicy.fallback(topicMode, languageCode);
           return;
         }
 
         if (_looksLikeDefensiveBoundaryResponse(repaired)) {
-          yield _pedagogicalFallbackResponse(topicMode);
+          yield ChatPromptPolicy.fallback(topicMode, languageCode);
           return;
         }
 
@@ -463,94 +477,26 @@ class PedagogicalChatBackend {
 
     final lower = compact.toLowerCase();
     final hasAge =
-        RegExp(r'\b\d{1,2}\b').hasMatch(lower) ||
-        lower.contains('jahr') ||
-        lower.contains('monate') ||
+        RegExp(
+          r'\b\d{1,2}(?:\s+(?:vollendete|completed))?\s*(?:jahre?|monate?|years?|months?|yaş(?:ını)?|sal(?:ên)?|meh)(?![\p{L}\p{N}])',
+          unicode: true,
+        ).hasMatch(lower) ||
         lower.contains('kindergartenalter') ||
         lower.contains('grundschule');
     final hasTriggerContext =
         lower.contains('weil') ||
         lower.contains('wenn') ||
         lower.contains('situation') ||
-        lower.contains('passiert');
+        lower.contains('passiert') ||
+        lower.contains('because') ||
+        lower.contains('when') ||
+        lower.contains('happens') ||
+        lower.contains('çünkü') ||
+        lower.contains('olduğunda') ||
+        lower.contains('dema') ||
+        lower.contains('rewş');
 
     return !hasAge || !hasTriggerContext;
-  }
-
-  String _buildCoachingPrompt({
-    required String userMessage,
-    required String topicMode,
-    required bool needsFollowUpQuestion,
-    required List<String> contextAnchors,
-    required List<String> historyAnchors,
-  }) {
-    final modeHint = _modeSpecificHint(topicMode);
-    final approachHint = _complementaryApproachHint(topicMode);
-    final followUpRule = needsFollowUpQuestion
-        ? 'Stelle am Ende genau EINE kurze Rueckfrage, die den naechsten hilfreichen Schritt absichert.'
-        : 'Stelle keine Rueckfrage, wenn die Lage für konkrete Schritte ausreicht.';
-    final continuationRule = historyAnchors.isEmpty
-        ? 'Wenn kein Verlaufskontext vorliegt, starte ohne Rueckblick und bleibe beim aktuellen Anliegen.'
-        : 'Nutze den Verlauf aktiv und knüpfe natürlich an frühere Themen an (z. B. Name, Alter, Muster). Wenn es nach längerer Pause klingt, frage sanft nach dem aktuellen Stand.';
-
-    return '''
-Themenmodus: $topicMode
-
-Nutzeranliegen:
-$userMessage
-
-  Du bist ein hochgradig empathischer, paedagogischer KI-Begleiter für Eltern nach GfK (Rosenberg), Hüther (Neurobiologie) und Juul (Familientherapie).
-  Haltung: warm, wertfrei, entlastend, auf Augenhoehe.
-
-HÜTHER-LINSE — wende sie bei jeder Antwort an:
-- Frage dich zuerst: Ist das Verhalten des Kindes ein Ausdruck von unerfüllter VERBUNDENHEIT oder unerfüllter AUTONOMIE?
-  → Verbundenheit: Kind braucht Nähe, Sicherheit, echte Zugehörigkeit
-  → Autonomie: Kind will selbst entscheiden, entdecken, gestalten — das ist gesund
-- Druck, Strafen, Belohnungen kurzfristig wirkungsvoll aber langfristig beziehungsschädigend → immer Beziehungsarbeit vorziehen
-- Kinder lernen durch Nachahmung, nicht Belehrung → Eltern als Vorbild benennen
-- Hindernisse nicht wegnehmen: Eltern ermutigen NEBEN dem Kind zu stehen statt alles zu lösen
-- Begeisterung und emotionale Beteiligung sind die neurobiologische Grundbedingung für Lernen
-
-Pflichtformat mit klaren Ueberschriften:
-  1) Immer zuerst Empathie in 1-2 Saetzen.
-     Gefühle/Bedürfnisse nur als Vermutung oder Frage formulieren, nie als absolute Behauptung.
-  2) Kurze entwicklungs-/bindungsorientierte Einordnung in einem Satz: In der Regel die Hüther-Linse (Verbundenheit vs. Autonomie); bei Lern-, Selbststaendigkeits-, Spiel- oder Kreativthemen darf stattdessen die passende Linse unten greifen.
-  3) Danach genau EIN GfK-Schritt im Fokus (Beobachtung ODER Gefühl ODER Bedürfnis ODER Bitte).
-  4) Gib 1-2 kleine alltagstaugliche Optionen in Kann-Form, nicht in Muss-Form.
-  5) Stelle genau EINE offene, behutsame Frage, passend zum gewählten GfK-Schritt.
-  6) $followUpRule
-
-Modus-Hinweis:
-$modeHint
-
-Passende weitere paedagogische Impulse (OPTIONAL, nur wenn sie der Familie konkret helfen — nicht benennen, nicht doziert, einfach einfliessen lassen):
-$approachHint
-
-Wichtig:
-- Kein Moralisieren.
-- Keine leeren Floskeln.
-- Kein abstrakter Theorieblock.
-- Klar, waermend, handlungsfaehig.
-- Kein Satz wie: "Ich bleibe bei ... ich gebe keine Ratschlaege ...".
-- Schreibe so, dass Eltern sich verstanden, beruhigt und handlungsfaehig fühlen.
-- Keine Formulierung mit "Du musst".
-- Keine vorschnellen Erziehungsurteile.
-  - Keine Sternchen, keine dekorativen Zeichen und kein Markdown (kein * oder **).
-- Ruhiger, professioneller Sprachstil für Eltern.
-  - Antwort kurz und verdaulich: keine Textwand, kurze Absaetze (max. 3-4 Saetze pro Absatz).
-  - Emojis nur dezent und sparsam (0-2 pro Antwort).
-- Uebernimm die wichtigsten Kontextinfos aus der Elternnachricht sichtbar in der Antwort.
-- Wenn konkrete Details genannt wurden (z. B. Alter, Tageszeit, Situation), müssen sie in der Antwort auftauchen.
-  - Wenn Eltern in "Wolfssprache" schreiben (Selbstvorwurf/Urteil), uebersetze empathisch in Gefühl und Bedürfnis statt zu belehren.
-- Vermute Gefühle/Bedürfnisse immer als Frage oder vorsichtige Spiegelung, nie als Fakt.
-- Empathie kommt immer vor Strategie.
-- Ein GfK-Schritt pro Antwort, nicht alle vier gleichzeitig.
-- Bullet Points sind erlaubt, wenn sie die Lesbarkeit auf dem Handy verbessern.
-- $continuationRule
-
-Kontextanker (nicht verlieren): ${contextAnchors.isEmpty ? 'keine' : contextAnchors.join(', ')}
-Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : historyAnchors.join(', ')}
-''';
   }
 
   List<String> _extractHistoryAnchors(List<Map<String, String>> history) {
@@ -659,65 +605,7 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
     return matches >= minMatches;
   }
 
-  String _contextRetentionRetryInstruction(List<String> anchors) {
-    final anchorText = anchors.isEmpty ? 'keine' : anchors.join(', ');
-    return 'Bitte antworte neu und verliere keine wichtigen Angaben der Eltern. '
-        'Greife die genannten Kontextinfos sichtbar auf: $anchorText. '
-        'Bleibe authentisch, empathisch und alltagsnah.';
-  }
-
-  String _modeSpecificHint(String topicMode) {
-    switch (topicMode) {
-      case 'Trotz und Wut':
-        return 'Fokus auf Co-Regulation, klare Grenzen ohne Beschaemung und kurze Deeskalation im Moment.';
-      case 'Geschwisterkonflikt':
-        return 'Fokus auf Trennen ohne Strafe, Gefühle spiegeln, faire Wiederannaeherung und Wiedergutmachung.';
-      case 'Schlaf':
-        return 'Fokus auf realistische Entlastung, kleine Routinen und energiesparende Schritte für Eltern.';
-      case 'Medien':
-        return 'Fokus auf klare, vorab vereinbarte Grenzen plus kooperative Übergänge statt Machtkampf.';
-      case 'Kita und Schule':
-        return 'Fokus auf kindgerechte Begleitung, alltagsnahe Struktur und kooperative Kommunikation mit Fachkraeften.';
-      case 'Lernen und Selbststaendigkeit':
-        return 'Fokus auf Montessori ("Hilf mir, es selbst zu tun") und Situationsansatz: dem Kind altersgerecht etwas selbst zutrauen, '
-            'die Umgebung vorbereiten statt staendig einzugreifen, Alltagsaufgaben als Lernchance nutzen.';
-      case 'Spielen und Kreativitaet':
-        return 'Fokus auf Froebel (Spielen ist die hoechste Form des Lernens) und Reggio ("das Kind hat 100 Sprachen"): '
-            'freies Spiel, Prozess vor Ergebnis, Ausdruck ueber Malen/Bauen/Bewegen; Freinet: Lernen am echten Leben.';
-      default:
-        return 'Fokus auf eine sofort umsetzbare, bindungsorientierte Entlastung für den Familienalltag.';
-    }
-  }
-
-  /// Situativ passende weitere paedagogische Linse(n) als OPTIONALE Impulse —
-  /// damit die Antwort nicht nur Huether/GfK, sondern bei passenden Themen auch
-  /// Montessori, Reggio, Froebel, Freinet, Juul und den Situationsansatz
-  /// erkennbar einfliessen laesst (ohne starre Floskeln zu erzwingen).
-  String _complementaryApproachHint(String topicMode) {
-    switch (topicMode) {
-      case 'Lernen und Selbststaendigkeit':
-        return 'Montessori: dem Kind altersgerecht Selbststaendigkeit zutrauen und die Umgebung vorbereiten. '
-            'Situationsansatz: von der aktuellen Lebenswelt des Kindes ausgehen.';
-      case 'Spielen und Kreativitaet':
-        return 'Froebel: Spielen als vollwertige Lernform ernst nehmen. '
-            'Reggio: viele Ausdrucksformen zulassen, Prozess vor Ergebnis. '
-            'Freinet: an echten Alltagserfahrungen anknuepfen.';
-      case 'Geschwisterkonflikt':
-        return 'Juul: beide Kinder als vollwertige Menschen ernst nehmen, Selbstverantwortung statt Gehorsam staerken.';
-      case 'Kita und Schule':
-        return 'Situationsansatz: an der konkreten Lebenswelt des Kindes ansetzen. '
-            'Juul: Kooperation statt Gehorsam als Ziel.';
-      case 'Trotz und Wut':
-      case 'Schlaf':
-      case 'Medien':
-        return 'Juul: das Kind als vollwertigen Menschen ernst nehmen und authentisch, aber fuehrend begleiten.';
-      default:
-        return 'Waehle situativ die passende Linse (Montessori, Reggio, Froebel, Freinet, Juul oder Situationsansatz), '
-            'wenn sie der Familie konkret hilft — ohne Theorie-Vortrag.';
-    }
-  }
-
-  bool _needsQualityRetry(String response) {
+  bool _needsQualityRetry(String response, String language, bool needsFollowUp) {
     final lower = response.toLowerCase();
     if (response.trim().length < 140) {
       return true;
@@ -735,14 +623,21 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
       'ich gebe daher keine ratschläge',
       'keine ratschlaege zu',
       'keine ratschläge zu',
+      'as an ai',
+      'it depends',
+      'bir yapay zekâ olarak',
+      'wekî ai',
     ];
     final hasGeneric = _containsAny(lower, genericMarkers);
-    final hasEmpathySignal =
-        lower.contains('kann es sein') ||
-        lower.contains('ich hoere heraus') ||
-        lower.contains('das klingt');
+    final empathyMarkers = {
+      'de': ['kann es sein', 'ich hoere heraus', 'ich höre heraus', 'das klingt'],
+      'en': ['that sounds', 'it sounds', 'i hear', 'it may', 'it can feel'],
+      'tr': ['görünüyor', 'duyuyorum', 'anlıyorum', 'olabilir', 'zor'],
+      'ku': ['xuya', 'dijwar', 'dibe ku', 'fêm', 'dibihîzim'],
+    };
+    final hasEmpathySignal = _containsAny(lower, empathyMarkers[language] ?? empathyMarkers['en']!);
     final questionCount = RegExp(r'\?').allMatches(response).length;
-    final tooManyQuestions = questionCount > 2;
+    final tooManyQuestions = questionCount > (needsFollowUp ? 1 : 0);
     final paragraphs = response
         .split(RegExp(r'\n\s*\n'))
         .where((p) => p.trim().isNotEmpty)
@@ -755,14 +650,6 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
         !hasEmpathySignal ||
         tooManyQuestions ||
         hasOverlongParagraph;
-  }
-
-  String _qualityRetryInstruction(String topicMode) {
-    return 'Bitte antworte jetzt deutlich konkreter und authentischer für den Modus "$topicMode": '
-        '1) Empathie zuerst, 2) genau ein GfK-Schritt im Fokus, 3) 1-2 Optionen in Kann-Form, 4) genau eine offene Frage. '
-        'Kurze mobile Lesbarkeit: max. 3-4 Saetze pro Absatz. '
-        'Gefühle/Bedürfnisse als Vermutung formulieren. '
-        'Keine Textwand, keine Grenzfloskeln, kein "Du musst".';
   }
 
   bool _looksLikeDefensiveBoundaryResponse(String input) {
@@ -831,11 +718,9 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
       ..add({'role': 'assistant', 'content': originalResponse})
       ..add({
         'role': 'user',
-        'content':
-            'Bitte formuliere die Antwort neu: rein gewaltfrei, bindungsorientiert und nach GfK. '
-            'Kein Schimpfen, keine Drohung, keine Strafe. '
-            'Gib stattdessen 3 konkrete alltagstaugliche Schritte plus 2 direkte Beispielsätze für Eltern. '
-            'Themenmodus: $topicMode.',
+        'content': ChatPromptPolicy.text(languageCode, 'chat_repair_prompt', {
+          'focus': ChatPromptPolicy.focus(topicMode, languageCode),
+        }),
       });
 
     return _chatWithConsent(
@@ -845,31 +730,6 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
       childProfileId: childProfileId,
       languageCode: languageCode,
     );
-  }
-
-  String _pedagogicalFallbackResponse(String topicMode) {
-    switch (topicMode) {
-      case 'Schlaf':
-        return 'Das klingt sehr kraeftezehrend, besonders wenn es abends häufig eskaliert. '
-            'Du koenntest heute drei kleine Dinge testen: '
-            '1) 20 Minuten vor dem Schlafen Reize senken, '
-            '2) eine klare Wahl anbieten (Buch oder Lied), '
-            '3) eine ruhige Abschluss-Formulierung wiederholen. '
-            'Moegliche Saetze: "Du willst noch wach bleiben, ich sehe das. Jetzt begleiten wir den Koerper in die Ruhe." '
-            'und "Du darfst traurig sein, ich bleibe ruhig bei dir und halte die Grenze." '
-            'Welche Szene ist bei euch am schwierigsten: der Übergang ins Bett oder das Liegenbleiben?';
-      case 'Trotz und Wut':
-        return 'Das ist eine intensive Situation, und deine Erschoepfung ist gut nachvollziehbar. '
-            'Du koenntest jetzt zuerst Sicherheit herstellen, dann Gefühle spiegeln und erst danach eine Alternative anbieten. '
-            'Moegliche Saetze: "Ich sehe deine Wut, ich lasse nicht zu, dass jemand verletzt wird." '
-            'und "Du kannst stampfen oder ins Kissen druecken, ich bleibe bei dir." '
-            'Was ist bei euch der häufigste Ausloeser direkt vor dem Wutanfall?';
-      default:
-        return 'Danke fürs Teilen - du bist damit nicht allein. '
-            'Wir können gemeinsam eine gewaltfreie, paedagogisch passende Loesung erarbeiten. '
-            'Wenn du magst, nenne Alter des Kindes, typische Situation und was du in dem Moment fuehlst. '
-            'Dann formuliere ich mit dir die GFK-Schritte Beobachtung, Gefühl, Bedürfnis und Bitte konkret für euren Alltag.';
-    }
   }
 
   List<Map<String, String>> _prepareHistory(
@@ -891,28 +751,6 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
       });
     }
     return prepared;
-  }
-
-  String _offTopicResponse() {
-    return 'Ich bin fur padagogische Elternberatung da. Wenn du magst, beschreibe deine Familien- oder Erziehungsfrage, dann unterstutze ich dich gern.';
-  }
-
-  String _violentBoundaryResponse() {
-    return 'Ich kann keine gewaltfordernden oder verletzenden Anleitungen geben. '
-        'Wenn du magst, helfe ich dir mit einem gewaltfreien Vorgehen nach Rosenberg: '
-        '1) Beobachtung, 2) Gefuhl, 3) Bedurfnis, 4) konkrete Bitte.';
-  }
-
-  String _diagnosisBoundaryResponse() {
-    return 'Ich kann keine Diagnose stellen oder bestaetigen, was ein Kind "hat". '
-        'Ich kann dir aber paedagogische Orientierung geben, wie du dein Kind im Alltag stabil und bindungsorientiert begleiten kannst. '
-        'Wenn du diagnostische Klaerung brauchst, wende dich bitte an Kinderarztpraxis oder Kinder- und Jugendpsychologie.';
-  }
-
-  String _medicalBoundaryResponse() {
-    return 'Ich gebe keine medizinischen Empfehlungen oder Medikamentenhinweise. '
-        'Bei gesundheitlichen Fragen nutze bitte aerztliche Beratung. '
-        'Bei Unsicherheit ausserhalb der Sprechzeiten hilft in Deutschland der aerztliche Bereitschaftsdienst unter 116117.';
   }
 
   // Hinweis: Krisen- und Überlastungs-Antworten sind in CrisisSupport

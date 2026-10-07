@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:parentpeak/logic/account_ai_consent.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/chat_provider_exception.dart';
+import 'package:parentpeak/logic/chat_prompt_policy.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -117,12 +118,14 @@ class GeminiAIService {
     if (text == null || text.isEmpty) {
       throw const FormatException('AI response text must be a non-empty string');
     }
-    final groundingUrls =
-        (response['groundingUrls'] as List<dynamic>?)
-            ?.map((url) => url.toString())
-            .where((url) => url.startsWith('https://'))
-            .toList() ??
-        const <String>[];
+    final rawUrls = response['groundingUrls'];
+    if (rawUrls != null &&
+        (rawUrls is! List || rawUrls.any((url) => url is! String))) {
+      throw const FormatException('AI grounding URLs must be a list of strings');
+    }
+    final groundingUrls = rawUrls is List
+        ? [for (final url in rawUrls) if (url is String && url.startsWith('https://')) url]
+        : const <String>[];
     return GeminiProxyResponse(text: text, groundingUrls: groundingUrls);
   }
 
@@ -147,7 +150,9 @@ class GeminiAIService {
     try {
       return await generateText(
         _historyPrompt(messages),
-        systemInstruction: APIConfig.parentAssistantSystemPrompt,
+        systemInstruction: ChatPromptPolicy.text(
+          languageCode ?? LanguageService.activeCode, 'chat_system_prompt',
+        ),
         childProfileId: childProfileId,
         requestGuard: requestGuard,
         appLanguage: languageCode,
