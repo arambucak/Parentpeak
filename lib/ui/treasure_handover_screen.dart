@@ -8,6 +8,8 @@ import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
+import 'package:parentpeak/models/treasure_category.dart';
+import 'package:parentpeak/models/treasure_geometry.dart';
 import 'package:parentpeak/models_and_widgets/animation_helpers.dart';
 import 'package:parentpeak/ui/treasure_upload_screen.dart';
 import 'package:parentpeak/ui/widgets/treasure_mine_offer_card.dart';
@@ -552,23 +554,18 @@ class _TreasureHandoverScreenState
     );
   }
 
-  /// Echte Entfernung vom Nutzer zum Artikel (Haversine über LocationService).
-  /// Fällt auf die gespeicherte distanceMeters zurück, wenn keine Koordinaten da sind.
-  String _distanceLabel(AppLocalizations l10n, TreasureListing listing) {
+  int? _listingDistance(TreasureListing listing) {
     final loc = LocationService.instance;
-    if (loc.hasLocation &&
-        listing.latitude != null &&
-        listing.longitude != null) {
-      final text = loc.distanceText(listing.latitude!, listing.longitude!);
-      if (text != null) {
-        return l10n.tFormat('treasureDistanceAway', {'distance': text});
-      }
-    }
-    // Fallback: keine echten Koordinaten verfügbar
-    final m = listing.distanceMeters;
-    if (m <= 0) return l10n.t('treasureDistanceNearby');
+    return TreasureGeometry.distanceMeters(
+      loc.latitude, loc.longitude, listing.latitude, listing.longitude,
+    ) ?? listing.distanceMeters;
+  }
+
+  String _distanceLabel(AppLocalizations l10n, TreasureListing listing) {
+    final m = _listingDistance(listing);
+    if (m == null) return l10n.t('treasureDistanceUnknown');
     final distance = m < 1000 ? '$m m' : '${(m / 1000).toStringAsFixed(1)} km';
-    return l10n.tFormat('treasureDistanceAway', {'distance': distance});
+    return l10n.tFormat('treasureDistanceApproximate', {'distance': distance});
   }
 
   List<TreasureListing> get _filteredListings {
@@ -581,10 +578,13 @@ class _TreasureHandoverScreenState
           _normalizeCategoryKey(listing.category) == _categoryFilter;
       final matchesCondition =
           _conditionFilter == 'all' || listing.conditionKey == _conditionFilter;
+      final distance = _listingDistance(listing);
+      final matchesRadius = distance == null ||
+          TreasureGeometry.withinRadius(distance, listing.shareRadiusKm);
       final matchesDistance =
           _maxDistanceMeters == null ||
-          listing.distanceMeters <= _maxDistanceMeters!;
-      return matchesCategory && matchesCondition && matchesDistance;
+          (distance != null && distance <= _maxDistanceMeters!);
+      return matchesCategory && matchesCondition && matchesRadius && matchesDistance;
     }).toList();
   }
 
@@ -657,6 +657,7 @@ class _TreasureHandoverScreenState
         'equipment',
         l10n.t('treasureCategoryEquipment', fallback: 'Ausstattung'),
       ),
+      ('other', l10n.t('treasureCategoryOther')),
     ];
     final conditionOptions = [
       ('all', l10n.t('treasureFilterAll', fallback: 'Alle')),
@@ -1882,15 +1883,7 @@ class _TreasureHandoverScreenState
   }
 
   String _normalizeCategoryKey(String category) {
-    final value = category.trim().toLowerCase();
-    if (value.contains('fahr') || value == 'vehicles') return 'vehicles';
-    if (value.contains('kleidung') || value == 'clothing') return 'clothing';
-    if (value.contains('spiel') || value == 'toys') return 'toys';
-    if (value.contains('buch') || value == 'books' || value == 'bücher') {
-      return 'books';
-    }
-    if (value.contains('ausstatt') || value == 'equipment') return 'equipment';
-    return 'toys';
+    return TreasureCategory.normalize(category);
   }
 
   Future<void> _openListingDetail(TreasureListing listing) async {
@@ -2585,12 +2578,13 @@ class _TreasureHandoverScreenState
   }
 
   IconData _categoryIcon(String category) {
-    final value = category.toLowerCase();
-    if (value.contains('fahr')) return Icons.pedal_bike_rounded;
-    if (value.contains('kleidung')) return Icons.checkroom_rounded;
-    if (value.contains('buch')) return Icons.menu_book_rounded;
-    if (value.contains('ausstattung')) return Icons.stroller_rounded;
-    return Icons.toys_rounded;
+    final value = TreasureCategory.normalize(category);
+    if (value == 'vehicles') return Icons.pedal_bike_rounded;
+    if (value == 'clothing') return Icons.checkroom_rounded;
+    if (value == 'books') return Icons.menu_book_rounded;
+    if (value == 'equipment') return Icons.stroller_rounded;
+    if (value == 'toys') return Icons.toys_rounded;
+    return Icons.category_rounded;
   }
 
   Widget _buildCoffeeSlotPicker(
@@ -2869,7 +2863,7 @@ class _TreasureHandoverScreenState
       'equipment': 'treasureCategoryEquipment',
     };
     final normalized = _normalizeCategoryKey(category);
-    return l10n.t(keys[normalized] ?? 'treasureCategoryToys');
+    return l10n.t(keys[normalized] ?? 'treasureCategoryOther');
   }
 }
 

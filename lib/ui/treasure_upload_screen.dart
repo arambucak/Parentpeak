@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/treasure_photo_analysis_service.dart';
 import 'package:parentpeak/logic/treasure_draft_images.dart';
+import 'package:parentpeak/models/treasure_category.dart';
 import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/services/location_service.dart';
@@ -64,7 +65,7 @@ class _ScopedTreasureUploadScreen extends StatefulWidget {
 
 class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   static const String _defaultCategoryKey = 'vehicles';
-  static const double _defaultDistanceMeters = 120;
+  static const double _defaultRadiusKm = 1;
   static const int _defaultConditionIndex = 1;
   static const String _defaultTitle = 'Rotes Laufrad';
   static const String _defaultColor = 'Rot';
@@ -76,7 +77,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   bool _isAnalyzingImage = false;
   bool _imageAnalysisFailed = false;
   String _selectedCategoryKey = _defaultCategoryKey;
-  double _distanceMeters = _defaultDistanceMeters;
+  double _shareRadiusKm = _defaultRadiusKm;
   bool _draftHydrated = false;
   bool _publishing = false;
   bool _publishOutcomeUnknown = false;
@@ -196,6 +197,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
         'equipment',
         l10n.t('treasureCategoryEquipment', fallback: 'Ausstattung'),
       ),
+      ('other', l10n.t('treasureCategoryOther')),
     ];
 
     final currentCondition = conditions[_conditionIndex];
@@ -315,10 +317,6 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                     return;
                   }
 
-                  final categoryLabel = _categoryLabelForKey(
-                    l10n,
-                    _selectedCategoryKey,
-                  );
                   final locationLabel = loc.city ?? l10n.t('location');
                   final locationCoords = (loc.latitude!, loc.longitude!);
                   final title = _titleController.text.trim().isEmpty
@@ -334,7 +332,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                   final listing = TreasureListing(
                     id: 'treasure-${DateTime.now().millisecondsSinceEpoch}',
                     title: title,
-                    category: categoryLabel,
+                    category: _selectedCategoryKey,
                     sizeAge: _sizeAgeController.text.trim().isEmpty
                         ? l10n.t(
                             'treasureSizeAgePlaceholder',
@@ -342,7 +340,8 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                           )
                         : _sizeAgeController.text.trim(),
                     conditionKey: _conditionKeyForIndex(_conditionIndex),
-                    distanceMeters: _distanceMeters.round(),
+                    distanceMeters: null,
+                    shareRadiusKm: _shareRadiusKm,
                     colorLabel: color,
                     note: note,
                     locationLabel: locationLabel,
@@ -1130,11 +1129,9 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
 
   Widget _buildDistanceCard(AppLocalizations l10n) {
     return _SectionFrame(
-      title: l10n.t('treasureDistanceLabel', fallback: 'Entfernung'),
+      title: l10n.t('treasureShareRadiusLabel'),
       subtitle: l10n.t(
-        'treasureDistanceHelper',
-        fallback:
-            'So schnell kann jemand aus der Nähe einschätzen, ob es gerade passt.',
+        'treasureShareRadiusHelper',
       ),
       child: Column(
         children: [
@@ -1142,13 +1139,13 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
             children: [
               Expanded(
                 child: Slider(
-                  min: 50,
-                  max: 800,
-                  divisions: 15,
-                  value: _distanceMeters,
+                  min: 1,
+                  max: 25,
+                  divisions: 24,
+                  value: _shareRadiusKm,
                   onChanged: (value) {
                     setState(() {
-                      _distanceMeters = value;
+                      _shareRadiusKm = value;
                     });
                     _onDraftChanged();
                   },
@@ -1165,9 +1162,8 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                 ),
                 child: Text(
                   l10n.tFormat(
-                    'treasureDistanceMeters',
-                    {'meters': '${_distanceMeters.round()}'},
-                    fallback: '${_distanceMeters.round()} m entfernt',
+                    'treasureShareRadiusKm',
+                    {'radius': '${_shareRadiusKm.round()}'},
                   ),
                   style: const TextStyle(
                     color: Color(0xFF1E5CD7),
@@ -1223,6 +1219,8 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
         return l10n.t('treasureCategoryBooks', fallback: 'Bücher');
       case 'equipment':
         return l10n.t('treasureCategoryEquipment', fallback: 'Ausstattung');
+      case 'other':
+        return l10n.t('treasureCategoryOther');
       default:
         return l10n.t('treasureCategoryVehicles', fallback: 'Fahrzeuge');
     }
@@ -1470,11 +1468,12 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
           _noteController.text = draft['note']?.toString() ?? '';
           _sizeAgeController.text =
               draft['sizeAge']?.toString() ?? _defaultSizeAge;
-          _selectedCategoryKey =
-              draft['categoryKey']?.toString() ?? _defaultCategoryKey;
-          _distanceMeters =
-              double.tryParse(draft['distanceMeters']?.toString() ?? '') ??
-              _defaultDistanceMeters;
+          _selectedCategoryKey = draft['categoryKey'] == null
+              ? _defaultCategoryKey
+              : TreasureCategory.normalize(draft['categoryKey'].toString());
+          _shareRadiusKm =
+              double.tryParse(draft['shareRadiusKm']?.toString() ?? '') ??
+              _defaultRadiusKm;
           _conditionIndex =
               int.tryParse(draft['conditionIndex']?.toString() ?? '') ??
               _defaultConditionIndex;
@@ -1553,7 +1552,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
       'note': _noteController.text.trim(),
       'sizeAge': _sizeAgeController.text.trim(),
       'categoryKey': _selectedCategoryKey,
-      'distanceMeters': _distanceMeters.round(),
+      'shareRadiusKm': _shareRadiusKm,
       'conditionIndex': _conditionIndex,
     };
   }
@@ -1565,7 +1564,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
         _noteController.text.trim().isNotEmpty ||
         _sizeAgeController.text.trim() != _defaultSizeAge ||
         _selectedCategoryKey != _defaultCategoryKey ||
-        _distanceMeters.round() != _defaultDistanceMeters.round() ||
+        _shareRadiusKm != _defaultRadiusKm ||
         _conditionIndex != _defaultConditionIndex;
   }
 
@@ -1635,7 +1634,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
         _noteController.clear();
         _sizeAgeController.text = _defaultSizeAge;
         _selectedCategoryKey = _defaultCategoryKey;
-        _distanceMeters = _defaultDistanceMeters;
+        _shareRadiusKm = _defaultRadiusKm;
         _conditionIndex = _defaultConditionIndex;
         _voiceCaptured = false;
         _selectedImages = const [];
@@ -1870,9 +1869,8 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                   bottom: 18,
                   child: Text(
                     l10n.tFormat(
-                      'treasureDistanceMeters',
-                      {'meters': '${_distanceMeters.round()}'},
-                      fallback: '${_distanceMeters.round()} m entfernt',
+                      'treasureShareRadiusKm',
+                      {'radius': '${_shareRadiusKm.round()}'},
                     ),
                     style: const TextStyle(
                       color: Colors.white,

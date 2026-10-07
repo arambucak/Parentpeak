@@ -4,6 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 const { publicTreasure } = require('../../treasure_public_view');
+const treasureGeometry = require('../../treasure_geometry');
 
 const source = fs.readFileSync(path.join(__dirname, '../../server.js'), 'utf8');
 const treasure = {
@@ -74,6 +75,7 @@ function fixture({ missing = false, fails = false } = {}) {
   const context = {
     app: { get: (route, handler) => { handlers[route] = handler; } },
     publicTreasure,
+    treasureGeometry,
     haversineDistance: () => 1.234,
     console: { error: () => {} },
     prisma: { treasureItem: {
@@ -123,7 +125,7 @@ test('real list and detail routes share the public view while keeping server dis
   const detail = await app.request('/api/treasures/:id');
   assert.equal(list.status, 200);
   assert.equal(list.body.treasures.length, 1);
-  assert.equal(list.body.treasures[0].distanceKm, 1.2);
+  assert.equal(list.body.treasures[0].distanceKm, 0);
   assert.deepEqual({ ...list.body.treasures[0], distanceKm: null }, detail.body.treasure);
 });
 

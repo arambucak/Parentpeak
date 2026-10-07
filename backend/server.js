@@ -13,6 +13,7 @@ const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
 const { changeParticipation, updateOwnedEvent, validateEventMode, CONFIRMED } = require('./event_participation_policy');
 const { publicTreasure } = require('./treasure_public_view');
+const treasureGeometry = require('./treasure_geometry');
 
 // Firebase Admin — initialised lazily so the server starts without credentials
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
@@ -13597,8 +13598,12 @@ app.post('/api/treasures', async (req, res) => {
   if (await isUserSuspended(userId.toString().trim())) return respondSuspended(res);
 
   // Validate coordinates
-  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+  if (!treasureGeometry.position(latitude, longitude)) {
     return res.status(400).json({ error: 'Ungültige Koordinaten' });
+  }
+  const publicationRadius = treasureGeometry.radiusKm(shareRadiusKm);
+  if (publicationRadius === null) {
+    return res.status(400).json({ error: 'Ungültiger Veröffentlichungsradius' });
   }
 
   // Validate title length
@@ -13625,10 +13630,7 @@ app.post('/api/treasures', async (req, res) => {
         isFree: isFree !== false,
         price: isFree === false && price ? parseFloat(price) : null,
         visibility: visibility ? String(visibility).slice(0, 50) : 'nearby',
-        shareRadiusKm: Math.min(
-          Math.max(shareRadiusKm ? parseFloat(shareRadiusKm) : 10, 1),
-          25,
-        ),
+        shareRadiusKm: publicationRadius,
         photoUrl: photoUrl ? String(photoUrl).slice(0, 500) : null,
         photoUrls: Array.isArray(photoUrls)
           ? photoUrls
@@ -13673,53 +13675,41 @@ app.get('/api/treasures', async (req, res) => {
   } = req.query;
 
   try {
-    let treasures = await prisma.treasureItem.findMany({
+    const geographic = latitude !== undefined || longitude !== undefined;
+    const viewer = geographic ? treasureGeometry.position(latitude, longitude) : null;
+    const requestedRadius = treasureGeometry.radiusKm(radiusKm);
+    if ((geographic && !viewer) || requestedRadius === null) {
+      return res.status(400).json({ error: 'Valid coordinates and positive radiusKm required' });
+    }
+    const limit = Math.min(Math.max(parseInt(maxResults, 10) || 50, 1), 100);
+    const start = Math.max(parseInt(offset, 10) || 0, 0);
+    const query = {
       where: {
         status: status,
         visibility: visibility,
         ...(category && { category: String(category) }),
         ...(condition && { condition: String(condition) })
       },
-      orderBy: { createdAt: 'desc' },
-      take: Math.min(parseInt(maxResults, 10) || 50, 100),
-      skip: parseInt(offset, 10) || 0,
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       include: { ratings: true, handovers: true }
-    });
-
-    // Filter by geographic proximity if coordinates provided
-    if (latitude !== undefined && longitude !== undefined) {
-      const viewerLat = parseFloat(latitude);
-      const viewerLon = parseFloat(longitude);
-      const requestedRadius = parseFloat(radiusKm) || 10;
-      // The giveaway market is intentionally local. Never expand a client
-      // request beyond 25 km, even if an outdated app sends a larger radius.
-      const maxDistance = Math.min(Math.max(requestedRadius, 1), 25);
-
-      treasures = treasures.filter(treasure => {
-        if (!treasure.latitude || !treasure.longitude) return false;
-        const distance = haversineDistance(viewerLat, viewerLon, treasure.latitude, treasure.longitude);
-        const listingRadius = Math.min(
-          Math.max(Number(treasure.shareRadiusKm) || 10, 1),
-          25,
-        );
-        return distance <= Math.min(maxDistance, listingRadius);
-      }).sort((a, b) => {
-        const distA = haversineDistance(viewerLat, viewerLon, a.latitude, a.longitude);
-        const distB = haversineDistance(viewerLat, viewerLon, b.latitude, b.longitude);
-        return distA - distB; // Closest first
-      });
+    };
+    let results;
+    if (geographic) {
+      // Scan bounded DB batches before proximity sorting and result pagination.
+      const matches = [];
+      const batchSize = 200;
+      for (let skip = 0; ; skip += batchSize) {
+        const batch = await prisma.treasureItem.findMany({ ...query, take: batchSize, skip });
+        matches.push(...treasureGeometry.discover(batch, viewer, requestedRadius));
+        if (batch.length < batchSize) break;
+      }
+      results = matches.sort((a, b) => a.distance - b.distance).slice(start, start + limit);
+    } else {
+      const treasures = await prisma.treasureItem.findMany({ ...query, take: limit, skip: start });
+      results = treasures.map(treasure => ({ treasure, distance: null }));
     }
-
-    // Datenschutz: Fremden Nutzern NIEMALS die exakte Angebots-Position
-    // (= oft die Heimadresse der schenkenden Familie) liefern. Für die grobe
-    // Karten-/Umkreisdarstellung reicht eine stark gerundete Position
-    // (~1 km Raster bei 2 Dezimalstellen). Die genaue Distanz wird separat
-    // serverseitig berechnet und verrät keine Position.
-    const formattedTreasures = treasures.map(t => publicTreasure(t, {
-      // Echte Distanz in km (falls Betrachter-Koordinaten vorhanden)
-      distanceKm: (latitude !== undefined && longitude !== undefined && t.latitude && t.longitude)
-        ? Math.round(haversineDistance(parseFloat(latitude), parseFloat(longitude), t.latitude, t.longitude) * 10) / 10
-        : null,
+    const formattedTreasures = results.map(({ treasure, distance }) => publicTreasure(treasure, {
+      distanceKm: distance === null ? null : Math.round(distance * 1000) / 1000,
     }));
 
     res.json({ treasures: formattedTreasures, total: formattedTreasures.length });

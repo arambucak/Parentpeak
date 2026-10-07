@@ -1,3 +1,6 @@
+import 'treasure_category.dart';
+import 'treasure_geometry.dart';
+
 class TreasureListing {
   const TreasureListing({
     required this.id,
@@ -6,6 +9,7 @@ class TreasureListing {
     required this.sizeAge,
     required this.conditionKey,
     required this.distanceMeters,
+    this.shareRadiusKm = 1,
     required this.colorLabel,
     required this.note,
     this.locationLabel,
@@ -25,7 +29,8 @@ class TreasureListing {
   final String category;
   final String sizeAge;
   final String conditionKey;
-  final int distanceMeters;
+  final int? distanceMeters;
+  final double shareRadiusKm;
   final String colorLabel;
   final String note;
   final String? locationLabel;
@@ -72,6 +77,7 @@ class TreasureListing {
     String? sizeAge,
     String? conditionKey,
     int? distanceMeters,
+    double? shareRadiusKm,
     String? colorLabel,
     String? note,
     String? locationLabel,
@@ -92,6 +98,7 @@ class TreasureListing {
       sizeAge: sizeAge ?? this.sizeAge,
       conditionKey: conditionKey ?? this.conditionKey,
       distanceMeters: distanceMeters ?? this.distanceMeters,
+      shareRadiusKm: shareRadiusKm ?? this.shareRadiusKm,
       colorLabel: colorLabel ?? this.colorLabel,
       note: note ?? this.note,
       locationLabel: locationLabel ?? this.locationLabel,
@@ -115,11 +122,13 @@ class TreasureListing {
     return TreasureListing(
       id: map['id']?.toString() ?? '',
       title: map['title']?.toString() ?? '',
-      category: map['category']?.toString() ?? '',
+      category: TreasureCategory.normalize(map['category']?.toString() ?? ''),
       sizeAge: map['sizeAge']?.toString() ?? '',
       conditionKey: map['conditionKey']?.toString() ?? 'round2',
       distanceMeters:
-          int.tryParse(map['distanceMeters']?.toString() ?? '') ?? 200,
+          map['distanceBasis'] == 'coarse-v1'
+              ? int.tryParse(map['distanceMeters']?.toString() ?? '') : null,
+      shareRadiusKm: TreasureGeometry.readRadius(map['shareRadiusKm']),
       colorLabel: map['colorLabel']?.toString() ?? '',
       note: map['note']?.toString() ?? '',
       locationLabel: map['locationLabel']?.toString(),
@@ -141,10 +150,12 @@ class TreasureListing {
     return {
       'id': id,
       'title': title,
-      'category': category,
+      'category': TreasureCategory.normalize(category),
       'sizeAge': sizeAge,
       'conditionKey': conditionKey,
       'distanceMeters': distanceMeters,
+      'distanceBasis': 'coarse-v1',
+      'shareRadiusKm': shareRadiusKm,
       'colorLabel': colorLabel,
       'note': note,
       'locationLabel': locationLabel,
