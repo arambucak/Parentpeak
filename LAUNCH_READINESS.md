@@ -25,7 +25,7 @@ Statusbegriffe:
 | Web-Auslieferung | **Bereits erfolgt:** Pages-`build` und `deploy` fuer `cfae2a2` sind erfolgreich: [Run 37651530082](https://github.com/arambucak/Parentpeak/actions/runs/37651530082). Das beweist weder die aktuell sichtbare Custom-Domain-Version noch einen passenden Render-/DB-Stand. |
 | #151-Produktionsmigration | **Schema-Mismatch behoben:** nach ausdruecklicher Nutzerfreigabe am 7. Oktober 2026 um 22:37:53 MESZ erfolgreich gegen die Render-DB angewandt. Beide nullable TEXT-Spalten, erfolgreicher Migrationseintrag und keine ausstehenden Migrationen unmittelbar read-only bestaetigt (Abschnitt 0.2). |
 | Backup vor Migration | Nutzer bestaetigt: PITR 3 Tage aktiv, vollstaendiger Render-Export `completed`, Sicherungspunkt 7. Oktober 2026, 22:32 Uhr (als MESZ gefuehrt). Kein unabhaengiger Restore-Test nachgewiesen. |
-| Laufende Render-Version | Im freigegebenen Dashboard **belegt**: Service `Parentpeak`, Live-Deploy `dep-db373js9v7es73cfm83g`, SHA `cfae2a2786736be6aa7f6e1ebccaed5defe00df1`. `/health` liefert weiterhin keine Commit-ID. Dashboard-Pre-Deploy ist leer, entgegen dem Blueprint. |
+| Laufende Render-Version | Dashboard-Erstnachweis: Service `Parentpeak`, SHA `cfae2a2786736be6aa7f6e1ebccaed5defe00df1`. Nutzer bestaetigt am 7. Oktober um 23:13 MESZ: Pre-Deploy `npm run migrate:deploy` gespeichert, Deploy auf `cfae2a2`, `No pending migrations`, Status Live, `/health` HTTP 200. Einrichtung erledigt; `/health` liefert weiterhin keine Commit-ID. |
 | Audit-Testnachweise | Lokaler Abschlussplan: 134 gezielte Tests, 29 Chrome-Tests, Web-JS-Release gruen; volle lokale Suite 902 bestanden / 1 Skip / nur 12 bekannte Events-Firebasefehler; Analyzer 11 Infos. Nicht als neu ausgefuehrte Tests dieses Dokumentationsauftrags ausgeben. |
 
 Fuer dieses Dokument wurden Repo-Dateien, GitHub-Metadaten/Logs und das
@@ -128,8 +128,13 @@ Read-only-Abnahme ohne neue Consent-/Memory-Daten:
    Transfer und Versions-/Revision-Widerrufstest bleiben separat freizugebende
    funktionale Tests. `/health` allein prueft das Schema nicht.
 
-**Dauerhafte Ursache noch offen:** Dashboard-Pre-Deploy zuletzt leer,
-keine neue Nutzerbestaetigung zur Einrichtung. **Reihenfolge verbindlich:
+**Pre-Deploy-Einrichtung erledigt:** Nutzer bestaetigt am 7. Oktober 2026,
+23:13 MESZ: Command gespeichert, Deploy auf `cfae2a2`, Log `No pending migrations`,
+Status Live und `/health` HTTP 200. Kein weiterer Deploy durch den Assistenten.
+A-Logs-Abnahme zuvor vom Nutzer akzeptiert; authentifizierter Settings-GET
+bewusst auf spaetere Geraete-QA verschoben, nicht als ausgefuehrt behauptet.
+Das App-/Backend-Deploy-Gate bleibt offen. Historische Einrichtungsanleitung:
+**Reihenfolge verbindlich:
 erst Dokumentation sichern, dann A durch den Nutzer abnehmen; B erst nach
 erfolgreicher A-Abnahme.** Der Assistent wertet nur redigierte
 Nutzerrueckmeldungen aus und startet keine weiteren Live-Checks.
@@ -186,8 +191,8 @@ Vorbereitete Datenschutz-PRs, **nicht live und nicht gemergt**:
 - Blueprint-Datei ist nicht gleich Dashboard-Konfiguration: laut
   [Backend-Dokumentation](backend/README.md) muss ein geaenderter
   `preDeployCommand` im Render-Dashboard per Blueprint-Sync uebernommen werden.
-  Die Dashboard-Nachpruefung zeigt einen leeren Pre-Deploy-Befehl
-  (Abschnitt 0.1); den Blueprint-Befehl nicht als aktive Konfiguration behandeln.
+  Die Erstnachpruefung zeigte einen leeren Pre-Deploy-Befehl (Abschnitt 0.1).
+  Inzwischen Einrichtung und erfolgreicher Lauf vom Nutzer bestaetigt (0.2).
 - [Pages-Workflow](.github/workflows/deploy-web-pages.yml) deployt bei jedem
   Push auf `main` **ohne Abhaengigkeit von Migration/Render oder `analyze`**.
   Die App-Reihenfolge wird also nicht automatisch erzwungen. Mobile
@@ -680,8 +685,8 @@ nicht auf. Keine Apple-Antworten ungeprueft in Google-Felder kopieren.
 1. **P0 - Produktions-Transfergrenze:** #151-Schema-Mismatch am 7. Oktober
    22:37:53 MESZ behoben, unmittelbare DB-Verifikation gruen; Nutzer-Backup-
    Punkt 22:32. Noch offen: authentifizierte funktionale Backend-Abnahme,
-   Consent-/Revision-Verhalten und Restore-Test. Pre-Deploy dauerhaft
-   einrichten und App-Deploy-Gate mit Schema-/Backend-Nachweis umsetzen.
+   Consent-/Revision-Verhalten und Restore-Test. Pre-Deploy-Einrichtung
+   erledigt; App-Deploy-Gate mit Schema-/Backend-Nachweis noch umsetzen.
    Bereits deployten Web-Stand abgleichen; ohne Nachweis keine weitere
    Memory-/App-Freigabe. CI/Health allein genuegen nicht.
 2. **P0 - Sicherer Stop/Rollback:** consent-faehigen Rollback und betriebliches
