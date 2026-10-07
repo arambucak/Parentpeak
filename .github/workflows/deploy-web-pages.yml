@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -15,7 +16,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact release with backend history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Require successful main CI and compatible live backend
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
+        run: node scripts/pages_release_gate.cjs
+
   build:
+    needs: release-gate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -93,7 +113,7 @@ jobs:
         run: cp CNAME build/web/CNAME
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
@@ -105,8 +125,21 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [release-gate, build]
     steps:
+      - name: Checkout exact release with backend history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Recheck CI and backend immediately before publishing
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
+        run: node scripts/pages_release_gate.cjs
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

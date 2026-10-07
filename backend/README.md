@@ -1,5 +1,51 @@
 # Parentpeak Marktplatz Backend
 
+## Pages-Release-Gate und Aktivierung
+
+Der Pages-Workflow prueft vor Build und unmittelbar vor Veroeffentlichung:
+aktuellen main-SHA, erfolgreichen push-main-Lauf von flutter-analyze.yml
+inklusive erfolgreichem analyze-Job sowie `/release/readiness` vom echten
+Backend. Health 200 allein ist unzureichend. Die Backendkennung muss
+`parentpeak-memory-consent-v1` / `chat-memory-v1` und die erforderlichen
+Schema-/Migrationseigenschaften nachweisen.
+
+Der Backendcommit muss entweder exakt dem App-SHA entsprechen oder sein
+Git-Tree unter `backend/` muss exakt mit dem Release uebereinstimmen. So darf
+ein reiner Client-/Dokumentationsmerge das unveraenderte Backend verwenden,
+waehrend jede Backendaenderung bis zum passenden Render-Deploy blockiert.
+Unbekannte Backendcommits/fehlende History/abweichende Trees blockieren.
+CI wird maximal etwa 20 Minuten abgewartet; Backendfehler blockieren sofort.
+Manueller Workflowstart auf anderen Branches oder alten main-SHAs blockiert.
+
+Aktivierung braucht separate Freigaben, keine automatischen Admin-Merges:
+
+1. Backend-Nachweis-PR #162 separat reviewen und kontrolliert ausrollen.
+   Vor diesem Merge ist der bisherige Pages-Workflow noch ungegated; er kann
+   die unveraenderte alte App erneut ausliefern. #162 fuegt nur den
+   rueckwaertskompatiblen Nachweis hinzu, keine App-/Schemaanforderung.
+2. Render-Live-SHA, Migrationsergebnis und read-only `/release/readiness`
+   pruefen. Keine Tokens/DB-Secrets in CI erforderlich.
+3. Gate-PR separat freigeben. Sein Einfuehrungsmerge blockiert Pages, wenn
+   Backendnachweis/Schema/CI fehlen. Die alte App bleibt erreichbar.
+4. Wenn ein Gate wegen noch laufendem Renderdeploy blockiert, erst Backend
+   verifizieren, dann vorhandenen Pages-Lauf fuer denselben aktuellen SHA
+   kontrolliert erneut starten. Kein Skip-/Health-only-Bypass.
+5. Danach Datenschutz-PRs einzeln mergen, kombinierte CI und Live-Nachweis
+   jeweils abwarten. Recht/Store/Geraete-QA bleiben eigene Release-Gates.
+
+Die Action-Versionen aus #33/#34 (configure-pages@v6, deploy-pages@v5) sind
+hier bewusst enthalten. Diese PRs danach als ersetzt behandeln bzw. vor
+jedem spaeteren Merge pruefen; nicht den alten Workflow ueber das Gate kopieren.
+Der Git-Tree-Abgleich umfasst Backenddateien, nicht Render-Environment/
+Blueprint-Konfiguration. Deren Aenderungen brauchen weiterhin eigene
+Freigabe und Verifikation. Ein Rollenwechsel nach dem letzten Remote-Check
+ist kein atomar verhinderbares Ereignis; Render waehrend der Freigabe nicht
+parallel manuell auf inkompatible Versionen umstellen.
+
+```bash
+node --test backend/tests/unit/pages-release-gate.test.js
+```
+
 ## Einwilligung fuer KI-Elternberatung
 
 Der aktive `ChatScreen` wartet auf die geladene, explizite Zustimmung, bevor
