@@ -23,13 +23,67 @@ Statusbegriffe:
 | Gemergter Code / CI | `analyze: SUCCESS` auch fuer den Merge-SHA: [Run 37651530250](https://github.com/arambucak/Parentpeak/actions/runs/37651530250), volle Fluttertests, Backendunits, Analyzer-/Baselinepruefung. |
 | Physische Apple-/Android-Abnahme | Nicht nachgewiesen. `apple-prepare`, `ios-smoke-build`, `macos-smoke-build` sind in diesem Lauf **SKIPPED**. |
 | Web-Auslieferung | **Bereits erfolgt:** Pages-`build` und `deploy` fuer `cfae2a2` sind erfolgreich: [Run 37651530082](https://github.com/arambucak/Parentpeak/actions/runs/37651530082). Das beweist weder die aktuell sichtbare Custom-Domain-Version noch einen passenden Render-/DB-Stand. |
-| #151-Produktionsmigration | Nicht nachgewiesen. Letzter gelisteter `Prisma Migrate Deploy`: [Run 37242909121](https://github.com/arambucak/Parentpeak/actions/runs/37242909121), 4. Oktober, SHA `d737290...`. Sein Log wendet `20261001000000_add_ai_memory` an, **nicht** `20261007000000_ai_memory_consent`. Ein dortiges "up to date" gilt fuer den damaligen Checkout. |
-| Laufende Render-Version | Nicht nachgewiesen; kein Zugriff auf Render-Deploy-/DB-Nachweise in dieser Pruefung. `/health` liefert keine Commit-ID. |
+| #151-Produktionsmigration | Weiterhin nicht direkt fuer Render nachgewiesen. Neue Read-only-Diagnose [Run 37668027342](https://github.com/arambucak/Parentpeak/actions/runs/37668027342) liest die DB im GitHub-Secret: `20261001000000_add_ai_memory` erfolgreich registriert, **kein** Eintrag fuer `20261007000000_ai_memory_consent`. Gleichheit mit Render-DB und beide Consent-Spalten noch separat nachweisen (Abschnitt 0.1). |
+| Laufende Render-Version | Im freigegebenen Dashboard **belegt**: Service `Parentpeak`, Live-Deploy `dep-db373js9v7es73cfm83g`, SHA `cfae2a2786736be6aa7f6e1ebccaed5defe00df1`. `/health` liefert weiterhin keine Commit-ID. Dashboard-Pre-Deploy ist leer, entgegen dem Blueprint. |
 | Audit-Testnachweise | Lokaler Abschlussplan: 134 gezielte Tests, 29 Chrome-Tests, Web-JS-Release gruen; volle lokale Suite 902 bestanden / 1 Skip / nur 12 bekannte Events-Firebasefehler; Analyzer 11 Infos. Nicht als neu ausgefuehrte Tests dieses Dokumentationsauftrags ausgeben. |
 
-Hier wurden nur Repo-Dateien und GitHub-Metadaten/Logs gelesen und dieses
-Dokument erstellt. Keine Migration, kein Deployment, keine Store-Einreichung,
-keine Produktivdaten-/Google-Anfrage und keine Produktivcode-Aenderung.
+Fuer dieses Dokument wurden Repo-Dateien, GitHub-Metadaten/Logs und das
+freigegebene Render-Dashboard gelesen. Der vorhandene Read-only-Diagnoseworkflow
+wurde ausgefuehrt; er liest ausschliesslich Schema-/Migrationsmetadaten.
+Keine Migration, kein Deployment, keine Store-Einreichung, keine
+Nutzerdaten-/Google-Anfrage und keine Produktivcode-Aenderung in diesem PR.
+
+### 0.1 Nachpruefung des Live-Zustands am 7. Oktober
+
+- [Render-Service](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0):
+  Anzeigename `Parentpeak` (nicht der Blueprint-Name `parentpeak-backend`),
+  URL `https://parentpeak.onrender.com`, Repository `arambucak/Parentpeak`,
+  Branch `main`. Der [aktuelle Live-Deploy](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0/deploys/dep-db373js9v7es73cfm83g)
+  zeigt `Deploy succeeded|Live`, SHA `cfae2a2`, 7. Oktober 18:22:39 GMT+2,
+  Trigger `Auto-Deploy`; Build-/Live-Logs ebenfalls vorhanden.
+- `git merge-base --is-ancestor d9a7627 cfae2a2` ist erfolgreich:
+  der aktuelle Render-Code enthaelt #151. Die fruehere Hypothese eines
+  alten Render-Codes ist damit widerlegt, nicht bloss unbelegt.
+- [Dashboard-Settings](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0/settings)
+  direkt gelesen: Root `backend`, Build `npm install`, Start `npm start`,
+  Auto-Deploy `On Commit`, **Pre-Deploy Command leer**. Der Migrationsbefehl
+  aus `render.yaml` ist also aktuell nicht wirksam eingerichtet.
+  `prisma generate` im Build generiert nur den Client, nicht das DB-Schema.
+- Der vorhandene `prisma-migrate-diagnose.yml` wurde auf `main` gestartet,
+  [Run 37668027342](https://github.com/arambucak/Parentpeak/actions/runs/37668027342),
+  erfolgreich, 7. Oktober ca. 20:36 GMT+2. Das gepruefte Script fuehrt nur
+  SELECTs aus. Die Migrationsliste enthaelt **keinen** #151-Eintrag.
+  Das gilt fuer das GitHub-Secret-Ziel; Gleichheit mit dem Service-Ziel ist
+  nicht bewiesen. Auch manuell hinzugefuegte Spalten werden so nicht ausgeschlossen.
+- Die Render-Web-Shell konnte geoeffnet werden, nahm automatisierte Eingaben
+  aber nicht verlaesslich an. **Keine direkte erfolgreiche DB-SELECT-Abfrage
+  im Render-Service behaupten.** Die beiden SQL-Nachweise aus Abschnitt 1.2
+  und der administrative DB-Zielvergleich bleiben zwingend.
+- Daraus folgt: **kein vorsorglicher Web-Rollback auf aelteren Code**.
+  Zuerst Zielgleichheit und Spalten pruefen. Falls sie fehlen, nach expliziter
+  Freigabe Backup/Restore-Nachweis -> additive Migration -> Schema-Nachweis ->
+  Runtime-Checks. Der passende Backend-Code ist bereits live; ein erneuter
+  Deploy ist nicht allein wegen eines vermeintlich alten SHA erforderlich.
+  Fuer zukuenftige Releases Migrations-/Backend-Gate und den fehlenden
+  Pre-Deploy-Schritt getrennt vorbereiten; nichts davon hier umstellen.
+
+Die Fehleranalyse fuer ein **altes Backend** bleibt nur ein Vergleichsszenario,
+nicht die Beschreibung des jetzt belegten Render-Codes. Falls die aktuelle
+Render-DB die Spalten nicht hat, ist stattdessen ein neuer Prisma-Client auf
+altem Schema zu untersuchen: insbesondere Settings-/Memory-Zugriffe koennen
+scheitern. Ein erfolgreicher statischer Healthcheck schliesst das nicht aus.
+Eine Nutzerzahl oder Live-Fehlerquote wurde nicht ermittelt.
+
+Vorbereitete Datenschutz-PRs, **nicht live und nicht gemergt**:
+
+- #157: kontobezogener Kuehlschrank-Consent mit bestaetigtem Ack,
+  Service-Grenze und Google-Gemini-Texten; `analyze: SUCCESS`.
+- #158: Google-Gemini-Empfaenger im Entwicklungsbericht de/en/tr/ku,
+  eigene Sprach-/Fallbackregressionen; `analyze: SUCCESS`.
+- Neu verifizierter offener Entwicklungsbericht-Legacypunkt:
+  `dev.ai_report_consent` ist ebenfalls global, Ack ungeprueft, keine
+  dienstseitige Consent-Grenze. #158 ist nur die beauftragte Empfaenger-
+  Textkorrektur, keine Behebung dieser weiteren Grenze oder Rechtsfreigabe.
 
 ## 1. Kritischer Rollout: Migration -> Backend -> App
 
@@ -51,7 +105,8 @@ keine Produktivdaten-/Google-Anfrage und keine Produktivcode-Aenderung.
 - Blueprint-Datei ist nicht gleich Dashboard-Konfiguration: laut
   [Backend-Dokumentation](backend/README.md) muss ein geaenderter
   `preDeployCommand` im Render-Dashboard per Blueprint-Sync uebernommen werden.
-  Die tatsaechliche Synchronisation ist nicht nachgewiesen.
+  Die Dashboard-Nachpruefung zeigt einen leeren Pre-Deploy-Befehl
+  (Abschnitt 0.1); den Blueprint-Befehl nicht als aktive Konfiguration behandeln.
 - [Pages-Workflow](.github/workflows/deploy-web-pages.yml) deployt bei jedem
   Push auf `main` **ohne Abhaengigkeit von Migration/Render oder `analyze`**.
   Die App-Reihenfolge wird also nicht automatisch erzwungen. Mobile
@@ -67,8 +122,9 @@ Memory-Freigabe und betroffene Nutzung betrieblich begrenzen.
 
 ### 1.2 Vorhandene Prisma-Workflows und konkrete Befehle
 
-**Die folgenden Befehle sind ein Runbook fuer eine spaeter ausdruecklich
-freigegebene Ausfuehrung. Sie wurden hier nicht gestartet.**
+**Die mutierenden Befehle sind ein Runbook fuer eine spaeter ausdruecklich
+freigegebene Ausfuehrung. Sie wurden hier nicht gestartet.** Ausschliesslich
+die Read-only-Diagnose aus Schritt 2 wurde inzwischen ausgefuehrt (Abschnitt 0.1).
 Von der Repo-Wurzel; `main` waehrend des Rollouts auf dem freigegebenen SHA
 halten. Die Workflows haben keinen eigenen Release-SHA-Input.
 
