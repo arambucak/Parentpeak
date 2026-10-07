@@ -67,12 +67,12 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   static const String _defaultCategoryKey = 'vehicles';
   static const double _defaultRadiusKm = 1;
   static const int _defaultConditionIndex = 1;
-  static const String _defaultTitle = 'Rotes Laufrad';
-  static const String _defaultColor = 'Rot';
-  static const String _defaultSizeAge = '2-4 Jahre';
+  late String _defaultTitle;
+  late String _defaultColor;
+  late String _defaultSizeAge;
+  bool _defaultsInitialized = false;
 
   int _conditionIndex = 1;
-  bool _voiceCaptured = false;
   List<XFile> _selectedImages = const [];
   bool _isAnalyzingImage = false;
   bool _imageAnalysisFailed = false;
@@ -91,16 +91,10 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   int _analysisRequest = 0;
   late final TreasureListingService _listingService =
       widget.listingService.forScope(widget.listingService.store.scope);
-  final TextEditingController _titleController = TextEditingController(
-    text: _defaultTitle,
-  );
-  final TextEditingController _colorController = TextEditingController(
-    text: _defaultColor,
-  );
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _colorController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  final TextEditingController _sizeAgeController = TextEditingController(
-    text: _defaultSizeAge,
-  );
+  final TextEditingController _sizeAgeController = TextEditingController();
 
   @override
   void initState() {
@@ -110,6 +104,20 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
     _colorController.addListener(_onDraftChanged);
     _noteController.addListener(_onDraftChanged);
     _sizeAgeController.addListener(_onDraftChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_defaultsInitialized) return;
+    final l10n = AppLocalizations.of(context);
+    _defaultTitle = l10n.t('treasureDefaultTitle');
+    _defaultColor = l10n.t('treasureDefaultColor');
+    _defaultSizeAge = l10n.t('treasureDefaultSizeAge');
+    _titleController.text = _defaultTitle;
+    _colorController.text = _defaultColor;
+    _sizeAgeController.text = _defaultSizeAge;
+    _defaultsInitialized = true;
     unawaited(_restoreDraft());
   }
 
@@ -243,7 +251,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
               const SizedBox(height: 14),
               _buildLocationCard(l10n),
               const SizedBox(height: 14),
-              _buildVoiceTagCard(l10n),
+              _buildNoteCard(l10n),
               const SizedBox(height: 16),
               _buildPreviewCard(l10n, currentCondition),
               const SizedBox(height: 16),
@@ -326,7 +334,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                         )
                       : _titleController.text.trim();
                   final color = _colorController.text.trim().isEmpty
-                      ? 'Neutral'
+                      ? l10n.t('treasureNeutralColor')
                       : _colorController.text.trim();
                   final note = _noteController.text.trim();
                   final listing = TreasureListing(
@@ -620,7 +628,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
                 const SizedBox(width: 10),
-                Text(l10n.t('treasureVoiceProcessing')),
+                Expanded(child: Text(l10n.t('treasurePhotoAnalyzing'))),
               ],
             )
           : _imageAnalysisFailed
@@ -674,6 +682,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
             return Stack(
               children: [
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _promoteSelectedImage(index),
                   child: Container(
                     width: 90,
@@ -719,6 +728,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                   right: 6,
                   top: 6,
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _removeSelectedImageAt(index),
                     child: Container(
                       width: 24,
@@ -977,7 +987,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
     );
   }
 
-  Widget _buildVoiceTagCard(AppLocalizations l10n) {
+  Widget _buildNoteCard(AppLocalizations l10n) {
     final notePreview = _noteController.text.trim();
     return _SectionFrame(
       title: l10n.t('treasureOptionalNoteLabel', fallback: 'Kurze Notiz'),
@@ -1022,29 +1032,29 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        _voiceCaptured
+                        notePreview.isNotEmpty
                             ? Icons.check_circle_rounded
-                            : Icons.multitrack_audio_rounded,
+                            : Icons.edit_note_rounded,
                         size: 18,
-                        color: _voiceCaptured
+                        color: notePreview.isNotEmpty
                             ? const Color(0xFF1F9C5D)
                             : const Color(0xFF6A7D91),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _voiceCaptured && notePreview.isNotEmpty
+                          notePreview.isNotEmpty
                               ? l10n.t(
-                                  'treasureVoiceNoteSaved',
+                                  'treasureNoteEditable',
                                   fallback: 'Notiz übernommen.',
                                 )
                               : l10n.t(
-                                  'treasureVoiceAutofillHint',
+                                  'treasureNoteSuggestionHint',
                                   fallback:
                                       'Wir wandeln deine Notiz in einen startklaren Text um.',
                                 ),
                           style: TextStyle(
-                            color: _voiceCaptured
+                            color: notePreview.isNotEmpty
                                 ? const Color(0xFF23364B)
                                 : const Color(0xFF6A7D91),
                             fontWeight: FontWeight.w600,
@@ -1056,7 +1066,8 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              FilledButton.icon(
+              Flexible(
+                child: FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF1E5CD7),
                   padding: const EdgeInsets.symmetric(
@@ -1068,23 +1079,24 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
                   ),
                 ),
                 onPressed: () {
-                  final suggestedNote = _defaultVoiceNote(l10n);
+                  final suggestedNote = _noteSuggestion(l10n);
                   _noteController.text = suggestedNote;
                   _noteController.selection = TextSelection.fromPosition(
                     TextPosition(offset: _noteController.text.length),
                   );
-                  setState(() {
-                    _voiceCaptured = true;
-                  });
+                  setState(() {});
                   _onDraftChanged();
                 },
-                icon: const Icon(Icons.mic_none_rounded),
+                icon: const Icon(Icons.auto_fix_high_rounded),
                 label: Text(
-                  l10n.t('treasureRecordVoiceNote', fallback: 'Einsprechen'),
+                  l10n.t('treasureInsertNoteSuggestion'),
+                ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(l10n.t('treasureNoteSuggestionHint')),
         ],
       ),
     );
@@ -1226,17 +1238,14 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
     }
   }
 
-  String _defaultVoiceNote(AppLocalizations l10n) {
+  String _noteSuggestion(AppLocalizations l10n) {
     final sizeAge = _sizeAgeController.text.trim().isEmpty
         ? l10n.t('treasureSizeAgePlaceholder', fallback: '2-4 Jahre')
         : _sizeAgeController.text.trim();
     final title = _titleController.text.trim().isEmpty
         ? l10n.t('treasureTitlePlaceholder', fallback: 'Rotes Laufrad')
         : _titleController.text.trim();
-    if (l10n.locale.languageCode == 'de') {
-      return '$title in $sizeAge, faellt im Alltag direkt auf und ist sofort bereit für die naechste Runde.';
-    }
-    return '$title in $sizeAge, easy to spot in everyday use and ready for the next family.';
+    return l10n.tFormat('treasureNoteSuggestion', {'title': title, 'sizeAge': sizeAge});
   }
 
   Future<void> _pickCameraImage() async {
@@ -1356,11 +1365,18 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   }
 
   Future<void> _pickGalleryImages() async {
+    final request = _analysisRequest;
+    final scope = _listingService.store.scope;
     final pickedImages = await _imagePicker.pickMultiImage(
       imageQuality: 82,
       maxWidth: 1800,
     );
-    if (!mounted || pickedImages.isEmpty) return;
+    if (!mounted ||
+        pickedImages.isEmpty ||
+        request != _analysisRequest ||
+        scope != _listingService.store.scope) {
+      return;
+    }
     final mergedImages = [..._selectedImages];
     for (final image in pickedImages) {
       if (mergedImages.every((item) => item.path != image.path)) {
@@ -1477,7 +1493,6 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
           _conditionIndex =
               int.tryParse(draft['conditionIndex']?.toString() ?? '') ??
               _defaultConditionIndex;
-          _voiceCaptured = _noteController.text.trim().isNotEmpty;
           _selectedImages = restoredImages;
         });
       });
@@ -1636,7 +1651,6 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
         _selectedCategoryKey = _defaultCategoryKey;
         _shareRadiusKm = _defaultRadiusKm;
         _conditionIndex = _defaultConditionIndex;
-        _voiceCaptured = false;
         _selectedImages = const [];
       });
     });
@@ -1670,6 +1684,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   }
 
   void _showPersistenceMessage(String key) {
+        if (!mounted) return;
         final messenger = ScaffoldMessenger.of(context);
         messenger.hideCurrentSnackBar();
         messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).t(key))));

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
 import 'package:parentpeak/logic/treasure_backend_service.dart';
+import 'treasure_handover_text.dart';
 
 class TreasureMineOfferCard extends StatelessWidget {
   const TreasureMineOfferCard({
@@ -60,11 +61,11 @@ class TreasureMineOfferCard extends StatelessWidget {
             ),
             if (reservation.location.isNotEmpty) ...[
               const SizedBox(height: 3),
-              Text(reservation.location, style: theme.textTheme.bodySmall),
+              Text(treasureHandoverLocation(l10n, reservation.location)!, style: theme.textTheme.bodySmall),
             ],
             if (reservation.notes?.isNotEmpty ?? false) ...[
               const SizedBox(height: 3),
-              Text(reservation.notes!, style: theme.textTheme.bodySmall),
+              Text(treasureHandoverNotes(l10n, reservation.notes!), style: theme.textTheme.bodySmall),
             ],
             const SizedBox(height: 8),
             if (reservation.status == 'confirmed')
