@@ -11,6 +11,7 @@ import 'package:parentpeak/logic/account_ai_consent.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
 import 'package:parentpeak/logic/chat_memory_consent.dart';
+import 'package:parentpeak/logic/chat_context_policy.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/ui/widgets/chat_account_modal.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
@@ -540,30 +541,22 @@ class _ChatScreenState extends State<ChatScreen> {
     final tipText = raw.substring(tipPrefix.length).trim();
     try {
       if (!await _canSendWithConsent() || !_isCurrent(ticket, request)) return;
-      int childAge = 3;
+      if (!await _canSendWithRateLimit(ticket, request)) return;
+      int? childAge;
       try {
-        final profile = await FamilyMatchProfile.load();
+        final profile = await FamilyMatchProfile.load(throwOnError: true);
         if (!_isCurrent(ticket, request)) return;
         if (profile != null && profile.children.isNotEmpty) {
-          childAge = (profile.children.first.ageMonths / 12).round().clamp(
-            0,
-            16,
-          );
+          childAge = ChatContextPolicy.completedAge(profile.children.first);
         }
       } catch (error) {
         debugPrint('Chat tip profile load failed: $error');
         if (!_isCurrent(ticket, request)) return;
         _showError('chat_memory_load_failed');
       }
-      final smartPrompt =
-          'KONTEXT: Das Kind des Elternteils ist $childAge Jahre alt.\n\n'
-          'Der Elternteil hat diesen Tipp gelesen und will MEHR dazu wissen:\n'
-          '"$tipText"\n\n'
-          'Antworte SPEZIFISCH für ein $childAge-jähriges Kind:\n'
-          '1. Warum ist das bei $childAge-Jährigen besonders relevant? (2 Sätze)\n'
-          '2. 3 konkrete Alltagsbeispiele/Situationen\n'
-          '3. 1 Übung die der Elternteil HEUTE ausprobieren kann\n\n'
-          'Kurz, praktisch, kein Theorievortrag. Max 12 Zeilen.';
+      final smartPrompt = ChatContextPolicy.tipPrompt(
+        tipText, languageService.currentLanguage, childAge,
+      );
 
       if (!_isCurrent(ticket, request)) return;
       setState(() {
@@ -574,6 +567,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       });
       await _consumeReply(smartPrompt, ticket, request);
+      if (_isCurrent(ticket, request)) await AIRateLimiter.recordRequest();
     } catch (error) {
       _handleRequestError(error, ticket, request);
     } finally {
@@ -586,6 +580,20 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<bool> _canSendWithRateLimit(
+    ChatAccountTicket ticket, int request,
+  ) async {
+    await AIRateLimiter.initialize();
+    if (!_isCurrent(ticket, request)) return false;
+    if (AIRateLimiter.canMakeRequest()) return true;
+    setState(() => _messages.add({
+      'role': 'assistant',
+      'content': context.tr('chat_daily_limit', values: {'limit': '${AIRateLimiter.dailyLimit}'}),
+      'timestamp': DateTime.now(),
+    }));
+    return false;
+  }
+
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty || _isStreaming || _chatBackend == null) {
       return;
@@ -595,18 +603,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isStreaming = true);
     try {
       if (!await _canSendWithConsent() || !_isCurrent(ticket, request)) return;
-      await AIRateLimiter.initialize();
-      if (!_isCurrent(ticket, request)) return;
-      if (!AIRateLimiter.canMakeRequest()) {
-        setState(
-          () => _messages.add({
-            'role': 'assistant',
-            'content': AIRateLimiter.limitReachedMessage,
-            'timestamp': DateTime.now(),
-          }),
-        );
-        return;
-      }
+      if (!await _canSendWithRateLimit(ticket, request)) return;
       if (_topicsLoading || _topicsErrorKey != null) {
         _showError('chat_topics_load_failed');
         return;
@@ -658,7 +655,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _replyChildName = childName;
     final iterator = StreamIterator(
       _chatBackend!.streamReply(
-        history: _messages
+        history: _messages.take(_messages.length - 1)
             .map((entry) => <String, dynamic>{'role': entry['role'], 'content': entry['content']})
             .toList(),
         userMessage: text,
@@ -1659,6 +1656,16 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                context.tr('chat_history_budget', values: {
+                  'rounds': '${ChatContextPolicy.maxHistoryRounds}',
+                  'characters': '${ChatContextPolicy.maxHistoryCharacters}',
+                }),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
             if (_topicsErrorKey != null)
               ListTile(
                 title: Text(context.tr(_topicsErrorKey!)),
