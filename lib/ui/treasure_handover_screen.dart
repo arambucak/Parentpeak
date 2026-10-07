@@ -33,7 +33,8 @@ class TreasureHandoverScreen extends StatelessWidget {
     return TreasureAccountBoundary(
       store: service.store,
       builder: (_) => _ScopedTreasureHandoverScreen(
-        openMyListings: openMyListings, listingService: service,
+        openMyListings: openMyListings,
+        listingService: service,
       ),
     );
   }
@@ -41,22 +42,24 @@ class TreasureHandoverScreen extends StatelessWidget {
 
 class _ScopedTreasureHandoverScreen extends StatefulWidget {
   const _ScopedTreasureHandoverScreen({
-    required this.openMyListings, required this.listingService,
+    required this.openMyListings,
+    required this.listingService,
   });
   final bool openMyListings;
   final TreasureListingService listingService;
 
   @override
-  State<_ScopedTreasureHandoverScreen> createState() => _TreasureHandoverScreenState();
+  State<_ScopedTreasureHandoverScreen> createState() =>
+      _TreasureHandoverScreenState();
 }
 
-class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> {
-
+class _TreasureHandoverScreenState
+    extends State<_ScopedTreasureHandoverScreen> {
   TreasureHandoverMode _selectedMode = TreasureHandoverMode.coffeeChat;
   String? _selectedSlot;
   String? _selectedDropPoint;
-  late final TreasureListingService _listingService =
-      widget.listingService.forScope(widget.listingService.store.scope);
+  late final TreasureListingService _listingService = widget.listingService
+      .forScope(widget.listingService.store.scope);
   List<TreasureListing> _listings = const [];
   String _categoryFilter = 'all';
   String _conditionFilter = 'all';
@@ -116,8 +119,8 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     final contentMaxWidth = viewportWidth >= 1200
         ? 980.0
         : viewportWidth >= 900
-            ? 860.0
-            : double.infinity;
+        ? 860.0
+        : double.infinity;
     final horizontalPadding = viewportWidth >= 900 ? 24.0 : 16.0;
     final reserveLabel = _selectedMode == TreasureHandoverMode.coffeeChat
         ? l10n.t(
@@ -168,9 +171,16 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
             child: ListView(
               controller: _scrollController,
               padding: EdgeInsets.fromLTRB(
-                  horizontalPadding, 4, horizontalPadding, 120),
+                horizontalPadding,
+                4,
+                horizontalPadding,
+                120,
+              ),
               children: [
-                TreasureLegacyCard(store: _listingService.store, onClaimed: _restoreSafetyState),
+                TreasureLegacyCard(
+                  store: _listingService.store,
+                  onClaimed: _restoreSafetyState,
+                ),
                 _buildHeaderCard(l10n),
                 if (_syncError != null && _syncError!.trim().isNotEmpty)
                   _buildSyncErrorCard(l10n),
@@ -215,10 +225,14 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                   const SizedBox(height: 14),
                   _ModeSegmentedSwitch(
                     selectedMode: _selectedMode,
-                    coffeeLabel: l10n.t('treasureHandoverCoffeeMode',
-                        fallback: 'Kurz treffen'),
-                    flyingLabel: l10n.t('treasureHandoverFlyingSwap',
-                        fallback: 'Still tauschen'),
+                    coffeeLabel: l10n.t(
+                      'treasureHandoverCoffeeMode',
+                      fallback: 'Kurz treffen',
+                    ),
+                    flyingLabel: l10n.t(
+                      'treasureHandoverFlyingSwap',
+                      fallback: 'Still tauschen',
+                    ),
                     onChanged: (mode) {
                       setState(() {
                         _selectedMode = mode;
@@ -248,8 +262,13 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
           ? null
           : SafeArea(
               minimum: EdgeInsets.fromLTRB(
-                  horizontalPadding, 8, horizontalPadding, 12),
+                horizontalPadding,
+                8,
+                horizontalPadding,
+                12,
+              ),
               child: Center(
+                heightFactor: 1,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: contentMaxWidth),
                   child: Column(
@@ -261,11 +280,13 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(52),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           backgroundColor: const Color(0xFF1E5CD7),
                         ),
-                        onPressed:
-                            _canConfirmSelection ? _confirmSelection : null,
+                        onPressed: _canConfirmSelection
+                            ? _confirmSelection
+                            : null,
                         icon: const Icon(Icons.check_circle_rounded),
                         label: Text(reserveLabel),
                       ),
@@ -412,15 +433,19 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                     ),
                     _PreviewBadge(
                       icon: Icons.edit_note_rounded,
-                      label: l10n.t('treasureOptionalNoteLabel',
-                          fallback: 'Notiz'),
+                      label: l10n.t(
+                        'treasureOptionalNoteLabel',
+                        fallback: 'Notiz',
+                      ),
                       background: Colors.white,
                       foreground: const Color(0xFF1E5CD7),
                     ),
                     _PreviewBadge(
                       icon: Icons.share_rounded,
-                      label: l10n.t('treasurePublishNow',
-                          fallback: 'Jetzt teilen'),
+                      label: l10n.t(
+                        'treasurePublishNow',
+                        fallback: 'Jetzt teilen',
+                      ),
                       background: Colors.white,
                       foreground: const Color(0xFF1E5CD7),
                     ),
@@ -436,18 +461,24 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                           minimumSize: const Size.fromHeight(48),
                           backgroundColor: const Color(0xFF1E5CD7),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         onPressed: _openUpload,
                         icon: const Icon(Icons.add_circle_outline_rounded),
-                        label: Text(l10n.t('treasurePublishNow',
-                            fallback: 'Jetzt teilen')),
+                        label: Text(
+                          l10n.t(
+                            'treasurePublishNow',
+                            fallback: 'Jetzt teilen',
+                          ),
+                        ),
                       )
                     : FilledButton.icon(
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         onPressed: () async {
                           final located = await LocationService.instance
@@ -458,7 +489,8 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                           } else {
                             ScaffoldMessenger.of(this.context).showSnackBar(
                               SnackBar(
-                                  content: Text(l10n.t('location_denied'))),
+                                content: Text(l10n.t('location_denied')),
+                              ),
                             );
                           }
                         },
@@ -495,8 +527,11 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       ),
       child: Row(
         children: [
-          const Icon(Icons.bookmark_added_rounded,
-              size: 18, color: Color(0xFF1E5CD7)),
+          const Icon(
+            Icons.bookmark_added_rounded,
+            size: 18,
+            color: Color(0xFF1E5CD7),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -541,11 +576,13 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       if (_blockedListingIds.contains(listing.id)) {
         return false;
       }
-      final matchesCategory = _categoryFilter == 'all' ||
+      final matchesCategory =
+          _categoryFilter == 'all' ||
           _normalizeCategoryKey(listing.category) == _categoryFilter;
       final matchesCondition =
           _conditionFilter == 'all' || listing.conditionKey == _conditionFilter;
-      final matchesDistance = _maxDistanceMeters == null ||
+      final matchesDistance =
+          _maxDistanceMeters == null ||
           listing.distanceMeters <= _maxDistanceMeters!;
       return matchesCategory && matchesCondition && matchesDistance;
     }).toList();
@@ -599,8 +636,9 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
               color: const Color(0xFF334961),
             ),
             maxLines: compactScreen ? 2 : null,
-            overflow:
-                compactScreen ? TextOverflow.ellipsis : TextOverflow.visible,
+            overflow: compactScreen
+                ? TextOverflow.ellipsis
+                : TextOverflow.visible,
           ),
         ],
       ),
@@ -617,14 +655,14 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       ('books', l10n.t('treasureCategoryBooks', fallback: 'Bücher')),
       (
         'equipment',
-        l10n.t('treasureCategoryEquipment', fallback: 'Ausstattung')
+        l10n.t('treasureCategoryEquipment', fallback: 'Ausstattung'),
       ),
     ];
     final conditionOptions = [
       ('all', l10n.t('treasureFilterAll', fallback: 'Alle')),
       (
         'studio',
-        l10n.t('treasureConditionLikeNew', fallback: 'Studio-Zustand')
+        l10n.t('treasureConditionLikeNew', fallback: 'Studio-Zustand'),
       ),
       ('round2', l10n.t('treasureConditionGood', fallback: 'Runde 2')),
       ('wild', l10n.t('treasureConditionRaider', fallback: 'Wildnis-Modus')),
@@ -648,16 +686,19 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
         ),
         const SizedBox(height: 6),
         Text(
-          l10n.t('treasureFeedSubtitle',
-              fallback: 'Lokal, ehrlich, sofort verständlich'),
+          l10n.t(
+            'treasureFeedSubtitle',
+            fallback: 'Lokal, ehrlich, sofort verständlich',
+          ),
           style: TextStyle(
             fontWeight: FontWeight.w600,
             color: const Color(0xFF607286),
             fontSize: compactScreen ? 12.2 : null,
           ),
           maxLines: compactScreen ? 2 : null,
-          overflow:
-              compactScreen ? TextOverflow.ellipsis : TextOverflow.visible,
+          overflow: compactScreen
+              ? TextOverflow.ellipsis
+              : TextOverflow.visible,
         ),
         const SizedBox(height: 10),
         Container(
@@ -671,8 +712,9 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
           child: Text(
             _globalDigitalMode
                 ? l10n.t('treasureGlobalMode')
-                : l10n.tFormat(
-                    'treasureCurrentRadius', {'radius': _discoveryScope}),
+                : l10n.tFormat('treasureCurrentRadius', {
+                    'radius': _discoveryScope,
+                  }),
             style: const TextStyle(
               color: Color(0xFF385069),
               fontWeight: FontWeight.w700,
@@ -714,17 +756,23 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.t('treasureFeedEmptyTitle',
-                  fallback: 'Noch keine Schätze in deiner Nähe'),
+              l10n.t(
+                'treasureFeedEmptyTitle',
+                fallback: 'Noch keine Schätze in deiner Nähe',
+              ),
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
             ),
             const SizedBox(height: 6),
             Text(
-              l10n.t('treasureFeedEmptyText',
-                  fallback:
-                      'Starte einfach mit dem ersten Teil, das bei euch weiterziehen darf.'),
+              l10n.t(
+                'treasureFeedEmptyText',
+                fallback:
+                    'Starte einfach mit dem ersten Teil, das bei euch weiterziehen darf.',
+              ),
               style: const TextStyle(
-                  color: Color(0xFF607286), fontWeight: FontWeight.w600),
+                color: Color(0xFF607286),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -742,17 +790,23 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.t('treasureNoResultsTitle',
-                  fallback: 'Gerade nichts Passendes dabei'),
+              l10n.t(
+                'treasureNoResultsTitle',
+                fallback: 'Gerade nichts Passendes dabei',
+              ),
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
             ),
             const SizedBox(height: 6),
             Text(
-              l10n.t('treasureNoResultsText',
-                  fallback:
-                      'Versuch es mit einer größeren Entfernung oder schau später nochmal rein.'),
+              l10n.t(
+                'treasureNoResultsText',
+                fallback:
+                    'Versuch es mit einer größeren Entfernung oder schau später nochmal rein.',
+              ),
               style: const TextStyle(
-                  color: Color(0xFF607286), fontWeight: FontWeight.w600),
+                color: Color(0xFF607286),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -786,308 +840,311 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     final isFreshToday = _isFreshToday(listing.createdAt);
     final freshnessTimeLabel = _freshnessTimeLabel(l10n, listing.createdAt);
     return GestureDetector(
-        onTap: () => _openListingDetail(listing),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF1E5CD7) : Colors.transparent,
-              width: 1.6,
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x14000000),
-                blurRadius: 14,
-                offset: Offset(0, 5),
-              ),
-            ],
+      onTap: () => _openListingDetail(listing),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF1E5CD7) : Colors.transparent,
+            width: 1.6,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 210,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  gradient: hasImage
-                      ? null
-                      : const LinearGradient(
-                          colors: [Color(0xFFFDF1E8), Color(0xFFEFF4FF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                  color: hasImage ? const Color(0xFF14283F) : null,
-                ),
-                child: Stack(
-                  children: [
-                    if (hasImage)
-                      Positioned.fill(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
-                          child: _buildTreasureImageByPath(
-                            primaryImagePath!,
-                            fit: BoxFit.cover,
-                            errorWidget: const DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0xFFFDF1E8),
-                                    Color(0xFFEFF4FF)
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                              ),
-                              child: SizedBox.expand(),
-                            ),
-                          ),
-                        ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 14,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 210,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                gradient: hasImage
+                    ? null
+                    : const LinearGradient(
+                        colors: [Color(0xFFFDF1E8), Color(0xFFEFF4FF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    if (listing.photoCount > 1)
-                      Positioned(
-                        right: 18,
-                        top: 18,
-                        child: _PreviewBadge(
-                          icon: Icons.collections_rounded,
-                          label: l10n.tFormat(
-                            'treasurePhotoCount',
-                            {'count': '${listing.photoCount}'},
-                            fallback: '${listing.photoCount} Fotos',
-                          ),
-                          background: Colors.black.withValues(alpha: 0.28),
-                          foreground: Colors.white,
-                        ),
-                      ),
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: LinearGradient(
-                            colors: hasImage
-                                ? [
-                                    Colors.black.withValues(alpha: 0.05),
-                                    Colors.black.withValues(alpha: 0.46),
-                                  ]
-                                : [Colors.transparent, Colors.transparent],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 18,
-                      left: 18,
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _PreviewBadge(
-                            icon: conditionMeta.$5,
-                            label: conditionMeta.$1,
-                            background: conditionMeta.$3,
-                            foreground: conditionMeta.$4,
-                          ),
-                          if (isSelected) ...[
-                            const SizedBox(width: 8),
-                            _PreviewBadge(
-                              icon: Icons.check_circle_rounded,
-                              label: l10n.t('treasureSelectedForHandover',
-                                  fallback: 'Ausgewählt'),
-                              background: const Color(0xFFEAF1FF),
-                              foreground: const Color(0xFF1E5CD7),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      right: 22,
-                      top: 28,
-                      child: Icon(
-                        _categoryIcon(listing.category),
-                        size: 72,
-                        color: hasImage
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : const Color(0x22D96C2F),
-                      ),
-                    ),
-                    Positioned(
-                      left: 18,
-                      right: 18,
-                      bottom: 16,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${listing.title} · ${listing.sizeAge}',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: hasImage
-                                  ? Colors.white
-                                  : const Color(0xFF152B42),
-                              height: 1.15,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _distanceLabel(l10n, listing),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: hasImage
-                                  ? Colors.white70
-                                  : const Color(0xFF607286),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                color: hasImage ? const Color(0xFF14283F) : null,
               ),
-              const SizedBox(height: 10),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(44),
-                  backgroundColor: _reservedListingIds.contains(listing.id)
-                      ? const Color(0xFF16A34A)
-                      : const Color(0xFF1E5CD7),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: () => _openListingDetail(listing),
-                icon: Icon(
-                    _reservedListingIds.contains(listing.id)
-                        ? Icons.check_circle_rounded
-                        : Icons.handshake_rounded,
-                    size: 18),
-                label: Text(
-                  _reservedListingIds.contains(listing.id)
-                      ? l10n.t('treasureReserved')
-                      : l10n.t(
-                          'treasureReserveAndPickup',
-                          fallback: compactScreen
-                              ? 'Details'
-                              : 'Details & reservieren',
-                        ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              child: Stack(
                 children: [
-                  if (_reservedListingIds.contains(listing.id))
-                    _PreviewBadge(
-                      icon: Icons.bookmark_added_rounded,
-                      label: l10n.t('treasureReservedByYou'),
-                      background: const Color(0xFFDCFCE7),
-                      foreground: const Color(0xFF16A34A),
+                  if (hasImage)
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: _buildTreasureImageByPath(
+                          primaryImagePath!,
+                          fit: BoxFit.cover,
+                          errorWidget: const DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFFDF1E8), Color(0xFFEFF4FF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: SizedBox.expand(),
+                          ),
+                        ),
+                      ),
                     ),
-                  _PreviewBadge(
-                    icon: Icons.category_rounded,
-                    label: _categoryLabel(l10n, listing.category),
-                    background: const Color(0xFFF1F5FB),
-                    foreground: const Color(0xFF29425C),
+                  if (listing.photoCount > 1)
+                    Positioned(
+                      right: 18,
+                      top: 18,
+                      child: _PreviewBadge(
+                        icon: Icons.collections_rounded,
+                        label: l10n.tFormat(
+                          'treasurePhotoCount',
+                          {'count': '${listing.photoCount}'},
+                          fallback: '${listing.photoCount} Fotos',
+                        ),
+                        background: Colors.black.withValues(alpha: 0.28),
+                        foreground: Colors.white,
+                      ),
+                    ),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        gradient: LinearGradient(
+                          colors: hasImage
+                              ? [
+                                  Colors.black.withValues(alpha: 0.05),
+                                  Colors.black.withValues(alpha: 0.46),
+                                ]
+                              : [Colors.transparent, Colors.transparent],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
                   ),
+                  Positioned(
+                    top: 18,
+                    left: 18,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _PreviewBadge(
+                          icon: conditionMeta.$5,
+                          label: conditionMeta.$1,
+                          background: conditionMeta.$3,
+                          foreground: conditionMeta.$4,
+                        ),
+                        if (isSelected) ...[
+                          const SizedBox(width: 8),
+                          _PreviewBadge(
+                            icon: Icons.check_circle_rounded,
+                            label: l10n.t(
+                              'treasureSelectedForHandover',
+                              fallback: 'Ausgewählt',
+                            ),
+                            background: const Color(0xFFEAF1FF),
+                            foreground: const Color(0xFF1E5CD7),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    right: 22,
+                    top: 28,
+                    child: Icon(
+                      _categoryIcon(listing.category),
+                      size: 72,
+                      color: hasImage
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : const Color(0x22D96C2F),
+                    ),
+                  ),
+                  Positioned(
+                    left: 18,
+                    right: 18,
+                    bottom: 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${listing.title} · ${listing.sizeAge}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: hasImage
+                                ? Colors.white
+                                : const Color(0xFF152B42),
+                            height: 1.15,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _distanceLabel(l10n, listing),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: hasImage
+                                ? Colors.white70
+                                : const Color(0xFF607286),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+                backgroundColor: _reservedListingIds.contains(listing.id)
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFF1E5CD7),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () => _openListingDetail(listing),
+              icon: Icon(
+                _reservedListingIds.contains(listing.id)
+                    ? Icons.check_circle_rounded
+                    : Icons.handshake_rounded,
+                size: 18,
+              ),
+              label: Text(
+                _reservedListingIds.contains(listing.id)
+                    ? l10n.t('treasureReserved')
+                    : l10n.t(
+                        'treasureReserveAndPickup',
+                        fallback: compactScreen
+                            ? 'Details'
+                            : 'Details & reservieren',
+                      ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (_reservedListingIds.contains(listing.id))
                   _PreviewBadge(
-                    icon: Icons.palette_outlined,
-                    label: listing.colorLabel,
+                    icon: Icons.bookmark_added_rounded,
+                    label: l10n.t('treasureReservedByYou'),
+                    background: const Color(0xFFDCFCE7),
+                    foreground: const Color(0xFF16A34A),
+                  ),
+                _PreviewBadge(
+                  icon: Icons.category_rounded,
+                  label: _categoryLabel(l10n, listing.category),
+                  background: const Color(0xFFF1F5FB),
+                  foreground: const Color(0xFF29425C),
+                ),
+                _PreviewBadge(
+                  icon: Icons.palette_outlined,
+                  label: listing.colorLabel,
+                  background: const Color(0xFFFFF1E5),
+                  foreground: const Color(0xFFD96C2F),
+                ),
+                if (_reportedListingIds.contains(listing.id))
+                  _PreviewBadge(
+                    icon: Icons.flag_rounded,
+                    label: l10n.t('treasureReportedFlag', fallback: 'Gemeldet'),
+                    background: const Color(0xFFFFEDED),
+                    foreground: const Color(0xFFC53A3A),
+                  ),
+                if (listing.ratingCount > 0)
+                  _PreviewBadge(
+                    icon: Icons.star_rounded,
+                    label:
+                        '${listing.rating.toStringAsFixed(1)} (${listing.ratingCount})',
+                    background: const Color(0xFFFFF7E5),
+                    foreground: const Color(0xFFC47A00),
+                  ),
+                if (listing.views > 0)
+                  _PreviewBadge(
+                    icon: Icons.visibility_rounded,
+                    label: '${listing.views}',
+                    background: const Color(0xFFEAF1FF),
+                    foreground: const Color(0xFF1E5CD7),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _MetaHintChip(
+                  icon: Icons.lock_open_rounded,
+                  label: l10n.t(
+                    'treasureContactlessHint',
+                    fallback: 'Kontaktlos möglich',
+                  ),
+                ),
+                if (isJustListed)
+                  _MetaHintChip(
+                    icon: Icons.auto_awesome_rounded,
+                    label: l10n.t('treasureJustListed', fallback: 'Gerade neu'),
+                    background: const Color(0xFFEAF7EF),
+                    foreground: const Color(0xFF1F9C5D),
+                  )
+                else if (isFreshToday)
+                  _MetaHintChip(
+                    icon: Icons.schedule_rounded,
+                    label: l10n.t('treasureFreshToday', fallback: 'Heute neu'),
                     background: const Color(0xFFFFF1E5),
                     foreground: const Color(0xFFD96C2F),
                   ),
-                  if (_reportedListingIds.contains(listing.id))
-                    _PreviewBadge(
-                      icon: Icons.flag_rounded,
-                      label:
-                          l10n.t('treasureReportedFlag', fallback: 'Gemeldet'),
-                      background: const Color(0xFFFFEDED),
-                      foreground: const Color(0xFFC53A3A),
-                    ),
-                  if (listing.ratingCount > 0)
-                    _PreviewBadge(
-                      icon: Icons.star_rounded,
-                      label:
-                          '${listing.rating.toStringAsFixed(1)} (${listing.ratingCount})',
-                      background: const Color(0xFFFFF7E5),
-                      foreground: const Color(0xFFC47A00),
-                    ),
-                  if (listing.views > 0)
-                    _PreviewBadge(
-                      icon: Icons.visibility_rounded,
-                      label: '${listing.views}',
-                      background: const Color(0xFFEAF1FF),
-                      foreground: const Color(0xFF1E5CD7),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
+                if (freshnessTimeLabel != null)
                   _MetaHintChip(
-                    icon: Icons.lock_open_rounded,
-                    label: l10n.t('treasureContactlessHint',
-                        fallback: 'Kontaktlos möglich'),
+                    icon: Icons.access_time_rounded,
+                    label: freshnessTimeLabel,
+                    background: const Color(0xFFF7F9FD),
+                    foreground: const Color(0xFF607286),
                   ),
-                  if (isJustListed)
-                    _MetaHintChip(
-                      icon: Icons.auto_awesome_rounded,
-                      label:
-                          l10n.t('treasureJustListed', fallback: 'Gerade neu'),
-                      background: const Color(0xFFEAF7EF),
-                      foreground: const Color(0xFF1F9C5D),
-                    )
-                  else if (isFreshToday)
-                    _MetaHintChip(
-                      icon: Icons.schedule_rounded,
-                      label:
-                          l10n.t('treasureFreshToday', fallback: 'Heute neu'),
-                      background: const Color(0xFFFFF1E5),
-                      foreground: const Color(0xFFD96C2F),
+                if (isSelected)
+                  _MetaHintChip(
+                    icon: Icons.check_circle_rounded,
+                    label: l10n.t(
+                      'treasureSelectedForHandover',
+                      fallback: 'Vorgemerkt',
                     ),
-                  if (freshnessTimeLabel != null)
-                    _MetaHintChip(
-                      icon: Icons.access_time_rounded,
-                      label: freshnessTimeLabel,
-                      background: const Color(0xFFF7F9FD),
-                      foreground: const Color(0xFF607286),
-                    ),
-                  if (isSelected)
-                    _MetaHintChip(
-                      icon: Icons.check_circle_rounded,
-                      label: l10n.t('treasureSelectedForHandover',
-                          fallback: 'Vorgemerkt'),
-                      background: const Color(0xFFEAF1FF),
-                      foreground: const Color(0xFF1E5CD7),
-                    ),
-                ],
-              ),
-              if (listing.note.trim().isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(
-                  listing.note,
-                  style: const TextStyle(
-                    color: Color(0xFF607286),
-                    fontWeight: FontWeight.w600,
-                    height: 1.35,
+                    background: const Color(0xFFEAF1FF),
+                    foreground: const Color(0xFF1E5CD7),
                   ),
-                ),
               ],
+            ),
+            if (listing.note.trim().isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                listing.note,
+                style: const TextStyle(
+                  color: Color(0xFF607286),
+                  fontWeight: FontWeight.w600,
+                  height: 1.35,
+                ),
+              ),
             ],
-          ),
-        ));
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildFilterRow<T>({
@@ -1105,7 +1162,8 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
             .map(
               (entry) => Padding(
                 padding: EdgeInsets.only(
-                    right: entry.key == items.length - 1 ? 0 : 8),
+                  right: entry.key == items.length - 1 ? 0 : 8,
+                ),
                 child: GestureDetector(
                   onTap: () => onSelected(entry.value.$1),
                   child: Container(
@@ -1166,8 +1224,8 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       _selectedListing = _selectedListing == null
           ? null
           : visibleListings
-              .where((item) => item.id == _selectedListing?.id)
-              .firstOrNull;
+                .where((item) => item.id == _selectedListing?.id)
+                .firstOrNull;
       _loadingListings = false;
     });
     if (_scrollController.hasClients) {
@@ -1194,8 +1252,11 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.campaign_outlined,
-              color: Color(0xFF9A5A11), size: 18),
+          const Icon(
+            Icons.campaign_outlined,
+            color: Color(0xFF9A5A11),
+            size: 18,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -1216,7 +1277,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
 
   Future<void> _openUpload() async {
     final result = await Navigator.of(context).push<TreasureListing>(
-      MaterialPageRoute(builder: (_) => TreasureUploadScreen(listingService: widget.listingService)),
+      MaterialPageRoute(
+        builder: (_) =>
+            TreasureUploadScreen(listingService: widget.listingService),
+      ),
     );
     if (!mounted || result == null) return;
     final listings = await _attempt(_listingService.loadListings);
@@ -1261,9 +1325,9 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
             children: [
               Text(
                 l10n.t('treasureMyListings', fallback: 'Meine Anzeigen'),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 14),
               if (overview.offers.isEmpty && overview.reservedByMe.isEmpty)
@@ -1278,8 +1342,11 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                   },
                   onConfirm: (handover) {
                     Navigator.of(sheetContext).pop();
-                    _updateOwnerHandover(offer.id, handover.id,
-                        complete: false);
+                    _updateOwnerHandover(
+                      offer.id,
+                      handover.id,
+                      complete: false,
+                    );
                   },
                   onComplete: (handover) {
                     Navigator.of(sheetContext).pop();
@@ -1293,15 +1360,16 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                 Text(
                   l10n.t('treasureReservations', fallback: 'Reservierungen'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 for (final reservation in overview.reservedByMe)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(
-                        reservation.treasureTitle ?? reservation.treasureId),
+                      reservation.treasureTitle ?? reservation.treasureId,
+                    ),
                     subtitle: Text(
                       reservation.status == 'confirmed'
                           ? l10n.t('treasureReservationConfirmed')
@@ -1331,24 +1399,30 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     required bool complete,
   }) async {
     final l10n = AppLocalizations.of(context);
-    final updated = await _attempt(() => complete
-        ? _listingService.completeHandover(
-            listingId: listingId,
-            handoverId: handoverId,
-          )
-        : _listingService.confirmHandover(
-            listingId: listingId,
-            handoverId: handoverId,
-          ));
+    final updated = await _attempt(
+      () => complete
+          ? _listingService.completeHandover(
+              listingId: listingId,
+              handoverId: handoverId,
+            )
+          : _listingService.confirmHandover(
+              listingId: listingId,
+              handoverId: handoverId,
+            ),
+    );
     if (updated == null) return;
     if (!mounted) return;
     await _loadListings();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.t(
-          updated ? 'treasureHandoverUpdated' : 'treasureHandoverUpdateFailed',
-        )),
+        content: Text(
+          l10n.t(
+            updated
+                ? 'treasureHandoverUpdated'
+                : 'treasureHandoverUpdateFailed',
+          ),
+        ),
       ),
     );
   }
@@ -1361,11 +1435,13 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
         title: Text(
           l10n.t('treasureDeleteTitle', fallback: 'Anzeige löschen?'),
         ),
-        content: Text(l10n.t(
-          'treasureDeleteText',
-          fallback:
-              'Die Anzeige wird dauerhaft entfernt. Bestehende Reservierungen werden aufgehoben.',
-        )),
+        content: Text(
+          l10n.t(
+            'treasureDeleteText',
+            fallback:
+                'Die Anzeige wird dauerhaft entfernt. Bestehende Reservierungen werden aufgehoben.',
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1383,7 +1459,9 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     );
     if (confirmed != true || !mounted) return;
 
-    final deleted = await _attempt(() => _listingService.deleteListing(listingId: listingId));
+    final deleted = await _attempt(
+      () => _listingService.deleteListing(listingId: listingId),
+    );
     if (!mounted || deleted == null) return;
 
     if (deleted) {
@@ -1396,47 +1474,64 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.t(
-          deleted ? 'treasureDeleteSuccess' : 'treasureDeleteFailed',
-          fallback: deleted
-              ? '"$title" wurde gelöscht.'
-              : 'Die Anzeige konnte nicht gelöscht werden.',
-        )),
+        content: Text(
+          l10n.t(
+            deleted ? 'treasureDeleteSuccess' : 'treasureDeleteFailed',
+            fallback: deleted
+                ? '"$title" wurde gelöscht.'
+                : 'Die Anzeige konnte nicht gelöscht werden.',
+          ),
+        ),
       ),
     );
   }
 
   Future<void> _cancelMyReservation(String listingId) async {
     final l10n = AppLocalizations.of(context);
-    final cancelled =
-        await _attempt(() => _listingService.cancelReservation(listingId: listingId));
+    final cancelled = await _attempt(
+      () => _listingService.cancelReservation(listingId: listingId),
+    );
     if (!mounted || cancelled == null) return;
+    if (cancelled) setState(() => _reservedListingIds.remove(listingId));
     await _loadListings();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.t(
-          cancelled
-              ? 'treasureHandoverUpdated'
-              : 'treasureHandoverUpdateFailed',
-        )),
+        content: Text(
+          l10n.t(
+            cancelled
+                ? 'treasureHandoverUpdated'
+                : 'treasureHandoverUpdateFailed',
+          ),
+        ),
       ),
     );
   }
 
   Future<void> _restoreSafetyState() async {
-    final data = await _attempt(() => _listingService.store.read(expectedScope: _listingService.scope));
+    final data = await _attempt(
+      () => _listingService.store.read(expectedScope: _listingService.scope),
+    );
     if (!mounted || data == null) return;
     setState(() {
-      _blockedListingIds = Set<String>.from(data[TreasureAccountStore.blockedKey] as List? ?? []);
-      _reportedListingIds = Set<String>.from(data[TreasureAccountStore.reportedKey] as List? ?? []);
-      _reservedListingIds = Set<String>.from(data[TreasureAccountStore.reservedKey] as List? ?? []);
-      _listings = _listings.where((item) => !_blockedListingIds.contains(item.id)).toList();
+      _blockedListingIds = Set<String>.from(
+        data[TreasureAccountStore.blockedKey] as List? ?? [],
+      );
+      _reportedListingIds = Set<String>.from(
+        data[TreasureAccountStore.reportedKey] as List? ?? [],
+      );
+      _reservedListingIds = Set<String>.from(
+        data[TreasureAccountStore.reservedKey] as List? ?? [],
+      );
+      _listings = _listings
+          .where((item) => !_blockedListingIds.contains(item.id))
+          .toList();
     });
   }
 
   Future<bool> _persistSafetyState({
-    required Set<String> blocked, required Set<String> reported,
+    required Set<String> blocked,
+    required Set<String> reported,
   }) async {
     final saved = await _attempt(() async {
       await _listingService.store.update((data) {
@@ -1455,34 +1550,51 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     } catch (error) {
       debugPrint('Treasure screen operation: $error');
       if (mounted) {
-        final message = AppLocalizations.of(context).t('treasure_storage_failed');
+        final key = error is TreasureRemoteCommitException
+            ? 'treasure_${error.action}_local_failed'
+            : 'treasure_storage_failed';
+        final message = AppLocalizations.of(context).t(key);
         setState(() => _syncError = message);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
       return null;
     }
   }
 
   Future<T?> _accountDialog<T>({
-    required BuildContext context, required WidgetBuilder builder,
+    required BuildContext context,
+    required WidgetBuilder builder,
   }) {
     final scope = _listingService.scope;
-    return showDialog<T>(context: context, builder: (context) => TreasureAccountModal(
-      store: _listingService.store, scope: scope, builder: builder,
-    ));
+    return showDialog<T>(
+      context: context,
+      builder: (context) => TreasureAccountModal(
+        store: _listingService.store,
+        scope: scope,
+        builder: builder,
+      ),
+    );
   }
 
   Future<T?> _accountSheet<T>({
-    required BuildContext context, required WidgetBuilder builder,
-    bool showDragHandle = false, bool isScrollControlled = false,
+    required BuildContext context,
+    required WidgetBuilder builder,
+    bool showDragHandle = false,
+    bool isScrollControlled = false,
     Color? backgroundColor,
   }) {
     final scope = _listingService.scope;
     return showModalBottomSheet<T>(
-      context: context, showDragHandle: showDragHandle,
-      isScrollControlled: isScrollControlled, backgroundColor: backgroundColor,
+      context: context,
+      showDragHandle: showDragHandle,
+      isScrollControlled: isScrollControlled,
+      backgroundColor: backgroundColor,
       builder: (context) => TreasureAccountModal(
-        store: _listingService.store, scope: scope, builder: builder,
+        store: _listingService.store,
+        scope: scope,
+        builder: builder,
       ),
     );
   }
@@ -1500,7 +1612,8 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
           builder: (context, setDialogState) {
             return AlertDialog(
               title: Text(
-                  l10n.t('treasureReportTitle', fallback: 'Angebot melden')),
+                l10n.t('treasureReportTitle', fallback: 'Angebot melden'),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1508,11 +1621,12 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                   DropdownButtonFormField<String>(
                     initialValue: selectedReason,
                     items: reasons
-                        .map((reason) => DropdownMenuItem<String>(
-                              value: reason,
-                              child:
-                                  Text(l10n.t('treasureReportReason_$reason')),
-                            ))
+                        .map(
+                          (reason) => DropdownMenuItem<String>(
+                            value: reason,
+                            child: Text(l10n.t('treasureReportReason_$reason')),
+                          ),
+                        )
                         .toList(),
                     onChanged: (value) {
                       if (value == null || value.isEmpty) return;
@@ -1545,8 +1659,9 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child:
-                      Text(l10n.t('treasureReportSubmit', fallback: 'Melden')),
+                  child: Text(
+                    l10n.t('treasureReportSubmit', fallback: 'Melden'),
+                  ),
                 ),
               ],
             );
@@ -1560,15 +1675,23 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       return;
     }
 
-    final sent = await _attempt(() => _listingService.reportListing(
-      listingId: listing.id,
-      reason: selectedReason,
-      note: noteController.text.trim(),
-    ));
+    final sent = await _attempt(
+      () => _listingService.reportListing(
+        listingId: listing.id,
+        reason: selectedReason,
+        note: noteController.text.trim(),
+      ),
+    );
     noteController.dispose();
     if (!mounted || sent == null) return;
     final reported = {..._reportedListingIds, listing.id};
-    if (!await _persistSafetyState(blocked: _blockedListingIds, reported: reported) || !mounted) return;
+    if (!await _persistSafetyState(
+          blocked: _blockedListingIds,
+          reported: reported,
+        ) ||
+        !mounted) {
+      return;
+    }
     setState(() {
       _reportedListingIds = reported;
       _syncError = _listingService.lastSyncError;
@@ -1581,8 +1704,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       SnackBar(
         content: Text(
           sent
-              ? l10n.t('treasureReportSuccess',
-                  fallback: 'Danke, wir prüfen diese Meldung.')
+              ? l10n.t(
+                  'treasureReportSuccess',
+                  fallback: 'Danke, wir prüfen diese Meldung.',
+                )
               : l10n.t(
                   'treasureReportLocalOnly',
                   fallback:
@@ -1599,13 +1724,16 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     final confirmed = await _accountDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title:
-            Text(l10n.t('treasureDeleteTitle', fallback: 'Anzeige löschen?')),
-        content: Text(l10n.t(
-          'treasureDeleteText',
-          fallback:
-              'Die Anzeige wird dauerhaft entfernt. Bestehende Reservierungen werden aufgehoben.',
-        )),
+        title: Text(
+          l10n.t('treasureDeleteTitle', fallback: 'Anzeige löschen?'),
+        ),
+        content: Text(
+          l10n.t(
+            'treasureDeleteText',
+            fallback:
+                'Die Anzeige wird dauerhaft entfernt. Bestehende Reservierungen werden aufgehoben.',
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1615,14 +1743,17 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
             style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(
-                l10n.t('treasureDeleteAction', fallback: 'Anzeige löschen')),
+              l10n.t('treasureDeleteAction', fallback: 'Anzeige löschen'),
+            ),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
 
-    final deleted = await _attempt(() => _listingService.deleteListing(listingId: listing.id));
+    final deleted = await _attempt(
+      () => _listingService.deleteListing(listingId: listing.id),
+    );
     if (!mounted || deleted == null) return;
 
     if (deleted) {
@@ -1635,12 +1766,14 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.t(
-          deleted ? 'treasureDeleteSuccess' : 'treasureDeleteFailed',
-          fallback: deleted
-              ? 'Deine Anzeige wurde gelöscht.'
-              : 'Die Anzeige konnte nicht gelöscht werden.',
-        )),
+        content: Text(
+          l10n.t(
+            deleted ? 'treasureDeleteSuccess' : 'treasureDeleteFailed',
+            fallback: deleted
+                ? 'Deine Anzeige wurde gelöscht.'
+                : 'Die Anzeige konnte nicht gelöscht werden.',
+          ),
+        ),
       ),
     );
   }
@@ -1650,8 +1783,9 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     final confirmed = await _accountDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title:
-            Text(l10n.t('treasureBlockTitle', fallback: 'Angebot ausblenden?')),
+        title: Text(
+          l10n.t('treasureBlockTitle', fallback: 'Angebot ausblenden?'),
+        ),
         content: Text(
           l10n.t(
             'treasureBlockText',
@@ -1675,7 +1809,13 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     if (confirmed != true || !mounted) return;
 
     final blocked = {..._blockedListingIds, listing.id};
-    if (!await _persistSafetyState(blocked: blocked, reported: _reportedListingIds) || !mounted) return;
+    if (!await _persistSafetyState(
+          blocked: blocked,
+          reported: _reportedListingIds,
+        ) ||
+        !mounted) {
+      return;
+    }
     setState(() {
       _blockedListingIds = blocked;
       _listings = _listings.where((item) => item.id != listing.id).toList();
@@ -1690,8 +1830,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          l10n.t('treasureBlockSuccess',
-              fallback: 'Angebot wurde aus deinem Feed ausgeblendet.'),
+          l10n.t(
+            'treasureBlockSuccess',
+            fallback: 'Angebot wurde aus deinem Feed ausgeblendet.',
+          ),
         ),
         behavior: SnackBarBehavior.fixed,
       ),
@@ -1712,8 +1854,11 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
         children: [
           const Padding(
             padding: EdgeInsets.only(top: 2),
-            child: Icon(Icons.wifi_off_rounded,
-                size: 16, color: Color(0xFFB45814)),
+            child: Icon(
+              Icons.wifi_off_rounded,
+              size: 16,
+              color: Color(0xFFB45814),
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -1751,8 +1896,11 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
   Future<void> _openListingDetail(TreasureListing listing) async {
     final l10n = AppLocalizations.of(context);
     final conditionMeta = _conditionMeta(l10n, listing.conditionKey);
-    final listedTimeLabel =
-        _detailListedTimeLabel(context, l10n, listing.createdAt);
+    final listedTimeLabel = _detailListedTimeLabel(
+      context,
+      l10n,
+      listing.createdAt,
+    );
     final galleryPaths = listing.resolvedImagePaths;
     final hasImage = galleryPaths.isNotEmpty;
     final galleryController = PageController();
@@ -1846,14 +1994,16 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                                   gradient: LinearGradient(
                                     colors: hasImage
                                         ? [
-                                            Colors.black
-                                                .withValues(alpha: 0.06),
-                                            Colors.black
-                                                .withValues(alpha: 0.52),
+                                            Colors.black.withValues(
+                                              alpha: 0.06,
+                                            ),
+                                            Colors.black.withValues(
+                                              alpha: 0.52,
+                                            ),
                                           ]
                                         : [
                                             Colors.transparent,
-                                            Colors.transparent
+                                            Colors.transparent,
                                           ],
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
@@ -1878,8 +2028,9 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                                     icon: Icons.collections_rounded,
                                     label:
                                         '${currentIndex + 1}/${listing.photoCount}',
-                                    background:
-                                        Colors.black.withValues(alpha: 0.28),
+                                    background: Colors.black.withValues(
+                                      alpha: 0.28,
+                                    ),
                                     foreground: Colors.white,
                                   ),
                                 ),
@@ -1894,16 +2045,20 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                                       title: listing.title,
                                     ),
                                     child: Tooltip(
-                                      message: l10n.t('treasureOpenGallery',
-                                          fallback: 'Galerie öffnen'),
+                                      message: l10n.t(
+                                        'treasureOpenGallery',
+                                        fallback: 'Galerie öffnen',
+                                      ),
                                       child: Container(
                                         width: 38,
                                         height: 38,
                                         decoration: BoxDecoration(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.28),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.28,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.open_in_full_rounded,
@@ -2005,7 +2160,8 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                                       fit: BoxFit.cover,
                                       errorWidget: const DecoratedBox(
                                         decoration: BoxDecoration(
-                                            color: Color(0xFFF4F7FC)),
+                                          color: Color(0xFFF4F7FC),
+                                        ),
                                         child: SizedBox.expand(),
                                       ),
                                     ),
@@ -2020,8 +2176,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                   ],
                   const SizedBox(height: 16),
                   Text(
-                    l10n.t('treasureDetailSectionAbout',
-                        fallback: 'Auf einen Blick'),
+                    l10n.t(
+                      'treasureDetailSectionAbout',
+                      fallback: 'Auf einen Blick',
+                    ),
                     style: TextStyle(
                       fontSize: compactSheet ? 14 : 15,
                       fontWeight: FontWeight.w800,
@@ -2091,17 +2249,17 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                   if (listing.views > 0)
                     _DetailLine(
                       icon: Icons.visibility_outlined,
-                      text: l10n.tFormat(
-                        'treasureViewsLine',
-                        {'count': '${listing.views}'},
-                        fallback: '${listing.views} Aufrufe',
-                      ),
+                      text: l10n.tFormat('treasureViewsLine', {
+                        'count': '${listing.views}',
+                      }, fallback: '${listing.views} Aufrufe'),
                     ),
                   if (listing.note.trim().isNotEmpty) ...[
                     const SizedBox(height: 14),
                     Text(
-                      l10n.t('treasureFamilyNoteTitle',
-                          fallback: 'Hinweis von der Familie'),
+                      l10n.t(
+                        'treasureFamilyNoteTitle',
+                        fallback: 'Hinweis von der Familie',
+                      ),
                       style: TextStyle(
                         fontSize: compactSheet ? 14 : 15,
                         fontWeight: FontWeight.w800,
@@ -2120,8 +2278,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                   ],
                   const SizedBox(height: 14),
                   Text(
-                    l10n.t('treasureDetailSectionPickup',
-                        fallback: 'Abholung & Übergabe'),
+                    l10n.t(
+                      'treasureDetailSectionPickup',
+                      fallback: 'Abholung & Übergabe',
+                    ),
                     style: TextStyle(
                       fontSize: compactSheet ? 14 : 15,
                       fontWeight: FontWeight.w800,
@@ -2130,8 +2290,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    l10n.t('treasureContactlessHint',
-                        fallback: 'Kontaktlos möglich'),
+                    l10n.t(
+                      'treasureContactlessHint',
+                      fallback: 'Kontaktlos möglich',
+                    ),
                     style: const TextStyle(
                       color: Color(0xFF607286),
                       fontWeight: FontWeight.w600,
@@ -2146,9 +2308,11 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        l10n.t('treasureDetailSelectedHint',
-                            fallback:
-                                'Dieser Schatz ist aktuell für deine Übergabe vorgemerkt.'),
+                        l10n.t(
+                          'treasureDetailSelectedHint',
+                          fallback:
+                              'Dieser Schatz ist aktuell für deine Übergabe vorgemerkt.',
+                        ),
                         style: const TextStyle(
                           color: Color(0xFF1E5CD7),
                           fontWeight: FontWeight.w700,
@@ -2178,8 +2342,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                                 size: narrowActions ? 17 : 18,
                               ),
                               label: Text(
-                                l10n.t('treasureReportAction',
-                                    fallback: 'Melden'),
+                                l10n.t(
+                                  'treasureReportAction',
+                                  fallback: 'Melden',
+                                ),
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
                               ),
@@ -2199,15 +2365,17 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                                 size: narrowActions ? 17 : 18,
                               ),
                               label: Text(
-                                l10n.t('treasureBlockAction',
-                                    fallback: 'Ausblenden'),
+                                l10n.t(
+                                  'treasureBlockAction',
+                                  fallback: 'Ausblenden',
+                                ),
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
                               ),
                             ),
                           ),
-                            if (listing.ownerUserId ==
-                                AuthService.instance.currentUser?.uid ||
+                          if (listing.ownerUserId ==
+                                  AuthService.instance.currentUser?.uid ||
                               _ownedListingIds.contains(listing.id))
                             SizedBox(
                               width: narrowActions
@@ -2245,7 +2413,8 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
                       minimumSize: const Size.fromHeight(50),
                       backgroundColor: const Color(0xFF1E5CD7),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     onPressed: () {
                       setState(() {
@@ -2308,18 +2477,14 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     }
     if (age.inMinutes < 60) {
       final minutes = age.inMinutes.clamp(1, 59);
-      return l10n.tFormat(
-        'treasureMinutesAgoShort',
-        {'count': '$minutes'},
-        fallback: 'vor $minutes Min.',
-      );
+      return l10n.tFormat('treasureMinutesAgoShort', {
+        'count': '$minutes',
+      }, fallback: 'vor $minutes Min.');
     }
     final hours = age.inHours.clamp(1, 23);
-    return l10n.tFormat(
-      'treasureHoursAgoShort',
-      {'count': '$hours'},
-      fallback: 'vor $hours Std.',
-    );
+    return l10n.tFormat('treasureHoursAgoShort', {
+      'count': '$hours',
+    }, fallback: 'vor $hours Std.');
   }
 
   String _detailListedTimeLabel(
@@ -2331,8 +2496,9 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     if (relative != null) {
       return relative;
     }
-    return MaterialLocalizations.of(context)
-        .formatShortDate(createdAt.toLocal());
+    return MaterialLocalizations.of(
+      context,
+    ).formatShortDate(createdAt.toLocal());
   }
 
   Future<void> _openFullscreenGallery({
@@ -2352,15 +2518,20 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (dialogContext, _, __) {
         return TreasureAccountModal(
-          store: _listingService.store, scope: scope,
+          store: _listingService.store,
+          scope: scope,
           builder: (_) => _TreasureFullscreenGallery(
-            title: title, galleryPaths: galleryPaths, initialIndex: initialIndex,
+            title: title,
+            galleryPaths: galleryPaths,
+            initialIndex: initialIndex,
           ),
         );
       },
       transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
-        final eased =
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final eased = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: eased,
           child: ScaleTransition(
@@ -2380,8 +2551,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       case 'studio':
         return (
           l10n.t('treasureConditionLikeNew', fallback: 'Wie neu'),
-          l10n.t('treasureConditionLikeNewHint',
-              fallback: 'Sehr gepflegt, fast wie neu.'),
+          l10n.t(
+            'treasureConditionLikeNewHint',
+            fallback: 'Sehr gepflegt, fast wie neu.',
+          ),
           const Color(0xFFE8F1FF),
           const Color(0xFF2D62F0),
           Icons.diamond_rounded,
@@ -2389,8 +2562,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       case 'wild':
         return (
           l10n.t('treasureConditionRaider', fallback: 'Mit Spuren'),
-          l10n.t('treasureConditionRaiderHint',
-              fallback: 'Mit Spuren, aber bereit fürs nächste Abenteuer.'),
+          l10n.t(
+            'treasureConditionRaiderHint',
+            fallback: 'Mit Spuren, aber bereit fürs nächste Abenteuer.',
+          ),
           const Color(0xFFFFF1E5),
           const Color(0xFFD96C2F),
           Icons.park_rounded,
@@ -2398,8 +2573,10 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
       default:
         return (
           l10n.t('treasureConditionGood', fallback: 'Gut genutzt'),
-          l10n.t('treasureConditionGoodHint',
-              fallback: 'Sichtbar genutzt, voll einsatzbereit.'),
+          l10n.t(
+            'treasureConditionGoodHint',
+            fallback: 'Sichtbar genutzt, voll einsatzbereit.',
+          ),
           const Color(0xFFEAF7EF),
           const Color(0xFF1F9C5D),
           Icons.autorenew_rounded,
@@ -2455,10 +2632,7 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     List<String> dropPoints,
   ) {
     return _PickerFrame(
-      title: l10n.t(
-        'treasureContactlessPointLabel',
-        fallback: 'Abholpunkt',
-      ),
+      title: l10n.t('treasureContactlessPointLabel', fallback: 'Abholpunkt'),
       subtitle: l10n.t(
         'treasureDropPointHint',
         fallback:
@@ -2494,14 +2668,20 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
         ? l10n.t('treasureHandoverCoffeeMode', fallback: 'Kurz treffen')
         : l10n.t('treasureHandoverFlyingSwap', fallback: 'Still tauschen');
     final detail = isCoffee
-        ? l10n.t('treasureHandoverCoffeeModeText',
-            fallback: 'Kurz hallo, übergeben, fertig.')
-        : l10n.t('treasureHandoverFlyingSwapText',
-            fallback: 'Kontaktlos abholen, wenn es passt.');
-    final background =
-        isCoffee ? const Color(0xFFFFF3EA) : const Color(0xFFEFF9F2);
-    final foreground =
-        isCoffee ? const Color(0xFFD96C2F) : const Color(0xFF1F9C5D);
+        ? l10n.t(
+            'treasureHandoverCoffeeModeText',
+            fallback: 'Kurz hallo, übergeben, fertig.',
+          )
+        : l10n.t(
+            'treasureHandoverFlyingSwapText',
+            fallback: 'Kontaktlos abholen, wenn es passt.',
+          );
+    final background = isCoffee
+        ? const Color(0xFFFFF3EA)
+        : const Color(0xFFEFF9F2);
+    final foreground = isCoffee
+        ? const Color(0xFFD96C2F)
+        : const Color(0xFF1F9C5D);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -2610,22 +2790,29 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
 
-    final reserved = await _attempt(() => _listingService.reserveListing(
-      listingId: listing.id,
-      preferredSlot: detailId,
-      handoverMode:
-          _selectedMode == TreasureHandoverMode.coffeeChat ? 'coffee' : 'swap',
-    ));
+    final reserved = await _attempt(
+      () => _listingService.reserveListing(
+        listingId: listing.id,
+        preferredSlot: detailId,
+        handoverMode: _selectedMode == TreasureHandoverMode.coffeeChat
+            ? 'coffee'
+            : 'swap',
+      ),
+    );
 
     if (!mounted || reserved == null) return;
     if (!reserved) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(l10n.t(
-            'treasureNetworkError',
-            fallback:
-                'Die Reservierung konnte gerade nicht gespeichert werden.',
-          )),
+          content: Text(
+            l10n.t(
+              _listingService.lastSyncError == 'treasure_reservation_offline'
+                  ? 'treasure_reservation_offline'
+                  : 'treasureNetworkError',
+              fallback:
+                  'Die Reservierung konnte gerade nicht gespeichert werden.',
+            ),
+          ),
         ),
       );
       return;
@@ -2637,17 +2824,15 @@ class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> 
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          l10n.tFormat(
-            'treasureReservationSuccessDetail',
-            {
-              'title': listing.title,
-              'detailType': l10n.t(
-                  _selectedMode == TreasureHandoverMode.coffeeChat
-                      ? 'treasureTimeWindowLabel'
-                      : 'treasureContactlessPointLabel'),
-              'detail': detailLabel ?? '—',
-            },
-          ),
+          l10n.tFormat('treasureReservationSuccessDetail', {
+            'title': listing.title,
+            'detailType': l10n.t(
+              _selectedMode == TreasureHandoverMode.coffeeChat
+                  ? 'treasureTimeWindowLabel'
+                  : 'treasureContactlessPointLabel',
+            ),
+            'detail': detailLabel ?? '—',
+          }),
         ),
         duration: const Duration(seconds: 5),
         behavior: SnackBarBehavior.floating,
@@ -2873,17 +3058,13 @@ class _SelectableOptionTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Expanded(
-              child: Text(
-                label,
-                style: textStyle,
-              ),
-            ),
+            Expanded(child: Text(label, style: textStyle)),
             const SizedBox(width: 8),
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color:
-                  selected ? const Color(0xFF1E5CD7) : const Color(0xFF8EA0B5),
+              color: selected
+                  ? const Color(0xFF1E5CD7)
+                  : const Color(0xFF8EA0B5),
               size: 18,
             ),
           ],
@@ -3056,8 +3237,10 @@ class _TreasureFullscreenGalleryState
   @override
   void initState() {
     super.initState();
-    _currentIndex =
-        widget.initialIndex.clamp(0, widget.galleryPaths.length - 1);
+    _currentIndex = widget.initialIndex.clamp(
+      0,
+      widget.galleryPaths.length - 1,
+    );
     _pageController = PageController(initialPage: _currentIndex);
   }
 
@@ -3177,8 +3360,9 @@ class _TreasureFullscreenGalleryState
                               widget.galleryPaths[index],
                               fit: BoxFit.cover,
                               errorWidget: const DecoratedBox(
-                                decoration:
-                                    BoxDecoration(color: Color(0xFF1B1F26)),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF1B1F26),
+                                ),
                                 child: SizedBox.expand(),
                               ),
                             ),

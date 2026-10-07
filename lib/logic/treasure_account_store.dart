@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/treasure_draft_images.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TreasureAccountChanged implements Exception {
@@ -78,6 +79,7 @@ class TreasureAccountStore {
         if (paths != null && (paths is! List || paths.any((path) => path is! String))) {
           throw const FormatException('Invalid treasure draft images');
         }
+        if (draft['images'] != null) TreasureDraftImages.validate(draft['images']);
       }
     }
     return data;

@@ -336,7 +336,9 @@ void main() {
       draft['title'] = 'mutated';
       await saved;
       expect(await service.loadDraft(), {'title': 'A'});
-      await service.reserveListing(listingId: 'A-reserved');
+      expect(await service.reserveListing(listingId: 'A-reserved'), isFalse);
+      await store.update((data) => data[TreasureAccountStore.reservedKey] = ['A-reserved'],
+        expectedScope: store.scope);
       final listing = TreasureListing(
         id: 'a',
         title: 'Private feed',
