@@ -1,5 +1,23 @@
 # Parentpeak Marktplatz Backend
 
+## Empfaengerhinweis fuer Entwicklungsberichte
+
+Der aktive Entwicklungsbericht-Dialog benennt Google Gemini in de/en/tr/ku
+ausdruecklich als KI-Empfaenger. Nicht abgedeckte UI-Sprachen verwenden den
+englischen Hinweis. Die Berichtsantworten gehen ueber `/ai/generate` an den
+Backend-Proxy; der Kindname wird im Prompt durch `[KIND]` ersetzt und erst lokal
+wieder eingesetzt.
+
+Diese Textkorrektur aendert keine bestehende Zustimmung und ist keine
+Rechts-/Launchfreigabe. Der globale Legacy-Key `dev.ai_report_consent`,
+sein ungepruefter Schreib-Ack und die fehlende dienstseitige Consent-Grenze
+bleiben ein gesonderter offener Datenschutzpunkt. Auch vorhandene Aussagen
+zur Speicherung ersetzen keinen Nachweis der realen Provider-Aufbewahrung.
+
+```bash
+flutter test --no-pub test/development_pdf_i18n_test.dart test/localization_audit_verification_test.dart
+```
+
 ## Einwilligung fuer KI-Elternberatung
 
 Der aktive `ChatScreen` wartet auf die geladene, explizite Zustimmung, bevor

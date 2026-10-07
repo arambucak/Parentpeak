@@ -1837,7 +1837,7 @@ class AppStringsManager {
           '- WICHTIG: Dieses Kind hat besondere Beduerfnisse. Vergleiche NICHT mit Altersnormen. Beschreibe nur den individuellen Fortschritt. Statt "Foerderbedarf" sage "waechst in eigenem Tempo". Sei besonders wertschaetzend und staerkend.',
       'development_consent_title': 'Bericht mit KI erstellen',
       'development_consent_body':
-          'Für den Bericht werden die Antworten dieses Entwicklungs-Checks an unseren KI-Dienst gesendet. Der Name deines Kindes bleibt dabei auf deinem Gerät und wird nicht übertragen. Deine Angaben werden nur zur Erstellung des Berichts verarbeitet, nicht gespeichert, um dich zu identifizieren.',
+          'Für den Bericht werden die Antworten dieses Entwicklungs-Checks an unseren KI-Dienst (Google Gemini) gesendet. Der Name deines Kindes bleibt dabei auf deinem Gerät und wird nicht übertragen. Deine Angaben werden nur zur Erstellung des Berichts verarbeitet, nicht gespeichert, um dich zu identifizieren.',
       'development_consent_accept': 'Einverstanden, Bericht erstellen',
       'dev_answer_yes': 'Ja',
       'dev_answer_sometimes': 'Manchmal',
@@ -4281,7 +4281,7 @@ class AppStringsManager {
           '- IMPORTANT: This child has special needs. Do NOT compare to age norms. Describe only individual progress. Instead of "needs support" say "grows at their own pace". Be especially appreciative and encouraging.',
       'development_consent_title': 'Create report with AI',
       'development_consent_body':
-          'To create the report, the answers from this development check are sent to our AI service. Your child\'s name stays on your device and is not transmitted. Your input is only processed to create the report and is not stored to identify you.',
+          'To create the report, the answers from this development check are sent to our AI service (Google Gemini). Your child\'s name stays on your device and is not transmitted. Your input is only processed to create the report and is not stored to identify you.',
       'development_consent_accept': 'Agree and create report',
       'dev_answer_yes': 'Yes',
       'dev_answer_sometimes': 'Sometimes',
@@ -13456,7 +13456,7 @@ class AppStringsManager {
           '- GIRÎNG: Ev zarok xwedî pêdiviyên taybet e. Bi normên temen RE neqiyase. Tenê pêşketina kesane rave bike. Li şûna "pêdiviya piştgiriyê" bibêje "bi leza xwe mezin dibe". Bi taybetî bihapîne û hêzdar be.',
       'development_consent_title': 'Bi AI\'yê rapor çêbike',
       'development_consent_body':
-          'Ji bo raporê, bersivên vê kontrola pêşketinê ji xizmeta me ya AI\'yê re tên şandin. Navê zaroka te li ser cîhaza te dimîne û nayê veguhastin. Agahiyên te tenê ji bo çêkirina raporê têne pêvajokirin, ji bo nasîna te nayên tomarkirin.',
+          'Ji bo raporê, bersivên vê kontrola pêşketinê ji xizmeta me ya AI\'yê (Google Gemini) re tên şandin. Navê zaroka te li ser cîhaza te dimîne û nayê veguhastin. Agahiyên te tenê ji bo çêkirina raporê têne pêvajokirin, ji bo nasîna te nayên tomarkirin.',
       'development_consent_accept': 'Razî me, raporê çêbike',
       'dev_answer_yes': 'Erê',
       'dev_answer_sometimes': 'Carinan',
@@ -19601,7 +19601,7 @@ class AppStringsManager {
           '- ÖNEMLİ: Bu çocuğun özel gereksinimleri var. Yaş normlarıyla KARŞILAŞTIRMA. Yalnızca bireysel ilerlemeyi anlat. "Destek gerekli" yerine "kendi hızında büyüyor" de. Özellikle takdir edici ve güçlendirici ol.',
       'development_consent_title': 'Yapay zekâ ile rapor oluştur',
       'development_consent_body':
-          'Rapor için bu gelişim kontrolünün yanıtları yapay zekâ hizmetimize gönderilir. Çocuğunuzun adı cihazınızda kalır ve aktarılmaz. Bilgileriniz yalnızca raporu oluşturmak için işlenir, sizi tanımlamak için saklanmaz.',
+          'Rapor için bu gelişim kontrolünün yanıtları yapay zekâ hizmetimize (Google Gemini) gönderilir. Çocuğunuzun adı cihazınızda kalır ve aktarılmaz. Bilgileriniz yalnızca raporu oluşturmak için işlenir, sizi tanımlamak için saklanmaz.',
       'development_consent_accept': 'Kabul ediyorum, raporu oluştur',
       'dev_answer_yes': 'Evet',
       'dev_answer_sometimes': 'Bazen',
