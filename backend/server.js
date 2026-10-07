@@ -11092,6 +11092,18 @@ app.post('/payments/transactions/:id/status', async (req, res) => {
 });
 
 // Health Check
+app.get('/release/readiness', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const { releaseReadiness } = require('./release_readiness');
+    const evidence = await releaseReadiness(prisma, process.env.RENDER_GIT_COMMIT);
+    res.json(evidence);
+  } catch (error) {
+    console.error('Release readiness failed:', error.name, error.code || 'unavailable');
+    res.status(503).json({ status: 'not-ready' });
+  }
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Parentpeak Backend läuft!' });
 });
