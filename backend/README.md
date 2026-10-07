@@ -481,6 +481,14 @@ erneute Pushnachricht. Ein gleichzeitiger eigener Commit wird nach verlorenem
 Status-Claim erneut geprueft; fremde Reservierungen bleiben 410. Archivierte,
 bereits bestaetigte/beanspruchte oder abgeschlossene Angebote werden dadurch
 nicht reaktiviert. Auth-/Eigentuemergrenzen und Status-Claim bleiben bestehen.
+Storno ist transaktional: nur eigene pending/reserved-Uebergaben werden
+storniert. Erst nach einem tatsaechlichen Storno und ohne verbleibende
+pending/reserved/confirmed-Uebergabe ist reserved->available erlaubt.
+Archivierte/claimed Anzeigen werden niemals durch Storno reaktiviert.
+Ohne eigene offene Reservierung ist die Wiederholung ein wirkungsloser Erfolg;
+eigene confirmed/completed-Uebergaben werden mit 409 abgewiesen.
+Ein Status-Schreibfehler rollt die gesamte Stornierung zurueck und liefert
+500 statt einer falschen Erfolgsantwort.
 Keine Deployment- oder Launchfreigabe.
 
 ### Verschenkmarkt: Kategorien und ungefaehre Reichweite

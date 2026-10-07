@@ -14193,27 +14193,44 @@ app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
     return res.status(403).json({ error: 'Stornierung nur fuer das eigene Konto erlaubt' });
   }
   try {
-    await prisma.treasureHandover.updateMany({
-      where: {
-        treasureId: id,
-        requesterId: String(requesterUserId),
-        status: { in: ['pending', 'reserved'] },
-      },
-      data: { status: 'cancelled', updatedAt: new Date() },
+    await prisma.$transaction(async tx => {
+      const committed = await tx.treasureHandover.findFirst({
+        where: {
+          treasureId: id,
+          requesterId: String(requesterUserId),
+          status: { in: ['confirmed', 'completed'] },
+        },
+      });
+      if (committed) {
+        const error = new Error('Bestaetigte oder abgeschlossene Uebergabe kann nicht storniert werden');
+        error.code = 'HANDOVER_NOT_CANCELLABLE';
+        throw error;
+      }
+      const cancelled = await tx.treasureHandover.updateMany({
+        where: {
+          treasureId: id,
+          requesterId: String(requesterUserId),
+          status: { in: ['pending', 'reserved'] },
+        },
+        data: { status: 'cancelled', updatedAt: new Date() },
+      });
+      if (cancelled.count === 0) return;
+      const activeCount = await tx.treasureHandover.count({
+        where: { treasureId: id, status: { in: ['pending', 'reserved', 'confirmed'] } },
+      });
+      if (activeCount === 0) {
+        await tx.treasureItem.updateMany({
+          where: { id, status: 'reserved' },
+          data: { status: 'available', updatedAt: new Date() },
+        });
+      }
     });
-    // Wenn keine offenen Reservierungen mehr: Artikel wieder 'available'
-    const openCount = await prisma.treasureHandover.count({
-      where: { treasureId: id, status: { in: ['pending', 'reserved'] } },
-    });
-    if (openCount === 0) {
-      await prisma.treasureItem.update({
-        where: { id },
-        data: { status: 'available', updatedAt: new Date() },
-      }).catch(() => {});
-    }
     res.json({ success: true });
   } catch (err) {
     console.error('❌ Cancel reservation error:', err.message);
+    if (err.code === 'HANDOVER_NOT_CANCELLABLE') {
+      return res.status(409).json({ error: err.message });
+    }
     res.status(500).json({ error: `Stornierung fehlgeschlagen: ${err.message}` });
   }
 });
