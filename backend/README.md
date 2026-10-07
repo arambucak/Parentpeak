@@ -14,9 +14,10 @@ Lokale Krisenhilfe kann ohne externen Aufruf weiter funktionieren.
 Die Informationen in de/en/tr/ku benennen Google Gemini, den ueber das Backend
 gesendeten Verlauf und die Grenzen der automatischen Anonymisierung.
 Gespraeche liegen derzeit nur im RAM; Themenhaeufigkeiten werden lokal
-gespeichert. Aktiviertes optionales KI-Gedaechtnis ergaenzt derzeit serverseitig
-echte Kinderprofile und bestaetigte Familieninformationen; dies wird
-ausdruecklich offengelegt. Datenminimierung und gesonderter Memory-Consent folgen separat.
+gespeichert. Optionales KI-Gedaechtnis ergaenzt nur mit zusaetzlichem,
+versioniertem Memory-Consent neutrale Kindbezeichnungen, vollendetes Alter
+und bestaetigte Familieninformationen. Freitext kann weiterhin personenbezogen
+sein; eine vollstaendige Anonymisierung wird nicht behauptet.
 Dieser Consent-PR ist keine vollstaendige Datenschutz-/Launchfreigabe und
 keine serverseitige Einwilligungspruefung fuer beliebige direkte Proxyaufrufe.
 
@@ -74,6 +75,66 @@ Betroffene Speicher/Leser:
 ```bash
 flutter test --no-pub test/chat_account_test.dart test/chat_account_ui_test.dart test/chat_ai_consent_test.dart test/pedagogical_chat_backend_test.dart test/pedagogical_prompt_breadth_test.dart test/ai_memory_service_test.dart test/localization_audit_verification_test.dart
 ```
+
+### Zusaetzlicher Memory-Consent und Datenminimierung
+
+`ChatMemoryConsent` speichert den bestaetigten lokalen Ack unter
+`chat.memory_consent.v1.<Kontobereich>`. Chat-Consent, alte globale Flags
+oder ein bisheriges `enabled=true` ersetzen diese neue Zustimmung nicht.
+Die vier Sprachdialoge nennen Speicherung im Backend, Google Gemini,
+bestaetigte Gesundheitsangaben, verbleibende Freitext-Risiken und fehlende
+zusaetzliche App-Verschluesselung. Ablehnung laesst normalen Chat mit
+seinem eigenen Consent zu, startet aber keine Memory-Aktivierung.
+
+Der Server verlangt `memoryConsentVersion: "chat-memory-v1"` und einen
+passenden aktivierten `AiMemorySettings`-Datensatz fuer neue Profile,
+Memory-Eintraege und `/ai/generate` mit `childProfileId`. Der Aktivierungs-Write
+speichert die Version und eine neue eindeutige `consentRevision`.
+Vor/nach jedem Google-Aufruf, vor Auth-/Grounding-Retries, nach Payload-Lesen
+und vor Antwort wird dieser Stand neu geprueft. Widerruf oder Aus/Ein
+invalidiert die laufende Memory-Antwort; keine automatische Extraktion oder
+Speicherung von KI-Antworten. Ohne Kinderprofil-ID keine Memory-Injektion.
+Ein Lookupfehler blockiert die Anfrage sichtbar, statt Kontext unbemerkt
+wegzulassen. Clientseitig sind Memory-Writes und Providerrequests ebenfalls
+vor/nach Aufrufen und an Token-/Kontogrenzen geschuetzt.
+
+Neue Profilnamen werden serverseitig ausschliesslich als `[CHILD_1]`
+gespeichert. Der echte Anzeigename bleibt kontobezogen auf diesem Geraet
+unter `chat.memory_names.v1.<Kontobereich>.<Profil-ID>`, mit geprueftem
+Schreib-Ack. Ein Teilfehler benennt den bereits gespeicherten neutralen
+Servereintrag, laedt die Liste neu und fordert nicht zur Doppelanlage auf.
+Explizites Profil-Loeschen entfernt auch den lokalen Namen.
+Bestehende Originalprofile und Memory-Werte werden nicht automatisch
+ueberschrieben, geloescht oder neu beansprucht.
+
+Der KI-Kontext verwendet neutrale `[CHILD_n]`-Tokens und tagkorrekt
+vollendetes Alter anhand des UTC-Kalendertags; kein Geburtstag/Geschlecht
+im Profilheader und kein erfundenes Alter bei fehlendem/ungueltigem Datum.
+Bekannte Profilnamen und gaengige genaue Geburtsdatumsformen werden auch
+aus Memory-Schluesseln/Werten entfernt. Neue bestaetigte Werte verwenden
+relative `[THIS_CHILD]`-/`[OTHER_CHILD]`-Tokens. Unbekannte Namen/andere
+Datumsformen in Freitext werden nicht als vollstaendig anonymisiert
+behauptet. Lokale Anzeige ersetzt Tokens erst beim Rendern; die erneut
+gesendete Gespraechshistorie behaelt die Platzhalter.
+
+Lesen und explizites Loeschen vorhandener eigener Daten bleiben ohne neue
+Zustimmung moeglich. Ausschalten loescht Originaldaten nicht. Alte Apps
+koennen Memory ohne neue Version weder aktivieren noch uebertragen oder
+neu schreiben. Rollout: zuerst additive Migration
+`20261007000000_ai_memory_consent` mit `npm run migrate:deploy` und Prisma-
+Clientgenerierung, dann Backend und App ausrollen. Es wurde lokal keine
+Produktionsmigration ausgefuehrt. Ein Rollback auf das alte Backend wuerde
+die neue Transfergrenze aufheben; bei Rollback Memory serverseitig sperren,
+nicht die Zustimmungsspalten oder Originaldaten loeschen.
+
+```bash
+node --test backend/tests/unit/ai-memory-policy.test.js
+flutter test --no-pub test/chat_memory_consent_test.dart test/chat_account_test.dart test/chat_account_ui_test.dart test/ai_memory_service_test.dart test/chat_ai_consent_test.dart test/pedagogical_chat_backend_test.dart test/pedagogical_prompt_breadth_test.dart test/localization_audit_verification_test.dart
+```
+
+Weitere Chat-Auditbefunde (Sanitizer-Anker, Tipp-/Historygrenzen,
+Fallback-/Memory-UI-i18n und Send-Web-Tap) bleiben separate Arbeiten;
+keine pauschale Launch-, Produktions- oder Datenschutzfreigabe.
 
 ## Einwilligung fuer KI-Familienrezepte
 

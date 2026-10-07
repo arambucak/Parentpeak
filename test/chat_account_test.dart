@@ -8,6 +8,7 @@ import 'package:parentpeak/logic/ai_memory_service.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
+import 'package:parentpeak/logic/chat_memory_consent.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -227,10 +228,12 @@ void main() {
   });
 
   test('memory mutation cannot dispatch after its token wait changes account', () async {
+    final memoryConsent = ChatMemoryConsent(scopeProvider: () => store.scope);
+    await memoryConsent.grant(store.scope);
     final token = Completer<String?>();
     final started = Completer<void>();
     var calls = 0;
-    final service = AiMemoryService(accountStore: store, apiClient: BackendApiClient(
+    final service = AiMemoryService(accountStore: store, consent: memoryConsent, apiClient: BackendApiClient(
       baseUrl: 'https://example.invalid',
       authTokenProvider: () { started.complete(); return token.future; },
       httpClient: MockClient((_) async { calls++; return http.Response('{}', 200); }),

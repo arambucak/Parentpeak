@@ -6,14 +6,20 @@ import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/logic/privacy_sanitizer.dart';
+import 'package:parentpeak/logic/chat_memory_consent.dart';
 
 class GeminiAIService {
-  GeminiAIService({String? modelName, BackendApiClient? apiClient})
-      : _modelName = modelName ?? APIConfig.getGeminiModelName(),
-        _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
+  GeminiAIService({
+    String? modelName,
+    BackendApiClient? apiClient,
+    ChatMemoryConsent? memoryConsent,
+  }) : _modelName = modelName ?? APIConfig.getGeminiModelName(),
+       _apiClient = apiClient ?? BackendServiceFactory.createApiClient(),
+       memoryConsent = memoryConsent ?? ChatMemoryConsent.instance;
 
   final String _modelName;
   final BackendApiClient? _apiClient;
+  final ChatMemoryConsent memoryConsent;
 
   Future<String> generateText(
     String prompt, {
@@ -48,14 +54,30 @@ class GeminiAIService {
     String? childProfileId,
     void Function()? requestGuard,
   }) async {
-    final client = requestGuard == null
+    final owner = memoryConsent.scope;
+    final memoryChildId = childProfileId?.trim();
+    final useMemory =
+        memoryChildId != null &&
+        memoryChildId.isNotEmpty &&
+        await memoryConsent.hasConsent();
+    final revision = memoryConsent.revision(owner);
+    void guard() {
+      requestGuard?.call();
+      if (useMemory) memoryConsent.requireRevision(owner, revision);
+    }
+
+    if (useMemory) await memoryConsent.require(owner);
+    guard();
+    final client = requestGuard == null && !useMemory
         ? _apiClient
-        : _apiClient?.withRequestGuard(requestGuard);
+        : _apiClient?.withRequestGuard(guard);
     if (client == null) {
       throw Exception('Backend-URL nicht konfiguriert.');
     }
 
-    final response = await client.postJson(
+    final Map<String, dynamic> response;
+    try {
+      response = await client.postJson(
       '/ai/generate',
       {
         'model': _modelName,
@@ -64,8 +86,8 @@ class GeminiAIService {
           'systemInstruction': systemInstruction.trim(),
         'useGoogleSearch': useGoogleSearch,
         'language': appLanguage ?? LanguageService.activeCode,
-        if (childProfileId != null && childProfileId.trim().isNotEmpty)
-          'childProfileId': childProfileId.trim(),
+        if (useMemory) 'childProfileId': memoryChildId,
+        if (useMemory) 'memoryConsentVersion': ChatMemoryConsent.version,
         if (imageBytes != null) 'imageBase64': base64Encode(imageBytes),
         if (imageBytes != null) 'imageMimeType': imageMimeType,
       },
@@ -74,13 +96,23 @@ class GeminiAIService {
       timeout: useGoogleSearch
           ? const Duration(seconds: 50)
           : const Duration(seconds: 30),
-    );
+      );
+    } on BackendApiException catch (error) {
+      guard();
+      if (useMemory && error.isForbidden) {
+        throw const ChatMemoryConsentRequiredException();
+      }
+      rethrow;
+    }
     final text = response['text']?.toString().trim();
-    requestGuard?.call();
+    guard();
+    if (useMemory) await memoryConsent.require(owner);
+    guard();
     if (text == null || text.isEmpty) {
       throw Exception('KI-Dienst lieferte keine Antwort.');
     }
-    final groundingUrls = (response['groundingUrls'] as List<dynamic>?)
+    final groundingUrls =
+        (response['groundingUrls'] as List<dynamic>?)
             ?.map((url) => url.toString())
             .where((url) => url.startsWith('https://'))
             .toList() ??
@@ -112,6 +144,8 @@ class GeminiAIService {
         childProfileId: childProfileId,
         requestGuard: requestGuard,
       );
+    } on ChatMemoryConsentRequiredException {
+      rethrow;
     } catch (error) {
       return 'Fehler: $error';
     }
@@ -136,10 +170,12 @@ class GeminiAIService {
 
   String _historyPrompt(List<Map<String, String>> messages) {
     final safeMessages = PrivacySanitizer.sanitizeHistoryForAi(messages);
-    return safeMessages.map((message) {
-      final role = message['role'] == 'user' ? 'User' : 'Assistant';
-      return '$role: ${message['content'] ?? ''}';
-    }).join('\n\n');
+    return safeMessages
+        .map((message) {
+          final role = message['role'] == 'user' ? 'User' : 'Assistant';
+          return '$role: ${message['content'] ?? ''}';
+        })
+        .join('\n\n');
   }
 }
 
