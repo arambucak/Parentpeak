@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:flutter/foundation.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/treasure_listing.dart';
 import 'package:parentpeak/logic/treasure_backend_service.dart';
+import 'package:parentpeak/logic/treasure_account_store.dart';
 import 'package:parentpeak/services/location_service.dart';
 
 class TreasureDiscoveryResult {
@@ -14,340 +14,284 @@ class TreasureDiscoveryResult {
   final bool showInviteBanner;
 
   const TreasureDiscoveryResult({
-    required this.listings,
-    required this.scope,
-    required this.globalDigitalMode,
-    required this.showInviteBanner,
+    required this.listings, required this.scope,
+    required this.globalDigitalMode, required this.showInviteBanner,
   });
 }
 
 class TreasureListingService {
-  TreasureListingService._();
+  TreasureListingService({
+    TreasureAccountStore? store,
+    TreasureBackendService? backend,
+    this.expectedScope,
+  }) : store = store ?? TreasureAccountStore.instance,
+       _backendService = backend ?? TreasureBackendService() {
+    _scope = this.store.scope;
+    AuthService.instance.addListener(_accountChanged);
+  }
 
-  static final TreasureListingService instance = TreasureListingService._();
-  static const String _storageKey = 'treasure_listings.v1';
-  static const String _draftStorageKey = 'treasure_upload_draft.v1';
+  static final instance = TreasureListingService();
+  final TreasureAccountStore store;
+  final String? expectedScope;
+  final TreasureBackendService _backendService;
   static const double _localDiscoveryRadiusKm = 25;
-
   List<TreasureListing>? _cache;
-  final TreasureBackendService _backendService = TreasureBackendService();
+  late String _scope;
+  int _revision = 0;
+  bool _disposed = false;
   String? lastSyncError;
+
+  TreasureListingService forScope(String scope) => TreasureListingService(
+    store: store, backend: _backendService, expectedScope: scope,
+  );
+
+  void dispose() {
+    _disposed = true;
+    AuthService.instance.removeListener(_accountChanged);
+    _clear();
+  }
+
+  void _clear() {
+    _cache = null;
+    lastSyncError = null;
+    _backendService.lastSyncError = null;
+    _revision++;
+  }
+
+  void _accountChanged() {
+    if (_scope == store.scope) return;
+    _scope = store.scope;
+    _clear();
+  }
+
+  String get scope {
+    if (_disposed) throw StateError('Treasure service has been disposed');
+    _accountChanged();
+    final expected = expectedScope ?? store.scope;
+    store.requireScope(expected);
+    return expected;
+  }
 
   bool get isBackendEnabled => _backendService.isEnabled;
 
-  Future<TreasureDiscoveryResult> loadListingsWithFallback() async {
-    if (_backendService.isEnabled) {
-      final loc = LocationService.instance;
-      if (!loc.hasLocation) {
-        _cache = [];
-        lastSyncError =
-            'Standort benötigt, um Angebote in deiner Nähe zu zeigen.';
-        return const TreasureDiscoveryResult(
-          listings: [],
-          scope: '25km',
-          globalDigitalMode: false,
-          showInviteBanner: false,
-        );
-      }
-
-      final lat = loc.latitude;
-      final lng = loc.longitude;
-      final remoteListings = await _backendService.fetchTreasures(
-        radiusKm: _localDiscoveryRadiusKm,
-        latitude: lat,
-        longitude: lng,
-      );
-      _cache = remoteListings;
-      await _persist();
-      lastSyncError = _backendService.lastSyncError;
-
-      return TreasureDiscoveryResult(
-        listings: List<TreasureListing>.from(_cache!),
-        scope: '25km',
-        globalDigitalMode: false,
-        showInviteBanner: false,
-      );
+  Future<T> _run<T>(Future<T> Function(String scope, void Function() guard) operation) async {
+    final owner = scope;
+    final revision = _revision;
+    void guard() {
+      store.requireScope(owner);
+      if (_disposed || revision != _revision) throw const TreasureAccountChanged();
     }
-
-    final local = await loadListings();
-    return TreasureDiscoveryResult(
-      listings: local,
-      scope: 'local-cache',
-      globalDigitalMode: false,
-      showInviteBanner: false,
-    );
-  }
-
-  Future<List<TreasureListing>> loadListings() async {
-    if (_cache != null) {
-      return List<TreasureListing>.from(_cache!);
-    }
-
-    if (_backendService.isEnabled) {
-      final loc = LocationService.instance;
-      if (!loc.hasLocation) {
-        _cache = [];
-        lastSyncError =
-            'Standort benötigt, um Angebote in deiner Nähe zu zeigen.';
-        return const [];
-      }
-      final remoteListings = await _backendService.fetchTreasures(
-        radiusKm: _localDiscoveryRadiusKm,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-      );
-      _cache = remoteListings;
-      await _persist();
-      lastSyncError = _backendService.lastSyncError;
-      return List<TreasureListing>.from(_cache!);
-    }
-
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_storageKey);
-      if (raw != null && raw.isNotEmpty) {
-        final decoded = jsonDecode(raw);
-        if (decoded is List) {
-          _cache = decoded
-              .map((item) =>
-                  TreasureListing.fromMap(Map<String, dynamic>.from(item)))
-              .toList();
-          return List<TreasureListing>.from(_cache!);
-        }
+      final result = await operation(owner, guard);
+      guard();
+      return result;
+    } catch (error) {
+      debugPrint('Treasure operation failed: $error');
+      if (store.scope == owner && revision == _revision) {
+        _cache = null;
+        lastSyncError = 'treasure_storage_failed';
       }
-    } catch (e) {
-      // Continue with empty state when persisted data cannot be read.
+      rethrow;
     }
-
-    _cache = [];
-    return List<TreasureListing>.from(_cache!);
   }
 
-  Future<TreasureListing?> createListing(
-    TreasureListing listing, {
-    String? userId,
-  }) async {
-    if (listing.latitude == null || listing.longitude == null) {
-      lastSyncError = 'Standort benötigt, um ein Angebot zu veröffentlichen.';
-      return null;
-    }
+  Future<void> _persist(String owner) async {
+    final snapshot = _cache?.map((item) => item.toMap()).toList() ?? [];
+    await store.update((data) => data[TreasureAccountStore.feedKey] = snapshot,
+      expectedScope: owner);
+  }
 
-    if (!_backendService.isEnabled) {
-      lastSyncError = 'Verschenkmarkt ist gerade nicht verfügbar.';
-      return null;
+  Future<TreasureDiscoveryResult> loadListingsWithFallback() => _run((owner, guard) async {
+    if (_backendService.isEnabled) {
+      _cache = null;
+      final listings = await _load(owner, guard);
+      return TreasureDiscoveryResult(
+        listings: listings, scope: '25km', globalDigitalMode: false, showInviteBanner: false,
+      );
     }
-
-    final resolvedUserId = (userId != null && userId.trim().isNotEmpty)
-        ? userId.trim()
-        : AuthService.instance.currentUser?.uid;
-    if (resolvedUserId == null || resolvedUserId.isEmpty) {
-      lastSyncError = 'Bitte melde dich an, um ein Angebot zu veröffentlichen.';
-      return null;
-    }
-
-    final created = await _backendService.createTreasure(
-      listing: listing,
-      userId: resolvedUserId,
-      location: listing.locationLabel ?? 'Familien-Nachbarschaft',
-      latitude: listing.latitude!,
-      longitude: listing.longitude!,
+    return TreasureDiscoveryResult(
+      listings: await _load(owner, guard), scope: 'local-cache',
+      globalDigitalMode: false, showInviteBanner: false,
     );
-    if (created == null) {
+  });
+
+  Future<List<TreasureListing>> loadListings() => _run(_load);
+
+  Future<List<TreasureListing>> _load(String owner, void Function() guard) async {
+    if (_cache != null) return List.of(_cache!);
+    if (_backendService.isEnabled) {
+      final loc = LocationService.instance;
+      if (!loc.hasLocation) {
+        lastSyncError = 'Standort benötigt, um Angebote in deiner Nähe zu zeigen.';
+        return [];
+      }
+      final listings = await _backendService.fetchTreasures(
+        radiusKm: _localDiscoveryRadiusKm, latitude: loc.latitude, longitude: loc.longitude,
+      );
+      guard();
+      _cache = listings;
       lastSyncError = _backendService.lastSyncError;
-      return null;
+      await _persist(owner);
+      return List.of(listings);
     }
-
-    _cache = [
-      created,
-      ...?_cache?.where((item) => item.id != created.id),
-    ];
-    await _persist();
-    lastSyncError = null;
-    return created;
+    final data = await store.read(expectedScope: owner);
+    guard();
+    _cache = (data[TreasureAccountStore.feedKey] as List? ?? [])
+        .map((item) => TreasureListing.fromMap(Map<String, dynamic>.from(item as Map))).toList();
+    return List.of(_cache!);
   }
 
-  static const String _reservedStorageKey = 'treasure_reserved_ids.v1';
+  Future<TreasureListing?> createListing(TreasureListing listing, {String? userId}) =>
+    _run((owner, guard) async {
+      if (listing.latitude == null || listing.longitude == null) {
+        lastSyncError = 'Standort benötigt, um ein Angebot zu veröffentlichen.';
+        return null;
+      }
+      if (!_backendService.isEnabled) {
+        lastSyncError = 'Verschenkmarkt ist gerade nicht verfügbar.';
+        return null;
+      }
+      final uid = store.userId;
+      if (uid == null || (userId != null && userId != uid)) {
+        lastSyncError = 'Bitte melde dich an, um ein Angebot zu veröffentlichen.';
+        return null;
+      }
+      final created = await _backendService.createTreasure(
+        listing: listing, userId: uid,
+        location: listing.locationLabel ?? 'Familien-Nachbarschaft',
+        latitude: listing.latitude!, longitude: listing.longitude!,
+      );
+      guard();
+      if (created == null) {
+        lastSyncError = _backendService.lastSyncError;
+        return null;
+      }
+      _cache = [created, ...?_cache?.where((item) => item.id != created.id)];
+      await _persist(owner);
+      lastSyncError = null;
+      return created;
+    });
 
-  /// IDs der reservierten Schätze (lokal, damit "reserviert" sofort sichtbar ist).
-  Future<Set<String>> loadReservedIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList(_reservedStorageKey) ?? const []).toSet();
-  }
+  Future<Set<String>> loadReservedIds() => _run((owner, guard) async {
+    final data = await store.read(expectedScope: owner);
+    return Set<String>.from(data[TreasureAccountStore.reservedKey] as List? ?? []);
+  });
 
   Future<bool> reserveListing({
-    required String listingId,
-    String? preferredSlot,
-    String? handoverMode,
-    String? message,
-  }) async {
-    final userId = AuthService.instance.currentUser?.uid ?? 'guest';
-
+    required String listingId, String? preferredSlot, String? handoverMode, String? message,
+  }) => _run((owner, guard) async {
+    final uid = store.userId;
+    if (uid == null) {
+      lastSyncError = 'Bitte melde dich an, um ein Angebot zu reservieren.';
+      return false;
+    }
     if (_backendService.isEnabled) {
       final ok = await _backendService.reserveTreasure(
-        treasureId: listingId,
-        requesterUserId: userId,
-        preferredSlot: preferredSlot,
-        handoverMode: handoverMode,
-        message: message,
+        treasureId: listingId, requesterUserId: uid,
+        preferredSlot: preferredSlot, handoverMode: handoverMode, message: message,
       );
+      guard();
       lastSyncError = ok ? null : _backendService.lastSyncError;
       if (!ok) return false;
     }
-
-    final prefs = await SharedPreferences.getInstance();
-    final reserved =
-        (prefs.getStringList(_reservedStorageKey) ?? <String>[]).toSet();
-    reserved.add(listingId);
-    await prefs.setStringList(_reservedStorageKey, reserved.toList());
+    await store.update((data) {
+      data[TreasureAccountStore.reservedKey] = {
+        ...?data[TreasureAccountStore.reservedKey] as List?, listingId,
+      }.toList();
+    }, expectedScope: owner);
     return true;
-  }
+  });
 
-  Future<bool> deleteListing({required String listingId}) async {
-    final userId = AuthService.instance.currentUser?.uid;
-    if (userId == null || userId.isEmpty) {
+  Future<bool> deleteListing({required String listingId}) => _run((owner, guard) async {
+    final uid = store.userId;
+    if (uid == null) {
       lastSyncError = 'Bitte melde dich an, um deine Anzeige zu löschen.';
       return false;
     }
-
     if (_backendService.isEnabled) {
-      final deleted = await _backendService.deleteTreasure(
-        treasureId: listingId,
-        userId: userId,
-      );
+      final deleted = await _backendService.deleteTreasure(treasureId: listingId, userId: uid);
+      guard();
       lastSyncError = deleted ? null : _backendService.lastSyncError;
       if (!deleted) return false;
     }
-
-    final listings = await loadListings();
+    final listings = await _load(owner, guard);
+    guard();
     _cache = listings.where((item) => item.id != listingId).toList();
-    await _persist();
+    await _persist(owner);
     return true;
-  }
+  });
 
-  Future<TreasureMineOverview?> loadMine() async {
-    final userId = AuthService.instance.currentUser?.uid;
-    if (userId == null || userId.isEmpty) {
+  Future<TreasureMineOverview?> loadMine() => _run((owner, guard) async {
+    final uid = store.userId;
+    if (uid == null) {
       lastSyncError = 'Bitte melde dich an, um deine Anzeigen zu sehen.';
       return null;
     }
-    final overview = await _backendService.fetchMine(userId: userId);
+    final overview = await _backendService.fetchMine(userId: uid);
+    guard();
     lastSyncError = _backendService.lastSyncError;
     return overview;
-  }
+  });
 
-  Future<bool> confirmHandover({
-    required String listingId,
-    required String handoverId,
-  }) =>
-      _updateHandoverStatus(listingId, handoverId, 'confirm');
+  Future<bool> confirmHandover({required String listingId, required String handoverId}) =>
+    _updateHandoverStatus(listingId, handoverId, 'confirm');
+  Future<bool> completeHandover({required String listingId, required String handoverId}) =>
+    _updateHandoverStatus(listingId, handoverId, 'complete');
 
-  Future<bool> completeHandover({
-    required String listingId,
-    required String handoverId,
-  }) =>
-      _updateHandoverStatus(listingId, handoverId, 'complete');
+  Future<bool> cancelReservation({required String listingId}) => _run((owner, guard) async {
+    final uid = store.userId;
+    if (uid == null) return false;
+    final ok = await _backendService.cancelReservation(treasureId: listingId, requesterUserId: uid);
+    guard();
+    lastSyncError = ok ? null : _backendService.lastSyncError;
+    return ok;
+  });
 
-  Future<bool> cancelReservation({required String listingId}) async {
-    final userId = AuthService.instance.currentUser?.uid;
-    if (userId == null || userId.isEmpty) return false;
-    final cancelled = await _backendService.cancelReservation(
-      treasureId: listingId,
-      requesterUserId: userId,
-    );
-    lastSyncError = cancelled ? null : _backendService.lastSyncError;
-    return cancelled;
-  }
-
-  Future<bool> _updateHandoverStatus(
-    String listingId,
-    String handoverId,
-    String action,
-  ) async {
-    final userId = AuthService.instance.currentUser?.uid;
-    if (userId == null || userId.isEmpty) return false;
-    final updated = await _backendService.updateHandoverStatus(
-      treasureId: listingId,
-      handoverId: handoverId,
-      userId: userId,
-      action: action,
-    );
-    lastSyncError = updated ? null : _backendService.lastSyncError;
-    return updated;
-  }
+  Future<bool> _updateHandoverStatus(String listingId, String handoverId, String action) =>
+    _run((owner, guard) async {
+      final uid = store.userId;
+      if (uid == null) return false;
+      final ok = await _backendService.updateHandoverStatus(
+        treasureId: listingId, handoverId: handoverId, userId: uid, action: action,
+      );
+      guard();
+      lastSyncError = ok ? null : _backendService.lastSyncError;
+      return ok;
+    });
 
   Future<bool> reportListing({
-    required String listingId,
-    required String reason,
-    String? note,
-    String? reporterUserId,
-  }) async {
+    required String listingId, required String reason, String? note, String? reporterUserId,
+  }) => _run((owner, guard) async {
     if (!_backendService.isEnabled) {
       lastSyncError = 'Backend nicht verfügbar. Meldung lokal markiert.';
       return false;
     }
-
-    final resolvedReporter =
-        (reporterUserId != null && reporterUserId.trim().isNotEmpty)
-            ? reporterUserId.trim()
-            : (AuthService.instance.currentUser?.uid ?? 'anonymous-user');
-
+    final uid = store.userId;
+    if (uid == null || (reporterUserId != null && reporterUserId != uid)) {
+      lastSyncError = 'treasure_account_changed';
+      return false;
+    }
     final sent = await _backendService.reportTreasure(
-      treasureId: listingId,
-      reporterUserId: resolvedReporter,
-      reason: reason,
-      note: note,
+      treasureId: listingId, reporterUserId: uid, reason: reason, note: note,
     );
+    guard();
     lastSyncError = _backendService.lastSyncError;
     return sent;
-  }
+  });
 
-  Future<Map<String, dynamic>?> loadDraft() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_draftStorageKey);
-      if (raw == null || raw.isEmpty) {
-        return null;
-      }
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) {
-        return decoded;
-      }
-      if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded);
-      }
-    } catch (e) {
-      // Ignore corrupted drafts and continue with empty state.
-    }
-    return null;
+  Future<Map<String, dynamic>?> loadDraft() => _run((owner, guard) async {
+    final data = await store.read(expectedScope: owner);
+    return data[TreasureAccountStore.draftKey] as Map<String, dynamic>?;
+  });
+  Future<void> saveDraft(Map<String, dynamic> draft) {
+    final snapshot = jsonDecode(jsonEncode(draft)) as Map<String, dynamic>;
+    return _run((owner, guard) async {
+      await store.update((data) => data[TreasureAccountStore.draftKey] = snapshot,
+        expectedScope: owner);
+    });
   }
-
-  Future<void> saveDraft(Map<String, dynamic> draft) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_draftStorageKey, jsonEncode(draft));
-    } catch (e) {
-      // Ignore transient local persistence failures.
-    }
-  }
-
-  Future<void> clearDraft() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_draftStorageKey);
-    } catch (e) {
-      // Ignore transient local persistence failures.
-    }
-  }
-
-  Future<void> _persist() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _storageKey,
-        jsonEncode(_cache?.map((item) => item.toMap()).toList() ?? const []),
-      );
-    } catch (e) {
-      // Ignore transient local persistence failures.
-    }
-  }
+  Future<void> clearDraft() => _run((owner, guard) async {
+    await store.update((data) => data[TreasureAccountStore.draftKey] = null,
+      expectedScope: owner);
+  });
 }

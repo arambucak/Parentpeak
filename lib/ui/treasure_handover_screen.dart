@@ -11,31 +11,52 @@ import 'package:parentpeak/models/treasure_listing.dart';
 import 'package:parentpeak/models_and_widgets/animation_helpers.dart';
 import 'package:parentpeak/ui/treasure_upload_screen.dart';
 import 'package:parentpeak/ui/widgets/treasure_mine_offer_card.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/treasure_account_store.dart';
+import 'package:parentpeak/ui/widgets/treasure_account_boundary.dart';
+import 'package:parentpeak/ui/widgets/treasure_legacy_card.dart';
 
 enum TreasureHandoverMode { coffeeChat, flyingSwap }
 
-class TreasureHandoverScreen extends StatefulWidget {
+class TreasureHandoverScreen extends StatelessWidget {
   const TreasureHandoverScreen({
     super.key,
     this.openMyListings = false,
+    this.listingService,
   });
 
   final bool openMyListings;
+  final TreasureListingService? listingService;
 
   @override
-  State<TreasureHandoverScreen> createState() => _TreasureHandoverScreenState();
+  Widget build(BuildContext context) {
+    final service = listingService ?? TreasureListingService.instance;
+    return TreasureAccountBoundary(
+      store: service.store,
+      builder: (_) => _ScopedTreasureHandoverScreen(
+        openMyListings: openMyListings, listingService: service,
+      ),
+    );
+  }
 }
 
-class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
-  static const String _blockedListingsKey = 'treasure_blocked_listing_ids.v1';
-  static const String _reportedListingsKey = 'treasure_reported_listing_ids.v1';
+class _ScopedTreasureHandoverScreen extends StatefulWidget {
+  const _ScopedTreasureHandoverScreen({
+    required this.openMyListings, required this.listingService,
+  });
+  final bool openMyListings;
+  final TreasureListingService listingService;
+
+  @override
+  State<_ScopedTreasureHandoverScreen> createState() => _TreasureHandoverScreenState();
+}
+
+class _TreasureHandoverScreenState extends State<_ScopedTreasureHandoverScreen> {
 
   TreasureHandoverMode _selectedMode = TreasureHandoverMode.coffeeChat;
   String? _selectedSlot;
   String? _selectedDropPoint;
-  final TreasureListingService _listingService =
-      TreasureListingService.instance;
+  late final TreasureListingService _listingService =
+      widget.listingService.forScope(widget.listingService.store.scope);
   List<TreasureListing> _listings = const [];
   String _categoryFilter = 'all';
   String _conditionFilter = 'all';
@@ -75,6 +96,13 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
   @override
   void dispose() {
+    _listingService.dispose();
+    _listings = const [];
+    _selectedListing = null;
+    _blockedListingIds.clear();
+    _reportedListingIds.clear();
+    _reservedListingIds.clear();
+    _ownedListingIds.clear();
     _scrollController.dispose();
     super.dispose();
   }
@@ -142,7 +170,10 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
               padding: EdgeInsets.fromLTRB(
                   horizontalPadding, 4, horizontalPadding, 120),
               children: [
+                TreasureLegacyCard(store: _listingService.store, onClaimed: _restoreSafetyState),
                 _buildHeaderCard(l10n),
+                if (_syncError != null && _syncError!.trim().isNotEmpty)
+                  _buildSyncErrorCard(l10n),
                 const SizedBox(height: 14),
                 if (_showDiscoveryInviteBanner) ...[
                   _buildDiscoveryInviteBanner(l10n),
@@ -205,10 +236,6 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
                   _buildGuidingTextCard(l10n),
                   const SizedBox(height: 18),
                   _buildFeedDiscoveryStrip(l10n),
-                  if (_syncError != null && _syncError!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _buildSyncErrorCard(l10n),
-                  ],
                   const SizedBox(height: 14),
                   _buildAeroFeedPreview(l10n),
                 ],
@@ -1119,7 +1146,12 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   }
 
   Future<void> _loadListings() async {
-    final discovery = await _listingService.loadListingsWithFallback();
+    final discovery = await _attempt(_listingService.loadListingsWithFallback);
+    if (!mounted) return;
+    if (discovery == null) {
+      setState(() => _loadingListings = false);
+      return;
+    }
     final listings = discovery.listings;
     final visibleListings = listings
         .where((item) => !_blockedListingIds.contains(item.id))
@@ -1144,7 +1176,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   }
 
   Future<void> _loadOwnedListingIds() async {
-    final overview = await _listingService.loadMine();
+    final overview = await _attempt(_listingService.loadMine);
     if (!mounted || overview == null) return;
     setState(() {
       _ownedListingIds = overview.offers.map((offer) => offer.id).toSet();
@@ -1184,11 +1216,11 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
   Future<void> _openUpload() async {
     final result = await Navigator.of(context).push<TreasureListing>(
-      MaterialPageRoute(builder: (_) => const TreasureUploadScreen()),
+      MaterialPageRoute(builder: (_) => TreasureUploadScreen(listingService: widget.listingService)),
     );
-    if (result == null) return;
-    final listings = await _listingService.loadListings();
-    if (!mounted) return;
+    if (!mounted || result == null) return;
+    final listings = await _attempt(_listingService.loadListings);
+    if (!mounted || listings == null) return;
     setState(() {
       _listings = listings
           .where((item) => !_blockedListingIds.contains(item.id))
@@ -1201,7 +1233,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
   Future<void> _showMyListings() async {
     final l10n = AppLocalizations.of(context);
-    final overview = await _listingService.loadMine();
+    final overview = await _attempt(_listingService.loadMine);
     if (!mounted) return;
     if (overview == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1213,7 +1245,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
       _ownedListingIds = overview.offers.map((offer) => offer.id).toSet();
     });
 
-    await showModalBottomSheet<void>(
+    await _accountSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
@@ -1299,15 +1331,16 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     required bool complete,
   }) async {
     final l10n = AppLocalizations.of(context);
-    final updated = complete
-        ? await _listingService.completeHandover(
+    final updated = await _attempt(() => complete
+        ? _listingService.completeHandover(
             listingId: listingId,
             handoverId: handoverId,
           )
-        : await _listingService.confirmHandover(
+        : _listingService.confirmHandover(
             listingId: listingId,
             handoverId: handoverId,
-          );
+          ));
+    if (updated == null) return;
     if (!mounted) return;
     await _loadListings();
     if (!mounted) return;
@@ -1322,7 +1355,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
   Future<void> _deleteMineListing(String listingId, String title) async {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await _accountDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
@@ -1350,8 +1383,8 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    final deleted = await _listingService.deleteListing(listingId: listingId);
-    if (!mounted) return;
+    final deleted = await _attempt(() => _listingService.deleteListing(listingId: listingId));
+    if (!mounted || deleted == null) return;
 
     if (deleted) {
       setState(() {
@@ -1376,8 +1409,8 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   Future<void> _cancelMyReservation(String listingId) async {
     final l10n = AppLocalizations.of(context);
     final cancelled =
-        await _listingService.cancelReservation(listingId: listingId);
-    if (!mounted) return;
+        await _attempt(() => _listingService.cancelReservation(listingId: listingId));
+    if (!mounted || cancelled == null) return;
     await _loadListings();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1392,34 +1425,66 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
   }
 
   Future<void> _restoreSafetyState() async {
+    final data = await _attempt(() => _listingService.store.read(expectedScope: _listingService.scope));
+    if (!mounted || data == null) return;
+    setState(() {
+      _blockedListingIds = Set<String>.from(data[TreasureAccountStore.blockedKey] as List? ?? []);
+      _reportedListingIds = Set<String>.from(data[TreasureAccountStore.reportedKey] as List? ?? []);
+      _reservedListingIds = Set<String>.from(data[TreasureAccountStore.reservedKey] as List? ?? []);
+      _listings = _listings.where((item) => !_blockedListingIds.contains(item.id)).toList();
+    });
+  }
+
+  Future<bool> _persistSafetyState({
+    required Set<String> blocked, required Set<String> reported,
+  }) async {
+    final saved = await _attempt(() async {
+      await _listingService.store.update((data) {
+        data[TreasureAccountStore.blockedKey] = blocked.toList();
+        data[TreasureAccountStore.reportedKey] = reported.toList();
+      }, expectedScope: _listingService.scope);
+      return true;
+    });
+    return saved == true;
+  }
+
+  Future<T?> _attempt<T>(Future<T> Function() operation) async {
+    if (!mounted) return null;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final blocked =
-          prefs.getStringList(_blockedListingsKey) ?? const <String>[];
-      final reported =
-          prefs.getStringList(_reportedListingsKey) ?? const <String>[];
-      final reserved = await _listingService.loadReservedIds();
-      if (!mounted) return;
-      setState(() {
-        _blockedListingIds = blocked.toSet();
-        _reportedListingIds = reported.toSet();
-        _reservedListingIds = reserved;
-      });
-    } catch (_) {
-      // Ignore local persistence read errors.
+      return await operation();
+    } catch (error) {
+      debugPrint('Treasure screen operation: $error');
+      if (mounted) {
+        final message = AppLocalizations.of(context).t('treasure_storage_failed');
+        setState(() => _syncError = message);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      }
+      return null;
     }
   }
 
-  Future<void> _persistSafetyState() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(
-          _blockedListingsKey, _blockedListingIds.toList());
-      await prefs.setStringList(
-          _reportedListingsKey, _reportedListingIds.toList());
-    } catch (_) {
-      // Ignore local persistence write errors.
-    }
+  Future<T?> _accountDialog<T>({
+    required BuildContext context, required WidgetBuilder builder,
+  }) {
+    final scope = _listingService.scope;
+    return showDialog<T>(context: context, builder: (context) => TreasureAccountModal(
+      store: _listingService.store, scope: scope, builder: builder,
+    ));
+  }
+
+  Future<T?> _accountSheet<T>({
+    required BuildContext context, required WidgetBuilder builder,
+    bool showDragHandle = false, bool isScrollControlled = false,
+    Color? backgroundColor,
+  }) {
+    final scope = _listingService.scope;
+    return showModalBottomSheet<T>(
+      context: context, showDragHandle: showDragHandle,
+      isScrollControlled: isScrollControlled, backgroundColor: backgroundColor,
+      builder: (context) => TreasureAccountModal(
+        store: _listingService.store, scope: scope, builder: builder,
+      ),
+    );
   }
 
   Future<void> _reportListing(TreasureListing listing) async {
@@ -1428,7 +1493,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
     String selectedReason = reasons.first;
     final noteController = TextEditingController();
-    final confirmed = await showDialog<bool>(
+    final confirmed = await _accountDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -1495,18 +1560,19 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
       return;
     }
 
-    final sent = await _listingService.reportListing(
+    final sent = await _attempt(() => _listingService.reportListing(
       listingId: listing.id,
       reason: selectedReason,
       note: noteController.text.trim(),
-    );
+    ));
     noteController.dispose();
-
+    if (!mounted || sent == null) return;
+    final reported = {..._reportedListingIds, listing.id};
+    if (!await _persistSafetyState(blocked: _blockedListingIds, reported: reported) || !mounted) return;
     setState(() {
-      _reportedListingIds = {..._reportedListingIds, listing.id};
+      _reportedListingIds = reported;
       _syncError = _listingService.lastSyncError;
     });
-    await _persistSafetyState();
 
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -1530,7 +1596,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
   Future<void> _deleteListing(TreasureListing listing) async {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await _accountDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title:
@@ -1556,8 +1622,8 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    final deleted = await _listingService.deleteListing(listingId: listing.id);
-    if (!mounted) return;
+    final deleted = await _attempt(() => _listingService.deleteListing(listingId: listing.id));
+    if (!mounted || deleted == null) return;
 
     if (deleted) {
       setState(() {
@@ -1581,7 +1647,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
   Future<void> _blockListing(TreasureListing listing) async {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await _accountDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title:
@@ -1608,14 +1674,15 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
 
     if (confirmed != true || !mounted) return;
 
+    final blocked = {..._blockedListingIds, listing.id};
+    if (!await _persistSafetyState(blocked: blocked, reported: _reportedListingIds) || !mounted) return;
     setState(() {
-      _blockedListingIds = {..._blockedListingIds, listing.id};
+      _blockedListingIds = blocked;
       _listings = _listings.where((item) => item.id != listing.id).toList();
       if (_selectedListing?.id == listing.id) {
         _selectedListing = null;
       }
     });
-    await _persistSafetyState();
 
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -1691,7 +1758,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     final galleryController = PageController();
     final galleryIndex = ValueNotifier<int>(0);
 
-    await showModalBottomSheet<void>(
+    await _accountSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -2276,6 +2343,7 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     if (galleryPaths.isEmpty) {
       return;
     }
+    final scope = _listingService.scope;
     await showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -2283,10 +2351,11 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
       barrierColor: Colors.black.withValues(alpha: 0.94),
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (dialogContext, _, __) {
-        return _TreasureFullscreenGallery(
-          title: title,
-          galleryPaths: galleryPaths,
-          initialIndex: initialIndex,
+        return TreasureAccountModal(
+          store: _listingService.store, scope: scope,
+          builder: (_) => _TreasureFullscreenGallery(
+            title: title, galleryPaths: galleryPaths, initialIndex: initialIndex,
+          ),
         );
       },
       transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
@@ -2541,14 +2610,14 @@ class _TreasureHandoverScreenState extends State<TreasureHandoverScreen> {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
 
-    final reserved = await _listingService.reserveListing(
+    final reserved = await _attempt(() => _listingService.reserveListing(
       listingId: listing.id,
       preferredSlot: detailId,
       handoverMode:
           _selectedMode == TreasureHandoverMode.coffeeChat ? 'coffee' : 'swap',
-    );
+    ));
 
-    if (!mounted) return;
+    if (!mounted || reserved == null) return;
     if (!reserved) {
       messenger.showSnackBar(
         SnackBar(
