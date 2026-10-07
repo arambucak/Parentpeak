@@ -475,8 +475,13 @@ Feed oder die Uebergabeauswahl. Fehlender Serverstatus gilt als unbekannt,
 nicht als verfuegbar. Bei lokalen Nachfehlern bleiben bestaetigte Fotos erhalten.
 Alte Cacheeintraege ohne Status behalten ihren bisherigen available-Default;
 ein frueher verlorener Serverstatus wird nicht nachtraeglich erfunden.
-Keine Deployment- oder Launchfreigabe: wiederholte Reservierungen bleiben
-ein separater Auditpunkt.
+Wiederholtes Reservieren gibt die eigene bestehende pending/reserved-Uebergabe
+mit HTTP 200 und `alreadyReserved: true` zurueck, ohne neue Uebergabe oder
+erneute Pushnachricht. Ein gleichzeitiger eigener Commit wird nach verlorenem
+Status-Claim erneut geprueft; fremde Reservierungen bleiben 410. Archivierte,
+bereits bestaetigte/beanspruchte oder abgeschlossene Angebote werden dadurch
+nicht reaktiviert. Auth-/Eigentuemergrenzen und Status-Claim bleiben bestehen.
+Keine Deployment- oder Launchfreigabe.
 
 ### Verschenkmarkt: Kategorien und ungefaehre Reichweite
 
