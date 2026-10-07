@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:parentpeak/logic/chat_ai_consent.dart';
 import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/chat_memory_consent.dart';
+import 'package:parentpeak/logic/privacy_sanitizer.dart';
 import 'package:parentpeak/logic/crisis_support.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 
@@ -281,13 +282,18 @@ class PedagogicalChatBackend {
       return;
     }
 
+    final safeConversation = PrivacySanitizer.sanitizeHistoryForAi([
+      ..._prepareHistory(history),
+      {'role': 'user', 'content': message},
+    ]);
+    final safeMessage = safeConversation.last['content']!;
+    final preparedHistory = safeConversation.sublist(0, safeConversation.length - 1);
     final topicMode = _classifyTopicMode(lower);
-    final contextAnchors = _extractContextAnchors(message);
-    final preparedHistory = _prepareHistory(history);
+    final contextAnchors = _extractContextAnchors(safeMessage);
     final historyAnchors = _extractHistoryAnchors(preparedHistory);
     final needsFollowUpQuestion = _shouldAskSingleFollowUpQuestion(message);
     final coachingPrompt = _buildCoachingPrompt(
-      userMessage: message,
+      userMessage: safeMessage,
       topicMode: topicMode,
       needsFollowUpQuestion: needsFollowUpQuestion,
       contextAnchors: contextAnchors,
@@ -539,13 +545,6 @@ Verlaufskontext (falls vorhanden): ${historyAnchors.isEmpty ? 'keiner' : history
         .toList();
     if (ageMatches.isNotEmpty) {
       anchors.add(ageMatches.last);
-    }
-
-    final nameMatch = RegExp(
-      r'(?:mein|unser)\s+(?:sohn|tochter|kind)\s+([A-ZÄÖÜ][a-zäöüß]{1,20})',
-    ).firstMatch(joinedOriginal);
-    if (nameMatch != null) {
-      anchors.add(nameMatch.group(1)!);
     }
 
     const carryOverPatterns = [

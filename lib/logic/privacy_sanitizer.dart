@@ -23,29 +23,60 @@ class PrivacySanitizer {
 
   static final RegExp _postalCodePattern = RegExp(r'\b\d{5}\b');
 
-  // Fängt sowohl "mein Kind Max" als auch "Kind: Max" / "Kind - Max" ab. Der
-  // Trenner nach kind/sohn/tochter darf Whitespace, Doppelpunkt oder Bindestrich
-  // sein (jeweils optional von Leerzeichen umgeben), damit struktureller
-  // Prompt-Kontext wie "Kind: Max, Alter: ..." nicht am Schutz vorbeiläuft.
+  // Relation labels are case-insensitive; name capitalization is checked
+  // separately so ordinary verbs after a relation are not treated as names.
   static final RegExp _childNamePattern = RegExp(
-    r'\b(?:[Mm]ein(?:e|er|em)?\s+)?(?:[Kk]ind|[Ss]ohn|[Tt]ochter)\s*[:\-]?\s*([A-ZÄÖÜ][a-zäöüß]{1,20})\b',
+    r'(?<![\p{L}\p{N}])'
+    r'(?:kind|sohn|tochter|child|son|daughter|çocuk|çocuğum|çocuğumuz|oğlum|oğlumuz|kızım|kızımız|zarok|zarokê|kurê|keça)'
+    r'(?:\s+(?:heißt|heisst|named|called|adlı|isimli|min|me))?'
+    r'(?:\s*[:\-]\s*|\s+)'
+    r"([\p{L}][\p{L}\p{M}]*(?:[-’'][\p{L}][\p{L}\p{M}]*)*)"
+    r'(?![\p{L}\p{N}])',
     unicode: true,
+    caseSensitive: false,
   );
 
+  static final RegExp _capitalizedName = RegExp(r'^\p{Lu}', unicode: true);
+  static const _notNames = {
+    'ich', 'wir', 'er', 'sie', 'es', 'du', 'das', 'die', 'der', 'mein', 'meine',
+    'unser', 'unsere', 'alter', 'morgen', 'heute', 'i', 'we', 'he', 'she',
+    'they', 'the', 'my', 'our', 'age', 'biz', 'bu', 'yaş', 'yaşı',
+    'ez', 'em', 'ew', 'temen',
+  };
+
+  static Set<String> _childNames(Iterable<String> texts) => {
+    for (final text in texts)
+      for (final match in _childNamePattern.allMatches(text))
+        if (_capitalizedName.hasMatch(match.group(1)!) &&
+            !_notNames.contains(match.group(1)!.toLowerCase()))
+          match.group(1)!,
+  };
+
+  static String _replaceNames(String text, Set<String> names) {
+    final ordered = names.toList()..sort((a, b) => b.length.compareTo(a.length));
+    for (final name in ordered) {
+      text = text.replaceAll(
+        RegExp('(?<![\\p{L}\\p{N}\\[])${RegExp.escape(name)}(?![\\p{L}\\p{N}\\]])',
+          unicode: true, caseSensitive: false),
+        '[KINDNAME]',
+      );
+    }
+    return text;
+  }
+
   static String sanitizeForAi(String input) {
+    return _sanitize(input, _childNames([input]));
+  }
+
+  static String _sanitize(String input, Set<String> names) {
     var text = input.trim();
     if (text.isEmpty) return text;
 
+    text = _replaceNames(text, names);
     text = text.replaceAll(_emailPattern, '[EMAIL]');
     text = text.replaceAll(_coordinatePattern, '[KOORDINATEN]');
     text = text.replaceAll(_streetPattern, '[ADRESSE]');
     text = text.replaceAll(_postalCodePattern, '[PLZ]');
-    text = text.replaceAllMapped(_childNamePattern, (m) {
-      final prefix = m.group(0) ?? '';
-      final name = m.group(1) ?? '';
-      return prefix.replaceFirst(name, '[KINDNAME]');
-    });
-
     // Phone replacement intentionally last to avoid partial replacements
     // in already redacted placeholders.
     text = text.replaceAllMapped(_phonePattern, (m) {
@@ -61,11 +92,12 @@ class PrivacySanitizer {
   static List<Map<String, String>> sanitizeHistoryForAi(
     List<Map<String, String>> history,
   ) {
+    final names = _childNames(history.map((item) => item['content'] ?? ''));
     return history
         .map(
           (item) => {
             'role': item['role'] ?? 'user',
-            'content': sanitizeForAi(item['content'] ?? ''),
+            'content': _sanitize(item['content'] ?? '', names),
           },
         )
         .toList(growable: false);

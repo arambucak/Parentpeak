@@ -132,7 +132,28 @@ node --test backend/tests/unit/ai-memory-policy.test.js
 flutter test --no-pub test/chat_memory_consent_test.dart test/chat_account_test.dart test/chat_account_ui_test.dart test/ai_memory_service_test.dart test/chat_ai_consent_test.dart test/pedagogical_chat_backend_test.dart test/pedagogical_prompt_breadth_test.dart test/localization_audit_verification_test.dart
 ```
 
-Weitere Chat-Auditbefunde (Sanitizer-Anker, Tipp-/Historygrenzen,
+### Chat-Sanitizer und Kontextanker
+
+`PedagogicalChatBackend` anonymisiert Verlauf und aktuelle Nachricht zusammen,
+bevor Coaching-/Verlaufskontext abgeleitet wird. Verlaufanker enthalten keine
+extrahierten Klarnamen mehr. `PrivacySanitizer` erkennt Kindbezeichnungen in
+de/en/tr/ku mit Unicode-/Bindestrich-/Apostrophnamen und ersetzt erkannte
+Namen auch in spaeteren blossen Nutzer-/Assistenten-Erwaehnungen. Die Sammlung
+gilt nur fuer den aktuellen Aufruf, nicht als dauerhafter personenbezogener
+Namensspeicher. Originalnachrichten/Anzeige werden nicht ueberschrieben.
+
+Die bestehenden E-Mail-/Telefon-/Standort-/Adressfilter und neutralen Memory-
+Tokens bleiben erhalten. Alter und Beratungsthemen werden nicht pauschal
+entfernt. Sicherheitsrouting prueft weiterhin die originale aktuelle Nachricht,
+bevor ueberhaupt ein externer Aufruf erwogen wird. Es bleibt eine begrenzte
+heuristische Erkennung: unbekannte Beziehungen, Kleinbuchstaben-Namen und
+andere freie Identifikatoren sind keine garantiert vollstaendige Anonymisierung.
+
+```bash
+flutter test --no-pub test/chat_privacy_payload_test.dart test/privacy_sanitizer_test.dart
+```
+
+Weitere Chat-Auditbefunde (Tipp-/Historygrenzen,
 Fallback-/Memory-UI-i18n und Send-Web-Tap) bleiben separate Arbeiten;
 keine pauschale Launch-, Produktions- oder Datenschutzfreigabe.
 
