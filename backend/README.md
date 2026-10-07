@@ -834,6 +834,50 @@ und `https://www.bmwsb.bund.de/DE/themen/wohnen/wohngeld/wohngeldrechner/wohngel
 antworten beim Abruf mit HTTP 403. Kein inhaltlich bestaetigter Ersatz;
 der bisher dokumentierte Link bleibt unveraendert, nicht als tot eingestuft.
 
+## Bild-Upload: Multer-Sicherheitsstand
+
+Multer ist gezielt von 2.2.0 auf 2.4.0 angehoben (Manifest `^2.4.0`,
+Lockfile 2.4.0). Keine anderen Paketversionen wurden aktualisiert; die nicht
+mehr benoetigte concat-stream-Kette entfaellt durch das Multer-Update.
+Prisma bleibt unveraendert.
+
+`POST /uploads/image` behaelt `single('image')`, DiskStorage, die vier
+MIME-Typen, zufaellige Dateinamen sowie 201/400-Antworten bei. Genau 10 MiB
+ist jetzt inklusive erlaubt; ein Byte mehr liefert weiter 400.
+Der neue `fieldArrayIndexLimit: 0` ist erforderlich, um den im Advisory
+GHSA-535w-7cp7-47q4 beschriebenen Array-Konvertierungs-DoS zu verhindern.
+Der Endpoint verarbeitet keine Array-Metadaten; vorhandene App-Aufrufer
+senden nur das Bildfeld. Gewoehnliche Textfelder bleiben akzeptiert.
+Eine Versionsanhebung ohne diese Option waere fuer diesen Pfad unvollstaendig.
+
+Changelog 2.3/2.4: geaenderte Dekodierung von Formularnamen betrifft unser
+festes `image`-Feld nicht; das ganzzahlige Dateilimit ist weiterhin gueltig.
+Neue optionale Storage-/Stream-Optionen werden nicht benoetigt. DiskStorage-
+Abbruch-/Descriptor-/Orphan-Datei-Fixes werden durch echte lokale HTTP-
+Regressionen mit dem installierten Multer getestet, nicht nur Mock-Parser.
+
+Die Tests extrahieren die echte Konfiguration/Route aus server.js und binden
+einen temporaeren Loopback-Server ohne Firebase/DB/Produktionszugriffe.
+Sie pruefen gueltige Dateien, MIME/Dateigrenze, malformed/truncated Multipart,
+grosse Array-Indizes und Abbrueche auch vor der Dateinamenvergabe; Streams
+muessen geschlossen und Teil-Dateien entfernt sein. Authmiddleware ist
+nicht Gegenstand dieses isolierten Parser-/Handler-Tests.
+
+CI stellt die bestehenden gelockten Backenddependencies mit `npm ci`,
+`--ignore-scripts` und ohne Audit wieder her; keine Migration, Prisma-
+Generierung oder sonstigen Lifecycle-Scripts im Testinstall.
+
+```bash
+node --test backend/tests/unit/image-upload.test.js
+node --test backend/tests/unit/*.test.js
+```
+
+Lokal kann `PARENTPEAK_MULTER_TEST_PACKAGE` auf ein isoliert installiertes
+Multer-Paket zeigen, um keine fehlenden sonstigen Backenddependencies
+nachzuinstallieren. Der Test verlangt dieselbe Version wie das Lockfile.
+Dieser Fix beseitigt die Multer-Meldungen, nicht die anderen npm-Warnungen;
+Produktionswirksamkeit erst nach separat freigegebenem Deploy.
+
 ## Installation
 
 1. **Node.js installieren** (falls nicht vorhanden)
