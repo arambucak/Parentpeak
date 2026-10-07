@@ -19,6 +19,12 @@ class _StubApiClient extends BackendApiClient {
   Map<String, dynamic> postResponse = const {};
 
   @override
+  BackendApiClient withRequestGuard(void Function() guard) {
+    guard();
+    return this;
+  }
+
+  @override
   Future<dynamic> getJson(String path) async {
     getPaths.add(path);
     return getResponse;

@@ -13,6 +13,12 @@ class _RecordingApiClient extends BackendApiClient {
   final List<String> prompts = [];
 
   @override
+  BackendApiClient withRequestGuard(void Function() guard) {
+    guard();
+    return this;
+  }
+
+  @override
   Future<Map<String, dynamic>> postJson(
     String path,
     Map<String, dynamic> body, {

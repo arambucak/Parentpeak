@@ -16,13 +16,63 @@ gesendeten Verlauf und die Grenzen der automatischen Anonymisierung.
 Gespraeche liegen derzeit nur im RAM; Themenhaeufigkeiten werden lokal
 gespeichert. Aktiviertes optionales KI-Gedaechtnis ergaenzt derzeit serverseitig
 echte Kinderprofile und bestaetigte Familieninformationen; dies wird
-ausdruecklich offengelegt. Datenminimierung und gesonderter Memory-Consent
-sowie vollstaendige Chat-RAM-/Themen-Kontotrennung folgen separat.
+ausdruecklich offengelegt. Datenminimierung und gesonderter Memory-Consent folgen separat.
 Dieser Consent-PR ist keine vollstaendige Datenschutz-/Launchfreigabe und
 keine serverseitige Einwilligungspruefung fuer beliebige direkte Proxyaufrufe.
 
 ```bash
 flutter test --no-pub test/chat_ai_consent_test.dart test/pedagogical_chat_backend_test.dart test/pedagogical_prompt_breadth_test.dart test/privacy_sanitizer_test.dart test/localization_audit_verification_test.dart
+```
+
+### Eigener Chat-Owner und lokale Kontotrennung
+
+`ChatAccountStore` verwaltet ausschliesslich lokale Themenzahlen in
+`chat.accounts.v1`, mit einem Owner-Umschlag pro Konto und getrenntem Gastbereich.
+Der Chat hat einen eigenen Legacy-Owner, unabhaengig von Zentrale, Geld,
+Treasure und KI-Consent. `ki_chat.topic_counts.v1` bleibt unzugeordnet und
+unveraendert, bis ein angemeldeter Nutzer ausdruecklich das Eigentum bestaetigt.
+Claim und zusammengefuehrte Zaehler werden atomar in einem bestaetigten Write
+gespeichert. Keine automatische Zuordnung, Loeschung, Veroeffentlichung oder
+KI-Uebertragung; keine neue dauerhafte Gespraechshistorie.
+
+Reads validieren Owner/JSON/Zaehler, Writes sind instanzuebergreifend serialisiert.
+Claim-, Lade-, Increment- und Resetfehler sind sichtbar, RAM-/Erfolgszustand erst
+nach Ack. Fehlerhafte Originaldaten werden nicht ueberschrieben.
+Scope plus Kontogeneration schuetzen auch A->B->A-Wechsel.
+
+Der aktive Chat leert bei Kontowechsel Verlauf, Controller, laufende Antwort,
+Feedback, Themen und aktive Memory-Kind-ID. Die Antwortannahme wird abgebrochen;
+alte Keyboard-/Modalcallbacks und verspaetete Load-/Providerantworten bleiben
+ungueltig. Auch Chatloeschen/Dispose invalidieren laufende Antworten.
+Memorysettings leeren private Controller und Profile; offene Claim-, Themen-,
+Loesch- und Memorydialoge blenden alte Inhalte aus und schliessen kontogebunden.
+
+Gemini und Memory-CRUD verwenden requestgebundene HTTP-Guards vor/nach dem
+asynchronen Tokenabruf, direkt vor Versand, nach Antwort und vor 401-Retry.
+Bei initialisiertem Firebase wird zusaetzlich die Uebereinstimmung mit der
+lokalen Authidentitaet geprueft, damit ein Authuebergang keinen fremden Token
+fuer alten Kontext verwendet. Andere Backendverbraucher ohne Guard bleiben
+unveraendert. Serverseitige Memory-Ownerchecks bleiben erhalten.
+Bereits versandte HTTP-/Providerrequests koennen serverseitig weiterlaufen;
+kein rueckwirkender Widerruf oder physisches Loeschen von Netzwerkpuffern wird
+behauptet. Sie koennen keine Chatantwort oder Folgeanfrage im neuen Konto
+erzeugen. Kontotrennung ist keine lokale Verschluesselung oder Synchronisierung.
+
+Betroffene Speicher/Leser:
+
+- RAM-Chat, Feedback, Eingabe, Themenanalyse/-Reset, Retry und Tipp-Expansion:
+  `ChatScreen` und `PedagogicalChatBackend`.
+- Lokale Themen: `ChatAccountStore`; alte globale Themen ausschliesslich
+  expliziter Claim. Globale Altzustimmung bleibt kein Eigentumsbeleg.
+- Serverseitiges Memory: `AiMemoryService`, aktive Kindwahl im Chat,
+  `AiMemorySettingsScreen` einschliesslich Edit/Delete/Detaildialogen und
+  `/ai/settings`, `/ai/children`, `/ai/children/:id/memory`.
+- Externe Requests/Token/401: `GeminiAIService`, `BackendApiClient`.
+- Deviceglobaler `AIRateLimiter` bleibt bewusst geraetebezogen.
+  Ungenutzter Legacy-Chat und Netzwerk-Gruppen-/Matchchats sind nicht diese Kachel.
+
+```bash
+flutter test --no-pub test/chat_account_test.dart test/chat_account_ui_test.dart test/chat_ai_consent_test.dart test/pedagogical_chat_backend_test.dart test/pedagogical_prompt_breadth_test.dart test/ai_memory_service_test.dart test/localization_audit_verification_test.dart
 ```
 
 ## Einwilligung fuer KI-Familienrezepte
