@@ -14067,6 +14067,14 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
     return res.status(403).json({ error: 'Reservierung nur fuer das eigene Konto erlaubt' });
   }
 
+  const ownReservationQuery = {
+    where: {
+      treasureId: id,
+      requesterId: String(requesterUserId),
+      status: { in: ['pending', 'reserved'] },
+    },
+  };
+
   try {
     const treasure = await prisma.treasureItem.findUnique({
       where: { id },
@@ -14075,7 +14083,7 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
     if (!treasure) {
       return res.status(404).json({ error: 'Treasure nicht gefunden' });
     }
-    if (treasure.status !== 'available') {
+    if (!['available', 'reserved'].includes(treasure.status)) {
       return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
     }
     // Eigenes Angebot kann man nicht reservieren
@@ -14092,19 +14100,16 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
     }
 
     // Doppelte Reservierung desselben Nutzers vermeiden
-    const existing = await prisma.treasureHandover.findFirst({
-      where: {
-        treasureId: id,
-        requesterId: String(requesterUserId),
-        status: { in: ['pending', 'reserved'] },
-      },
-    });
+    const existing = await prisma.treasureHandover.findFirst(ownReservationQuery);
     if (existing) {
       return res.status(200).json({
         handover: existing,
         alreadyReserved: true,
         message: 'Bereits von dir reserviert',
       });
+    }
+    if (treasure.status !== 'available') {
+      return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
     }
 
     const modeNote = handoverMode === 'swap' ? 'Stiller Tausch' : 'Kurz treffen';
@@ -14149,6 +14154,24 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
   } catch (err) {
     console.error('❌ Treasure reserve error:', err.message);
     if (err.code === 'TREASURE_UNAVAILABLE') {
+      try {
+        const current = await prisma.treasureItem.findUnique({
+          where: { id }, select: { status: true },
+        });
+        if (current?.status === 'reserved') {
+          const existing = await prisma.treasureHandover.findFirst(ownReservationQuery);
+          if (existing) {
+            return res.status(200).json({
+              handover: existing,
+              alreadyReserved: true,
+              message: 'Bereits von dir reserviert',
+            });
+          }
+        }
+      } catch (lookupError) {
+        console.error('❌ Treasure reserve retry lookup error:', lookupError.message);
+        return res.status(500).json({ error: 'Reservierungsstatus konnte nicht geprüft werden' });
+      }
       return res.status(410).json({ error: 'Dieses Angebot ist nicht mehr verfügbar' });
     }
     res.status(500).json({ error: `Reservierung fehlgeschlagen: ${err.message}` });
