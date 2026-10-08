@@ -320,6 +320,7 @@ Produktcode noch nicht umgesetzt. Dieser Abschnitt aktualisiert nur #169.
 | Danach | W10: verbleibende Auth-/Profil-i18n. | Eigener PR de/en/tr/ku; neue Strings der vorherigen PRs schon dort lokalisieren. |
 | Danach | W13: Testliterale und Scanumfang. | Eigener PR; zuerst synthetisch bestaetigen/gegebenenfalls extern rotieren, nie Werte benutzen/wiedergeben. |
 | Weiter offen | W05 Exportvollstaendigkeit, W07 Onboarding-Save/Abbruch, W11 Reset-Zustellbeobachtung, W12 Testabdeckung; N01-N04 und weitere Inventurzeilen. | W05 in PR 2 untersuchen; abgeschlossener lokaler Onboarding-Save-Vertrag in PR 1 mitpruefen. Rest nicht stillschweigend als erledigt markieren. |
+| Spaeter klaeren | onboarding.parent_roles und onboarding.child_ages werden geschrieben, haben aber derzeit keine fachlichen Leser. | In PR 1 kontobezogen verlustfrei erhalten. Danach separat entscheiden, ob kuenftige Nutzung oder toter Code; nicht im Kontoschutzfix entfernen. |
 
 ### 7.2 Verifizierte globale Keys und alle direkten Leser/Schreiber
 
