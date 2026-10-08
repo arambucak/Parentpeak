@@ -34,6 +34,14 @@ jobs:
       - name: Run Tests
         run: flutter test --no-pub
 
+      - name: Setup pinned backend Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: backend/.node-version
+
+      - name: Verify pinned backend Node runtime
+        run: node backend/node_runtime.cjs
+
       - name: Restore locked backend test dependencies without lifecycle scripts
         run: npm ci --prefix backend --omit=dev --ignore-scripts --no-audit --no-fund
 
