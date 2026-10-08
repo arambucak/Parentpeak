@@ -748,3 +748,168 @@ Deploy-ID, QA-Protokolle beider Plattformen, Recht-/Store-Abnahme,
 Rollbackprobe, genehmigte Restpunkte, Verantwortliche und Rollout-/Monitoring-
 Plan. Solange Pflichtnachweise fehlen, lautet der Status
 **"Audit abgeschlossen, Launch noch nicht freigegeben"**.
+
+## 6. Launch-Endspurt: priorisierte To-dos
+
+Planungsstand: 8. Oktober 2026, nach erfolgreichem #160-Release.
+App/main: `fcd94920786b43d35b3ce15b505023ebfde36618`;
+Live-Backend: `64358dfbaf4daa3bb2dcc508f96fc4bd07fd049a`.
+Die Live-Nachweise stammen aus der bereits abgeschlossenen Abnahme, nicht
+aus neuen Produktionsrequests fuer diese Checkliste. Dieser Abschnitt
+autorisiert weder Merge noch Deploy, Installation, Secret-/Renderaenderung,
+Produktions-Schreibtest oder oeffentlichen Launch.
+
+### 6.1 Stufe 1 - Launch-Blocker
+
+Abhaken bedeutet **nachgewiesen und vom Release-Verantwortlichen freigegeben**,
+nicht nur vorbereitet. Pro Entscheidung Datum, Verantwortlichen, Release-SHA
+und redigierten Nachweis festhalten; keine Tokens oder echten Kinddaten ablegen.
+
+| Gate | Genau zu pruefen | Copilot kann ohne Produktionszugriff vorbereiten | Nutzer / extern zwingend |
+|---|---|---|---|
+| [ ] Recht / Store | Privacy Policy, Impressum, App Privacy / Data Safety gegen 6.1.2 und Abschnitt 4 abgleichen; reale Dienste, Zwecke, Gesundheitsdaten, Fotos, Retention, Loeschung, Transfers und Sprachumfang. | Codebelege, Datenflussmatrix, Widerspruchsliste und Text-/Deklarationsvorlagen; keine Rechtsberatung oder Freigabe. | Verantwortlicher/Kontakt, reale Vertragsanbieter, Regionen, AVV/Transfergarantien und Fristen liefern; anwaltliche/fachliche Pruefung organisieren; Storeantworten selbst bestaetigen/einreichen. |
+| [ ] Signierte Geraete-QA | Alle Zeilen in 6.1.3 auf iOS **und** Android; iPad wenn unterstuetzt. Fehler oder fremde Kontodaten stoppen die Freigabe. | Synthetische Szenarien, vorhandene Unit-/CI-Nachweise, Protokollvorlage und Auswertung redigierter Fehler. | Signierte Builds, reale Geraete und eigene Testkonten; Berechtigungen, OS-Sharing und Push physisch pruefen; separate Freigabe fuer schreibende Tests. |
+| [ ] Security-Restrisiko-Abnahme | Alle elf Paketentscheidungen in 6.1.1 einzeln; keine Akzeptanz nur wegen niedriger Prioritaet oder DoS-Kategorie. | Retained-Audit/Lockfile-/Codebelege, Erreichbarkeitsanalyse und spaeter getrennte Fix-PRs nach Auftrag. | Empfehlungen einzeln akzeptieren oder Fix verlangen; echte Deployment-/SMTP-Konfiguration ohne Secret-Offenlegung bestaetigen. Ungeklaerter erreichbarer Pfad ist kein gruener Haken. |
+
+#### 6.1.1 Security: abhakbare Entscheidungstabelle
+
+Quelle ist die **vorhandene Auditaufnahme nach dem Multer-Fix**, kein frischer
+npm-/Registry-Scan: 24 Produktions-Paketmeldungen, davon 1 critical, 10 high,
+13 moderate. Der lokale Auditbeleg liegt ausserhalb des Repos; er hat keinen
+Lockfile-Digest, daher ist seine exakte Entstehung nicht kryptografisch belegt.
+Die gelockten Versionen sind in [package-lock.json](backend/package-lock.json)
+pruefbar. Counts sind **npm-Paketeintraege, nicht elf unabhaengige Angriffe**:
+Prisma/config rollen transitive Meldungen auf. Moderate-Meldungen sind durch
+diese Tabelle weder behoben noch automatisch akzeptiert.
+
+"Akzeptieren" ist eine **bedingte Empfehlung fuer den geprueften Releaseumfang**,
+kein dauerhafter Freibrief. "Fixen" bedeutet separater Auftrag/PR mit Tests,
+keine Aenderung in diesem Doku-PR. Patched-Ziele stammen aus der gespeicherten
+Auditaufnahme und sind vor einem Fix erneut zu verifizieren; keine blinden
+Overrides, kein `npm audit fix --force`, kein Prisma-Downgrade.
+DoS ist ausdruecklich Teil der Bewertung.
+
+| Freigabe | Paket / Audit-Severity / Lock-Version | Laufzeit, Pfad und Grenze | Klare Empfehlung / Begruendung |
+|---|---|---|---|
+| [ ] Entscheidung + Datum: ____ | `proxy-addr` / critical / 2.0.7; GHSA-jqcg-44mw-7w3h | Express-Laufzeitabhaengigkeit. [Backend](backend/server.js) setzt kein `trust proxy`; der betroffene IPv4-mapped-IPv6-Subnetz-Vertrauenspfad ist nicht als aktiviert belegt. `getClientIp` liest separat rohes X-Forwarded-For: nicht mit dieser Advisory verwechseln. | **Fixen empfohlen:** kompatible transitive Aufloesung auf 2.0.8+ pruefen. Kein nachgewiesener Advisory-Exploit im aktuellen Code, aber kleine Laufzeitkorrektur statt dauerhafter Critical-Ausnahme bevorzugen. Bis dahin nur explizite, begruendete Ausnahme; Header-/Rate-Limit-Vertrauensgrenze separat bewerten. |
+| [ ] Entscheidung + Datum: ____ | `@fastify/busboy` / high / 3.2.0; GHSA-xjh9-v7x6-24jw, GHSA-x8mw-p69m-v3mx | Firebase Admin parst damit **ausgehende API-Multipartantworten** (`handleMultipartResponse`), nicht unseren `/uploads/image`-Ingress. Unser Upload verwendet Multer mit anderem `busboy`. | **Akzeptieren fuer diesen Umfang:** kein direkt vom Upload-Angreifer kontrollierter Parserpfad belegt; Google-Antworten sind die Grenze, nicht pauschal "Tooling". Bei fremdem Multipart-Input neu bewerten. Geplantes SDK-Update auf Aufloesung 3.2.2+ pruefen (auch moderate Meldung). |
+| [ ] Entscheidung + Datum: ____ | `@grpc/grpc-js` / high / 1.14.4; GHSA-m9gg-hp2v-232j | Optionale Google-GAX/Firestore-Kette; Backend nutzt Firebase Auth/Messaging/Storage, kein eigener gRPC-Server oder Firestore-Pfad gefunden. Advisory betrifft bestimmte Server-Zertifikatskonfigurationen. | **Akzeptieren:** betroffene Serverfunktion im Release nicht belegt. Vor gRPC-/Firestore-Erweiterung neu bewerten; kompatibles SDK-Update auf 1.14.5+ einplanen. |
+| [ ] Entscheidung + Datum: ____ | `@prisma/config` / high / 7.8.0 | CLI-/Pre-Deploy-Tooling; vererbte `deepmerge-ts`-Meldung, keine eigene Advisory. [Konfiguration](backend/prisma.config.ts) stammt aus Repo/Environment, nicht aus HTTP-JSON. | **Akzeptieren:** kein Angreifer-Objektgraph in diesem Toolingpfad belegt. Tooling laeuft beim Deploy, ist also nicht "nie benutzt". Zusammen mit kompatiblem Prisma-Update pflegen. |
+| [ ] Entscheidung + Datum: ____ | `brace-expansion` / high / 2.1.2; vier DoS-Advisories: GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p | Transitive optionale `glob`-/Google-Kette; kein Backendrequest mit nutzerkontrolliertem Globmuster gefunden. | **Akzeptieren:** fehlender untrusted-Glob-Eingang ist die Begruendung, nicht DoS als Kategorie. Bei dynamischen Nutzer-Globmustern vorher fixen. |
+| [ ] Entscheidung + Datum: ____ | `deepmerge-ts` / high / 7.1.5; GHSA-ggr8-5vv4-36mx | Prisma-Konfiguration/CLI; rekursiver Objektgraph kann Stack erschoepfen. Keine HTTP-Nutzdaten in dieser Config-Zusammenfuehrung belegt. | **Akzeptieren:** kontrollierte Tooling-Eingaben. Kompatibles Prisma/config-Update mit 8.0.0+ pruefen; nicht unabhaengig vom Config-API-Vertrag erzwingen. |
+| [ ] Entscheidung + Datum: ____ | `fast-uri` / high / 3.1.3; sieben high-Advisories zu Host-/Authority-Verwechslung und SSRF | Prisma-CLI-/AJV-Kette; kein laufender HTTP-Pfad in diesen Parser gefunden. Mehrere URI-Sicherheitsfehler, keine sieben separaten Laufzeitwege bewiesen. | **Fixen empfohlen:** kompatible Tooling-Aufloesung auf 3.1.7+ pruefen und Prisma regressionspruefen. Aktuell kein belegter Runtime-Angriff; dennoch URI-Sicherheitskorrektur geplant statt ungepruefte Dauerakzeptanz. |
+| [ ] Entscheidung + Datum: ____ | `fast-xml-parser` / high / 5.10.0; GHSA-8r6m-32jq-jx6q | Optionale Google-Storage-Kette, Entity-Expansion-DoS. Storage wird fuer Account-Medienbereinigung verwendet; genauer XML-Aufruf/Responsepfad in der lokalen optionalen Installation nicht vollstaendig belegt. | **Fixen empfohlen:** kompatibles SDK-/Parser-Update ausserhalb des betroffenen Bereichs pruefen. **Nicht** als sicher unerreichbar akzeptieren, solange der XML-Inputpfad ungeklaert ist. Alternativ expliziten Negativnachweis vor Ausnahme liefern. |
+| [ ] Entscheidung + Datum: ____ | `mysql2` / high / 3.15.3; GHSA-3f6p-5ww8-9rcr | Prisma-CLI-Abhaengigkeit; Auth-Downgrade bei MySQL. [Datasource](backend/prisma/schema.prisma) und Adapter sind PostgreSQL; kein MySQL-Verbindungsweg gefunden. | **Akzeptieren:** anderes DB-Protokoll, betroffene Authentifizierung nicht genutzt. Vor MySQL-Nutzung kompatible Aufloesung 3.22.0+ pruefen. |
+| [ ] Entscheidung + Datum: ____ | `nodemailer` / high / 9.0.3; GHSA-2x7j-588g-ccc2, GHSA-v53p-9fqp-m79j | Direkte Laufzeitabhaengigkeit. `sendEmail` nutzt zuerst Resend, sonst SMTP. Passwortreset nimmt Request-E-Mail an, Firebase-Linkgenerierung erfolgt vor `sendMail`; Verifizierung verwendet Token-E-Mail. Formatpruefung allein beweist keine Sicherheit des Address-Parsers. Produktions-SMTP/Resend-Konfiguration hier nicht gelesen. | **Fixen empfohlen:** bei moeglichem SMTP-Betrieb Parser-DoS nicht wegakzeptieren. Gepatchte kompatible Version ausserhalb des gespeicherten Bereichs `<=10.0.5` verifizieren, Mailflows testen. Ausnahme nur mit Nachweis, dass SMTP-Pfad deaktiviert bleibt; Firebase-Vorpruefung allein reicht nicht als Unmoeglichkeitsbeweis. |
+| [ ] Entscheidung + Datum: ____ | `prisma` / high / 7.8.0 | CLI `postinstall`/`migrate:deploy`; Sammelmeldung fuer config/dev/mysql2, keine zusaetzliche eigenstaendige Advisory. Prisma Client und PostgreSQL-Runtime nicht mit dem CLI-Eintrag gleichsetzen. | **Fixen empfohlen als Toolchain-Buendel:** insbesondere `fast-uri` kompatibel aufloesen; andere oben begruendete Ausnahmen separat erfassen. Keine pauschale Major-Downgrade-Empfehlung uebernehmen. |
+
+- [ ] Release-Verantwortlicher bestaetigt jede Zeile bzw. beauftragt getrennte
+  Fixes; vorgeschlagene Fixes gelten ohne begruendete Ausnahme als offen.
+- [ ] Nach spaeterem Fix erneute Auditaufnahme mit Lockfile-Hash,
+  Backendtests und unveraendertem Prisma-/Readinessvertrag dokumentieren.
+- [ ] Keine komplette Security-Freigabe allein aus dieser statischen Analyse
+  oder dem erfolgreich behobenen Multer-DoS ableiten.
+
+#### 6.1.2 Recht / Store: Datenfluss-Nachweis aus dem Code
+
+Dies ist eine technische Faktenmatrix, **keine Rechtsberatung** und keine
+vorab ausgefuellte Apple-/Google-Deklaration. Pfad im Code bedeutet nicht
+automatisch produktive Aktivierung. SDK-Konfiguration, Regionen, Vertraege,
+Retention und Storekategorien muss der Verantwortliche bestaetigen.
+Heuristische Sanitization/Rundung ist keine garantierte Anonymisierung.
+
+| Daten | Wohin / Zweck | Lokal oder externer Empfaenger; Grenze | Codebeleg |
+|---|---|---|---|
+| E-Mail, Login-Credentials/Providerdaten, UID, ID-Token | Anmeldung, Verifizierung, Backendauth | Firebase Auth; Token/UID auch eigenes Render-Backend. Nicht jeder Loginwert ist KI-Kontext. | [Auth](lib/logic/auth_service.dart), [API](lib/logic/backend_api_client.dart), [Backend](backend/server.js) |
+| E-Mail und Reset-/Verifizierungslink | Kontozugang wiederherstellen / E-Mail bestaetigen | Backend -> Firebase Admin; Versand Resend oder SMTP/Nodemailer je Config. Telefonnummer-OTP ist hiervon getrennt. | [Mailrouten und sendEmail](backend/server.js#L11374) |
+| Chatnachricht, begrenzter Verlauf, Sprache, ggf. Freitext mit sensiblen Angaben | KI-Elternberatung | App -> Render `/ai/generate` -> Google Gemini. Text-Sanitizer begrenzt Offenlegung, beweist aber keine Anonymitaet; Chat-Consent erforderlich. | [Chat](lib/ui/chat_screen.dart), [KI-Proxyclient](lib/logic/gemini_ai_service.dart), [Backend-Proxy](backend/server.js#L3030) |
+| Bestaetigte Kind-/Gesundheits-/Memorywerte, Consent-Version/-Revision; optional Geburtsdatum/Geschlecht | Kontobezogenes KI-Gedaechtnis und personalisierter Kontext | Render/Prisma-DB; freigegebener minimierter Kontext an Gemini. Lokaler Anzeigename von neuem neutralem Servernamen getrennt; alte Originale bleiben. Ausschalten ist nicht Loeschen. | [Memoryclient](lib/logic/ai_memory_service.dart), [Settings](lib/ui/ai_memory_settings_screen.dart), [Schema](backend/prisma/schema.prisma), [Kontext](backend/server.js) |
+| Kindesalter, Allergien, Gerichtswunsch | Kindgerechte Familienrezepte | Lokales Profil/Dossier -> Render -> Gemini nach eigenem Rezept-Consent; keine automatische Publikation. | [Rezepte](lib/logic/family_recipe_service.dart), [Consent](lib/logic/family_recipe_consent.dart) |
+| Kuehlschrank-Fotobytes; bestaetigte Zutaten, Alter/Allergien fuer Rezept | Zutaten erkennen / Rezept vorschlagen | Bild base64 -> Render -> Gemini, danach Rezeptkontext; Fotoanalyse ist kein Backend-Publishing. Provider-/Log-Retention unbekannt, kein "nirgends gespeichert"-Versprechen. | [Kuehlschrankservice](lib/logic/fridge_recipe_service.dart), [KI-Transport](lib/logic/gemini_ai_service.dart) |
+| Verschenkmarkt-Fotobytes | Optionale Titel-/Kategorie-/Beschreibungsvorschlaege | Render -> Gemini nach Foto-Consent; Bild nicht vor Uebertragung anonymisiert. Manuelle Eingabe bleibt moeglich. | [Fotoanalyse](lib/logic/treasure_photo_analysis_service.dart) |
+| Entwicklungsantworten/Profilkontext, Alter, Scores; neutraler `[KIND]`-Platzhalter | Entwicklungsbericht erstellen | Render -> Gemini nach Bericht-Consent; Name erst lokal im Bericht eingesetzt. Bericht/History lokal konto-/gastbezogen gespeichert. | [Prompt](lib/ui/entwicklung_impulse_screen.dart#L1159), [Berichtservice](lib/logic/development_report_service.dart) |
+| Wegweiser-Freitext, Situation, Land, Alter, Suchanfrage | Allgemeine/individualisierte Leistungsorientierung | Nach Consent Render -> Gemini; optional Google-Suche. Allgemeiner Fallback ist keine individuelle Fachberatung. | [Wegweiser](lib/ui/benefit_guide_screen.dart), [KI-Client](lib/logic/gemini_ai_service.dart) |
+| Kind-Dossier, Allergien, Budget/Finanzwerte, lokale Entwuerfe/Consents | Lokale Appfunktionen und Kontotrennung | JSON/SharedPreferences lokal, keine zugesagte App-Verschluesselung. Auswahl fuer KI/Sharing ist gesonderter externer Pfad; OS-/Browserbackups nicht aus Repo bewiesen. | [Zentrale](lib/logic/family_hub_store.dart), [Finanzen](lib/logic/family_finance_store.dart), [Chatstore](lib/logic/chat_account_store.dart) |
+| Suchtext oder gerundete GPS-/Pin-Koordinaten; Kartenkachelanfragen | Ortssuche, Karte, Discovery | Nominatim/OpenStreetMap direkt; Matchingprofil ans eigene Backend. Rundung nur nach geprueftem Pfad, keine Behauptung "kein Standorttransfer". | [Ortssuche](lib/logic/location_autocomplete_service.dart), [Event-Geocoder](lib/logic/event_geocoder.dart), [Netzwerk](lib/ui/eltern_netzwerk_screen.dart) |
+| Fotos, Anzeigen-/Rezepttexte, Autorname/UID, Sichtbarkeit | Bewusste Community-Veroeffentlichung | Backend/Medien-URL und jeweilige Zielgruppe. `/uploads` wird statisch bereitgestellt: URL-Sichtbarkeit gesondert von Listen-/Rezeptsichtbarkeit pruefen. KI-Consent ist keine Publikationsfreigabe. | [Rezept-Publishing](lib/logic/family_recipe_share_service.dart), [Upload/static](backend/server.js#L11583) |
+| Kalender-/Event-/Netzwerk-/Freundschaftsdaten, Kontokennungen | Synchronisierung, Einladungen, Match | Eigenes Backend je aktivem Flow, nicht pauschal lokal. Im Event-Einladungstext rohe Host-ID sichtbar. | [Kalendersync](lib/logic/calendar_backend_service.dart), [Freundschaft](lib/logic/friendship_service.dart), [Events](lib/ui/events_activities_screen.dart) |
+| FCM-Token, User-ID, Benachrichtigungspayload | Pushzustellung und Zielnavigation | Backend/Firebase Messaging; lokale Reminder separat OS-lokal. Logout/Token-Abmeldung manuell nachweisen. | [Notifications](lib/logic/notification_service.dart), [Backend](backend/server.js) |
+| Fehler, Stacktraces, technischer Kontext/Logtexte | Fehlerdiagnose | Firebase Crashlytics auf unterstuetzten Mobil-Releasepfaden; Web ausgeschlossen. Freitext kann sensible Anteile enthalten; Fristen nicht aus Code bewiesen. | [ErrorReporting](lib/logic/error_reporting_service.dart) |
+| CSV/PDF/Text/Bilder, je ausgewaehltem Export | Nutzerinitiiertes Teilen | OS-Share-Ziel/Clipboard bzw. Ziel-App; deren Weiterverarbeitung nicht unter Appkontrolle. Kein automatischer KI-Transfer durch OS-Sharing. | [CSV](lib/ui/finance_budget_screen.dart), [PDF](lib/ui/entwicklung_impulse_screen.dart), [Zentrale](lib/ui/familien_zentrale_screen.dart) |
+| Zahlungs-/Transaktions-/Kontaktdaten, falls Zahlungsflow aktiviert | Zahlungsabwicklung | Stripe-Pfad im Backend vorhanden; tatsaechliche Release-Erreichbarkeit/Config gesondert feststellen. Keine erfundene pauschale Collection-Aussage. | [Backend-Stripepfade](backend/server.js), [Dependency](pubspec.yaml) |
+
+- [ ] Nutzer liefert reale Verarbeitungsrollen/Empfaenger, Regionen,
+  Aufbewahrungs-/Backupfristen, Loesch-/Exportverfahren und aktive Dienstpfade.
+- [ ] Fachliche Pruefung gleicht **jede Zeile** mit Privacy Policy,
+  App Privacy und Data Safety nach deren jeweils eigenen Definitionen ab.
+- [ ] Keine Aussagen "keine Daten geteilt", "voll anonym", "30 Tage" oder
+  "vollstaendig uebersetzt" ohne belegten Betriebs-/Inhaltsnachweis.
+
+#### 6.1.3 Geraete-QA: iOS und Android separat abhaken
+
+Pro Plattform Kopf ausfuellen: App-SHA/Buildnummer ____, signierter Build ____,
+OS/Modell ____, Tester/Datum ____, Backend/Testumgebung ____,
+Nachweis/Abweichung ____. `[ ]` erst nach Durchfuehrung abhaken.
+Eigene A/B-Testkonten, Gast und synthetische Daten verwenden.
+Schreibende/Provider-Tests nur in freigegebener Testumgebung; nicht durch
+diese Liste Produktionszugriff ableiten. Ablehnungstests duerfen keinen
+KI-Request ausloesen; Netzwerkbelege aus Testinstrumentierung redigieren.
+Abschnitt 3 bleibt der detaillierte Erwartungskatalog.
+
+Fuer **jeden Consent**: erste Nutzung, Ablehnung, Zurueck/Abbruch, Zustimmung,
+persistierter Ack, Neustart, Gast -> A -> Logout -> B -> A; DE/EN/TR/KU,
+grosse Schrift und Speicher-/Netzwerkfehler. Fehlenden Ack in Testharness
+simulieren, nicht produktive Preferences sabotieren. Spaete Antworten
+duerfen nach Kontowechsel nicht beim neuen Konto landen.
+
+| Szenario / bestandenes Kriterium | iOS | Android |
+|---|---|---|
+| Familienrezept-Consent: Ablehnung nur lokale Inspiration; Alter/Allergien/Gericht erst nach Zustimmung und Ack an KI. | [ ] | [ ] |
+| Kuehlschrank-Consent: Legacy-Zustimmung gilt nicht; kein Bildtransfer bei Ablehnung/Ack-Fehler; Kamera-/Galerieabbruch ohne Request, Retry-/Kontowechselgrenzen. | [ ] | [ ] |
+| Verschenkmarkt-Foto-Consent: Ablehnung erlaubt manuelle Anzeige; Bild behalten; KI-Analyse getrennt von sichtbarer Publikationsfreigabe. | [ ] | [ ] |
+| Entwicklungsbericht-Consent: Empfaenger Google Gemini sichtbar; A-B-A waehrend Retry; keine fremden Berichte/History/Scores; Name lokal eingesetzt, Legacydaten nicht automatisch zugeordnet. | [ ] | [ ] |
+| Wegweiser-Consent: allgemeine Leistungen bei Ablehnung; individueller Request erst nach Ack; Ausfallfallback erkennbar allgemein. | [ ] | [ ] |
+| Chat-Consent: kein Senden vorher; Fehler/Tageslimit ehrlich; Gast/A/B-Zustimmungen getrennt; spaete Antwort nicht an B. | [ ] | [ ] |
+| Memory-Zusatz-Consent: unabhaengig vom Chat; Aus/Ein invalidiert laufende Nutzung; Ausschalten vs. explizites Loeschen klar; kein neuer Transfer ohne gueltige Zustimmung. | [ ] | [ ] |
+| Standortverarbeitungsinfo und Profil-Claim: Nominatim/OSM-Hinweis sichtbar; GPS/Pin/Manuelle Suche, Ablehnung von OS-Standortrecht; lokaler Legacyentwurf nur nach ausdruecklicher Kontozuordnung, nicht automatisch aktiv/veroeffentlicht. | [ ] | [ ] |
+| Kamera/Galerie: erlaubt, verweigert, nachtraeglich widerrufen; leeres/ungueltiges/grosses Bild, Hintergrund/Neustart, Offline/Timeout; kein falscher Upload-/KI-Erfolg. | [ ] | [ ] |
+| Kuehlschrankausgabe: erkannte Zutaten korrigierbar, Allergien plausibel; vorhandene Altersrundung/Default 3 separat fachlich bewerten. | [ ] | [ ] |
+| Treasure/Rezepte: Entwurf nach Neustart, gerundeter Ort, Sichtbarkeit privat/Freunde/oeffentlich, Reservierung/Storno/Teilfehler ohne Doppelaktion; oeffentliche Foto-URL-Grenze bewusst pruefen. | [ ] | [ ] |
+| Logout ohne Neustart: A-Dossier/Allergien/Geld/Profil/Entwurf/Chat/Memory angelegt; B sieht nichts davon in Screens, Suche, Bildern, Controllern, Share oder Push; zurueck A eigene Daten erhalten. | [ ] | [ ] |
+| Logout waehrend Laden/Speichern/Claim/Upload/KI: keine spaeten Ergebnisse oder Writes im B-Scope; bereits gesendete Requests nicht als rueckwirkend geloescht darstellen. | [ ] | [ ] |
+| DE -> EN -> TR -> KU: offene Dialoge, Fehler, Consent, FAQ-Suche, lange Texte, Tastatur und 200/300-Prozent-Schrift; weiterer Sprachpicker mit tatsaechlichem EN-/DE-Fallback, keine Volluebersetzungsbehauptung. | [ ] | [ ] |
+| Sharing: Geld/Zentrale/Netzwerk, Budget-CSV, Entwicklungs-PDF; Ziel-App fehlt, Abbruch, Clipboardfehler, keine A-Daten bei B; iPad-Popover inkl. CSV gesondert pruefen. | [ ] | [ ] |
+| Push/Reminder: Permission, Vorder-/Hintergrund/Cold-Start, Zielnavigation, Tokenrefresh/Logout; Uhrzeit/Zeitzone/DST; Ruhemodus nicht als Cancel aller bereits geplanten Reminder darstellen. | [ ] | [ ] |
+| Recht-/Support-/amtliche Links ohne Login; TR-Leistungsangaben und Wohngeld-Link verifiziert; Deaktivierung/Loesch-/Exportweg mit Testidentitaet nachvollziehbar. | [ ] | [ ] |
+
+- [ ] iPad-Sharing-Abnahme falls unterstuetzt; keine Freigabe aus iPhone
+  ableiten (CSV-Popover ist noch kein bestandener Nachweis).
+- [ ] Abweichungen mit redigiertem Nachweis klassifizieren; Blocker beheben
+  und betroffene Szenarien erneut ausfuehren, nicht als Restrisiko verstecken.
+
+### 6.2 Stufe 2 - Bewusste Restrisiken dokumentieren und entscheiden
+
+Diese Stufe darf parallel vorbereitet werden, ersetzt aber keine Stufe-1-
+Abnahme. Nutzer dokumentiert akzeptierten Umfang, Begruendung, Termin und
+Verantwortlichen. Copilot kann Vorlagen/Codebelege liefern, nicht das reale
+Betriebsrisiko stellvertretend akzeptieren.
+
+| Entscheidung | Grenze / konkrete Freigabe |
+|---|---|
+| [ ] SMS / OTP | Flow bleibt nicht verdrahtet und nicht als produktionsfunktional beworben. Festes Secret ist aktiv, SMS-Versand/geteilter Speicher fehlen. Vor Aktivierung eigener Fix + Abnahme zwingend. |
+| [ ] Lokale Verschluesselung | Schutzbedarf fuer Kind-/Gesundheits-/Finanzdaten und OS-/Browserbackups bewerten. App-Verschluesselung nur bei begruendet akzeptierter Grenze verschieben; Kontoskope nicht als Verschluesselung bezeichnen. |
+| [ ] `hostUserId` | Sichtbare technische Kennung ausdruecklich akzeptieren oder vor Launch ersetzen lassen; keine erfundenen Hostnamen. |
+| [ ] Volluebersetzung | Ehrlichen Launch-Sprachumfang/Fallback festlegen. Volluebersetzung darf spaeter kommen, unverstaendlicher Consent/Rechtstext fuer die adressierte Zielgruppe nicht. |
+| [ ] Restore-Probe / Rollback | Backup/PITR ist **kein** Restore-Nachweis. Testplan, isoliertes Ziel, Wiederherstellungs-/Consent-Pruefung und kompatibler Rollback vorbereiten. Abschnitt 5 stuft die sichere Probe weiterhin als Pflicht vor Launch ein; Aufnahme hier bedeutet **keine automatische Verschiebung**. Verschiebung waere eine gesonderte ausdrueckliche Aenderung der Freigabekriterien. |
+
+### 6.3 Stufe 3 - Nach Launch, separat priorisieren
+
+| Backlog | Grenze / naechster Auftrag |
+|---|---|
+| [ ] Dependency-PRs | #35-#39 und #93 einzeln auf aktuelles main, API-/Native-Kompatibilitaet und volle CI pruefen. #33/#34 sind bereits geschlossen; Pages-Upgrades in #163, Gate nicht durch alte Workflows ueberschreiben. Sicherheitsfixes aus Stufe 1 sind **nicht** durch diesen Backlog auf nach Launch verschoben. |
+| [ ] Alt-Features | #22 Nutzersync, #27 Startup-Fast-Path, #28 private Gruppen/unbegrenzte Einladungen separat fachlich entscheiden; #28 hatte zuletzt fehlgeschlagenes analyze. Kein pauschales Mergepaket. |
+| [ ] Vertiefte Memory-Staging-Abnahme | Zusaetzliche Belastungs-/Langzeit-/Randfallmatrix, Provider-Ausfaelle, konkurrierende Revisionen und wiederholte Kontowechsel mit synthetischen Daten auf Staging erweitern. **Pflichtbasis vor Launch bleibt:** authentifizierte Settings-Abnahme, gueltiger Consent/Revision, Widerruf/Transfergrenze und sichere Betriebs-/Rollbacknachweise aus Abschnitt 5. Ist diese Basis unbewiesen, Memory nicht als launchfreigegeben behandeln; vor Verschiebung eigenen Scope-/Deaktivierungsentscheid verlangen. |
+
+**Reihenfolge:** Stufe 1 belegen und Entscheidungen aus Stufe 2 abschliessen;
+danach finales Freigabeprotokoll aus Abschnitt 5. Erst mit ausdruecklicher
+Launchfreigabe veroeffentlichen/Stores freigeben; Stufe 3 separat bearbeiten.
