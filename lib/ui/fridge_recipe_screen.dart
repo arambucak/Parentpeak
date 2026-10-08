@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/family_recipe_share_service.dart';
 import 'package:parentpeak/logic/fridge_recipe_service.dart';
+import 'package:parentpeak/logic/fridge_photo_consent.dart';
+import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
@@ -21,16 +22,22 @@ import 'package:parentpeak/logic/family_hub_store.dart';
 /// → kindgerechtes Rezept generieren → fehlende Zutaten mit einem Tap auf die
 /// Einkaufsliste setzen.
 class FridgeRecipeScreen extends StatelessWidget {
-  const FridgeRecipeScreen({super.key});
+  const FridgeRecipeScreen({super.key, this.service, this.picker});
+
+  final FridgeRecipeService? service;
+  final ImagePicker? picker;
 
   @override
   Widget build(BuildContext context) => FamilyHubAccountBoundary(
-    builder: (_) => const _ScopedFridgeRecipeScreen(),
+    builder: (_) => _ScopedFridgeRecipeScreen(service: service, picker: picker),
   );
 }
 
 class _ScopedFridgeRecipeScreen extends StatefulWidget {
-  const _ScopedFridgeRecipeScreen();
+  const _ScopedFridgeRecipeScreen({this.service, this.picker});
+
+  final FridgeRecipeService? service;
+  final ImagePicker? picker;
 
   @override
   State<_ScopedFridgeRecipeScreen> createState() => _FridgeRecipeScreenState();
@@ -42,9 +49,9 @@ class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
   final _scope = FamilyHubStore.instance.scope;
   static const _accent = Color(0xFFE8543A);
 
-  final _service = FridgeRecipeService.instance;
+  late final _service = widget.service ?? FridgeRecipeService.instance;
   final _shareService = FamilyRecipeShareService.instance;
-  final _picker = ImagePicker();
+  late final _picker = widget.picker ?? ImagePicker();
   final _addCtrl = TextEditingController();
 
   _Phase _phase = _Phase.start;
@@ -61,47 +68,22 @@ class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
     super.dispose();
   }
 
-  /// Einmalige, transparente Einwilligung bevor ein Kühlschrank-Foto an die KI
-  /// geht. Das Foto und die Allergie-Angaben werden zur Zutaten-/Rezept-
-  /// erstellung an unseren KI-Dienst gesendet; der Nutzer erfährt das vorher
-  /// und bestätigt aktiv. Zustimmung wird gemerkt.
-  Future<bool> _ensurePhotoConsent() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('fridge.ai_photo_consent') == true) return true;
-    if (!mounted) return false;
-    final theme = Theme.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(context.tr('fridge_consent_title')),
-        content: Text(
-          context.tr('fridge_consent_body'),
-          style: theme.textTheme.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.tr('cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(context.tr('fridge_consent_accept')),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await prefs.setBool('fridge.ai_photo_consent', true);
-      return true;
-    }
-    return false;
-  }
+  Future<bool> _ensurePhotoConsent() => ensureAccountAiConsent(
+    context,
+    consent: _service.consent,
+    titleKey: 'fridge_consent_title',
+    bodyKey: 'fridge_consent_body',
+    acceptKey: 'fridge_consent_accept',
+    failedKey: 'fridge_consent_failed',
+  );
 
   Future<void> _pickPhoto(ImageSource source) async {
+    final owner = _service.consent.scope;
     if (!await _ensurePhotoConsent()) return;
     if (!mounted) return;
     try {
+      await _service.consent.require(owner);
+      if (!mounted) return;
       final img = await _picker.pickImage(
         source: source,
         maxWidth: 1400,
@@ -113,9 +95,9 @@ class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
         _phase = _Phase.detecting;
       });
       final languageCode = Localizations.localeOf(context).languageCode;
-      final bytes = await img.readAsBytes();
       final detected = await _service.detectIngredients(
-        bytes,
+        img,
+        expectedScope: owner,
         languageCode: languageCode,
       );
       if (!mounted) return;
@@ -131,6 +113,12 @@ class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
           ),
         );
       }
+    } on FridgePhotoConsentRequiredException {
+      if (!mounted) return;
+      setState(() => _phase = _Phase.start);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('fridge_consent_failed'))),
+      );
     } on AiRateLimitException catch (e) {
       if (mounted) {
         setState(() => _phase = _Phase.start);
@@ -179,13 +167,23 @@ class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
       return;
     }
     final languageCode = Localizations.localeOf(context).languageCode;
+    final owner = _service.consent.scope;
+    if (!await _ensurePhotoConsent() || !mounted) return;
     setState(() => _phase = _Phase.generating);
     FamilyRecipe? recipe;
     try {
       recipe = await _service.generateFromIngredients(
         _ingredients,
+        expectedScope: owner,
         languageCode: languageCode,
       );
+    } on FridgePhotoConsentRequiredException {
+      if (!mounted) return;
+      setState(() => _phase = _Phase.ingredients);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('fridge_consent_failed'))),
+      );
+      return;
     } on AiRateLimitException catch (e) {
       if (!mounted) return;
       setState(() => _phase = _Phase.ingredients);
