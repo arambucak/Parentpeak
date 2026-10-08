@@ -1,11 +1,13 @@
 # ParentPeak: Weg zum sicheren Launch
 
 Stand: 8. Oktober 2026. Gepruefter Checkout: `/Users/aram/Parentpeak-1`,
-Release-`main`: `138ca5d93aafc7b099361c8b472fb7dd75cf9cc0`.
-Live-Backend: `64358dfbaf4daa3bb2dcc508f96fc4bd07fd049a`.
-Unterschiedliche SHAs sind hier kompatibel: beide haben denselben vollstaendigen
-`backend/`-Tree `09c1569063977c66184729261addbc01b355a22d`.
-Dieser Doku-PR #160 ist noch ungemergt; er enthaelt #156.
+Release-`main` und Live-Backend:
+`cb1350ca68ddb904cff3f3aca0327cd966bb1ce7` (#167).
+`backend/`-Tree: `626ed19ab4b09428c7fd21a75563bfa9e96ebcbd`.
+#160 ist gemergt und veroeffentlicht; #156/#158 sind als ersetzt geschlossen.
+Security-Code mit #167 live abgenommen. Technischer Nachlauf:
+**Node 24.21.0 pinnen - PR vorbereitet, Produktionsabnahme noch offen.**
+Diese Runtime-PR aendert den Backend-Tree; der neue Stand ist noch nicht live.
 
 Das [Kachel-Audit](AUDIT_PLAN.md#gesamt-abschluss-des-kachel-audits--7-oktober-2026)
 ist abgeschlossen: zehn Kacheln, 53 Fix-PRs #103-#155. **Das ist keine
@@ -28,21 +30,24 @@ Statusbegriffe:
 
 | Bereich | Verifizierter Stand |
 |---|---|
-| Gemergter Code / CI | `analyze: SUCCESS` fuer Release-SHA `138ca5d`: [Run 37766825467](https://github.com/arambucak/Parentpeak/actions/runs/37766825467), volle Fluttertests, Backendunits, Analyzer-/Baselinepruefung. |
+| Gemergter Code / CI | `analyze: SUCCESS` fuer Release-SHA `cb1350c`: [Run 37778703512](https://github.com/arambucak/Parentpeak/actions/runs/37778703512), volle Fluttertests, 212 Backendunits, Analyzer-/Baselinepruefung. |
 | Physische Apple-/Android-Abnahme | Nicht nachgewiesen. `apple-prepare`, `ios-smoke-build`, `macos-smoke-build` sind in diesem Lauf **SKIPPED**. |
-| Web-Auslieferung | **Pages erfolgreich veroeffentlicht:** [Run 37766825449](https://github.com/arambucak/Parentpeak/actions/runs/37766825449) fuer `138ca5d`; beide Gates bestaetigen kompatibles Live-Backend `64358df`. Kein unabhaengiger Browser-/CDN-/Custom-Domain-Cache- oder Geraete-QA-Nachweis. |
+| Web-Auslieferung | **Pages erfolgreich veroeffentlicht:** [Run 37778703514](https://github.com/arambucak/Parentpeak/actions/runs/37778703514) fuer `cb1350c`; beide Gates bestaetigen exakt denselben Live-Backend-SHA. Kein unabhaengiger Browser-/CDN-/Custom-Domain-Cache- oder Geraete-QA-Nachweis. |
 | #151-Produktionsmigration | **Schema-Mismatch behoben:** nach ausdruecklicher Nutzerfreigabe am 7. Oktober 2026 um 22:37:53 MESZ erfolgreich gegen die Render-DB angewandt. Beide nullable TEXT-Spalten, erfolgreicher Migrationseintrag und keine ausstehenden Migrationen unmittelbar read-only bestaetigt (Abschnitt 0.2). |
 | Backup vor Migration | Nutzer bestaetigt: PITR 3 Tage aktiv, vollstaendiger Render-Export `completed`, Sicherungspunkt 7. Oktober 2026, 22:32 Uhr (als MESZ gefuehrt). Kein unabhaengiger Restore-Test nachgewiesen. |
-| Laufende Render-Version | Service `Parentpeak`, `64358df`, [Deploy dep-db3d4qe7bikc73bt6kdg](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0/deploys/dep-db3d4qe7bikc73bt6kdg), Live seit 8. Oktober 01:16:04 MESZ. Build erfolgreich, Pre-Deploy `No pending migrations to apply`, Readiness-Vertrag und Health HTTP 200. Nach #157/#161/#159 kein neuer Renderdeploy beobachtet. |
+| Laufende Render-Version | Service `Parentpeak`, `cb1350c`, [Deploy dep-db3ov16q1p3s73fgnhh0](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0/deploys/dep-db3ov16q1p3s73fgnhh0), Live seit 8. Oktober 14:42:55 MESZ. Build erfolgreich, Pre-Deploy `No pending migrations to apply`, Readiness-Vertrag und Health HTTP 200. Runtime 26.11.1 bestaetigt; Rueckkehr zu exakt Node 24.21.0 LTS vorbereitet, noch nicht deployt. |
 | Deploy-Gate | #163 aktiv und praktisch verifiziert: erfolgreiche genaue main-CI, versioniertes Backend-/Schemazeugnis vor Build und nochmals vor Publikation. Identischer kompletter Backend-Tree erlaubt aelteren Live-SHA; keine Health-only-Freigabe. |
 | Consent-/FAQ-Fixes | #157, #161 (enthaelt #158) und #159 gemergt und erfolgreich auf Pages veroeffentlicht; Nachweise in 0.3. #158 als ersetzt geschlossen. Manuelle Geraete-/Rechtsabnahme bleibt offen. |
 | Multer / OTP | #165 bringt Multer 2.4.0 mit `fieldArrayIndexLimit: 0` und Release-Nachweis live. Nutzer bestaetigte installierte Version read-only. OTP_HASH_SECRET durch Nutzer gespeichert und mit #163-Deploy wirksam; Fallback-Warnung im neuen Startlog weg. SMS-/OTP-Flow trotzdem nicht produktionsfunktional (0.4). |
+| Weitere Security-Fixes / Runtime | #167 live: proxy-addr 2.0.8, fast-uri 3.1.8, fast-xml-parser 5.10.1, Nodemailer 10.0.16. Render-Shell-Audit: critical 0, high 7, moderate 13; vier Zielpakete weg. Offene engines-Range fuehrte zu Node 26 Current. Pin-Fix ist vorbereitet, **nicht als live erledigt abgehakt** (0.5). |
 | Audit-Testnachweise | Lokaler Abschlussplan: 134 gezielte Tests, 29 Chrome-Tests, Web-JS-Release gruen; volle lokale Suite 902 bestanden / 1 Skip / nur 12 bekannte Events-Firebasefehler; Analyzer 11 Infos. Nicht als neu ausgefuehrte Tests dieses Dokumentationsauftrags ausgeben. |
 
 Fuer dieses Dokument wurden Repo-Dateien, GitHub-Metadaten/Logs und das
 freigegebene Render-Dashboard gelesen. Der vorhandene Read-only-Diagnoseworkflow
 wurde ausgefuehrt; er liest ausschliesslich Schema-/Migrationsmetadaten.
-Dieser Dokumentations-PR aendert keinen Produktivcode. Die spaeter gesondert
+Die urspruengliche Doku-PR #160 aenderte keinen Produktivcode; die aktuelle
+Runtime-PR aendert Node-Auswahl, Lifecycle-Pruefungen und Backend-CI.
+Die spaeter gesondert
 freigegebene Produktionsmigration ist in Abschnitt 0.2 dokumentiert.
 Die separat freigegebenen Deploys/Merges sind unten dokumentiert. Dieser
 Doku-Auftrag fuehrt keinen weiteren Produktionsmerge/Deploy, keine Store-
@@ -162,6 +167,8 @@ Alle Merges erfolgten nach einzelner ausdruecklicher Nutzerfreigabe.
 | #157: Kuehlschrank-Consent | `b029834b400e49aabb63ca59c081755926a43df3`, Merge 11:40:40 MESZ. [main-CI 37758311867](https://github.com/arambucak/Parentpeak/actions/runs/37758311867) und [Pages 37758311914](https://github.com/arambucak/Parentpeak/actions/runs/37758311914) SUCCESS. Gates 11:45:19 / 11:47:34 akzeptieren Backend `64358df`. |
 | #161: Entwicklungsbericht-Consent inklusive #158 | `2d81164d2700cc6f65692f21e8b4f0df566f0a3d`, Merge 12:20:38 MESZ. [main-CI 37762847460](https://github.com/arambucak/Parentpeak/actions/runs/37762847460) und [Pages 37762847484](https://github.com/arambucak/Parentpeak/actions/runs/37762847484) SUCCESS. Gates 12:25:38 / 12:28:01 akzeptieren Backend `64358df`. #158 danach als ersetzt geschlossen. |
 | #159: ehrlicher FAQ-Sprachhinweis | `138ca5d93aafc7b099361c8b472fb7dd75cf9cc0`, Merge 12:56:50 MESZ. [main-CI 37766825467](https://github.com/arambucak/Parentpeak/actions/runs/37766825467) und [Pages 37766825449](https://github.com/arambucak/Parentpeak/actions/runs/37766825449) SUCCESS. Gates 13:01:35 / 13:04:23 akzeptieren Backend `64358df`. |
+| #160: Launch-Doku inklusive #156 | `fcd94920786b43d35b3ce15b505023ebfde36618`, Merge 13:25:19 MESZ. [main-CI 37769932540](https://github.com/arambucak/Parentpeak/actions/runs/37769932540) und [Pages 37769932629](https://github.com/arambucak/Parentpeak/actions/runs/37769932629) SUCCESS. Gates 13:29:18 / 13:32:02 akzeptieren Backend `64358df`. #156 danach geschlossen. |
+| #167: vier gezielte Security-Updates | `cb1350ca68ddb904cff3f3aca0327cd966bb1ce7`, Merge 14:41:38 MESZ. Render Live 14:42:55, [main-CI 37778703512](https://github.com/arambucak/Parentpeak/actions/runs/37778703512) und [Pages 37778703514](https://github.com/arambucak/Parentpeak/actions/runs/37778703514) SUCCESS. Gates 14:45:21 / 14:47:31 pruefen exakt neuen Backend-SHA. Keine Pages-Neuausloesung. |
 
 Nach #157/#161/#159 blieb Render Live auf `64358df`, Readiness `ready`;
 kein neuer Renderdeploy beobachtet. Client-Doku liegt ohne Inhaltsverlust in
@@ -196,6 +203,47 @@ App-Einstieg; die aktuelle Home-Kachel oeffnet ElternNetzwerkScreen.
 Nutzerentscheidung. **Vor Aktivierung zwingend:** echten SMS-Versand,
 gemeinsamen kurzlebigen OTP-Speicher und ehrliche Versand-/Fehleranzeige
 nachruesten und abnehmen. Ein festes Secret allein repariert den Flow nicht.
+
+### 0.5 Technischer Nachlauf: Node-Runtime pinnen
+
+Nach #167 bestaetigte die read-only Render-Shell Nodemailer 10.0.16,
+Commit `cb1350c` und Node 26.11.1. Produktions-Audit: 20 Meldungen
+(13 moderate, 7 high, 0 critical), die vier Zielpakete nicht mehr gemeldet.
+Build/Pre-Deploy/Start/Readiness/Health abgenommen, Startlog ohne Fehler.
+Nutzer bestaetigte vor dem Merge Render-Export completed am 8. Oktober
+14:36 MESZ und PITR 3 Tage. Backup ist kein Restore-Test.
+
+Node 26 ist am 8. Oktober Current; Node 24 ist LTS.
+Die Runtime-PR bereitet [backend/.node-version](backend/.node-version)
+mit **24.21.0** und engines `>=24.0.0 <25.0.0` vor.
+[Runtime-Guard](backend/node_runtime.cjs) prueft exakt die tatsaechliche
+Node-Version vor Build-Installation, Pre-Deploy und Start. CI liest denselben
+Backend-Pin. Pin und Guard liegen im vollstaendig Gate-geprueften Backend-Tree.
+Prisma 7.8.0 und Nodemailer 10.0.16 bleiben unveraendert und kompatibel.
+
+Render-Prioritaet: NODE_VERSION > .node-version > .nvmrc > engines.
+Dokumentierte RootDir-Regel: Dateien/Kommandos relativ zum Service-Root
+`backend`; `.node-version` liegt dort. Read-only Dashboardpruefung am
+8. Oktober: kein NODE_VERSION-Eintrag und keine verknuepfte Environmentgruppe
+sichtbar. Kein Dashboardwert geaendert. Ob die Datei beim echten Build exakt
+so ausgewaehlt wird, bleibt **Deploy-Abnahme**, kein vorweggenommener Nachweis.
+Der Guard verhindert Erfolg auf einer abweichenden Runtime auch bei Override.
+
+- [x] Code-Auswahl vorbereitet; exakter Pin im Backend-Tree.
+- [ ] Nutzer: frisches Backup/PITR und eigener Merge-/Deployentscheid.
+- [ ] Render-Buildlog und Shell: **exakt 24.21.0**, nicht 26.x oder anderer Patch.
+- [ ] Neuer main-SHA Live, Pre-Deploy No pending migrations, Readiness mit
+  beiden Migrationen/nullable-text, Health 200 und Startlog ohne Fehler.
+- [ ] Audit weiter critical 0 und vier Fixpakete nicht gemeldet.
+- [ ] main-CI und beide Pages-Gates auf kompatiblem neuen Backend erfolgreich.
+
+Erst danach Status **Node-Pin produktiv erledigt** setzen. Weitere 24.x-
+Patches bewusst per eigener PR und Tests freigeben; engines erlaubt die Linie,
+aber exakter Pin und Guard verhindern automatische Patch-/Majorwechsel.
+#166 bleibt eine separate offene Doku-PR: ihre angehaengten Checklisten werden
+hier weder ersetzt noch geloescht. Nach diesem Runtime-Stand #166 auf main
+aktualisieren und die historischen Security-Entscheidungen als solche
+kennzeichnen, ohne manuelle Freigaben als bereits erteilt zu markieren.
 
 ## 1. Kritischer Rollout: Migration -> Backend -> App
 
@@ -424,7 +472,7 @@ Release-Verantwortliche die Bedingung und Restrisiken dokumentieren.
 | Entwicklungsfragen | [Question-Localization](lib/l10n/development_question_localizations.dart) hat EN/TR/KU; DE kommt aus dem Original. Andere Sprachen erhalten unveraendert deutsche Domains. | Grossprojekt **kann Post-Launch** fuer weitere Sprachen, wenn Launch-Sprachen/Inhaltsumfang ehrlich begrenzt oder der DE-Fallback sichtbar erklaert sind. Kein Volluebersetzungsversprechen fuer alle 16 auswaehlbaren Sprachen. |
 | FAQ: Planpraezisierung | Die 32 [FAQ-Rohdaten](lib/data/eltern_wissen_data.dart) sind ueberwiegend deutsch; [Service](lib/logic/eltern_wissen_service.dart) sucht darin. #159 liefert jetzt den sichtbaren Sprachhinweis im [aktiven Widget](lib/ui/widgets/eltern_wissen_widget.dart) live. | **Code/Pages erledigt, manuelle Sprach-QA offen.** Fachlich gepruefte Volluebersetzung und lokalisierte Suche bleiben Post-Launch; nicht als vollstaendig vier-sprachige FAQ bewerben. |
 | Telefon-Verifizierung / SMS | Festes OTP-Secret wirksam; Matching-OTP trotzdem ohne SMS-Versand und gemeinsamen Speicher. Separater Screen aktuell nicht verdrahtet (0.4). | Nach Nutzerentscheidung **kein aktueller Launch-Blocker**, aber **vor jeder Aktivierung zwingend nachruesten und testen**. Nicht als funktionierende SMS-Verifizierung bewerben. |
-| Weitere npm-Schwachstellen | Multer-Blocker mit #165 behoben, 2.4.0 plus Indexlimit live. Letzte gezielte Auditaufnahme nach Fix: 24 Produktionsmeldungen (13 moderate, 10 high, 1 critical); kein neues Audit in diesem Doku-Auftrag. | Verbleibende erreichbare Pfade und Risikoentscheidungen getrennt abnehmen. Keine pauschale Security-Freigabe aus Multer-Fix ableiten; kein npm audit fix --force oder Prisma-Downgrade. |
+| Weitere npm-Schwachstellen | Multer mit #165 und vier weitere Zielpakete mit #167 live behoben. Render-Shell-Audit am 8. Oktober: 20 Produktionsmeldungen (13 moderate, 7 high, 0 critical), vier Zielpakete weg. | Sechs bedingte Akzeptanzentscheidungen plus Prisma-Sammeleintrag weiterhin getrennt abnehmen; kein vollstaendig sauberer Audit. Kein npm audit fix --force oder Prisma-Downgrade. Node-LTS-Pin ist technischer Nachlauf, noch nicht live abgenommen. |
 | "EN-Fallback ueberall ehrlich?" | **Nein, nicht belegt und in geprueften Pfaden nicht einheitlich.** [AppStringsManager](lib/l10n/app_localizations_all.dart) und [AppLocalizations](lib/l10n/app_localizations.dart) fallen fuer fehlende UI-Keys auf EN zurueck; Entwicklungs-/FAQ-Inhalte auf DE. [Profilpicker](lib/ui/profile_safety_screen.dart) und [Familienprofilpicker](lib/ui/family_profile_screen.dart) zeigen keinen entsprechenden Vollstaendigkeits-/Fallbackhinweis. [Rechtliches](lib/ui/legal_info_screen.dart) enthaelt deutsche Festtexte. | **Vor Launch noetig:** Sprachumfang und EN-/DE-Inhaltsfallback ehrlich kommunizieren; sicherheitsrelevante Consent-/Rechtstexte muessen fuer die tatsaechlich adressierten Nutzer verstaendlich sein. Keine pauschale vier-/16-sprachige Freigabe aus Key-Tests ableiten. |
 | Release-QA | CI belegt Tests, aber Apple-Jobs am Release-SHA sind uebersprungen; kein physisches Geraeteprotokoll. [Aelterer Releaseguide](docs/release/RELEASE_EXECUTION_GUIDE_v1.0.0.md) behauptet noch "NO ISSUES/READY", Stand Juli. | **Vor Launch noetig:** Abschnitt 3 mit signierten aktuellen Builds. Alte gruen markierte Dokumente sind kein aktueller Nachweis. JS-Web ist geprueft; Wasm-/TTS-Warnungen nicht als behoben ausgeben. Wasm-Auslieferung nur nach eigener Abnahme. |
 | Finanzdaten/Links | [Audit-Restliste](AUDIT_PLAN.md) dokumentiert TR-"Cocuk Parasi", Wohngeld-HTTP403 und Quellenpflege. | **Vor Launch noetig:** [Quellenmatrix vom 06.10.2026](backend/README.md#familien-geld-einzelpruefung-amtlicher-leistungsdaten) konkret gegen die aktuellen Inhalte pruefen, nicht nur Disclaimer lesen. Bekannten 403 nicht ohne amtlichen Beleg durch eine erfundene URL ersetzen; unbestaetigtes TR-Programm nicht als amtlich bestaetigt vermarkten. Danach laufende Pflege. |
