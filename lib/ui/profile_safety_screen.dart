@@ -23,6 +23,8 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/services/image_upload_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
+import 'package:parentpeak/ui/widgets/profile_legacy_claim.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
@@ -61,11 +63,13 @@ class ProfileSafetyScreen extends StatefulWidget {
     required this.devices,
     required this.onRevoke,
     this.onBack,
+    this.accountStore,
   });
 
   final List<TrustedDevice> devices;
   final Future<bool> Function(String deviceUuid, String deviceName) onRevoke;
   final VoidCallback? onBack;
+  final ProfileAccountStore? accountStore;
 
   @override
   State<ProfileSafetyScreen> createState() => _ProfileSafetyScreenState();
@@ -78,6 +82,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   int _avatarRevision = 0;
   int? _avatarVersion;
   bool _avatarBusy = false;
+  late final _accounts = widget.accountStore ?? ProfileAccountStore.instance;
+  bool _childrenFailed = false;
+  int _childrenRequest = 0;
+  late ProfileAccountTicket _session;
 
   String? get _renderedAvatarUrl {
     final url = UserProfileService.resolveAvatarUrl(_avatarUrl);
@@ -92,9 +100,29 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   @override
   void initState() {
     super.initState();
+    _session = _accounts.ticket;
+    _accounts.addListener(_accountUpdated);
     _loadChildren();
     _loadAppVersion();
     _loadAvatar();
+  }
+
+  void _accountUpdated() {
+    final next = _accounts.ticket;
+    if (next.scope != _session.scope || next.generation != _session.generation) {
+      _session = next;
+      _avatarRevision++;
+      setState(() { _children = []; _avatarUrl = null; _avatarVersion = null;
+        _avatarBusy = false; _childrenFailed = false; });
+      _loadAvatar();
+    }
+    _loadChildren();
+  }
+
+  @override
+  void dispose() {
+    _accounts.removeListener(_accountUpdated);
+    super.dispose();
   }
 
   Future<void> _loadAvatar() async {
@@ -109,6 +137,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
 
   Future<void> _chooseAvatarSource() async {
     if (_avatarBusy) return;
+    final ticket = _accounts.ticket;
     final action = await showModalBottomSheet<Object?>(
       context: context,
       showDragHandle: true,
@@ -136,10 +165,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         ),
       ),
     );
-    if (!mounted) return;
+    if (!mounted || !_accounts.isCurrent(ticket)) return;
     if (action == 'remove' && _avatarUrl != null) {
       final removed = await UserProfileService.instance.setAvatarUrl(null);
-      if (removed && mounted) {
+      if (removed && mounted && _accounts.isCurrent(ticket)) {
         setState(() {
           _avatarRevision++;
           _avatarUrl = null;
@@ -156,6 +185,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       maxHeight: 900,
       imageQuality: 85,
     );
+    if (!mounted || !_accounts.isCurrent(ticket)) return;
     if (file == null) {
       if (mounted) setState(() => _avatarBusy = false);
       return;
@@ -167,9 +197,10 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
             file,
             folder: 'profiles/$uid',
           );
+    if (!mounted || !_accounts.isCurrent(ticket)) return;
     final saved =
         url != null && await UserProfileService.instance.setAvatarUrl(url);
-    if (!mounted) return;
+    if (!mounted || !_accounts.isCurrent(ticket)) return;
     setState(() {
       _avatarBusy = false;
       if (saved) {
@@ -199,8 +230,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   }
 
   Future<void> _loadChildren() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getStringList('profile.children') ?? [];
+    final ticket = _accounts.ticket;
+    final request = ++_childrenRequest;
+    try {
+    final data = await _accounts.read(ticket);
+    final saved = List<String>.from(data[ProfileAccountStore.childrenKey] ?? []);
     final children = <_ChildInfo>[];
     for (final raw in saved) {
       final parts = raw.split('|');
@@ -208,17 +242,39 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         children.add(_ChildInfo(name: parts[0], age: parts[1]));
       }
     }
-    if (mounted) setState(() => _children = children);
+    if (mounted && request == _childrenRequest && _accounts.isCurrent(ticket)) {
+      setState(() { _children = children; _childrenFailed = false; });
+    }
+    } on ProfileAccountChanged {
+      // A newer account load owns the UI.
+    } catch (error) {
+      debugPrint('Account children load failed: $error');
+      if (mounted && request == _childrenRequest && _accounts.isCurrent(ticket)) {
+        setState(() => _childrenFailed = true);
+      }
+    }
   }
 
   Future<void> _addChild() async {
+    final ticket = _accounts.ticket;
     final result = await _showAddChildDialog();
-    if (result == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getStringList('profile.children') ?? [];
-    saved.add('${result.name}|${result.age}');
-    await prefs.setStringList('profile.children', saved);
-    await _loadChildren();
+    if (result == null || !mounted || !_accounts.isCurrent(ticket)) return;
+    try {
+      await _accounts.update(ticket, (data) {
+        final saved = List<String>.from(data[ProfileAccountStore.childrenKey] ?? []);
+        saved.add('${result.name}|${result.age}');
+        data[ProfileAccountStore.childrenKey] = saved;
+      });
+      await _loadChildren();
+    } on ProfileAccountChanged {
+      // Discard a dialog or write from the previous session.
+    } catch (error) {
+      debugPrint('Account child save failed: $error');
+      if (mounted && _accounts.isCurrent(ticket)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('profile_account_failed'))));
+      }
+    }
   }
 
   Future<_ChildInfo?> _showAddChildDialog() async {
@@ -522,7 +578,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     ),
                   )),
               const SizedBox(height: 10),
-              if (_children.isEmpty)
+              ProfileLegacyClaim(domain: ProfileLegacyDomain.children, store: _accounts),
+              ProfileLegacyClaim(domain: ProfileLegacyDomain.onboarding, store: _accounts),
+              ProfileLegacyClaim(domain: ProfileLegacyDomain.location, store: _accounts),
+              if (_childrenFailed)
+                TextButton(onPressed: _loadChildren,
+                    child: Text(_t('profile_account_failed'))),
+              if (_children.isEmpty && !_childrenFailed)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -1317,6 +1379,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
 
   /// Anzeigenamen zentral aendern — gilt app-weit (Firebase + UserProfile).
   Future<void> _editDisplayName(String current) async {
+    final ticket = _accounts.ticket;
     final ctrl = TextEditingController(text: current);
     final newName = await showDialog<String>(
       context: context,
@@ -1341,14 +1404,25 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         ],
       ),
     );
-    if (newName == null || newName.isEmpty || newName == current) return;
+    ctrl.dispose();
+    if (!mounted || !_accounts.isCurrent(ticket) ||
+        newName == null || newName.isEmpty || newName == current) {
+      return;
+    }
     final messenger = ScaffoldMessenger.of(context);
     // Firebase displayName + serverseitiges UserProfile aktualisieren.
     try {
       await FirebaseAuth.instance.currentUser?.updateDisplayName(newName);
-    } catch (_) {}
-    await UserProfileService.instance.setDisplayName(newName);
-    if (!mounted) return;
+      _accounts.require(ticket);
+      await UserProfileService.instance.setDisplayName(newName, ticket: ticket);
+    } catch (error) {
+      debugPrint('Account display name update failed: $error');
+      if (mounted && _accounts.isCurrent(ticket)) {
+        messenger.showSnackBar(SnackBar(content: Text(_t('profile_account_failed'))));
+      }
+      return;
+    }
+    if (!mounted || !_accounts.isCurrent(ticket)) return;
     setState(() {});
     messenger.showSnackBar(SnackBar(
       content: Text('Anzeigename aktualisiert: $newName'),

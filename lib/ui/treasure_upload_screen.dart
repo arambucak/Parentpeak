@@ -100,6 +100,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
   void initState() {
     super.initState();
     AuthService.instance.addListener(_onAnalysisAccountChanged);
+    LocationService.instance.addListener(_locationChanged);
     _titleController.addListener(_onDraftChanged);
     _colorController.addListener(_onDraftChanged);
     _noteController.addListener(_onDraftChanged);
@@ -123,6 +124,7 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
 
   @override
   void dispose() {
+    LocationService.instance.removeListener(_locationChanged);
     _listingService.dispose();
     AuthService.instance.removeListener(_onAnalysisAccountChanged);
     _analysisRequest++;
@@ -151,6 +153,10 @@ class _TreasureUploadScreenState extends State<_ScopedTreasureUploadScreen> {
 
   void _onAnalysisAccountChanged() {
     if (mounted) setState(_invalidateAnalysis);
+  }
+
+  void _locationChanged() {
+    if (mounted) setState(() {});
   }
 
   @override

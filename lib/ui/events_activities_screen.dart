@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
 import 'package:parentpeak/logic/event_feed_session_cache.dart';
@@ -120,6 +120,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   bool _gpsDetecting = false;
 
   static const String _savedCityKey = 'events.saved_city';
+  late final ProfileAccountStore _locationAccounts = widget.viewerUserId == null
+      ? ProfileAccountStore.instance
+      : ProfileAccountStore(userIdProvider: widget.viewerUserId);
 
   @override
   void initState() {
@@ -147,6 +150,12 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   void _onAccountChanged() {
     if (!mounted || _feedUserId == _viewerUserId) return;
     _feedUserId = _viewerUserId;
+    final remembered = _session.locations[_viewerUserId ?? 'guest'];
+    _activeLocation = remembered?.$1;
+    _userLockedLocation = remembered?.$2 ?? false;
+    _fallbackCity = _activeLocation?.city ?? '';
+    _hasRealLocation = _activeLocation != null;
+    _gpsDetecting = false;
     _displayedQuery = null;
     _pendingQuery = null;
     _requestGeneration++;
@@ -158,7 +167,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       _lastFeedSyncAt = null;
       _aiFeedFailed = false;
     });
-    if (_hasRealLocation) _refreshFeed();
+    _loadSavedCityThenDetect();
   }
 
   void _onLanguageChanged() {
@@ -166,14 +175,27 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   Future<void> _loadSavedCityThenDetect() async {
+    final ticket = _locationAccounts.ticket;
     if (_hasRealLocation) {
       _refreshFeed();
       _detectGpsAndRefresh();
       return;
     }
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    final saved = prefs.getString(_savedCityKey);
+    Map<String, dynamic> data;
+    try {
+      data = await _locationAccounts.read(ticket);
+    } on ProfileAccountChanged {
+      return;
+    } catch (error) {
+      debugPrint('Event account location load failed: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('profile_account_failed'))));
+      }
+      return;
+    }
+    if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
+    final saved = data[_savedCityKey] as String?;
     if (saved != null && saved.isNotEmpty && mounted) {
       setState(() {
         _fallbackCity = saved;
@@ -183,7 +205,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       final coords = await (widget.geocoder ?? EventGeocoder.instance).resolve(
         saved,
       );
-      if (!mounted) return;
+      if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
       if (_activeLocation == null && _fallbackCity == saved && coords != null) {
         setState(
           () => _activeLocation = PickedLocation(
@@ -197,7 +219,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         _refreshFeed();
       }
     }
-    _detectGpsAndRefresh();
+    if (_locationAccounts.isCurrent(ticket)) _detectGpsAndRefresh();
   }
 
   // Search city: active location takes priority, saved city is the fallback.
@@ -212,6 +234,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       AuthService.instance.removeListener(_onAccountChanged);
     }
     languageService.removeListener(_onLanguageChanged);
+    if (widget.viewerUserId != null) _locationAccounts.dispose();
     super.dispose();
   }
 
@@ -221,12 +244,13 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   /// dann wird die Stadt immer aktualisiert und gespeichert.
   Future<void> _detectGpsAndRefresh({bool forceOverride = false}) async {
     if (!mounted || _gpsDetecting) return;
+    final ticket = _locationAccounts.ticket;
     setState(() => _gpsDetecting = true);
     var startingLocation = _activeLocation;
     if (widget.locationLoader != null) {
       try {
         final location = await widget.locationLoader!();
-        if (!mounted) return;
+        if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
         if (location != null &&
             (forceOverride || !_userLockedLocation) &&
             identical(startingLocation, _activeLocation)) {
@@ -238,9 +262,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           _refreshFeed();
         }
       } finally {
-        if (mounted) setState(() => _gpsDetecting = false);
+        if (mounted && _locationAccounts.isCurrent(ticket)) setState(() => _gpsDetecting = false);
       }
-      if (mounted) _refreshFeed();
+      if (mounted && _locationAccounts.isCurrent(ticket)) _refreshFeed();
       return;
     }
 
@@ -271,10 +295,10 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
 
     try {
       var permission = await Geolocator.checkPermission();
-      if (!mounted) return;
+      if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (!mounted) return;
+        if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
       }
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
@@ -325,8 +349,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           timeLimit: kIsWeb ? Duration(seconds: 20) : Duration(seconds: 6),
         ),
       );
+      if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
       final district = await _reverseGeocode(pos.latitude, pos.longitude);
-      if (!mounted) return;
+      if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
       // When Nominatim fails, use coordinates as search city so Gemini can locate events
       final coordCity =
           '${pos.latitude.toStringAsFixed(4)},${pos.longitude.toStringAsFixed(4)}';
@@ -347,10 +372,11 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
         final shouldUpdate = (forceOverride || !_userLockedLocation) &&
             identical(startingLocation, _activeLocation);
         if (shouldUpdate) {
-          final prefs = await SharedPreferences.getInstance();
-          if (district != null) await prefs.setString(_savedCityKey, district);
+          if (district != null) {
+            await _locationAccounts.write(ticket, {_savedCityKey: district});
+          }
         }
-        if (!mounted) return;
+        if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
         setState(() {
           if (shouldUpdate &&
               (forceOverride || !_userLockedLocation) &&
@@ -365,9 +391,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
     } catch (e) {
       debugPrint('EventsActivitiesScreen: GPS fehlgeschlagen: $e');
-      if (mounted) setState(() => _gpsDetecting = false);
+      if (mounted && _locationAccounts.isCurrent(ticket)) setState(() => _gpsDetecting = false);
     }
-    _refreshFeed();
+    if (mounted && _locationAccounts.isCurrent(ticket)) _refreshFeed();
   }
 
   Future<String?> _reverseGeocode(double lat, double lon) async {
@@ -1381,19 +1407,31 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   Widget _buildLocationSearch(ThemeData theme) {
+    final ticket = _locationAccounts.ticket;
     return Row(
       children: [
         Expanded(
           child: LocationPickerWidget(
+            key: ValueKey('events.location.${ticket.scope}.${ticket.generation}'),
             hint: context.tr('events_choose_location'),
             initialLocation: _activeLocation,
             onLocationPicked: (loc) async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setString(
-                _savedCityKey,
-                loc.city.isNotEmpty ? loc.city : loc.displayName,
-              );
-              if (!mounted) return;
+              if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
+              try {
+                await _locationAccounts.write(ticket, {
+                  _savedCityKey: loc.city.isNotEmpty ? loc.city : loc.displayName,
+                });
+              } on ProfileAccountChanged {
+                return;
+              } catch (error) {
+                debugPrint('Event account location save failed: $error');
+                if (mounted && _locationAccounts.isCurrent(ticket)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.tr('profile_account_failed'))));
+                }
+                return;
+              }
+              if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
               setState(() {
                 _activeLocation = loc;
                 _fallbackCity =

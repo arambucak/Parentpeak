@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
@@ -17,15 +19,15 @@ class Friend {
   });
 
   factory Friend.fromJson(Map<String, dynamic> j) => Friend(
-        uid: j['uid'] as String? ?? '',
-        name: (j['name'] as String?)?.trim().isNotEmpty == true
-            ? (j['name'] as String).trim()
-            : 'Familie',
-        avatarUrl: (j['avatarUrl'] as String?)?.trim().isNotEmpty == true
-            ? (j['avatarUrl'] as String).trim()
-            : null,
-        roomId: j['roomId'] as String? ?? '',
-      );
+    uid: j['uid'] as String? ?? '',
+    name: (j['name'] as String?)?.trim().isNotEmpty == true
+        ? (j['name'] as String).trim()
+        : 'Familie',
+    avatarUrl: (j['avatarUrl'] as String?)?.trim().isNotEmpty == true
+        ? (j['avatarUrl'] as String).trim()
+        : null,
+    roomId: j['roomId'] as String? ?? '',
+  );
 }
 
 class FriendshipData {
@@ -140,6 +142,8 @@ class FriendshipService extends ChangeNotifier {
   /// Freundschaftsanfrage an eine UID senden. Ist das Ziel nicht privat, wird
   /// die Freundschaft sofort bestaetigt (Server entscheidet).
   Future<bool> sendRequest(String toUid) async {
+    final store = ProfileAccountStore.instance;
+    final ticket = store.ticket;
     final api = _api;
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty || toUid.isEmpty) {
@@ -151,14 +155,14 @@ class FriendshipService extends ChangeNotifier {
     final myName = FirebaseAuth.instance.currentUser?.displayName?.trim();
     if (myName != null && myName.isNotEmpty) {
       try {
-        await api.postJsonAny('/api/profile', {
-          'userId': uid,
-          'displayName': myName,
-        });
-      } catch (_) {}
+        await UserProfileService.instance.setDisplayName(myName, ticket: ticket);
+      } catch (error) {
+        debugPrint('Friendship identity sync failed: $error');
+        return false;
+      }
     }
     try {
-      await api.postJsonAny('/api/friendships/request', {
+      await api.withRequestGuard(() => store.require(ticket)).postJsonAny('/api/friendships/request', {
         'fromUid': uid,
         'toUid': toUid,
       });

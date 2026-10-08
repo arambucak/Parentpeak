@@ -1,4 +1,5 @@
 import 'package:parentpeak/l10n/supported_languages.dart';
+import 'package:parentpeak/l10n/profile_account_strings.dart';
 
 // Vollständige Localization Struktur mit 28 Sprachen inkl. RTL
 
@@ -7,6 +8,7 @@ class AppStringsManager {
   static const Map<String, Map<String, String>> allStrings = {
     // Deutsch
     'de': {
+      ...profileAccountDe,
       'events_attendees_count': '{count} dabei',
       'events_attendees_none': 'Noch niemand dabei',
       'events_attendees_one_family': '1 Familie dabei',
@@ -3016,6 +3018,7 @@ class AppStringsManager {
     },
     // English
     'en': {
+      ...profileAccountEn,
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -11625,6 +11628,7 @@ class AppStringsManager {
     },
     // کوردی Kurmancî (ku)
     'ku': {
+      ...profileAccountKu,
       'events_attendees_count': '{count} beşdar in',
       'events_attendees_none': 'Hêj kes tune',
       'events_attendees_one_family': '1 malbat beşdar e',
@@ -17768,6 +17772,7 @@ class AppStringsManager {
     },
     // Türkçe (Turkish)
     'tr': {
+      ...profileAccountTr,
       'events_attendees_count': '{count} katılıyor',
       'events_attendees_none': 'Henüz kimse yok',
       'events_attendees_one_family': '1 aile katılıyor',

@@ -4,6 +4,55 @@ Diese Dokumentation beschreibt die jeweiligen Client-Grenzen und offenen
 Einschraenkungen. Sie ist keine allgemeine Datenschutz-, Rechts- oder
 Launchfreigabe. Testbefehle werden vom Projekt-Root ausgefuehrt.
 
+## Kinder, Onboarding und gemeinsame Einstellungen: Kontogrenze
+
+`ProfileAccountStore` speichert Kinder, Onboarding-Abschluss/Familienname,
+Elternrollen, Altersgruppen, Prioritaeten, Feiertagsland/-region, Kachelreihenfolge,
+gemeinsamen Standort und Events-Stadt in `profile.accounts.v1`. Jeder Datensatz
+hat einen eigenen `account.<encoded-UID>`-Owner; neue Gastdaten liegen separat.
+Logout loescht keine fremden Kontodaten, sondern invalidiert die aktuelle
+Session. Leser und laufende Dialoge/Syncs verwenden Scope und Sessiongeneration:
+Auch Logout und erneutes Login derselben UID machen alte Ergebnisse ungueltig.
+
+Die bisherigen globalen Keys werden nicht automatisch gelesen, zugeordnet oder
+geloescht. Sie bleiben als ignorierter lokaler Altbestand erhalten. Profil und
+Onboarding bieten getrennte ausdrueckliche Claims fuer Kinder, Onboarding/
+Einstellungen und Standort. Der Dialog nennt die reine lokale Zuordnung;
+ein Claim sendet keine HTTP-Anfrage und veroeffentlicht kein Matching-Profil.
+Owner-Marker und uebernommene Werte werden zusammen gespeichert. Parallele Claims,
+Kontowechsel, ein bereits beanspruchter Bereich oder vorhandene kontobezogene
+Werte verhindern Ueberschreiben/Vermischen. Bei Konflikten bleibt der Altbestand
+erhalten; dieser PR bietet keine Zusammenfuehrung. Die bislang fachlich
+ungenutzten Mehrfachrollen/Altersgruppen bleiben fuer die lokale Wiederherstellung
+erhalten; ihre weitergehende Verwendung ist Backlog.
+
+Kinderlisten werden nicht an den Onboarding-Endpunkt gesendet. Der bestehende
+minimale Sync umfasst nur UID, Abschluss, Familienname, Elternrolle und
+Prioritaeten. AuthGate wartet auf einen kontobezogenen Status und zeigt bei
+Speicher-/Serverfehlern einen Fehler mit Retry statt stillschweigendem Erfolg.
+Fehlt ein lokaler Abschluss und ist der Server offline, bleibt der Gate-Check
+sichtbar blockiert. Nach lokal erfolgreichem Abschluss darf die App weiter;
+ein gescheiterter anschliessender Sync wird ausdruecklich gemeldet.
+
+`GET /api/onboarding/:userId`, `POST /api/onboarding` und jede Variante von
+`POST /api/profile` verlangen jetzt ein verifiziertes Firebase-ID-Token mit
+passender UID (fehlend/ungueltig: 401, fremde UID: 403). Das gilt auch ohne
+`avatarUrl`, bei Datenbankfehlern und ohne Firebase-Admin-Konfiguration; ein
+gemeinsames Backend-Token ersetzt den Owner-Nachweis nicht. Bewusste oeffentliche
+Anzeigenamen-/Avatar-Lesezugriffe ueber `GET /api/profile/:userId` bleiben bestehen.
+Client-HTTP-Guards pruefen die Session auch nach Token-Aufloesung und vor 401-Retry.
+
+Keine Schema-Migration. Der geaenderte Backend-Tree verlangt vor Pages-Freigabe
+einen freigegebenen Render-Rollout. Dieser Nachweis ist keine Produktionsfreigabe.
+Der owner-begrenzte Datenexport (K01) und die Nominatim-Datensparsamkeit im
+Onboarding-GPS-Pfad (K04) bleiben eigene nachfolgende PRs; die lokale Zuordnung
+ist keine Verschluesselung und behebt diese offenen Grenzen nicht.
+
+```bash
+flutter test --no-pub test/profile_account_store_test.dart test/profile_account_http_guard_test.dart test/onboarding_account_sync_test.dart test/profile_claim_widget_test.dart test/profile_onboarding_lifecycle_widget_test.dart test/location_account_lifecycle_test.dart test/onboarding_test.dart test/calendar_service_test.dart test/event_filter_ui_test.dart test/localization_audit_verification_test.dart
+cd backend && node --test tests/unit/*.test.js
+```
+
 ## Kuehlschrank-Foto: kontobezogener Client-Consent
 
 `FridgePhotoConsent` nutzt den gemeinsamen geprueften Schreib-Ack unter

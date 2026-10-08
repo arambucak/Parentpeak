@@ -23,6 +23,7 @@ import 'package:parentpeak/ui/auth/login_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_screen.dart';
 import 'package:parentpeak/logic/onboarding_sync_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/config/feature_flags.dart';
@@ -62,10 +63,14 @@ void _handleNotificationTap(Map<String, dynamic> data) {
 }
 
 // Development shortcut: skips auth gate and opens the app shell directly.
-const bool _debugBypassAuthGate =
-    bool.fromEnvironment('PP_DEBUG_SKIP_LOGIN', defaultValue: false);
-const String _debugStartTab =
-    String.fromEnvironment('PP_DEBUG_START_TAB', defaultValue: 'home');
+const bool _debugBypassAuthGate = bool.fromEnvironment(
+  'PP_DEBUG_SKIP_LOGIN',
+  defaultValue: false,
+);
+const String _debugStartTab = String.fromEnvironment(
+  'PP_DEBUG_START_TAB',
+  defaultValue: 'home',
+);
 
 void _reportAppError(String context, Object error, StackTrace stackTrace) {
   debugPrint('AppError[$context]: $error');
@@ -81,33 +86,36 @@ void _reportAppError(String context, Object error, StackTrace stackTrace) {
 }
 
 void main() {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    FlutterError.onError = (FlutterErrorDetails details) {
-      FlutterError.presentError(details);
-      unawaited(
-        ErrorReportingService.instance.recordFlutterError(
-          details,
-          context: 'FlutterError.onError',
-          fatal: true,
-        ),
-      );
-      _reportAppError(
-        'FlutterError.onError',
-        details.exception,
-        details.stack ?? StackTrace.current,
-      );
-    };
-    PlatformDispatcher.instance.onError =
-        (Object error, StackTrace stackTrace) {
-      _reportAppError('PlatformDispatcher.onError', error, stackTrace);
-      return true;
-    };
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.presentError(details);
+        unawaited(
+          ErrorReportingService.instance.recordFlutterError(
+            details,
+            context: 'FlutterError.onError',
+            fatal: true,
+          ),
+        );
+        _reportAppError(
+          'FlutterError.onError',
+          details.exception,
+          details.stack ?? StackTrace.current,
+        );
+      };
+      PlatformDispatcher.instance.onError =
+          (Object error, StackTrace stackTrace) {
+            _reportAppError('PlatformDispatcher.onError', error, stackTrace);
+            return true;
+          };
 
-    await _startApp();
-  }, (Object error, StackTrace stackTrace) {
-    _reportAppError('runZonedGuarded', error, stackTrace);
-  });
+      await _startApp();
+    },
+    (Object error, StackTrace stackTrace) {
+      _reportAppError('runZonedGuarded', error, stackTrace);
+    },
+  );
 }
 
 Future<void> _startApp() async {
@@ -124,7 +132,8 @@ Future<void> _startApp() async {
 
   if (isBlockingReleaseConfig && releaseConfigIssues.isNotEmpty) {
     throw StateError(
-        'Unsichere Release-Konfiguration: ${releaseConfigIssues.join('; ')}');
+      'Unsichere Release-Konfiguration: ${releaseConfigIssues.join('; ')}',
+    );
   }
   if (kReleaseMode && kIsWeb && releaseConfigIssues.isNotEmpty) {
     debugPrint(
@@ -178,12 +187,14 @@ Future<void> _startApp() async {
     );
   }
 
-  runApp(DemoApp(
-    key: demoAppKey,
-    startupInviteInput: startupInviteInput,
-    startupFriendCode: _extractStartupFriendCode(),
-    startupReferralCode: _extractStartupReferralCode(),
-  ));
+  runApp(
+    DemoApp(
+      key: demoAppKey,
+      startupInviteInput: startupInviteInput,
+      startupFriendCode: _extractStartupFriendCode(),
+      startupReferralCode: _extractStartupReferralCode(),
+    ),
+  );
 }
 
 Future<bool> _loadOptionalDotEnv() async {
@@ -297,11 +308,12 @@ class DemoApp extends StatefulWidget {
   final String? startupFriendCode;
   final String? startupReferralCode;
 
-  const DemoApp(
-      {super.key,
-      this.startupInviteInput,
-      this.startupFriendCode,
-      this.startupReferralCode});
+  const DemoApp({
+    super.key,
+    this.startupInviteInput,
+    this.startupFriendCode,
+    this.startupReferralCode,
+  });
 
   static void setThemeMode(ThemeMode mode) {
     debugPrint('📱 DemoApp.setThemeMode() called with mode=$mode');
@@ -333,10 +345,12 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
     themeService.initialize().then((_) {
       if (mounted) {
         setState(() {
-          _currentThemeMode =
-              themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light;
+          _currentThemeMode = themeService.isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light;
           debugPrint(
-              '✅ Theme initialized: isDarkMode=${themeService.isDarkMode}, _currentThemeMode=$_currentThemeMode');
+            '✅ Theme initialized: isDarkMode=${themeService.isDarkMode}, _currentThemeMode=$_currentThemeMode',
+          );
         });
       }
     });
@@ -355,8 +369,9 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
       debugPrint('   isDarkMode=${themeService.isDarkMode}');
       debugPrint('   OLD _currentThemeMode=$_currentThemeMode');
       setState(() {
-        _currentThemeMode =
-            themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light;
+        _currentThemeMode = themeService.isDarkMode
+            ? ThemeMode.dark
+            : ThemeMode.light;
         debugPrint('   NEW _currentThemeMode=$_currentThemeMode');
       });
     }
@@ -365,7 +380,8 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
   void _onLanguageChanged() {
     if (mounted) {
       debugPrint(
-          '🔄 _onLanguageChanged() called: currentLanguage=${languageService.currentLanguage}');
+        '🔄 _onLanguageChanged() called: currentLanguage=${languageService.currentLanguage}',
+      );
       setState(() {
         // Erzwinge einen Rebuild wenn die Sprache wechselt
       });
@@ -384,8 +400,10 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final backendBaseUrl = APIConfig.getBackendBaseUrl() ?? '';
     const storage = FlutterSecureStorageAdapter();
-    final service =
-        RevocationServiceImpl(baseUrl: backendBaseUrl, secureStorage: storage);
+    final service = RevocationServiceImpl(
+      baseUrl: backendBaseUrl,
+      secureStorage: storage,
+    );
 
     return MaterialApp(
       navigatorKey: appNavigatorKey,
@@ -425,13 +443,14 @@ class ParentpeakAppShell extends StatefulWidget {
   final String? startupFriendCode;
   final String? startupReferralCode;
 
-  const ParentpeakAppShell(
-      {super.key,
-      required this.devices,
-      required this.onRevoke,
-      this.startupInviteInput,
-      this.startupFriendCode,
-      this.startupReferralCode});
+  const ParentpeakAppShell({
+    super.key,
+    required this.devices,
+    required this.onRevoke,
+    this.startupInviteInput,
+    this.startupFriendCode,
+    this.startupReferralCode,
+  });
 
   @override
   State<ParentpeakAppShell> createState() => _ParentpeakAppShellState();
@@ -455,7 +474,8 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
   void _onLanguageChanged() {
     if (mounted) {
       debugPrint(
-          '🌍 Sprache geändert in ParentpeakAppShell - erzwinge Rebuild aller Screens');
+        '🌍 Sprache geändert in ParentpeakAppShell - erzwinge Rebuild aller Screens',
+      );
       setState(() {
         // Erzwinge einen Rebuild aller Tabs
       });
@@ -468,10 +488,11 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
 
     final tabs = <Widget>[
       HomeScreen(
-          key: ValueKey('home-${languageService.currentLanguage}'),
-          initialInviteInput: widget.startupInviteInput,
-          initialFriendCode: widget.startupFriendCode,
-          initialReferralCode: widget.startupReferralCode),
+        key: ValueKey('home-${languageService.currentLanguage}'),
+        initialInviteInput: widget.startupInviteInput,
+        initialFriendCode: widget.startupFriendCode,
+        initialReferralCode: widget.startupReferralCode,
+      ),
       ProfileSafetyScreen(
         key: ValueKey('family-${languageService.currentLanguage}'),
         devices: widget.devices,
@@ -499,13 +520,17 @@ class _ParentpeakAppShellState extends State<ParentpeakAppShell> {
               icon: const Icon(Icons.home_outlined),
               selectedIcon: const Icon(Icons.home_rounded),
               label: AppStringsManager.getString(
-                  languageService.currentLanguage, 'nav_home'),
+                languageService.currentLanguage,
+                'nav_home',
+              ),
             ),
             NavigationDestination(
               icon: const Icon(Icons.family_restroom_outlined),
               selectedIcon: const Icon(Icons.family_restroom_rounded),
               label: AppStringsManager.getString(
-                  languageService.currentLanguage, 'nav_profile'),
+                languageService.currentLanguage,
+                'nav_profile',
+              ),
             ),
           ],
         ),
@@ -523,6 +548,8 @@ class AuthGate extends StatefulWidget {
   final String? startupInviteInput;
   final String? startupFriendCode;
   final String? startupReferralCode;
+  final ProfileAccountStore? accountStore;
+  final OnboardingSyncService? onboardingSync;
 
   const AuthGate({
     super.key,
@@ -531,6 +558,8 @@ class AuthGate extends StatefulWidget {
     this.startupInviteInput,
     this.startupFriendCode,
     this.startupReferralCode,
+    this.accountStore,
+    this.onboardingSync,
   });
 
   @override
@@ -540,11 +569,16 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   bool _isRefreshingEntitlements = false;
   bool? _onboardingCompleted;
+  bool _onboardingFailed = false;
+  int _onboardingRequest = 0;
+  ProfileAccountTicket? _onboardingTicket;
+  late final _accounts = widget.accountStore ?? ProfileAccountStore.instance;
 
   @override
   void initState() {
     super.initState();
     AuthService.instance.addListener(_refresh);
+    _accounts.addListener(_profileDataChanged);
     _syncEntitlements();
     _checkOnboarding();
     _ensureUserProfile();
@@ -563,27 +597,47 @@ class _AuthGateState extends State<AuthGate> {
     if (name.isEmpty) return;
     try {
       await UserProfileService.instance.setDisplayName(name);
-    } catch (_) {}
+    } catch (error) {
+      debugPrint('Account display name sync failed: $error');
+    }
   }
 
   @override
   void dispose() {
+    _accounts.removeListener(_profileDataChanged);
     AuthService.instance.removeListener(_refresh);
     super.dispose();
   }
 
   Future<void> _checkOnboarding() async {
-    var completed = await OnboardingScreen.isCompleted();
-    // Cross-Device (Option A): Ist der Nutzer eingeloggt, aber lokal noch nicht
-    // als "onboarded" markiert, den account-gebundenen Status vom Server holen.
-    // So muss man auf einem neuen Geraet nicht erneut durchs Onboarding.
-    if (!completed && AuthService.instance.currentUser != null) {
-      try {
-        completed = await OnboardingSyncService.instance.pullCompleted();
-      } catch (_) {}
-    }
+    final store = _accounts;
+    final ticket = store.ticket;
+    final request = ++_onboardingRequest;
+    _onboardingTicket = ticket;
     if (mounted) {
-      setState(() => _onboardingCompleted = completed);
+      setState(() {
+        _onboardingCompleted = null;
+        _onboardingFailed = false;
+      });
+    }
+    try {
+      final data = await store.read(ticket);
+      var completed = data[ProfileAccountStore.completedKey] == true;
+      if (!completed && ticket.scope != 'guest') {
+        completed =
+            await (widget.onboardingSync ?? OnboardingSyncService.instance)
+                .pullCompleted(ticket);
+      }
+      if (mounted && request == _onboardingRequest && store.isCurrent(ticket)) {
+        setState(() => _onboardingCompleted = completed);
+      }
+    } on ProfileAccountChanged {
+      // Login/logout started a new check.
+    } catch (error) {
+      debugPrint('Account onboarding check failed: $error');
+      if (mounted && request == _onboardingRequest && store.isCurrent(ticket)) {
+        setState(() => _onboardingFailed = true);
+      }
     }
   }
 
@@ -608,21 +662,36 @@ class _AuthGateState extends State<AuthGate> {
 
   String? get _debugScreen {
     if (!_allowWebQueryBypass) return null;
-    final value =
-        Uri.base.queryParameters['pp_debug_screen']?.trim().toLowerCase();
+    final value = Uri.base.queryParameters['pp_debug_screen']
+        ?.trim()
+        .toLowerCase();
     if (value == null || value.isEmpty) return null;
     return value;
   }
 
   void _refresh() {
+    final ticket = _accounts.ticket;
+    final changed =
+        _onboardingTicket == null ||
+        ticket.scope != _onboardingTicket!.scope ||
+        ticket.generation != _onboardingTicket!.generation;
     if (mounted) {
       setState(() {});
     }
     _syncEntitlements();
     // Nach Login den (ggf. server-seitigen) Onboarding-Status neu bestimmen.
-    _checkOnboarding();
+    if (changed) _checkOnboarding();
     // Nach Login den Anzeigenamen serverseitig sichern (UserProfile).
     _ensureUserProfile();
+  }
+
+  void _profileDataChanged() {
+    final ticket = _accounts.ticket;
+    if (_onboardingTicket == null ||
+        ticket.scope != _onboardingTicket!.scope ||
+        ticket.generation != _onboardingTicket!.generation) {
+      _refresh();
+    }
   }
 
   @override
@@ -668,8 +737,39 @@ class _AuthGateState extends State<AuthGate> {
 
     // Nicht eingeloggt → Login
     if (user == null) {
-      return LoginScreen(
-        onLoginSuccess: _refresh,
+      return LoginScreen(onLoginSuccess: _refresh);
+    }
+
+    final store = _accounts;
+    final ticket = _onboardingTicket;
+    if (ticket == null ||
+        !store.isCurrent(ticket) ||
+        _onboardingCompleted == null) {
+      return Scaffold(
+        body: Center(
+          child: _onboardingFailed
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppStringsManager.getString(
+                        languageService.currentLanguage,
+                        'profile_account_failed',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _checkOnboarding,
+                      child: Text(
+                        AppStringsManager.getString(
+                          languageService.currentLanguage,
+                          'profile_account_retry',
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : const CircularProgressIndicator(),
+        ),
       );
     }
 
@@ -685,14 +785,19 @@ class _AuthGateState extends State<AuthGate> {
     // Onboarding noch nicht abgeschlossen → Onboarding zeigen
     if (_onboardingCompleted == false) {
       return OnboardingScreen(
+        key: ValueKey('onboarding.${ticket.scope}.${ticket.generation}'),
+        accountStore: store,
         onComplete: () {
-          setState(() => _onboardingCompleted = true);
+          if (store.isCurrent(ticket)) {
+            setState(() => _onboardingCompleted = true);
+          }
         },
       );
     }
 
     // Eingeloggt & Zugang vorhanden → Haupt-App
     return ParentpeakAppShell(
+      key: ValueKey('shell.${ticket.scope}.${ticket.generation}'),
       devices: widget.devices,
       onRevoke: widget.onRevoke,
       startupInviteInput: widget.startupInviteInput,

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/entitlement_service.dart';
 import 'package:parentpeak/ui/calendar_screen.dart';
@@ -78,12 +79,15 @@ class _HomeScreenState extends State<HomeScreen>
   List<String> _recentTileIds = const [];
   List<String> _customTileOrderIds = const [];
   List<Map<String, dynamic>> _todayEvents = [];
+  final _accounts = ProfileAccountStore.instance;
+  int _orderRequest = 0;
 
   @override
   void initState() {
     super.initState();
     if (kIsWeb) _loadTodayEvents();
     languageService.addListener(_onLanguageChanged);
+    _accounts.addListener(_restoreTileOrder);
     _restoreRecentTiles();
     _restoreTileOrder();
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -104,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen>
   void dispose() {
     _authSub?.cancel();
     languageService.removeListener(_onLanguageChanged);
+    _accounts.removeListener(_restoreTileOrder);
     super.dispose();
   }
 
@@ -242,15 +247,27 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _restoreTileOrder() async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getStringList(_tileOrderStorageKey) ?? const [];
-    if (!mounted) return;
-    setState(() {
-      _customTileOrderIds = stored;
-    });
+    final ticket = _accounts.ticket;
+    final request = ++_orderRequest;
+    if (mounted) setState(() => _customTileOrderIds = []);
+    try {
+      final data = await _accounts.read(ticket);
+      if (!mounted || request != _orderRequest || !_accounts.isCurrent(ticket)) return;
+      setState(() => _customTileOrderIds = List<String>.from(data[_tileOrderStorageKey] ?? []));
+    } on ProfileAccountChanged {
+      // A new account reloads its own order.
+    } catch (error) {
+      debugPrint('Account tile order load failed: $error');
+      if (mounted && _accounts.isCurrent(ticket)) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'profile_account_failed'))));
+      }
+    }
   }
 
   Future<void> _prioritizeTile(_FeatureAction action) async {
+    final ticket = _accounts.ticket;
     final normalized = action.id.trim();
     if (normalized.isEmpty) return;
 
@@ -265,38 +282,61 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() {
         _customTileOrderIds = updated;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              '"${action.label}" ${AppStringsManager.getString(languageService.currentLanguage, 'tile_moved_up')}'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_tileOrderStorageKey, updated);
+    try {
+      await _accounts.write(ticket, {_tileOrderStorageKey: updated});
+      if (mounted && _accounts.isCurrent(ticket)) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('"${action.label}" ${AppStringsManager.getString(
+              languageService.currentLanguage, 'tile_moved_up')}'),
+          duration: const Duration(seconds: 2),
+        ));
+      }
+    } on ProfileAccountChanged {
+      // The current session reloads its order.
+    } catch (error) {
+      debugPrint('Account tile order save failed: $error');
+      await _restoreTileOrder();
+      if (mounted && _accounts.isCurrent(ticket)) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'profile_account_failed'))));
+      }
+    }
   }
 
   // ignore: unused_element
   Future<void> _resetTileOrder() async {
+    final ticket = _accounts.ticket;
     if (_customTileOrderIds.isEmpty) return;
 
     if (mounted) {
       setState(() {
         _customTileOrderIds = const [];
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+    }
+
+    try {
+      await _accounts.update(ticket, (data) => data.remove(_tileOrderStorageKey));
+      if (mounted && _accounts.isCurrent(ticket)) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(AppStringsManager.getString(
               languageService.currentLanguage, 'tile_order_reset')),
           duration: const Duration(seconds: 2),
-        ),
-      );
+        ));
+      }
+    } on ProfileAccountChanged {
+      // The current session reloads its order.
+    } catch (error) {
+      debugPrint('Account tile order reset failed: $error');
+      await _restoreTileOrder();
+      if (mounted && _accounts.isCurrent(ticket)) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'profile_account_failed'))));
+      }
     }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tileOrderStorageKey);
   }
 
   List<_FeatureAction> _applyCustomOrder(List<_FeatureAction> actions) {

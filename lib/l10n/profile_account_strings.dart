@@ -1,0 +1,48 @@
+const profileAccountDe = <String, String>{
+    'profile_claim_title': 'Lokale Daten zuordnen?',
+    'profile_claim_explanation': 'Bestätige nur, wenn diese bisherigen lokalen Daten dir gehören. Sie werden ausschließlich dem aktuell angemeldeten Konto zugeordnet. Dabei werden keine Daten veröffentlicht oder hochgeladen. Bestehende Kontodaten werden nicht überschrieben.',
+    'profile_claim_confirm': 'Meinem Konto zuordnen',
+    'profile_legacy_unassigned': 'Unzugeordneter lokaler Altbestand. Keine automatische Übernahme.',
+    'profile_legacy_children': 'Bisherige lokale Kinderliste',
+    'profile_legacy_onboarding': 'Bisherige lokale Einrichtung',
+    'profile_legacy_location': 'Bisheriger lokaler Standort',
+    'profile_account_failed': 'Kontodaten konnten nicht geladen oder gespeichert werden. Bitte erneut versuchen; bestehende Daten bleiben erhalten.',
+    'profile_account_retry': 'Erneut versuchen',
+    'profile_sync_failed': 'Einrichtung lokal gespeichert. Die Kontosynchronisierung ist fehlgeschlagen; bitte später erneut versuchen.',
+};
+const profileAccountEn = <String, String>{
+    'profile_claim_title': 'Assign local data?',
+    'profile_claim_explanation': 'Confirm only if these previous local data belong to you. They will be assigned only to the currently signed-in account. No data will be published or uploaded. Existing account data will not be overwritten.',
+    'profile_claim_confirm': 'Assign to my account',
+    'profile_legacy_unassigned': 'Unassigned local legacy data. Never adopted automatically.',
+    'profile_legacy_children': 'Previous local child list',
+    'profile_legacy_onboarding': 'Previous local setup',
+    'profile_legacy_location': 'Previous local location',
+    'profile_account_failed': 'Account data could not be loaded or saved. Please retry; existing data are preserved.',
+    'profile_account_retry': 'Retry',
+    'profile_sync_failed': 'Setup saved locally. Account sync failed; please retry later.',
+};
+const profileAccountTr = <String, String>{
+    'profile_claim_title': 'Yerel veriler atansın mı?',
+    'profile_claim_explanation': 'Yalnızca önceki yerel veriler size aitse onaylayın. Veriler yalnızca şu anda oturum açmış hesaba atanır. Hiçbir veri yayımlanmaz veya yüklenmez. Mevcut hesap verilerinin üzerine yazılmaz.',
+    'profile_claim_confirm': 'Hesabıma ata',
+    'profile_legacy_unassigned': 'Atanmamış eski yerel veriler. Otomatik olarak devralınmaz.',
+    'profile_legacy_children': 'Önceki yerel çocuk listesi',
+    'profile_legacy_onboarding': 'Önceki yerel kurulum',
+    'profile_legacy_location': 'Önceki yerel konum',
+    'profile_account_failed': 'Hesap verileri yüklenemedi veya kaydedilemedi. Yeniden deneyin; mevcut veriler korunur.',
+    'profile_account_retry': 'Yeniden dene',
+    'profile_sync_failed': 'Kurulum yerel olarak kaydedildi. Hesap eşitlemesi başarısız oldu; daha sonra yeniden deneyin.',
+};
+const profileAccountKu = <String, String>{
+    'profile_claim_title': 'Daneyên herêmî bên veqetandin?',
+    'profile_claim_explanation': 'Tenê heke ev daneyên herêmî yên berê yên te ne, piştrast bike. Ew tenê bi hesabê ku niha têketî ye ve tên girêdan. Tu dane nayên weşandin an barkirin. Daneyên heyî yên hesabê nayên nivîsandin.',
+    'profile_claim_confirm': 'Bi hesabê min ve girê bide',
+    'profile_legacy_unassigned': 'Daneyên herêmî yên kevn bê xwedî ne. Bi awayekî otomatîk nayên girtin.',
+    'profile_legacy_children': 'Lîsteya zarokan a herêmî ya berê',
+    'profile_legacy_onboarding': 'Sazkirina herêmî ya berê',
+    'profile_legacy_location': 'Cihê herêmî yê berê',
+    'profile_account_failed': 'Daneyên hesabê nehatin barkirin an tomarkirin. Dîsa biceribîne; daneyên heyî tên parastin.',
+    'profile_account_retry': 'Dîsa biceribîne',
+    'profile_sync_failed': 'Sazkirin herêmî hate tomarkirin. Hevdemkirina hesabê bi ser neket; paşê dîsa biceribîne.',
+};

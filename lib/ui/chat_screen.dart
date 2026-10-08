@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -292,11 +292,20 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _loadCountryCode() async {
     final ticket = _ticket;
-    final prefs = await SharedPreferences.getInstance();
-    // Gleiche Quelle wie Kalender/Feiertage + Familien-Geld (Onboarding).
-    final country = prefs.getString('holiday.country');
+    final accounts = ProfileAccountStore.instance;
+    final profileTicket = accounts.ticket;
+    try {
+    final data = await accounts.read(profileTicket);
+    final country = data[ProfileAccountStore.countryKey] as String?;
+    accounts.require(profileTicket);
     if (_isCurrent(ticket) && country != null && country.trim().isNotEmpty) {
       setState(() => _countryCode = country.trim());
+    }
+    } on ProfileAccountChanged {
+      // The new chat session reloads its own country.
+    } catch (error) {
+      debugPrint('Chat account country load failed: $error');
+      if (_isCurrent(ticket)) _showError('profile_account_failed');
     }
   }
 

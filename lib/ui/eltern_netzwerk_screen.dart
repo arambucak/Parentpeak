@@ -17,6 +17,7 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/friendship_service.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
@@ -396,10 +397,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   }
 
   Future<void> _init() async {
+    final ticket = ProfileAccountStore.instance.ticket;
     final prefs = await SharedPreferences.getInstance();
     final dismissed = prefs.getStringList('friends.dismissed') ?? [];
     if (mounted) setState(() => _dismissedSuggestions = dismissed.toSet());
     await _refreshProfile();
+    if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) return;
 
     // NEUES FUNDAMENT: den app-weiten Anzeigenamen serverseitig sichern
     // (uid -> displayName). Kommt aus der Registrierung; hier nur gespiegelt.
@@ -407,7 +410,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         AuthService.instance.currentUser?.displayName ??
         _profile?.displayName ??
         'Familie';
-    unawaited(UserProfileService.instance.setDisplayName(myName));
+    unawaited(UserProfileService.instance.setDisplayName(myName, ticket: ticket).catchError((Object error) {
+      debugPrint('Network profile identity sync failed: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('profile_account_failed'))));
+      }
+    }));
     // Neue UID-Freundschaften + offene Anfragen laden.
     unawaited(FriendshipService.instance.load());
   }

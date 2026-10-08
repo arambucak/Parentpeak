@@ -2369,6 +2369,20 @@ async function authorizeAccountOwner(req, res, userId) {
   return false;
 }
 
+async function authorizeProfileOwner(req, res, userId) {
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (!verified) {
+    res.status(401).json({ error: 'Firebase ID-Token erforderlich' });
+    return false;
+  }
+  if (uid !== userId) {
+    res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt' });
+    return false;
+  }
+  req.firebaseUid = uid;
+  return true;
+}
+
 // Middleware: if FIREBASE_REQUIRE_AUTH=1 AND Firebase Admin is configured,
 // reject write requests whose token does not match the acting userId.
 const firebaseRequireAuth = (process.env.FIREBASE_REQUIRE_AUTH || '0') === '1';
@@ -7683,6 +7697,7 @@ const onboardingProfiles = new Map(); // in-memory fallback: userId -> {...}
 app.get('/api/onboarding/:userId', async (req, res) => {
   const userId = (req.params.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  if (!await authorizeProfileOwner(req, res, userId)) return;
   try {
     await ensureSocialSchemaReady();
     const rows = await prisma.$queryRawUnsafe(
@@ -7711,6 +7726,7 @@ app.get('/api/onboarding/:userId', async (req, res) => {
 app.post('/api/onboarding', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  if (!await authorizeProfileOwner(req, res, userId)) return;
   const completed = req.body.completed === true;
   const familyName = (req.body.familyName || '').toString().trim().slice(0, 100);
   const parentRole = (req.body.parentRole || '').toString().trim().slice(0, 50);
@@ -7794,13 +7810,9 @@ app.get('/api/profile/:userId', async (req, res) => {
 app.post('/api/profile', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  if (!await authorizeProfileOwner(req, res, userId)) return;
   const displayName = (req.body.displayName || '').toString().trim().slice(0, 100);
   const hasAvatarUrl = Object.prototype.hasOwnProperty.call(req.body, 'avatarUrl');
-  if (hasAvatarUrl) {
-    const { uid, verified } = await verifyFirebaseIdToken(req);
-    if (!verified) return res.status(401).json({ error: 'Firebase ID-Token erforderlich' });
-    if (uid !== userId) return res.status(403).json({ error: 'Profilfoto nur für eigenes Profil änderbar' });
-  }
   const avatarUrl = hasAvatarUrl
       ? (req.body.avatarUrl || '').toString().trim().slice(0, 500)
       : undefined;

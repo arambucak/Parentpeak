@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 
 /// Tages-Tipp-Karte — ein kurzer, umsetzbarer Eltern-Tipp pro Tag.
 ///
@@ -23,12 +23,22 @@ class _DailyTipCardState extends State<DailyTipCard> {
   @override
   void initState() {
     super.initState();
+    ProfileAccountStore.instance.addListener(_loadTip);
     _loadTip();
   }
 
+  @override
+  void dispose() {
+    ProfileAccountStore.instance.removeListener(_loadTip);
+    super.dispose();
+  }
+
   Future<void> _loadTip() async {
-    final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('onboarding.parent_role') ?? 'kleinkind';
+    final store = ProfileAccountStore.instance;
+    final ticket = store.ticket;
+    try {
+    final data = await store.read(ticket);
+    final role = data[ProfileAccountStore.roleKey] as String? ?? 'kleinkind';
     final tips = _tipsForRole(role);
 
     // Wähle Tipp basierend auf dem Tag des Jahres
@@ -36,12 +46,20 @@ class _DailyTipCardState extends State<DailyTipCard> {
     final index = dayOfYear % tips.length;
     final selected = tips[index];
 
-    if (mounted) {
+    if (mounted && store.isCurrent(ticket)) {
       setState(() {
         _tip = selected.$1;
         _category = selected.$2;
         _loading = false;
       });
+    }
+    } on ProfileAccountChanged {
+      // The account listener already started the current session's load.
+    } catch (error) {
+      debugPrint('Account daily tip load failed: $error');
+      if (mounted && store.isCurrent(ticket)) {
+        setState(() { _tip = context.tr('profile_account_failed'); _loading = false; });
+      }
     }
   }
 

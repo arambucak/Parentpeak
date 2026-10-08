@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 
 /// "Was machen wir heute?" — Spielerischer Aktivitäts-Generator.
 ///
@@ -47,24 +48,40 @@ class _QuickActivityCardState extends State<QuickActivityCard>
       curve: Curves.easeOutBack,
     );
     _cardController.value = 1.0;
+    ProfileAccountStore.instance.addListener(_loadActivity);
     _loadActivity();
   }
 
   @override
   void dispose() {
+    ProfileAccountStore.instance.removeListener(_loadActivity);
     _cardController.dispose();
     super.dispose();
   }
 
   Future<void> _loadActivity() async {
-    final prefs = await SharedPreferences.getInstance();
-    _parentRole = prefs.getString('onboarding.parent_role') ?? 'kleinkind';
+    final store = ProfileAccountStore.instance;
+    final ticket = store.ticket;
+    if (mounted) setState(() => _current = null);
+    try {
+    final data = await store.read(ticket);
+    if (!store.isCurrent(ticket)) return;
+    _parentRole = data[ProfileAccountStore.roleKey] as String? ?? 'kleinkind';
     final activities = _filteredActivities();
     if (activities.isEmpty) return;
     final dayOfYear =
         DateTime.now().difference(DateTime(DateTime.now().year)).inDays;
     _currentIndex = dayOfYear % activities.length;
-    await _applyActivity(activities[_currentIndex]);
+    await _applyActivity(activities[_currentIndex], ticket: ticket);
+    } on ProfileAccountChanged {
+      // A new session reloads its own role.
+    } catch (error) {
+      debugPrint('Account activity load failed: $error');
+      if (mounted && store.isCurrent(ticket)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('profile_account_failed'))));
+      }
+    }
   }
 
   List<_ActivityItem> _filteredActivities() {
@@ -73,11 +90,13 @@ class _QuickActivityCardState extends State<QuickActivityCard>
     return all.where((a) => a.category == _selectedCategory).toList();
   }
 
-  Future<void> _applyActivity(_ActivityItem item) async {
+  Future<void> _applyActivity(_ActivityItem item, {ProfileAccountTicket? ticket}) async {
+    final store = ProfileAccountStore.instance;
+    final expected = ticket ?? store.ticket;
     final prefs = await SharedPreferences.getInstance();
     final favKey = 'activity.fav.${item.id}';
     final isFav = prefs.getBool(favKey) ?? false;
-    if (mounted) {
+    if (mounted && store.isCurrent(expected)) {
       setState(() {
         _current = item;
         _isFavorite = isFav;

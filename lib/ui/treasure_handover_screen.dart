@@ -82,6 +82,7 @@ class _TreasureHandoverScreenState
   @override
   void initState() {
     super.initState();
+    LocationService.instance.addListener(_locationChanged);
     unawaited(_initializeScreen());
   }
 
@@ -104,6 +105,7 @@ class _TreasureHandoverScreenState
 
   @override
   void dispose() {
+    LocationService.instance.removeListener(_locationChanged);
     _listingService.dispose();
     _listings = const [];
     _selectedListing = null;
@@ -113,6 +115,10 @@ class _TreasureHandoverScreenState
     _ownedListingIds.clear();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _locationChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
