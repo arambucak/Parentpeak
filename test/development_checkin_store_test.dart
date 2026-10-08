@@ -13,29 +13,33 @@ void main() {
       DevelopmentCheckinStore(prefs: await SharedPreferences.getInstance());
 
   group('Antworten pro Altersgruppe getrennt', () {
-    test('Antworten einer Altersgruppe landen NICHT in einer anderen',
-        () async {
-      final s = await store();
-      await s.saveAnswers('2-3y', {'motorik_0': 2, 'sprache_1': 1});
+    test(
+      'Antworten einer Altersgruppe landen NICHT in einer anderen',
+      () async {
+        final s = await store();
+        await s.saveAnswers('2-3y', {'motorik_0': 2, 'sprache_1': 1});
 
-      // Dieselbe Altersgruppe liefert die Antworten zurück ...
-      expect(await s.loadAnswers('2-3y'), {'motorik_0': 2, 'sprache_1': 1});
-      // ... eine ANDERE Altersgruppe ist leer (kein Übersprechen).
-      expect(await s.loadAnswers('3-4y'), isEmpty);
-    });
+        // Dieselbe Altersgruppe liefert die Antworten zurück ...
+        expect(await s.loadAnswers('2-3y'), {'motorik_0': 2, 'sprache_1': 1});
+        // ... eine ANDERE Altersgruppe ist leer (kein Übersprechen).
+        expect(await s.loadAnswers('3-4y'), isEmpty);
+      },
+    );
 
-    test('Wachsen über eine Altersgrenze korrumpiert alte Antworten nicht',
-        () async {
-      final s = await store();
-      // Kind beantwortet den Check mit 2-3 Jahren.
-      await s.saveAnswers('2-3y', {'motorik_0': 2, 'motorik_1': 2});
-      // Später beantwortet es (als 3-4-Jähriges) andere Fragen.
-      await s.saveAnswers('3-4y', {'motorik_0': 0});
+    test(
+      'Wachsen über eine Altersgrenze korrumpiert alte Antworten nicht',
+      () async {
+        final s = await store();
+        // Kind beantwortet den Check mit 2-3 Jahren.
+        await s.saveAnswers('2-3y', {'motorik_0': 2, 'motorik_1': 2});
+        // Später beantwortet es (als 3-4-Jähriges) andere Fragen.
+        await s.saveAnswers('3-4y', {'motorik_0': 0});
 
-      // Beide Sätze bleiben strikt getrennt erhalten.
-      expect(await s.loadAnswers('2-3y'), {'motorik_0': 2, 'motorik_1': 2});
-      expect(await s.loadAnswers('3-4y'), {'motorik_0': 0});
-    });
+        // Beide Sätze bleiben strikt getrennt erhalten.
+        expect(await s.loadAnswers('2-3y'), {'motorik_0': 2, 'motorik_1': 2});
+        expect(await s.loadAnswers('3-4y'), {'motorik_0': 0});
+      },
+    );
 
     test('clearAnswers leert nur die betroffene Altersgruppe', () async {
       final s = await store();
@@ -53,14 +57,47 @@ void main() {
         // So sah der buggy Legacy-Zustand aus.
         'dev.answers.v3': 'motorik_0:2,sprache_0:2',
       });
-      final s =
-          DevelopmentCheckinStore(prefs: await SharedPreferences.getInstance());
+      final s = DevelopmentCheckinStore(
+        prefs: await SharedPreferences.getInstance(),
+      );
       // Keine Altersgruppe erbt die alten, nicht zuordenbaren Antworten.
       expect(await s.loadAnswers('2-3y'), isEmpty);
     });
   });
 
   group('Score-Verlauf (Snapshot) pro Altersgruppe', () {
+    test('report snapshots remain account-scoped', () async {
+      final s = await store();
+      await s.saveSnapshot(
+        '2-3y',
+        DevelopmentScoreSnapshot(
+          scores: const {'motorik': 1},
+          date: DateTime(2026),
+        ),
+        scope: 'account.a',
+      );
+      expect(await s.loadPreviousSnapshot('2-3y', scope: 'account.b'), isNull);
+      expect(await s.loadPreviousSnapshot('2-3y'), isNull);
+      expect(
+        await s.loadPreviousSnapshot('2-3y', scope: 'account.a'),
+        isNotNull,
+      );
+    });
+
+    test('invalidated request cannot write a report snapshot', () async {
+      final s = await store();
+      await expectLater(
+        s.saveSnapshot(
+          '2-3y',
+          DevelopmentScoreSnapshot(scores: const {}, date: DateTime(2026)),
+          scope: 'account.a',
+          requestGuard: () => throw StateError('Account changed'),
+        ),
+        throwsStateError,
+      );
+      expect(await s.loadPreviousSnapshot('2-3y', scope: 'account.a'), isNull);
+    });
+
     test('ohne vorherigen Check gibt es keinen Snapshot', () async {
       final s = await store();
       expect(await s.loadPreviousSnapshot('2-3y'), isNull);
@@ -87,13 +124,18 @@ void main() {
     test('Snapshots verschiedener Altersgruppen sind getrennt', () async {
       final s = await store();
       await s.saveSnapshot(
-          '2-3y',
-          DevelopmentScoreSnapshot(
-              scores: const {'motorik': 1.0}, date: DateTime(2026, 1, 1)));
+        '2-3y',
+        DevelopmentScoreSnapshot(
+          scores: const {'motorik': 1.0},
+          date: DateTime(2026, 1, 1),
+        ),
+      );
 
       expect(await s.loadPreviousSnapshot('3-4y'), isNull);
-      expect((await s.loadPreviousSnapshot('2-3y'))!.scores['motorik'],
-          closeTo(1.0, 1e-9));
+      expect(
+        (await s.loadPreviousSnapshot('2-3y'))!.scores['motorik'],
+        closeTo(1.0, 1e-9),
+      );
     });
   });
 

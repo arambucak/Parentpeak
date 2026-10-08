@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/logic/family_hub_store.dart';
+import 'package:parentpeak/logic/fridge_photo_consent.dart';
 
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
@@ -19,8 +21,13 @@ import 'package:parentpeak/services/ai_rate_limiter.dart';
 /// sondern nur zur Analyse an den KI-Dienst gesendet.
 class FridgeRecipeService {
   static final FridgeRecipeService instance = FridgeRecipeService();
-  FridgeRecipeService({GeminiAIService? aiService}) : _aiService = aiService;
+  FridgeRecipeService({
+    GeminiAIService? aiService,
+    FridgePhotoConsent? consent,
+  }) : _aiService = aiService,
+       consent = consent ?? FridgePhotoConsent.instance;
   final GeminiAIService? _aiService;
+  final FridgePhotoConsent consent;
 
   int _childAgeYears = 3;
   List<String> _allergies = [];
@@ -76,11 +83,22 @@ class FridgeRecipeService {
   /// Erkennt Zutaten auf einem Foto. Gibt eine Liste erkannter Lebensmittel
   /// zurück (leere Liste bei Fehler). Nicht-essbare Objekte werden ignoriert.
   Future<List<String>> detectIngredients(
-    Uint8List imageBytes, {
+    XFile image, {
+    required String expectedScope,
     String mimeType = 'image/jpeg',
     String languageCode = 'de',
   }) async {
+    await consent.require(expectedScope);
     final scope = await _ensureContext();
+    void guard() {
+      consent.requireScope(expectedScope);
+      FamilyHubStore.instance.requireScope(scope);
+    }
+    guard();
+    await consent.require(expectedScope);
+    final imageBytes = await image.readAsBytes();
+    guard();
+    await consent.require(expectedScope);
     await AIRateLimiter.initialize();
     if (!AIRateLimiter.canMakeRequest()) {
       debugPrint('FridgeRecipeService: Rate limit erreicht');
@@ -105,7 +123,8 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
 
     try {
       final modelName = APIConfig.getGeminiModelName();
-      FamilyHubStore.instance.requireScope(scope);
+      await consent.require(expectedScope);
+      guard();
       final raw = await (_aiService ?? GeminiAIService(modelName: modelName)).generateText(
         prompt,
         systemInstruction:
@@ -113,11 +132,18 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
             'gültigen JSON-Array aus Zutaten-Namen auf $outputLanguage. Kein Markdown.',
         imageBytes: imageBytes,
         imageMimeType: mimeType,
+        appLanguage: languageCode,
+        requestGuard: guard,
       );
-      FamilyHubStore.instance.requireScope(scope);
+      guard();
+      await consent.require(expectedScope);
       await AIRateLimiter.recordRequest();
+      guard();
+      await consent.require(expectedScope);
       return _parseIngredientList(raw);
     } on FamilyHubAccountChanged {
+      rethrow;
+    } on FridgePhotoConsentRequiredException {
       rethrow;
     } catch (e) {
       debugPrint('FridgeRecipeService.detectIngredients: $e');
@@ -129,9 +155,16 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
   /// Zutaten. Gibt null zurück, wenn nichts erzeugt werden konnte.
   Future<FamilyRecipe?> generateFromIngredients(
     List<String> ingredients, {
+    required String expectedScope,
     String languageCode = 'de',
   }) async {
+    await consent.require(expectedScope);
     final scope = await _ensureContext();
+    void guard() {
+      consent.requireScope(expectedScope);
+      FamilyHubStore.instance.requireScope(scope);
+    }
+    guard();
     final clean = ingredients
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
@@ -181,15 +214,21 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
 
     try {
       final modelName = APIConfig.getGeminiModelName();
-      FamilyHubStore.instance.requireScope(scope);
+      await consent.require(expectedScope);
+      guard();
       final raw = await (_aiService ?? GeminiAIService(modelName: modelName)).generateText(
         prompt,
         systemInstruction:
             'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
             'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+        appLanguage: languageCode,
+        requestGuard: guard,
       );
-      FamilyHubStore.instance.requireScope(scope);
+      guard();
+      await consent.require(expectedScope);
       await AIRateLimiter.recordRequest();
+      guard();
+      await consent.require(expectedScope);
       final recipe = _parseRecipe(raw);
       if (recipe == null) return null;
       // SICHERHEIT: Kühlschrank-Rezept gegen die Allergene gegenprüfen. Enthält
@@ -200,6 +239,8 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       }
       return recipe;
     } on FamilyHubAccountChanged {
+      rethrow;
+    } on FridgePhotoConsentRequiredException {
       rethrow;
     } catch (e) {
       debugPrint('FridgeRecipeService.generateFromIngredients: $e');

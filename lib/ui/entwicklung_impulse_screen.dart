@@ -6,7 +6,9 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
-import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/logic/development_report_service.dart';
+import 'package:parentpeak/logic/development_report_consent.dart';
+import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/weekly_impulse_service.dart';
 import 'package:parentpeak/models_and_widgets/weekly_impulse_feature.dart';
@@ -47,6 +49,9 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   late final TabController _tabController;
   final FlutterTts _tts = FlutterTts();
   late final WeeklyImpulseService _impulseService;
+  final DevelopmentReportService _reportService = DevelopmentReportService();
+  late String _reportScope;
+  int _reportEpoch = 0;
 
   WeeklyImpulse? _impulse;
   bool _isLoading = true;
@@ -80,6 +85,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     );
     _impulseService = widget.impulseService ??
         BackendServiceFactory.createWeeklyImpulseService();
+    _reportScope = _reportService.consent.scope;
+    AuthService.instance.addListener(_onReportAccountChanged);
     languageService.addListener(_onLanguageChanged);
     _loadImpulse();
     _loadCheckIn();
@@ -89,9 +96,24 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   @override
   void dispose() {
     _tts.stop();
+    AuthService.instance.removeListener(_onReportAccountChanged);
     languageService.removeListener(_onLanguageChanged);
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _onReportAccountChanged() {
+    final scope = _reportService.consent.scope;
+    if (scope == _reportScope) return;
+    _reportScope = scope;
+    _reportEpoch++;
+    if (!mounted) return;
+    setState(() {
+      _aiReport = null;
+      _previousSnapshot = null;
+      _reportFailed = false;
+      _generatingReport = false;
+    });
   }
 
   void _onLanguageChanged() {
@@ -1005,6 +1027,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   DevelopmentScoreSnapshot? _previousSnapshot;
 
   Future<void> _loadCheckIn() async {
+    final scope = _reportScope;
+    final epoch = _reportEpoch;
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('dev.child_name');
     final birthStr = prefs.getString('dev.child_birth');
@@ -1029,9 +1053,19 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         ..addAll(answers);
       final tQ = _devDomains.fold(0, (int s, d) => s + d.questions.length);
       _devDone = _devAnswers.length >= tQ && tQ > 0;
-      _previousSnapshot = await _checkinStore.loadPreviousSnapshot(ageGroupId);
+      final previous = await _checkinStore.loadPreviousSnapshot(ageGroupId, scope: scope);
+      if (!mounted || epoch != _reportEpoch) return;
+      _previousSnapshot = previous;
     }
-    _aiReport = prefs.getString('dev.ai_report.v3');
+    if (!mounted || epoch != _reportEpoch) return;
+    try {
+      final report = await _reportService.loadReport(scope);
+      if (!mounted || epoch != _reportEpoch) return;
+      _aiReport = report;
+    } on DevelopmentReportConsentRequiredException catch (error) {
+      debugPrint('Development report load account changed: $error');
+      return;
+    }
     if (mounted) setState(() {});
   }
 
@@ -1054,7 +1088,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     // ein laufender Check beim Bearbeiten des Profils nicht verloren.
     final restored = await _checkinStore.loadAnswers(profile.ageGroupId);
     final previous =
-        await _checkinStore.loadPreviousSnapshot(profile.ageGroupId);
+        await _checkinStore.loadPreviousSnapshot(profile.ageGroupId, scope: _reportScope);
     if (!mounted) return;
     setState(() {
       _childProfile = profile;
@@ -1071,48 +1105,29 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     });
   }
 
-  /// Einmalige, transparente Einwilligung bevor Entwicklungs-Antworten an die
-  /// KI gehen. Der Kindname bleibt ohnehin lokal; hier wird offengelegt, dass
-  /// die (anonymisierten) Antworten zur Berichtserstellung verarbeitet werden.
-  /// Rückgabe: true, wenn der Bericht erstellt werden darf.
-  Future<bool> _ensureAiConsent() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('dev.ai_report_consent') == true) return true;
-    if (!mounted) return false;
-
-    final theme = Theme.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(_t('development_consent_title')),
-        content: Text(_t('development_consent_body'),
-            style: theme.textTheme.bodyMedium),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(_t('cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(_t('development_consent_accept')),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await prefs.setBool('dev.ai_report_consent', true);
-      return true;
-    }
-    return false;
-  }
-
   Future<void> _generateAIReport() async {
-    if (_childProfile == null) return;
+    if (_childProfile == null || _generatingReport) return;
+    final scope = _reportScope;
+    final epoch = _reportEpoch;
+    void guard() {
+      _reportService.consent.requireScope(scope);
+      if (!mounted || epoch != _reportEpoch) {
+        throw const DevelopmentReportConsentRequiredException();
+      }
+    }
 
     // Vor dem ersten KI-Bericht: transparente Einwilligung einholen.
-    if (!await _ensureAiConsent()) return;
-    if (!mounted) return;
+    if (!await ensureAccountAiConsent(
+      context,
+      consent: _reportService.consent,
+      titleKey: 'development_consent_title',
+      bodyKey: 'development_consent_body',
+      acceptKey: 'development_consent_accept',
+      failedKey: 'development_consent_save_failed',
+    )) {
+      return;
+    }
+    if (!mounted || epoch != _reportEpoch) return;
 
     // Report-Limit prüfen
     final limitService = DevelopmentReportLimitService.instance;
@@ -1188,22 +1203,28 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         '$specialNeedsNote\n$sb\n$languageInstruction';
 
     try {
-      final raw = await GeminiAIService().generateText(prompt);
+      final raw = await _reportService.generate(
+        prompt,
+        expectedScope: scope,
+        requestGuard: guard,
+      );
+      guard();
       // Den echten Namen erst lokal einsetzen — er war nie Teil des KI-Calls.
       final childName = p.name.trim().isNotEmpty
           ? p.name.trim()
           : _t('pdf_default_child_name');
       final text = raw.replaceAll(namePlaceholder, childName);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('dev.ai_report.v3', text);
-      // Bericht-Historie speichern
-      final historyRaw = prefs.getStringList('dev.report_history') ?? [];
-      final entry = '${DateTime.now().toIso8601String()}|||$text';
-      historyRaw.insert(0, entry);
-      if (historyRaw.length > 12) historyRaw.removeRange(12, historyRaw.length);
-      await prefs.setStringList('dev.report_history', historyRaw);
+      await _reportService.saveReport(
+        text,
+        expectedScope: scope,
+        requestGuard: guard,
+      );
+      guard();
       // Report-Limit tracken
-      await DevelopmentReportLimitService.instance.recordReportCreated();
+      await DevelopmentReportLimitService.instance.recordReportCreated(
+        requestGuard: guard,
+      );
+      guard();
       // Aktuellen Score-Stand als "letzten abgeschlossenen Check" DIESER
       // Altersgruppe sichern — damit der NÄCHSTE Check einen echten Vorher-
       // Nachher-Vergleich zeigen kann. Der aktuell angezeigte Vergleich
@@ -1214,8 +1235,11 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
           scores: _currentDevScores(),
           date: DateTime.now(),
         ),
+        scope: scope,
+        requestGuard: guard,
       );
-      if (mounted) {
+      guard();
+      if (mounted && epoch == _reportEpoch) {
         setState(() {
           _aiReport = text;
           _reportFailed = false;
@@ -1224,7 +1248,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       }
     } catch (e) {
       debugPrint('EntwicklungImpulse: KI-Report fehlgeschlagen: $e');
-      if (mounted) {
+      if (mounted && epoch == _reportEpoch) {
         // Fehlerzustand sauber vom echten Bericht trennen: _aiReport NICHT mit
         // Fehlertext überschreiben (sonst sähe es aus wie ein echter Bericht
         // inkl. PDF-Export). Stattdessen dezenter, retry-barer Hinweis.
@@ -1280,16 +1304,26 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
   }
 
   Future<void> _showReportHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final historyRaw = prefs.getStringList('dev.report_history') ?? [];
-    if (!mounted) return;
+    final epoch = _reportEpoch;
+    final List<String> historyRaw;
+    try {
+      historyRaw = await _reportService.loadHistory(_reportScope);
+    } on DevelopmentReportConsentRequiredException catch (error) {
+      debugPrint('Development history account changed: $error');
+      return;
+    }
+    if (!mounted || epoch != _reportEpoch) return;
     final theme = Theme.of(context);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => AnimatedBuilder(
+        animation: AuthService.instance,
+        builder: (context, child) => epoch != _reportEpoch
+            ? const SizedBox.shrink()
+            : Container(
         constraints:
             BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.75),
         decoration: BoxDecoration(
@@ -1375,7 +1409,7 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
               },
             )),
         ]),
-      ),
+      )),
     );
   }
 

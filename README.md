@@ -49,6 +49,9 @@ Eine Familien-App die Eltern dort unterstützt wo es zählt — im Alltag. Kein 
 
 ## Architektur
 
+Client-Verarbeitungsgrenzen, Consent-Mechanismen und dokumentierte
+Sprachgrenzen: [Client-Datenschutz und Sprachumfang](docs/client-privacy-and-language.md).
+
 ```mermaid
 graph TB
     subgraph Client["Flutter App (iOS / Android / Web)"]
@@ -129,6 +132,49 @@ flutter run                    # Connected Device
 - **Web:** Automatisch via GitHub Actions → GitHub Pages (`parentpeak.de`)
 - **Backend:** Render Auto-Deploy from `main`
 - **iOS/Android:** Manual Release (geplant: Fastlane)
+
+## Pages-Release-Gate und Aktivierung
+
+Der Pages-Workflow prueft vor Build und unmittelbar vor Veroeffentlichung
+den aktuellen main-SHA, erfolgreichen push-main-Lauf von flutter-analyze.yml
+inklusive analyze-Job und `/release/readiness` vom echten Backend. Health 200
+allein reicht nicht: Kennung `parentpeak-memory-consent-v1`, Memory-Version,
+Migrationen und Consent-Schema sind Pflicht.
+
+Backendcommit muss dem Release entsprechen oder sein Git-Tree unter
+`backend/` muss exakt identisch sein. Reine Client-/Dokumentationsmerges
+koennen unveraenderte Backendquellen verwenden; jede Backendaenderung
+blockiert bis zum passenden Renderstand. CI wird maximal etwa 20 Minuten
+abgewartet; Backendfehler/fehlende History/alte main-SHAs blockieren.
+
+Aktivierung nur mit separater Freigabe pro Schritt:
+
+1. Backend-Nachweis #162 kontrolliert ausrollen. Bis dahin ist der alte
+   Pages-Workflow noch ungated; er kann die unveraenderte alte App erneut
+   ausliefern. #162 stellt keine neue App-/Schemaanforderung.
+2. Render-SHA, Pre-Deploy und read-only `/release/readiness` verifizieren.
+3. Gate-PR freigeben. Bereits sein Einfuehrungsmerge blockiert Pages bei
+   fehlendem CI-/Backend-/Schemanachweis. Auch seine neuen Backendtests
+   veraendern den backend/-Tree; der Renderstand muss dazu passen.
+4. Bei noch laufendem Renderdeploy erst Nachweis abnehmen, dann denselben
+   aktuellen Pages-SHA kontrolliert erneut starten. Kein Health-only-Bypass.
+5. Danach Datenschutz-PRs einzeln integrieren und Live-Nachweis abwarten.
+
+Alternativ Gate zuerst aktivieren: Pages bleibt bis zum Backend-Nachweis
+blockiert. In beiden Reihenfolgen bleibt die vorherige App bei Gate-Fehlern
+live. Keine neuen Render-/DB-Secrets erforderlich.
+
+configure-pages@v6 und deploy-pages@v5 aus #33/#34 sind enthalten; die alten
+PRs danach als ersetzt behandeln und keinen alten Workflow ueber das Gate
+kopieren. Render-Environment/Blueprint ausserhalb backend/-Tree wird nicht
+automatisch attestiert und braucht eigene Freigabe. Manuelle inkompatible
+Backendrollbacks waehrend der Freigabe sind auszuschliessen; letzte Remote-
+Pruefung und Pages-Publikation sind keine atomare Transaktion.
+Recht/Store/Geraete-QA sowie Dependency-Security bleiben eigene Gates.
+
+```bash
+node --test backend/tests/unit/pages-release-gate.test.js
+```
 
 ## Projekt-Struktur
 
