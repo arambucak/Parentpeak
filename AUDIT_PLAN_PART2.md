@@ -266,7 +266,9 @@ als "bleibt lokal" bezeichnen. Sicherheit **HIGH**, Konfidenz 10/10.
 
 ## 5. Entscheidungspunkte und weitere Arbeit
 
-**Kein Befund ist bereits ein Fixauftrag.** Empfohlene erste Entscheidungen:
+Zum Zeitpunkt des Erstberichts war kein Befund ein Fixauftrag. Die nach
+Abnahme freigegebene Vorbereitungsreihenfolge und der aktuelle Analyseauftrag
+stehen in Abschnitt 7; Merge-/Produktionsfreigaben folgen weiterhin separat.
 
 1. K01 Export: eigener Account plus welche ausdruecklich geraetebezogenen
    Einstellungen; kein Dump anderer Accounts/Legacydaten.
@@ -295,3 +297,156 @@ verbleiben beim Nutzer/externen Verantwortlichen.
   ausgefuehrt: diese koennen Datensaetze schreiben und sind nicht read-only.
 - Dokupruefungen und PR-CI werden im PR mit exaktem Ergebnis dokumentiert.
 - `AUDIT_PLAN.md` und nutzerveraenderte `.gitignore` nicht gestaged.
+
+## 7. Angenommener Bericht: Fix-Backlog und PR-1-Voranalyse
+
+Nutzerentscheidung vom 8. Oktober 2026 nach Abnahme von #169:
+K01-K04 sind Launch-Blocker. Getrennte Fix-PRs, kein automatischer Merge/
+Deploy. Aktueller Schritt: **PR 1 read-only analysieren und planen**;
+Produktcode noch nicht umgesetzt. Dieser Abschnitt aktualisiert nur #169.
+
+### 7.1 Freigegebene Reihenfolge fuer die Fix-Vorbereitung
+
+| Reihenfolge | Umfang | Status / Freigabegrenze |
+|---|---|---|
+| PR 1 | K02 + K03: lokale Profilkinder/Onboarding mit Owner/Legacy-Claim; Land/Region, Kachelreihenfolge und gemeinsamer Standort ebenfalls kontobezogen; Firebase-Owner fuer GET/POST-Onboarding und alle POST-Profilfelder. | Voranalyse unten; erweiterter Owner-Scope vom Nutzer bestaetigt. Backend-Change: Tests/PR-CI, dann Backup und separate Merge-/Deploy-Freigabe. |
+| PR 2 | K01: Export nur aktuelles Konto, keine fremden/Legacy-Prefs. Serverexport gegen heutige Modelle pruefen, fehlende Kategorien explizit benennen. | Eigene Export-Regressionen; Servererweiterung waere ebenfalls Backend-Change mit eigener Freigabe. |
+| PR 3 | K04: Onboarding-GPS vor Reverse-Geocoding mit bestehendem roundCoordinate minimieren; fehlende Datenschutzkeys de/en/tr/ku. | Eigene Query-/UI-/Lokalisierungstests; keine Standort-Produktionsanfrage fuer Tests. |
+| PR 4 | W02 + W08: verified/session/Auth-State, FCM-Kontowechsel, lokale Erinnerungen beim Logout aufheben, Tokenroute mit Ownerpruefung. | Eigene Lifecycle-/Backendtests; Backup und separate Merge-/Deploy-Freigabe. |
+| Danach | W01: native Google-API / bewusstes Web-Popup-Redirect-Verhalten. | Eigener PR, signierte Geraete-/Browserabnahme. |
+| Danach | W06: Verifizierungs-Resend ohne falschen Erfolg. | Eigener PR, Versand-/Fehler-/Cooldown-Regression. |
+| Danach | W03 + W04: providerpassende Reauth vor Loeschung, ehrliche Teilfehler. | Eigener PR, Abbruch-/Retry-/Backendfehler-Regression; keine Live-Loeschtests. |
+| Danach | W09: aktuelle Rechtstexte/Memory-/Datenfluss-Claims. | Eigener PR; Faktennachweise vorbereiten, Rechtsfreigabe extern. |
+| Danach | W10: verbleibende Auth-/Profil-i18n. | Eigener PR de/en/tr/ku; neue Strings der vorherigen PRs schon dort lokalisieren. |
+| Danach | W13: Testliterale und Scanumfang. | Eigener PR; zuerst synthetisch bestaetigen/gegebenenfalls extern rotieren, nie Werte benutzen/wiedergeben. |
+| Weiter offen | W05 Exportvollstaendigkeit, W07 Onboarding-Save/Abbruch, W11 Reset-Zustellbeobachtung, W12 Testabdeckung; N01-N04 und weitere Inventurzeilen. | W05 in PR 2 untersuchen; abgeschlossener lokaler Onboarding-Save-Vertrag in PR 1 mitpruefen. Rest nicht stillschweigend als erledigt markieren. |
+
+### 7.2 Verifizierte globale Keys und alle direkten Leser/Schreiber
+
+Die Suche ueber den heutigen Dart-Code zeigt folgende direkte Zugriffe.
+Profile.children als Modellfeld von FamilyMatchProfile ist **nicht** der
+Preferences-Key profile.children; bestehende #124-Kontogrenzen bleiben bestehen.
+
+| Key(s) | Schreiber | Leser / Auswirkung | Geplanter Umgang |
+|---|---|---|---|
+| profile.children (StringList name/age) | [Profil: _addChild](lib/ui/profile_safety_screen.dart#L214) | [Profil: _loadChildren](lib/ui/profile_safety_screen.dart#L201), _addChild liest vor Append ebenfalls. Keine anderen direkten Keyleser in lib. | Eigener Account-Owner; Legacy nur ausdruecklich claimen, keine Backend-/KI-Synchronisierung. |
+| onboarding.completed (bool) | [Wizard](lib/ui/onboarding/onboarding_screen.dart#L145), [Sync pull](lib/logic/onboarding_sync_service.dart#L50) | [isCompleted](lib/ui/onboarding/onboarding_screen.dart#L34) -> [AuthGate](lib/main.dart#L575). Aktuell unterdrueckt global true den Serverpull fuer B. | Account-Status; AuthGate bis zur aktuellen Kontoentscheidung nicht mit dem Status von A rendern. |
+| onboarding.family_name (String) | Wizard; Sync pull | [Sync push](lib/logic/onboarding_sync_service.dart#L29) | Account; bestehende Anzeigeidentitaet Firebase/UserProfile nicht durch unbeanspruchten Altbestand ersetzen. |
+| onboarding.parent_role (String) | Wizard; Sync pull | Sync push; [DailyTipCard](lib/ui/widgets/home/daily_tip_card.dart#L29); [QuickActivityCard](lib/ui/widgets/home/quick_activity_card.dart#L59) | Alle drei Leser auf gleiche Accountquelle; Widgets bei Wechsel neu laden/alte Ergebnisse verwerfen. Die beiden Karten haben derzeit keine gefundenen App-Aufrufstellen, werden trotzdem konsistent migriert. |
+| onboarding.parent_roles, onboarding.child_ages (StringList) | Wizard | Keine direkten Leser im heutigen lib-Code gefunden; allgemeiner Preference-Export liest auch diese Werte. | Accountdaten erhalten, kein Wegwerfen als vermeintlich toter Key. |
+| onboarding.priorities (StringList) | Wizard; Sync pull | Sync push | Accountquelle fuer Lesen und Schreiben. |
+| holiday.country, holiday.region (String) | Wizard; [HolidayService setters](lib/services/holiday_service.dart#L57) | [HolidayService initialize/cache](lib/services/holiday_service.dart#L51) -> [Kalender](lib/ui/calendar_screen.dart#L201); country direkt auch [Chat](lib/ui/chat_screen.dart#L293). | Kontobezogen in PR 1 bestaetigt; Kalender-/Chatleser und statische Caches zusammen migrieren. |
+| home.tile_order.v1 (StringList) | Wizard; Home priorisieren/zuruecksetzen | [Home restore/order](lib/ui/home_screen.dart#L244) | Kontobezogen in PR 1 bestaetigt. Keine Vermischung mit home.recent_tiles.v1 behaupten. |
+| location.latitude, location.longitude (double), location.city, location.method (String) | [LocationService GPS/manual/coordinates](lib/services/location_service.dart#L53), vom Wizard genutzt | [LocationService initialize/cache](lib/services/location_service.dart#L43); Onboarding; EventsActivitiesScreen; TreasureUploadScreen; TreasureHandoverScreen; TreasureListingService. | Kontobezogen in PR 1 bestaetigt, einschliesslich Cache und Verbraucher. K04-Rundung bleibt PR 3; Ownerfrage wird bereits hier geloest. |
+
+Der rohe [Profil-Export](lib/ui/profile_safety_screen.dart#L1400) bleibt ein
+bereichsuebergreifender Leser aller Keys/Envelopes, bis PR 2 umgesetzt ist.
+Auch nach PR 1 ist K01 deshalb noch ein Launch-Blocker.
+Sprache/Theme sind keine dieser Familien-/Onboardingdaten; kein prefs.clear
+oder blindes Loeschen beim Logout vorgesehen. FamilyHub-, Finance-, Treasure-,
+Spielfreunde- und Chat-Stores werden nicht auf neue gemeinsame Kindmodelle
+umgebaut. Profilkinder bleiben im bisherigen Funktionsumfang lokal.
+
+### 7.3 Weitere betroffene Services und Backend-Vertraege
+
+- [AuthGate](lib/main.dart#L540): _checkOnboarding, _refresh und onComplete
+  muessen eine UID/Sessiongeneration erfassen; null/alter completed-State
+  darf weder alte Shell noch falschen Wizard freigeben. Logout/Login/Wechsel
+  verwirft ausstehende Pulls und Wizard-/Profil-Dialogergebnisse.
+- [OnboardingSyncService](lib/logic/onboarding_sync_service.dart): push/pull
+  lesen/schreiben bisher globale Preferences. Geplante explizite Owner/
+  Sessiontickets fuer Request und Antwort; API-/Authfehler sichtbar und
+  unterscheidbar von completed:false. Firebase- und App-UID duerfen nicht
+  unterschiedliche Owner darstellen.
+- [UserProfileService](lib/logic/user_profile_service.dart): setDisplayName,
+  setVisibility und setAvatarUrl schreiben /api/profile. Aufrufer:
+  AuthGate, Onboarding, Profilnamenaenderung/Avatar und Eltern-Netzwerk.
+  [FriendshipService.sendRequest](lib/logic/friendship_service.dart#L140)
+  schreibt displayName zusaetzlich direkt vor einer Freundschaftsanfrage.
+  Alle nutzen den Firebase-Tokenprovider der BackendFactory; neue 401/403
+  duerfen nicht als gespeicherter Erfolg behandelt werden.
+- GET /api/profile/:userId dient auch fremden Anzeigenamen/Avataren,
+  darunter [EventHostIdentity](lib/ui/widgets/event_host_identity.dart#L83).
+  Diesen bewusst getrennten Lesepfad nicht pauschal sperren; PR 1 haertet
+  den Schreibpfad und die privaten Onboarding-Reads.
+- [Onboarding GET/POST](backend/server.js#L7683): vor Schema/DB/Memoryfallback
+  zwingend verifizierten Firebase-Token und passende Pfad-/Body-UID pruefen.
+  [POST profile](backend/server.js#L7794): gleiche Pruefung fuer **alle**
+  Mutationen, nicht nur avatarUrl; leeres/entferntes Avatarfeld bleibt geschuetzt.
+- [authorizeAccountOwner](backend/server.js#L2347) ist nicht 1:1 geeignet:
+  Backend-Token-/Dev-Ausnahmen und Loeschfehlermeldung. Die strikte bisherige
+  Avatar-/Matching-Firebasegrenze als Prior Art verwenden, mit gemeinsamem
+  zielgerichtetem Ownerhelper statt einer neuen globalen Middleware-Ausnahme.
+  401 ohne/bei ungueltigem Token, 403 bei fremder UID; keine DB-/Memorymutation
+  vor Autorisierung. Unkonfigurierte Firebase-Verifizierung fail-closed.
+- Historische Server-Onboardingzeilen werden nicht blind geloescht oder
+  als nachtraeglich sicher authentifiziert behauptet. Kein Schemawechsel
+  geplant; bestehender minimaler Syncumfang bleibt erhalten.
+
+### 7.4 Owner-/Claim-Plan analog #124, mit den spaeteren Scopeguards
+
+1. Gemeinsame lokale Profile-/Onboarding-Accountgrenze mit typisiertem
+   Payload, Owner und Schema-Version. Bestehende Envelope-/Serialisierungs-
+   muster aus [FamilyHubStore](lib/logic/family_hub_store.dart) verwenden;
+   Generation/Firebase-Identity-Guards wie
+   [ChatAccountStore](lib/logic/chat_account_store.dart).
+   Kinder und Onboarding bleiben getrennte Claim-Domaenen.
+2. Keine automatischen Reads aus globalen Altkeys. Nur "unzugeordnete
+   lokale Daten vorhanden" anzeigen; keine Kindnamen eines unbeanspruchten
+   Altbestands vorbelaeufig als aktuelle Kinder rendern.
+3. Ausdrueckliche, lokalisierte Ownerbestaetigung wie
+   [#124-Claim](lib/logic/playmate_profile_service.dart#L53):
+   abbrechen/ablehnen laesst Originaldaten unveraendert. Zustimmung nur
+   fuer dieselbe weiterhin aktive Session, keine HTTP-/KI-/Profilpublikation.
+4. Daten und exklusiven Legacy-Owner atomar in einem bestaetigten
+   Envelopewrite festhalten; Originalkeys koennen wie #130 als unbenutztes
+   Backup erhalten bleiben. Ein Claim fuer A darf fuer B nicht erneut
+   angeboten werden. Bestehende Kontodaten nicht still ueberschreiben,
+   Kinder nicht unbemerkt mergen; Konflikt bewusst anzeigen.
+5. Logout trennt den aktiven Zugriff und UI-/Servicecaches, ohne A-Daten zu
+   loeschen. Auch A -> Logout -> A muss alte Asyncresultate verwerfen.
+   Lokaler Save prueft Persistenz-Ergebnis; completed erst als Teil des
+   erfolgreichen lokalen Abschlusswrites setzen, nicht als ersten Einzelkey.
+   Unbeanspruchtes completed=true allein ueberspringt keinen Wizard.
+6. Lokaler Claim ist keine automatische Cloud-Einwilligung:
+   minimaler Server-Sync nur im vorhandenen regulaeren Abschlussvertrag;
+   Profilkinder bleiben lokal. Netzwerkfehler duerfen erfolgreich gespeicherte
+   lokale Daten nicht vernichten, aber auch keinen Cloud-Erfolg vortaeuschen.
+
+**Scopeentscheidung bestaetigt:** Der Nutzer hat alle drei Zusatzbereiche
+fuer PR 1 kontobezogen freigegeben: Land/Region, Kachelreihenfolge und gemeinsamer
+Standort. Deshalb die oben genannten Verbraucher und Async-GPS/Geocoder-Guards
+mitmigrieren; keine stillschweigende geraeteweite Standortausnahme.
+Legacy-Standort separat erkennbar und nur ausdruecklich uebernehmen, nicht
+automatisch mit einem Kinderclaim. Bei B ohne Standort bleibt hasLocation
+false; ein bei A gestartetes GPS/Geocoder-Ergebnis darf B weder im Cache noch
+im gespeicherten Ownerpayload setzen. Die externe Query-Rundung bleibt
+absichtlich ein eigener PR 3 und wird nicht als bereits erledigt dargestellt.
+
+### 7.5 Geplanter Test-/Rolloutnachweis fuer PR 1
+
+- Store: A/B/Gast, Logout/Neustart, unbeanspruchter Altbestand, Claim
+  akzeptiert/abgelehnt, bestehende Kontodaten, parallele Claims, anderer
+  Legacy-Owner, korrupte Envelope und persist=false/throw.
+- Race: Konto-/Generationwechsel waehrend Load/Claim/Kinderdialog/
+  Wizardabschluss/Serverpull, insbesondere A -> Logout -> A.
+- UI/Services: keine A-Kinder/Phasen/Abschlussdaten bei B; Claimdialog
+  lokalisiert de/en/tr/ku; Server completed:false versus Auth/Netzfehler;
+  kein Upload beim Legacyclaim, keine Kinder im Minimal-Sync.
+- Zusatzscope: A/B-Land/Region/Kachelreihenfolge/Standort, Wechsel bei offenem
+  Kalender/Events/Verschenkmarkt, keine A-Koordinaten als B-Uploadvorschlag,
+  abgebrochene GPS/Forward-/Reverse-Geocoderantworten nach Logout/Login;
+  statische Holiday- und Location-Caches sofort invalidieren.
+- Backend isolierte reale Routehandler wie vorhandene Unit-Fixtures:
+  GET/POST-Onboarding und POST-Profil je ohne Token, invalid, fremde
+  Firebase-UID, Owner; ohne/mit/leerer avatarUrl sowie displayName,
+  username, searchable, isPrivate. Abgelehnte Requests erreichen weder
+  Schema/DB noch Memoryfallback; Owner behielt bisherige Partialupdates.
+- Zieltests plus volle Flutter-Suite mit bekannten lokalen Eventsgrenzen;
+  flutter analyze --no-pub Baseline 11, Lokalisierungsaudit; Backendunits
+  unter gepinntem Node 24.21.0, node --check; volle PR-CI analyze SUCCESS.
+- Backend-Tree wird absichtlich geaendert: kein backend-neutraler Gatebeleg.
+  Pre-live Gate muss fail-closed bleiben; Simulation fuer den neuen Live-SHA.
+  Erst danach frisches Backup und explizite Merge-/Deploy-Freigabe, Render-
+  Build/Pre-Deploy/Readiness/Health/Logs abnehmen, anschliessend beide
+  Pages-Gates und Veroeffentlichung. Kein manuelles Triggern ohne Freigabe.
