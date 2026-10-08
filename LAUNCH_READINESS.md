@@ -1,12 +1,20 @@
 # ParentPeak: Weg zum sicheren Launch
 
-Stand: 7. Oktober 2026. Gepruefter Checkout: `/Users/aram/Parentpeak-1`,
-`main` und GitHub-`main`: `cfae2a2786736be6aa7f6e1ebccaed5defe00df1`.
+Stand: 8. Oktober 2026. Gepruefter Checkout: `/Users/aram/Parentpeak-1`,
+Release-`main`: `138ca5d93aafc7b099361c8b472fb7dd75cf9cc0`.
+Live-Backend: `64358dfbaf4daa3bb2dcc508f96fc4bd07fd049a`.
+Unterschiedliche SHAs sind hier kompatibel: beide haben denselben vollstaendigen
+`backend/`-Tree `09c1569063977c66184729261addbc01b355a22d`.
+Dieser Doku-PR #160 ist noch ungemergt; er enthaelt #156.
 
 Das [Kachel-Audit](AUDIT_PLAN.md#gesamt-abschluss-des-kachel-audits--7-oktober-2026)
 ist abgeschlossen: zehn Kacheln, 53 Fix-PRs #103-#155. **Das ist keine
 Produktions-, Datenschutz- oder Rechtsfreigabe.** Dieses Dokument ist eine
 belegbasierte Release-Checkliste, keine solche Freigabe.
+
+Der Auditplan ist eine lokale, absichtlich unversionierte Uebergabe; sein Link
+ist im GitHub-Checkout nicht verfuegbar. Die hier dokumentierten Release-
+Nachweise und Restpunkte sind deshalb eigenstaendig aufgefuehrt.
 
 ## 0. Was belegt ist und was nicht
 
@@ -20,12 +28,15 @@ Statusbegriffe:
 
 | Bereich | Verifizierter Stand |
 |---|---|
-| Gemergter Code / CI | `analyze: SUCCESS` auch fuer den Merge-SHA: [Run 37651530250](https://github.com/arambucak/Parentpeak/actions/runs/37651530250), volle Fluttertests, Backendunits, Analyzer-/Baselinepruefung. |
+| Gemergter Code / CI | `analyze: SUCCESS` fuer Release-SHA `138ca5d`: [Run 37766825467](https://github.com/arambucak/Parentpeak/actions/runs/37766825467), volle Fluttertests, Backendunits, Analyzer-/Baselinepruefung. |
 | Physische Apple-/Android-Abnahme | Nicht nachgewiesen. `apple-prepare`, `ios-smoke-build`, `macos-smoke-build` sind in diesem Lauf **SKIPPED**. |
-| Web-Auslieferung | **Bereits erfolgt:** Pages-`build` und `deploy` fuer `cfae2a2` sind erfolgreich: [Run 37651530082](https://github.com/arambucak/Parentpeak/actions/runs/37651530082). Das beweist weder die aktuell sichtbare Custom-Domain-Version noch einen passenden Render-/DB-Stand. |
+| Web-Auslieferung | **Pages erfolgreich veroeffentlicht:** [Run 37766825449](https://github.com/arambucak/Parentpeak/actions/runs/37766825449) fuer `138ca5d`; beide Gates bestaetigen kompatibles Live-Backend `64358df`. Kein unabhaengiger Browser-/CDN-/Custom-Domain-Cache- oder Geraete-QA-Nachweis. |
 | #151-Produktionsmigration | **Schema-Mismatch behoben:** nach ausdruecklicher Nutzerfreigabe am 7. Oktober 2026 um 22:37:53 MESZ erfolgreich gegen die Render-DB angewandt. Beide nullable TEXT-Spalten, erfolgreicher Migrationseintrag und keine ausstehenden Migrationen unmittelbar read-only bestaetigt (Abschnitt 0.2). |
 | Backup vor Migration | Nutzer bestaetigt: PITR 3 Tage aktiv, vollstaendiger Render-Export `completed`, Sicherungspunkt 7. Oktober 2026, 22:32 Uhr (als MESZ gefuehrt). Kein unabhaengiger Restore-Test nachgewiesen. |
-| Laufende Render-Version | Dashboard-Erstnachweis: Service `Parentpeak`, SHA `cfae2a2786736be6aa7f6e1ebccaed5defe00df1`. Nutzer bestaetigt am 7. Oktober um 23:13 MESZ: Pre-Deploy `npm run migrate:deploy` gespeichert, Deploy auf `cfae2a2`, `No pending migrations`, Status Live, `/health` HTTP 200. Einrichtung erledigt; `/health` liefert weiterhin keine Commit-ID. |
+| Laufende Render-Version | Service `Parentpeak`, `64358df`, [Deploy dep-db3d4qe7bikc73bt6kdg](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0/deploys/dep-db3d4qe7bikc73bt6kdg), Live seit 8. Oktober 01:16:04 MESZ. Build erfolgreich, Pre-Deploy `No pending migrations to apply`, Readiness-Vertrag und Health HTTP 200. Nach #157/#161/#159 kein neuer Renderdeploy beobachtet. |
+| Deploy-Gate | #163 aktiv und praktisch verifiziert: erfolgreiche genaue main-CI, versioniertes Backend-/Schemazeugnis vor Build und nochmals vor Publikation. Identischer kompletter Backend-Tree erlaubt aelteren Live-SHA; keine Health-only-Freigabe. |
+| Consent-/FAQ-Fixes | #157, #161 (enthaelt #158) und #159 gemergt und erfolgreich auf Pages veroeffentlicht; Nachweise in 0.3. #158 als ersetzt geschlossen. Manuelle Geraete-/Rechtsabnahme bleibt offen. |
+| Multer / OTP | #165 bringt Multer 2.4.0 mit `fieldArrayIndexLimit: 0` und Release-Nachweis live. Nutzer bestaetigte installierte Version read-only. OTP_HASH_SECRET durch Nutzer gespeichert und mit #163-Deploy wirksam; Fallback-Warnung im neuen Startlog weg. SMS-/OTP-Flow trotzdem nicht produktionsfunktional (0.4). |
 | Audit-Testnachweise | Lokaler Abschlussplan: 134 gezielte Tests, 29 Chrome-Tests, Web-JS-Release gruen; volle lokale Suite 902 bestanden / 1 Skip / nur 12 bekannte Events-Firebasefehler; Analyzer 11 Infos. Nicht als neu ausgefuehrte Tests dieses Dokumentationsauftrags ausgeben. |
 
 Fuer dieses Dokument wurden Repo-Dateien, GitHub-Metadaten/Logs und das
@@ -33,7 +44,9 @@ freigegebene Render-Dashboard gelesen. Der vorhandene Read-only-Diagnoseworkflow
 wurde ausgefuehrt; er liest ausschliesslich Schema-/Migrationsmetadaten.
 Dieser Dokumentations-PR aendert keinen Produktivcode. Die spaeter gesondert
 freigegebene Produktionsmigration ist in Abschnitt 0.2 dokumentiert.
-Kein Deployment, keine Store-Einreichung und keine KI-Testanfrage ausgefuehrt.
+Die separat freigegebenen Deploys/Merges sind unten dokumentiert. Dieser
+Doku-Auftrag fuehrt keinen weiteren Produktionsmerge/Deploy, keine Store-
+Einreichung und keine KI-Testanfrage aus.
 
 ### 0.1 Historische Erstdiagnose am 7. Oktober (vor Konsolidierung)
 
@@ -100,8 +113,9 @@ aus Abschnitt 0.2 ergaenzt; die Schemaluecke ist nicht mehr offen.
   uebernommen. Keine weitere Migration, kein Deploy, kein Merge und keine
   Render-Einstellungsaenderung nach dieser Freigabe.
 
-**Funktionale Abnahme bleibt offen:** Schema-Nachweis ist kein erfolgreicher
-authentifizierter Backend-GET oder vollstaendiger Opt-in-Test.
+**Betriebliche Logs-Abnahme vom Nutzer akzeptiert; vertiefte funktionale QA
+bleibt offen:** Schema-Nachweis ist kein erfolgreicher authentifizierter
+Settings-GET oder vollstaendiger Opt-in-Test.
 Nach der Migration ausgefuehrte Live-GETs: `/health` HTTP 200 mit
 `status: OK`; `/ai/settings` ohne Token HTTP 401 mit Firebase-ID-Token-
 Hinweis. Erreichbarkeit und Auth-Gate sind damit bestaetigt, nicht die
@@ -130,46 +144,58 @@ Read-only-Abnahme ohne neue Consent-/Memory-Daten:
 
 **Pre-Deploy-Einrichtung erledigt:** Nutzer bestaetigt am 7. Oktober 2026,
 23:13 MESZ: Command gespeichert, Deploy auf `cfae2a2`, Log `No pending migrations`,
-Status Live und `/health` HTTP 200. Kein weiterer Deploy durch den Assistenten.
+Status Live und `/health` HTTP 200. Spaetere freigegebene Deploys siehe 0.3.
 A-Logs-Abnahme zuvor vom Nutzer akzeptiert; authentifizierter Settings-GET
 bewusst auf spaetere Geraete-QA verschoben, nicht als ausgefuehrt behauptet.
-Das App-/Backend-Deploy-Gate bleibt offen. Historische Einrichtungsanleitung:
-**Reihenfolge verbindlich:
-erst Dokumentation sichern, dann A durch den Nutzer abnehmen; B erst nach
-erfolgreicher A-Abnahme.** Der Assistent wertet nur redigierte
-Nutzerrueckmeldungen aus und startet keine weiteren Live-Checks.
-Anleitung fuer den spaeteren Schritt B:
-Render -> Web-Service `Parentpeak` -> Settings -> Deploy ->
-Pre-Deploy Command -> Edit -> `npm run migrate:deploy` -> Save.
-Root Directory muss `backend` sein. Speichern als potentiell Deploy-ausloesende
-Aenderung behandeln, nicht als read-only Schritt. Kein garantiertes
-"Save only" fuer dieses Settingsfeld behaupten; Environment-Saveoptionen
-sind ein anderer Dialog.
+Das App-/Backend-Deploy-Gate ist inzwischen mit #163 aktiv (0.3).
+Pre-Deploy prueft bei jedem neuen Backenddeploy alle ausstehenden Migrationen;
+spaetere Migrationen und DB-Ziele weiterhin vor Freigabe pruefen.
 
-Vor Speichern Branch `main`, freizugebenden SHA `cfae2a2`, dessen gruene CI,
-keine neueren ungeprueften main-Commits/Deployqueue und dasselbe DB-Ziel
-pruefen. Danach Dashboardwert, Pre-Deploy-Log und Live-SHA kontrollieren.
-Wenn ein Deploy startet, darf er keine ungeprueften neuen Migrationen mitnehmen.
-Beim unveraenderten SHA und demselben DB-Ziel findet der Befehl nach unserer
-erfolgreichen Migration keine ausstehenden Migrationen vor. Das gilt nicht
-automatisch fuer einen spaeteren SHA oder eine andere Datenbank.
-Der korrigierte Pre-Deploy-Schritt ersetzt das weiterhin fehlende
-App-Migration-/Backend-Gate nicht.
+### 0.3 Verifizierte Releases am 8. Oktober
 
-Vorbereitete Datenschutz-PRs, **nicht live und nicht gemergt**:
+Alle Merges erfolgten nach einzelner ausdruecklicher Nutzerfreigabe.
 
-- #157: kontobezogener Kuehlschrank-Consent mit bestaetigtem Ack,
-  Service-Grenze und Google-Gemini-Texten; `analyze: SUCCESS`.
-- #158: Google-Gemini-Empfaenger im Entwicklungsbericht de/en/tr/ku,
-  eigene Sprach-/Fallbackregressionen; `analyze: SUCCESS`.
-- #159: sichtbarer Hinweis auf ueberwiegend deutsche FAQ-Inhalte/Suchbegriffe
-  und englischen Fallback fehlender UI-Texte. 15 gezielte und 9 Chrome-Tests
-  bestanden; volle lokale Suite 910 bestanden / 1 Skip / nur 12 bekannte
-  Events-Firebasefehler, Analyzer 11 Infos. CI separat am aktuellen PR pruefen.
-- Neu verifizierter offener Entwicklungsbericht-Legacypunkt:
-  `dev.ai_report_consent` ist ebenfalls global, Ack ungeprueft, keine
-  dienstseitige Consent-Grenze. #158 ist nur die beauftragte Empfaenger-
-  Textkorrektur, keine Behebung dieser weiteren Grenze oder Rechtsfreigabe.
+| Release | Squash-SHA / Nachweis |
+|---|---|
+| #165: #164 Multer + #162 Readiness | `9984d2e4a05836f7f2f62a23ac1b2c4559876f62`, Merge 00:45:41 MESZ, Render Live 00:46:55. 181 Backendtests lokal; Build/Pre-Deploy/Readiness/Health abgenommen, Multer 2.4.0 vom Nutzer in Render-Shell bestaetigt. #162/#164 ersetzt. |
+| #163: Pages-Gate + gespeichertes OTP-Secret | `64358dfbaf4daa3bb2dcc508f96fc4bd07fd049a`, Merge 01:14:47 MESZ, Render Live 01:16:04. [main-CI 37701141463](https://github.com/arambucak/Parentpeak/actions/runs/37701141463) und [Pages 37701141424](https://github.com/arambucak/Parentpeak/actions/runs/37701141424) SUCCESS. Gates 01:19:34 / 01:22:14, jeweils Release- und Backend-SHA identisch. |
+| #157: Kuehlschrank-Consent | `b029834b400e49aabb63ca59c081755926a43df3`, Merge 11:40:40 MESZ. [main-CI 37758311867](https://github.com/arambucak/Parentpeak/actions/runs/37758311867) und [Pages 37758311914](https://github.com/arambucak/Parentpeak/actions/runs/37758311914) SUCCESS. Gates 11:45:19 / 11:47:34 akzeptieren Backend `64358df`. |
+| #161: Entwicklungsbericht-Consent inklusive #158 | `2d81164d2700cc6f65692f21e8b4f0df566f0a3d`, Merge 12:20:38 MESZ. [main-CI 37762847460](https://github.com/arambucak/Parentpeak/actions/runs/37762847460) und [Pages 37762847484](https://github.com/arambucak/Parentpeak/actions/runs/37762847484) SUCCESS. Gates 12:25:38 / 12:28:01 akzeptieren Backend `64358df`. #158 danach als ersetzt geschlossen. |
+| #159: ehrlicher FAQ-Sprachhinweis | `138ca5d93aafc7b099361c8b472fb7dd75cf9cc0`, Merge 12:56:50 MESZ. [main-CI 37766825467](https://github.com/arambucak/Parentpeak/actions/runs/37766825467) und [Pages 37766825449](https://github.com/arambucak/Parentpeak/actions/runs/37766825449) SUCCESS. Gates 13:01:35 / 13:04:23 akzeptieren Backend `64358df`. |
+
+Nach #157/#161/#159 blieb Render Live auf `64358df`, Readiness `ready`;
+kein neuer Renderdeploy beobachtet. Client-Doku liegt ohne Inhaltsverlust in
+[Client-Datenschutz und Sprachumfang](docs/client-privacy-and-language.md).
+Dadurch bleibt der vollstaendige Backend-Tree identisch. Das Gate selbst
+wurde nicht abgeschwaecht. Ein Renderdeploy ist nicht fuer die Gate-Kompatibilitaet
+noetig; tatsaechliches Auto-Deploy-Verhalten haengt von Render-Filtern ab.
+
+Das Gate wartet auf die genaue main-CI, nicht auf ein inkompatibles Backend.
+Bei fehlendem Backendnachweis bleibt der bisherige Pages-Stand live; ein
+kontrollierter erneuter Lauf benoetigt eigene Freigabe. In diesen Releases
+waren keine erneuten Pages-Laeufe noetig. Zweite Pruefung ist keine atomare
+Sperre gegen manuelle Backendrollbacks; kompatiblen Betrieb weiter sichern.
+
+### 0.4 OTP-Konfiguration und verbleibende Telefon-Verifizierung
+
+Nutzer hat `OTP_HASH_SECRET` sicher als Render-Environment-Variable per
+Save only gespeichert (kein Deploy), anschliessend wurde es mit dem
+freigegebenen #163-Deploy wirksam. Im neuen Startlog fehlt die zuvor sichtbare
+Fallback-Warnung. Secret-Wert nicht gelesen, ausgegeben oder im Repo gespeichert.
+
+[hashOtpForUser und OTP-Routen](backend/server.js) verwenden das Secret nur
+fuer die separate Eltern-Matching-Telefonverifizierung, nicht fuer Firebase-
+Login, E-Mail-Verifizierung oder Passwort-Reset. Der OTP-Speicher ist eine
+prozesslokale Map: offene Anfragen gehen bei Neustart/Instanzwechsel verloren,
+auch mit festem Secret. Es gibt keinen SMS-Provider-Versand; Produktion
+liefert keinen devCode, obwohl die Anforderungsantwort channel sms meldet.
+[ParentMatchingScreen](lib/ui/parent_matching_screen.dart) hat keinen gefundenen
+App-Einstieg; die aktuelle Home-Kachel oeffnet ElternNetzwerkScreen.
+
+**Kein Launch-Blocker fuer den aktuell nicht verdrahteten Flow**, nach
+Nutzerentscheidung. **Vor Aktivierung zwingend:** echten SMS-Versand,
+gemeinsamen kurzlebigen OTP-Speicher und ehrliche Versand-/Fehleranzeige
+nachruesten und abnehmen. Ein festes Secret allein repariert den Flow nicht.
 
 ## 1. Kritischer Rollout: Migration -> Backend -> App
 
@@ -193,17 +219,18 @@ Vorbereitete Datenschutz-PRs, **nicht live und nicht gemergt**:
   `preDeployCommand` im Render-Dashboard per Blueprint-Sync uebernommen werden.
   Die Erstnachpruefung zeigte einen leeren Pre-Deploy-Befehl (Abschnitt 0.1).
   Inzwischen Einrichtung und erfolgreicher Lauf vom Nutzer bestaetigt (0.2).
-- [Pages-Workflow](.github/workflows/deploy-web-pages.yml) deployt bei jedem
-  Push auf `main` **ohne Abhaengigkeit von Migration/Render oder `analyze`**.
-  Die App-Reihenfolge wird also nicht automatisch erzwungen. Mobile
-  Auslieferung ist separat; der aktuelle Web-Stand ist schon deployed.
+- [Pages-Workflow](.github/workflows/deploy-web-pages.yml) startet bei main-Push
+  oder manueller Ausloesung, publiziert seit #163 aber nur nach erfolgreicher
+  genauer main-CI und kompatiblem Live-Backend. [Gate](scripts/pages_release_gate.cjs)
+  prueft versionierten Vertrag, erforderliche Migrationen/Spalten und exakten
+  SHA oder identischen kompletten Backend-Tree vor Build und vor Publikation.
+  Mobile Auslieferung und manuelle Storefreigabe bleiben separat.
 
 **Vor weiterer Freigabe:** verantwortliche Person, freizugebenden SHA,
 DB-Ziel, Backups/Restore-Verfahren und kompatiblen Backend-Rollback festhalten.
-Render-Autodeploy, Branch und Pages-Auslieferung kontrollieren bzw. fuer den
-koordinierten Release pausieren. Nicht behaupten, der Backend-vor-App-Gate sei
-bereits eingehalten worden. Den schon publizierten Web-Stand zuerst mit dem
-realen Backend abgleichen; bei unklarer Transfergrenze keine weitere
+Render-Autodeploy, Branch und Pages-Auslieferung kontrollieren. Das aktive
+Gate nicht umgehen; bei fehlendem Backendnachweis stoppen. Den freizugebenden
+Web-Stand mit dem realen Backend abgleichen; bei unklarer Transfergrenze keine weitere
 Memory-Freigabe und betroffene Nutzung betrieblich begrenzen.
 
 ### 1.2 Vorhandene Prisma-Workflows und konkrete Befehle
@@ -289,11 +316,11 @@ Nachweis setzen. Auch `/admin/migrate-db` ersetzt dieses Runbook nicht.
 ### 1.3 Render-Backend deployen und Identitaet pruefen
 
 Nach bestaetigter Migration im Render-Dashboard den Service
-`parentpeak-backend` auf den freigegebenen Commit deployen (manueller Deploy
+`Parentpeak` auf den freigegebenen Commit deployen (manueller Deploy
 des freigegebenen Commits bzw. kontrollierter Autodeploy).
 
-- [ ] Dashboard: korrekter Service/Branch und exakter SHA `cfae2a2...`
-  oder ein separat freigegebener Nachfolger mit allen #151-Guards.
+- [ ] Dashboard: korrekter Service/Branch und freigegebener SHA mit allen
+  #151-Guards. Aktueller verifizierter Live-SHA steht in Abschnitt 0.
 - [ ] Buildlog: Prisma-Clientgenerierung erfolgreich; Predeploy:
   `npm run migrate:deploy` erfolgreich; Start: `npm start`, neue Instanz live.
 - [ ] Dashboard-Deploy-ID, SHA, UTC-Zeit, DB-/Migrations-Run-ID und
@@ -309,6 +336,9 @@ des freigegebenen Commits bzw. kontrollierter Autodeploy).
 
   [server.js](backend/server.js) antwortet statisch mit `status: "OK"` und
   einer Meldung. **Kein SHA, keine DB-/Consent-Bestaetigung.**
+  Zusaetzlich `/release/readiness`: HTTP 200, `status: ready`, erwarteter
+  Commit/Backend-Tree und Vertrag `parentpeak-memory-consent-v1` mit
+  `chat-memory-v1`, beiden Migrationen und nullable-text Consent-Spalten.
   Auch ein gruener [Keep-Alive-Workflow](.github/workflows/backend-keepalive.yml)
   reicht nicht: sein Script warnt bei schlechten HTTP-Statuscodes nur und
   beendet sie nicht zwingend als Failure.
@@ -347,7 +377,8 @@ Tests sind kein Nachweis, dass Render diesen Code schon ausfuehrt.
   keine Serversecrets in App-Artefakte einbauen.
 - TestFlight/Play Internal auf realen Geraeten abnehmen (Abschnitt 3), dann
   manueller Store-Gate und kontrollierter Rollout mit Monitoring.
-- Web-Gate wegen bereits erfolgreichem Pages-Deploy gesondert nachholen.
+- Aktives Web-Gate bei jedem Release beibehalten; main-CI und beide
+  Backendpruefungen mit finalem Pages-Ergebnis protokollieren.
   Ein kuenftiger `gh workflow run deploy-web-pages.yml --repo
   arambucak/Parentpeak --ref main` ist ein echter App-Deploy und erst nach
   Backend-/QA-Freigabe vorgesehen, kein neutraler Test.
@@ -391,7 +422,9 @@ Release-Verantwortliche die Bedingung und Restrisiken dokumentieren.
 | Rohe `hostUserId` | [Events-Screen](lib/ui/events_activities_screen.dart) setzt in `events_invitation_from` direkt `invitation.hostUserId` ein; [Modell](lib/models/event_invitation.dart) hat keinen Host-Anzeigenamen. | **Kann Post-Launch**, wenn technische IDs fuer diese Sichtbarkeit bewusst akzeptiert und als solche erklaert werden. Kein Anzeigename erfinden, keine Auth-ID aendern. Backend-/UI-Anzeigename separat planen; bei internen Identifikatoren mit unerwuenschter Offenlegung vor Launch loesen. |
 | Lokale Verschluesselung | [Zentralenstore](lib/logic/family_hub_store.dart), [Finanzstore](lib/logic/family_finance_store.dart) und [Chatstore](lib/logic/chat_account_store.dart) nutzen JSON/SharedPreferences; Kontoskope sind keine Verschluesselung. [SecureStorage](lib/logic/secure_storage.dart) existiert fuer andere Verbraucher, schuetzt diese Stores aber nicht automatisch. | **Vor Launch noetig:** dokumentierte Schutzbedarfs-/Backup-/Geraetezugriffsentscheidung fuer Kind-/Gesundheits-/Finanzdaten. Zusaetzliche App-Verschluesselung **kann Post-Launch** nur bei begruendet akzeptiertem Restrisiko, passender Offenlegung und kontrolliertem Releaseumfang; bei notwendigem Schutz dieser Daten vor lokalem Zugriff ist Umsetzung vorher Pflicht. OS-Schutz nicht als App-Verschluesselung ausgeben. |
 | Entwicklungsfragen | [Question-Localization](lib/l10n/development_question_localizations.dart) hat EN/TR/KU; DE kommt aus dem Original. Andere Sprachen erhalten unveraendert deutsche Domains. | Grossprojekt **kann Post-Launch** fuer weitere Sprachen, wenn Launch-Sprachen/Inhaltsumfang ehrlich begrenzt oder der DE-Fallback sichtbar erklaert sind. Kein Volluebersetzungsversprechen fuer alle 16 auswaehlbaren Sprachen. |
-| FAQ: Planpraezisierung | Entgegen der pauschalen Restlistenformulierung sind die 32 [FAQ-Rohdaten](lib/data/eltern_wissen_data.dart) ueberwiegend deutsch. [Service](lib/logic/eltern_wissen_service.dart) sucht darin; [aktives Widget](lib/ui/widgets/eltern_wissen_widget.dart) ersetzt nur den einzelnen TR-Eintrag `klein_04`, nicht alle EN/TR/KU-FAQ. | **Vor Launch noetig:** den vorbereiteten Fallback-Hinweis aus #159 freigeben/ausliefern und manuell pruefen; noch nicht live. Bewusste Entscheidung fuer C: fachlich gepruefte Volluebersetzung plus lokalisierte Suche **Post-Launch**, nicht als bereits vier-sprachige FAQ bewerben. Der Auditplan bleibt unveraendert. |
+| FAQ: Planpraezisierung | Die 32 [FAQ-Rohdaten](lib/data/eltern_wissen_data.dart) sind ueberwiegend deutsch; [Service](lib/logic/eltern_wissen_service.dart) sucht darin. #159 liefert jetzt den sichtbaren Sprachhinweis im [aktiven Widget](lib/ui/widgets/eltern_wissen_widget.dart) live. | **Code/Pages erledigt, manuelle Sprach-QA offen.** Fachlich gepruefte Volluebersetzung und lokalisierte Suche bleiben Post-Launch; nicht als vollstaendig vier-sprachige FAQ bewerben. |
+| Telefon-Verifizierung / SMS | Festes OTP-Secret wirksam; Matching-OTP trotzdem ohne SMS-Versand und gemeinsamen Speicher. Separater Screen aktuell nicht verdrahtet (0.4). | Nach Nutzerentscheidung **kein aktueller Launch-Blocker**, aber **vor jeder Aktivierung zwingend nachruesten und testen**. Nicht als funktionierende SMS-Verifizierung bewerben. |
+| Weitere npm-Schwachstellen | Multer-Blocker mit #165 behoben, 2.4.0 plus Indexlimit live. Letzte gezielte Auditaufnahme nach Fix: 24 Produktionsmeldungen (13 moderate, 10 high, 1 critical); kein neues Audit in diesem Doku-Auftrag. | Verbleibende erreichbare Pfade und Risikoentscheidungen getrennt abnehmen. Keine pauschale Security-Freigabe aus Multer-Fix ableiten; kein npm audit fix --force oder Prisma-Downgrade. |
 | "EN-Fallback ueberall ehrlich?" | **Nein, nicht belegt und in geprueften Pfaden nicht einheitlich.** [AppStringsManager](lib/l10n/app_localizations_all.dart) und [AppLocalizations](lib/l10n/app_localizations.dart) fallen fuer fehlende UI-Keys auf EN zurueck; Entwicklungs-/FAQ-Inhalte auf DE. [Profilpicker](lib/ui/profile_safety_screen.dart) und [Familienprofilpicker](lib/ui/family_profile_screen.dart) zeigen keinen entsprechenden Vollstaendigkeits-/Fallbackhinweis. [Rechtliches](lib/ui/legal_info_screen.dart) enthaelt deutsche Festtexte. | **Vor Launch noetig:** Sprachumfang und EN-/DE-Inhaltsfallback ehrlich kommunizieren; sicherheitsrelevante Consent-/Rechtstexte muessen fuer die tatsaechlich adressierten Nutzer verstaendlich sein. Keine pauschale vier-/16-sprachige Freigabe aus Key-Tests ableiten. |
 | Release-QA | CI belegt Tests, aber Apple-Jobs am Release-SHA sind uebersprungen; kein physisches Geraeteprotokoll. [Aelterer Releaseguide](docs/release/RELEASE_EXECUTION_GUIDE_v1.0.0.md) behauptet noch "NO ISSUES/READY", Stand Juli. | **Vor Launch noetig:** Abschnitt 3 mit signierten aktuellen Builds. Alte gruen markierte Dokumente sind kein aktueller Nachweis. JS-Web ist geprueft; Wasm-/TTS-Warnungen nicht als behoben ausgeben. Wasm-Auslieferung nur nach eigener Abnahme. |
 | Finanzdaten/Links | [Audit-Restliste](AUDIT_PLAN.md) dokumentiert TR-"Cocuk Parasi", Wohngeld-HTTP403 und Quellenpflege. | **Vor Launch noetig:** [Quellenmatrix vom 06.10.2026](backend/README.md#familien-geld-einzelpruefung-amtlicher-leistungsdaten) konkret gegen die aktuellen Inhalte pruefen, nicht nur Disclaimer lesen. Bekannten 403 nicht ohne amtlichen Beleg durch eine erfundene URL ersetzen; unbestaetigtes TR-Programm nicht als amtlich bestaetigt vermarkten. Danach laufende Pflege. |
@@ -414,13 +447,13 @@ keine Service-Grenze. Keine reale KI-Anfrage beim Ablehnungs-/Fehlertest.
 
 | Flow / Beleg | Abnahme auf beiden Plattformen |
 |---|---|
-| Kuehlschrankfoto: [Screen](lib/ui/fridge_recipe_screen.dart), [Service](lib/logic/fridge_recipe_service.dart) | [ ] Ablehnung stoppt Fotoanalyse; Kamera-/Galerieabbruch, Neustart und Kontowechsel. **Offene Legacy-Luecke:** `fridge.ai_photo_consent` ist geraeteglobal, nicht versioniert; `setBool`-Ack wird nicht ausgewertet. Der Service prueft Konto, aber keinen Foto-Consent. Nicht als neues account-scoped Muster abnehmen (siehe Abschnitt 4). |
+| Kuehlschrankfoto: [Consent](lib/logic/fridge_photo_consent.dart), [Screen](lib/ui/fridge_recipe_screen.dart), [Service](lib/logic/fridge_recipe_service.dart) | [ ] #157 live: Ablehnung stoppt KI; Kamera-/Galerieabbruch, Neustart, Legacy-Key ohne neue Freigabe, fehlender Schreib-Ack, Konto A/B und Wechsel waehrend Bildlesen/HTTP/Retry manuell abnehmen. Konto-/Gast-Key und Service-Consent vor/nach Anfrage implementiert, Geraete-QA nicht daraus ableiten. |
 | Verschenkmarkt-Foto: [Consent](lib/logic/treasure_photo_consent.dart), [Analysegrenze](lib/logic/treasure_photo_analysis_service.dart) | [ ] Ohne Consent Foto behalten/manuell ausfuellen, kein KI-Transfer; Zustimmung bleibt bei A, B bestaetigt separat; Speicherfehler blockiert; Kontowechsel waehrend Byte-Lesen/KI liefert kein Ergebnis an B. Analyse ist keine Veroeffentlichung. |
 | Familienrezept: [Consent](lib/logic/family_recipe_consent.dart), [Dialog](lib/ui/widgets/family_recipe_consent_dialog.dart) | [ ] Ohne Zustimmung nur lokale Inspiration; alters-/allergiebezogene Uebertragung erst nach Ack; Gerichtsuche einschliessen. Kuehlschrankrezept separat testen: dessen eigener Service darf nicht allein wegen dieses getrennten Consents als geschuetzt gelten. |
 | Wegweiser: [Consent](lib/logic/benefit_guide_consent.dart), [Screen](lib/ui/benefit_guide_screen.dart) | [ ] Ablehnung laesst allgemeine Leistungen nutzbar; Konto/Gast-Zustimmungen getrennt; kein KI-Erfolg bei fehlendem Ack; Ausfallfallback sichtbar allgemein, Links/Sharing pruefen. |
 | Chat: [Consent](lib/logic/chat_ai_consent.dart), [Screen](lib/ui/chat_screen.dart) | [ ] Kein Senden vor Zustimmung; sichtbarer Lade-/Speicherfehler; Verlaufbudget sechs volle Runden/12.000 Zeichen; Tipp folgt Tageslimit; Ausfallantwort als solche erkennbar. |
 | Memory: [Consent](lib/logic/chat_memory_consent.dart), [Settings](lib/ui/ai_memory_settings_screen.dart) | [ ] Zusatz-Opt-in unabhaengig vom Chat; Ablehnung laesst normalen Chat zu; ohne Opt-in keine neuen Memory-Writes/Transfers. Neutrale Servernamen, lokaler Anzeigename, vollendetes Alter, Teilfehler ohne Doppelanlage; Aus/Ein invalidiert laufende Antwort; Aus schaltet Nutzung ab, explizites Loeschen ist separat. |
-| Entwicklungsbericht: [Consent-Texte](lib/l10n/app_localizations_all.dart), [Feature](lib/models_and_widgets/development_schema_feature.dart) | [ ] Antworten nur nach Zustimmung; kein Klarname im Request; Ergebnis ersetzt Namen erst lokal. Auch hier Empfaengertext pruefen: derzeit generischer "KI-Dienst". |
+| Entwicklungsbericht: [Consent](lib/logic/development_report_consent.dart), [Service](lib/logic/development_report_service.dart), [aktiver Screen](lib/ui/entwicklung_impulse_screen.dart) | [ ] #161 live: Google Gemini, Konto-/Gast-Zustimmung, Ack-Fehler, Widerruf/Retry, A-B-A-Wechsel und kontobezogene Berichte/History/Scores abnehmen. Kein Klarname im Request; Name erst lokal einsetzen. Legacy-Key/Altberichte nicht automatisch autorisieren/zuordnen. |
 
 ### 3.2 Foto-, Veroeffentlichungs- und Share-Flows
 
@@ -538,8 +571,8 @@ Policy als geheilt betrachten.
 Dies sind vorgeschlagene Bausteine, keine vollstaendige oder rechtlich
 abgenommene Datenschutzerklaerung. `web/privacy` und Store-Konsolen wurden
 nicht geaendert. Vor Verwendung muss der tatsaechliche Releaseumfang stimmen;
-insbesondere #157/#158 sind noch nicht live und die Entwicklungsbericht-
-Consent-Grenze ist weiterhin Legacy. Eckige Pruefmarker sind Stop-Kriterien,
+Die Client-Consent-Fixes #157/#161 sind inzwischen live; dies ersetzt keine
+fachliche/rechtliche Pruefung. Eckige Pruefmarker sind Stop-Kriterien,
 kein veroeffentlichungsfertiger Text.
 
 **Lokale Daten und optionale Backend-Speicherung**
@@ -614,16 +647,14 @@ Abschnitt 3 verlinkten aktiven Dialoge.
 | Verschenkmarkt-Foto | Google Gemini explizit; Backendweg, nicht anonymisierte Bildinhalte und optionale Analyse benannt. |
 | Chat | Google Gemini explizit; Nachricht/Verlauf, begrenzte Anonymisierung und separates Memory benannt. |
 | Memory | Google Gemini explizit; accountbezogene Backendspeicherung, Gesundheitswerte, neutrale Namen, Altersminimierung, Aus vs. Loeschung und fehlende App-Verschluesselung benannt. |
-| Kuehlschrank-Foto | **Live/main weiterhin nein**. #157 bereitet Google Gemini in de/en/tr/ku und die neue Konto-/Ack-/Service-Grenze vor, ist aber ungemergt. |
-| Entwicklungsbericht | **Live/main weiterhin nein**. #158 bereitet Google Gemini in de/en/tr/ku vor, ist aber ungemergt. Globaler Consent-/Ack-/Service-Legacypunkt separat offen. |
+| Kuehlschrank-Foto | **Live mit #157:** Google Gemini in de/en/tr/ku, Konto-/Gast-Key, bestaetigter Ack und Service-/Retry-Grenzen. Alte globale Zustimmung autorisiert keine Verarbeitung. |
+| Entwicklungsbericht | **Live mit #161 inklusive #158:** Google Gemini in de/en/tr/ku, Konto-/Gast-Consent, Ack und Service-/Retry-/Ergebnisgrenzen. Globale Legacy-Zustimmung gilt nicht als neuer Consent. |
 
-Die letzten beiden sind **vor Launch zu klaeren/zu korrigieren oder die
-entsprechenden KI-Flows vom Release auszunehmen**. Insbesondere ist das
-globale Kuehlschrank-Opt-in kein Nachweis, dass Konto B eingewilligt hat.
-Diese Befunde wurden nicht im Produktivcode behoben.
-
-Genauer: in separaten Code-PRs vorbereitet, aber weder gemergt noch im
-Produktionsrelease ausgerollt. Ein gruener PR ist keine Live-Behebung.
+Die dokumentierten Mechanismusluecken sind implementiert und auf Pages
+ausgerollt. Geraete-QA, Verstaendlichkeit und rechtliche Abnahme bleiben offen.
+Client-Service-Guards sind keine unabhaengige Backend-Consent-Sperre fuer
+fremde Clients; Provider-Retention und bereits abgesandte Requests bleiben
+gesonderte Grenzen. Details: [Client-Dokumentation](docs/client-privacy-and-language.md).
 
 ### 4.3 Apple App Privacy / Google Data Safety
 
@@ -686,20 +717,17 @@ nicht auf. Keine Apple-Antworten ungeprueft in Google-Felder kopieren.
    22:37:53 MESZ behoben, unmittelbare DB-Verifikation gruen; Nutzer-Backup-
    Punkt 22:32. Noch offen: authentifizierte funktionale Backend-Abnahme,
    Consent-/Revision-Verhalten und Restore-Test. Pre-Deploy-Einrichtung
-   erledigt; App-Deploy-Gate mit Schema-/Backend-Nachweis noch umsetzen.
+   und App-Deploy-Gate mit Schema-/Backend-Nachweis erledigt und live verifiziert.
    Bereits deployten Web-Stand abgleichen; ohne Nachweis keine weitere
    Memory-/App-Freigabe. CI/Health allein genuegen nicht.
 2. **P0 - Sicherer Stop/Rollback:** consent-faehigen Rollback und betriebliches
    Abschalten testen. Kein erreichbar unsicheres Vor-#151-Backend und keine
    Loeschung von Originaldaten/Consent-Spalten.
-3. **P0 - Einwilligungsluecken:** Kuehlschrank-Foto-/Rezept-Legacypfad mit
-   generischem Empfaenger, globaler Zustimmung, ungeprueftem Ack und fehlendem
-   Service-Consent adressieren; Entwicklungsbericht-Empfaenger transparent
-   benennen. #157/#158 sind vorbereitet, nicht live. Auch den inzwischen
-   verifizierten globalen Entwicklungsbericht-Consent, dessen ungeprueften
-   Schreib-Ack und fehlende Service-Grenze gesondert beheben; eine reine
-   Empfaenger-Textkorrektur erledigt das nicht. Alternativ diese KI-Flows
-   nachweislich vom Release ausschliessen.
+3. **P0 - Einwilligungsabnahme:** #157/#161 beheben die dokumentierten
+   Kuehlschrank-/Entwicklungsbericht-Mechanismusluecken und sind auf Pages live;
+   #158 enthalten und ersetzt. Kein weiterer offener Codefix fuer diese
+   Befunde behauptet. Reale Geraete-, Konto-/Retry-/Ack- und rechtliche
+   Abnahme bleibt Pflicht; clientseitige Grenze nicht als Server-Sperre ausgeben.
 4. **P0 - Recht/Stores:** veraltete bzw. widerspruechliche Privacy-Aussagen,
    Impressumszugang, Gesundheits-/Memory-/Foto-/OSM-/Diagnoseverarbeitung,
    Drittland-/Retention-/Loeschgrenzen und Storeangaben fachlich abstimmen.
