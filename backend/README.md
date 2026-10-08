@@ -1,6 +1,38 @@
 # Parentpeak Marktplatz Backend
 
-## Gezieltes Security-Update (noch nicht produktiv ausgerollt)
+## Exakte Node-24-LTS-Runtime (Rollout noch offen)
+
+`backend/.node-version` waehlt exakt **24.21.0**. Mit Render `rootDir: backend`
+ist dies der Service-Root; Render verwendet dort die Versionsdatei vor
+`package.json` engines. Die engines-Range `>=24.0.0 <25.0.0` beschreibt die
+kompatible LTS-Linie, nicht die Freigabe beliebiger Patchversionen.
+`node_runtime.cjs` verifiziert exakt die laufende Version gegen diese Datei
+vor `npm install`, `npm run migrate:deploy` und `npm start`.
+Eine abweichende Runtime blockiert Build/Pre-Deploy/Start mit explizitem Fehler.
+CI verwendet denselben Pin und prueft ihn vor Restore/Tests.
+
+Render `NODE_VERSION` hat hoehere Prioritaet als die Datei. Bei der read-only
+Dashboardpruefung am 8. Oktober war kein NODE_VERSION-Eintrag und keine
+verknuepfte Environmentgruppe sichtbar; keine Renderaenderung ausgefuehrt.
+Vor Merge erneut gegen ungeplante Overrides pruefen. Exakte Dateiauswertung
+ist erst mit Buildlog/Shell beim freigegebenen Deploy bewiesen.
+Offizielle Dokumentation: [Node-Auswahl](https://render.com/docs/node-version),
+[Service-Root](https://render.com/docs/monorepo-support).
+
+Nach dem separat freigegebenen Deploy: Buildlog und Shell `node -v` muessen
+`v24.21.0` zeigen; neuer main-SHA, Pre-Deploy, Readiness, Health, Logs,
+Audit und beide Pages-Gates sind abnehmen. Kein Alias `lts` und keine
+unbegrenzte engines-Range verwenden. Zukuenftige Patchupdates aendern den Pin
+bewusst per PR; Prisma 7.8.0 und Nodemailer 10.0.16 bleiben kompatibel.
+Lokale Lifecycle-Scripts nur unter dem exakten Pin ausfuehren:
+
+```bash
+node backend/node_runtime.cjs
+npm ci --prefix backend --omit=dev --ignore-scripts --no-audit --no-fund
+node --test backend/tests/unit/*.test.js
+```
+
+## Gezieltes Security-Update (#167 live abgenommen)
 
 Der Lockstand aktualisiert nur `proxy-addr` 2.0.7 -> 2.0.8,
 `fast-uri` 3.1.3 -> 3.1.8, `fast-xml-parser` 5.10.0 -> 5.10.1
@@ -10,11 +42,10 @@ Der XML-Fix benoetigt zusaetzlich `@nodable/entities` 2.2.0 -> 3.1.0.
 Prisma CLI/Client/PG-Adapter bleiben auf 7.8.0; die sechs bedingt akzeptierten
 Pakete bleiben versionsgleich, einschliesslich beider brace-expansion-Eintraege.
 
-Nodemailer 10 benoetigt Node >=20. Die Backend-Engine-Range
-`^20.19.0 || ^22.12.0 || >=24.0.0` beruecksichtigt auch die bereits strengere
-Prisma-Anforderung. Render Node 24.14.1 wurde vom Nutzer read-only bestaetigt.
-`engines` dokumentiert kompatible Runtimes; ohne npm `engine-strict` ist es
-keine harte Installationssperre und kein exaktes Render-Node-Pinning.
+Nodemailer 10 benoetigt Node >=20; Prisma unterstuetzt Node >=24.
+Die urspruengliche offene Engine-Range fuehrte bei #167 auf Render zu
+26.11.1 statt zuvor 24.14.1. Die separate Node-Pin-Korrektur oben ist
+vorbereitet, aber noch nicht als produktiv abgenommen behauptet.
 
 Frischer lokaler Produktions-Audit am 8. Oktober 2026:
 24 -> 20 Paketmeldungen, critical 1 -> 0, high 10 -> 7, moderate 13 -> 13.
@@ -38,12 +69,14 @@ Google-Storage-Multiparthelper prueft Parser/Builder mit synthetischen
 XML-Antworten, einschliesslich der Ablehnung mehrfacher DOCTYPEs.
 Kein echter Mailversand, Google-Storage-Request oder Produktionszugriff.
 
-**Rollout erst nach separater Freigabe:** Backend-Tree geaendert, daher
-verlangt das Pages-Gate den passenden Render-Stand. Backup/PITR, ein
-freigegebener Squash-Merge mit einem Renderdeploy, Pre-Deploy, neuer SHA,
-Readiness/Health und Logs sind erneut abzunehmen. Auditbeleg gegen den
-tatsaechlich ausgelieferten Lockstand bestaetigen. Ein eventuell
-fail-closed beendeter Pages-Lauf darf nur mit eigener Freigabe neu starten.
+**#167 ausgerollt:** main/Render `cb1350ca68ddb904cff3f3aca0327cd966bb1ce7`,
+Live am 8. Oktober 14:42:55 MESZ. Pre-Deploy ohne ausstehende Migrationen,
+Readiness/Health/Startlog und Nodemailer 10.0.16 in Render-Shell bestaetigt.
+Frischer Render-Audit entspricht den obigen Restmeldungen. Beide Pages-Gates
+prueften exakt neuen SHA, Pages automatisch erfolgreich, kein Rerun.
+Der Node-Pin ist ein neuer Backend-Tree und braucht eine eigene Freigabe
+nach Backup; ein eventuell fail-closed beendeter Pages-Lauf darf nur mit
+eigener Freigabe neu starten.
 
 ## Release-Nachweis fuer Pages (noch separat auszurollen)
 
