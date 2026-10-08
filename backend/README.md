@@ -1,36 +1,22 @@
 # Parentpeak Marktplatz Backend
 
-## Empfaengerhinweis fuer Entwicklungsberichte
+## Release-Nachweis fuer Pages (noch separat auszurollen)
 
-Der aktive Entwicklungsbericht-Dialog benennt Google Gemini in de/en/tr/ku
-ausdruecklich als KI-Empfaenger. Nicht abgedeckte UI-Sprachen verwenden den
-englischen Hinweis. Die Berichtsantworten gehen ueber `/ai/generate` an den
-Backend-Proxy; der Kindname wird im Prompt durch `[KIND]` ersetzt und erst lokal
-wieder eingesetzt.
+`GET /release/readiness` ist ein read-only, nicht gecachter Release-Nachweis.
+Er liefert nur Commit-/Kompatibilitaets- und Schemametadaten, keine Kontodaten.
+Die Identitaet kommt ausschliesslich aus Render `RENDER_GIT_COMMIT`; fehlt sie,
+antwortet die Route mit 503. Die Route prueft beide erforderlichen Migrationen
+(finished, nicht rolled back), nullable TEXT-Consent-Spalten und eine echte
+SELECT-Abfrage ueber den laufenden generierten Prisma-Client.
+Ein nicht verfuegbares Schema/DB/Client liefert 503, nicht einen Health-Fallback.
 
-`DevelopmentReportConsent` speichert eine neue, ausdrueckliche Zustimmung unter
-`dev.ai_report_consent.v1.account.<encoded-user-id>`; Gastmodus ist separat
-unter `.guest`. Der globale Legacy-Key bleibt erhalten, gibt aber keine
-KI-Verarbeitung frei. Nur ein positiver Schreib-Ack aktiviert den Bericht;
-Fehler und Kontowechsel im Dialog zeigen einen lokalisierten Hinweis.
-
-`DevelopmentReportService` prueft Zustimmung und Ursprungskonto vor und nach
-dem KI-Aufruf. Sein HTTP-Guard greift auch bei Token-Aufloesung und 401-Retry;
-Widerruf oder Kontowechsel verwerfen Ergebnisse. Der Screen invalidiert
-laufende Requests auch bei Wechsel weg vom und zurueck zum gleichen Konto.
-Neue Berichte/Historien und zugehoerige Score-Snapshots liegen kontobezogen;
-unzugeordnete Legacy-Berichte werden nicht automatisch einem Konto zugewiesen
-und bleiben unveraendert lokal erhalten. Antworten und lokale Kindprofile
-werden durch diesen begrenzten Consent-Fix nicht insgesamt migriert.
-Report-Limit und Score-Speicherung pruefen den Ursprung vor weiteren Writes.
-
-Bereits abgesandte Anfragen werden nicht rueckgaengig gemacht. Die lokale
-Consent-Grenze ist keine unabhaengige Backend-Sperre fuer fremde Clients und
-keine Rechts-/Launchfreigabe. Bestehende Aussagen zur Speicherung ersetzen
-keinen Nachweis der realen Provider-Aufbewahrung.
+Dies ist kein Memory-Opt-in-Test, kein Nachweis aller Backendmigrationen und
+keine Rechts-/Launchfreigabe. Die Kompatibilitaetskennung muss bei kuenftigen
+API-/Schema-Anforderungen bewusst versioniert werden. Bis zur gesonderten
+Freigabe fuer Merge/Render-Deploy existiert dieser Nachweis nicht live.
 
 ```bash
-flutter test --no-pub test/development_report_consent_test.dart test/development_checkin_store_test.dart test/development_pdf_i18n_test.dart test/gemini_ai_service_test.dart test/localization_audit_verification_test.dart
+node --test backend/tests/unit/release-readiness.test.js
 ```
 
 ## Einwilligung fuer KI-Elternberatung
@@ -866,6 +852,50 @@ Wohngeld-Linkpruefung am 06.10.2026: Auch die gefundenen BMWSB-Kandidaten
 und `https://www.bmwsb.bund.de/DE/themen/wohnen/wohngeld/wohngeldrechner/wohngeldrechner-node.html`
 antworten beim Abruf mit HTTP 403. Kein inhaltlich bestaetigter Ersatz;
 der bisher dokumentierte Link bleibt unveraendert, nicht als tot eingestuft.
+
+## Bild-Upload: Multer-Sicherheitsstand
+
+Multer ist gezielt von 2.2.0 auf 2.4.0 angehoben (Manifest `^2.4.0`,
+Lockfile 2.4.0). Keine anderen Paketversionen wurden aktualisiert; die nicht
+mehr benoetigte concat-stream-Kette entfaellt durch das Multer-Update.
+Prisma bleibt unveraendert.
+
+`POST /uploads/image` behaelt `single('image')`, DiskStorage, die vier
+MIME-Typen, zufaellige Dateinamen sowie 201/400-Antworten bei. Genau 10 MiB
+ist jetzt inklusive erlaubt; ein Byte mehr liefert weiter 400.
+Der neue `fieldArrayIndexLimit: 0` ist erforderlich, um den im Advisory
+GHSA-535w-7cp7-47q4 beschriebenen Array-Konvertierungs-DoS zu verhindern.
+Der Endpoint verarbeitet keine Array-Metadaten; vorhandene App-Aufrufer
+senden nur das Bildfeld. Gewoehnliche Textfelder bleiben akzeptiert.
+Eine Versionsanhebung ohne diese Option waere fuer diesen Pfad unvollstaendig.
+
+Changelog 2.3/2.4: geaenderte Dekodierung von Formularnamen betrifft unser
+festes `image`-Feld nicht; das ganzzahlige Dateilimit ist weiterhin gueltig.
+Neue optionale Storage-/Stream-Optionen werden nicht benoetigt. DiskStorage-
+Abbruch-/Descriptor-/Orphan-Datei-Fixes werden durch echte lokale HTTP-
+Regressionen mit dem installierten Multer getestet, nicht nur Mock-Parser.
+
+Die Tests extrahieren die echte Konfiguration/Route aus server.js und binden
+einen temporaeren Loopback-Server ohne Firebase/DB/Produktionszugriffe.
+Sie pruefen gueltige Dateien, MIME/Dateigrenze, malformed/truncated Multipart,
+grosse Array-Indizes und Abbrueche auch vor der Dateinamenvergabe; Streams
+muessen geschlossen und Teil-Dateien entfernt sein. Authmiddleware ist
+nicht Gegenstand dieses isolierten Parser-/Handler-Tests.
+
+CI stellt die bestehenden gelockten Backenddependencies mit `npm ci`,
+`--ignore-scripts` und ohne Audit wieder her; keine Migration, Prisma-
+Generierung oder sonstigen Lifecycle-Scripts im Testinstall.
+
+```bash
+node --test backend/tests/unit/image-upload.test.js
+node --test backend/tests/unit/*.test.js
+```
+
+Lokal kann `PARENTPEAK_MULTER_TEST_PACKAGE` auf ein isoliert installiertes
+Multer-Paket zeigen, um keine fehlenden sonstigen Backenddependencies
+nachzuinstallieren. Der Test verlangt dieselbe Version wie das Lockfile.
+Dieser Fix beseitigt die Multer-Meldungen, nicht die anderen npm-Warnungen;
+Produktionswirksamkeit erst nach separat freigegebenem Deploy.
 
 ## Installation
 
