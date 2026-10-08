@@ -2,12 +2,13 @@
 
 Stand: 8. Oktober 2026. Gepruefter Checkout: `/Users/aram/Parentpeak-1`,
 Release-`main` und Live-Backend:
-`cb1350ca68ddb904cff3f3aca0327cd966bb1ce7` (#167).
-`backend/`-Tree: `626ed19ab4b09428c7fd21a75563bfa9e96ebcbd`.
+`ee7a7755d1685500e10e1b6f5359f1252607e9d0` (#168).
+`backend/`-Tree: `be7de5bd749ed2d80c5e4203fb3253b94847ffc5`.
 #160 ist gemergt und veroeffentlicht; #156/#158 sind als ersetzt geschlossen.
 Security-Code mit #167 live abgenommen. Technischer Nachlauf:
-**Node 24.21.0 pinnen - PR vorbereitet, Produktionsabnahme noch offen.**
-Diese Runtime-PR aendert den Backend-Tree; der neue Stand ist noch nicht live.
+**Node 24.21.0 produktiv abgenommen; neue Push-main-CI/Pages noch offen.**
+Der manuelle #168-Backend-Deploy ist live. #166 ist nur vorbereitet;
+seine Veroeffentlichung und der oeffentliche Launch sind nicht freigegeben.
 
 Das [Kachel-Audit](AUDIT_PLAN.md#gesamt-abschluss-des-kachel-audits--7-oktober-2026)
 ist abgeschlossen: zehn Kacheln, 53 Fix-PRs #103-#155. **Das ist keine
@@ -30,16 +31,16 @@ Statusbegriffe:
 
 | Bereich | Verifizierter Stand |
 |---|---|
-| Gemergter Code / CI | `analyze: SUCCESS` fuer Release-SHA `cb1350c`: [Run 37778703512](https://github.com/arambucak/Parentpeak/actions/runs/37778703512), volle Fluttertests, 212 Backendunits, Analyzer-/Baselinepruefung. |
+| Gemergter Code / CI | #168-PR-CI `analyze: SUCCESS`: [Run 37781968692](https://github.com/arambucak/Parentpeak/actions/runs/37781968692), exakt Node 24.21.0, 217 Backendunits. Kein Push-main-CI-Lauf fuer `ee7a775` angelegt; letzter erfolgreicher Release-main-Lauf bleibt [Run 37778703512](https://github.com/arambucak/Parentpeak/actions/runs/37778703512) fuer #167. |
 | Physische Apple-/Android-Abnahme | Nicht nachgewiesen. `apple-prepare`, `ios-smoke-build`, `macos-smoke-build` sind in diesem Lauf **SKIPPED**. |
 | Web-Auslieferung | **Pages erfolgreich veroeffentlicht:** [Run 37778703514](https://github.com/arambucak/Parentpeak/actions/runs/37778703514) fuer `cb1350c`; beide Gates bestaetigen exakt denselben Live-Backend-SHA. Kein unabhaengiger Browser-/CDN-/Custom-Domain-Cache- oder Geraete-QA-Nachweis. |
 | #151-Produktionsmigration | **Schema-Mismatch behoben:** nach ausdruecklicher Nutzerfreigabe am 7. Oktober 2026 um 22:37:53 MESZ erfolgreich gegen die Render-DB angewandt. Beide nullable TEXT-Spalten, erfolgreicher Migrationseintrag und keine ausstehenden Migrationen unmittelbar read-only bestaetigt (Abschnitt 0.2). |
 | Backup vor Migration | Nutzer bestaetigt: PITR 3 Tage aktiv, vollstaendiger Render-Export `completed`, Sicherungspunkt 7. Oktober 2026, 22:32 Uhr (als MESZ gefuehrt). Kein unabhaengiger Restore-Test nachgewiesen. |
-| Laufende Render-Version | Service `Parentpeak`, `cb1350c`, [Deploy dep-db3ov16q1p3s73fgnhh0](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0/deploys/dep-db3ov16q1p3s73fgnhh0), Live seit 8. Oktober 14:42:55 MESZ. Build erfolgreich, Pre-Deploy `No pending migrations to apply`, Readiness-Vertrag und Health HTTP 200. Runtime 26.11.1 bestaetigt; Rueckkehr zu exakt Node 24.21.0 LTS vorbereitet, noch nicht deployt. |
+| Laufende Render-Version | Service `Parentpeak`, `ee7a775`, [Deploy dep-db3trgm7bikc73acrkpg](https://dashboard.render.com/web/srv-d8q0p5j6sc1c73auvfa0/deploys/dep-db3trgm7bikc73acrkpg), manuell vom Nutzer gestartet, Live laut Log am 8. Oktober 20:16:48 MESZ. Build waehlt backend/.node-version 24.21.0; Shell bestaetigt v24.21.0. Pre-Deploy `No pending migrations to apply`, Readiness exakter SHA/beide Migrationen/nullable-text, Health HTTP 200; eingesehenes Deploy-Startlog ohne Fehler. |
 | Deploy-Gate | #163 aktiv und praktisch verifiziert: erfolgreiche genaue main-CI, versioniertes Backend-/Schemazeugnis vor Build und nochmals vor Publikation. Identischer kompletter Backend-Tree erlaubt aelteren Live-SHA; keine Health-only-Freigabe. |
 | Consent-/FAQ-Fixes | #157, #161 (enthaelt #158) und #159 gemergt und erfolgreich auf Pages veroeffentlicht; Nachweise in 0.3. #158 als ersetzt geschlossen. Manuelle Geraete-/Rechtsabnahme bleibt offen. |
 | Multer / OTP | #165 bringt Multer 2.4.0 mit `fieldArrayIndexLimit: 0` und Release-Nachweis live. Nutzer bestaetigte installierte Version read-only. OTP_HASH_SECRET durch Nutzer gespeichert und mit #163-Deploy wirksam; Fallback-Warnung im neuen Startlog weg. SMS-/OTP-Flow trotzdem nicht produktionsfunktional (0.4). |
-| Weitere Security-Fixes / Runtime | #167 live: proxy-addr 2.0.8, fast-uri 3.1.8, fast-xml-parser 5.10.1, Nodemailer 10.0.16. Render-Shell-Audit: critical 0, high 7, moderate 13; vier Zielpakete weg. Offene engines-Range fuehrte zu Node 26 Current. Pin-Fix ist vorbereitet, **nicht als live erledigt abgehakt** (0.5). |
+| Weitere Security-Fixes / Runtime | #167-Fixes bleiben unter #168 live: proxy-addr 2.0.8, fast-uri 3.1.8, fast-xml-parser 5.10.1, Nodemailer 10.0.16. Frischer Render-Shell-Audit auf `ee7a775`: critical 0, high 7, moderate 13; vier Zielpakete nicht gemeldet. Node-Pin produktiv verifiziert (0.5); keine pauschale Restrisiko-Freigabe. |
 | Audit-Testnachweise | Lokaler Abschlussplan: 134 gezielte Tests, 29 Chrome-Tests, Web-JS-Release gruen; volle lokale Suite 902 bestanden / 1 Skip / nur 12 bekannte Events-Firebasefehler; Analyzer 11 Infos. Nicht als neu ausgefuehrte Tests dieses Dokumentationsauftrags ausgeben. |
 
 Fuer dieses Dokument wurden Repo-Dateien, GitHub-Metadaten/Logs und das
@@ -214,8 +215,8 @@ Nutzer bestaetigte vor dem Merge Render-Export completed am 8. Oktober
 14:36 MESZ und PITR 3 Tage. Backup ist kein Restore-Test.
 
 Node 26 ist am 8. Oktober Current; Node 24 ist LTS.
-Die Runtime-PR bereitet [backend/.node-version](backend/.node-version)
-mit **24.21.0** und engines `>=24.0.0 <25.0.0` vor.
+Die gemergte Runtime-PR #168 setzt [backend/.node-version](backend/.node-version)
+auf **24.21.0** und engines `>=24.0.0 <25.0.0`.
 [Runtime-Guard](backend/node_runtime.cjs) prueft exakt die tatsaechliche
 Node-Version vor Build-Installation, Pre-Deploy und Start. CI liest denselben
 Backend-Pin. Pin und Guard liegen im vollstaendig Gate-geprueften Backend-Tree.
@@ -225,25 +226,43 @@ Render-Prioritaet: NODE_VERSION > .node-version > .nvmrc > engines.
 Dokumentierte RootDir-Regel: Dateien/Kommandos relativ zum Service-Root
 `backend`; `.node-version` liegt dort. Read-only Dashboardpruefung am
 8. Oktober: kein NODE_VERSION-Eintrag und keine verknuepfte Environmentgruppe
-sichtbar. Kein Dashboardwert geaendert. Ob die Datei beim echten Build exakt
-so ausgewaehlt wird, bleibt **Deploy-Abnahme**, kein vorweggenommener Nachweis.
+sichtbar. Kein Dashboardwert vom Assistenten geaendert. Der manuelle Deploy
+belegt nun die Dateiauswahl: `Using Node.js version 24.21.0 via
+/opt/render/project/src/backend/.node-version`.
 Der Guard verhindert Erfolg auf einer abweichenden Runtime auch bei Override.
 
-- [x] Code-Auswahl vorbereitet; exakter Pin im Backend-Tree.
-- [ ] Nutzer: frisches Backup/PITR und eigener Merge-/Deployentscheid.
-- [ ] Render-Buildlog und Shell: **exakt 24.21.0**, nicht 26.x oder anderer Patch.
-- [ ] Neuer main-SHA Live, Pre-Deploy No pending migrations, Readiness mit
+- [x] Code-Auswahl gemergt; exakter Pin im Backend-Tree.
+- [x] Nutzer: Export completed 8. Oktober 15:25 MESZ, PITR 3 Tage;
+  #168-Merge freigegeben, manuellen Deploy selbst ausgefuehrt.
+- [x] Render-Buildlog und Shell: **exakt 24.21.0**, nicht 26.x oder anderer Patch.
+- [x] Neuer main-SHA Live, Pre-Deploy No pending migrations, Readiness mit
   beiden Migrationen/nullable-text, Health 200 und Startlog ohne Fehler.
-- [ ] Audit weiter critical 0 und vier Fixpakete nicht gemeldet.
+- [x] Audit weiter critical 0 und vier Fixpakete nicht gemeldet.
 - [ ] main-CI und beide Pages-Gates auf kompatiblem neuen Backend erfolgreich.
 
-Erst danach Status **Node-Pin produktiv erledigt** setzen. Weitere 24.x-
+**Backend-Abnahme bestanden:** Deploy `dep-db3trgm7bikc73acrkpg`,
+Commit `ee7a7755d1685500e10e1b6f5359f1252607e9d0`.
+Guard erfolgreich bei Installation, Pre-Deploy und Start; Shell bestaetigt
+Commit, v24.21.0 und Nodemailer 10.0.16. `npm audit --omit=dev --ignore-scripts
+--json` gegen den ausgelieferten Stand: 20 Meldungen, 0 critical, 7 high,
+13 moderate; alle vier #167-Zielpakete fehlen in vulnerabilities.
+Audit ist wegen der Restmeldungen nicht insgesamt gruen.
+
+Fuer `ee7a775` wurden keine Analyze-/Pages-Pushlaeufe angelegt; die Ursache
+des fehlenden Triggers ist nicht abschliessend nachgewiesen. Letzte
+Pages-Veroeffentlichung bleibt #167. Nach gesonderter Mergefreigabe soll #166
+einen neuen regulaeren Push-main-CI-/Pages-Lauf erzeugen. Sein Backend-Tree
+bleibt identisch zum nun live abgenommenen #168-Backend; beide Gates duerfen
+daher dessen aelteren SHA akzeptieren. Kein weiterer Render-Deploy notwendig.
+Render rootDir backend garantiert keinen Auto-Deploy bei reinen Root-Dokuaenderungen.
+Keine manuellen CI-/Pages-Neustarts ohne eigene Freigabe.
+
+**Node-Pin produktiv erledigt, Pages-Nachlauf offen.** Weitere 24.x-
 Patches bewusst per eigener PR und Tests freigeben; engines erlaubt die Linie,
 aber exakter Pin und Guard verhindern automatische Patch-/Majorwechsel.
-#166 bleibt eine separate offene Doku-PR: ihre angehaengten Checklisten werden
-hier weder ersetzt noch geloescht. Nach diesem Runtime-Stand #166 auf main
-aktualisieren und die historischen Security-Entscheidungen als solche
-kennzeichnen, ohne manuelle Freigaben als bereits erteilt zu markieren.
+#166 bleibt eine separate offene Doku-PR: ihre angehaengten Checklisten bleiben
+erhalten. Sie wird auf diesen Runtime-Stand aktualisiert; historische Security-
+Befunde werden gekennzeichnet, ohne manuelle Freigaben vorwegzunehmen.
 
 ## 1. Kritischer Rollout: Migration -> Backend -> App
 
@@ -472,7 +491,7 @@ Release-Verantwortliche die Bedingung und Restrisiken dokumentieren.
 | Entwicklungsfragen | [Question-Localization](lib/l10n/development_question_localizations.dart) hat EN/TR/KU; DE kommt aus dem Original. Andere Sprachen erhalten unveraendert deutsche Domains. | Grossprojekt **kann Post-Launch** fuer weitere Sprachen, wenn Launch-Sprachen/Inhaltsumfang ehrlich begrenzt oder der DE-Fallback sichtbar erklaert sind. Kein Volluebersetzungsversprechen fuer alle 16 auswaehlbaren Sprachen. |
 | FAQ: Planpraezisierung | Die 32 [FAQ-Rohdaten](lib/data/eltern_wissen_data.dart) sind ueberwiegend deutsch; [Service](lib/logic/eltern_wissen_service.dart) sucht darin. #159 liefert jetzt den sichtbaren Sprachhinweis im [aktiven Widget](lib/ui/widgets/eltern_wissen_widget.dart) live. | **Code/Pages erledigt, manuelle Sprach-QA offen.** Fachlich gepruefte Volluebersetzung und lokalisierte Suche bleiben Post-Launch; nicht als vollstaendig vier-sprachige FAQ bewerben. |
 | Telefon-Verifizierung / SMS | Festes OTP-Secret wirksam; Matching-OTP trotzdem ohne SMS-Versand und gemeinsamen Speicher. Separater Screen aktuell nicht verdrahtet (0.4). | Nach Nutzerentscheidung **kein aktueller Launch-Blocker**, aber **vor jeder Aktivierung zwingend nachruesten und testen**. Nicht als funktionierende SMS-Verifizierung bewerben. |
-| Weitere npm-Schwachstellen | Multer mit #165 und vier weitere Zielpakete mit #167 live behoben. Render-Shell-Audit am 8. Oktober: 20 Produktionsmeldungen (13 moderate, 7 high, 0 critical), vier Zielpakete weg. | Sechs bedingte Akzeptanzentscheidungen plus Prisma-Sammeleintrag weiterhin getrennt abnehmen; kein vollstaendig sauberer Audit. Kein npm audit fix --force oder Prisma-Downgrade. Node-LTS-Pin ist technischer Nachlauf, noch nicht live abgenommen. |
+| Weitere npm-Schwachstellen | Multer mit #165 und vier weitere Zielpakete mit #167 live behoben. Frischer #168-Render-Shell-Audit am 8. Oktober: 20 Produktionsmeldungen (13 moderate, 7 high, 0 critical), vier Zielpakete weg. | Sechs bedingte Akzeptanzentscheidungen plus Prisma-Sammeleintrag weiterhin getrennt abnehmen; kein vollstaendig sauberer Audit. Kein npm audit fix --force oder Prisma-Downgrade. Node-LTS-Pin ist produktiv abgenommen; neuer main-CI-/Pages-Nachlauf bleibt offen. |
 | "EN-Fallback ueberall ehrlich?" | **Nein, nicht belegt und in geprueften Pfaden nicht einheitlich.** [AppStringsManager](lib/l10n/app_localizations_all.dart) und [AppLocalizations](lib/l10n/app_localizations.dart) fallen fuer fehlende UI-Keys auf EN zurueck; Entwicklungs-/FAQ-Inhalte auf DE. [Profilpicker](lib/ui/profile_safety_screen.dart) und [Familienprofilpicker](lib/ui/family_profile_screen.dart) zeigen keinen entsprechenden Vollstaendigkeits-/Fallbackhinweis. [Rechtliches](lib/ui/legal_info_screen.dart) enthaelt deutsche Festtexte. | **Vor Launch noetig:** Sprachumfang und EN-/DE-Inhaltsfallback ehrlich kommunizieren; sicherheitsrelevante Consent-/Rechtstexte muessen fuer die tatsaechlich adressierten Nutzer verstaendlich sein. Keine pauschale vier-/16-sprachige Freigabe aus Key-Tests ableiten. |
 | Release-QA | CI belegt Tests, aber Apple-Jobs am Release-SHA sind uebersprungen; kein physisches Geraeteprotokoll. [Aelterer Releaseguide](docs/release/RELEASE_EXECUTION_GUIDE_v1.0.0.md) behauptet noch "NO ISSUES/READY", Stand Juli. | **Vor Launch noetig:** Abschnitt 3 mit signierten aktuellen Builds. Alte gruen markierte Dokumente sind kein aktueller Nachweis. JS-Web ist geprueft; Wasm-/TTS-Warnungen nicht als behoben ausgeben. Wasm-Auslieferung nur nach eigener Abnahme. |
 | Finanzdaten/Links | [Audit-Restliste](AUDIT_PLAN.md) dokumentiert TR-"Cocuk Parasi", Wohngeld-HTTP403 und Quellenpflege. | **Vor Launch noetig:** [Quellenmatrix vom 06.10.2026](backend/README.md#familien-geld-einzelpruefung-amtlicher-leistungsdaten) konkret gegen die aktuellen Inhalte pruefen, nicht nur Disclaimer lesen. Bekannten 403 nicht ohne amtlichen Beleg durch eine erfundene URL ersetzen; unbestaetigtes TR-Programm nicht als amtlich bestaetigt vermarkten. Danach laufende Pflege. |
@@ -796,3 +815,177 @@ Deploy-ID, QA-Protokolle beider Plattformen, Recht-/Store-Abnahme,
 Rollbackprobe, genehmigte Restpunkte, Verantwortliche und Rollout-/Monitoring-
 Plan. Solange Pflichtnachweise fehlen, lautet der Status
 **"Audit abgeschlossen, Launch noch nicht freigegeben"**.
+
+## 6. Launch-Endspurt: priorisierte To-dos
+
+Planungsstand: 8. Oktober 2026, nach Backend-Abnahme von #168.
+main/Live-Backend: `ee7a7755d1685500e10e1b6f5359f1252607e9d0`;
+Pages bleibt auf #167 `cb1350ca68ddb904cff3f3aca0327cd966bb1ce7`.
+Die Checkliste wurde mit read-only Deploy-/Shell-/HTTP-Nachweisen aktualisiert.
+Neue main-CI/Pages folgen erst nach gesonderter #166-Mergefreigabe. Dieser Abschnitt
+autorisiert weder Merge noch Deploy, Installation, Secret-/Renderaenderung,
+Produktions-Schreibtest oder oeffentlichen Launch.
+
+### 6.1 Stufe 1 - Launch-Blocker
+
+Abhaken bedeutet **nachgewiesen und vom Release-Verantwortlichen freigegeben**,
+nicht nur vorbereitet. Pro Entscheidung Datum, Verantwortlichen, Release-SHA
+und redigierten Nachweis festhalten; keine Tokens oder echten Kinddaten ablegen.
+
+| Gate | Genau zu pruefen | Copilot kann ohne Produktionszugriff vorbereiten | Nutzer / extern zwingend |
+|---|---|---|---|
+| [ ] Recht / Store | Privacy Policy, Impressum, App Privacy / Data Safety gegen 6.1.2 und Abschnitt 4 abgleichen; reale Dienste, Zwecke, Gesundheitsdaten, Fotos, Retention, Loeschung, Transfers und Sprachumfang. | Codebelege, Datenflussmatrix, Widerspruchsliste und Text-/Deklarationsvorlagen; keine Rechtsberatung oder Freigabe. | Verantwortlicher/Kontakt, reale Vertragsanbieter, Regionen, AVV/Transfergarantien und Fristen liefern; anwaltliche/fachliche Pruefung organisieren; Storeantworten selbst bestaetigen/einreichen. |
+| [ ] Signierte Geraete-QA | Alle Zeilen in 6.1.3 auf iOS **und** Android; iPad wenn unterstuetzt. Fehler oder fremde Kontodaten stoppen die Freigabe. | Synthetische Szenarien, vorhandene Unit-/CI-Nachweise, Protokollvorlage und Auswertung redigierter Fehler. | Signierte Builds, reale Geraete und eigene Testkonten; Berechtigungen, OS-Sharing und Push physisch pruefen; separate Freigabe fuer schreibende Tests. |
+| [ ] Security-Restrisiko-Abnahme | Sechs bedingte Akzeptanz-Pakete plus Prisma-Sammelmeldung in 6.1.1 einzeln; vier #167-Fixes erledigt. Keine Akzeptanz nur wegen niedriger Prioritaet oder DoS-Kategorie. | Retained-Audit/Lockfile-/Codebelege und frischen Render-Audit liefern; Fixnachweise von offenen Ausnahmen trennen. | Verbliebene Empfehlungen einzeln akzeptieren oder Fix verlangen; echte Deployment-/SMTP-Konfiguration ohne Secret-Offenlegung bestaetigen. Ungeklaerter erreichbarer Pfad ist kein gruener Haken. |
+
+#### 6.1.1 Security: abhakbare Entscheidungstabelle
+
+Historische Quelle ist die **vorhandene Auditaufnahme nach dem Multer-Fix**, kein frischer
+npm-/Registry-Scan: 24 Produktions-Paketmeldungen, davon 1 critical, 10 high,
+13 moderate. Der lokale Auditbeleg liegt ausserhalb des Repos; er hat keinen
+Lockfile-Digest, daher ist seine exakte Entstehung nicht kryptografisch belegt.
+Die gelockten Versionen sind in [package-lock.json](backend/package-lock.json)
+pruefbar. Counts sind **npm-Paketeintraege, nicht elf unabhaengige Angriffe**:
+Prisma/config rollen transitive Meldungen auf. Moderate-Meldungen sind durch
+diese Tabelle weder behoben noch automatisch akzeptiert.
+
+**Aktueller Nachweis nach #167 und #168:** frischer Render-Shell-Audit auf
+`ee7a775`: 20 Paketmeldungen, 0 critical, 7 high, 13 moderate. Die vier
+Fix-Zeilen unten sind historische Befunde und inzwischen erledigt, keine
+offenen Ausnahmeantraege. Sechs Akzeptanz-Pakete und Prisma 7.8.0 bleiben
+versionsgleich; die sieben high-Eintraege sind keine sieben unabhaengigen
+Angriffe. Manuelle Restrisikoentscheidungen bleiben offen.
+
+"Akzeptieren" ist eine **bedingte Empfehlung fuer den geprueften Releaseumfang**,
+kein dauerhafter Freibrief. Historische Patched-Ziele stammen aus der gespeicherten
+Auditaufnahme; fuer die vier erledigten Fixes gelten die #167-Versionen unten.
+Ziele zukuenftiger Fixes erneut verifizieren; keine blinden
+Overrides, kein `npm audit fix --force`, kein Prisma-Downgrade.
+DoS ist ausdruecklich Teil der Bewertung.
+
+| Freigabe | Paket / Audit-Severity / Lock-Version | Laufzeit, Pfad und Grenze | Klare Empfehlung / Begruendung |
+|---|---|---|---|
+| [x] #167-Fix live; #168-Audit bestaetigt | `proxy-addr` / historisch critical / 2.0.7 -> **2.0.8**; GHSA-jqcg-44mw-7w3h | Express-Laufzeitabhaengigkeit. [Backend](backend/server.js) setzt kein `trust proxy`; kein Advisory-Exploit im aktuellen Code nachgewiesen. Rohe X-Forwarded-For-Verarbeitung ist eine separate Vertrauensgrenze. | **Behoben statt akzeptiert:** kompatibles Update, Proxy-Regression bestanden; im ausgelieferten Audit nicht mehr gemeldet. |
+| [ ] Entscheidung + Datum: ____ | `@fastify/busboy` / high / 3.2.0; GHSA-xjh9-v7x6-24jw, GHSA-x8mw-p69m-v3mx | Firebase Admin parst damit **ausgehende API-Multipartantworten** (`handleMultipartResponse`), nicht unseren `/uploads/image`-Ingress. Unser Upload verwendet Multer mit anderem `busboy`. | **Akzeptieren fuer diesen Umfang:** kein direkt vom Upload-Angreifer kontrollierter Parserpfad belegt; Google-Antworten sind die Grenze, nicht pauschal "Tooling". Bei fremdem Multipart-Input neu bewerten. Geplantes SDK-Update auf Aufloesung 3.2.2+ pruefen (auch moderate Meldung). |
+| [ ] Entscheidung + Datum: ____ | `@grpc/grpc-js` / high / 1.14.4; GHSA-m9gg-hp2v-232j | Optionale Google-GAX/Firestore-Kette; Backend nutzt Firebase Auth/Messaging/Storage, kein eigener gRPC-Server oder Firestore-Pfad gefunden. Advisory betrifft bestimmte Server-Zertifikatskonfigurationen. | **Akzeptieren:** betroffene Serverfunktion im Release nicht belegt. Vor gRPC-/Firestore-Erweiterung neu bewerten; kompatibles SDK-Update auf 1.14.5+ einplanen. |
+| [ ] Entscheidung + Datum: ____ | `@prisma/config` / high / 7.8.0 | CLI-/Pre-Deploy-Tooling; vererbte `deepmerge-ts`-Meldung, keine eigene Advisory. [Konfiguration](backend/prisma.config.ts) stammt aus Repo/Environment, nicht aus HTTP-JSON. | **Akzeptieren:** kein Angreifer-Objektgraph in diesem Toolingpfad belegt. Tooling laeuft beim Deploy, ist also nicht "nie benutzt". Zusammen mit kompatiblem Prisma-Update pflegen. |
+| [ ] Entscheidung + Datum: ____ | `brace-expansion` / high / 2.1.2; vier DoS-Advisories: GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p | Transitive optionale `glob`-/Google-Kette; kein Backendrequest mit nutzerkontrolliertem Globmuster gefunden. | **Akzeptieren:** fehlender untrusted-Glob-Eingang ist die Begruendung, nicht DoS als Kategorie. Bei dynamischen Nutzer-Globmustern vorher fixen. |
+| [ ] Entscheidung + Datum: ____ | `deepmerge-ts` / high / 7.1.5; GHSA-ggr8-5vv4-36mx | Prisma-Konfiguration/CLI; rekursiver Objektgraph kann Stack erschoepfen. Keine HTTP-Nutzdaten in dieser Config-Zusammenfuehrung belegt. | **Akzeptieren:** kontrollierte Tooling-Eingaben. Kompatibles Prisma/config-Update mit 8.0.0+ pruefen; nicht unabhaengig vom Config-API-Vertrag erzwingen. |
+| [x] #167-Fix live; #168-Audit bestaetigt | `fast-uri` / historisch high / 3.1.3 -> **3.1.8**; Host-/Authority-Verwechslung und SSRF | Prisma-CLI-/AJV-Kette; kein laufender HTTP-Pfad in diesen Parser gefunden. | **Behoben statt akzeptiert:** 3.1.8 deckt die Zielmeldungen ab; 3.1.7 war kein ausreichendes Gesamtziel. AJV-Regression bestanden, Prisma unveraendert; im ausgelieferten Audit nicht mehr gemeldet. |
+| [x] #167-Fix live; #168-Audit bestaetigt | `fast-xml-parser` / historisch high / 5.10.0 -> **5.10.1**; GHSA-8r6m-32jq-jx6q | Optionale Google-Storage-Kette, Entity-Expansion-DoS. Tatsaechlicher SDK-XML-Multipartpfad durch #167-Regressionen geprueft, nicht pauschal als unerreichbar bewertet. | **Behoben statt akzeptiert:** XML-/Storage-Regression und DOCTYPE-Abweisung bestanden; notwendige Entities-Abhaengigkeit mit aktualisiert. Im ausgelieferten Audit nicht mehr gemeldet. |
+| [ ] Entscheidung + Datum: ____ | `mysql2` / high / 3.15.3; GHSA-3f6p-5ww8-9rcr | Prisma-CLI-Abhaengigkeit; Auth-Downgrade bei MySQL. [Datasource](backend/prisma/schema.prisma) und Adapter sind PostgreSQL; kein MySQL-Verbindungsweg gefunden. | **Akzeptieren:** anderes DB-Protokoll, betroffene Authentifizierung nicht genutzt. Vor MySQL-Nutzung kompatible Aufloesung 3.22.0+ pruefen. |
+| [x] #167-Fix live; #168-Shell/Audit bestaetigt | `nodemailer` / historisch high / 9.0.3 -> **10.0.16**; GHSA-2x7j-588g-ccc2, GHSA-v53p-9fqp-m79j | Direkte Laufzeitabhaengigkeit. `sendEmail` nutzt zuerst Resend, sonst SMTP; Produktions-Credentials nicht gelesen. | **Behoben statt akzeptiert:** createTransport/sendMail, MIME-/IDN-Empfaenger, SMTP-Konfiguration und Fehlerpfade getestet. Shell bestaetigt 10.0.16; im ausgelieferten Audit nicht mehr gemeldet. |
+| [ ] Entscheidung + Datum: ____ | `prisma` / high / 7.8.0 unveraendert | CLI `postinstall`/`migrate:deploy`; Sammelmeldung fuer transitive Tooling-Pakete, keine zusaetzliche eigenstaendige Advisory. Prisma Client und PostgreSQL-Runtime nicht mit dem CLI-Eintrag gleichsetzen. | **Bedingt akzeptieren:** fast-uri durch #167 behoben; verbliebene kontrollierte Config-/PostgreSQL-Tooling-Grenzen einzeln freigeben. Nutzer entschied Prisma unveraendert; kein Major-Downgrade. Kompatibles Buendel spaeter separat pruefen. |
+
+- [ ] Release-Verantwortlicher bestaetigt jede offene Akzeptanz-Zeile bzw.
+  beauftragt getrennte Fixes; vier erledigte Fixes sind keine Restrisikoannahme.
+- [x] Nach #167/#168 Backendtests, unveraenderter Prisma-/Readinessvertrag und
+  frischer Audit des ausgelieferten SHA dokumentiert (0.5).
+- [ ] Auditaufnahme fuer die finale Freigabe zusaetzlich mit Lockfile-Hash
+  archivieren; bisheriger Shell-Nachweis enthaelt Counts/Zielabwesenheit.
+- [ ] Keine komplette Security-Freigabe allein aus dieser statischen Analyse
+  oder dem erfolgreich behobenen Multer-DoS ableiten.
+
+#### 6.1.2 Recht / Store: Datenfluss-Nachweis aus dem Code
+
+Dies ist eine technische Faktenmatrix, **keine Rechtsberatung** und keine
+vorab ausgefuellte Apple-/Google-Deklaration. Pfad im Code bedeutet nicht
+automatisch produktive Aktivierung. SDK-Konfiguration, Regionen, Vertraege,
+Retention und Storekategorien muss der Verantwortliche bestaetigen.
+Heuristische Sanitization/Rundung ist keine garantierte Anonymisierung.
+
+| Daten | Wohin / Zweck | Lokal oder externer Empfaenger; Grenze | Codebeleg |
+|---|---|---|---|
+| E-Mail, Login-Credentials/Providerdaten, UID, ID-Token | Anmeldung, Verifizierung, Backendauth | Firebase Auth; Token/UID auch eigenes Render-Backend. Nicht jeder Loginwert ist KI-Kontext. | [Auth](lib/logic/auth_service.dart), [API](lib/logic/backend_api_client.dart), [Backend](backend/server.js) |
+| E-Mail und Reset-/Verifizierungslink | Kontozugang wiederherstellen / E-Mail bestaetigen | Backend -> Firebase Admin; Versand Resend oder SMTP/Nodemailer je Config. Telefonnummer-OTP ist hiervon getrennt. | [Mailrouten und sendEmail](backend/server.js#L11374) |
+| Chatnachricht, begrenzter Verlauf, Sprache, ggf. Freitext mit sensiblen Angaben | KI-Elternberatung | App -> Render `/ai/generate` -> Google Gemini. Text-Sanitizer begrenzt Offenlegung, beweist aber keine Anonymitaet; Chat-Consent erforderlich. | [Chat](lib/ui/chat_screen.dart), [KI-Proxyclient](lib/logic/gemini_ai_service.dart), [Backend-Proxy](backend/server.js#L3030) |
+| Bestaetigte Kind-/Gesundheits-/Memorywerte, Consent-Version/-Revision; optional Geburtsdatum/Geschlecht | Kontobezogenes KI-Gedaechtnis und personalisierter Kontext | Render/Prisma-DB; freigegebener minimierter Kontext an Gemini. Lokaler Anzeigename von neuem neutralem Servernamen getrennt; alte Originale bleiben. Ausschalten ist nicht Loeschen. | [Memoryclient](lib/logic/ai_memory_service.dart), [Settings](lib/ui/ai_memory_settings_screen.dart), [Schema](backend/prisma/schema.prisma), [Kontext](backend/server.js) |
+| Kindesalter, Allergien, Gerichtswunsch | Kindgerechte Familienrezepte | Lokales Profil/Dossier -> Render -> Gemini nach eigenem Rezept-Consent; keine automatische Publikation. | [Rezepte](lib/logic/family_recipe_service.dart), [Consent](lib/logic/family_recipe_consent.dart) |
+| Kuehlschrank-Fotobytes; bestaetigte Zutaten, Alter/Allergien fuer Rezept | Zutaten erkennen / Rezept vorschlagen | Bild base64 -> Render -> Gemini, danach Rezeptkontext; Fotoanalyse ist kein Backend-Publishing. Provider-/Log-Retention unbekannt, kein "nirgends gespeichert"-Versprechen. | [Kuehlschrankservice](lib/logic/fridge_recipe_service.dart), [KI-Transport](lib/logic/gemini_ai_service.dart) |
+| Verschenkmarkt-Fotobytes | Optionale Titel-/Kategorie-/Beschreibungsvorschlaege | Render -> Gemini nach Foto-Consent; Bild nicht vor Uebertragung anonymisiert. Manuelle Eingabe bleibt moeglich. | [Fotoanalyse](lib/logic/treasure_photo_analysis_service.dart) |
+| Entwicklungsantworten/Profilkontext, Alter, Scores; neutraler `[KIND]`-Platzhalter | Entwicklungsbericht erstellen | Render -> Gemini nach Bericht-Consent; Name erst lokal im Bericht eingesetzt. Bericht/History lokal konto-/gastbezogen gespeichert. | [Prompt](lib/ui/entwicklung_impulse_screen.dart#L1159), [Berichtservice](lib/logic/development_report_service.dart) |
+| Wegweiser-Freitext, Situation, Land, Alter, Suchanfrage | Allgemeine/individualisierte Leistungsorientierung | Nach Consent Render -> Gemini; optional Google-Suche. Allgemeiner Fallback ist keine individuelle Fachberatung. | [Wegweiser](lib/ui/benefit_guide_screen.dart), [KI-Client](lib/logic/gemini_ai_service.dart) |
+| Kind-Dossier, Allergien, Budget/Finanzwerte, lokale Entwuerfe/Consents | Lokale Appfunktionen und Kontotrennung | JSON/SharedPreferences lokal, keine zugesagte App-Verschluesselung. Auswahl fuer KI/Sharing ist gesonderter externer Pfad; OS-/Browserbackups nicht aus Repo bewiesen. | [Zentrale](lib/logic/family_hub_store.dart), [Finanzen](lib/logic/family_finance_store.dart), [Chatstore](lib/logic/chat_account_store.dart) |
+| Suchtext oder gerundete GPS-/Pin-Koordinaten; Kartenkachelanfragen | Ortssuche, Karte, Discovery | Nominatim/OpenStreetMap direkt; Matchingprofil ans eigene Backend. Rundung nur nach geprueftem Pfad, keine Behauptung "kein Standorttransfer". | [Ortssuche](lib/logic/location_autocomplete_service.dart), [Event-Geocoder](lib/logic/event_geocoder.dart), [Netzwerk](lib/ui/eltern_netzwerk_screen.dart) |
+| Fotos, Anzeigen-/Rezepttexte, Autorname/UID, Sichtbarkeit | Bewusste Community-Veroeffentlichung | Backend/Medien-URL und jeweilige Zielgruppe. `/uploads` wird statisch bereitgestellt: URL-Sichtbarkeit gesondert von Listen-/Rezeptsichtbarkeit pruefen. KI-Consent ist keine Publikationsfreigabe. | [Rezept-Publishing](lib/logic/family_recipe_share_service.dart), [Upload/static](backend/server.js#L11583) |
+| Kalender-/Event-/Netzwerk-/Freundschaftsdaten, Kontokennungen | Synchronisierung, Einladungen, Match | Eigenes Backend je aktivem Flow, nicht pauschal lokal. Im Event-Einladungstext rohe Host-ID sichtbar. | [Kalendersync](lib/logic/calendar_backend_service.dart), [Freundschaft](lib/logic/friendship_service.dart), [Events](lib/ui/events_activities_screen.dart) |
+| FCM-Token, User-ID, Benachrichtigungspayload | Pushzustellung und Zielnavigation | Backend/Firebase Messaging; lokale Reminder separat OS-lokal. Logout/Token-Abmeldung manuell nachweisen. | [Notifications](lib/logic/notification_service.dart), [Backend](backend/server.js) |
+| Fehler, Stacktraces, technischer Kontext/Logtexte | Fehlerdiagnose | Firebase Crashlytics auf unterstuetzten Mobil-Releasepfaden; Web ausgeschlossen. Freitext kann sensible Anteile enthalten; Fristen nicht aus Code bewiesen. | [ErrorReporting](lib/logic/error_reporting_service.dart) |
+| CSV/PDF/Text/Bilder, je ausgewaehltem Export | Nutzerinitiiertes Teilen | OS-Share-Ziel/Clipboard bzw. Ziel-App; deren Weiterverarbeitung nicht unter Appkontrolle. Kein automatischer KI-Transfer durch OS-Sharing. | [CSV](lib/ui/finance_budget_screen.dart), [PDF](lib/ui/entwicklung_impulse_screen.dart), [Zentrale](lib/ui/familien_zentrale_screen.dart) |
+| Zahlungs-/Transaktions-/Kontaktdaten, falls Zahlungsflow aktiviert | Zahlungsabwicklung | Stripe-Pfad im Backend vorhanden; tatsaechliche Release-Erreichbarkeit/Config gesondert feststellen. Keine erfundene pauschale Collection-Aussage. | [Backend-Stripepfade](backend/server.js), [Dependency](pubspec.yaml) |
+
+- [ ] Nutzer liefert reale Verarbeitungsrollen/Empfaenger, Regionen,
+  Aufbewahrungs-/Backupfristen, Loesch-/Exportverfahren und aktive Dienstpfade.
+- [ ] Fachliche Pruefung gleicht **jede Zeile** mit Privacy Policy,
+  App Privacy und Data Safety nach deren jeweils eigenen Definitionen ab.
+- [ ] Keine Aussagen "keine Daten geteilt", "voll anonym", "30 Tage" oder
+  "vollstaendig uebersetzt" ohne belegten Betriebs-/Inhaltsnachweis.
+
+#### 6.1.3 Geraete-QA: iOS und Android separat abhaken
+
+Pro Plattform Kopf ausfuellen: App-SHA/Buildnummer ____, signierter Build ____,
+OS/Modell ____, Tester/Datum ____, Backend/Testumgebung ____,
+Nachweis/Abweichung ____. `[ ]` erst nach Durchfuehrung abhaken.
+Eigene A/B-Testkonten, Gast und synthetische Daten verwenden.
+Schreibende/Provider-Tests nur in freigegebener Testumgebung; nicht durch
+diese Liste Produktionszugriff ableiten. Ablehnungstests duerfen keinen
+KI-Request ausloesen; Netzwerkbelege aus Testinstrumentierung redigieren.
+Abschnitt 3 bleibt der detaillierte Erwartungskatalog.
+
+Fuer **jeden Consent**: erste Nutzung, Ablehnung, Zurueck/Abbruch, Zustimmung,
+persistierter Ack, Neustart, Gast -> A -> Logout -> B -> A; DE/EN/TR/KU,
+grosse Schrift und Speicher-/Netzwerkfehler. Fehlenden Ack in Testharness
+simulieren, nicht produktive Preferences sabotieren. Spaete Antworten
+duerfen nach Kontowechsel nicht beim neuen Konto landen.
+
+| Szenario / bestandenes Kriterium | iOS | Android |
+|---|---|---|
+| Familienrezept-Consent: Ablehnung nur lokale Inspiration; Alter/Allergien/Gericht erst nach Zustimmung und Ack an KI. | [ ] | [ ] |
+| Kuehlschrank-Consent: Legacy-Zustimmung gilt nicht; kein Bildtransfer bei Ablehnung/Ack-Fehler; Kamera-/Galerieabbruch ohne Request, Retry-/Kontowechselgrenzen. | [ ] | [ ] |
+| Verschenkmarkt-Foto-Consent: Ablehnung erlaubt manuelle Anzeige; Bild behalten; KI-Analyse getrennt von sichtbarer Publikationsfreigabe. | [ ] | [ ] |
+| Entwicklungsbericht-Consent: Empfaenger Google Gemini sichtbar; A-B-A waehrend Retry; keine fremden Berichte/History/Scores; Name lokal eingesetzt, Legacydaten nicht automatisch zugeordnet. | [ ] | [ ] |
+| Wegweiser-Consent: allgemeine Leistungen bei Ablehnung; individueller Request erst nach Ack; Ausfallfallback erkennbar allgemein. | [ ] | [ ] |
+| Chat-Consent: kein Senden vorher; Fehler/Tageslimit ehrlich; Gast/A/B-Zustimmungen getrennt; spaete Antwort nicht an B. | [ ] | [ ] |
+| Memory-Zusatz-Consent: unabhaengig vom Chat; Aus/Ein invalidiert laufende Nutzung; Ausschalten vs. explizites Loeschen klar; kein neuer Transfer ohne gueltige Zustimmung. | [ ] | [ ] |
+| Standortverarbeitungsinfo und Profil-Claim: Nominatim/OSM-Hinweis sichtbar; GPS/Pin/Manuelle Suche, Ablehnung von OS-Standortrecht; lokaler Legacyentwurf nur nach ausdruecklicher Kontozuordnung, nicht automatisch aktiv/veroeffentlicht. | [ ] | [ ] |
+| Kamera/Galerie: erlaubt, verweigert, nachtraeglich widerrufen; leeres/ungueltiges/grosses Bild, Hintergrund/Neustart, Offline/Timeout; kein falscher Upload-/KI-Erfolg. | [ ] | [ ] |
+| Kuehlschrankausgabe: erkannte Zutaten korrigierbar, Allergien plausibel; vorhandene Altersrundung/Default 3 separat fachlich bewerten. | [ ] | [ ] |
+| Treasure/Rezepte: Entwurf nach Neustart, gerundeter Ort, Sichtbarkeit privat/Freunde/oeffentlich, Reservierung/Storno/Teilfehler ohne Doppelaktion; oeffentliche Foto-URL-Grenze bewusst pruefen. | [ ] | [ ] |
+| Logout ohne Neustart: A-Dossier/Allergien/Geld/Profil/Entwurf/Chat/Memory angelegt; B sieht nichts davon in Screens, Suche, Bildern, Controllern, Share oder Push; zurueck A eigene Daten erhalten. | [ ] | [ ] |
+| Logout waehrend Laden/Speichern/Claim/Upload/KI: keine spaeten Ergebnisse oder Writes im B-Scope; bereits gesendete Requests nicht als rueckwirkend geloescht darstellen. | [ ] | [ ] |
+| DE -> EN -> TR -> KU: offene Dialoge, Fehler, Consent, FAQ-Suche, lange Texte, Tastatur und 200/300-Prozent-Schrift; weiterer Sprachpicker mit tatsaechlichem EN-/DE-Fallback, keine Volluebersetzungsbehauptung. | [ ] | [ ] |
+| Sharing: Geld/Zentrale/Netzwerk, Budget-CSV, Entwicklungs-PDF; Ziel-App fehlt, Abbruch, Clipboardfehler, keine A-Daten bei B; iPad-Popover inkl. CSV gesondert pruefen. | [ ] | [ ] |
+| Push/Reminder: Permission, Vorder-/Hintergrund/Cold-Start, Zielnavigation, Tokenrefresh/Logout; Uhrzeit/Zeitzone/DST; Ruhemodus nicht als Cancel aller bereits geplanten Reminder darstellen. | [ ] | [ ] |
+| Recht-/Support-/amtliche Links ohne Login; TR-Leistungsangaben und Wohngeld-Link verifiziert; Deaktivierung/Loesch-/Exportweg mit Testidentitaet nachvollziehbar. | [ ] | [ ] |
+
+- [ ] iPad-Sharing-Abnahme falls unterstuetzt; keine Freigabe aus iPhone
+  ableiten (CSV-Popover ist noch kein bestandener Nachweis).
+- [ ] Abweichungen mit redigiertem Nachweis klassifizieren; Blocker beheben
+  und betroffene Szenarien erneut ausfuehren, nicht als Restrisiko verstecken.
+
+### 6.2 Stufe 2 - Bewusste Restrisiken dokumentieren und entscheiden
+
+Diese Stufe darf parallel vorbereitet werden, ersetzt aber keine Stufe-1-
+Abnahme. Nutzer dokumentiert akzeptierten Umfang, Begruendung, Termin und
+Verantwortlichen. Copilot kann Vorlagen/Codebelege liefern, nicht das reale
+Betriebsrisiko stellvertretend akzeptieren.
+
+| Entscheidung | Grenze / konkrete Freigabe |
+|---|---|
+| [ ] SMS / OTP | Flow bleibt nicht verdrahtet und nicht als produktionsfunktional beworben. Festes Secret ist aktiv, SMS-Versand/geteilter Speicher fehlen. Vor Aktivierung eigener Fix + Abnahme zwingend. |
+| [ ] Lokale Verschluesselung | Schutzbedarf fuer Kind-/Gesundheits-/Finanzdaten und OS-/Browserbackups bewerten. App-Verschluesselung nur bei begruendet akzeptierter Grenze verschieben; Kontoskope nicht als Verschluesselung bezeichnen. |
+| [ ] `hostUserId` | Sichtbare technische Kennung ausdruecklich akzeptieren oder vor Launch ersetzen lassen; keine erfundenen Hostnamen. |
+| [ ] Volluebersetzung | Ehrlichen Launch-Sprachumfang/Fallback festlegen. Volluebersetzung darf spaeter kommen, unverstaendlicher Consent/Rechtstext fuer die adressierte Zielgruppe nicht. |
+| [ ] Restore-Probe / Rollback | Backup/PITR ist **kein** Restore-Nachweis. Testplan, isoliertes Ziel, Wiederherstellungs-/Consent-Pruefung und kompatibler Rollback vorbereiten. Abschnitt 5 stuft die sichere Probe weiterhin als Pflicht vor Launch ein; Aufnahme hier bedeutet **keine automatische Verschiebung**. Verschiebung waere eine gesonderte ausdrueckliche Aenderung der Freigabekriterien. |
+
+### 6.3 Stufe 3 - Nach Launch, separat priorisieren
+
+| Backlog | Grenze / naechster Auftrag |
+|---|---|
+| [ ] Dependency-PRs | #35-#39 und #93 einzeln auf aktuelles main, API-/Native-Kompatibilitaet und volle CI pruefen. #33/#34 sind bereits geschlossen; Pages-Upgrades in #163, Gate nicht durch alte Workflows ueberschreiben. Sicherheitsfixes aus Stufe 1 sind **nicht** durch diesen Backlog auf nach Launch verschoben. |
+| [ ] Alt-Features | #22 Nutzersync, #27 Startup-Fast-Path, #28 private Gruppen/unbegrenzte Einladungen separat fachlich entscheiden; #28 hatte zuletzt fehlgeschlagenes analyze. Kein pauschales Mergepaket. |
+| [ ] Vertiefte Memory-Staging-Abnahme | Zusaetzliche Belastungs-/Langzeit-/Randfallmatrix, Provider-Ausfaelle, konkurrierende Revisionen und wiederholte Kontowechsel mit synthetischen Daten auf Staging erweitern. **Pflichtbasis vor Launch bleibt:** authentifizierte Settings-Abnahme, gueltiger Consent/Revision, Widerruf/Transfergrenze und sichere Betriebs-/Rollbacknachweise aus Abschnitt 5. Ist diese Basis unbewiesen, Memory nicht als launchfreigegeben behandeln; vor Verschiebung eigenen Scope-/Deaktivierungsentscheid verlangen. |
+
+**Reihenfolge:** Stufe 1 belegen und Entscheidungen aus Stufe 2 abschliessen;
+danach finales Freigabeprotokoll aus Abschnitt 5. Erst mit ausdruecklicher
+Launchfreigabe veroeffentlichen/Stores freigeben; Stufe 3 separat bearbeiten.
