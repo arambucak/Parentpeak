@@ -1,5 +1,50 @@
 # Parentpeak Marktplatz Backend
 
+## Gezieltes Security-Update (noch nicht produktiv ausgerollt)
+
+Der Lockstand aktualisiert nur `proxy-addr` 2.0.7 -> 2.0.8,
+`fast-uri` 3.1.3 -> 3.1.8, `fast-xml-parser` 5.10.0 -> 5.10.1
+und Nodemailer 9.0.3 -> 10.0.16. Kompatible transitive Overrides pinnen
+die drei Parser-/Proxyversionen innerhalb der bisherigen Consumer-Ranges.
+Der XML-Fix benoetigt zusaetzlich `@nodable/entities` 2.2.0 -> 3.1.0.
+Prisma CLI/Client/PG-Adapter bleiben auf 7.8.0; die sechs bedingt akzeptierten
+Pakete bleiben versionsgleich, einschliesslich beider brace-expansion-Eintraege.
+
+Nodemailer 10 benoetigt Node >=20. Die Backend-Engine-Range
+`^20.19.0 || ^22.12.0 || >=24.0.0` beruecksichtigt auch die bereits strengere
+Prisma-Anforderung. Render Node 24.14.1 wurde vom Nutzer read-only bestaetigt.
+`engines` dokumentiert kompatible Runtimes; ohne npm `engine-strict` ist es
+keine harte Installationssperre und kein exaktes Render-Node-Pinning.
+
+Frischer lokaler Produktions-Audit am 8. Oktober 2026:
+24 -> 20 Paketmeldungen, critical 1 -> 0, high 10 -> 7, moderate 13 -> 13.
+Keines der vier Zielpakete wird im Nachher-Audit noch gemeldet. Die sieben
+high-Eintraege sind die sechs bedingt akzeptierten Pakete plus der
+Prisma-Sammeleintrag. Das ist keine pauschale Security-/Launchfreigabe.
+`npm audit` endet wegen der Restmeldungen weiterhin mit Exit 1.
+
+```bash
+npm ci --prefix backend --omit=dev --ignore-scripts --no-audit --no-fund
+node --test backend/tests/unit/security-dependencies.test.js
+node --test backend/tests/unit/*.test.js
+npm audit --prefix backend --omit=dev --ignore-scripts --json
+```
+
+Die Regressionen fuehren echten Nodemailer (MIME/IDN, SMTP-Auth und
+Empfaengerablehnung) gegen ausschliesslich lokalen synthetischen SMTP aus.
+Die produktiven Mailhelper werden aus server.js ausgefuehrt; Resend-Prioritaet,
+Konfiguration und Fehlerweitergabe bleiben geprueft. Der echte private
+Google-Storage-Multiparthelper prueft Parser/Builder mit synthetischen
+XML-Antworten, einschliesslich der Ablehnung mehrfacher DOCTYPEs.
+Kein echter Mailversand, Google-Storage-Request oder Produktionszugriff.
+
+**Rollout erst nach separater Freigabe:** Backend-Tree geaendert, daher
+verlangt das Pages-Gate den passenden Render-Stand. Backup/PITR, ein
+freigegebener Squash-Merge mit einem Renderdeploy, Pre-Deploy, neuer SHA,
+Readiness/Health und Logs sind erneut abzunehmen. Auditbeleg gegen den
+tatsaechlich ausgelieferten Lockstand bestaetigen. Ein eventuell
+fail-closed beendeter Pages-Lauf darf nur mit eigener Freigabe neu starten.
+
 ## Release-Nachweis fuer Pages (noch separat auszurollen)
 
 `GET /release/readiness` ist ein read-only, nicht gecachter Release-Nachweis.
