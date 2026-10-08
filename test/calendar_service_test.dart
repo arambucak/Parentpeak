@@ -8,8 +8,8 @@ void main() {
   SharedPreferences.setMockInitialValues({});
 
   group('HolidayService', () {
-    test('German holidays 2026 are correct', () {
-      HolidayService.setCountry('DE');
+    test('German holidays 2026 are correct', () async {
+      await HolidayService.setCountry('DE');
       final jan = HolidayService.getHolidaysForMonth(2026, 1);
       expect(jan.any((h) => h.name == 'Neujahr'), isTrue);
 
@@ -20,53 +20,53 @@ void main() {
       expect(dec.any((h) => h.name.contains('Weihnacht')), isTrue);
     });
 
-    test('Austrian holidays exist', () {
-      HolidayService.setCountry('AT');
+    test('Austrian holidays exist', () async {
+      await HolidayService.setCountry('AT');
       final oct = HolidayService.getHolidaysForMonth(2026, 10);
       expect(oct.any((h) => h.name == 'Nationalfeiertag'), isTrue);
     });
 
-    test('Turkish holidays exist', () {
-      HolidayService.setCountry('TR');
+    test('Turkish holidays exist', () async {
+      await HolidayService.setCountry('TR');
       final apr = HolidayService.getHolidaysForMonth(2026, 4);
       expect(apr, isNotEmpty);
     });
 
-    test('UK holidays exist', () {
-      HolidayService.setCountry('GB');
+    test('UK holidays exist', () async {
+      await HolidayService.setCountry('GB');
       final dec = HolidayService.getHolidaysForMonth(2026, 12);
       expect(dec.any((h) => h.name == 'Christmas Day'), isTrue);
     });
 
-    test('Swiss holidays exist', () {
-      HolidayService.setCountry('CH');
+    test('Swiss holidays exist', () async {
+      await HolidayService.setCountry('CH');
       final aug = HolidayService.getHolidaysForMonth(2026, 8);
       expect(aug.any((h) => h.name == 'Bundesfeiertag'), isTrue);
     });
 
-    test('School holidays NRW 2026 summer', () {
-      HolidayService.setCountry('DE');
-      HolidayService.setRegion('NRW');
+    test('School holidays NRW 2026 summer', () async {
+      await HolidayService.setCountry('DE');
+      await HolidayService.setRegion('NRW');
       final july = HolidayService.getSchoolHolidaysForMonth(2026, 7);
       expect(july.any((h) => h.name == 'Sommerferien'), isTrue);
     });
 
-    test('School holidays Bayern 2026', () {
-      HolidayService.setCountry('DE');
-      HolidayService.setRegion('BY');
+    test('School holidays Bayern 2026', () async {
+      await HolidayService.setCountry('DE');
+      await HolidayService.setRegion('BY');
       final feb = HolidayService.getSchoolHolidaysForMonth(2026, 2);
       expect(feb.any((h) => h.name == 'Winterferien'), isTrue);
     });
 
-    test('Holiday for specific day returns correct result', () {
-      HolidayService.setCountry('DE');
+    test('Holiday for specific day returns correct result', () async {
+      await HolidayService.setCountry('DE');
       final holiday = HolidayService.getHolidayForDay(DateTime(2026, 1, 1));
       expect(holiday, isNotNull);
       expect(holiday!.name, equals('Neujahr'));
     });
 
-    test('Non-holiday day returns null', () {
-      HolidayService.setCountry('DE');
+    test('Non-holiday day returns null', () async {
+      await HolidayService.setCountry('DE');
       final holiday = HolidayService.getHolidayForDay(DateTime(2026, 3, 15));
       expect(holiday, isNull);
     });
@@ -83,8 +83,8 @@ void main() {
       expect(regions.length, equals(16));
     });
 
-    test('German holidays 2028 are present (Ostern 16.04.2028)', () {
-      HolidayService.setCountry('DE');
+    test('German holidays 2028 are present (Ostern 16.04.2028)', () async {
+      await HolidayService.setCountry('DE');
       final apr = HolidayService.getHolidaysForMonth(2028, 4);
       expect(apr.any((h) => h.name == 'Karfreitag'), isTrue);
       expect(apr.any((h) => h.name == 'Ostermontag'), isTrue);
@@ -92,13 +92,13 @@ void main() {
       expect(jun.any((h) => h.name == 'Pfingstmontag'), isTrue);
     });
 
-    test('maxDataYear reflects German data through 2028', () {
-      HolidayService.setCountry('DE');
+    test('maxDataYear reflects German data through 2028', () async {
+      await HolidayService.setCountry('DE');
       expect(HolidayService.maxDataYear(), equals(2028));
     });
 
-    test('isBeyondData flags years past the maintained data', () {
-      HolidayService.setCountry('DE');
+    test('isBeyondData flags years past the maintained data', () async {
+      await HolidayService.setCountry('DE');
       expect(HolidayService.isBeyondData(2028), isFalse);
       expect(HolidayService.isBeyondData(2029), isTrue);
     });

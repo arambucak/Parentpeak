@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/main.dart';
@@ -11,6 +12,8 @@ import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/onboarding_sync_service.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
+import 'package:parentpeak/ui/widgets/profile_legacy_claim.dart';
 
 /// Onboarding-Ergebnis das nach Abschluss zurückgegeben wird.
 class OnboardingResult {
@@ -27,13 +30,15 @@ class OnboardingResult {
 
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
+  final ProfileAccountStore? accountStore;
 
-  const OnboardingScreen({super.key, required this.onComplete});
+  const OnboardingScreen({super.key, required this.onComplete, this.accountStore});
 
   /// Prüft ob Onboarding bereits abgeschlossen wurde.
   static Future<bool> isCompleted() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('onboarding.completed') ?? false;
+    final store = ProfileAccountStore.instance;
+    final data = await store.read(store.ticket);
+    return data[ProfileAccountStore.completedKey] == true;
   }
 
   @override
@@ -42,9 +47,12 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen>
     with TickerProviderStateMixin {
-  static const String _completedKey = 'onboarding.completed';
-  static const String _roleKey = 'onboarding.parent_role';
-  static const String _prioritiesKey = 'onboarding.priorities';
+  late final _accounts = widget.accountStore ?? ProfileAccountStore.instance;
+  late final ProfileAccountTicket _session;
+  bool _saving = false;
+  bool _failed = false;
+  int _loadRequest = 0;
+  String? _loadedOnboarding;
 
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -67,9 +75,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
+    _session = _accounts.ticket;
+    _accounts.addListener(_loadAccount);
+    _loadAccount();
     // Der Anzeigename kommt aus der Registrierung — Feld vorbelegen, damit der
     // Nutzer nicht erneut tippen muss (nur bestaetigen).
-    final existingName = FirebaseAuth.instance.currentUser?.displayName?.trim();
+    final existingName = Firebase.apps.isEmpty ? null
+        : FirebaseAuth.instance.currentUser?.displayName?.trim();
     if (existingName != null && existingName.isNotEmpty) {
       _familyNameController.text = existingName;
     }
@@ -98,11 +110,53 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   void dispose() {
+    _accounts.removeListener(_loadAccount);
     _pageController.dispose();
     _familyNameController.dispose();
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAccount() async {
+    final request = ++_loadRequest;
+    try {
+      final data = await _accounts.read(_session);
+      if (!mounted || request != _loadRequest || !_accounts.isCurrent(_session)) return;
+      final signature = jsonEncode({
+        for (final key in ProfileAccountStore.domains[ProfileLegacyDomain.onboarding]!)
+          if (data.containsKey(key)) key: data[key],
+      });
+      if (signature == _loadedOnboarding) {
+        if (_failed) setState(() => _failed = false);
+        return;
+      }
+      _loadedOnboarding = signature;
+      setState(() {
+        _failed = false;
+        final name = data[ProfileAccountStore.familyNameKey] as String?;
+        if (name != null) _familyNameController.text = name;
+        _selectedRoles
+          ..clear()
+          ..addAll(List<String>.from(data[ProfileAccountStore.rolesKey] ?? []));
+        final role = data[ProfileAccountStore.roleKey] as String?;
+        if (_selectedRoles.isEmpty && role != null) _selectedRoles.add(role);
+        _selectedChildAges
+          ..clear()
+          ..addAll(List<String>.from(data[ProfileAccountStore.agesKey] ?? []));
+        _selectedPriorities
+          ..clear()
+          ..addAll(List<String>.from(data[ProfileAccountStore.prioritiesKey] ?? []));
+        _selectedCountry = data[ProfileAccountStore.countryKey] as String? ?? 'DE';
+        _selectedRegion = data[ProfileAccountStore.regionKey] as String? ?? 'NRW';
+      });
+    } on ProfileAccountChanged {
+      // AuthGate replaces the old wizard.
+      if (mounted) setState(() => _saving = false);
+    } catch (error) {
+      debugPrint('Account onboarding load failed: $error');
+      if (mounted && _accounts.isCurrent(_session)) setState(() => _failed = true);
+    }
   }
 
   void _goToPage(int page) {
@@ -143,59 +197,57 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Future<void> _completeOnboarding() async {
+    if (_saving || _failed || !_accounts.isCurrent(_session)) return;
+    setState(() => _saving = true);
     HapticFeedback.mediumImpact();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_completedKey, true);
-
-    // Anzeigename (aus Registrierung vorbelegt, ggf. hier bestaetigt/angepasst)
-    // ist die EINE app-weite Identitaet: Firebase displayName + UserProfile.
     final familyName = _familyNameController.text.trim();
-    if (familyName.isNotEmpty) {
-      await prefs.setString('onboarding.family_name', familyName);
-      try {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user != null && user.displayName?.trim() != familyName) {
-          await user.updateDisplayName(familyName);
-        }
-      } catch (_) {}
-      // App-weit serverseitig sichern (uid -> displayName).
-      unawaited(UserProfileService.instance.setDisplayName(familyName));
-    }
-
-    if (_selectedRoles.isNotEmpty) {
-      await prefs.setString(_roleKey, _selectedRoles.first);
-      await prefs.setStringList(
-          'onboarding.parent_roles', _selectedRoles.toList());
-    }
-    await prefs.setStringList(
-      _prioritiesKey,
-      _selectedPriorities.toList(),
-    );
-
-    // Save child ages
-    await prefs.setStringList('onboarding.child_ages', _selectedChildAges);
-
-    // Save country & region → auto-configures Kalender holidays
-    await prefs.setString('holiday.country', _selectedCountry);
-    await prefs.setString('holiday.region', _selectedRegion);
-
-    // Save location if GPS was granted during onboarding or city was entered
+    final values = <String, dynamic>{
+      ProfileAccountStore.completedKey: true,
+      ProfileAccountStore.familyNameKey: familyName,
+      ProfileAccountStore.rolesKey: _selectedRoles.toList(),
+      ProfileAccountStore.agesKey: List<String>.from(_selectedChildAges),
+      ProfileAccountStore.prioritiesKey: _selectedPriorities.toList(),
+      ProfileAccountStore.countryKey: _selectedCountry,
+      ProfileAccountStore.regionKey: _selectedRegion,
+      ProfileAccountStore.tileOrderKey: _buildTileOrder(),
+      if (_selectedRoles.isNotEmpty) ProfileAccountStore.roleKey: _selectedRoles.first,
+    };
+    try {
     if (!LocationService.instance.hasLocation) {
-      // Show friendly location dialog
-      if (mounted) {
-        await _showLocationDialog();
+      if (mounted) await _showLocationDialog();
+    }
+    _accounts.require(_session);
+    if (familyName.isNotEmpty && _session.scope != 'guest') {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && user.displayName?.trim() != familyName) {
+        await user.updateDisplayName(familyName);
+      }
+      _accounts.require(_session);
+      await UserProfileService.instance.setDisplayName(familyName, ticket: _session);
+    }
+    await _accounts.write(_session, values);
+    try {
+      if (_session.scope != 'guest') {
+        await OnboardingSyncService.instance.pushCompleted(_session);
+      }
+    } on ProfileAccountChanged {
+      rethrow;
+    } catch (error) {
+      debugPrint('Onboarding saved locally; remote sync failed: $error');
+      if (mounted && _accounts.isCurrent(_session)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('profile_sync_failed'))));
       }
     }
-
-    // Speichere die personalisierte Kachel-Reihenfolge
-    final tileOrder = _buildTileOrder();
-    await prefs.setStringList('home.tile_order.v1', tileOrder);
-
-    // Minimal-Sync: Abschluss + unkritische Stammdaten account-gebunden
-    // sichern, damit ein neues Geraet das Onboarding ueberspringt (best-effort).
-    unawaited(OnboardingSyncService.instance.pushCompleted());
-
-    widget.onComplete();
+    if (mounted && _accounts.isCurrent(_session)) widget.onComplete();
+    } on ProfileAccountChanged {
+      // No completion callback for an obsolete wizard.
+    } catch (error) {
+      debugPrint('Account onboarding save failed: $error');
+      if (mounted && _accounts.isCurrent(_session)) setState(() => _failed = true);
+    } finally {
+      if (mounted && _accounts.isCurrent(_session)) setState(() => _saving = false);
+    }
   }
 
   List<String> _buildTileOrder() {
@@ -244,6 +296,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (!_accounts.isCurrent(_session)) return const SizedBox.shrink();
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -337,7 +390,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             // Bottom Navigation
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: _buildBottomNav(theme),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                ProfileLegacyClaim(domain: ProfileLegacyDomain.onboarding, store: _accounts),
+                ProfileLegacyClaim(domain: ProfileLegacyDomain.location, store: _accounts),
+                if (_failed) TextButton(
+                  onPressed: _loadAccount,
+                  child: Text(_t('profile_account_failed')),
+                ),
+                if (_saving) const CircularProgressIndicator()
+                else _buildBottomNav(theme),
+              ]),
             ),
           ],
         ),
@@ -418,12 +480,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ),
     );
 
+    if (!mounted || !_accounts.isCurrent(_session)) return;
     if (result == 'gps') {
       final success = await LocationService.instance.requestGPSLocation();
-      if (!success && mounted) {
+      if (!success && mounted && _accounts.isCurrent(_session)) {
         // GPS failed — ask for PLZ
         final plzController = TextEditingController();
-        await showDialog(
+        final input = await showDialog<String>(
           context: context,
           builder: (ctx) => AlertDialog(
             shape:
@@ -445,11 +508,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   child: Text(_t('cancel'))),
               FilledButton(
                 onPressed: () {
-                  if (plzController.text.trim().isNotEmpty) {
-                    LocationService.instance
-                        .setManualLocation(plzController.text.trim());
-                  }
-                  Navigator.pop(ctx);
+                  Navigator.pop(ctx, plzController.text.trim());
                 },
                 child: Text(_t('done')),
               ),
@@ -457,6 +516,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ),
         );
         plzController.dispose();
+        if (input != null && input.isNotEmpty && mounted &&
+            _accounts.isCurrent(_session)) {
+          await LocationService.instance.setManualLocation(input);
+        }
       }
     }
   }

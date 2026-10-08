@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
 import 'package:parentpeak/logic/event_geocoder.dart';
 import 'package:parentpeak/logic/event_service.dart';
@@ -137,8 +138,11 @@ void main() {
     testWidgets(
       'saved city uses provider coordinates or unknown (resolved=$resolved)',
       (tester) async {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('events.saved_city', 'Grunewald, Berlin');
+        final store = ProfileAccountStore(userIdProvider: () => 'viewer');
+        await tester.runAsync(() => store.write(store.ticket, {
+          ProfileAccountStore.eventCityKey: 'Grunewald, Berlin',
+        }));
+        store.dispose();
         final service = _Service([
           _event('Saved-city event', latitude: 52.4986, longitude: 13.4033),
         ]);

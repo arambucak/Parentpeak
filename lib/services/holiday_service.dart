@@ -1,4 +1,9 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
+
+class HolidayChanges extends ChangeNotifier {
+  void changed() => notifyListeners();
+}
 
 /// A public holiday entry
 class PublicHoliday {
@@ -40,35 +45,75 @@ class SchoolHolidayPeriod {
 }
 
 class HolidayService {
-  static const _countryKey = 'holiday.country';
-  static const _regionKey = 'holiday.region';
+  static const _countryKey = ProfileAccountStore.countryKey;
+  static const _regionKey = ProfileAccountStore.regionKey;
 
   static String _country = 'DE';
   static String _region = 'NRW';
 
-  static String get country => _country;
-  static String get region => _region;
+  static ProfileAccountTicket? _loaded;
+  static bool _listening = false;
+  static int _request = 0;
+  static bool loadFailed = false;
+  static final changes = HolidayChanges();
+
+  static void _guardCache() {
+    if (_loaded == null || !ProfileAccountStore.instance.isCurrent(_loaded!)) {
+      _country = 'DE';
+      _region = 'NRW';
+    }
+  }
+
+  static String get country { _guardCache(); return _country; }
+  static String get region { _guardCache(); return _region; }
 
   static Future<void> initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    _country = prefs.getString(_countryKey) ?? 'DE';
-    _region = prefs.getString(_regionKey) ?? 'NRW';
+    final store = ProfileAccountStore.instance;
+    if (!_listening) {
+      _listening = true;
+      store.addListener(_reload);
+    }
+    final ticket = store.ticket;
+    final request = ++_request;
+    _guardCache();
+    try {
+      final data = await store.read(ticket);
+      if (request != _request || !store.isCurrent(ticket)) return;
+      _country = data[_countryKey] as String? ?? 'DE';
+      _region = data[_regionKey] as String? ?? 'NRW';
+      _loaded = ticket;
+      loadFailed = false;
+      changes.changed();
+    } on ProfileAccountChanged {
+      // A newer session owns the holiday cache.
+    } catch (error) {
+      debugPrint('Account holiday load failed: $error');
+      if (request == _request && store.isCurrent(ticket)) {
+        _country = 'DE'; _region = 'NRW'; loadFailed = true;
+        changes.changed();
+      }
+    }
   }
 
-  static Future<void> setCountry(String c) async {
-    _country = c;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_countryKey, c);
+  static void _reload() {
+    _guardCache();
+    initialize();
   }
 
-  static Future<void> setRegion(String r) async {
-    _region = r;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_regionKey, r);
+  static Future<void> setCountry(String c) =>
+      setSelection(c, region, ProfileAccountStore.instance.ticket);
+
+  static Future<void> setRegion(String r) =>
+      setSelection(country, r, ProfileAccountStore.instance.ticket);
+
+  static Future<void> setSelection(String c, String r, ProfileAccountTicket ticket) async {
+    await ProfileAccountStore.instance.write(ticket, {_countryKey: c, _regionKey: r});
+    await initialize();
   }
 
   /// Get public holidays for a given month
   static List<PublicHoliday> getHolidaysForMonth(int year, int month) {
+    _guardCache();
     return _allHolidays
         .where((h) =>
             h.country == _country &&
@@ -82,7 +127,7 @@ class HolidayService {
   /// statt stillschweigend einen leeren Kalender zu zeigen. Gibt null zurück,
   /// wenn für das Land gar keine Daten vorliegen.
   static int? maxDataYear([String? country]) {
-    final c = country ?? _country;
+    final c = country ?? HolidayService.country;
     final years =
         _allHolidays.where((h) => h.country == c).map((h) => h.date.year);
     if (years.isEmpty) return null;
@@ -100,6 +145,7 @@ class HolidayService {
 
   /// Get public holiday for a specific day (or null)
   static PublicHoliday? getHolidayForDay(DateTime day) {
+    _guardCache();
     try {
       return _allHolidays.firstWhere((h) =>
           h.country == _country &&
@@ -114,6 +160,7 @@ class HolidayService {
   /// Get school holiday periods that overlap with a given month
   static List<SchoolHolidayPeriod> getSchoolHolidaysForMonth(
       int year, int month) {
+    _guardCache();
     final monthStart = DateTime(year, month, 1);
     final monthEnd = DateTime(year, month + 1, 0);
     return _allSchoolHolidays
@@ -127,6 +174,7 @@ class HolidayService {
 
   /// Check if a day is in school holidays
   static SchoolHolidayPeriod? getSchoolHolidayForDay(DateTime day) {
+    _guardCache();
     try {
       return _allSchoolHolidays.firstWhere((p) =>
           p.country == _country && p.region == _region && p.containsDay(day));

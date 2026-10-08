@@ -3,16 +3,29 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 
 /// Central location service — single source of truth for user location.
 /// Used by: Events, Verschenkmarkt, Spielfreunde, and any future feature.
 ///
 /// Supports: GPS (automatic) or PLZ/City (manual fallback).
 /// DSGVO: Only city-level precision shared. Exact GPS stays local.
-class LocationService {
-  static final LocationService instance = LocationService._();
-  LocationService._();
+class LocationService extends ChangeNotifier {
+  static final LocationService instance = LocationService();
+  LocationService({ProfileAccountStore? store, http.Client? httpClient,
+    Future<(double, double)> Function()? gpsProvider})
+      : _store = store ?? ProfileAccountStore.instance,
+        _httpClient = httpClient,
+        _gpsProvider = gpsProvider {
+    _store.addListener(_reload);
+  }
+  final ProfileAccountStore _store;
+  final http.Client? _httpClient;
+  final Future<(double, double)> Function()? _gpsProvider;
+  ProfileAccountTicket? _loaded;
+  int _loadRequest = 0;
+  int _operation = 0;
+  bool loadFailed = false;
 
   static const String _latKey = 'location.latitude';
   static const String _lngKey = 'location.longitude';
@@ -25,33 +38,71 @@ class LocationService {
   String? _method;
 
   /// Current latitude (null if not set)
-  double? get latitude => _latitude;
+  double? get latitude { _guardCache(); return _latitude; }
 
   /// Current longitude (null if not set)
-  double? get longitude => _longitude;
+  double? get longitude { _guardCache(); return _longitude; }
 
   /// City name or PLZ (for display)
-  String? get city => _city;
+  String? get city { _guardCache(); return _city; }
 
   /// Whether location is available
-  bool get hasLocation => _latitude != null && _longitude != null;
+  bool get hasLocation => latitude != null && longitude != null;
 
   /// How location was determined
-  String? get method => _method;
+  String? get method { _guardCache(); return _method; }
+
+  void _guardCache() {
+    if (_loaded == null || !_store.isCurrent(_loaded!)) {
+      _latitude = null; _longitude = null; _city = null; _method = null;
+    }
+  }
+
+  void _reload() {
+    _guardCache();
+    initialize();
+  }
 
   /// Initialize from SharedPreferences (call at app start)
   Future<void> initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    _latitude = prefs.getDouble(_latKey);
-    _longitude = prefs.getDouble(_lngKey);
-    _city = prefs.getString(_cityKey);
-    _method = prefs.getString(_methodKey);
+    final ticket = _store.ticket;
+    final request = ++_loadRequest;
+    _guardCache();
+    try {
+      final data = await _store.read(ticket);
+      if (request != _loadRequest || !_store.isCurrent(ticket)) return;
+      _latitude = (data[_latKey] as num?)?.toDouble();
+      _longitude = (data[_lngKey] as num?)?.toDouble();
+      _city = data[_cityKey] as String?;
+      _method = data[_methodKey] as String?;
+      _loaded = ticket;
+      loadFailed = false;
+      notifyListeners();
+    } on ProfileAccountChanged {
+      // A new session reloads its own location.
+    } catch (error) {
+      debugPrint('Account location load failed: $error');
+      if (request == _loadRequest && _store.isCurrent(ticket)) {
+        _loaded = null; _guardCache(); loadFailed = true; notifyListeners();
+      }
+    }
   }
 
   /// Try to get GPS location. Returns true if successful.
   /// Shows system permission dialog if needed.
   Future<bool> requestGPSLocation() async {
+    final ticket = _store.ticket;
+    final operation = ++_operation;
     try {
+      final provider = _gpsProvider;
+      if (provider != null) {
+        final coords = await provider();
+        _requireOperation(ticket, operation);
+        final city = await _reverseGeocodeAndSetCity(coords.$1, coords.$2);
+        _requireOperation(ticket, operation);
+        await _save(ticket, operation, coords.$1, coords.$2, city, 'gps');
+        return true;
+      }
       // On web, isLocationServiceEnabled() is unreliable — browsers don't expose
       // a system-level GPS toggle. Skip this check on web.
       if (!kIsWeb) {
@@ -75,14 +126,10 @@ class LocationService {
         ),
       );
 
-      _latitude = position.latitude;
-      _longitude = position.longitude;
-      _method = 'gps';
-
-      // Reverse geocode to get city name
-      await _reverseGeocodeAndSetCity(position.latitude, position.longitude);
-
-      await _save();
+      _requireOperation(ticket, operation);
+      final city = await _reverseGeocodeAndSetCity(position.latitude, position.longitude);
+      _requireOperation(ticket, operation);
+      await _save(ticket, operation, position.latitude, position.longitude, city, 'gps');
       return true;
     } catch (e) {
       debugPrint('LocationService.requestGPSLocation failed: $e');
@@ -93,28 +140,19 @@ class LocationService {
   /// Set location manually from PLZ/City input.
   /// Uses a simple geocoding lookup for German/Austrian/Swiss PLZ.
   Future<void> setManualLocation(String input) async {
-    _city = input.trim();
-    _method = 'manual';
-
+    final ticket = _store.ticket;
+    final operation = ++_operation;
     final coords =
         _geocodePLZ(input.trim()) ?? await _forwardGeocode(input.trim());
-    if (coords != null) {
-      _latitude = coords.$1;
-      _longitude = coords.$2;
-    } else {
-      _latitude = null;
-      _longitude = null;
-    }
-    await _save();
+    _requireOperation(ticket, operation);
+    await _save(ticket, operation, coords?.$1, coords?.$2, input.trim(), 'manual');
   }
 
   /// Set location from known coordinates (e.g. from onboarding city picker)
   Future<void> setCoordinates(double lat, double lng, {String? city}) async {
-    _latitude = lat;
-    _longitude = lng;
-    _city = city;
-    _method = city != null ? 'manual' : 'gps';
-    await _save();
+    final ticket = _store.ticket;
+    final operation = ++_operation;
+    await _save(ticket, operation, lat, lng, city, city != null ? 'manual' : 'gps');
   }
 
   /// Calculate distance in km from user to a point
@@ -133,21 +171,15 @@ class LocationService {
 
   /// Clear stored location
   Future<void> clear() async {
-    _latitude = null;
-    _longitude = null;
-    _city = null;
-    _method = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_latKey);
-    await prefs.remove(_lngKey);
-    await prefs.remove(_cityKey);
-    await prefs.remove(_methodKey);
+    final ticket = _store.ticket;
+    final operation = ++_operation;
+    await _save(ticket, operation, null, null, null, null);
   }
 
   // ─── Private ──────────────────────────────────────────────────────────────
 
   /// Reverse geocode coordinates to get a city name via Nominatim
-  Future<void> _reverseGeocodeAndSetCity(double lat, double lng) async {
+  Future<String?> _reverseGeocodeAndSetCity(double lat, double lng) async {
     try {
       final uri = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json&addressdetails=1',
@@ -156,8 +188,8 @@ class LocationService {
       final headers = kIsWeb
           ? <String, String>{}
           : {'User-Agent': 'ParentPeak/1.0 (family app)'};
-      final resp = await http
-          .get(uri, headers: headers)
+      final resp = await (_httpClient?.get(uri, headers: headers) ??
+          http.get(uri, headers: headers))
           .timeout(const Duration(seconds: 8));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -168,15 +200,17 @@ class LocationService {
         final suburb =
             address?['suburb'] as String? ?? address?['quarter'] as String?;
         if (suburb != null && cityName != null) {
-          _city = '$suburb, $cityName';
+          return '$suburb, $cityName';
         } else if (cityName != null) {
-          _city = cityName;
+          return cityName;
         }
+        return null;
       }
     } catch (e) {
       debugPrint('LocationService._reverseGeocodeAndSetCity failed: $e');
       // Non-fatal: location still works without city name
     }
+    return null;
   }
 
   Future<(double, double)?> _forwardGeocode(String query) async {
@@ -190,8 +224,8 @@ class LocationService {
       final headers = kIsWeb
           ? <String, String>{}
           : {'User-Agent': 'ParentPeak/1.0 (family app)'};
-      final response = await http
-          .get(uri, headers: headers)
+      final response = await (_httpClient?.get(uri, headers: headers) ??
+          http.get(uri, headers: headers))
           .timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) return null;
       final results = jsonDecode(response.body);
@@ -210,12 +244,32 @@ class LocationService {
     }
   }
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (_latitude != null) await prefs.setDouble(_latKey, _latitude!);
-    if (_longitude != null) await prefs.setDouble(_lngKey, _longitude!);
-    if (_city != null) await prefs.setString(_cityKey, _city!);
-    if (_method != null) await prefs.setString(_methodKey, _method!);
+  void _requireOperation(ProfileAccountTicket ticket, int operation) {
+    _store.require(ticket);
+    if (operation != _operation) throw const ProfileAccountChanged();
+  }
+
+  Future<void> _save(ProfileAccountTicket ticket, int operation,
+      double? lat, double? lng, String? city, String? method) async {
+    _requireOperation(ticket, operation);
+    await _store.update(ticket, (data) {
+      _requireOperation(ticket, operation);
+      for (final key in [_latKey, _lngKey, _cityKey, _methodKey]) {
+        data.remove(key);
+      }
+      if (lat != null) data[_latKey] = lat;
+      if (lng != null) data[_lngKey] = lng;
+      if (city != null) data[_cityKey] = city;
+      if (method != null) data[_methodKey] = method;
+    });
+    _requireOperation(ticket, operation);
+    await initialize();
+  }
+
+  @override
+  void dispose() {
+    _store.removeListener(_reload);
+    super.dispose();
   }
 
   /// Haversine formula for distance between two GPS points

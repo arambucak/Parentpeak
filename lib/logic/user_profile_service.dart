@@ -3,18 +3,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 
 /// Die eine Identitaet: uid -> Anzeigename (app-weit). Der Name wird EINMAL
 /// bei der Registrierung gesetzt und ueberall automatisch verwendet.
 /// username/searchable/isPrivate sind optional (Default: privat, nicht
 /// auffindbar) und werden erst in Schritt 2 (Suche) relevant.
 class UserProfileService {
-  UserProfileService._();
-  static final UserProfileService instance = UserProfileService._();
+  UserProfileService({BackendApiClient? api, ProfileAccountStore? store,
+      String? Function()? userIdProvider})
+      : _api = api ?? BackendServiceFactory.createApiClient(),
+        _store = store ?? ProfileAccountStore.instance,
+        _userIdProvider = userIdProvider ??
+            (() => FirebaseAuth.instance.currentUser?.uid);
+  static final UserProfileService instance = UserProfileService();
 
-  final BackendApiClient? _api = BackendServiceFactory.createApiClient();
-
-  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+  final BackendApiClient? _api;
+  final ProfileAccountStore _store;
+  final String? Function() _userIdProvider;
+  String? get _uid => _userIdProvider();
 
   static String? resolveAvatarUrl(String? photoUrl, {String? apiBaseUrl}) {
     final value = photoUrl?.trim();
@@ -33,19 +40,22 @@ class UserProfileService {
   }
 
   /// Anzeigename serverseitig setzen/aktualisieren (app-weit gueltig).
-  Future<void> setDisplayName(String displayName) async {
+  Future<void> setDisplayName(String displayName, {ProfileAccountTicket? ticket}) async {
+    final store = _store;
+    final expected = ticket ?? store.ticket;
+    store.require(expected);
     final api = _api;
     final uid = _uid;
     final name = displayName.trim();
-    if (api == null || uid == null || uid.isEmpty || name.isEmpty) return;
-    try {
-      await api.postJsonAny('/api/profile', {
+    if (api == null || uid == null || uid.isEmpty || name.isEmpty) {
+      throw StateError('Profile identity or backend missing');
+    }
+      store.require(expected);
+      await api.withRequestGuard(() => store.require(expected)).postJsonAny('/api/profile', {
         'userId': uid,
         'displayName': name,
       });
-    } catch (e) {
-      debugPrint('UserProfileService.setDisplayName failed: $e');
-    }
+      store.require(expected);
   }
 
   Future<String?> avatarUrlFor(String uid) async {
@@ -63,14 +73,18 @@ class UserProfileService {
   }
 
   Future<bool> setAvatarUrl(String? avatarUrl) async {
+    final store = _store;
+    final ticket = store.ticket;
     final api = _api;
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty) return false;
     try {
-      await api.postJsonAny('/api/profile', {
+      store.require(ticket);
+      await api.withRequestGuard(() => store.require(ticket)).postJsonAny('/api/profile', {
         'userId': uid,
         'avatarUrl': avatarUrl ?? '',
       });
+      store.require(ticket);
       return true;
     } catch (e) {
       debugPrint('UserProfileService.setAvatarUrl failed: $e');
@@ -99,17 +113,19 @@ class UserProfileService {
   /// bestaetigt werden muessen.
   Future<void> setVisibility(
       {bool? searchable, bool? isPrivate, String? username}) async {
+    final store = _store;
+    final ticket = store.ticket;
     final api = _api;
     final uid = _uid;
-    if (api == null || uid == null || uid.isEmpty) return;
+    if (api == null || uid == null || uid.isEmpty) {
+      throw StateError('Profile identity or backend missing');
+    }
     final body = <String, dynamic>{'userId': uid};
     if (searchable != null) body['searchable'] = searchable;
     if (isPrivate != null) body['isPrivate'] = isPrivate;
     if (username != null) body['username'] = username.trim().toLowerCase();
-    try {
-      await api.postJsonAny('/api/profile', body);
-    } catch (e) {
-      debugPrint('UserProfileService.setVisibility failed: $e');
-    }
+      store.require(ticket);
+      await api.withRequestGuard(() => store.require(ticket)).postJsonAny('/api/profile', body);
+      store.require(ticket);
   }
 }

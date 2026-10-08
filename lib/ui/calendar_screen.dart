@@ -12,6 +12,7 @@ import 'package:parentpeak/logic/calendar_logic.dart';
 import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/ui/widgets/user_avatar.dart';
 import 'package:parentpeak/services/holiday_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/widgets/language_change_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -199,6 +200,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     _selectedDay =
         DateTime(_focusedDay.year, _focusedDay.month, _focusedDay.day);
     HolidayService.initialize();
+    HolidayService.changes.addListener(_holidayChanged);
     _loadCustomPersons();
     _loadPersonColors();
     // Sync-Präferenz zuerst laden, damit _loadEvents weiß, ob es vom Backend
@@ -209,6 +211,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   static const String _customPersonsKey = 'calendar_custom_persons';
+
+  void _holidayChanged() {
+    if (mounted) setState(() {});
+  }
 
   Future<void> _loadCustomPersons() async {
     final prefs = await SharedPreferences.getInstance();
@@ -351,6 +357,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   @override
   void dispose() {
+    HolidayService.changes.removeListener(_holidayChanged);
     _titleController.dispose();
     _quickAddController.dispose();
     super.dispose();
@@ -1598,6 +1605,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   // ─── HOLIDAY SETTINGS ───────────────────────────────────────────────────
   void _showHolidaySettings() {
+    final ticket = ProfileAccountStore.instance.ticket;
     String tempCountry = HolidayService.country;
     String tempRegion = HolidayService.region;
     bool tempSyncEnabled = CalendarBackendService.syncEnabled;
@@ -1760,12 +1768,20 @@ class _CalendarScreenState extends State<CalendarScreen>
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: () async {
-                      await HolidayService.setCountry(tempCountry);
-                      await HolidayService.setRegion(tempRegion);
+                      try {
+                      await HolidayService.setSelection(tempCountry, tempRegion, ticket);
+                      ProfileAccountStore.instance.require(ticket);
                       await CalendarBackendService.setSyncEnabled(
                           tempSyncEnabled);
                       if (mounted) setState(() {});
                       if (ctx.mounted) Navigator.pop(ctx);
+                      } catch (error) {
+                        debugPrint('Account holiday selection failed: $error');
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(content: Text(_t('profile_account_failed'))));
+                        }
+                      }
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF8B5CF6),
