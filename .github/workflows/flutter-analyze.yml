@@ -34,6 +34,9 @@ jobs:
       - name: Run Tests
         run: flutter test --no-pub
 
+      - name: Restore locked backend test dependencies without lifecycle scripts
+        run: npm ci --prefix backend --omit=dev --ignore-scripts --no-audit --no-fund
+
       - name: Run Backend Unit Tests
         run: node --test backend/tests/unit/*.test.js
 

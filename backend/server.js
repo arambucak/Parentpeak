@@ -74,7 +74,8 @@ const multerStorage = multer.diskStorage({
 });
 const upload = multer({
   storage: multerStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  // This image endpoint does not consume array-valued multipart metadata.
+  limits: { fileSize: 10 * 1024 * 1024, fieldArrayIndexLimit: 0 }, // 10 MB
   fileFilter: (_req, file, cb) => {
     const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
     if (allowed.has(file.mimetype)) {
@@ -11092,6 +11093,18 @@ app.post('/payments/transactions/:id/status', async (req, res) => {
 });
 
 // Health Check
+app.get('/release/readiness', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const { releaseReadiness } = require('./release_readiness');
+    const evidence = await releaseReadiness(prisma, process.env.RENDER_GIT_COMMIT);
+    res.json(evidence);
+  } catch (error) {
+    console.error('Release readiness failed:', error.name, error.code || 'unavailable');
+    res.status(503).json({ status: 'not-ready' });
+  }
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Parentpeak Backend läuft!' });
 });

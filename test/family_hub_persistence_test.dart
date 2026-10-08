@@ -5,6 +5,7 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/family_hub_todos.dart';
 import 'package:parentpeak/logic/family_recipe_service.dart';
 import 'package:parentpeak/logic/fridge_recipe_service.dart';
+import 'package:parentpeak/logic/fridge_photo_consent.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/shopping_item.dart';
@@ -209,12 +210,14 @@ void main() {
     () async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(FamilyHubStore.storageKey, '{invalid');
+      await FridgePhotoConsent.instance.grant(FridgePhotoConsent.instance.scope);
       await expectLater(
         FamilyRecipeService().initialize(),
         throwsFormatException,
       );
       await expectLater(
-        FridgeRecipeService().generateFromIngredients(['Rice']),
+        FridgeRecipeService().generateFromIngredients(
+          ['Rice'], expectedScope: FridgePhotoConsent.instance.scope),
         throwsFormatException,
       );
     },

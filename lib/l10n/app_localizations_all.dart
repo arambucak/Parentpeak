@@ -1543,8 +1543,9 @@ class AppStringsManager {
       'recipe_ai_request_failed':
           'Die Rezept-Erstellung konnte nicht gestartet werden. Bitte versuche es erneut.',
       'fridge_consent_body':
-          'Für die Zutaten-Erkennung wird dein Foto an unseren KI-Dienst gesendet. Bitte achte darauf, dass keine Personen oder privaten Notizen darauf zu sehen sind. Auch die im Profil hinterlegten Allergien werden zur sicheren Rezept-Erstellung mitgenutzt. Das Foto wird nicht dauerhaft gespeichert.',
+          'Für die Zutaten-Erkennung wird dein Foto über das ParentPeak-Backend an Google Gemini gesendet. Bildinhalte werden nicht anonymisiert; zeige keine Personen, privaten Notizen oder Adressen. Für das anschließende Rezept werden die bestätigten Zutaten, das Kindesalter und vorhandene Allergie-Angaben an Google Gemini gesendet. Die App speichert das Foto nicht als dauerhaften Entwurf. Diese optionale Zustimmung gilt für diesen Kühlschrank-KI-Ablauf und wird für dein aktuelles Konto beziehungsweise den Gastmodus auf diesem Gerät gespeichert. Sie veröffentlicht weder Foto noch Rezept. Ohne Zustimmung wird keine KI-Anfrage gestartet.',
       'fridge_consent_accept': 'Einverstanden, Foto auswerten',
+      'fridge_consent_failed': 'Die Kühlschrank-KI-Zustimmung konnte nicht bestätigt werden. Ohne bestätigte Zustimmung wird keine neue KI-Anfrage gestartet.',
       'fridge_choose_photo': 'Auswählen',
       'fridge_no_ingredients_detected':
           'Ich konnte keine Zutaten sicher erkennen. Du kannst sie unten einfach selbst ergänzen.',
@@ -1836,9 +1837,15 @@ class AppStringsManager {
       'development_report_special_needs':
           '- WICHTIG: Dieses Kind hat besondere Beduerfnisse. Vergleiche NICHT mit Altersnormen. Beschreibe nur den individuellen Fortschritt. Statt "Foerderbedarf" sage "waechst in eigenem Tempo". Sei besonders wertschaetzend und staerkend.',
       'development_consent_title': 'Bericht mit KI erstellen',
+      'knowledge_content_language_notice':
+          'Eltern-Wissen ist noch nicht vollständig übersetzt. Fragen, Antworten und Suchbegriffe sind überwiegend auf Deutsch. Suche mit deutschen Wörtern oder wähle eine Themenkarte.',
+      'knowledge_ui_language_notice':
+          'Fehlende Übersetzungen der Bedienelemente werden auf Englisch angezeigt.',
       'development_consent_body':
-          'Für den Bericht werden die Antworten dieses Entwicklungs-Checks an unseren KI-Dienst gesendet. Der Name deines Kindes bleibt dabei auf deinem Gerät und wird nicht übertragen. Deine Angaben werden nur zur Erstellung des Berichts verarbeitet, nicht gespeichert, um dich zu identifizieren.',
+          'Für den Bericht werden die Antworten dieses Entwicklungs-Checks an unseren KI-Dienst (Google Gemini) gesendet. Der Name deines Kindes bleibt dabei auf deinem Gerät und wird nicht übertragen. Deine Angaben werden nur zur Erstellung des Berichts verarbeitet, nicht gespeichert, um dich zu identifizieren.',
       'development_consent_accept': 'Einverstanden, Bericht erstellen',
+      'development_consent_save_failed':
+          'Die Zustimmung konnte nicht sicher gespeichert werden oder das Konto hat gewechselt. Es wird kein KI-Bericht erstellt.',
       'dev_answer_yes': 'Ja',
       'dev_answer_sometimes': 'Manchmal',
       'dev_answer_not_yet': 'Noch nicht',
@@ -3998,8 +4005,9 @@ class AppStringsManager {
       'recipe_ai_request_failed':
           'Recipe creation could not be started. Please try again.',
       'fridge_consent_body':
-          'To detect ingredients, your photo is sent to our AI service. Please make sure no people or private notes are visible. The allergies saved in your profile are also used to create a safe recipe. The photo is not stored permanently.',
+          'To detect ingredients, your photo is sent through the ParentPeak backend to Google Gemini. Image contents are not anonymized; do not show people, private notes or addresses. For the subsequent recipe, confirmed ingredients, child age and available allergy details are sent to Google Gemini. The app does not save the photo as a permanent draft. This optional consent applies to this fridge AI flow and is saved for your current account or guest mode on this device. It does not publish the photo or recipe. Without consent, no AI request is started.',
       'fridge_consent_accept': 'Agree and analyze photo',
+      'fridge_consent_failed': 'Fridge AI consent could not be confirmed. Without confirmed consent, no new AI request is started.',
       'fridge_choose_photo': 'Choose',
       'fridge_no_ingredients_detected':
           'I could not identify any ingredients reliably. You can add them manually below.',
@@ -4280,9 +4288,15 @@ class AppStringsManager {
       'development_report_special_needs':
           '- IMPORTANT: This child has special needs. Do NOT compare to age norms. Describe only individual progress. Instead of "needs support" say "grows at their own pace". Be especially appreciative and encouraging.',
       'development_consent_title': 'Create report with AI',
+      'knowledge_content_language_notice':
+          'Parent knowledge is not fully translated yet. Questions, answers and search terms are mostly in German. Search using German words or select a topic card.',
+      'knowledge_ui_language_notice':
+          'Missing interface translations are shown in English.',
       'development_consent_body':
-          'To create the report, the answers from this development check are sent to our AI service. Your child\'s name stays on your device and is not transmitted. Your input is only processed to create the report and is not stored to identify you.',
+          'To create the report, the answers from this development check are sent to our AI service (Google Gemini). Your child\'s name stays on your device and is not transmitted. Your input is only processed to create the report and is not stored to identify you.',
       'development_consent_accept': 'Agree and create report',
+      'development_consent_save_failed':
+          'Consent could not be saved safely or the account changed. No AI report will be created.',
       'dev_answer_yes': 'Yes',
       'dev_answer_sometimes': 'Sometimes',
       'dev_answer_not_yet': 'Not yet',
@@ -13167,8 +13181,9 @@ class AppStringsManager {
       'recipe_ai_request_failed':
           'Çêkirina reçeteyê dest pê nekir. Ji kerema xwe dîsa biceribîne.',
       'fridge_consent_body':
-          'Ji bo naskirina pêkhateyan, wêneyê te ji xizmeta me ya AI\'yê re tê şandin. Ji kerema xwe bawer bike ku kes an notên taybet lê xuya nabin. Alerjiyên di profîla te de jî ji bo çêkirina reçeteyeke ewle têne bikaranîn. Wêne bi domdarî nayê tomarkirin.',
+          'Ji bo naskirina pêkhateyan, wêneyê te bi backend-a ParentPeak ji Google Gemini re tê şandin. Naveroka wêneyê nayê anonîmkirin; kes, notên taybet an navnîşanan nîşan nede. Ji bo reçeteya paşê, pêkhateyên pejirandî, temenê zarokê û agahiyên alerjiyê yên heyî ji Google Gemini re tên şandin. Sepan wêneyê wekî pêşnivîseke domdar tomar nake. Ev razîbûna bijarte ji bo vê rêya AI ya sarincê ye û li ser vê cîhazê ji bo hesabê te yê niha an moda mêvan tê tomarkirin. Wêne an reçete nayê weşandin. Bê razîbûn daxwaza AI nayê destpêkirin.',
       'fridge_consent_accept': 'Razî me, wêne binirxîne',
+      'fridge_consent_failed': 'Razîbûna AI ya sarincê nehat pejirandin. Bê razîbûna pejirandî daxwazeke nû ya AI nayê destpêkirin.',
       'fridge_choose_photo': 'Hilbijêre',
       'fridge_no_ingredients_detected':
           'Min pêkhate bi ewlehî nas nekirin. Tu dikarî li jêr bixwe wan lê zêde bikî.',
@@ -13455,9 +13470,15 @@ class AppStringsManager {
       'development_report_special_needs':
           '- GIRÎNG: Ev zarok xwedî pêdiviyên taybet e. Bi normên temen RE neqiyase. Tenê pêşketina kesane rave bike. Li şûna "pêdiviya piştgiriyê" bibêje "bi leza xwe mezin dibe". Bi taybetî bihapîne û hêzdar be.',
       'development_consent_title': 'Bi AI\'yê rapor çêbike',
+      'knowledge_content_language_notice':
+          'Zanîna dêûbavan hîn bi tevahî nehatiye wergerandin. Pirs, bersiv û peyvên lêgerînê bi piranî bi Almanî ne. Bi peyvên Almanî bigere an kartek mijarê hilbijêre.',
+      'knowledge_ui_language_notice':
+          'Wergerên kontrolên sepanê yên ku kêm in bi Îngilîzî tên nîşandan.',
       'development_consent_body':
-          'Ji bo raporê, bersivên vê kontrola pêşketinê ji xizmeta me ya AI\'yê re tên şandin. Navê zaroka te li ser cîhaza te dimîne û nayê veguhastin. Agahiyên te tenê ji bo çêkirina raporê têne pêvajokirin, ji bo nasîna te nayên tomarkirin.',
+          'Ji bo raporê, bersivên vê kontrola pêşketinê ji xizmeta me ya AI\'yê (Google Gemini) re tên şandin. Navê zaroka te li ser cîhaza te dimîne û nayê veguhastin. Agahiyên te tenê ji bo çêkirina raporê têne pêvajokirin, ji bo nasîna te nayên tomarkirin.',
       'development_consent_accept': 'Razî me, raporê çêbike',
+      'development_consent_save_failed':
+          'Razîbûn bi ewlehî nehat tomarkirin an hesab guherî. Rapora AI nayê çêkirin.',
       'dev_answer_yes': 'Erê',
       'dev_answer_sometimes': 'Carinan',
       'dev_answer_not_yet': 'Hêj na',
@@ -19313,8 +19334,9 @@ class AppStringsManager {
       'recipe_ai_request_failed':
           'Tarif oluşturma başlatılamadı. Lütfen tekrar deneyin.',
       'fridge_consent_body':
-          'Malzemeleri tanımak için fotoğrafın yapay zekâ hizmetimize gönderilir. Lütfen üzerinde kişiler veya özel notlar olmamasına dikkat et. Profilindeki alerjiler de güvenli bir tarif oluşturmak için kullanılır. Fotoğraf kalıcı olarak saklanmaz.',
+          'Malzemeleri tanımak için fotoğrafınız ParentPeak sunucusu üzerinden Google Gemini’ye gönderilir. Görüntü içeriği anonimleştirilmez; kişileri, özel notları veya adresleri göstermeyin. Sonraki tarif için onaylanan malzemeler, çocuğun yaşı ve mevcut alerji bilgileri Google Gemini’ye gönderilir. Uygulama fotoğrafı kalıcı taslak olarak kaydetmez. Bu isteğe bağlı onay, bu buzdolabı yapay zekâ akışı için geçerlidir ve bu cihazda mevcut hesabınız veya misafir modu için saklanır. Fotoğrafı veya tarifi yayımlamaz. Onay olmadan yapay zekâ isteği başlatılmaz.',
       'fridge_consent_accept': 'Kabul ediyorum, fotoğrafı analiz et',
+      'fridge_consent_failed': 'Buzdolabı yapay zekâ onayı doğrulanamadı. Doğrulanmış onay olmadan yeni yapay zekâ isteği başlatılmaz.',
       'fridge_choose_photo': 'Fotoğraf seç',
       'fridge_no_ingredients_detected':
           'Malzemeleri güvenilir biçimde tanıyamadım. Aşağıdan kendin kolayca ekleyebilirsin.',
@@ -19600,9 +19622,15 @@ class AppStringsManager {
       'development_report_special_needs':
           '- ÖNEMLİ: Bu çocuğun özel gereksinimleri var. Yaş normlarıyla KARŞILAŞTIRMA. Yalnızca bireysel ilerlemeyi anlat. "Destek gerekli" yerine "kendi hızında büyüyor" de. Özellikle takdir edici ve güçlendirici ol.',
       'development_consent_title': 'Yapay zekâ ile rapor oluştur',
+      'knowledge_content_language_notice':
+          'Ebeveyn bilgileri henüz tamamen çevrilmedi. Sorular, yanıtlar ve arama terimleri çoğunlukla Almancadır. Almanca kelimelerle arayın veya bir konu kartı seçin.',
+      'knowledge_ui_language_notice':
+          'Eksik arayüz çevirileri İngilizce gösterilir.',
       'development_consent_body':
-          'Rapor için bu gelişim kontrolünün yanıtları yapay zekâ hizmetimize gönderilir. Çocuğunuzun adı cihazınızda kalır ve aktarılmaz. Bilgileriniz yalnızca raporu oluşturmak için işlenir, sizi tanımlamak için saklanmaz.',
+          'Rapor için bu gelişim kontrolünün yanıtları yapay zekâ hizmetimize (Google Gemini) gönderilir. Çocuğunuzun adı cihazınızda kalır ve aktarılmaz. Bilgileriniz yalnızca raporu oluşturmak için işlenir, sizi tanımlamak için saklanmaz.',
       'development_consent_accept': 'Kabul ediyorum, raporu oluştur',
+      'development_consent_save_failed':
+          'Onay güvenli şekilde kaydedilemedi veya hesap değişti. Yapay zekâ raporu oluşturulmayacak.',
       'dev_answer_yes': 'Evet',
       'dev_answer_sometimes': 'Bazen',
       'dev_answer_not_yet': 'Henüz değil',

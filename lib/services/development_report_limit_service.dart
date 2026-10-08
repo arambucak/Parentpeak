@@ -81,9 +81,10 @@ class DevelopmentReportLimitService {
   // ─── Report-Tracking ──────────────────────────────────────────────────────
 
   /// Registriere einen erstellten KI-Bericht. Returns true wenn erlaubt.
-  Future<bool> recordReportCreated() async {
+  Future<bool> recordReportCreated({void Function()? requestGuard}) async {
+    requestGuard?.call();
     if (isLimitActive) {
-      _checkYearReset();
+      _checkYearReset(persist: false);
       if (_reportCountThisYear >= freeReportsPerYear) {
         return false;
       }
@@ -91,7 +92,8 @@ class DevelopmentReportLimitService {
 
     _reportCountThisYear++;
     _lastReportAt = DateTime.now();
-    await _persist();
+    await _persist(requestGuard: requestGuard);
+    requestGuard?.call();
     debugPrint('DevelopmentReportLimitService: Report recorded '
         '($_reportCountThisYear/$freeReportsPerYear)');
     return true;
@@ -99,26 +101,30 @@ class DevelopmentReportLimitService {
 
   // ─── Private ──────────────────────────────────────────────────────────────
 
-  void _checkYearReset() {
+  void _checkYearReset({bool persist = true}) {
     final currentYear = DateTime.now().year;
     if (_trackedYear != currentYear) {
       _reportCountThisYear = 0;
       _trackedYear = currentYear;
-      _persist();
+      if (persist) _persist();
     }
   }
 
-  Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _persist({void Function()? requestGuard}) async {
     final uid = AuthService.instance.currentUser?.uid ?? '';
     final key = uid.isNotEmpty ? '$_lastReportKey.$uid' : _lastReportKey;
     final countKey = uid.isNotEmpty ? '$_reportCountKey.$uid' : _reportCountKey;
     final yearKey = uid.isNotEmpty ? '$_yearKey.$uid' : _yearKey;
+    final prefs = await SharedPreferences.getInstance();
+    requestGuard?.call();
 
     if (_lastReportAt != null) {
       await prefs.setInt(key, _lastReportAt!.millisecondsSinceEpoch);
+      requestGuard?.call();
     }
     await prefs.setInt(countKey, _reportCountThisYear);
+    requestGuard?.call();
     await prefs.setInt(yearKey, _trackedYear);
+    requestGuard?.call();
   }
 }
