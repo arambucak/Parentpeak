@@ -49,6 +49,9 @@ Eine Familien-App die Eltern dort unterstützt wo es zählt — im Alltag. Kein 
 
 ## Architektur
 
+Client-Verarbeitungsgrenzen, Consent-Mechanismen und dokumentierte
+Sprachgrenzen: [Client-Datenschutz und Sprachumfang](docs/client-privacy-and-language.md).
+
 ```mermaid
 graph TB
     subgraph Client["Flutter App (iOS / Android / Web)"]
