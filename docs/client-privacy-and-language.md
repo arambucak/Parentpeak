@@ -59,3 +59,24 @@ keinen Nachweis der realen Provider-Aufbewahrung.
 ```bash
 flutter test --no-pub test/development_report_consent_test.dart test/development_checkin_store_test.dart test/development_pdf_i18n_test.dart test/gemini_ai_service_test.dart test/localization_audit_verification_test.dart
 ```
+
+## Sprachumfang von Eltern-Wissen
+
+Die aktive FAQ-Datenbank enthaelt 32 Eintraege, ueberwiegend auf Deutsch;
+die Suche arbeitet mit deutschen Fragen, Tags und Kategorien. Themenkarten
+starten passende deutsche Suchbegriffe. Eine einzelne tuerkische Tagesantwort
+ist keine vollstaendige FAQ-Uebersetzung.
+
+Fuer jede nichtdeutsche App-Sprache zeigt das aktive Widget einen nicht
+wegklickbaren Hinweis, auch bei Suchtreffern und leerer Suche. In de/en/tr/ku
+ist der Hinweis selbst lokalisiert; andere Sprachen erhalten ihn auf Englisch
+mit einer zusaetzlichen Erklaerung fuer fehlende UI-Uebersetzungen.
+Themenkarten skalieren mit vergroesserter Schrift, und die Tagesimpuls-
+Ueberschrift kann umbrechen; Widgettests decken 200/300 Prozent Textgroesse ab.
+Vollstaendige FAQ-Uebersetzungen und lokalisierte Suche bleiben bewusst
+Post-Launch-Arbeit. Dieser Hinweis behauptet keine globale Erklaerung aller
+anderen Sprach-Fallbacks der App oder abgeschlossene sprachliche Release-QA.
+
+```bash
+flutter test --no-pub test/eltern_wissen_language_notice_test.dart test/eltern_wissen_search_test.dart test/localization_audit_verification_test.dart
+```
