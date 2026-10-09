@@ -84,6 +84,13 @@ function fixture({ app, configured = true, failure, production = true,
       },
       findMany: async ({ where }) => [...families.values()].filter(f => f.createdById === where.createdById),
     },
+    // exportOwnFamilyItems liest seit PR B2 auch MealPlans der eigenen Familie
+    // (familyId ist nur ein String ohne FK). In den B1-Fixtures existieren keine
+    // Meal-Pläne, daher leere Rückgaben.
+    mealPlan: {
+      findMany: async () => [],
+      deleteMany: async () => ({ count: 0 }),
+    },
   };
   for (const [model, table] of Object.entries(data)) {
     const matching = where => table.find(row => row.id === where.id && row.familyId === where.familyId);

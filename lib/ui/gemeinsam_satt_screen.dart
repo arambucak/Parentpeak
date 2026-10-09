@@ -3,7 +3,7 @@ import 'package:parentpeak/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/food_share_post.dart';
 import 'package:parentpeak/models/shared_recipe.dart';
@@ -179,6 +179,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
   final TextEditingController _commentController = TextEditingController();
   final backend_service.GemeinsamSattBackendService _service =
       backend_service.GemeinsamSattBackendService();
+  final MealPlannerService _mealPlannerService =
+      BackendServiceFactory.createMealPlannerService();
 
   late List<FoodSharePost> _posts;
   late List<SharedRecipe> _recipes;
@@ -455,9 +457,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
   Future<void> _loadWeekMealPlan() async {
     try {
-      final familyId = APIConfig.getBackendFamilyId();
-      final weekPlan = await MealPlannerService.getWeekMealPlan(
-        familyId,
+      // Familienkontext wird serverseitig aus der Token-UID aufgelöst (own).
+      final weekPlan = await _mealPlannerService.getWeekMealPlan(
         DateTime.now(),
       );
 
@@ -3907,7 +3908,8 @@ class _CreateRecipeSheetState extends State<_CreateRecipeSheet> {
             const SizedBox(height: 4),
             Center(
                 child: Text(_t('satt_share_hint'),
-                    style: const TextStyle(color: Color(0xFF8A9AB0), fontSize: 13))),
+                    style: const TextStyle(
+                        color: Color(0xFF8A9AB0), fontSize: 13))),
             const SizedBox(height: 20),
 
             // Emoji picker

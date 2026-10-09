@@ -10,6 +10,7 @@ import 'parent_matching_backend_service.dart';
 import 'photo_backend_service.dart';
 import 'shopping_backend_service.dart';
 import 'todo_backend_service.dart';
+import 'package:parentpeak/services/meal_planner_service.dart';
 import 'weekly_planner_storage_service.dart';
 import 'weekly_impulse_service.dart';
 
@@ -99,6 +100,10 @@ class BackendServiceFactory {
 
   static ShoppingBackendService createShoppingService() {
     return ShoppingBackendService(apiClient: createVerifiedApiClient());
+  }
+
+  static MealPlannerService createMealPlannerService() {
+    return MealPlannerService(apiClient: createVerifiedApiClient());
   }
 
   static CalendarBackendService createCalendarService() {

@@ -1,189 +1,128 @@
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+
 import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/family_backend_scope.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/models/meal_plan.dart';
 
+/// Backend-Client für Essenspläne.
+///
+/// Sicherheitsgrenze (PR B2): Alle Aufrufe laufen über den verifizierten
+/// Firebase-Client. Der Familienkontext wird NICHT mehr aus der globalen
+/// Konfiguration (`demo-family-001`) abgeleitet, sondern serverseitig aus der
+/// Token-UID über den reservierten Selector `own`. Eine fremde Familien-ID kann
+/// nicht gesendet werden; der Server lehnt sie mit 403 ab.
+///
+/// Hinweis: Die Schreibmethoden (`saveMealPlan`, `addMeal`, `updateMeal`,
+/// `deleteMeal`) werden aktuell von keiner UI aufgerufen — die lokale
+/// Meal-Bearbeitung bleibt lokal. Sie sind trotzdem korrekt authentifiziert und
+/// getestet, damit eine spätere Verdrahtung sicher ist.
 class MealPlannerService {
-  static Uri? _resolveUri(String relativePath) {
-    final baseUrl = APIConfig.getBackendBaseUrl();
-    if (baseUrl == null || baseUrl.trim().isEmpty) {
-      return null;
-    }
+  MealPlannerService(
+      {BackendApiClient? apiClient, ProfileAccountStore? accountStore})
+      : _apiClient = apiClient,
+        _scope = FamilyBackendScope(accountStore: accountStore);
 
-    final normalizedBase = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
-    final normalizedPath = relativePath.startsWith('/')
-        ? relativePath.substring(1)
-        : relativePath;
-    return Uri.parse(normalizedBase).resolve(normalizedPath);
+  final BackendApiClient? _apiClient;
+  final FamilyBackendScope _scope;
+
+  /// Reservierter Selector: "Familie der Token-UID", serverseitig aufgelöst.
+  static const String _ownFamilySelector = 'own';
+
+  static String _mealPlansBasePath() => APIConfig.getBackendMealPlansPath();
+
+  BackendApiClient _client(ProfileAccountTicket? ticket) =>
+      _scope.requireClient(_apiClient, ticket);
+
+  /// Hole Essensplan für einen bestimmten Tag.
+  Future<DayPlan?> getMealPlan(DateTime date,
+      {ProfileAccountTicket? ticket}) async {
+    final dateStr = date.toIso8601String().split('T')[0];
+    final path = '${_mealPlansBasePath()}/$_ownFamilySelector?date=$dateStr';
+    final data = await _client(ticket).getJson(path);
+    if (data is Map<String, dynamic>) return _parseDayPlan(data);
+    return null;
   }
 
-  static String _mealPlansBasePath() {
-    return APIConfig.getBackendMealPlansPath();
-  }
-  
-  /// Fetch meal plan for a specific day
-  static Future<DayPlan?> getMealPlan(String familyId, DateTime date) async {
-    final endpoint = _resolveUri('${_mealPlansBasePath()}/$familyId?date=${date.toIso8601String().split('T')[0]}');
-    if (endpoint == null) return null;
-
-    try {
-      final response = await http.get(
-        endpoint,
-      ).timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return _parseDayPlan(data);
-      }
-      return null;
-    } catch (e) {
-      debugPrint('MealPlannerService.getMealPlan(): failed: $e');
-      return null;
-    }
+  /// Hole Wochenplan (7 Tage ab [startDate]).
+  Future<WeekPlan?> getWeekMealPlan(DateTime startDate,
+      {ProfileAccountTicket? ticket}) async {
+    final dateStr = startDate.toIso8601String().split('T')[0];
+    final path =
+        '${_mealPlansBasePath()}/$_ownFamilySelector/week?startDate=$dateStr';
+    final data = await _client(ticket).getJson(path);
+    if (data is! List) return null;
+    final days = data
+        .whereType<Map<String, dynamic>>()
+        .map<DayPlan>(_parseDayPlan)
+        .toList();
+    return WeekPlan(weekStart: startDate, days: days);
   }
 
-  /// Fetch week meal plan (7 days starting from startDate)
-  static Future<WeekPlan?> getWeekMealPlan(String familyId, DateTime startDate) async {
-    final endpoint = _resolveUri(
-      '${_mealPlansBasePath()}/$familyId/week?startDate=${startDate.toIso8601String().split('T')[0]}',
-    );
-    if (endpoint == null) return null;
-
-    try {
-      final response = await http.get(
-        endpoint,
-      ).timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        final days = data.map<DayPlan>((dayData) => _parseDayPlan(dayData)).toList();
-        
-        return WeekPlan(
-          weekStart: startDate,
-          days: days,
-        );
-      }
-      return null;
-    } catch (e) {
-      debugPrint('MealPlannerService.getWeekMealPlan(): failed: $e');
-      return null;
-    }
-  }
-
-  /// Create or update a day's meal plan
-  static Future<DayPlan?> saveMealPlan(
-    String familyId,
+  /// Erstelle oder aktualisiere den Essensplan eines Tages.
+  Future<DayPlan?> saveMealPlan(
     DateTime date,
-    List<Meal> meals,
-  ) async {
-    final endpoint = _resolveUri('${_mealPlansBasePath()}/$familyId');
-    if (endpoint == null) return null;
-
-    try {
-      final dateStr = date.toIso8601String().split('T')[0];
-      final payload = {
-        'date': dateStr,
-        'meals': meals.map((meal) => {
-          'title': meal.title,
-          'type': meal.type.name,
-          'description': meal.description,
-          'ingredients': meal.ingredients,
-        }).toList(),
-      };
-
-      final response = await http.post(
-        endpoint,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
-      ).timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = json.decode(response.body);
-        return _parseDayPlan(data);
-      }
-      return null;
-    } catch (e) {
-      debugPrint('MealPlannerService.saveMealPlan(): failed: $e');
-      return null;
-    }
+    List<Meal> meals, {
+    ProfileAccountTicket? ticket,
+  }) async {
+    final dateStr = date.toIso8601String().split('T')[0];
+    final payload = {
+      'date': dateStr,
+      'meals': meals
+          .map((meal) => {
+                'title': meal.title,
+                'type': meal.type.name,
+                'description': meal.description,
+                'ingredients': meal.ingredients,
+              })
+          .toList(),
+    };
+    final data = await _client(ticket)
+        .postJsonAny('${_mealPlansBasePath()}/$_ownFamilySelector', payload);
+    if (data is Map<String, dynamic>) return _parseDayPlan(data);
+    return null;
   }
 
-  /// Add a single meal to a meal plan
-  static Future<Meal?> addMeal(String mealPlanId, Meal meal) async {
-    final endpoint = _resolveUri('/meals/$mealPlanId');
-    if (endpoint == null) return null;
-
-    try {
-      final payload = {
-        'title': meal.title,
-        'type': meal.type.name,
-        'description': meal.description,
-        'ingredients': meal.ingredients,
-      };
-
-      final response = await http.post(
-        endpoint,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
-      ).timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = json.decode(response.body);
-        return _parseMeal(data);
-      }
-      return null;
-    } catch (e) {
-      debugPrint('MealPlannerService.addMeal(): failed: $e');
-      return null;
-    }
+  /// Füge eine einzelne Mahlzeit zu einem Essensplan hinzu.
+  Future<Meal?> addMeal(
+    String mealPlanId,
+    Meal meal, {
+    ProfileAccountTicket? ticket,
+  }) async {
+    final payload = {
+      'title': meal.title,
+      'type': meal.type.name,
+      'description': meal.description,
+      'ingredients': meal.ingredients,
+    };
+    // Korrigierter Pfad: Backend mountet /api/meals/, nicht /meals/.
+    final data =
+        await _client(ticket).postJsonAny('/api/meals/$mealPlanId', payload);
+    if (data is Map<String, dynamic>) return _parseMeal(data);
+    return null;
   }
 
-  /// Update a meal
-  static Future<Meal?> updateMeal(String mealId, Meal meal) async {
-    final endpoint = _resolveUri('/meals/$mealId');
-    if (endpoint == null) return null;
-
-    try {
-      final payload = {
-        'title': meal.title,
-        'type': meal.type.name,
-        'description': meal.description,
-        'ingredients': meal.ingredients,
-      };
-
-      final response = await http.put(
-        endpoint,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
-      ).timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return _parseMeal(data);
-      }
-      return null;
-    } catch (e) {
-      debugPrint('MealPlannerService.updateMeal(): failed: $e');
-      return null;
-    }
+  /// Aktualisiere eine Mahlzeit.
+  Future<Meal?> updateMeal(
+    String mealId,
+    Meal meal, {
+    ProfileAccountTicket? ticket,
+  }) async {
+    final payload = {
+      'title': meal.title,
+      'type': meal.type.name,
+      'description': meal.description,
+      'ingredients': meal.ingredients,
+    };
+    final data = await _client(ticket).putJson('/api/meals/$mealId', payload);
+    if (data is Map<String, dynamic>) return _parseMeal(data);
+    return null;
   }
 
-  /// Delete a meal
-  static Future<bool> deleteMeal(String mealId) async {
-    final endpoint = _resolveUri('/meals/$mealId');
-    if (endpoint == null) return false;
-
-    try {
-      final response = await http.delete(
-        endpoint,
-      ).timeout(const Duration(seconds: 5));
-
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('MealPlannerService.deleteMeal(): failed: $e');
-      return false;
-    }
+  /// Lösche eine Mahlzeit.
+  Future<void> deleteMeal(String mealId, {ProfileAccountTicket? ticket}) async {
+    await _client(ticket).delete('/api/meals/$mealId');
   }
 
   // ============================================================
@@ -194,7 +133,9 @@ class MealPlannerService {
     final meals = <Meal>[];
     if (data['meals'] != null) {
       for (var mealData in data['meals']) {
-        meals.add(_parseMeal(mealData));
+        if (mealData is Map<String, dynamic>) {
+          meals.add(_parseMeal(mealData));
+        }
       }
     }
 
@@ -207,10 +148,10 @@ class MealPlannerService {
   static Meal _parseMeal(Map<String, dynamic> data) {
     final rawIngredients = data['ingredients'];
     final ingredients = rawIngredients is String
-      ? List<String>.from(json.decode(rawIngredients))
-      : rawIngredients is List
-        ? List<String>.from(rawIngredients)
-        : <String>[];
+        ? List<String>.from(json.decode(rawIngredients))
+        : rawIngredients is List
+            ? List<String>.from(rawIngredients)
+            : <String>[];
 
     final typeString = data['type'] as String;
     final mealType = MealType.values.firstWhere(
