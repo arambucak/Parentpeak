@@ -166,14 +166,23 @@ void main() {
 
     expect(find.text('de|ltr|Rezept löschen?'), findsOneWidget);
 
-    for (final code in const ['ar', 'fa', 'ckb']) {
-      locale.value = Locale(code);
+    // Erwartete Werte je RTL-Sprache: ar ist für die Kern-UI übersetzt (#186),
+    // fa/ckb fallen (noch) auf den englischen Wert zurück. Die eigentliche
+    // Invariante dieses Tests ist Locale-Propagation + RTL-Directionality.
+    const rtlExpected = <String, String>{
+      'ar': 'ar|rtl|حذف الوصفة؟',
+      'fa': 'fa|rtl|Delete recipe?',
+      'ckb': 'ckb|rtl|Delete recipe?',
+    };
+    for (final entry in rtlExpected.entries) {
+      locale.value = Locale(entry.key);
       await tester.pumpAndSettle();
 
       expect(
-        find.text('$code|rtl|Delete recipe?'),
+        find.text(entry.value),
         findsOneWidget,
-        reason: '$code must update the app locale and use RTL directionality',
+        reason:
+            '${entry.key} must update the app locale and use RTL directionality',
       );
     }
 
