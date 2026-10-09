@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/notification_account_binding.dart';
 
 typedef NotificationTapHandler = void Function(Map<String, dynamic> data);
 
@@ -21,6 +24,22 @@ class NotificationService {
   bool _initialized = false;
   bool _fcmListenersRegistered = false;
   NotificationTapHandler? _onNotificationTap;
+  int _sessionGeneration = 0;
+  String? _sessionOwner;
+  BackendApiClient? _sessionApiClient;
+  late final _binding = NotificationAccountBinding(
+    currentUserId: () => Firebase.apps.isEmpty
+        ? null : FirebaseAuth.instance.currentUser?.uid,
+    getToken: () async => kIsWeb ? null : FirebaseMessaging.instance.getToken(),
+    deleteToken: () async {
+      if (!kIsWeb && Firebase.apps.isNotEmpty) {
+        await FirebaseMessaging.instance.deleteToken();
+      }
+    },
+    cancelReminders: () async {
+      if (!kIsWeb && _initialized) await _plugin.cancelAll();
+    },
+  );
 
   bool get _isRunningOnIOSSimulator {
     if (kIsWeb) return false;
@@ -81,6 +100,23 @@ class NotificationService {
     NotificationTapHandler? onNotificationTap,
   }) async {
     _onNotificationTap = onNotificationTap ?? _onNotificationTap;
+    if (kIsWeb || apiClient == null || userId == null ||
+        Firebase.apps.isEmpty ||
+        FirebaseAuth.instance.currentUser?.uid != userId) {
+      return;
+    }
+    _sessionApiClient = apiClient;
+    if (_sessionOwner != userId) {
+      _sessionOwner = userId;
+      _sessionGeneration++;
+    }
+    final generation = _sessionGeneration;
+    void requireSession() {
+      if (_sessionOwner != userId || _sessionGeneration != generation ||
+          FirebaseAuth.instance.currentUser?.uid != userId) {
+        throw const NotificationAccountChanged();
+      }
+    }
     if (kDebugMode && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return; // Skip on iOS Simulator in debug
     }
@@ -99,43 +135,35 @@ class NotificationService {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional) {
-      final token = await messaging.getToken();
-      if (token != null && apiClient != null && userId != null) {
-        try {
-          await apiClient.registerFcmToken(
-            userId: userId,
-            token: token,
-          );
-        } catch (e) {
-          _logIgnoredError(
-            'NotificationService.initFcm(): initial token registration skipped',
-            e,
-          );
-          // Non-fatal: local notifications still work.
-        }
+      requireSession();
+      final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
+      requireSession();
+      if (idToken == null || idToken.isEmpty) {
+        throw StateError('A Firebase token is required for notification binding');
       }
+      // Retain the originating credential for deregistration after a UID switch,
+      // never resolve a new account's credential for an old account's DELETE.
+      final ownerClient = BackendApiClient(
+        baseUrl: apiClient.baseUrl,
+        authToken: idToken,
+      );
+      await _binding.bind(userId, ownerClient);
+      requireSession();
 
       if (!_fcmListenersRegistered) {
         _fcmListenersRegistered = true;
         // Re-register whenever the token is refreshed.
         messaging.onTokenRefresh.listen((newToken) async {
-          if (apiClient != null && userId != null) {
-            try {
-              await apiClient.registerFcmToken(
-                userId: userId,
-                token: newToken,
-              );
-            } catch (e) {
-              _logIgnoredError(
-                'NotificationService.initFcm(): token refresh registration skipped',
-                e,
-              );
-            }
+          try {
+            await _refreshAccountToken(newToken);
+          } catch (e) {
+            _logIgnoredError('Notification token refresh failed', e);
           }
         });
 
         // Show foreground FCM messages as local notifications.
         FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          if (!_binding.acceptsMessage(message.data['accountUserId'] as String?)) return;
           final notification = message.notification;
           if (notification != null) {
             showLocalNotification(
@@ -145,11 +173,14 @@ class NotificationService {
           }
         });
         FirebaseMessaging.onMessageOpenedApp.listen((message) {
+          if (!_binding.acceptsMessage(message.data['accountUserId'] as String?)) return;
           _onNotificationTap?.call(message.data);
         });
       }
       final initialMessage = await messaging.getInitialMessage();
-      if (initialMessage != null) {
+      requireSession();
+      if (initialMessage != null &&
+          _binding.acceptsMessage(initialMessage.data['accountUserId'] as String?)) {
         _onNotificationTap?.call(initialMessage.data);
       }
     }
@@ -160,13 +191,34 @@ class NotificationService {
     required BackendApiClient apiClient,
     required String userId,
   }) async {
-    final token = await FirebaseMessaging.instance.getToken();
-    if (token == null || token.isEmpty) return;
+    await endAccountSession();
+  }
 
-    await apiClient.unregisterFcmToken(
-      userId: userId,
-      token: token,
-    );
+  Future<void> endAccountSession() async {
+    _sessionOwner = null;
+    _sessionApiClient = null;
+    _sessionGeneration++;
+    await _binding.endSession();
+  }
+
+  Future<void> _refreshAccountToken(String token) async {
+    final owner = _sessionOwner;
+    final api = _sessionApiClient;
+    final generation = _sessionGeneration;
+    final user = FirebaseAuth.instance.currentUser;
+    if (owner == null || api == null || user?.uid != owner) return;
+    final idToken = await user!.getIdToken();
+    if (_sessionGeneration != generation ||
+        FirebaseAuth.instance.currentUser?.uid != owner) {
+      throw const NotificationAccountChanged();
+    }
+    if (idToken == null || idToken.isEmpty) {
+      throw StateError('Missing Firebase credential for token refresh');
+    }
+    await _binding.refresh(token, client: BackendApiClient(
+      baseUrl: api.baseUrl,
+      authToken: idToken,
+    ));
   }
 
   /// Display an immediate local notification (no scheduling).
@@ -175,7 +227,9 @@ class NotificationService {
     required String body,
   }) async {
     if (kIsWeb) return;
+    final generation = _sessionGeneration;
     final prefs = await SharedPreferences.getInstance();
+    if (generation != _sessionGeneration) return;
     if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     const androidDetails = AndroidNotificationDetails(
       'parentpeak_events',
@@ -191,12 +245,15 @@ class NotificationService {
       notificationDetails:
           const NotificationDetails(android: androidDetails, iOS: iosDetails),
     );
+    if (generation != _sessionGeneration) await _plugin.cancelAll();
   }
 
   Future<void> scheduleReminder(
       DateTime when, String title, String body) async {
     if (kIsWeb) return;
+    final generation = _sessionGeneration;
     final prefs = await SharedPreferences.getInstance();
+    if (generation != _sessionGeneration) return;
     if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     final now = DateTime.now();
     if (when.isBefore(now)) return; // keine Vergangenheit planen
@@ -223,6 +280,7 @@ class NotificationService {
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
+    if (generation != _sessionGeneration) await _plugin.cancelAll();
   }
 
   Future<void> scheduleEventReminder({
@@ -233,7 +291,9 @@ class NotificationService {
     required String reminderKey,
   }) async {
     if (kIsWeb) return;
+    final generation = _sessionGeneration;
     final prefs = await SharedPreferences.getInstance();
+    if (generation != _sessionGeneration) return;
     if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
     final now = DateTime.now();
     if (when.isBefore(now)) return;
@@ -262,6 +322,7 @@ class NotificationService {
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
+    if (generation != _sessionGeneration) await _plugin.cancelAll();
   }
 
   Future<void> scheduleStandardCalendarReminders({
@@ -270,6 +331,7 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    final generation = _sessionGeneration;
     final entries = <({String key, DateTime when})>[
       (key: 'week_before', when: eventStart.subtract(const Duration(days: 7))),
       (key: 'day_before', when: eventStart.subtract(const Duration(days: 1))),
@@ -277,6 +339,7 @@ class NotificationService {
     ];
 
     for (final entry in entries) {
+      if (generation != _sessionGeneration) return;
       await scheduleEventReminder(
         eventId: eventId,
         when: entry.when,

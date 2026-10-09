@@ -1,5 +1,21 @@
 # Parentpeak Marktplatz Backend
 
+## Owner-gebundene Device-Tokens
+
+`POST /devices/register-token` und `DELETE /devices/register-token` verlangen
+ein verifiziertes Firebase-ID-Token fuer die angegebene `userId`, analog zur
+Profil-Owner-Pruefung: fehlend/ungueltig 401, fremde UID 403.
+Ein bereits einem anderen Konto zugeordneter FCM-Token kann nicht
+ueberschrieben werden (409); erst der bisherige Owner kann ihn deregistrieren.
+Eigene Registrierungen sind idempotent. Push-Daten enthalten serverseitig
+`accountUserId`, damit der Client fremde/spaete Anzeige- und Navigationsereignisse
+verwerfen kann.
+
+Der bisherige In-Memory-Token-Store bleibt bestehen; keine Schema-Migration
+und keine neue dauerhafte Token-Persistenz. Fehler beim bestehenden
+User-Persistenzversuch werden protokolliert. Dieser Backend-Change verlangt
+einen freigegebenen Render-Rollout vor dem Pages-Gate.
+
 ## Exakte Node-24-LTS-Runtime (Rollout noch offen)
 
 `backend/.node-version` waehlt exakt **24.21.0**. Mit Render `rootDir: backend`

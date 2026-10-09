@@ -395,7 +395,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.edit_rounded));
       await tester.pumpAndSettle();
       expect(find.text('Legacy doctor'), findsOneWidget);
-      await AuthService.instance.logout();
+      await tester.runAsync(() => AuthService.instance.logout());
       await tester.pumpAndSettle();
       expect(find.text('Legacy doctor'), findsNothing);
       expect(find.text('Legacy child'), findsNothing);

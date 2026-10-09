@@ -692,6 +692,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signInWithGoogle() async {
     try {
+      if (AuthService.instance.isLoggedIn) {
+        await AuthService.instance.logout();
+      }
       final googleProvider = GoogleAuthProvider();
       googleProvider.addScope('email');
       final result = await FirebaseAuth.instance.signInWithPopup(
@@ -699,7 +702,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (result.user != null && mounted) {
         await AuthService.instance.initialize();
-        if (mounted) widget.onLoginSuccess?.call();
+        if (!mounted) return;
+        if (AuthService.instance.isLoggedIn) {
+          widget.onLoginSuccess?.call();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.tr('login_failed'))),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;

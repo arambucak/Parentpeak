@@ -59,6 +59,34 @@ Bereits vorhandene praezise Account-/Legacy-Standorte werden durch diesen
 Change nicht nachtraeglich migriert; bei erneuter Standortwahl werden sie
 gerundet ersetzt. Keine Backend-Aenderung.
 
+## Wiederhergestellte Session und Benachrichtigungen
+
+Firebase-Auto-Login laedt den Nutzer neu und fordert einen frischen ID-Token
+an. UID, Token-Owner, Ablaufzeit und E-Mail-Verifizierung muessen passen;
+ein vorhandener lokaler Session-Owner muss dieselbe UID haben. Ohne bisherigen
+Owner darf eine valide Firebase-Session erstmalig zugeordnet werden.
+Mismatch, abgelehnter Refresh oder nicht verifizierte Session fuehren zum
+Logout statt einer stillen Uebernahme. Bei nicht erreichbarer Verifizierung
+wird ebenfalls eine neue Anmeldung verlangt; dies ist kein Offline-Auto-Login.
+Firebase-Abmeldung/UID-Wechsel invalidieren die lokale Session. Der bestehende
+Debug-only lokale Auth-Fallback bleibt unveraendert.
+
+FCM-Registrierung und Refresh binden sich an den aktuellen Owner und eine
+Sessiongeneration statt an die UID des ersten Listeners. Beim Wechsel wird
+der bisherige Token mit der Ursprungs-Credential deregistriert, auf dem Geraet
+invalidiert und fuer das neue Konto neu gebunden. Logout hebt lokale
+Erinnerungen auf; spaete Registrierungsantworten werden bereinigt.
+Auch bei Backend-Abmeldefehlern wird die Geraete-Invalidierung versucht und
+der Fehler protokolliert. Clientseitige FCM-Anzeige/Navigation akzeptiert nur
+Push-Daten mit passender `accountUserId`. Bereits vom Betriebssystem/Provider
+zugestellte Pushes koennen nicht rueckwirkend verhindert werden; reale
+Geraete-QA bleibt erforderlich. Web-FCM ist deaktiviert.
+
+Die Token-Routen verlangen serverseitig einen passenden verifizierten
+Firebase-Owner. Eine bereits fremd gebundene Token-Zuordnung darf nicht
+ueberschrieben werden. Der Backend-Tree aendert sich; vor einem Merge und
+Deploy sind Backup und ausdrueckliche Rollout-Freigabe erforderlich.
+
 ## Kontobezogener Datenexport
 
 Der lokale Anteil des Profil-Exports wird aus den validierten Owner-Envelopes
