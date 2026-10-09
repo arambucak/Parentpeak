@@ -1,5 +1,35 @@
 # Parentpeak Marktplatz Backend
 
+## Kontogebundener Kalender und strikte Firebase-Identitaet
+
+`requireVerifiedUser` verifiziert einen Firebase-Bearer-Token unabhaengig von
+`FIREBASE_REQUIRE_AUTH`. Fehlende Admin-Konfiguration, fehlende/ungueltige/
+abgelaufene Tokens und ein gemeinsamer Backend-Token ohne Firebase-Verifikation
+geben keinen Zugriff (401). Eine angegebene Body-/Query-`userId` muss zur
+verifizierten UID passen (sonst 403). Die Identitaet steht in `req.firebaseUid`.
+Andere Routen werden durch diesen Helper nicht automatisch abgesichert.
+
+GET/POST `/calendar/events` und DELETE `/calendar/events/:id` verwenden diesen
+Helper. Reads filtern auf die Token-UID, neue Termine erhalten diese als Owner,
+Deletes binden ID und Owner atomar. Fremde oder fehlende Termine liefern bei
+DELETE denselben 404; `familyId` ist keine Kalender-Zugriffsberechtigung.
+DB-Fehler liefern bei deaktiviertem In-Memory-Fallback (Produktionsstandard)
+503. Ein ausdruecklich erlaubter Entwicklungsfallback liest/loescht nur
+Datensaetze mit derselben `userId`; unzugeordnete Demo-Termine bleiben unsichtbar.
+
+Der Flutter-Kalender nutzt bereits den dynamischen Firebase-Tokenprovider und
+sendet keine vor dem Web-Session-Restore erfasste Owner-Behauptung mehr.
+Deaktivierter Sync bleibt vollstaendig lokal, ohne Backend-Calls.
+Keine Datenmigration oder automatische Zuordnung alter Termine.
+
+```bash
+node --test backend/tests/unit/calendar-owner-routes.test.js
+flutter test --no-pub test/calendar_sync_preference_test.dart test/calendar_contract_roundtrip_test.dart
+```
+
+Dieser Backend-Change verlangt den freigegebenen Backup-/Render-Rollout vor
+dem Pages-Gate; ein PR oder dessen CI deployt diese Aenderung nicht als Abnahme.
+
 ## Owner-gebundene Device-Tokens
 
 `POST /devices/register-token` und `DELETE /devices/register-token` verlangen

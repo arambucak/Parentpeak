@@ -2312,8 +2312,7 @@ function verifyStripeWebhookSignature({ rawBody, signatureHeader, secret, tolera
   return false;
 }
 
-// JWT verification helper: verifies a Firebase ID token if Admin SDK is
-// available; otherwise accepts requests transparently (dev/fallback mode).
+// Missing Admin configuration never produces a verified identity.
 async function verifyFirebaseIdToken(req) {
   if (!firebaseAdmin) return { uid: null, verified: false };
   const authHeader = req.headers.authorization || '';
@@ -2325,6 +2324,21 @@ async function verifyFirebaseIdToken(req) {
   } catch (_) {
     return { uid: null, verified: false };
   }
+}
+
+async function requireVerifiedUser(req, res, next) {
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (!verified || !uid) {
+    return res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
+  }
+  req.firebaseUid = uid;
+  for (const claimedUid of [req.body?.userId, req.query?.userId]) {
+    if (claimedUid !== undefined &&
+        (typeof claimedUid !== 'string' || claimedUid.trim() !== uid)) {
+      return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt' });
+    }
+  }
+  return next();
 }
 
 function resolveVerifiedUserId(req, fallbackUserId) {
@@ -2387,10 +2401,9 @@ async function authorizeProfileOwner(req, res, userId) {
 // reject write requests whose token does not match the acting userId.
 const firebaseRequireAuth = (process.env.FIREBASE_REQUIRE_AUTH || '0') === '1';
 
-// Pfade, die den Nutzer ueber die userId im Body/Path identifizieren (nicht
-// ueber den Token). Diese Schreib-Endpoints muessen auch ohne verifizierten
-// Firebase-Token funktionieren, sonst schlagen sie auf Web (Session-Restore-
-// Timing) still fehl. Muss mit der zweiten Middleware konsistent sein.
+// Legacy-Ausnahmen fuer Web-Session-Restore. Kalender und weitere gehaertete
+// Routen verlangen unabhaengig davon lokal einen verifizierten Firebase-Token.
+// Muss mit der zweiten Middleware konsistent sein.
 const socialNoTokenWritePaths = [
   '/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat',
   '/api/friends', '/api/safety', '/api/onboarding', '/api/account',
@@ -2578,8 +2591,8 @@ app.use(async (req, res, next) => {
     return;
   }
 
-  // Calendar and todo endpoints: accept userId from request body as lightweight auth.
-  // Firebase token verification is still attempted; body userId is the fallback.
+  // Legacy exceptions; hardened routes such as calendar enforce Firebase
+  // identity locally even when these global guards continue.
   const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships', '/api/recipes'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
@@ -2587,7 +2600,7 @@ app.use(async (req, res, next) => {
       const { uid, verified } = await verifyFirebaseIdToken(req);
       if (verified) req.firebaseUid = uid;
     }
-    // Always continue — userId in body identifies the owner
+    // Continue to route-local authorization.
     next();
     return;
   }
@@ -6748,26 +6761,23 @@ app.delete('/shopping/:id', async (req, res) => {
 });
 
 // 10. Calendar events
-app.get('/calendar/events', async (req, res) => {
-  const userId = (req.query.userId || req.query.familyId || '').toString().trim();
+app.get('/calendar/events', requireVerifiedUser, async (req, res) => {
+  const userId = req.firebaseUid;
   try {
     await ensureSocialSchemaReady();
-    if (userId) {
-      const rows = await prisma.$queryRawUnsafe(
-        `SELECT * FROM "CalendarEvent" WHERE "userId" = $1 ORDER BY "startAt" ASC`,
-        userId
-      );
-      return res.json({ items: rows });
-    }
-    return res.json({ items: [] });
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "CalendarEvent" WHERE "userId" = $1 ORDER BY "startAt" ASC`,
+      userId
+    );
+    return res.json({ items: rows });
   } catch (error) {
-    // fallback to in-memory on DB error
-    return res.json({ items: calendarEvents.filter(e => !userId || e.familyId === userId) });
+    if (respondWithStrictPersistenceError(res, 'GET /calendar/events', error)) return;
+    return res.json({ items: calendarEvents.filter(e => e.userId === userId) });
   }
 });
 
-app.post('/calendar/events', async (req, res) => {
-  const userId = (req.firebaseUid || req.body.userId || req.body.familyId || 'demo-family-001').toString().trim();
+app.post('/calendar/events', requireVerifiedUser, async (req, res) => {
+  const userId = req.firebaseUid;
   const event = {
     id: generateId('cal'),
     userId,
@@ -6799,22 +6809,27 @@ app.post('/calendar/events', async (req, res) => {
     );
     return res.status(201).json({ item: event });
   } catch (error) {
-    // fallback to in-memory if DB unavailable
+    if (respondWithStrictPersistenceError(res, 'POST /calendar/events', error)) return;
     calendarEvents.unshift(event);
     return res.status(201).json({ item: event });
   }
 });
 
-app.delete('/calendar/events/:id', async (req, res) => {
+app.delete('/calendar/events/:id', requireVerifiedUser, async (req, res) => {
   const id = (req.params.id || '').toString().trim();
   if (!id) return res.status(400).json({ error: 'id erforderlich' });
   try {
     await ensureSocialSchemaReady();
-    await prisma.$executeRawUnsafe(`DELETE FROM "CalendarEvent" WHERE "id" = $1`, id);
-  } catch (_) {
-    // also remove from in-memory fallback
-    const idx = calendarEvents.findIndex(e => e.id === id);
-    if (idx !== -1) calendarEvents.splice(idx, 1);
+    const deleted = await prisma.$executeRawUnsafe(
+      `DELETE FROM "CalendarEvent" WHERE "id" = $1 AND "userId" = $2`,
+      id, req.firebaseUid
+    );
+    if (deleted === 0) return res.status(404).json({ error: 'Termin nicht gefunden' });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /calendar/events/:id', error)) return;
+    const idx = calendarEvents.findIndex(e => e.id === id && e.userId === req.firebaseUid);
+    if (idx === -1) return res.status(404).json({ error: 'Termin nicht gefunden' });
+    calendarEvents.splice(idx, 1);
   }
   return res.status(200).json({ deleted: id });
 });

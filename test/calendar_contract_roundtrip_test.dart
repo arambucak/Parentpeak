@@ -28,6 +28,19 @@ void main() {
       expect(payload['abholer'], 'Oma');
     });
 
+    test('owner claim is optional and never an empty UID', () {
+      expect(
+          CalendarContract.buildCreatePayload(event).containsKey('userId'),
+          isFalse);
+      expect(
+          CalendarContract.buildCreatePayload(event, userId: '')
+              .containsKey('userId'),
+          isFalse);
+      expect(
+          CalendarContract.buildCreatePayload(event, userId: 'u1')['userId'],
+          'u1');
+    });
+
     test('normalize liest die Felder (camelCase) zurück', () {
       // Simuliert eine Server-Antwort, die genau den Create-Payload spiegelt.
       final payload = CalendarContract.buildCreatePayload(event, userId: 'u1');
