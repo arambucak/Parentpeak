@@ -142,6 +142,7 @@ void main() {
     removed = [];
     uploads = 0;
     uploader = ImageUploadService(
+      userIdProvider: () => 'debug_demo_user',
       upload: (_, __) async => 'https://example.invalid/${++uploads}.png',
       remove: (url) async => removed.add(url),
     );
@@ -452,6 +453,7 @@ void main() {
       'partial photo upload is visible; cleanup failure = $cleanupFails',
       (tester) async {
         uploader = ImageUploadService(
+          userIdProvider: () => 'debug_demo_user',
           upload: (_, __) async {
             if (++uploads == 2) throw StateError('second image failed');
             return 'https://example.invalid/one.png';

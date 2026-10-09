@@ -5447,7 +5447,7 @@ function firebaseStorageObjectFromUrl(value) {
     }
 
     if (bucket !== firebaseStorageBucket || objectPath.includes('..')) return null;
-    if (!/^(treasures|events)\/[^/]+$/.test(objectPath)) return null;
+    if (!/^(?:treasures\/(?:[^/]+\/)?[^/]+|events\/[^/]+)$/.test(objectPath)) return null;
     return objectPath;
   } catch (_) {
     return null;
@@ -5466,7 +5466,7 @@ async function getRemainingMediaReferences() {
   return rows.map(row => row.url).filter(Boolean);
 }
 
-async function deleteUnreferencedAccountMedia(mediaUrls) {
+async function deleteUnreferencedAccountMedia(mediaUrls, userId) {
   const remainingUrls = await getRemainingMediaReferences();
   const referencedLocalFiles = new Set(
     remainingUrls.map(localUploadFilenameFromUrl).filter(Boolean),
@@ -5499,6 +5499,11 @@ async function deleteUnreferencedAccountMedia(mediaUrls) {
   if (firebaseAdmin && firebaseStorageBucket) {
     const bucket = firebaseAdmin.storage().bucket(firebaseStorageBucket);
     for (const objectPath of firebaseObjects) {
+      const parts = objectPath.split('/');
+      if (parts[0] === 'treasures' && parts.length === 3 && parts[1] !== userId) {
+        console.warn('Firebase-Storage-Cleanup skipped foreign owner folder');
+        continue;
+      }
       if (referencedFirebaseObjects.has(objectPath)) continue;
       try {
         await bucket.file(objectPath).delete({ ignoreNotFound: true });
@@ -5870,7 +5875,7 @@ app.post('/account/delete-data', async (req, res) => {
 
     const mediaCleanup = dryRun
       ? { removedLocalFiles: 0, removedFirebaseObjects: 0 }
-      : await deleteUnreferencedAccountMedia(prismaResult.mediaUrls);
+      : await deleteUnreferencedAccountMedia(prismaResult.mediaUrls, userId);
 
     const removedEntries = prismaResult.removed + removedMemoryEntries;
     return res.json({
@@ -8441,7 +8446,7 @@ app.delete('/api/account/:userId', async (req, res) => {
     // unkritisch fuer die Konto-Loeschung (best effort), werden aber gemeldet.
     if (recipePhotoUrls.length > 0) {
       try {
-        const media = await deleteUnreferencedAccountMedia(recipePhotoUrls);
+        const media = await deleteUnreferencedAccountMedia(recipePhotoUrls, userId);
         deleted.recipeMedia = media;
       } catch (e) {
         deleted.recipeMedia = `error: ${e?.message || e}`;

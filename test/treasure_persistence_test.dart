@@ -342,6 +342,7 @@ void main() {
     () async {
       final removed = <String>[];
       final upload = ImageUploadService(
+        userIdProvider: () => 'owner-a',
         upload: (file, _) async => 'https://example.invalid/${file.path}',
         remove: (url) async => removed.add(url),
       );
@@ -359,6 +360,7 @@ void main() {
       final removed = <String>[];
       var calls = 0;
       final upload = ImageUploadService(
+        userIdProvider: () => 'owner-a',
         upload: (_, __) async {
           if (++calls == 2) throw StateError('network unavailable');
           return 'uploaded-one';
@@ -390,6 +392,7 @@ void main() {
       final removed = <String>[];
       var calls = 0;
       final upload = ImageUploadService(
+        userIdProvider: () => 'owner-a',
         upload: (_, __) async {
           if (++calls == 3) throw StateError('failed third photo');
           return 'uploaded-$calls';
@@ -419,6 +422,7 @@ void main() {
       var current = true;
       final removed = <String>[];
       final upload = ImageUploadService(
+        userIdProvider: () => 'owner-a',
         upload: (_, __) async {
           current = false;
           return 'old-account-photo';

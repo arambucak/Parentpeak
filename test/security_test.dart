@@ -37,6 +37,33 @@ void main() {
       expect(rules.contains("contentType.matches('image/.*')"), isTrue);
     });
 
+    test(
+      'treasure rules bind writes and deletes to UID and exclude flat objects',
+      () {
+        final rules = File('storage.rules').readAsStringSync();
+        final scoped = rules
+            .split('match /treasures/{userId}/{allPaths=**} {')[1]
+            .split('match /treasures/{fileName}')[0];
+        expect(scoped, contains('request.auth.uid == userId'));
+        expect(scoped, contains('allow delete:'));
+        expect(
+          scoped,
+          contains("request.resource.name.matches('treasures/[^/]+/.+')"),
+        );
+        expect(scoped, contains("resource.name.matches('treasures/[^/]+/.+')"));
+        final legacy = rules
+            .split('match /treasures/{fileName} {')[1]
+            .split('match /profiles/')[0];
+        expect(legacy, contains('allow read: if true'));
+        expect(legacy, contains('allow write, delete: if false'));
+      },
+    );
+
+    test('unused Firebase events rule is absent', () {
+      final rules = File('storage.rules').readAsStringSync();
+      expect(rules, isNot(contains('match /events/')));
+    });
+
     test('no hardcoded passwords in integration tests', () {
       final dir = Directory('integration_test');
       if (!dir.existsSync()) return;
@@ -44,10 +71,16 @@ void main() {
       for (final file in files) {
         if (!file.path.endsWith('.dart')) continue;
         final content = file.readAsStringSync();
-        expect(content.contains('Fth.951753'), isFalse,
-            reason: 'Hardcoded password found in ${file.path}');
-        expect(content.contains('password123'), isFalse,
-            reason: 'Test password found in ${file.path}');
+        expect(
+          content.contains('Fth.951753'),
+          isFalse,
+          reason: 'Hardcoded password found in ${file.path}',
+        );
+        expect(
+          content.contains('password123'),
+          isFalse,
+          reason: 'Test password found in ${file.path}',
+        );
       }
     });
 
