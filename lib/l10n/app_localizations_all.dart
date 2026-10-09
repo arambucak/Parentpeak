@@ -939,6 +939,8 @@ class AppStringsManager {
       'impressum': 'Impressum',
       'ai_disclosure': 'KI-Nutzungshinweis',
       'export_data': 'Meine Daten exportieren',
+      'profile_export_sign_in_required':
+          'Bitte melde dich an, um deine Daten zu exportieren.',
       'open_source_licenses': 'Open-Source-Lizenzen',
       'contact_support': 'Kontakt & Support',
       'language_select': 'Sprache wählen',
@@ -3941,6 +3943,8 @@ class AppStringsManager {
       'impressum': 'Legal Notice',
       'ai_disclosure': 'AI Usage Notice',
       'export_data': 'Export my data',
+      'profile_export_sign_in_required':
+          'Please sign in to export your data.',
       'open_source_licenses': 'Open Source Licenses',
       'contact_support': 'Contact & Support',
       'language_select': 'Choose language',
@@ -12602,6 +12606,8 @@ class AppStringsManager {
       'impressum': 'Agahdariya qanûnî',
       'ai_disclosure': 'Agahdariya bikaranîna KI',
       'export_data': 'Daneyên min derxîne',
+      'profile_export_sign_in_required':
+          'Ji kerema xwe têkeve hesabê xwe da ku daneyên xwe derxînî.',
       'open_source_licenses': 'Lîsansên çavkaniya vekirî',
       'contact_support': 'Têkilî & Piştgirî',
       'language_select': 'Ziman hilbijêre',
@@ -18741,6 +18747,8 @@ class AppStringsManager {
       'impressum': 'Yasal Bildirim',
       'ai_disclosure': 'Yapay Zeka Kullanım Bildirimi',
       'export_data': 'Verilerimi dışa aktar',
+      'profile_export_sign_in_required':
+          'Verilerinizi dışa aktarmak için lütfen hesabınıza giriş yapın.',
       'open_source_licenses': 'Açık Kaynak Lisansları',
       'contact_support': 'İletişim & Destek',
       'language_select': 'Dil seç',

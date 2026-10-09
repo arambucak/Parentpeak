@@ -10,7 +10,6 @@ import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/l10n/supported_languages.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
@@ -24,6 +23,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
+import 'package:parentpeak/logic/profile_data_export_service.dart';
 import 'package:parentpeak/ui/widgets/profile_legacy_claim.dart';
 
 String _t(String key) =>
@@ -1472,64 +1472,66 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   }
 
   Future<void> _exportUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys();
-    final localData = <String, dynamic>{};
-    for (final key in keys) {
-      final val = prefs.get(key);
-      localData[key] = val;
-    }
-
-    Map<String, dynamic>? serverExport;
+    final ticket = _accounts.ticket;
     final userId = FirebaseAuth.instance.currentUser?.uid;
-    final apiClient = BackendServiceFactory.createApiClient();
-    if (userId != null && userId.isNotEmpty) {
+    try {
+      if (userId == null || userId.trim().isEmpty) {
+        throw const ProfileExportSignInRequired();
+      }
+      final localData =
+          await ProfileDataExportService(accounts: _accounts).collectLocalData(ticket);
+      _accounts.require(ticket);
+
+      final apiClient = BackendServiceFactory.createApiClient();
+      if (userId != _accounts.userId) {
+        throw const ProfileAccountChanged();
+      }
       if (apiClient == null) {
         _showExportError('Server-Datenexport ist derzeit nicht konfiguriert.');
         return;
       }
-      try {
-        final response = await apiClient.getJson(
-          '/account/export-data?userId=${Uri.encodeQueryComponent(userId)}',
-        );
-        if (response is! Map<String, dynamic>) {
-          throw const FormatException('Unerwartetes Exportformat');
-        }
-        serverExport = response;
-      } catch (error) {
-        _showExportError(
-            'Server-Daten konnten nicht exportiert werden: $error');
-        return;
+      final serverExport = await apiClient
+          .withRequestGuard(() => _accounts.require(ticket))
+          .getJson('/account/export-data?userId=${Uri.encodeQueryComponent(userId)}');
+      if (serverExport is! Map<String, dynamic>) {
+        throw const FormatException('Unerwartetes Exportformat');
       }
-    }
 
-    final jsonStr = const JsonEncoder.withIndent('  ').convert({
-      'exportDate': DateTime.now().toIso8601String(),
-      'app': 'Parentpeak',
-      'version': _appVersion,
-      'serverData': serverExport,
-      'localDeviceData': localData,
-    });
-
-    await Clipboard.setData(ClipboardData(text: jsonStr));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(children: [
-          Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Datenexport in die Zwischenablage kopiert',
-              style: TextStyle(fontSize: 13),
+      _accounts.require(ticket);
+      final jsonStr = const JsonEncoder.withIndent('  ').convert({
+        'exportDate': DateTime.now().toIso8601String(),
+        'app': 'Parentpeak',
+        'version': _appVersion,
+        'serverData': serverExport,
+        'localDeviceData': localData,
+      });
+      await Clipboard.setData(ClipboardData(text: jsonStr));
+      if (!mounted || !_accounts.isCurrent(ticket)) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Datenexport in die Zwischenablage kopiert',
+                style: TextStyle(fontSize: 13),
+              ),
             ),
-          ),
-        ]),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF16A34A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+          ]),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF16A34A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } on ProfileExportSignInRequired {
+      _showExportError(_t('profile_export_sign_in_required'));
+    } on ProfileAccountChanged {
+      _showExportError('Kontowechsel erkannt. Bitte starte den Export erneut.');
+    } catch (error) {
+      debugPrint('Profile data export failed: $error');
+      _showExportError('Datenexport fehlgeschlagen. Bitte erneut versuchen.');
+    }
   }
 
   void _showExportError(String message) {

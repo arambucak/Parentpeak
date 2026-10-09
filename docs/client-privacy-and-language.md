@@ -44,9 +44,31 @@ Client-HTTP-Guards pruefen die Session auch nach Token-Aufloesung und vor 401-Re
 
 Keine Schema-Migration. Der geaenderte Backend-Tree verlangt vor Pages-Freigabe
 einen freigegebenen Render-Rollout. Dieser Nachweis ist keine Produktionsfreigabe.
-Der owner-begrenzte Datenexport (K01) und die Nominatim-Datensparsamkeit im
-Onboarding-GPS-Pfad (K04) bleiben eigene nachfolgende PRs; die lokale Zuordnung
-ist keine Verschluesselung und behebt diese offenen Grenzen nicht.
+Die Nominatim-Datensparsamkeit im Onboarding-GPS-Pfad (K04) bleibt ein eigener
+nachfolgender PR; die lokale Zuordnung ist keine Verschluesselung und behebt
+diese offene Grenze nicht.
+
+## Kontobezogener Datenexport
+
+Der lokale Anteil des Profil-Exports wird aus den validierten Owner-Envelopes
+und ausdruecklich kontobezogenen Schluesseln zusammengestellt. Andere
+Account-Envelopes, Gast-/Legacy-Keys ohne Claim und globale SharedPreferences
+werden nicht exportiert. Ein Kontowechsel waehrend des Sammelns oder des
+Serverabrufs bricht den Export ab. Ohne angemeldetes Konto wird der Export
+vor dem Lesen lokaler Daten verweigert; der Profil-Handler zeigt einen
+Anmeldehinweis in de/en/tr/ku statt einen Gast-Export zu erstellen.
+Das JSON wird weiterhin in die
+Zwischenablage kopiert; Zwischenablagen koennen synchronisiert oder laenger
+verfuegbar bleiben. Ein expliziter Download-/Teilen-Flow bleibt eine separate
+UX-Verbesserung.
+
+Der Serverexport ist nicht vollstaendig: KI-Memory-Einstellungen samt
+Consent-Version/-Revision, KI-Kindprofile und Memory-Eintraege, Familien-
+Mitgliedschaften, Familienanfragen und familiengebundene Todos/
+Einkaufslisten/Mahlzeiten, Event-Serien-Follows sowie die per SQL verwalteten
+`OnboardingProfile`-Stammdaten sind in der aktuellen Exportabfrage nicht
+enthalten. Diese Servermodelle muessen vor einer vollstaendigen Art.-20-
+Abdeckung separat bewertet und ergaenzt werden.
 
 ```bash
 flutter test --no-pub test/profile_account_store_test.dart test/profile_account_http_guard_test.dart test/onboarding_account_sync_test.dart test/profile_claim_widget_test.dart test/profile_onboarding_lifecycle_widget_test.dart test/location_account_lifecycle_test.dart test/onboarding_test.dart test/calendar_service_test.dart test/event_filter_ui_test.dart test/localization_audit_verification_test.dart
