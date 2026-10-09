@@ -183,7 +183,9 @@ Future<void> _startApp() async {
         apiClient: apiClient,
         userId: currentUser.uid,
         onNotificationTap: _handleNotificationTap,
-      ),
+      ).catchError((Object error) {
+        debugPrint('Startup notification binding failed: $error');
+      }),
     );
   }
 

@@ -11294,6 +11294,12 @@ app.post('/devices/register-token', async (req, res) => {
   if (!userId || !token) {
     return res.status(400).json({ error: 'userId und token sind erforderlich' });
   }
+  if (!(await authorizeProfileOwner(req, res, userId))) return;
+  for (const [owner, tokens] of deviceTokens) {
+    if (owner !== userId && tokens.has(token)) {
+      return res.status(409).json({ error: 'Device token already bound to another account' });
+    }
+  }
 
   const existing = deviceTokens.get(userId) || new Set();
   existing.add(token);
@@ -11305,8 +11311,8 @@ app.post('/devices/register-token', async (req, res) => {
     // Upsert a marker in a custom field via raw SQL to avoid schema migration dependency.
     // The token set lives in-memory and is restored on restart via DB if schema has a DeviceToken table.
     // For now in-memory is the source of truth; schema migration is a separate step.
-  } catch (_) {
-    // Non-fatal: token is still registered in memory.
+  } catch (error) {
+    console.warn('Device token user persistence failed; token remains in memory');
   }
 
   return res.json({ ok: true, userId, platform, tokenCount: existing.size });
@@ -11319,6 +11325,7 @@ app.delete('/devices/register-token', async (req, res) => {
   if (!userId || !token) {
     return res.status(400).json({ error: 'userId und token sind erforderlich' });
   }
+  if (!(await authorizeProfileOwner(req, res, userId))) return;
 
   const existing = deviceTokens.get(userId);
   if (existing) {
@@ -11340,7 +11347,7 @@ async function sendPushToUser(userId, { title, body, data = {} }) {
       tokens,
       notification: { title, body },
       data: Object.fromEntries(
-        Object.entries(data).map(([k, v]) => [k, String(v)]),
+        Object.entries({ ...data, accountUserId: userId }).map(([k, v]) => [k, String(v)]),
       ),
     });
 

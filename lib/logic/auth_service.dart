@@ -11,8 +11,8 @@
 ///   - Sessions über SharedPreferences (für Prod: flutter_secure_storage)
 ///   - Input-Sanitierung vor jeder Datenbankoperation
 
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -153,7 +153,10 @@ class AuthService with ChangeNotifier {
 
   bool _firebaseReady = false;
   FirebaseAuth? _firebaseAuth;
-  final BackendApiClient? _apiClient = BackendServiceFactory.createApiClient();
+  final BackendApiClient? _apiClient;
+  StreamSubscription<User?>? _authSubscription;
+  int _sessionEpoch = 0;
+  final bool _injectedFirebase;
 
   static BackendApiClient? Function() backendApiClientFactory =
       BackendServiceFactory.createApiClient;
@@ -167,7 +170,17 @@ class AuthService with ChangeNotifier {
 
   // Singleton
   static final AuthService instance = AuthService._();
-  AuthService._();
+  AuthService._()
+      : _apiClient = BackendServiceFactory.createApiClient(),
+        _injectedFirebase = false;
+
+  @visibleForTesting
+  AuthService.withFirebaseForTesting(FirebaseAuth auth)
+      : _apiClient = null,
+        _injectedFirebase = true {
+    _firebaseAuth = auth;
+    _firebaseReady = true;
+  }
 
   static void _logIgnoredError(String context, Object error) {
     debugPrint('$context: $error');
@@ -186,13 +199,53 @@ class AuthService with ChangeNotifier {
   // ── Initialisierung ────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
+    final epoch = ++_sessionEpoch;
     await _tryInitFirebase();
 
     if (_firebaseReady) {
-      final firebaseUser = _firebaseAuth?.currentUser;
-      if (firebaseUser != null) {
-        _currentUser = await _readOrCreateFirebaseUser(firebaseUser);
+      final auth = _firebaseAuth!;
+      final prefs = await SharedPreferences.getInstance();
+      try {
+        final firebaseUser = auth.currentUser ??
+            await auth.authStateChanges().first.timeout(const Duration(seconds: 10));
+        if (epoch != _sessionEpoch) return;
+        if (firebaseUser == null) {
+          await logout();
+          return;
+        }
+        final raw = prefs.getString(_kUserKey);
+        final expectedUid = raw == null ? null
+            : ParentUser.fromJson(jsonDecode(raw) as Map<String, dynamic>).uid;
+        if (expectedUid != null && expectedUid != firebaseUser.uid) {
+          throw StateError('Restored Firebase UID does not match the local session owner');
+        }
+        await firebaseUser.reload();
+        final refreshed = auth.currentUser;
+        if (refreshed == null || refreshed.uid != firebaseUser.uid ||
+            !refreshed.emailVerified) {
+          throw StateError('Restored Firebase session is missing or unverified');
+        }
+        final token = await refreshed.getIdTokenResult(true);
+        final tokenOwner = token.claims?['sub'] ?? token.claims?['user_id'];
+        if (token.token?.isNotEmpty != true || tokenOwner != refreshed.uid ||
+            token.expirationTime == null ||
+            !token.expirationTime!.isAfter(DateTime.now()) ||
+            auth.currentUser?.uid != refreshed.uid) {
+          throw StateError('Restored Firebase token is invalid or belongs to another account');
+        }
+        if (epoch != _sessionEpoch) return;
+        final restored = await _readOrCreateFirebaseUser(refreshed);
+        if (epoch != _sessionEpoch || auth.currentUser?.uid != restored.uid) return;
+        await _persistSession(prefs, restored);
+        if (epoch != _sessionEpoch || auth.currentUser?.uid != restored.uid) return;
+        _currentUser = restored;
+        notifyListeners();
+        _watchFirebaseSession();
         await refreshEntitlements();
+        _triggerFcmInit(restored.uid);
+      } catch (error) {
+        _logIgnoredError('AuthService.initialize(): Firebase session rejected', error);
+        if (epoch == _sessionEpoch) await logout();
       }
       return;
     }
@@ -336,6 +389,8 @@ class AuthService with ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    if (_currentUser != null) await logout();
+    final epoch = ++_sessionEpoch;
     await _ensureFirebaseInitChecked();
 
     if (_firebaseReady) {
@@ -354,7 +409,7 @@ class AuthService with ChangeNotifier {
             debugPrint(
               'AuthService.login(): Firebase auth instance missing, using local fallback in debug.',
             );
-            return _loginLocal(email: email, password: password);
+            return _loginLocal(email: email, password: password, epoch: epoch);
           }
           return AuthResult.fail(
             AuthErrorCode.unknown,
@@ -367,6 +422,15 @@ class AuthService with ChangeNotifier {
           password: password,
         );
 
+        if (epoch != _sessionEpoch) {
+          if (credential.user != null &&
+              auth.currentUser?.uid == credential.user!.uid &&
+              _currentUser?.uid != credential.user!.uid) {
+            await auth.signOut();
+          }
+          return AuthResult.fail(AuthErrorCode.unknown,
+              'Login ist fehlgeschlagen. Bitte versuche es erneut.');
+        }
         final firebaseUser = credential.user;
         if (firebaseUser == null) {
           return AuthResult.fail(
@@ -385,6 +449,16 @@ class AuthService with ChangeNotifier {
         }
 
         final user = await _readOrCreateFirebaseUser(firebaseUser);
+        final prefs = await SharedPreferences.getInstance();
+        if (epoch != _sessionEpoch || auth.currentUser?.uid != user.uid) {
+          return AuthResult.fail(AuthErrorCode.unknown,
+              'Login ist fehlgeschlagen. Bitte versuche es erneut.');
+        }
+        await _persistSession(prefs, user);
+        if (epoch != _sessionEpoch || auth.currentUser?.uid != user.uid) {
+          return AuthResult.fail(AuthErrorCode.unknown,
+              'Login ist fehlgeschlagen. Bitte versuche es erneut.');
+        }
         _currentUser = user;
         await refreshEntitlements();
         notifyListeners();
@@ -398,7 +472,7 @@ class AuthService with ChangeNotifier {
           debugPrint(
             'AuthService.login(): recoverable Firebase error on debug build, using local fallback. code=${e.code}',
           );
-          return _loginLocal(email: email, password: password);
+          return _loginLocal(email: email, password: password, epoch: epoch);
         }
         final mapped = _mapFirebaseError(e);
         return mapped;
@@ -411,7 +485,7 @@ class AuthService with ChangeNotifier {
           debugPrint(
             'AuthService.login(): unknown Firebase error on debug build, using local fallback.',
           );
-          return _loginLocal(email: email, password: password);
+          return _loginLocal(email: email, password: password, epoch: epoch);
         }
         return AuthResult.fail(
           AuthErrorCode.unknown,
@@ -427,7 +501,7 @@ class AuthService with ChangeNotifier {
       );
     }
 
-    return _loginLocal(email: email, password: password);
+    return _loginLocal(email: email, password: password, epoch: epoch);
   }
 
   Future<AuthResult> _registerLocal({
@@ -484,6 +558,7 @@ class AuthService with ChangeNotifier {
   Future<AuthResult> _loginLocal({
     required String email,
     required String password,
+    required int epoch,
   }) async {
     final emailError = _validateEmail(email);
     if (emailError != null) return emailError;
@@ -533,8 +608,16 @@ class AuthService with ChangeNotifier {
       final user = ParentUser.fromJson(
         jsonDecode(profileRaw) as Map<String, dynamic>,
       );
-      _currentUser = user;
+      if (epoch != _sessionEpoch) {
+        return AuthResult.fail(AuthErrorCode.unknown,
+            'Login ist fehlgeschlagen. Bitte versuche es erneut.');
+      }
       await _persistSession(prefs, user);
+      if (epoch != _sessionEpoch) {
+        return AuthResult.fail(AuthErrorCode.unknown,
+            'Login ist fehlgeschlagen. Bitte versuche es erneut.');
+      }
+      _currentUser = user;
       notifyListeners();
       _triggerFcmInit(user.uid);
       return AuthResult.ok(user);
@@ -645,7 +728,10 @@ class AuthService with ChangeNotifier {
   }
 
   void _triggerFcmInit(String userId) {
+    _watchFirebaseSession();
+    final epoch = _sessionEpoch;
     Future.microtask(() async {
+      if (epoch != _sessionEpoch || _currentUser?.uid != userId) return;
       try {
         final apiClient = backendApiClientFactory();
         await NotificationService.instance.initFcm(
@@ -655,11 +741,29 @@ class AuthService with ChangeNotifier {
       } catch (e) {
         _logIgnoredError('AuthService._triggerFcmInit(): FCM init skipped', e);
       }
+
+    });
+  }
+
+  void _watchFirebaseSession() {
+    if (!_firebaseReady || _authSubscription != null) return;
+    _authSubscription = _firebaseAuth!.authStateChanges().listen((user) {
+      if (_currentUser != null && user?.uid != _currentUser!.uid) {
+        unawaited(logout().catchError((Object error) {
+          _logIgnoredError('Auth state invalidation failed', error);
+        }));
+      }
     });
   }
 
   Future<void> logout() async {
     final currentUserId = _currentUser?.uid;
+    final epoch = ++_sessionEpoch;
+    _currentUser = null;
+    notifyListeners();
+    await _authSubscription?.cancel();
+    _authSubscription = null;
+    var notificationsEnded = false;
     if (currentUserId != null) {
       try {
         final apiClient = backendApiClientFactory();
@@ -668,27 +772,32 @@ class AuthService with ChangeNotifier {
             apiClient: apiClient,
             userId: currentUserId,
           );
+          notificationsEnded = true;
         }
       } catch (e) {
         _logIgnoredError('AuthService.logout(): FCM unregister skipped', e);
         // Logout should not fail if token unregister fails.
       }
     }
-
-    if (_firebaseReady) {
-      final auth = _firebaseAuth;
-      if (auth != null) {
-        await auth.signOut();
+    if (epoch != _sessionEpoch) return;
+    if (!notificationsEnded) {
+      try {
+        await NotificationService.instance.endAccountSession();
+      } catch (error) {
+        _logIgnoredError('AuthService.logout(): notification cleanup failed', error);
       }
-      _currentUser = null;
-      notifyListeners();
-      return;
     }
-
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kUserKey);
-    _currentUser = null;
-    notifyListeners();
+    if (epoch != _sessionEpoch) return;
+    try {
+      if (!await prefs.remove(_kUserKey)) {
+        throw StateError('Could not remove the local session owner');
+      }
+    } finally {
+      if (_firebaseReady && epoch == _sessionEpoch) {
+        await _firebaseAuth?.signOut();
+      }
+    }
   }
 
   Future<void> resendVerificationEmail(String email) async {
@@ -921,13 +1030,14 @@ class AuthService with ChangeNotifier {
   // ── Hilfsmethoden ──────────────────────────────────────────────────────────
 
   Future<void> _tryInitFirebase() async {
+    if (_injectedFirebase) return;
     if (kDebugMode && disableFirebaseInitForTesting) {
       _firebaseReady = false;
       _firebaseAuth = null;
       return;
     }
 
-    if (!kIsWeb && Platform.isMacOS) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS) {
       _firebaseReady = false;
       _firebaseAuth = null;
       return;
@@ -1072,7 +1182,15 @@ class AuthService with ChangeNotifier {
   }
 
   Future<void> _persistSession(SharedPreferences prefs, ParentUser user) async {
-    await prefs.setString(_kUserKey, jsonEncode(user.toJson()));
+    if (!await prefs.setString(_kUserKey, jsonEncode(user.toJson()))) {
+      throw StateError('Could not persist the local session owner');
+    }
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   String _normalizeEmail(String email) => email.trim().toLowerCase();
