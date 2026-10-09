@@ -71,3 +71,42 @@ wurden bewusst nicht erzwungen.
   und wird nicht beworben. Das Rate-Limiting greift erst, wenn das Feature live
   geht; vor Aktivierung von SMS/OTP nachrüsten (verifizierte UID statt
   behaupteter UID, Empfänger-/Versand-Cooldown).
+
+## Lokalisierung: Kern-UI für FR/ES/IT/AR (Stand)
+
+Zielsprachen über die vollständigen Kernsprachen (DE/EN/TR/KU) hinaus wurden
+auf **Kern-Niveau** übersetzt und sind live:
+
+| Sprache | PR | Kern-Keys | RTL |
+|---------|-----|-----------|-----|
+| Französisch | #183 | 460 | nein |
+| Spanisch | #184 | 460 | nein |
+| Italienisch | #185 | 460 | nein |
+| Arabisch | #186 | 460 | ja |
+
+### Was „Kern" umfasst (sichtbarer erster Eindruck)
+Onboarding, Home inkl. aller Spielideen/Aktivitäten, Profil, kompletter
+Login-/Registrierungs-Flow, Mood-Check-in, Navigation, Kachel-Titel, Rituale,
+generische Aktionen/Status. Übersetzungen liegen in
+`app_localizations_<lang>_extra.dart` und werden per Spread in den jeweiligen
+Sprach-Block von `app_localizations_all.dart` eingebunden. Platzhalter
+(`{count}`, `{name}` …) sind programmatisch verifiziert erhalten.
+
+### Bewusst (noch) NICHT übersetzt — Fallback auf DE/EN
+Pro Sprache fallen ~1450 tiefe Detail-Keys weiter auf DE/EN zurück:
+- **Amtliche Finanzinhalte** (~382 Keys: länderspezifische Leistungen, Beträge,
+  Antragswege). **Fachlich heikel** — braucht Fachübersetzung/Muttersprachler,
+  keine reine UI-Übersetzung.
+- Chat-/Netzwerk-Interna, Küchen-/Rezept-Detailtexte, Admin-Bereich.
+- Diese Ebenen gestaffelt nachziehen, wenn ein konkreter Markt sie verlangt.
+- PDF/Report-Keys (`development_pdf_i18n_test` `requiredKeys`) bleiben
+  **absichtlich** auf EN; nicht pro Sprache übersetzen.
+
+### Qualitätsstand (wichtig vor Vermarktung)
+- FR/ES/IT: sorgfältiger Entwurf, nicht muttersprachlich abgenommen.
+- **AR: Entwurf eines Nicht-Muttersprachlers, RTL, im Team nicht prüfbar.**
+  Vor aktiver Bewerbung von Arabisch dringend Muttersprachler-Review der
+  Hauptscreens und der pädagogischen Formulierungen einholen.
+- Die Übersetzungs-Pipeline (`.tmp/` Skripte, `missing_template.json`,
+  `core_source.json`) kann für Nachträge oder einen externen Dienst
+  wiederverwendet werden.
