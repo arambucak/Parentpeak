@@ -1,28 +1,32 @@
 import 'backend_api_client.dart';
 import 'contracts/todo_contract.dart';
+import 'family_backend_scope.dart';
+import 'profile_account_store.dart';
 
 class TodoBackendService {
-  TodoBackendService({this.apiClient});
+  TodoBackendService({this.apiClient, ProfileAccountStore? accountStore})
+      : _scope = FamilyBackendScope(accountStore: accountStore);
 
   final BackendApiClient? apiClient;
+  final FamilyBackendScope _scope;
   String? lastSyncError;
 
-  Future<List<Map<String, dynamic>>> fetchTodos() async {
+  Future<List<Map<String, dynamic>>> fetchTodos({ProfileAccountTicket? ticket}) async {
     lastSyncError = null;
     if (apiClient == null) {
       lastSyncError = 'Todo-Backend ist nicht konfiguriert.';
-      return const <Map<String, dynamic>>[];
+      throw StateError(lastSyncError!);
     }
 
     try {
-      final payload = await apiClient!.getJson(TodoContract.todosPath);
-      return TodoContract.parseList(payload);
+      final payload = await _scope.requireClient(apiClient, ticket).getJson(TodoContract.todosPath);
+      return TodoContract.parseList(payload, strict: true);
     } catch (e) {
       lastSyncError = _friendlySyncError(
         action: 'Server-Sync fehlgeschlagen',
         error: e,
       );
-      return const <Map<String, dynamic>>[];
+      rethrow;
     }
   }
 
@@ -30,6 +34,7 @@ class TodoBackendService {
     required String title,
     required String assignee,
     required String category,
+    ProfileAccountTicket? ticket,
   }) async {
     lastSyncError = null;
     if (apiClient == null) {
@@ -42,7 +47,7 @@ class TodoBackendService {
         assignee: assignee,
         category: category,
       );
-      final payload = await apiClient!.postJsonAny(
+      final payload = await _scope.requireClient(apiClient, ticket).postJsonAny(
         TodoContract.todosPath,
         requestBody,
       );
@@ -60,14 +65,14 @@ class TodoBackendService {
     }
   }
 
-  Future<void> updateDone(String id, bool done) async {
+  Future<void> updateDone(String id, bool done, {ProfileAccountTicket? ticket}) async {
     lastSyncError = null;
     if (apiClient == null) {
       throw StateError('Todo-Backend ist nicht konfiguriert.');
     }
 
     try {
-      await apiClient!.putJson(
+      await _scope.requireClient(apiClient, ticket).putJson(
         TodoContract.todoByIdPath(id),
         TodoContract.buildUpdatePayload(done: done),
       );
@@ -80,14 +85,14 @@ class TodoBackendService {
     }
   }
 
-  Future<void> deleteTodo(String id) async {
+  Future<void> deleteTodo(String id, {ProfileAccountTicket? ticket}) async {
     lastSyncError = null;
     if (apiClient == null) {
       throw StateError('Todo-Backend ist nicht konfiguriert.');
     }
 
     try {
-      await apiClient!.delete(TodoContract.todoByIdPath(id));
+      await _scope.requireClient(apiClient, ticket).delete(TodoContract.todoByIdPath(id));
     } catch (e) {
       lastSyncError = _friendlySyncError(
         action: 'Todo konnte nicht auf Server gelöscht werden',

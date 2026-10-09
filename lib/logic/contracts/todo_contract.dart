@@ -12,9 +12,9 @@ class TodoContract {
     return '$base/$id';
   }
 
-  static List<Map<String, dynamic>> parseList(dynamic payload) {
+  static List<Map<String, dynamic>> parseList(dynamic payload, {bool strict = false}) {
     final raw = extractListFromPayload(
-        payload, const ['items', 'todos', 'data', 'results']);
+        payload, const ['items', 'todos', 'data', 'results'], strict: strict);
     return raw.map(normalize).toList();
   }
 
@@ -44,7 +44,6 @@ class TodoContract {
     required String category,
   }) {
     return {
-      'familyId': APIConfig.getBackendFamilyId(),
       'title': title,
       'notes': '',
       'assigneeName': assignee,
@@ -60,7 +59,6 @@ class TodoContract {
     required bool done,
   }) {
     return {
-      'familyId': APIConfig.getBackendFamilyId(),
       'completed': done,
       'updatedAt': DateTime.now().toUtc().toIso8601String(),
       'schemaVersion': APIConfig.getBackendApiVersion(),

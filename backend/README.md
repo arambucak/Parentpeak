@@ -1,5 +1,49 @@
 # Parentpeak Marktplatz Backend
 
+## Privater Familienkontext fuer Todos und Shopping
+
+Alle acht GET/POST/PUT/DELETE-Routen unter `/todos` und `/shopping` verlangen
+einen individuellen Firebase-Token, auch im Entwicklungsmodus. Die reservierte
+Familie `account-family-v1-<SHA-256(firebaseUid)>` wird atomar/idempotent
+aufgeloest. Die ID ist keine Berechtigung: Owner und exakt eigene Mitgliedschaft
+werden geprueft. Multi-Parent-Sharing ist hier noch nicht vorgesehen.
+Neue Backend-User werden nur anhand der verifizierten Firebase-UID provisioniert,
+niemals ueber E-Mail-Matching oder Demo-Passwoerter.
+
+Abweichende Familien-Claims liefern 403, kollidierende Owner/Mitgliedschaften
+oder E-Mail-Konflikte 409, voruebergehende DB-/Provisioning-Fehler 503.
+Strikte Token-Pruefungen unterscheiden erkannte Firebase-Netzwerk-/Service-
+Ausfaelle (503) von ungueltigen Tokens (401); die globale optionale Middleware
+bleibt unveraendert. Lifecycle-Routen verwenden die bereits verifizierte UID
+ohne zweite Token-Pruefung.
+Reads sind immer familiengefiltert; Updates/Deletes binden ID und Familie
+atomar (fremd/fehlend einheitlich 404). Produktion erlaubt keinen Datenfallback,
+auch nicht bei gesetztem Fallback-Flag. Ein ausdruecklicher Dev-Datenfallback
+setzt einen erfolgreich verifizierten DB-Familienkontext voraus.
+Demo-/globale/Legacy-Familien werden weder uebernommen noch migriert.
+
+Account-Export und -Loeschung verlangen ebenfalls den individuellen Token.
+Der Export umfasst die privaten Todos/ShoppingItems; Loeschung nutzt die
+bestehenden User -> Family -> Todo/ShoppingItem-Cascades. Fehlender Kontext
+beim Export provisioniert keine Familie. Konflikte sperren statt fremde Daten
+auszugeben oder eine erfolgreiche Memory-Loeschung zu behaupten.
+Meal-Plans bleiben fuer den separaten B2-Fix unveraendert.
+
+Flutter sendet keine globalen Todo-/Shopping-Familien-Claims, verwendet
+dynamische verifizierte Firebase-Tokens und einen einmaligen authentifizierten
+401-Refresh (jetzt auch PUT). Fehler bleiben sichtbar; Kontowechsel leeren
+Listen/Entwuerfe und verwerfen alte Antworten und optimistische Rollbacks.
+Bestehende alternative Listenformate bleiben akzeptiert; ungueltige Antworten
+sind Fehler statt vermeintlich erfolgreich leerer Listen.
+
+```bash
+node --test backend/tests/unit/family-todos-shopping.test.js
+flutter test --no-pub test/family_backend_scope_test.dart test/family_backend_scope_ui_test.dart
+```
+
+Dieser Backend-Change braucht den freigegebenen Backup-/Render-Rollout und
+Live-Abnahme vor dem Pages-Gate; lokale Tests sind kein Produktions-DB-Nachweis.
+
 ## Kontogebundener Kalender und strikte Firebase-Identitaet
 
 `requireVerifiedUser` verifiziert einen Firebase-Bearer-Token unabhaengig von

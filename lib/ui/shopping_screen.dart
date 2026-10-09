@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
-import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/shopping_backend_service.dart';
 import 'package:parentpeak/widgets/language_change_mixin.dart';
@@ -8,7 +8,9 @@ import 'package:parentpeak/main.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 class ShoppingScreen extends StatefulWidget {
-  const ShoppingScreen({super.key});
+  const ShoppingScreen({super.key, this.shoppingService, this.accountStore});
+  final ShoppingBackendService? shoppingService;
+  final ProfileAccountStore? accountStore;
 
   @override
   State<ShoppingScreen> createState() => _ShoppingScreenState();
@@ -16,8 +18,10 @@ class ShoppingScreen extends StatefulWidget {
 
 class _ShoppingScreenState extends State<ShoppingScreen>
     with LanguageChangeMixin<ShoppingScreen> {
-  final ShoppingBackendService _shoppingService =
-      BackendServiceFactory.createShoppingService();
+  late final ShoppingBackendService _shoppingService;
+  ProfileAccountStore get _accountStore =>
+      widget.accountStore ?? ProfileAccountStore.instance;
+  int _loadRequest = 0;
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   String? _syncError;
@@ -31,43 +35,79 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   @override
   void initState() {
     super.initState();
+    _shoppingService =
+        widget.shoppingService ?? BackendServiceFactory.createShoppingService();
+    _accountStore.addListener(_onAccountChanged);
+    _loadItems();
+  }
+
+  void _onAccountChanged() {
+    if (!mounted) return;
+    setState(() {
+      _items = [];
+      _controller.clear();
+      _syncError = null;
+      _loading = true;
+    });
     _loadItems();
   }
 
   Future<void> _loadItems() async {
-    final items = await _shoppingService.fetchItems();
-    if (!mounted) return;
-
-    setState(() {
-      _items = items;
-      _loading = false;
-      _syncError = _shoppingService.lastSyncError;
-    });
+    final ticket = _accountStore.ticket;
+    final request = ++_loadRequest;
+    try {
+      final items = await _shoppingService.fetchItems(ticket: ticket);
+      if (!mounted ||
+          !_accountStore.isCurrent(ticket) ||
+          request != _loadRequest) {
+        return;
+      }
+      setState(() {
+        _items = items;
+        _loading = false;
+        _syncError = null;
+      });
+    } catch (error) {
+      if (!mounted ||
+          !_accountStore.isCurrent(ticket) ||
+          request != _loadRequest) {
+        return;
+      }
+      setState(() {
+        _loading = false;
+        _syncError = _shoppingService.lastSyncError ?? error.toString();
+      });
+    }
   }
 
   Future<void> _toggleItemChecked(
-      Map<String, dynamic> item, bool checked) async {
+    Map<String, dynamic> item,
+    bool checked,
+  ) async {
+    final ticket = _accountStore.ticket;
     final previous = item['checked'] as bool;
     setState(() => item['checked'] = checked);
     final id = item['id']?.toString();
     if (id != null && id.isNotEmpty) {
       try {
-        await _shoppingService.updateChecked(id, checked);
+        await _shoppingService.updateChecked(id, checked, ticket: ticket);
       } catch (_) {
-        if (!mounted) return;
+        if (!mounted || !_accountStore.isCurrent(ticket)) return;
         setState(() {
           item['checked'] = previous;
           _syncError = _shoppingService.lastSyncError;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  _syncError ?? 'Status konnte nicht gespeichert werden.')),
+            content: Text(
+              _syncError ?? 'Status konnte nicht gespeichert werden.',
+            ),
+          ),
         );
         return;
       }
     }
-    if (!mounted) return;
+    if (!mounted || !_accountStore.isCurrent(ticket)) return;
     setState(() {
       _syncError = _shoppingService.lastSyncError;
     });
@@ -75,6 +115,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
 
   @override
   void dispose() {
+    _accountStore.removeListener(_onAccountChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -82,12 +123,14 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   Future<void> _addItem() async {
     if (_controller.text.trim().isEmpty) return;
     final name = _controller.text.trim();
+    final ticket = _accountStore.ticket;
     try {
       final created = await _shoppingService.addItem(
         name: name,
         category: _t('category_general'),
+        ticket: ticket,
       );
-      if (!mounted) return;
+      if (!mounted || !_accountStore.isCurrent(ticket)) return;
 
       _controller.clear();
       setState(() {
@@ -95,40 +138,47 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         _syncError = _shoppingService.lastSyncError;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_accountStore.isCurrent(ticket)) return;
       setState(() {
         _syncError = _shoppingService.lastSyncError;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content:
-                Text(_syncError ?? 'Eintrag konnte nicht gespeichert werden.')),
+          content: Text(
+            _syncError ?? 'Eintrag konnte nicht gespeichert werden.',
+          ),
+        ),
       );
     }
   }
 
   Future<void> _deleteItem(int index) async {
+    final ticket = _accountStore.ticket;
     final item = _items[index];
     final id = item['id']?.toString();
     setState(() => _items.removeAt(index));
     if (id != null && id.isNotEmpty) {
       try {
-        await _shoppingService.deleteItem(id);
+        await _shoppingService.deleteItem(id, ticket: ticket);
       } catch (_) {
-        if (!mounted) return;
+        if (!mounted || !_accountStore.isCurrent(ticket)) return;
         setState(() {
-          _items.insert(index, item);
+          if (!_items.any((entry) => entry['id'] == id)) {
+            _items.insert(index.clamp(0, _items.length), item);
+          }
           _syncError = _shoppingService.lastSyncError;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content:
-                  Text(_syncError ?? 'Eintrag konnte nicht gelöscht werden.')),
+            content: Text(
+              _syncError ?? 'Eintrag konnte nicht gelöscht werden.',
+            ),
+          ),
         );
         return;
       }
     }
-    if (!mounted) return;
+    if (!mounted || !_accountStore.isCurrent(ticket)) return;
     setState(() {
       _syncError = _shoppingService.lastSyncError;
     });
@@ -139,8 +189,8 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         action: SnackBarAction(
           label: _t('undo'),
           onPressed: () {
-            if (!mounted) return;
-            setState(() => _items.insert(index, item));
+            if (!mounted || !_accountStore.isCurrent(ticket)) return;
+            setState(() => _items.insert(index.clamp(0, _items.length), item));
           },
         ),
         duration: const Duration(seconds: 4),
@@ -151,8 +201,9 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final unchecked =
-        _items.where((item) => !(item['checked'] as bool)).toList();
+    final unchecked = _items
+        .where((item) => !(item['checked'] as bool))
+        .toList();
     final checked = _items.where((item) => item['checked'] as bool).toList();
 
     return Scaffold(
@@ -171,27 +222,28 @@ class _ShoppingScreenState extends State<ShoppingScreen>
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (_syncError != null && APIConfig.isBackendConfigured())
+          if (_syncError != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Material(
-                color:
-                    theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.45,
+                ),
                 borderRadius: BorderRadius.circular(12),
                 child: Material(
                   color: Colors.transparent,
                   child: ListTile(
-                  leading: Icon(
-                    Icons.cloud_off_rounded,
-                    color: theme.colorScheme.primary,
+                    leading: Icon(
+                      Icons.cloud_off_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    title: Text(context.tr('sync_failed')),
+                    subtitle: Text(_syncError!),
+                    trailing: TextButton(
+                      onPressed: _loadItems,
+                      child: Text(context.tr('reload_btn')),
+                    ),
                   ),
-                  title: Text(context.tr('sync_failed')),
-                  subtitle: Text(_syncError!),
-                  trailing: TextButton(
-                    onPressed: _loadItems,
-                    child: Text(context.tr('reload_btn')),
-                  ),
-                )
                 ),
               ),
             ),
@@ -209,10 +261,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
               borderRadius: BorderRadius.circular(16),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
                   Expanded(
@@ -265,11 +314,9 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 ],
               ),
             ),
-            ...unchecked.asMap().entries.map((e) => _buildItem(
-                  e.value,
-                  theme,
-                  e.key,
-                )),
+            ...unchecked.asMap().entries.map(
+              (e) => _buildItem(e.value, theme, e.key),
+            ),
             const SizedBox(height: 16),
           ],
 
@@ -279,11 +326,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
               padding: const EdgeInsets.only(bottom: 12),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.done_all,
-                    color: Colors.green[400],
-                    size: 20,
-                  ),
+                  Icon(Icons.done_all, color: Colors.green[400], size: 20),
                   const SizedBox(width: 8),
                   Text(
                     '${_t('in_cart')} (${checked.length})',
@@ -295,11 +338,9 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 ],
               ),
             ),
-            ...checked.asMap().entries.map((e) => _buildItem(
-                  e.value,
-                  theme,
-                  unchecked.length + e.key,
-                )),
+            ...checked.asMap().entries.map(
+              (e) => _buildItem(e.value, theme, unchecked.length + e.key),
+            ),
           ],
 
           if (_items.isEmpty) ...[
@@ -328,11 +369,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     );
   }
 
-  Widget _buildItem(
-    Map<String, dynamic> item,
-    ThemeData theme,
-    int index,
-  ) {
+  Widget _buildItem(Map<String, dynamic> item, ThemeData theme, int index) {
     final isChecked = item['checked'] as bool;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -347,33 +384,33 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         child: Material(
           color: Colors.transparent,
           child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Checkbox(
-            value: isChecked,
-            onChanged: (val) => _toggleItemChecked(item, val ?? false),
-            shape: const RoundedRectangleBorder(),
-          ),
-          title: Text(
-            item['name'] as String,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              decoration: isChecked ? TextDecoration.lineThrough : null,
-              color: isChecked ? Colors.grey : null,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            leading: Checkbox(
+              value: isChecked,
+              onChanged: (val) => _toggleItemChecked(item, val ?? false),
+              shape: const RoundedRectangleBorder(),
+            ),
+            title: Text(
+              item['name'] as String,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                decoration: isChecked ? TextDecoration.lineThrough : null,
+                color: isChecked ? Colors.grey : null,
+              ),
+            ),
+            subtitle: Text(
+              item['category'] as String,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.grey),
+              onPressed: () => _deleteItem(index),
             ),
           ),
-          subtitle: Text(
-            item['category'] as String,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[600],
-            ),
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.grey),
-            onPressed: () => _deleteItem(index),
-          ),
-        )
         ),
       ),
     );
