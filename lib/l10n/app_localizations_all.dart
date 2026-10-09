@@ -1,5 +1,6 @@
 import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/l10n/profile_account_strings.dart';
+import 'package:parentpeak/l10n/app_localizations_fr_extra.dart';
 
 // Vollständige Localization Struktur mit 28 Sprachen inkl. RTL
 
@@ -5986,6 +5987,7 @@ class AppStringsManager {
     },
     // Français
     'fr': {
+      ...appLocalizationsFrExtra,
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
