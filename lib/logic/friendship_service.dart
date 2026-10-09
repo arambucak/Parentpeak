@@ -45,10 +45,19 @@ class FriendshipData {
 /// Rueckgrat). Anfrage/Annehmen wie bei Instagram; Verbinden per Einladungs-
 /// Link/QR. Der PP-Code bleibt nur noch Deko.
 class FriendshipService extends ChangeNotifier {
-  FriendshipService._();
+  FriendshipService._() {
+    ProfileAccountStore.instance.addListener(() {
+      _data = const FriendshipData();
+      notifyListeners();
+    });
+  }
   static final FriendshipService instance = FriendshipService._();
 
-  final BackendApiClient? _api = BackendServiceFactory.createApiClient();
+  final BackendApiClient? _api = BackendServiceFactory.createVerifiedApiClient();
+  final BackendApiClient? _publicApi = BackendServiceFactory.createApiClient();
+
+  BackendApiClient? _guarded(ProfileAccountTicket ticket) =>
+      _api?.withRequestGuard(() => ProfileAccountStore.instance.require(ticket));
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -60,7 +69,8 @@ class FriendshipService extends ChangeNotifier {
 
   /// Freundesliste + Anfragen vom Server laden.
   Future<void> load() async {
-    final api = _api;
+    final ticket = ProfileAccountStore.instance.ticket;
+    final api = _guarded(ticket);
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty) return;
     try {
@@ -84,12 +94,11 @@ class FriendshipService extends ChangeNotifier {
 
   /// Einladungs-Token erzeugen (fuer Link/QR). Gibt den Link zurueck.
   Future<String?> createInviteLink() async {
-    final api = _api;
+    final api = _guarded(ProfileAccountStore.instance.ticket);
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty) return null;
     try {
       final res = await api.postJsonAny('/api/friendships/invite', {
-        'userId': uid,
       });
       if (res is Map<String, dynamic> && res['token'] is String) {
         return 'https://parentpeak.de/f/${res['token']}';
@@ -102,7 +111,7 @@ class FriendshipService extends ChangeNotifier {
 
   /// Einladungs-Token aufloesen -> {uid, name} des Einladenden.
   Future<Map<String, String>?> resolveInvite(String token) async {
-    final api = _api;
+    final api = _publicApi;
     if (api == null || token.isEmpty) return null;
     try {
       final res = await api.getJson('/api/friendships/resolve-invite/$token');
@@ -121,7 +130,7 @@ class FriendshipService extends ChangeNotifier {
   /// Bruecke: einen (alten) Freundes-Code -> {uid, name} aufloesen, damit man
   /// auch per Code eine UID-Freundschaftsanfrage senden kann.
   Future<Map<String, String>?> resolveCode(String code) async {
-    final api = _api;
+    final api = _publicApi;
     if (api == null || code.isEmpty) return null;
     try {
       final res = await api.getJson('/api/friends/lookup/$code');
@@ -163,10 +172,10 @@ class FriendshipService extends ChangeNotifier {
     }
     try {
       await api.withRequestGuard(() => store.require(ticket)).postJsonAny('/api/friendships/request', {
-        'fromUid': uid,
         'toUid': toUid,
       });
       await load();
+      store.require(ticket);
       return true;
     } catch (e) {
       debugPrint('FriendshipService.sendRequest failed: $e');
@@ -176,17 +185,18 @@ class FriendshipService extends ChangeNotifier {
 
   /// Eingehende Anfrage annehmen.
   Future<bool> accept(String otherUid) async {
-    final api = _api;
+    final ticket = ProfileAccountStore.instance.ticket;
+    final api = _guarded(ticket);
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty) {
       return false;
     }
     try {
       await api.postJsonAny('/api/friendships/accept', {
-        'uid': uid,
         'otherUid': otherUid,
       });
       await load();
+      ProfileAccountStore.instance.require(ticket);
       return true;
     } catch (e) {
       debugPrint('FriendshipService.accept failed: $e');
@@ -196,14 +206,16 @@ class FriendshipService extends ChangeNotifier {
 
   /// Freundschaft entfernen oder Anfrage ablehnen.
   Future<bool> remove(String otherUid) async {
-    final api = _api;
+    final ticket = ProfileAccountStore.instance.ticket;
+    final api = _guarded(ticket);
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty || otherUid.isEmpty) {
       return false;
     }
     try {
-      await api.delete('/api/friendships?uid=$uid&otherUid=$otherUid');
+      await api.delete('/api/friendships?otherUid=${Uri.encodeComponent(otherUid)}');
       await load();
+      ProfileAccountStore.instance.require(ticket);
       return true;
     } catch (e) {
       debugPrint('FriendshipService.remove failed: $e');

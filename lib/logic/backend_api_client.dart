@@ -27,12 +27,14 @@ class BackendApiException implements Exception {
     required this.path,
     required this.statusCode,
     this.serverMessage,
+    this.serverCode,
   });
 
   final String method;
   final String path;
   final int statusCode;
   final String? serverMessage;
+  final String? serverCode;
 
   bool get isUnauthorized => statusCode == 401;
   bool get isForbidden => statusCode == 403;
@@ -62,6 +64,17 @@ String? _extractServerError(String body) {
   return null;
 }
 
+String? _extractServerCode(String body) {
+  try {
+    final decoded = jsonDecode(body);
+    return decoded is Map && decoded['code'] is String
+        ? decoded['code'] as String
+        : null;
+  } on FormatException {
+    return null;
+  }
+}
+
 class BackendApiClient {
   BackendApiClient({
     required this.baseUrl,
@@ -69,6 +82,7 @@ class BackendApiClient {
     this.authTokenProvider,
     this.forceRefreshTokenProvider,
     this.requestGuard,
+    this.requireAuthToken = false,
     http.Client? httpClient,
   }) : _httpClient = httpClient ?? http.Client();
 
@@ -82,6 +96,7 @@ class BackendApiClient {
   final Future<String?> Function()? forceRefreshTokenProvider;
   final http.Client _httpClient;
   final void Function()? requestGuard;
+  final bool requireAuthToken;
 
   BackendApiClient withRequestGuard(void Function() guard) => BackendApiClient(
     baseUrl: baseUrl,
@@ -93,6 +108,7 @@ class BackendApiClient {
       requestGuard?.call();
       guard();
     },
+    requireAuthToken: requireAuthToken,
   );
 
   Future<String?> _resolveAuthToken() async {
@@ -112,11 +128,13 @@ class BackendApiClient {
       }
     }
 
+    if (requireAuthToken) {
+      throw StateError('Firebase session required for this request.');
+    }
     final staticToken = authToken?.trim();
     if (staticToken != null && staticToken.isNotEmpty) {
       return staticToken;
     }
-
     return null;
   }
 
@@ -132,6 +150,7 @@ class BackendApiClient {
     String? token;
     if (forceRefresh && forceRefreshTokenProvider != null) {
       token = (await forceRefreshTokenProvider!())?.trim();
+      if (token?.isEmpty == true) token = null;
     }
     token ??= await _resolveAuthToken();
     if (token != null && token.isNotEmpty) {
@@ -193,6 +212,7 @@ class BackendApiClient {
         path: path,
         statusCode: response.statusCode,
         serverMessage: _extractServerError(response.body),
+        serverCode: _extractServerCode(response.body),
       );
     }
 
@@ -250,6 +270,7 @@ class BackendApiClient {
         path: path,
         statusCode: response.statusCode,
         serverMessage: _extractServerError(response.body),
+        serverCode: _extractServerCode(response.body),
       );
     }
 
@@ -273,15 +294,29 @@ class BackendApiClient {
   }
 
   Future<void> delete(String path) async {
-    final headers = await _headers();
+    var headers = await _headers();
     requestGuard?.call();
-    final response = await _httpClient
+    var response = await _httpClient
         .delete(_uri(path), headers: headers)
         .timeout(const Duration(seconds: 8));
     requestGuard?.call();
 
+    if (response.statusCode == 401 && forceRefreshTokenProvider != null) {
+      headers = await _headers(forceRefresh: true);
+      requestGuard?.call();
+      response = await _httpClient
+          .delete(_uri(path), headers: headers)
+          .timeout(const Duration(seconds: 8));
+      requestGuard?.call();
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('DELETE $path failed: ${response.statusCode}');
+      throw BackendApiException(
+        method: 'DELETE',
+        path: path,
+        statusCode: response.statusCode,
+        serverMessage: _extractServerError(response.body),
+        serverCode: _extractServerCode(response.body),
+      );
     }
   }
 

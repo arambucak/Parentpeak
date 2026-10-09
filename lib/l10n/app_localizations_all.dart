@@ -1234,6 +1234,8 @@ class AppStringsManager {
       'network_members_add_failed':
           'Mitglieder konnten nicht hinzugefügt werden.',
       'network_group_not_member': 'Du bist kein Mitglied dieser Gruppe.',
+      'chat_access_unavailable': 'Diese Unterhaltung ist für dieses Konto nicht verfügbar.',
+      'friend_chat_request_failed': 'Die Chat-Anfrage ist fehlgeschlagen. Bitte prüfe deine Anmeldung und versuche es erneut.',
       'network_group_chat_empty':
           'Noch keine Nachrichten. Schreib die erste und bring die Gruppe ins Gespräch!',
       'network_sending': 'Senden…',
@@ -5739,6 +5741,8 @@ class AppStringsManager {
       'network_members_added': 'Members added.',
       'network_members_add_failed': 'Could not add members.',
       'network_group_not_member': 'You are not a member of this group.',
+      'chat_access_unavailable': 'This conversation is not available for this account.',
+      'friend_chat_request_failed': 'The chat request failed. Please check your sign-in and try again.',
       'network_group_chat_empty':
           'No messages yet. Write the first one and get the group talking!',
       'network_sending': 'Sending…',
@@ -12916,6 +12920,8 @@ class AppStringsManager {
       'network_members_added': 'Endam hatin zêdekirin.',
       'network_members_add_failed': 'Endam nehatin zêdekirin.',
       'network_group_not_member': 'Tu ne endamê vê komê yî.',
+      'chat_access_unavailable': 'Ev sohbet ji bo vê hesabê ne berdest e.',
+      'friend_chat_request_failed': 'Daxwaza sohbetê bi ser neket. Têketina xwe kontrol bike û dîsa biceribîne.',
       'network_group_chat_empty':
           'Hêj peyam tune. Ya yekem binivîse û komê bîne axaftinê!',
       'network_sending': 'Dişîne…',
@@ -19062,6 +19068,8 @@ class AppStringsManager {
       'network_members_added': 'Üyeler eklendi.',
       'network_members_add_failed': 'Üyeler eklenemedi.',
       'network_group_not_member': 'Bu grubun üyesi değilsin.',
+      'chat_access_unavailable': 'Bu konuşma bu hesap için kullanılamıyor.',
+      'friend_chat_request_failed': 'Sohbet isteği başarısız oldu. Girişini kontrol edip tekrar dene.',
       'network_group_chat_empty':
           'Henüz mesaj yok. İlkini yaz ve grubu sohbete başlat!',
       'network_sending': 'Gönderiliyor…',

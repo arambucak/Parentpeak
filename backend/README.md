@@ -30,6 +30,43 @@ flutter test --no-pub test/calendar_sync_preference_test.dart test/calendar_cont
 Dieser Backend-Change verlangt den freigegebenen Backup-/Render-Rollout vor
 dem Pages-Gate; ein PR oder dessen CI deployt diese Aenderung nicht als Abnahme.
 
+## Verifizierte Friend-Chat-Teilnahme und Beziehungsgrenzen
+
+Alle sechs `/friend-chat`-Routen und alle fuenf `/chat-groups`-Routen verlangen
+`requireVerifiedUser`. Nachrichtenautor, Read-/Clear-Marker, Gruppen-Owner und
+handelnder Nutzer stammen aus der Token-UID. Abweichende Actor-Claims werden
+abgelehnt (403). Der Austritt aus einer Gruppe darf nur die eigene UID betreffen.
+Gruppenmitglieder duerfen weiterhin weitere Mitglieder einladen.
+
+Einzelraeume muessen exakt die kanonische Form `uidA__uidB` haben: genau zwei
+verschiedene, nichtleere UIDs ohne Rand-Whitespace, lexikografisch sortiert.
+Die Token-UID muss eines der beiden Segmente sein. Legacy-`pp-`-Raeume und
+mehrdeutige/nichtkanonische IDs bleiben ohne verifizierbare Teilnahme gesperrt
+(403); bestehende Daten werden nicht geloescht oder automatisch migriert.
+Gruppen verlangen einen passenden `ChatGroupMember`-Datensatz. Fehler bei
+Schema-, Mitglieds-, Block- oder Freundschaftsabfragen liefern 503 statt eines
+In-Memory- oder unbeschraenkten Fallbacks. Die Uebersicht nutzt exakte Segmente
+statt UID-Substring-Suche und prueft Teilnahme und Leseblock vor Vorschau/Unread.
+
+Archiv-Reads nach Entfreunden bleiben erhalten. Wer vom anderen blockiert wurde,
+darf nicht lesen; die eigene Blockierung entfernt den eigenen Archivzugriff
+nicht. Schreiben verlangt bestaetigte Freundschaft und keinen Block in beiden
+Richtungen. Die Freundschaftsverwaltung bindet Sender/Empfaenger an die Token-UID;
+nur der angefragte Empfaenger darf eine Anfrage annehmen. Private Listen sowie
+Block-/Unblock-Aktionen sind ebenfalls kontogebunden. Oeffentliche Invite-/Code-
+Aufloesung bleibt unveraendert; keine neue Parent-Matching-Echtzeitfunktion.
+
+Flutter verwendet dynamische Firebase-Tokens mit einmaligem authentifiziertem
+401-Refresh, niemals einen tokenlosen Retry. 403/503 sind sichtbare Fehler.
+Kontowechsel verwerfen alte Antworten/Marker und leeren geoeffnete Chats.
+Polling bleibt erhalten. Dieser Backend-Tree braucht den separat freigegebenen
+Backup-/Render-Rollout vor dem Pages-Gate.
+
+```bash
+node --test backend/tests/unit/friend-chat-scope.test.js
+flutter test --no-pub test/friend_chat_scope_test.dart test/friend_chat_scope_ui_test.dart
+```
+
 ## Owner-gebundene Device-Tokens
 
 `POST /devices/register-token` und `DELETE /devices/register-token` verlangen

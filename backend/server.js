@@ -7580,11 +7580,11 @@ const _suspensionCacheTtlMs = 30 * 1000;
 
 /// Prueft, ob ein Nutzer gesperrt ist. Fehlertolerant: bei DB-Problemen
 /// greift der In-Memory-Fallback. Leere userId -> nie gesperrt.
-async function isUserSuspended(userId) {
+async function isUserSuspended(userId, { strict = false } = {}) {
   const id = (userId || '').toString().trim();
   if (!id) return false;
   const cached = _suspensionCache.get(id);
-  if (cached && Date.now() - cached.ts < _suspensionCacheTtlMs) {
+  if (!strict && cached && Date.now() - cached.ts < _suspensionCacheTtlMs) {
     return cached.suspended;
   }
   // "Check both": Der uebergebene Wert kann eine Firebase-UID ODER ein
@@ -7605,7 +7605,8 @@ async function isUserSuspended(userId) {
       );
       for (const r of codeRows) if (r.code) candidates.add(r.code);
     }
-  } catch (_) {
+  } catch (error) {
+    if (strict) throw error;
     // Fallback: Registry ueber In-Memory-Map.
     if (id.startsWith('pp-')) {
       const mem = friendRegistry.get(id);
@@ -7625,7 +7626,8 @@ async function isUserSuspended(userId) {
       list
     );
     suspended = rows.length > 0;
-  } catch (_) {
+  } catch (error) {
+    if (strict) throw error;
     suspended = list.some(c => safetySuspensions.has(c));
   }
   _suspensionCache.set(id, { suspended, ts: Date.now() });
@@ -7886,7 +7888,7 @@ function pairKey(a, b) {
 }
 
 // App-weiter Check: sind zwei UIDs bestaetigte Freunde?
-async function areFriends(uidA, uidB) {
+async function areFriends(uidA, uidB, { strict = false } = {}) {
   const a = (uidA || '').toString().trim();
   const b = (uidB || '').toString().trim();
   if (!a || !b || a === b) return false;
@@ -7898,7 +7900,8 @@ async function areFriends(uidA, uidB) {
       low, high
     );
     return rows.length > 0;
-  } catch (_) {
+  } catch (error) {
+    if (strict) throw error;
     const f = friendships.get(`${low}__${high}`);
     return !!f && f.status === 'accepted';
   }
@@ -7919,8 +7922,67 @@ function otherUidFromRoomId(roomId, selfUid) {
   return parts.find(p => p !== me) || null;
 }
 
+function directChatParticipant(roomId, uid) {
+  if (typeof roomId !== 'string' || !roomId || roomId !== roomId.trim()) return null;
+  const parts = roomId.split('__');
+  if (parts.length !== 2 ||
+      parts.some(part => !part || part !== part.trim()) ||
+      parts[0] === parts[1] || friendRoomId(...parts) !== roomId ||
+      !parts.includes(uid)) return null;
+  return { roomId, otherUid: otherUidFromRoomId(roomId, uid) };
+}
+
+function requireActorClaims(req, res, claims) {
+  if (claims.some(value => value !== undefined &&
+      (typeof value !== 'string' || value.trim() !== req.firebaseUid))) {
+    res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt', code: 'not_owner' });
+    return false;
+  }
+  return true;
+}
+
+function respondChatPersistenceError(res, label, error) {
+  console.error(`${label}:`, error?.message || error);
+  return res.status(503).json({ error: 'Chat derzeit nicht verfuegbar', code: 'persistence_unavailable' });
+}
+
+async function authorizeChatParticipant(req, res, roomId) {
+  if (typeof roomId !== 'string' || !roomId || roomId !== roomId.trim()) {
+    res.status(403).json({ error: 'Unterhaltung nicht verfuegbar', code: 'not_participant' });
+    return null;
+  }
+  if (roomId.startsWith('group_')) {
+    const groupId = roomId.slice('group_'.length);
+    if (!groupId || groupId !== groupId.trim()) {
+      res.status(403).json({ error: 'Unterhaltung nicht verfuegbar', code: 'not_participant' });
+      return null;
+    }
+    try {
+      await ensureSocialSchemaReady();
+      const members = await prisma.$queryRawUnsafe(
+        `SELECT 1 FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2 LIMIT 1`,
+        groupId, req.firebaseUid
+      );
+      if (!members.length) {
+        res.status(403).json({ error: 'Du bist kein Mitglied dieser Gruppe', code: 'not_member' });
+        return null;
+      }
+      return { roomId, groupId };
+    } catch (error) {
+      respondChatPersistenceError(res, 'Chat-Mitgliedschaft', error);
+      return null;
+    }
+  }
+  const participant = directChatParticipant(roomId, req.firebaseUid);
+  if (!participant) {
+    res.status(403).json({ error: 'Unterhaltung nicht verfuegbar', code: 'not_participant' });
+    return null;
+  }
+  return participant;
+}
+
 // Hat einer der beiden den anderen blockiert (Richtung egal)? Fehlertolerant.
-async function isBlockedBetween(uidA, uidB) {
+async function isBlockedBetween(uidA, uidB, { strict = false } = {}) {
   const a = (uidA || '').toString().trim();
   const b = (uidB || '').toString().trim();
   if (!a || !b) return false;
@@ -7933,7 +7995,8 @@ async function isBlockedBetween(uidA, uidB) {
       a, b
     );
     return rows.length > 0;
-  } catch (_) {
+  } catch (error) {
+    if (strict) throw error;
     const setA = safetyBlocks.get(a);
     const setB = safetyBlocks.get(b);
     return (!!setA && setA.has(b)) || (!!setB && setB.has(a));
@@ -7942,7 +8005,7 @@ async function isBlockedBetween(uidA, uidB) {
 
 // Hat der ANDERE mich blockiert? (Einseitig: otherUid -> me.) Fuer den
 // Lese-Zugriff: Wer blockiert wurde, verliert den Zugriff auf den Chat.
-async function hasBlockedMe(otherUid, selfUid) {
+async function hasBlockedMe(otherUid, selfUid, { strict = false } = {}) {
   const other = (otherUid || '').toString().trim();
   const me = (selfUid || '').toString().trim();
   if (!other || !me) return false;
@@ -7953,29 +8016,32 @@ async function hasBlockedMe(otherUid, selfUid) {
       other, me
     );
     return rows.length > 0;
-  } catch (_) {
+  } catch (error) {
+    if (strict) throw error;
     const set = safetyBlocks.get(other);
     return !!set && set.has(me);
   }
 }
 
 // Freundschaftsanfrage senden (oder direkt bestaetigen, wenn Ziel nicht privat).
-app.post('/api/friendships/request', async (req, res) => {
-  const fromUid = (req.body.fromUid || '').toString().trim();
+app.post('/api/friendships/request', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.fromUid])) return;
+  const fromUid = req.firebaseUid;
   const toUid = (req.body.toUid || '').toString().trim();
   if (!fromUid || !toUid) return res.status(400).json({ error: 'fromUid und toUid erforderlich' });
   if (fromUid === toUid) return res.status(400).json({ error: 'Eigene UID nicht erlaubt' });
   const [low, high] = pairKey(fromUid, toUid);
   try {
     await ensureSocialSchemaReady();
+    if (await isBlockedBetween(fromUid, toUid, { strict: true })) {
+      return res.status(403).json({ error: 'Verbindung nicht verfuegbar', code: 'blocked' });
+    }
     // Ist das Ziel-Profil oeffentlich (nicht privat)? Dann sofort 'accepted'.
     let targetPrivate = true;
-    try {
-      const p = await prisma.$queryRawUnsafe(
-        `SELECT "isPrivate" FROM "UserProfile" WHERE "userId" = $1`, toUid
-      );
-      if (p.length > 0) targetPrivate = p[0].isPrivate !== false;
-    } catch (_) {}
+    const p = await prisma.$queryRawUnsafe(
+      `SELECT "isPrivate" FROM "UserProfile" WHERE "userId" = $1`, toUid
+    );
+    if (p.length > 0) targetPrivate = p[0].isPrivate !== false;
     const status = targetPrivate ? 'pending' : 'accepted';
     await prisma.$executeRawUnsafe(
       `INSERT INTO "Friendship" ("userLow", "userHigh", "status", "requestedBy", "createdAt", "updatedAt")
@@ -7987,39 +8053,40 @@ app.post('/api/friendships/request', async (req, res) => {
     );
     return res.json({ ok: true, status, roomId: friendRoomId(fromUid, toUid) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/friendships/request', error)) return;
-    const key = `${low}__${high}`;
-    const prev = friendships.get(key);
-    friendships.set(key, { status: prev?.status === 'accepted' ? 'accepted' : 'pending', requestedBy: fromUid });
-    return res.json({ ok: true, status: 'pending', roomId: friendRoomId(fromUid, toUid) });
+    return respondChatPersistenceError(res, 'POST /api/friendships/request', error);
   }
 });
 
 // Anfrage annehmen.
-app.post('/api/friendships/accept', async (req, res) => {
-  const uid = (req.body.uid || '').toString().trim();
+app.post('/api/friendships/accept', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.uid])) return;
+  const uid = req.firebaseUid;
   const otherUid = (req.body.otherUid || '').toString().trim();
   if (!uid || !otherUid) return res.status(400).json({ error: 'uid und otherUid erforderlich' });
+  if (uid === otherUid) return res.status(403).json({ error: 'Eigene UID nicht erlaubt' });
   const [low, high] = pairKey(uid, otherUid);
   try {
     await ensureSocialSchemaReady();
-    await prisma.$executeRawUnsafe(
-      `UPDATE "Friendship" SET "status" = 'accepted', "updatedAt" = NOW() WHERE "userLow" = $1 AND "userHigh" = $2`,
-      low, high
+    if (await isBlockedBetween(uid, otherUid, { strict: true })) {
+      return res.status(403).json({ error: 'Verbindung nicht verfuegbar', code: 'blocked' });
+    }
+    const accepted = await prisma.$executeRawUnsafe(
+      `UPDATE "Friendship" SET "status" = 'accepted', "updatedAt" = NOW()
+       WHERE "userLow" = $1 AND "userHigh" = $2
+         AND "requestedBy" = $3 AND "status" IN ('pending', 'accepted')`,
+      low, high, otherUid
     );
+    if (accepted === 0) return res.status(403).json({ error: 'Keine eingehende Anfrage', code: 'not_recipient' });
     return res.json({ ok: true, roomId: friendRoomId(uid, otherUid) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/friendships/accept', error)) return;
-    const key = `${low}__${high}`;
-    if (friendships.has(key)) friendships.get(key).status = 'accepted';
-    else friendships.set(key, { status: 'accepted', requestedBy: otherUid });
-    return res.json({ ok: true, roomId: friendRoomId(uid, otherUid) });
+    return respondChatPersistenceError(res, 'POST /api/friendships/accept', error);
   }
 });
 
 // Freundschaft/Anfrage entfernen (unfriend / ablehnen).
-app.delete('/api/friendships', async (req, res) => {
-  const uid = (req.query.uid || req.body?.uid || '').toString().trim();
+app.delete('/api/friendships', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.query.uid, req.body?.uid])) return;
+  const uid = req.firebaseUid;
   const otherUid = (req.query.otherUid || req.body?.otherUid || '').toString().trim();
   if (!uid || !otherUid) return res.status(400).json({ error: 'uid und otherUid erforderlich' });
   const [low, high] = pairKey(uid, otherUid);
@@ -8030,15 +8097,14 @@ app.delete('/api/friendships', async (req, res) => {
     );
     return res.json({ ok: true });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'DELETE /api/friendships', error)) return;
-    friendships.delete(`${low}__${high}`);
-    return res.json({ ok: true });
+    return respondChatPersistenceError(res, 'DELETE /api/friendships', error);
   }
 });
 
 // Freundesliste + offene Anfragen (mit Namen) fuer eine UID.
-app.get('/api/friendships/:uid', async (req, res) => {
-  const uid = (req.params.uid || '').toString().trim();
+app.get('/api/friendships/:uid', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.params.uid])) return;
+  const uid = req.firebaseUid;
   if (!uid) return res.status(400).json({ error: 'uid erforderlich' });
   try {
     await ensureSocialSchemaReady();
@@ -8072,14 +8138,13 @@ app.get('/api/friendships/:uid', async (req, res) => {
     }
     return res.json({ friends, incoming, outgoing });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /api/friendships', error)) return;
-    return res.json({ friends: [], incoming: [], outgoing: [] });
+    return respondChatPersistenceError(res, 'GET /api/friendships', error);
   }
 });
 
 // Einladungs-Token erzeugen (fuer Link/QR).
-app.post('/api/friendships/invite', async (req, res) => {
-  const userId = (req.body.userId || '').toString().trim();
+app.post('/api/friendships/invite', requireVerifiedUser, async (req, res) => {
+  const userId = req.firebaseUid;
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
   const token = generateId('inv').replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
   try {
@@ -8476,8 +8541,9 @@ app.delete('/api/account/:userId', async (req, res) => {
 });
 
 // ─── Safety (Prio 4): server-side block + report ───────────────────────────
-app.post('/api/safety/block', async (req, res) => {
-  const blockerUserId = (req.body.blockerUserId || '').toString().trim();
+app.post('/api/safety/block', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.blockerUserId])) return;
+  const blockerUserId = req.firebaseUid;
   const blockedUserId = (req.body.blockedUserId || '').toString().trim();
   const blockedName = (req.body.blockedName || '').toString().trim().slice(0, 100);
   if (!blockerUserId || !blockedUserId) {
@@ -8493,15 +8559,13 @@ app.post('/api/safety/block', async (req, res) => {
     );
     return res.json({ ok: true });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/safety/block', error)) return;
-    if (!safetyBlocks.has(blockerUserId)) safetyBlocks.set(blockerUserId, new Set());
-    safetyBlocks.get(blockerUserId).add(blockedUserId);
-    return res.json({ ok: true });
+    return respondChatPersistenceError(res, 'POST /api/safety/block', error);
   }
 });
 
-app.post('/api/safety/unblock', async (req, res) => {
-  const blockerUserId = (req.body.blockerUserId || '').toString().trim();
+app.post('/api/safety/unblock', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.blockerUserId])) return;
+  const blockerUserId = req.firebaseUid;
   const blockedUserId = (req.body.blockedUserId || '').toString().trim();
   if (!blockerUserId || !blockedUserId) {
     return res.status(400).json({ error: 'blockerUserId und blockedUserId erforderlich' });
@@ -8514,14 +8578,13 @@ app.post('/api/safety/unblock', async (req, res) => {
     );
     return res.json({ ok: true });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/safety/unblock', error)) return;
-    safetyBlocks.get(blockerUserId)?.delete(blockedUserId);
-    return res.json({ ok: true });
+    return respondChatPersistenceError(res, 'POST /api/safety/unblock', error);
   }
 });
 
-app.get('/api/safety/blocks/:userId', async (req, res) => {
-  const userId = (req.params.userId || '').toString().trim();
+app.get('/api/safety/blocks/:userId', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.params.userId])) return;
+  const userId = req.firebaseUid;
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
   try {
     await ensureSocialSchemaReady();
@@ -8531,9 +8594,7 @@ app.get('/api/safety/blocks/:userId', async (req, res) => {
     );
     return res.json({ blocks: rows });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /api/safety/blocks', error)) return;
-    const set = safetyBlocks.get(userId) || new Set();
-    return res.json({ blocks: [...set].map(id => ({ blockedUserId: id, blockedName: '', createdAt: new Date().toISOString() })) });
+    return respondChatPersistenceError(res, 'GET /api/safety/blocks', error);
   }
 });
 
@@ -8879,23 +8940,22 @@ app.post('/admin/friends/cleanup', requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/friend-chat/messages', async (req, res) => {
-  const roomId = (req.query.roomId || '').toString().trim();
-  if (!roomId) return res.status(400).json({ error: 'roomId fehlt' });
+app.get('/friend-chat/messages', requireVerifiedUser, async (req, res) => {
+  const roomId = req.query.roomId;
+  const participant = await authorizeChatParticipant(req, res, roomId);
+  if (!participant) return;
   // Block-Schutz beim LESEN: Wer vom anderen blockiert wurde, verliert den
   // Zugriff auf den Chat komplett. 'Entfernen' (unfriend) sperrt NICHT das
   // Lesen -> Verlauf bleibt Nur-Lese-Archiv. Nur ein echter Block sperrt.
-  const requesterUid = (req.query.userId || '').toString().trim();
-  if (requesterUid) {
-    const otherUid = otherUidFromRoomId(roomId, requesterUid);
-    if (otherUid && (await hasBlockedMe(otherUid, requesterUid))) {
+  const requesterUid = req.firebaseUid;
+  try {
+    if (participant.otherUid &&
+        await hasBlockedMe(participant.otherUid, requesterUid, { strict: true })) {
       return res.status(403).json({
         error: 'Diese Unterhaltung ist nicht mehr verfügbar.',
         code: 'blocked',
       });
     }
-  }
-  try {
     await ensureSocialSchemaReady();
     // "Für mich löschen": Nachrichten vor dem clearedAt dieses Nutzers
     // ausblenden (der Verlauf des anderen bleibt unberührt).
@@ -8916,68 +8976,43 @@ app.get('/friend-chat/messages', async (req, res) => {
     );
     return res.json({ messages });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /friend-chat/messages', error)) return;
-    return res.json({ messages: friendChatMessages.get(roomId) || [] });
+    return respondChatPersistenceError(res, 'GET /friend-chat/messages', error);
   }
 });
 
-app.post('/friend-chat/messages', async (req, res) => {
-  const roomId   = (req.body.roomId   || '').toString().trim();
-  const userId   = (req.body.userId   || '').toString().trim();
+app.post('/friend-chat/messages', requireVerifiedUser, async (req, res) => {
+  const roomId = req.body.roomId;
+  const participant = await authorizeChatParticipant(req, res, roomId);
+  if (!participant) return;
+  const userId = req.firebaseUid;
   const userName = (req.body.userName || 'Elternteil').toString().trim();
   const content  = (req.body.content  || '').toString().trim();
   if (!roomId || !userId || !content) {
     return res.status(400).json({ error: 'roomId, userId und content erforderlich' });
   }
-  // Echter Bann: gesperrte Nutzer koennen keine Nachrichten mehr senden.
-  if (await isUserSuspended(userId)) return respondSuspended(res);
-
-  // Gruppen-Chat (roomId = group_<id>): Nur Mitglieder duerfen senden.
-  if (roomId.startsWith('group_')) {
-    const groupId = roomId.substring('group_'.length);
-    try {
-      await ensureSocialSchemaReady();
-      const member = await prisma.$queryRawUnsafe(
-        `SELECT 1 FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2 LIMIT 1`,
-        groupId, userId
-      );
-      if (!member || member.length === 0) {
-        return res.status(403).json({
-          error: 'Du bist kein Mitglied dieser Gruppe.',
-          code: 'not_member',
-        });
-      }
-    } catch (_) {
-      // Bei DB-Fehlern nicht blockieren (best effort, wie beim 1:1-Fallback).
-    }
-  }
-
-  // Chat-Schutz (NEUES UID-Format uidA__uidB): Nur bestaetigte Freunde duerfen
-  // NEUE Nachrichten senden. Nach 'Entfernen' -> keine Freundschaft mehr ->
-  // gesperrt. Nach 'Blockieren' -> ebenfalls gesperrt. Der Verlauf bleibt via
-  // GET lesbar (Nur-Lese-Archiv). Alte pp-Raeume: keine Pruefung (Auslauf).
-  const otherUid = otherUidFromRoomId(roomId, userId);
-  if (otherUid) {
-    if (await isBlockedBetween(userId, otherUid)) {
+  try {
+    if (await isUserSuspended(userId, { strict: true })) return respondSuspended(res);
+    const otherUid = participant.otherUid;
+    if (otherUid && await isBlockedBetween(userId, otherUid, { strict: true })) {
       return res.status(403).json({
         error: 'Diese Unterhaltung ist nicht mehr verfügbar.',
         code: 'blocked',
       });
     }
-    if (!(await areFriends(userId, otherUid))) {
+    if (otherUid && !(await areFriends(userId, otherUid, { strict: true }))) {
       return res.status(403).json({
         error: 'Ihr seid aktuell nicht mehr verbunden. Frühere Nachrichten '
           + 'kannst du weiter nachlesen.',
         code: 'not_friends',
       });
     }
+  } catch (error) {
+    return respondChatPersistenceError(res, 'Chat-Schreibberechtigung', error);
   }
 
   const item = { id: generateId('fc'), roomId, authorUserId: userId, authorName: userName, content, createdAt: new Date().toISOString() };
 
-  // Push an den ECHTEN Empfaenger: roomId = codeA-codeB. Wir bestimmen den
-  // Empfaenger-Code (die Haelfte, die NICHT der Sender ist) und loesen dessen
-  // userId via FriendRegistry auf. Fehler hier sind unkritisch (best effort).
+  // Empfaenger stammt aus der zuvor verifizierten Teilnahme.
   const pushToRecipient = async () => {
     try {
       let recipientUid = null;
@@ -9012,30 +9047,16 @@ app.post('/friend-chat/messages', async (req, res) => {
         );
         return;
       }
-      if (roomId.includes('__')) {
-        // NEUES Format: roomId = uidA__uidB -> Empfaenger = Haelfte != Sender.
-        const parts = roomId.split('__');
-        recipientUid = parts.find(p => p && p !== userId) || null;
-      } else {
-        // ALTES Format: roomId = pp-aaaaaa-pp-bbbbbb -> Code -> userId.
-        const codes = roomId.match(/pp-[a-z0-9]+/gi) || [];
-        if (codes.length >= 2) {
-          const senderCode = ('pp-' + userId.substring(0, 6)).toLowerCase();
-          const recipientCode =
-              codes.find(c => c.toLowerCase() !== senderCode) || codes[0];
-          if (recipientCode) {
-            const reg = await resolveFriendRegistry(recipientCode);
-            recipientUid = reg.userId || null;
-          }
-        }
-      }
+      recipientUid = participant.otherUid;
       if (!recipientUid) return;
       await sendPushToUser(recipientUid, {
         title: userName || 'Neue Nachricht',
         body: content.length > 100 ? content.substring(0, 100) + '...' : content,
         data: { type: 'friend_chat', roomId, senderId: userId },
       });
-    } catch (_) {}
+    } catch (error) {
+      console.error('Friend-Chat Push fehlgeschlagen:', error?.message || error);
+    }
   };
 
   try {
@@ -9047,11 +9068,7 @@ app.post('/friend-chat/messages', async (req, res) => {
     await pushToRecipient();
     return res.status(201).json({ item });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /friend-chat/messages', error)) return;
-    if (!friendChatMessages.has(roomId)) friendChatMessages.set(roomId, []);
-    friendChatMessages.get(roomId).push(item);
-    await pushToRecipient();
-    return res.status(201).json({ item });
+    return respondChatPersistenceError(res, 'POST /friend-chat/messages', error);
   }
 });
 
@@ -9059,17 +9076,17 @@ app.post('/friend-chat/messages', async (req, res) => {
 // Liefert pro Raum (1:1 + Gruppen) die letzte Nachricht, Zeit und die Zahl
 // ungelesener Nachrichten (basierend auf ChatRead.lastReadAt). Grundlage für
 // die Messenger-Liste im Chats-Tab.
-app.get('/friend-chat/overview', async (req, res) => {
-  const userId = (req.query.userId || '').toString().trim();
-  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+app.get('/friend-chat/overview', requireVerifiedUser, async (req, res) => {
+  const userId = req.firebaseUid;
   try {
     await ensureSocialSchemaReady();
 
-    // 1:1-Räume: alle roomIds im neuen Format uidA__uidB, die die UID enthalten.
+    // Kandidaten nach exakten Segmenten; vor Vorschau nochmals kanonisch pruefen.
     const directRooms = await prisma.$queryRawUnsafe(
       `SELECT DISTINCT "roomId" FROM "FriendChatMessage"
-       WHERE "roomId" LIKE $1 AND "roomId" LIKE '%\\_\\_%'`,
-      `%${userId}%`
+       WHERE split_part("roomId", '__', 1) = $1
+          OR split_part("roomId", '__', 2) = $1`,
+      userId
     );
     // Gruppen-Räume: alle Gruppen, in denen der Nutzer Mitglied ist.
     const groupRows = await prisma.$queryRawUnsafe(
@@ -9135,6 +9152,9 @@ app.get('/friend-chat/overview', async (req, res) => {
     }
 
     for (const row of directRooms) {
+      const participant = directChatParticipant(row.roomId, userId);
+      if (!participant ||
+          await hasBlockedMe(participant.otherUid, userId, { strict: true })) continue;
       const summary = await summarize(row.roomId, { isGroup: false });
       // 1:1-Chats ohne sichtbare Nachricht (komplett "für mich gelöscht")
       // werden aus der Übersicht ausgeblendet, bis etwas Neues kommt.
@@ -9164,16 +9184,16 @@ app.get('/friend-chat/overview', async (req, res) => {
 
     return res.json({ conversations });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /friend-chat/overview', error)) return;
-    return res.json({ conversations: [] });
+    return respondChatPersistenceError(res, 'GET /friend-chat/overview', error);
   }
 });
 
 // ─── Gelesen-Status setzen ──────────────────────────────────────────────────
 // Markiert einen Raum für den Nutzer bis jetzt als gelesen (Ungelesen → 0).
-app.post('/friend-chat/read', async (req, res) => {
-  const roomId = (req.body.roomId || '').toString().trim();
-  const userId = (req.body.userId || '').toString().trim();
+app.post('/friend-chat/read', requireVerifiedUser, async (req, res) => {
+  const roomId = req.body.roomId;
+  if (!await authorizeChatParticipant(req, res, roomId)) return;
+  const userId = req.firebaseUid;
   if (!roomId || !userId) {
     return res.status(400).json({ error: 'roomId und userId erforderlich' });
   }
@@ -9188,17 +9208,17 @@ app.post('/friend-chat/read', async (req, res) => {
     );
     return res.json({ ok: true });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /friend-chat/read', error)) return;
-    return res.json({ ok: true });
+    return respondChatPersistenceError(res, 'POST /friend-chat/read', error);
   }
 });
 
 // ─── Chat löschen (WhatsApp-Stil) ────────────────────────────────────────────
 // "Für mich löschen": blendet den bisherigen Verlauf nur für diesen Nutzer aus
 // (clearedAt). Der Verlauf der anderen Seite bleibt vollständig erhalten.
-app.post('/friend-chat/clear-for-me', async (req, res) => {
-  const roomId = (req.body.roomId || '').toString().trim();
-  const userId = (req.body.userId || '').toString().trim();
+app.post('/friend-chat/clear-for-me', requireVerifiedUser, async (req, res) => {
+  const roomId = req.body.roomId;
+  if (!await authorizeChatParticipant(req, res, roomId)) return;
+  const userId = req.firebaseUid;
   if (!roomId || !userId) {
     return res.status(400).json({ error: 'roomId und userId erforderlich' });
   }
@@ -9213,41 +9233,17 @@ app.post('/friend-chat/clear-for-me', async (req, res) => {
     );
     return res.json({ ok: true });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /friend-chat/clear-for-me', error)) return;
-    return res.json({ ok: true });
+    return respondChatPersistenceError(res, 'POST /friend-chat/clear-for-me', error);
   }
 });
 
 // "Für alle löschen": entfernt den Verlauf physisch für ALLE Teilnehmer.
 // Nur ein echter Teilnehmer (1:1) bzw. ein Gruppenmitglied darf das auslösen.
-app.post('/friend-chat/delete-for-all', async (req, res) => {
-  const roomId = (req.body.roomId || '').toString().trim();
-  const userId = (req.body.userId || '').toString().trim();
-  if (!roomId || !userId) {
-    return res.status(400).json({ error: 'roomId und userId erforderlich' });
-  }
+app.post('/friend-chat/delete-for-all', requireVerifiedUser, async (req, res) => {
+  const roomId = req.body.roomId;
+  if (!await authorizeChatParticipant(req, res, roomId)) return;
   try {
     await ensureSocialSchemaReady();
-
-    // Berechtigung prüfen: Der Aufrufer muss Teil des Chats sein.
-    let allowed = false;
-    if (roomId.startsWith('group_')) {
-      const groupId = roomId.substring('group_'.length);
-      const member = await prisma.$queryRawUnsafe(
-        `SELECT 1 FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2 LIMIT 1`,
-        groupId, userId
-      );
-      allowed = member && member.length > 0;
-    } else if (roomId.includes('__')) {
-      // 1:1: Die UID muss eine der beiden Hälften der roomId sein.
-      allowed = roomId.split('__').includes(userId);
-    }
-    if (!allowed) {
-      return res.status(403).json({
-        error: 'Nur Teilnehmer dürfen diesen Chat für alle löschen.',
-        code: 'not_participant',
-      });
-    }
 
     await prisma.$executeRawUnsafe(
       `DELETE FROM "FriendChatMessage" WHERE "roomId" = $1`,
@@ -9258,16 +9254,16 @@ app.post('/friend-chat/delete-for-all', async (req, res) => {
     await prisma.$executeRawUnsafe(`DELETE FROM "ChatCleared" WHERE "roomId" = $1`, roomId);
     return res.json({ ok: true });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /friend-chat/delete-for-all', error)) return;
-    return res.json({ ok: true });
+    return respondChatPersistenceError(res, 'POST /friend-chat/delete-for-all', error);
   }
 });
 
 // ─── Gruppenchat (Stufe 2) ───────────────────────────────────────────────────
 // Gruppe erstellen. Ersteller wird automatisch Owner-Mitglied.
-app.post('/chat-groups', async (req, res) => {
+app.post('/chat-groups', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.ownerUserId])) return;
   const name = (req.body.name || '').toString().trim();
-  const ownerUserId = (req.body.ownerUserId || '').toString().trim();
+  const ownerUserId = req.firebaseUid;
   const ownerName = (req.body.ownerName || 'Elternteil').toString().trim();
   const photoUrl = (req.body.photoUrl || '').toString().trim();
   const memberUids = Array.isArray(req.body.memberUids) ? req.body.memberUids : [];
@@ -9309,8 +9305,8 @@ app.post('/chat-groups', async (req, res) => {
 });
 
 // Alle Gruppen eines Nutzers (für die Chat-Übersicht / Gruppen-Liste).
-app.get('/chat-groups', async (req, res) => {
-  const userId = (req.query.userId || '').toString().trim();
+app.get('/chat-groups', requireVerifiedUser, async (req, res) => {
+  const userId = req.firebaseUid;
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
   try {
     await ensureSocialSchemaReady();
@@ -9325,15 +9321,15 @@ app.get('/chat-groups', async (req, res) => {
     const groups = rows.map(g => ({ ...g, roomId: `group_${g.id}` }));
     return res.json({ groups });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /chat-groups', error)) return;
-    return res.json({ groups: [] });
+    return respondChatPersistenceError(res, 'GET /chat-groups', error);
   }
 });
 
 // Mitglieder einer Gruppe.
-app.get('/chat-groups/:id/members', async (req, res) => {
+app.get('/chat-groups/:id/members', requireVerifiedUser, async (req, res) => {
   const groupId = (req.params.id || '').toString().trim();
   if (!groupId) return res.status(400).json({ error: 'id erforderlich' });
+  if (!await authorizeChatParticipant(req, res, `group_${groupId}`)) return;
   try {
     await ensureSocialSchemaReady();
     const members = await prisma.$queryRawUnsafe(
@@ -9343,30 +9339,24 @@ app.get('/chat-groups/:id/members', async (req, res) => {
     );
     return res.json({ members });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /chat-groups/:id/members', error)) return;
-    return res.json({ members: [] });
+    return respondChatPersistenceError(res, 'GET /chat-groups/:id/members', error);
   }
 });
 
 // Mitglieder zu einer Gruppe hinzufügen (nur Mitglieder dürfen einladen).
-app.post('/chat-groups/:id/members', async (req, res) => {
+app.post('/chat-groups/:id/members', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.actingUserId])) return;
   const groupId = (req.params.id || '').toString().trim();
-  const actingUserId = (req.body.actingUserId || '').toString().trim();
+  const actingUserId = req.firebaseUid;
   const memberUids = Array.isArray(req.body.memberUids) ? req.body.memberUids : [];
   const memberNames = (req.body.memberNames && typeof req.body.memberNames === 'object')
     ? req.body.memberNames : {};
   if (!groupId || !actingUserId) {
     return res.status(400).json({ error: 'id und actingUserId erforderlich' });
   }
+  if (!await authorizeChatParticipant(req, res, `group_${groupId}`)) return;
   try {
     await ensureSocialSchemaReady();
-    const isMember = await prisma.$queryRawUnsafe(
-      `SELECT 1 FROM "ChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2 LIMIT 1`,
-      groupId, actingUserId
-    );
-    if (!isMember || isMember.length === 0) {
-      return res.status(403).json({ error: 'Nur Mitglieder dürfen einladen' });
-    }
     for (const uid of memberUids) {
       const u = (uid || '').toString().trim();
       if (!u) continue;
@@ -9384,12 +9374,14 @@ app.post('/chat-groups/:id/members', async (req, res) => {
 });
 
 // Gruppe verlassen.
-app.delete('/chat-groups/:id/members/:userId', async (req, res) => {
+app.delete('/chat-groups/:id/members/:userId', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.params.userId])) return;
   const groupId = (req.params.id || '').toString().trim();
-  const userId = (req.params.userId || '').toString().trim();
+  const userId = req.firebaseUid;
   if (!groupId || !userId) {
     return res.status(400).json({ error: 'id und userId erforderlich' });
   }
+  if (!await authorizeChatParticipant(req, res, `group_${groupId}`)) return;
   try {
     await ensureSocialSchemaReady();
     await prisma.$executeRawUnsafe(
@@ -9398,8 +9390,7 @@ app.delete('/chat-groups/:id/members/:userId', async (req, res) => {
     );
     return res.json({ ok: true });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'DELETE /chat-groups/:id/members/:userId', error)) return;
-    return res.json({ ok: true });
+    return respondChatPersistenceError(res, 'DELETE /chat-groups/:id/members/:userId', error);
   }
 });
 
