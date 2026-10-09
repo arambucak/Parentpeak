@@ -39,15 +39,16 @@ void main() {
   MealPlannerService service(BackendApiClient client) =>
       MealPlannerService(apiClient: client, accountStore: store);
 
-  final meal = Meal(
+  const meal = Meal(
     id: 'm1',
     title: 'Pasta',
     type: MealType.lunch,
     description: null,
-    ingredients: const ['noodles'],
+    ingredients: ['noodles'],
   );
 
-  test('getWeekMealPlan uses own selector, Firebase token, no family claim', () async {
+  test('getWeekMealPlan uses own selector, Firebase token, no family claim',
+      () async {
     late http.Request captured;
     final svc = service(api((request) async {
       captured = request;
@@ -64,7 +65,8 @@ void main() {
     late http.Request captured;
     final svc = service(api((request) async {
       captured = request;
-      return http.Response('{"date":"2026-01-01T00:00:00.000Z","meals":[]}', 200);
+      return http.Response(
+          '{"date":"2026-01-01T00:00:00.000Z","meals":[]}', 200);
     }));
     await svc.getMealPlan(DateTime.utc(2026, 1, 1));
     expect(captured.url.path, contains('/own'));
@@ -103,7 +105,8 @@ void main() {
 
   for (final status in [401, 403, 404, 503]) {
     test('error $status surfaces as exception, not silent empty', () async {
-      final svc = service(api((_) async => http.Response('{"error":"x"}', status)));
+      final svc =
+          service(api((_) async => http.Response('{"error":"x"}', status)));
       await expectLater(
         svc.getWeekMealPlan(DateTime.utc(2026, 1, 1)),
         throwsA(isA<BackendApiException>()

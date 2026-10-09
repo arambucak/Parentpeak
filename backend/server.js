@@ -7498,16 +7498,15 @@ app.post('/parent-matching/actions', async (req, res) => {
   }
 });
 
-app.get('/parent-matching/messages/stream', async (req, res) => {
+app.get('/parent-matching/messages/stream', requireVerifiedUser, async (req, res) => {
   const familyId = (req.query.familyId || DEMO_FAMILY_ID).toString().trim();
   const profileId = (req.query.profileId || '').toString().trim();
-  const userId = (req.query.userId || '').toString().trim();
+  // Identitaet ausschliesslich aus dem verifizierten Token; eine abweichende
+  // query.userId wird bereits von requireVerifiedUser mit 403 abgelehnt.
+  const userId = req.firebaseUid;
 
   if (!profileId) {
     return res.status(400).json({ error: 'profileId fehlt' });
-  }
-  if (!userId) {
-    return res.status(400).json({ error: 'userId fehlt' });
   }
 
   try {
@@ -7591,16 +7590,13 @@ app.get('/parent-matching/messages/stream', async (req, res) => {
   }
 });
 
-app.get('/parent-matching/messages', async (req, res) => {
+app.get('/parent-matching/messages', requireVerifiedUser, async (req, res) => {
   const familyId = (req.query.familyId || DEMO_FAMILY_ID).toString().trim();
   const profileId = (req.query.profileId || '').toString().trim();
-  const userId = (req.query.userId || '').toString().trim();
+  const userId = req.firebaseUid;
 
   if (!profileId) {
     return res.status(400).json({ error: 'profileId fehlt' });
-  }
-  if (!userId) {
-    return res.status(400).json({ error: 'userId fehlt' });
   }
 
   try {
@@ -7653,18 +7649,17 @@ app.get('/parent-matching/messages', async (req, res) => {
   }
 });
 
-app.post('/parent-matching/messages', async (req, res) => {
+app.post('/parent-matching/messages', requireVerifiedUser, async (req, res) => {
   const familyId = (req.body.familyId || DEMO_FAMILY_ID).toString().trim();
   const profileId = (req.body.profileId || '').toString().trim();
-  const authorUserId = (req.body.userId || '').toString().trim();
+  // Autor ist der verifizierte Token-Nutzer; eine abweichende body.userId wird
+  // bereits von requireVerifiedUser mit 403 abgelehnt.
+  const authorUserId = req.firebaseUid;
   const authorName = (req.body.userName || 'Elternteil').toString().trim();
   const content = (req.body.content || '').toString().trim();
 
   if (!profileId) {
     return res.status(400).json({ error: 'profileId fehlt' });
-  }
-  if (!authorUserId) {
-    return res.status(400).json({ error: 'userId fehlt' });
   }
   if (!content) {
     return res.status(400).json({ error: 'Nachricht fehlt' });
