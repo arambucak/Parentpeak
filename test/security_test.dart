@@ -38,19 +38,29 @@ void main() {
     });
 
     test(
-      'treasure rules bind writes and deletes to UID and exclude flat objects',
+      'treasure rules require a filename and separate uploads from resource-free deletes',
       () {
         final rules = File('storage.rules').readAsStringSync();
         final scoped = rules
-            .split('match /treasures/{userId}/{allPaths=**} {')[1]
+            .split(
+              'match /treasures/{userId}/{fileName}/{remainingPaths=**} {',
+            )[1]
             .split('match /treasures/{fileName}')[0];
-        expect(scoped, contains('request.auth.uid == userId'));
-        expect(scoped, contains('allow delete:'));
-        expect(
-          scoped,
-          contains("request.resource.name.matches('treasures/[^/]+/.+')"),
-        );
-        expect(scoped, contains("resource.name.matches('treasures/[^/]+/.+')"));
+        expect(scoped, isNot(contains('allow write:')));
+        final uploads = scoped
+            .split('allow create, update:')[1]
+            .split(';')[0];
+        expect(uploads, contains('request.auth != null'));
+        expect(uploads, contains('request.auth.uid == userId'));
+        expect(uploads, contains('request.resource != null'));
+        expect(uploads, contains('request.resource.size is int'));
+        expect(uploads, contains('request.resource.size < 10 * 1024 * 1024'));
+        expect(uploads, contains('request.resource.contentType is string'));
+        expect(uploads, contains("contentType.matches('image/.*')"));
+        final deletion = scoped.split('allow delete:')[1].split(';')[0];
+        expect(deletion, contains('request.auth != null'));
+        expect(deletion, contains('request.auth.uid == userId'));
+        expect(deletion, isNot(contains('resource')));
         final legacy = rules
             .split('match /treasures/{fileName} {')[1]
             .split('match /profiles/')[0];
