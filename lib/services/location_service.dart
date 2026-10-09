@@ -3,13 +3,14 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:parentpeak/logic/event_geocoder.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
 
 /// Central location service — single source of truth for user location.
 /// Used by: Events, Verschenkmarkt, Spielfreunde, and any future feature.
 ///
 /// Supports: GPS (automatic) or PLZ/City (manual fallback).
-/// DSGVO: Only city-level precision shared. Exact GPS stays local.
+/// Coordinates are stored and reverse-geocoded at two-decimal precision.
 class LocationService extends ChangeNotifier {
   static final LocationService instance = LocationService();
   LocationService({ProfileAccountStore? store, http.Client? httpClient,
@@ -181,8 +182,10 @@ class LocationService extends ChangeNotifier {
   /// Reverse geocode coordinates to get a city name via Nominatim
   Future<String?> _reverseGeocodeAndSetCity(double lat, double lng) async {
     try {
+      final latitude = roundCoordinate(lat);
+      final longitude = roundCoordinate(lng);
       final uri = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json&addressdetails=1',
+        'https://nominatim.openstreetmap.org/reverse?lat=$latitude&lon=$longitude&format=json&addressdetails=1',
       );
       // User-Agent is forbidden in browser Fetch API — skip on web
       final headers = kIsWeb
@@ -257,8 +260,8 @@ class LocationService extends ChangeNotifier {
       for (final key in [_latKey, _lngKey, _cityKey, _methodKey]) {
         data.remove(key);
       }
-      if (lat != null) data[_latKey] = lat;
-      if (lng != null) data[_lngKey] = lng;
+      if (lat != null) data[_latKey] = roundCoordinate(lat);
+      if (lng != null) data[_lngKey] = roundCoordinate(lng);
       if (city != null) data[_cityKey] = city;
       if (method != null) data[_methodKey] = method;
     });

@@ -44,9 +44,20 @@ Client-HTTP-Guards pruefen die Session auch nach Token-Aufloesung und vor 401-Re
 
 Keine Schema-Migration. Der geaenderte Backend-Tree verlangt vor Pages-Freigabe
 einen freigegebenen Render-Rollout. Dieser Nachweis ist keine Produktionsfreigabe.
-Die Nominatim-Datensparsamkeit im Onboarding-GPS-Pfad (K04) bleibt ein eigener
-nachfolgender PR; die lokale Zuordnung ist keine Verschluesselung und behebt
-diese offene Grenze nicht.
+Die lokale Kontozuordnung ist keine Verschluesselung.
+
+## Ungefaehrer Standort im Onboarding
+
+`LocationService` verwendet den bestehenden `roundCoordinate`-Helper mit zwei
+Nachkommastellen: GPS, manuelle Geocoding-Ergebnisse und direkt ausgewaehlte
+Koordinaten werden vor dem Schreiben ins Account-Envelope gerundet. Auch der
+GPS-Reverse-Geocoding-Aufruf an OpenStreetMap Nominatim verwendet nur gerundete
+Koordinaten. Der Onboarding-Hinweis in de/en/tr/ku nennt die ungefaehre
+Speicherung und Nominatim als Empfaenger von Koordinaten bzw. Ortseingaben.
+Die Genauigkeit ist ungefaehr Kilometeraufloesung, keine Anonymisierung.
+Bereits vorhandene praezise Account-/Legacy-Standorte werden durch diesen
+Change nicht nachtraeglich migriert; bei erneuter Standortwahl werden sie
+gerundet ersetzt. Keine Backend-Aenderung.
 
 ## Kontobezogener Datenexport
 

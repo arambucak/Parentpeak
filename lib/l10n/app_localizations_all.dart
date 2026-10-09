@@ -939,6 +939,14 @@ class AppStringsManager {
       'impressum': 'Impressum',
       'ai_disclosure': 'KI-Nutzungshinweis',
       'export_data': 'Meine Daten exportieren',
+      'location_onboarding_explanation':
+          'Mit einem ungefähren Standort findest du Angebote in deiner Nähe. Die Standortwahl ist freiwillig.',
+      'location_onboarding_privacy':
+          'Dein Standort wird nur ungefähr gespeichert (2 Nachkommastellen, etwa 1 km). Für den Ortsnamen senden wir gerundete GPS-Koordinaten oder deine Ortseingabe an OpenStreetMap Nominatim.',
+      'location_onboarding_skip': 'Überspringen',
+      'location_onboarding_detect': 'Standort ermitteln',
+      'location_onboarding_manual_title': 'Ort oder Postleitzahl eingeben',
+      'location_onboarding_manual_hint': 'Stadt oder Postleitzahl',
       'profile_export_sign_in_required':
           'Bitte melde dich an, um deine Daten zu exportieren.',
       'open_source_licenses': 'Open-Source-Lizenzen',
@@ -3943,6 +3951,14 @@ class AppStringsManager {
       'impressum': 'Legal Notice',
       'ai_disclosure': 'AI Usage Notice',
       'export_data': 'Export my data',
+      'location_onboarding_explanation':
+          'An approximate location helps you find nearby activities. Choosing a location is optional.',
+      'location_onboarding_privacy':
+          'Your location is stored approximately (2 decimal places, about 1 km). To find the place name, we send rounded GPS coordinates or your entered place to OpenStreetMap Nominatim.',
+      'location_onboarding_skip': 'Skip',
+      'location_onboarding_detect': 'Find my location',
+      'location_onboarding_manual_title': 'Enter a place or postcode',
+      'location_onboarding_manual_hint': 'City or postcode',
       'profile_export_sign_in_required':
           'Please sign in to export your data.',
       'open_source_licenses': 'Open Source Licenses',
@@ -12606,6 +12622,14 @@ class AppStringsManager {
       'impressum': 'Agahdariya qanûnî',
       'ai_disclosure': 'Agahdariya bikaranîna KI',
       'export_data': 'Daneyên min derxîne',
+      'location_onboarding_explanation':
+          'Cihekî nêzîk alîkarî dike ku çalakiyên li nêzî te bibînî. Hilbijartina cihê ne mecbûrî ye.',
+      'location_onboarding_privacy':
+          'Cihê te tenê bi awayekî nêzîk tê tomarkirin (2 reqemên piştî virgulê, nêzî 1 km). Ji bo navê cihê, em koordînatên GPS yên giroverkirî an cihê ku te nivîsandî ji OpenStreetMap Nominatim re dişînin.',
+      'location_onboarding_skip': 'Derbas bike',
+      'location_onboarding_detect': 'Cihê min bibîne',
+      'location_onboarding_manual_title': 'Cih an koda posteyê binivîse',
+      'location_onboarding_manual_hint': 'Bajar an koda posteyê',
       'profile_export_sign_in_required':
           'Ji kerema xwe têkeve hesabê xwe da ku daneyên xwe derxînî.',
       'open_source_licenses': 'Lîsansên çavkaniya vekirî',
@@ -18747,6 +18771,14 @@ class AppStringsManager {
       'impressum': 'Yasal Bildirim',
       'ai_disclosure': 'Yapay Zeka Kullanım Bildirimi',
       'export_data': 'Verilerimi dışa aktar',
+      'location_onboarding_explanation':
+          'Yaklaşık konum, yakınınızdaki etkinlikleri bulmanıza yardımcı olur. Konum seçmek isteğe bağlıdır.',
+      'location_onboarding_privacy':
+          'Konumunuz yalnızca yaklaşık olarak kaydedilir (2 ondalık basamak, yaklaşık 1 km). Yer adını bulmak için yuvarlanmış GPS koordinatlarını veya girdiğiniz yeri OpenStreetMap Nominatim hizmetine göndeririz.',
+      'location_onboarding_skip': 'Atla',
+      'location_onboarding_detect': 'Konumumu bul',
+      'location_onboarding_manual_title': 'Yer veya posta kodu girin',
+      'location_onboarding_manual_hint': 'Şehir veya posta kodu',
       'profile_export_sign_in_required':
           'Verilerinizi dışa aktarmak için lütfen hesabınıza giriş yapın.',
       'open_source_licenses': 'Açık Kaynak Lisansları',

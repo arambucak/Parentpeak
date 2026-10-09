@@ -78,7 +78,8 @@ void main() {
       expect(payload['latitude'], 48.14);
       expect(payload['longitude'], 11.58);
       expect(LocationService.instance.city, 'Berlin');
-      expect(LocationService.instance.latitude, 52.520008);
+      expect(LocationService.instance.latitude, 52.52);
+      expect(LocationService.instance.longitude, 13.40);
       await LocationService.instance.clear();
     },
   );
