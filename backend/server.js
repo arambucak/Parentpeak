@@ -4822,6 +4822,20 @@ function allowPrivateFamilyFallback() {
   return process.env.NODE_ENV !== 'production' && !disableInMemoryFallbacks;
 }
 
+// Validiert einen Pfad-/Request-Parameter gegen die aufgeloeste eigene Familie.
+// Der reservierte Selector 'own' bedeutet "Familie der Token-UID". Eine explizite
+// echte Familien-ID ist nur zulaessig, wenn sie exakt der eigenen entspricht.
+// Die aufgeloeste Familien-ID ist niemals eine Berechtigung an sich; sie wird
+// ausschliesslich aus req.ownFamily (verifizierte UID + Owner-Pruefung) abgeleitet.
+function assertOwnFamilyParam(req, claimedFamilyId) {
+  const ownId = req.ownFamily.id;
+  if (claimedFamilyId === 'own') return ownId;
+  if (typeof claimedFamilyId !== 'string' || claimedFamilyId !== ownId) {
+    throw new FamilyContextError(403, 'not_owner', 'Nur fuer die eigene Familie erlaubt');
+  }
+  return ownId;
+}
+
 async function exportOwnFamilyItems(firebaseUid) {
   const id = ownFamilyId(firebaseUid);
   return prisma.$transaction(async transaction => {
@@ -4829,13 +4843,20 @@ async function exportOwnFamilyItems(firebaseUid) {
       where: { id },
       include: { memberUsers: { select: { id: true } } },
     });
-    if (!family) return { todos: [], shoppingItems: [] };
+    if (!family) return { todos: [], shoppingItems: [], mealPlans: [] };
     assertOwnFamily(family, firebaseUid);
-    const [todos, shoppingItems] = await Promise.all([
+    const [todos, shoppingItems, mealPlans] = await Promise.all([
       transaction.todo.findMany({ where: { familyId: id }, orderBy: { createdAt: 'desc' } }),
       transaction.shoppingItem.findMany({ where: { familyId: id }, orderBy: { createdAt: 'desc' } }),
+      // MealPlan hat keine Family-Relation (familyId ist nur ein String), daher
+      // explizit ueber die aufgeloeste eigene Familien-ID.
+      transaction.mealPlan.findMany({
+        where: { familyId: id },
+        orderBy: { date: 'desc' },
+        include: { meals: { orderBy: { createdAt: 'asc' } } },
+      }),
     ]);
-    return { todos, shoppingItems };
+    return { todos, shoppingItems, mealPlans };
   }, { isolationLevel: 'Serializable' });
 }
 
@@ -5669,6 +5690,12 @@ async function deleteUnreferencedAccountMedia(mediaUrls, userId) {
 
 async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
   const ownItems = await exportOwnFamilyItems(userId);
+  const ownMealCount = ownItems.mealPlans.reduce(
+    (sum, plan) => sum + 1 + (Array.isArray(plan.meals) ? plan.meals.length : 0),
+    0,
+  );
+  // Todos/ShoppingItems cascaden ueber die Family-Relation bei User-Loeschung.
+  // MealPlans NICHT (familyId ist nur ein String ohne FK) -> separat loeschen.
   const familyItemCount = ownItems.todos.length + ownItems.shoppingItems.length;
   const [userMedia, hostedEvents, ownedTreasures, ownedRecipes, ownedCommunityEvents] =
     await Promise.all([
@@ -5752,7 +5779,8 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
         hostAuditPaymentCount +
         userCount +
         parentMatchingActionCount +
-        familyItemCount,
+        familyItemCount +
+        ownMealCount,
       parentMatchingActionCount,
       hostedEventIds: hostedEvents.map(item => item.id),
       mediaUrls,
@@ -5824,6 +5852,15 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
       where: { actorUserId: userId },
     })).count;
   }
+
+  // MealPlan hat keine Family-Relation und cascadet daher NICHT bei der
+  // User-Loeschung. Meals cascaden von MealPlan, also reicht das Loeschen der
+  // Plaene der eigenen Familie. Owner-geprueft ueber die aufgeloeste Familien-ID.
+  const ownFamilyIdForDelete = ownFamilyId(userId);
+  removed += (await prisma.mealPlan.deleteMany({
+    where: { familyId: ownFamilyIdForDelete },
+  })).count;
+  removed += ownMealCount - ownItems.mealPlans.length; // zusaetzlich entfernte Meals
 
   // User -> created Family -> Todo/ShoppingItem cascades are defined in Prisma.
   const deletedUsers = (await prisma.user.deleteMany({ where: { id: userId } })).count;
@@ -5905,6 +5942,7 @@ async function exportAccountDataByUserIdPrisma(userId) {
     createdFamilies,
     todos: ownItems.todos,
     shoppingItems: ownItems.shoppingItems,
+    mealPlans: ownItems.mealPlans,
     hostedEvents,
     eventParticipations,
     messages,
@@ -11792,11 +11830,11 @@ app.post('/uploads/image', (req, res) => {
  * GET /api/meal-plans/:familyId?date=YYYY-MM-DD
  * Hole Essensplan für einen bestimmten Tag einer Familie
  */
-app.get('/api/meal-plans/:familyId', async (req, res) => {
-  const { familyId } = req.params;
+app.get('/api/meal-plans/:familyId', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   const { date } = req.query;
 
   try {
+    const familyId = assertOwnFamilyParam(req, req.params.familyId);
     if (!date) {
       return res.status(400).json({ error: 'date query parameter required' });
     }
@@ -11820,8 +11858,7 @@ app.get('/api/meal-plans/:familyId', async (req, res) => {
 
     res.json(mealPlan || { familyId, date: targetDate, meals: [] });
   } catch (err) {
-    console.error('❌ Fehler beim Abrufen des Essensplans:', err);
-    res.status(500).json({ error: err.message });
+    return respondFamilyPersistenceError(res, 'GET /api/meal-plans/:familyId', err);
   }
 });
 
@@ -11829,11 +11866,11 @@ app.get('/api/meal-plans/:familyId', async (req, res) => {
  * GET /api/meal-plans/:familyId/week?startDate=YYYY-MM-DD
  * Hole komplette Woche (7 Tage) für eine Familie
  */
-app.get('/api/meal-plans/:familyId/week', async (req, res) => {
-  const { familyId } = req.params;
+app.get('/api/meal-plans/:familyId/week', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   const { startDate } = req.query;
 
   try {
+    const familyId = assertOwnFamilyParam(req, req.params.familyId);
     if (!startDate) {
       return res.status(400).json({ error: 'startDate query parameter required' });
     }
@@ -11862,8 +11899,7 @@ app.get('/api/meal-plans/:familyId/week', async (req, res) => {
 
     res.json(mealPlans);
   } catch (err) {
-    console.error('❌ Fehler beim Abrufen der Woche:', err);
-    res.status(500).json({ error: err.message });
+    return respondFamilyPersistenceError(res, 'GET /api/meal-plans/:familyId/week', err);
   }
 });
 
@@ -11871,71 +11907,68 @@ app.get('/api/meal-plans/:familyId/week', async (req, res) => {
  * POST /api/meal-plans/:familyId
  * Erstelle oder aktualisiere Essensplan für einen Tag
  */
-app.post('/api/meal-plans/:familyId', async (req, res) => {
-  const { familyId } = req.params;
+app.post('/api/meal-plans/:familyId', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   const { date, meals } = req.body;
 
-  if (requireAuthForWrites && !req.headers.authorization) {
-    return res.status(401).json({ error: 'Authorization required' });
-  }
-
   try {
+    const familyId = assertOwnFamilyParam(req, req.params.familyId);
     const targetDate = new Date(date);
     targetDate.setUTCHours(0, 0, 0, 0);
 
-    // Lösche existierende Meals für diesen Tag
-    await prisma.meal.deleteMany({
-      where: {
-        mealPlan: {
-          familyId,
-          date: targetDate,
-        },
-      },
-    });
-
-    // Erstelle oder update MealPlan
-    const mealPlan = await prisma.mealPlan.upsert({
-      where: {
-        familyId_date: {
-          familyId,
-          date: targetDate,
-        },
-      },
-      update: { updatedAt: new Date() },
-      create: {
-        familyId,
-        date: targetDate,
-      },
-    });
-
-    // Erstelle neue Meals
-    if (meals && meals.length > 0) {
-      for (const meal of meals) {
-        await prisma.meal.create({
-          data: {
-            mealPlanId: mealPlan.id,
-            title: meal.title,
-            type: meal.type,
-            description: meal.description || null,
-            ingredients: JSON.stringify(meal.ingredients || []),
+    // Replace in EINER Transaktion: alte Meals loeschen, Plan upserten, neue Meals
+    // schreiben. Ein Fehler rollt alles zurueck, statt einen halb geleerten Plan
+    // zu hinterlassen.
+    const updated = await prisma.$transaction(async transaction => {
+      await transaction.meal.deleteMany({
+        where: {
+          mealPlan: {
+            familyId,
+            date: targetDate,
           },
-        });
-      }
-    }
-
-    const updated = await prisma.mealPlan.findUnique({
-      where: { id: mealPlan.id },
-      include: {
-        meals: {
-          orderBy: { createdAt: 'asc' },
         },
-      },
+      });
+
+      const mealPlan = await transaction.mealPlan.upsert({
+        where: {
+          familyId_date: {
+            familyId,
+            date: targetDate,
+          },
+        },
+        update: { updatedAt: new Date() },
+        create: {
+          familyId,
+          date: targetDate,
+        },
+      });
+
+      if (Array.isArray(meals) && meals.length > 0) {
+        for (const meal of meals) {
+          await transaction.meal.create({
+            data: {
+              mealPlanId: mealPlan.id,
+              title: meal.title,
+              type: meal.type,
+              description: meal.description || null,
+              ingredients: JSON.stringify(meal.ingredients || []),
+            },
+          });
+        }
+      }
+
+      return transaction.mealPlan.findUnique({
+        where: { id: mealPlan.id },
+        include: {
+          meals: {
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+      });
     });
 
     res.status(201).json(updated);
   } catch (err) {
-    console.error('❌ Fehler beim Erstellen des Essensplans:', err);
-    res.status(500).json({ error: err.message });
+    return respondFamilyPersistenceError(res, 'POST /api/meal-plans/:familyId', err);
   }
 });
 
@@ -11943,29 +11976,33 @@ app.post('/api/meal-plans/:familyId', async (req, res) => {
  * POST /api/meals/:mealPlanId
  * Füge einzelne Mahlzeit zum Essensplan hinzu
  */
-app.post('/api/meals/:mealPlanId', async (req, res) => {
+app.post('/api/meals/:mealPlanId', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   const { mealPlanId } = req.params;
   const { title, type, description, ingredients } = req.body;
 
-  if (requireAuthForWrites && !req.headers.authorization) {
-    return res.status(401).json({ error: 'Authorization required' });
-  }
-
   try {
-    const meal = await prisma.meal.create({
-      data: {
-        mealPlanId,
-        title,
-        type,
-        description: description || null,
-        ingredients: JSON.stringify(ingredients || []),
-      },
+    const meal = await prisma.$transaction(async transaction => {
+      const plan = await transaction.mealPlan.findUnique({
+        where: { id: mealPlanId },
+        select: { id: true, familyId: true },
+      });
+      // Fremder/fehlender Plan: einheitlich 404, verraet keine Existenz.
+      if (!plan || plan.familyId !== req.ownFamily.id) return null;
+      return transaction.meal.create({
+        data: {
+          mealPlanId: plan.id,
+          title,
+          type,
+          description: description || null,
+          ingredients: JSON.stringify(ingredients || []),
+        },
+      });
     });
 
+    if (!meal) return res.status(404).json({ error: 'Essensplan nicht gefunden' });
     res.status(201).json(meal);
   } catch (err) {
-    console.error('❌ Fehler beim Erstellen der Mahlzeit:', err);
-    res.status(500).json({ error: err.message });
+    return respondFamilyPersistenceError(res, 'POST /api/meals/:mealPlanId', err);
   }
 });
 
@@ -11973,30 +12010,34 @@ app.post('/api/meals/:mealPlanId', async (req, res) => {
  * PUT /api/meals/:mealId
  * Aktualisiere eine Mahlzeit
  */
-app.put('/api/meals/:mealId', async (req, res) => {
+app.put('/api/meals/:mealId', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   const { mealId } = req.params;
   const { title, type, description, ingredients } = req.body;
 
-  if (requireAuthForWrites && !req.headers.authorization) {
-    return res.status(401).json({ error: 'Authorization required' });
-  }
-
   try {
-    const meal = await prisma.meal.update({
-      where: { id: mealId },
-      data: {
-        title,
-        type,
-        description: description || null,
-        ingredients: JSON.stringify(ingredients || []),
-        updatedAt: new Date(),
-      },
+    const meal = await prisma.$transaction(async transaction => {
+      const existing = await transaction.meal.findUnique({
+        where: { id: mealId },
+        select: { id: true, mealPlan: { select: { familyId: true } } },
+      });
+      // Autorisierung ueber meal.mealPlan.familyId; fremd/fehlend -> null -> 404.
+      if (!existing || existing.mealPlan?.familyId !== req.ownFamily.id) return null;
+      return transaction.meal.update({
+        where: { id: mealId },
+        data: {
+          title,
+          type,
+          description: description || null,
+          ingredients: JSON.stringify(ingredients || []),
+          updatedAt: new Date(),
+        },
+      });
     });
 
+    if (!meal) return res.status(404).json({ error: 'Mahlzeit nicht gefunden' });
     res.json(meal);
   } catch (err) {
-    console.error('❌ Fehler beim Aktualisieren der Mahlzeit:', err);
-    res.status(500).json({ error: err.message });
+    return respondFamilyPersistenceError(res, 'PUT /api/meals/:mealId', err);
   }
 });
 
@@ -12004,22 +12045,24 @@ app.put('/api/meals/:mealId', async (req, res) => {
  * DELETE /api/meals/:mealId
  * Lösche eine Mahlzeit
  */
-app.delete('/api/meals/:mealId', async (req, res) => {
+app.delete('/api/meals/:mealId', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   const { mealId } = req.params;
 
-  if (requireAuthForWrites && !req.headers.authorization) {
-    return res.status(401).json({ error: 'Authorization required' });
-  }
-
   try {
-    await prisma.meal.delete({
-      where: { id: mealId },
+    const deleted = await prisma.$transaction(async transaction => {
+      const existing = await transaction.meal.findUnique({
+        where: { id: mealId },
+        select: { id: true, mealPlan: { select: { familyId: true } } },
+      });
+      if (!existing || existing.mealPlan?.familyId !== req.ownFamily.id) return false;
+      await transaction.meal.delete({ where: { id: mealId } });
+      return true;
     });
 
+    if (!deleted) return res.status(404).json({ error: 'Mahlzeit nicht gefunden' });
     res.json({ success: true, message: 'Mahlzeit gelöscht' });
   } catch (err) {
-    console.error('❌ Fehler beim Löschen der Mahlzeit:', err);
-    res.status(500).json({ error: err.message });
+    return respondFamilyPersistenceError(res, 'DELETE /api/meals/:mealId', err);
   }
 });
 
