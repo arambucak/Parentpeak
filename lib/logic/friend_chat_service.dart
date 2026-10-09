@@ -7,12 +7,13 @@
 ///   - Gelesen-Status (markRead), damit Ungelesen-Badges ehrlich sind.
 ///   - Gruppenchat-API (erstellen, laden, Mitglieder) — Stufe 2.
 ///
-/// Alles läuft über den Backend-Proxy (BackendApiClient). Fehler sind
-/// fehlertolerant: leere Liste / false statt Crash.
+/// Alles läuft über den authentifizierten Backend-Proxy. Reads werfen bei
+/// Fehlern; Mutationen liefern false mit Logging fuer sichtbare UI-Fehler.
 
 import 'package:flutter/foundation.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 
 /// Eine Zeile in der Chat-Übersicht (1:1 oder Gruppe).
 class ConversationSummary {
@@ -53,8 +54,9 @@ class ConversationSummary {
       lastMessage: (j['lastMessage'] ?? '').toString(),
       lastAuthorName: (j['lastAuthorName'] ?? '').toString(),
       lastAuthorUserId: (j['lastAuthorUserId'] ?? '').toString(),
-      lastMessageAt:
-          DateTime.tryParse(j['lastMessageAt']?.toString() ?? '')?.toLocal(),
+      lastMessageAt: DateTime.tryParse(
+        j['lastMessageAt']?.toString() ?? '',
+      )?.toLocal(),
       unreadCount: (j['unreadCount'] as num?)?.toInt() ?? 0,
     );
   }
@@ -103,36 +105,85 @@ class GroupMember {
   bool get isOwner => role == 'owner';
 
   factory GroupMember.fromJson(Map<String, dynamic> j) => GroupMember(
-        userId: (j['userId'] ?? '').toString(),
-        memberName: (j['memberName'] as String?)?.trim().isNotEmpty == true
-            ? (j['memberName'] as String).trim()
-            : 'Elternteil',
-        role: (j['role'] ?? 'member').toString(),
-      );
+    userId: (j['userId'] ?? '').toString(),
+    memberName: (j['memberName'] as String?)?.trim().isNotEmpty == true
+        ? (j['memberName'] as String).trim()
+        : 'Elternteil',
+    role: (j['role'] ?? 'member').toString(),
+  );
 }
 
 class FriendChatService {
-  FriendChatService._();
-  static final FriendChatService instance = FriendChatService._();
+  FriendChatService({
+    BackendApiClient? apiClient,
+    ProfileAccountStore? accountStore,
+  }) : _api = apiClient ?? BackendServiceFactory.createVerifiedApiClient(),
+       _store = accountStore ?? ProfileAccountStore.instance;
+  static final FriendChatService instance = FriendChatService();
 
-  final BackendApiClient? _api = BackendServiceFactory.createApiClient();
+  final BackendApiClient? _api;
+  final ProfileAccountStore _store;
+
+  BackendApiClient _guarded({
+    String? expectedUid,
+    ProfileAccountTicket? ticket,
+  }) {
+    final scope = ticket ?? _store.ticket;
+    void guard() {
+      _store.require(scope);
+      if (_store.userId == null ||
+          (expectedUid != null && _store.userId != expectedUid)) {
+        throw const ProfileAccountChanged();
+      }
+    }
+
+    guard();
+    final api = _api;
+    if (api == null) throw StateError('Chat backend is not configured.');
+    return api.withRequestGuard(guard);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMessages(
+    String roomId,
+    ProfileAccountTicket ticket,
+  ) async {
+    final data = await _guarded(
+      ticket: ticket,
+    ).getJson('/friend-chat/messages?roomId=${Uri.encodeComponent(roomId)}');
+    if (data is! Map || data['messages'] is! List) {
+      throw const FormatException('Invalid chat messages response');
+    }
+    return List<Map<String, dynamic>>.from(data['messages'] as List);
+  }
+
+  Future<Map<String, dynamic>> sendMessage(
+    String roomId,
+    String content,
+    String userName,
+    ProfileAccountTicket ticket,
+  ) async {
+    final data = await _guarded(ticket: ticket).postJsonAny(
+      '/friend-chat/messages',
+      {'roomId': roomId, 'content': content, 'userName': userName},
+    );
+    if (data is! Map || data['item'] is! Map) {
+      throw const FormatException('Invalid sent message response');
+    }
+    return Map<String, dynamic>.from(data['item'] as Map);
+  }
 
   /// Alle Unterhaltungen des Nutzers (für die Messenger-Liste).
   Future<List<ConversationSummary>> fetchOverview(String userId) async {
-    final api = _api;
-    if (api == null || userId.isEmpty) return const [];
-    try {
-      final res = await api.getJson('/friend-chat/overview?userId=$userId');
-      if (res is Map<String, dynamic> && res['conversations'] is List) {
-        return (res['conversations'] as List)
-            .whereType<Map<String, dynamic>>()
-            .map(ConversationSummary.fromJson)
-            .toList();
-      }
-    } catch (e) {
-      debugPrint('FriendChatService.fetchOverview failed: $e');
+    final res = await _guarded(
+      expectedUid: userId,
+    ).getJson('/friend-chat/overview');
+    if (res is Map<String, dynamic> && res['conversations'] is List) {
+      return (res['conversations'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map(ConversationSummary.fromJson)
+          .toList();
     }
-    return const [];
+    throw const FormatException('Invalid conversation overview response');
   }
 
   /// "Für mich löschen": blendet den bisherigen Verlauf nur für diesen Nutzer
@@ -141,10 +192,9 @@ class FriendChatService {
     final api = _api;
     if (api == null || roomId.isEmpty || userId.isEmpty) return false;
     try {
-      await api.postJsonAny('/friend-chat/clear-for-me', {
-        'roomId': roomId,
-        'userId': userId,
-      });
+      await _guarded(
+        expectedUid: userId,
+      ).postJsonAny('/friend-chat/clear-for-me', {'roomId': roomId});
       return true;
     } catch (e) {
       debugPrint('FriendChatService.clearForMe failed: $e');
@@ -158,10 +208,9 @@ class FriendChatService {
     final api = _api;
     if (api == null || roomId.isEmpty || userId.isEmpty) return false;
     try {
-      await api.postJsonAny('/friend-chat/delete-for-all', {
-        'roomId': roomId,
-        'userId': userId,
-      });
+      await _guarded(
+        expectedUid: userId,
+      ).postJsonAny('/friend-chat/delete-for-all', {'roomId': roomId});
       return true;
     } catch (e) {
       debugPrint('FriendChatService.deleteForAll failed: $e');
@@ -171,15 +220,13 @@ class FriendChatService {
 
   /// Markiert einen Raum für den Nutzer als gelesen (Ungelesen → 0).
   Future<void> markRead(String roomId, String userId) async {
-    final api = _api;
-    if (api == null || roomId.isEmpty || userId.isEmpty) return;
     try {
-      await api.postJsonAny('/friend-chat/read', {
-        'roomId': roomId,
-        'userId': userId,
-      });
+      await _guarded(
+        expectedUid: userId,
+      ).postJsonAny('/friend-chat/read', {'roomId': roomId});
     } catch (e) {
       debugPrint('FriendChatService.markRead failed: $e');
+      rethrow;
     }
   }
 
@@ -195,17 +242,18 @@ class FriendChatService {
     final api = _api;
     if (api == null || name.isEmpty || ownerUserId.isEmpty) return null;
     try {
-      final res = await api.postJsonAny('/chat-groups', {
-        'name': name,
-        'ownerUserId': ownerUserId,
-        'ownerName': ownerName,
-        'photoUrl': photoUrl,
-        'memberUids': memberUids,
-        'memberNames': memberNames,
-      });
+      final res = await _guarded(expectedUid: ownerUserId)
+          .postJsonAny('/chat-groups', {
+            'name': name,
+            'ownerName': ownerName,
+            'photoUrl': photoUrl,
+            'memberUids': memberUids,
+            'memberNames': memberNames,
+          });
       if (res is Map<String, dynamic> && res['group'] is Map) {
         return ChatGroupInfo.fromJson(
-            Map<String, dynamic>.from(res['group'] as Map));
+          Map<String, dynamic>.from(res['group'] as Map),
+        );
       }
     } catch (e) {
       debugPrint('FriendChatService.createGroup failed: $e');
@@ -215,10 +263,8 @@ class FriendChatService {
 
   /// Alle Gruppen des Nutzers.
   Future<List<ChatGroupInfo>> fetchGroups(String userId) async {
-    final api = _api;
-    if (api == null || userId.isEmpty) return const [];
     try {
-      final res = await api.getJson('/chat-groups?userId=$userId');
+      final res = await _guarded(expectedUid: userId).getJson('/chat-groups');
       if (res is Map<String, dynamic> && res['groups'] is List) {
         return (res['groups'] as List)
             .whereType<Map<String, dynamic>>()
@@ -227,8 +273,9 @@ class FriendChatService {
       }
     } catch (e) {
       debugPrint('FriendChatService.fetchGroups failed: $e');
+      rethrow;
     }
-    return const [];
+    throw const FormatException('Invalid groups response');
   }
 
   /// Lädt ein Gruppen-Foto hoch (Web-kompatibel via Bytes) und gibt die
@@ -240,8 +287,11 @@ class FriendChatService {
     final api = _api;
     if (api == null || bytes.isEmpty) return null;
     try {
-      final res = await api.uploadImageBytes('/uploads/image', bytes,
-          filename: filename);
+      final res = await _guarded().uploadImageBytes(
+        '/uploads/image',
+        bytes,
+        filename: filename,
+      );
       final url = res['url']?.toString();
       return (url != null && url.isNotEmpty) ? url : null;
     } catch (e) {
@@ -251,11 +301,14 @@ class FriendChatService {
   }
 
   /// Mitglieder einer Gruppe laden.
-  Future<List<GroupMember>> fetchMembers(String groupId) async {
-    final api = _api;
-    if (api == null || groupId.isEmpty) return const [];
+  Future<List<GroupMember>> fetchMembers(
+    String groupId, {
+    ProfileAccountTicket? ticket,
+  }) async {
     try {
-      final res = await api.getJson('/chat-groups/$groupId/members');
+      final res = await _guarded(
+        ticket: ticket,
+      ).getJson('/chat-groups/$groupId/members');
       if (res is Map<String, dynamic> && res['members'] is List) {
         return (res['members'] as List)
             .whereType<Map<String, dynamic>>()
@@ -264,8 +317,9 @@ class FriendChatService {
       }
     } catch (e) {
       debugPrint('FriendChatService.fetchMembers failed: $e');
+      rethrow;
     }
-    return const [];
+    throw const FormatException('Invalid group members response');
   }
 
   /// Weitere Mitglieder zu einer Gruppe hinzufügen.
@@ -278,11 +332,10 @@ class FriendChatService {
     final api = _api;
     if (api == null || groupId.isEmpty || actingUserId.isEmpty) return false;
     try {
-      await api.postJsonAny('/chat-groups/$groupId/members', {
-        'actingUserId': actingUserId,
-        'memberUids': memberUids,
-        'memberNames': memberNames,
-      });
+      await _guarded(expectedUid: actingUserId).postJsonAny(
+        '/chat-groups/$groupId/members',
+        {'memberUids': memberUids, 'memberNames': memberNames},
+      );
       return true;
     } catch (e) {
       debugPrint('FriendChatService.addMembers failed: $e');
@@ -295,7 +348,9 @@ class FriendChatService {
     final api = _api;
     if (api == null || groupId.isEmpty || userId.isEmpty) return false;
     try {
-      await api.delete('/chat-groups/$groupId/members/$userId');
+      await _guarded(
+        expectedUid: userId,
+      ).delete('/chat-groups/$groupId/members/${Uri.encodeComponent(userId)}');
       return true;
     } catch (e) {
       debugPrint('FriendChatService.leaveGroup failed: $e');

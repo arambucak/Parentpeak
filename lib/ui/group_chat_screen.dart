@@ -1,15 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/friend_chat_service.dart';
 import 'package:parentpeak/logic/friendship_service.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
 import 'package:parentpeak/ui/widgets/user_avatar.dart';
@@ -25,6 +23,8 @@ class GroupChatScreen extends StatefulWidget {
     required this.roomId,
     required this.groupName,
     this.photoUrl,
+    this.chatService,
+    this.accountStore,
   });
 
   /// Format: 'group_<id>'.
@@ -33,6 +33,8 @@ class GroupChatScreen extends StatefulWidget {
 
   /// Optionales Gruppen-Foto. Fallback: Gruppen-Icon.
   final String? photoUrl;
+  final FriendChatService? chatService;
+  final ProfileAccountStore? accountStore;
 
   @override
   State<GroupChatScreen> createState() => _GroupChatScreenState();
@@ -45,6 +47,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   List<GroupMember> _members = [];
   bool _isLoading = true;
   Timer? _pollTimer;
+  late final ProfileAccountTicket _chatTicket;
+  bool _chatAccountChanged = false;
+  bool _chatUnavailable = false;
+  bool _chatLoadFailed = false;
+  ProfileAccountStore get _accountStore =>
+      widget.accountStore ?? ProfileAccountStore.instance;
+  FriendChatService get _chatService =>
+      widget.chatService ?? FriendChatService.instance;
 
   String _t(String key) =>
       AppStringsManager.getString(languageService.currentLanguage, key);
@@ -54,11 +64,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       : widget.roomId;
 
   String get _currentUserId {
-    final firebaseUid = FirebaseAuth.instance.currentUser?.uid.trim();
-    if (firebaseUid != null && firebaseUid.isNotEmpty) return firebaseUid;
-    final value = AuthService.instance.currentUser?.uid.trim();
-    if (value != null && value.isNotEmpty) return value;
-    return 'local-parent-user';
+    return _accountStore.userId ?? '';
   }
 
   String get _currentUserName {
@@ -70,6 +76,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void initState() {
     super.initState();
+    _chatTicket = _accountStore.ticket;
+    _accountStore.addListener(_checkChatAccount);
     _loadMembers();
     _loadMessages();
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -77,8 +85,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     });
   }
 
+  void _checkChatAccount() {
+    if (!mounted || _accountStore.isCurrent(_chatTicket)) return;
+    _pollTimer?.cancel();
+    setState(() {
+      _chatAccountChanged = true;
+      _messages.clear();
+      _members = [];
+      _isLoading = false;
+    });
+    _showError(_t('chat_access_unavailable'));
+  }
+
   @override
   void dispose() {
+    _accountStore.removeListener(_checkChatAccount);
     _pollTimer?.cancel();
     _controller.dispose();
     _scrollController.dispose();
@@ -86,39 +107,38 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   Future<void> _loadMembers() async {
-    final members = await FriendChatService.instance.fetchMembers(_groupId);
-    if (!mounted) return;
-    setState(() => _members = members);
-  }
-
-  Future<Map<String, String>> _authHeaders({bool forceRefresh = false}) async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      try {
-        user = await FirebaseAuth.instance
-            .authStateChanges()
-            .firstWhere((u) => u != null)
-            .timeout(const Duration(seconds: 1));
-      } catch (_) {}
-    }
-    if (user == null) {
-      final apiToken = APIConfig.getBackendApiToken();
-      if (apiToken != null && apiToken.isNotEmpty) {
-        return {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiToken',
-        };
-      }
-      return {'Content-Type': 'application/json'};
-    }
     try {
-      final token = await user.getIdToken(forceRefresh);
-      return {
-        'Content-Type': 'application/json',
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      };
-    } catch (_) {
-      return {'Content-Type': 'application/json'};
+      final members = await _chatService.fetchMembers(
+        _groupId,
+        ticket: _chatTicket,
+      );
+      if (!mounted || _chatAccountChanged || _chatUnavailable) return;
+      setState(() => _members = members);
+    } on ProfileAccountChanged {
+      _checkChatAccount();
+    } on BackendApiException catch (error) {
+      if (!mounted || _chatAccountChanged) return;
+      if (error.isForbidden) {
+        _pollTimer?.cancel();
+        setState(() {
+          _chatUnavailable = true;
+          _isLoading = false;
+          _messages.clear();
+          _members = [];
+        });
+      }
+      _showError(
+        _t(
+          error.isForbidden
+              ? 'chat_access_unavailable'
+              : 'friend_chat_request_failed',
+        ),
+      );
+    } catch (error) {
+      debugPrint('Group members load failed: $error');
+      if (mounted && !_chatAccountChanged) {
+        _showError(_t('friend_chat_request_failed'));
+      }
     }
   }
 
@@ -128,47 +148,64 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   Future<void> _loadMessages() async {
-    final base = APIConfig.getBackendBaseUrl();
-    if (base == null) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
+    if (_chatAccountChanged || _chatUnavailable) return;
     try {
-      final uri = Uri.parse(
-        '$base/friend-chat/messages?roomId=${Uri.encodeComponent(widget.roomId)}'
-        '&userId=${Uri.encodeComponent(_currentUserId)}',
+      final msgs = await _chatService.fetchMessages(widget.roomId, _chatTicket);
+      if (!mounted || _chatAccountChanged || _chatUnavailable) return;
+      setState(() {
+        _chatLoadFailed = false;
+        _messages
+          ..clear()
+          ..addAll(
+            msgs.map(
+              (m) => _GroupMsg(
+                id: (m['id'] ?? '').toString(),
+                text: (m['content'] ?? '').toString(),
+                authorUserId: (m['authorUserId'] ?? '').toString(),
+                authorName: (m['authorName'] ?? 'Elternteil').toString(),
+                isMe: m['authorUserId'] == _currentUserId,
+                createdAt: _parseCreatedAt(m['createdAt']),
+              ),
+            ),
+          );
+        _isLoading = false;
+      });
+      _scrollToBottom(animate: false);
+    } on ProfileAccountChanged {
+      _checkChatAccount();
+    } on BackendApiException catch (error) {
+      if (!mounted || _chatAccountChanged) return;
+      if (error.isForbidden) {
+        _pollTimer?.cancel();
+        _messages.clear();
+        _members = [];
+        _chatUnavailable = true;
+      }
+      _showError(
+        _t(
+          error.isForbidden
+              ? 'chat_access_unavailable'
+              : 'friend_chat_request_failed',
+        ),
       );
-      final headers = await _authHeaders();
-      final resp = await http
-          .get(uri, headers: headers)
-          .timeout(const Duration(seconds: 10));
-      if (!mounted) return;
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final body = jsonDecode(resp.body) as Map<String, dynamic>;
-        final msgs = List<Map<String, dynamic>>.from(body['messages'] ?? []);
+      setState(() {
+        _chatLoadFailed = true;
+        _isLoading = false;
+      });
+    } catch (error) {
+      debugPrint('Group chat load failed: $error');
+      if (mounted && !_chatAccountChanged) {
+        _showError(_t('friend_chat_request_failed'));
         setState(() {
-          _messages
-            ..clear()
-            ..addAll(msgs.map((m) => _GroupMsg(
-                  id: (m['id'] ?? '').toString(),
-                  text: (m['content'] ?? '').toString(),
-                  authorUserId: (m['authorUserId'] ?? '').toString(),
-                  authorName: (m['authorName'] ?? 'Elternteil').toString(),
-                  isMe: m['authorUserId'] == _currentUserId,
-                  createdAt: _parseCreatedAt(m['createdAt']),
-                )));
+          _chatLoadFailed = true;
           _isLoading = false;
         });
-        _scrollToBottom(animate: false);
-      } else {
-        setState(() => _isLoading = false);
       }
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _send() async {
+    if (_chatAccountChanged || _chatUnavailable) return;
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
@@ -203,55 +240,42 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   Future<bool> _postMessage(String text) async {
-    final base = APIConfig.getBackendBaseUrl();
-    if (base == null) {
-      _showError('Backend-URL fehlt');
-      return false;
-    }
     try {
-      final headers = await _authHeaders();
-      final resp = await http
-          .post(
-            Uri.parse('$base/friend-chat/messages'),
-            headers: headers,
-            body: jsonEncode({
-              'roomId': widget.roomId,
-              'userId': _currentUserId,
-              'userName': _currentUserName,
-              'content': text,
-            }),
-          )
-          .timeout(const Duration(seconds: 15));
-      if (resp.statusCode == 201) return true;
-      if (resp.statusCode == 401) {
-        final freshHeaders = await _authHeaders(forceRefresh: true);
-        final retry = await http
-            .post(
-              Uri.parse('$base/friend-chat/messages'),
-              headers: freshHeaders,
-              body: jsonEncode({
-                'roomId': widget.roomId,
-                'userId': _currentUserId,
-                'userName': _currentUserName,
-                'content': text,
-              }),
-            )
-            .timeout(const Duration(seconds: 15));
-        if (retry.statusCode == 201) return true;
+      await _chatService.sendMessage(
+        widget.roomId,
+        text,
+        _currentUserName,
+        _chatTicket,
+      );
+      return true;
+    } on ProfileAccountChanged {
+      _checkChatAccount();
+    } on BackendApiException catch (error) {
+      if (mounted && !_chatAccountChanged) {
+        if (error.isForbidden) {
+          _pollTimer?.cancel();
+          setState(() {
+            _chatUnavailable = true;
+            _isLoading = false;
+            _messages.clear();
+            _members = [];
+          });
+        }
         _showError(
-            'Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
-        return false;
+          _t(
+            error.isForbidden
+                ? 'chat_access_unavailable'
+                : 'friend_chat_request_failed',
+          ),
+        );
       }
-      if (resp.statusCode == 403) {
-        _showError(_t('network_group_not_member'));
-        return false;
-      }
-      _showError('Fehler ${resp.statusCode}');
-      return false;
     } catch (e) {
-      _showError('Netzwerkfehler: $e');
-      return false;
+      debugPrint('Group send failed: $e');
+      if (mounted && !_chatAccountChanged) {
+        _showError(_t('friend_chat_request_failed'));
+      }
     }
+    return false;
   }
 
   void _scrollToBottom({bool animate = true}) {
@@ -259,8 +283,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (!_scrollController.hasClients) return;
       final target = _scrollController.position.maxScrollExtent;
       if (animate) {
-        _scrollController.animateTo(target,
-            duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
       } else {
         _scrollController.jumpTo(target);
       }
@@ -269,10 +296,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+    );
   }
 
   // ─── Mitglieder-Verwaltung ─────────────────────────────────────────────────
@@ -295,32 +321,37 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             children: [
               Text(
                 '${_t('network_members')} (${_members.length})',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 12),
-              ..._members.map((m) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: UserAvatar(name: m.memberName, radius: 20),
-                    title: Text(
-                      m.userId == _currentUserId
-                          ? '${m.memberName} (${_t('network_you_label')})'
-                          : m.memberName,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    trailing: m.isOwner
-                        ? Chip(
-                            label: Text(_t('network_owner_label')),
-                            visualDensity: VisualDensity.compact,
-                            backgroundColor:
-                                const Color(0xFF7C3AED).withValues(alpha: 0.1),
-                            labelStyle: const TextStyle(
-                                color: Color(0xFF7C3AED),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700),
-                          )
-                        : null,
-                  )),
+              ..._members.map(
+                (m) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: UserAvatar(name: m.memberName, radius: 20),
+                  title: Text(
+                    m.userId == _currentUserId
+                        ? '${m.memberName} (${_t('network_you_label')})'
+                        : m.memberName,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  trailing: m.isOwner
+                      ? Chip(
+                          label: Text(_t('network_owner_label')),
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor: const Color(
+                            0xFF7C3AED,
+                          ).withValues(alpha: 0.1),
+                          labelStyle: const TextStyle(
+                            color: Color(0xFF7C3AED),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
               const Divider(height: 20),
               FilledButton.icon(
                 onPressed: () {
@@ -333,7 +364,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   backgroundColor: const Color(0xFF0EA5A4),
                   minimumSize: const Size.fromHeight(46),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
@@ -362,77 +394,88 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (sheetCtx) => StatefulBuilder(builder: (sheetCtx, setSheet) {
-        final theme = Theme.of(sheetCtx);
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 4,
-            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 16,
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(_t('network_add_members'),
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 12),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: candidates.map((f) {
-                  return CheckboxListTile(
-                    value: selected.contains(f.uid),
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    secondary: UserAvatar(name: f.name, radius: 20),
-                    title: Text(f.name),
-                    onChanged: (v) => setSheet(() {
-                      if (v == true) {
-                        selected.add(f.uid);
-                      } else {
-                        selected.remove(f.uid);
-                      }
-                    }),
-                  );
-                }).toList(),
-              ),
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (sheetCtx, setSheet) {
+          final theme = Theme.of(sheetCtx);
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 4,
+              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 16,
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: selected.isEmpty
-                    ? null
-                    : () => Navigator.pop(sheetCtx, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF0EA5A4),
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _t('network_add_members'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                child: Text(_t('network_add_members')),
-              ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: candidates.map((f) {
+                      return CheckboxListTile(
+                        value: selected.contains(f.uid),
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        secondary: UserAvatar(name: f.name, radius: 20),
+                        title: Text(f.name),
+                        onChanged: (v) => setSheet(() {
+                          if (v == true) {
+                            selected.add(f.uid);
+                          } else {
+                            selected.remove(f.uid);
+                          }
+                        }),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: selected.isEmpty
+                        ? null
+                        : () => Navigator.pop(sheetCtx, true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF0EA5A4),
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(_t('network_add_members')),
+                  ),
+                ),
+              ],
             ),
-          ]),
-        );
-      }),
+          );
+        },
+      ),
     );
     if (added == true && selected.isNotEmpty) {
+      if (!_accountStore.isCurrent(_chatTicket)) return;
       final names = <String, String>{
         for (final f in FriendshipService.instance.friends)
           if (selected.contains(f.uid)) f.uid: f.name,
       };
-      final ok = await FriendChatService.instance.addMembers(
+      final ok = await _chatService.addMembers(
         groupId: _groupId,
         actingUserId: _currentUserId,
         memberUids: selected.toList(),
         memberNames: names,
       );
+      if (!_accountStore.isCurrent(_chatTicket)) return;
       if (ok) await _loadMembers();
       if (mounted) {
-        _showError(ok
-            ? _t('network_members_added')
-            : _t('network_members_add_failed'));
+        _showError(
+          ok ? _t('network_members_added') : _t('network_members_add_failed'),
+        );
       }
     }
   }
@@ -447,20 +490,28 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         content: Text(_t('network_leave_group_confirm')),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(_t('cancel'))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_t('cancel')),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.error),
+              backgroundColor: theme.colorScheme.error,
+            ),
             child: Text(_t('network_leave_group')),
           ),
         ],
       ),
     );
     if (confirmed == true) {
-      await FriendChatService.instance.leaveGroup(_groupId, _currentUserId);
-      if (mounted) Navigator.pop(context);
+      if (!_accountStore.isCurrent(_chatTicket)) return;
+      final ok = await _chatService.leaveGroup(_groupId, _currentUserId);
+      if (!mounted || !_accountStore.isCurrent(_chatTicket)) return;
+      if (ok) {
+        Navigator.pop(context);
+      } else {
+        _showError(_t('friend_chat_request_failed'));
+      }
     }
   }
 
@@ -474,34 +525,41 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         titleSpacing: 0,
         title: InkWell(
           onTap: _showMembersSheet,
-          child: Row(children: [
-            UserAvatar(
-              name: widget.groupName,
-              photoUrl: widget.photoUrl,
-              isGroup: true,
-              radius: 18,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(widget.groupName,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  if (_members.isNotEmpty)
-                    Text(
-                      '${_members.length} ${_t('network_members')}',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                ],
+          child: Row(
+            children: [
+              UserAvatar(
+                name: widget.groupName,
+                photoUrl: widget.photoUrl,
+                isGroup: true,
+                radius: 18,
               ),
-            ),
-          ]),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.groupName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (_members.isNotEmpty)
+                      Text(
+                        '${_members.length} ${_t('network_members')}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           PopupMenuButton<String>(
@@ -512,30 +570,48 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             },
             itemBuilder: (_) => [
               PopupMenuItem(
-                  value: 'members', child: Text(_t('network_members'))),
+                value: 'members',
+                child: Text(_t('network_members')),
+              ),
               PopupMenuItem(
-                  value: 'add', child: Text(_t('network_add_members'))),
+                value: 'add',
+                child: Text(_t('network_add_members')),
+              ),
               PopupMenuItem(
-                  value: 'leave', child: Text(_t('network_leave_group'))),
+                value: 'leave',
+                child: Text(_t('network_leave_group')),
+              ),
             ],
           ),
         ],
       ),
-      body: Column(children: [
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _messages.isEmpty
-                  ? _emptyState(theme)
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _messages.length,
-                      itemBuilder: (_, i) => _bubble(theme, _messages[i], i),
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _chatUnavailable || _chatLoadFailed
+                ? Center(
+                    child: Text(
+                      _t(
+                        _chatUnavailable
+                            ? 'chat_access_unavailable'
+                            : 'friend_chat_request_failed',
+                      ),
                     ),
-        ),
-        _composer(theme),
-      ]),
+                  )
+                : _messages.isEmpty
+                ? _emptyState(theme)
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(12),
+                    itemCount: _messages.length,
+                    itemBuilder: (_, i) => _bubble(theme, _messages[i], i),
+                  ),
+          ),
+          _composer(theme),
+        ],
+      ),
     );
   }
 
@@ -543,16 +619,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.groups_rounded, size: 48, color: Color(0xFF8B5CF6)),
-          const SizedBox(height: 12),
-          Text(
-            _t('network_group_chat_empty'),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          ),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.groups_rounded,
+              size: 48,
+              color: Color(0xFF8B5CF6),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _t('network_group_chat_empty'),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -577,8 +661,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
-        mainAxisAlignment:
-            m.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: m.isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!m.isMe) ...[
@@ -589,46 +674,53 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             const SizedBox(width: 6),
           ],
           Flexible(
-            child: Column(crossAxisAlignment: align, children: [
-              if (showAuthor)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4, bottom: 2),
-                  child: Text(
-                    m.authorName,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: const Color(0xFF7C3AED),
-                      fontWeight: FontWeight.w700,
+            child: Column(
+              crossAxisAlignment: align,
+              children: [
+                if (showAuthor)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 2),
+                    child: Text(
+                      m.authorName,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: const Color(0xFF7C3AED),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-              Container(
-                constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.72),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: bubbleColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(m.isMe ? 16 : 4),
-                    bottomRight: Radius.circular(m.isMe ? 4 : 16),
+                Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.72,
                   ),
-                ),
-                child: Text(m.text, style: TextStyle(color: textColor)),
-              ),
-              if (m.createdAt != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2, left: 4, right: 4),
-                  child: Text(
-                    m.sending
-                        ? _t('network_sending')
-                        : '${m.createdAt!.hour.toString().padLeft(2, '0')}:${m.createdAt!.minute.toString().padLeft(2, '0')}',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: theme.colorScheme.outline),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
                   ),
+                  decoration: BoxDecoration(
+                    color: bubbleColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(m.isMe ? 16 : 4),
+                      bottomRight: Radius.circular(m.isMe ? 4 : 16),
+                    ),
+                  ),
+                  child: Text(m.text, style: TextStyle(color: textColor)),
                 ),
-            ]),
+                if (m.createdAt != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2, left: 4, right: 4),
+                    child: Text(
+                      m.sending
+                          ? _t('network_sending')
+                          : '${m.createdAt!.hour.toString().padLeft(2, '0')}:${m.createdAt!.minute.toString().padLeft(2, '0')}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -636,40 +728,52 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   Widget _composer(ThemeData theme) {
+    if (_chatAccountChanged || _chatUnavailable) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(_t('chat_access_unavailable')),
+        ),
+      );
+    }
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
-        child: Row(children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _send(),
-              decoration: InputDecoration(
-                hintText: _t('network_message_hint'),
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.4),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                minLines: 1,
+                maxLines: 4,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _send(),
+                decoration: InputDecoration(
+                  hintText: _t('network_message_hint'),
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          FloatingActionButton.small(
-            onPressed: _send,
-            backgroundColor: const Color(0xFF7C3AED),
-            elevation: 0,
-            child: const Icon(Icons.send_rounded, color: Colors.white),
-          ),
-        ]),
+            const SizedBox(width: 8),
+            FloatingActionButton.small(
+              onPressed: _send,
+              backgroundColor: const Color(0xFF7C3AED),
+              elevation: 0,
+              child: const Icon(Icons.send_rounded, color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/friend_chat_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/services/chat_moderation_service.dart';
 import 'package:parentpeak/services/block_report_service.dart';
@@ -19,11 +18,15 @@ class MatchConversationScreen extends StatefulWidget {
     required this.profileId,
     required this.profileName,
     this.isFriendChat = false,
+    this.chatService,
+    this.accountStore,
   });
 
   final String profileId;
   final String profileName;
   final bool isFriendChat;
+  final FriendChatService? chatService;
+  final ProfileAccountStore? accountStore;
 
   @override
   State<MatchConversationScreen> createState() =>
@@ -42,30 +45,25 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   StreamSubscription<Map<String, dynamic>>? _streamSub;
   bool _streamActive = false;
   bool _isLoading = true;
+  late final ProfileAccountTicket _chatTicket;
+  bool _chatAccountChanged = false;
+  bool _chatReadDenied = false;
+  bool _chatLoadFailed = false;
+  ProfileAccountStore get _accountStore => widget.accountStore ?? ProfileAccountStore.instance;
+  FriendChatService get _chatService => widget.chatService ?? FriendChatService.instance;
 
   /// Wenn gesetzt: Der Chat ist Nur-Lese. Der Text wird als ruhiger Hinweis
   /// statt des Eingabefelds angezeigt (Freundschaft entfernt oder blockiert).
   String? _chatDisabledReason;
 
-  /// Liest den Fehler-`code` aus einer JSON-Antwort (z. B. 'not_friends').
-  String? _responseCode(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      if (decoded is Map && decoded['code'] is String) {
-        return decoded['code'] as String;
-      }
-    } catch (_) {}
-    return null;
-  }
-
   /// Schaltet den Chat auf Nur-Lese und setzt einen ruhigen, wertschaetzenden
   /// Hinweis (GfK-Ton, keine Schuldzuweisung). 'blocked' -> Zugriff endet,
   /// 'not_friends' -> Verlauf bleibt lesbar.
   void _applyChatDisabled(String? code) {
-    final reason = code == 'blocked'
-        ? 'Diese Unterhaltung ist nicht mehr verfügbar.'
+    final reason = code != 'not_friends'
+        ? _t('chat_access_unavailable')
         : 'Ihr seid aktuell nicht mehr verbunden. Frühere Nachrichten kannst '
-            'du weiter nachlesen.';
+              'du weiter nachlesen.';
     if (!mounted) return;
     setState(() => _chatDisabledReason = reason);
   }
@@ -112,8 +110,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       if (!_scrollController.hasClients) return;
       final target = _scrollController.position.maxScrollExtent;
       if (animate) {
-        _scrollController.animateTo(target,
-            duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
       } else {
         _scrollController.jumpTo(target);
       }
@@ -121,12 +122,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   }
 
   String get _currentUserId {
-    // Prefer FirebaseAuth (always in sync) over AuthService wrapper
-    final firebaseUid = FirebaseAuth.instance.currentUser?.uid.trim();
-    if (firebaseUid != null && firebaseUid.isNotEmpty) return firebaseUid;
-    final value = AuthService.instance.currentUser?.uid.trim();
-    if (value != null && value.isNotEmpty) return value;
-    return 'local-parent-user';
+    return _accountStore.userId ?? '';
   }
 
   String get _currentUserName {
@@ -157,11 +153,25 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   @override
   void initState() {
     super.initState();
+    _chatTicket = _accountStore.ticket;
+    _accountStore.addListener(_checkChatAccount);
     _loadMessages();
     if (!widget.isFriendChat) _startLiveStream();
     // Auto-poll for new messages every 5 seconds
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted && !_isLoading) _loadMessages();
+    });
+  }
+
+  void _checkChatAccount() {
+    if (!mounted || _accountStore.isCurrent(_chatTicket)) return;
+    _pollTimer?.cancel();
+    _streamSub?.cancel();
+    setState(() {
+      _chatAccountChanged = true;
+      _messages.clear();
+      _isLoading = false;
+      _chatDisabledReason = _t('chat_access_unavailable');
     });
   }
 
@@ -171,50 +181,57 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     _streamSub?.cancel();
     _streamSub = _service
         .streamMessages(profileId: widget.profileId, userId: _currentUserId)
-        .listen((event) {
-      final type = (event['type'] ?? '').toString();
-      if (type == 'ready' || type == 'ping') {
-        if (mounted && !_streamActive) {
-          setState(() => _streamActive = true);
-        }
-        return;
-      }
+        .listen(
+          (event) {
+            final type = (event['type'] ?? '').toString();
+            if (type == 'ready' || type == 'ping') {
+              if (mounted && !_streamActive) {
+                setState(() => _streamActive = true);
+              }
+              return;
+            }
 
-      final item = event['item'];
-      if (item is! Map) return;
-      final content = (item['content'] ?? '').toString().trim();
-      if (content.isEmpty) return;
+            final item = event['item'];
+            if (item is! Map) return;
+            final content = (item['content'] ?? '').toString().trim();
+            if (content.isEmpty) return;
 
-      final id = (item['id'] ?? '').toString();
-      final authorUserId = (item['authorUserId'] ?? '').toString();
-      if (!mounted) return;
+            final id = (item['id'] ?? '').toString();
+            final authorUserId = (item['authorUserId'] ?? '').toString();
+            if (!mounted) return;
 
-      if (_messages.any((msg) => msg.id == id && id.isNotEmpty)) {
-        return;
-      }
+            if (_messages.any((msg) => msg.id == id && id.isNotEmpty)) {
+              return;
+            }
 
-      setState(() {
-        _streamActive = true;
-        _messages.add(_Msg(
-          id: id,
-          text: content,
-          isMe: authorUserId == _currentUserId,
-          createdAt: _parseCreatedAt(item['createdAt']),
-        ));
-      });
-      _scrollToBottom();
-    }, onError: (_) {
-      if (mounted) {
-        setState(() => _streamActive = false);
-      }
-    }, onDone: () {
-      if (mounted) {
-        setState(() => _streamActive = false);
-      }
-    });
+            setState(() {
+              _streamActive = true;
+              _messages.add(
+                _Msg(
+                  id: id,
+                  text: content,
+                  isMe: authorUserId == _currentUserId,
+                  createdAt: _parseCreatedAt(item['createdAt']),
+                ),
+              );
+            });
+            _scrollToBottom();
+          },
+          onError: (_) {
+            if (mounted) {
+              setState(() => _streamActive = false);
+            }
+          },
+          onDone: () {
+            if (mounted) {
+              setState(() => _streamActive = false);
+            }
+          },
+        );
   }
 
   Future<void> _loadMessages() async {
+    if (_chatAccountChanged || _chatReadDenied) return;
     if (widget.isFriendChat) {
       await _loadFriendMessages();
       return;
@@ -225,99 +242,85 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     );
     if (!mounted) return;
     setState(() {
+      _chatLoadFailed = false;
       _messages
         ..clear()
-        ..addAll(items.map((item) {
-          final text = (item['content'] ?? '').toString();
-          final id = (item['id'] ?? '').toString();
-          final authorUserId = (item['authorUserId'] ?? '').toString();
-          return _Msg(
-            id: id,
-            text: text,
-            isMe: authorUserId == _currentUserId,
-            createdAt: _parseCreatedAt(item['createdAt']),
-          );
-        }));
+        ..addAll(
+          items.map((item) {
+            final text = (item['content'] ?? '').toString();
+            final id = (item['id'] ?? '').toString();
+            final authorUserId = (item['authorUserId'] ?? '').toString();
+            return _Msg(
+              id: id,
+              text: text,
+              isMe: authorUserId == _currentUserId,
+              createdAt: _parseCreatedAt(item['createdAt']),
+            );
+          }),
+        );
       _isLoading = false;
     });
     _scrollToBottom(animate: false);
   }
 
   Future<void> _loadFriendMessages() async {
-    final base = APIConfig.getBackendBaseUrl();
-    if (base == null) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
     try {
-      final uri = Uri.parse(
-        '$base/friend-chat/messages?roomId=${Uri.encodeComponent(widget.profileId)}'
-        '&userId=${Uri.encodeComponent(_currentUserId)}',
+      final msgs = await _chatService.fetchMessages(
+        widget.profileId,
+        _chatTicket,
       );
-      final headers = await _authHeaders();
-      final resp = await http
-          .get(uri, headers: headers)
-          .timeout(const Duration(seconds: 10));
-      if (!mounted) return;
-      if (resp.statusCode == 403) {
-        // Blockiert: Zugriff auf den Chat komplett gesperrt.
-        _applyChatDisabled(_responseCode(resp.body) ?? 'blocked');
-        setState(() => _isLoading = false);
-        return;
+      if (!mounted || _chatAccountChanged || _chatReadDenied) return;
+      setState(() {
+        _messages
+          ..clear()
+          ..addAll(
+            msgs.map(
+              (m) => _Msg(
+                id: (m['id'] ?? '').toString(),
+                text: (m['content'] ?? '').toString(),
+                isMe: m['authorUserId'] == _currentUserId,
+                createdAt: _parseCreatedAt(m['createdAt']),
+              ),
+            ),
+          );
+        _isLoading = false;
+      });
+      _scrollToBottom(animate: false);
+    } on ProfileAccountChanged {
+      _checkChatAccount();
+    } on BackendApiException catch (error) {
+      if (!mounted || _chatAccountChanged) return;
+      if (error.isForbidden) {
+        _chatReadDenied = true;
+        _messages.clear();
+        _applyChatDisabled(error.serverCode);
+        _pollTimer?.cancel();
       }
-      if (resp.statusCode == 401) {
-        // Retry without auth — GET may not need it
-        final retryResp = await http.get(uri, headers: {
-          'Content-Type': 'application/json'
-        }).timeout(const Duration(seconds: 10));
-        if (!mounted) return;
-        if (retryResp.statusCode >= 200 && retryResp.statusCode < 300) {
-          final body = jsonDecode(retryResp.body) as Map<String, dynamic>;
-          final msgs = List<Map<String, dynamic>>.from(body['messages'] ?? []);
-          setState(() {
-            _messages
-              ..clear()
-              ..addAll(msgs.map((m) => _Msg(
-                    id: (m['id'] ?? '').toString(),
-                    text: (m['content'] ?? '').toString(),
-                    isMe: m['authorUserId'] == _currentUserId,
-                    createdAt: _parseCreatedAt(m['createdAt']),
-                  )));
-            _isLoading = false;
-          });
-          _scrollToBottom(animate: false);
-          return;
-        }
-        _showError(
-            'Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
-        setState(() => _isLoading = false);
-        return;
-      }
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final body = jsonDecode(resp.body) as Map<String, dynamic>;
-        final msgs = List<Map<String, dynamic>>.from(body['messages'] ?? []);
-        setState(() {
-          _messages
-            ..clear()
-            ..addAll(msgs.map((m) => _Msg(
-                  id: (m['id'] ?? '').toString(),
-                  text: (m['content'] ?? '').toString(),
-                  isMe: m['authorUserId'] == _currentUserId,
-                  createdAt: _parseCreatedAt(m['createdAt']),
-                )));
-          _isLoading = false;
-        });
-        _scrollToBottom(animate: false);
-      } else {
-        setState(() => _isLoading = false);
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      _showError(
+        _t(
+          error.isForbidden
+              ? 'chat_access_unavailable'
+              : 'friend_chat_request_failed',
+        ),
+      );
+      setState(() {
+        _chatLoadFailed = true;
+        _isLoading = false;
+      });
+    } catch (error) {
+      debugPrint('Friend chat load failed: $error');
+      if (!mounted || _chatAccountChanged) return;
+      _showError(_t('friend_chat_request_failed'));
+      setState(() {
+        _chatLoadFailed = true;
+        _isLoading = false;
+      });
     }
   }
 
   @override
   void dispose() {
+    _accountStore.removeListener(_checkChatAccount);
     _pollTimer?.cancel();
     _streamSub?.cancel();
     _controller.dispose();
@@ -326,6 +329,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   }
 
   Future<void> _send() async {
+    if (_chatAccountChanged || _chatDisabledReason != null) return;
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
@@ -337,11 +341,12 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     }
 
     final optimistic = _Msg(
-        id: 'optimistic-${DateTime.now().microsecondsSinceEpoch}',
-        text: text,
-        isMe: true,
-        createdAt: DateTime.now(),
-        sending: true);
+      id: 'optimistic-${DateTime.now().microsecondsSinceEpoch}',
+      text: text,
+      isMe: true,
+      createdAt: DateTime.now(),
+      sending: true,
+    );
 
     setState(() {
       _messages.add(optimistic);
@@ -370,116 +375,47 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     await _loadMessages();
   }
 
-  Future<Map<String, String>> _authHeaders({bool forceRefresh = false}) async {
-    // currentUser can be null on web while Firebase restores the session
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      try {
-        user = await FirebaseAuth.instance
-            .authStateChanges()
-            .firstWhere((u) => u != null)
-            .timeout(const Duration(seconds: 1));
-      } catch (_) {}
-    }
-    if (user == null) {
-      // Fallback: use backend API token if Firebase session is lost
-      final apiToken = APIConfig.getBackendApiToken();
-      if (apiToken != null && apiToken.isNotEmpty) {
-        return {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiToken',
-        };
-      }
-      return {'Content-Type': 'application/json'};
-    }
-    try {
-      final token = await user.getIdToken(forceRefresh);
-      return {
-        'Content-Type': 'application/json',
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      };
-    } catch (_) {
-      return {'Content-Type': 'application/json'};
-    }
-  }
-
-  bool _isSuspendedResponse(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      return decoded is Map && decoded['code'] == 'account_suspended';
-    } catch (_) {
-      return false;
-    }
-  }
-
   Future<Map<String, dynamic>?> _sendFriendMessage(String text) async {
-    final base = APIConfig.getBackendBaseUrl();
-    if (base == null) {
-      _showError('Backend-URL fehlt');
-      return null;
-    }
     try {
-      final headers = await _authHeaders();
-      final resp = await http
-          .post(
-            Uri.parse('$base/friend-chat/messages'),
-            headers: headers,
-            body: jsonEncode({
-              'roomId': widget.profileId,
-              'userId': _currentUserId,
-              'userName': _currentUserName,
-              'content': text,
-            }),
-          )
-          .timeout(const Duration(seconds: 15));
-      if (resp.statusCode == 201) {
-        final body = jsonDecode(resp.body) as Map<String, dynamic>;
-        return body['item'] as Map<String, dynamic>?;
+      return await _chatService.sendMessage(
+        widget.profileId,
+        text,
+        _currentUserName,
+        _chatTicket,
+      );
+    } on ProfileAccountChanged {
+      _checkChatAccount();
+    } on SuspendedAccountException {
+      if (mounted && !_chatAccountChanged) {
+        await showAccountSuspendedNotice(context);
       }
-      if (resp.statusCode == 403 && _isSuspendedResponse(resp.body)) {
-        if (mounted) await showAccountSuspendedNotice(context);
-        return null;
-      }
-      if (resp.statusCode == 403) {
-        // Freundschaft entfernt (not_friends) oder blockiert (blocked):
-        // Chat auf Nur-Lese umstellen + freundlichen Hinweis anzeigen.
-        _applyChatDisabled(_responseCode(resp.body));
-        return null;
-      }
-      if (resp.statusCode == 401) {
-        // Retry once with forced token refresh
-        final freshHeaders = await _authHeaders(forceRefresh: true);
-        if (!freshHeaders.containsKey('Authorization')) {
-          _showError(
-              'Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
-          return null;
+    } on BackendApiException catch (error) {
+      if (!mounted || _chatAccountChanged) return null;
+      if (error.isForbidden) {
+        _applyChatDisabled(error.serverCode);
+        if (error.serverCode != 'not_friends') {
+          _chatReadDenied = true;
+          setState(() {
+            _messages.clear();
+            _isLoading = false;
+          });
+          _pollTimer?.cancel();
         }
-        final retryResp = await http
-            .post(
-              Uri.parse('$base/friend-chat/messages'),
-              headers: freshHeaders,
-              body: jsonEncode({
-                'roomId': widget.profileId,
-                'userId': _currentUserId,
-                'userName': _currentUserName,
-                'content': text,
-              }),
-            )
-            .timeout(const Duration(seconds: 15));
-        if (retryResp.statusCode == 201) {
-          final body = jsonDecode(retryResp.body) as Map<String, dynamic>;
-          return body['item'] as Map<String, dynamic>?;
-        }
-        _showError(
-            'Sitzung abgelaufen — bitte Seite neu laden oder erneut einloggen.');
-      } else {
-        _showError('Fehler ${resp.statusCode}');
       }
-      return null;
+      _showError(
+        _t(
+          error.isForbidden
+              ? 'chat_access_unavailable'
+              : 'friend_chat_request_failed',
+        ),
+      );
     } catch (e) {
-      _showError('Netzwerkfehler: $e');
-      return null;
+      debugPrint('Friend chat send failed: $e');
+      if (mounted && !_chatAccountChanged) {
+        _showError(_t('friend_chat_request_failed'));
+      }
     }
+    return null;
   }
 
   void _showBlockDialog() {
@@ -489,27 +425,36 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('${widget.profileName} blockieren?'),
         content: const Text(
-            'Blockierte Personen können dir keine Nachrichten mehr senden und sehen dein Profil nicht. Du kannst die Blockierung jederzeit aufheben.'),
+          'Blockierte Personen können dir keine Nachrichten mehr senden und sehen dein Profil nicht. Du kannst die Blockierung jederzeit aufheben.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(_t('cancel')),
+          ),
           FilledButton(
             onPressed: () async {
-              await BlockReportService.instance
-                  .blockUser(_otherPartyId, widget.profileName);
+              await BlockReportService.instance.blockUser(
+                _otherPartyId,
+                widget.profileName,
+              );
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
                 Navigator.pop(context); // Close chat
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('${widget.profileName} wurde blockiert.'),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${widget.profileName} wurde blockiert.'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
               }
             },
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFDC2626)),
+              backgroundColor: const Color(0xFFDC2626),
+            ),
             child: Text(_t('convo_block')),
           ),
         ],
@@ -526,28 +471,40 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
                   color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 16),
-            Text(_t('convo_report_user'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            Text(_t('conversation_report_reason')
-              .replaceAll('{name}', widget.profileName),
-                style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-            const SizedBox(height: 16),
-            _reportOption(ctx, 'Beleidigung / Hassrede', 'insult'),
-            _reportOption(ctx, 'Spam / Werbung', 'spam'),
-            _reportOption(ctx, 'Unangemessene Inhalte', 'inappropriate'),
-            _reportOption(ctx, 'Betrug / Fake-Profil', 'fraud'),
-            _reportOption(ctx, 'Sonstiges', 'other'),
-          ]),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _t('convo_report_user'),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _t(
+                  'conversation_report_reason',
+                ).replaceAll('{name}', widget.profileName),
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              _reportOption(ctx, 'Beleidigung / Hassrede', 'insult'),
+              _reportOption(ctx, 'Spam / Werbung', 'spam'),
+              _reportOption(ctx, 'Unangemessene Inhalte', 'inappropriate'),
+              _reportOption(ctx, 'Betrug / Fake-Profil', 'fraud'),
+              _reportOption(ctx, 'Sonstiges', 'other'),
+            ],
+          ),
         ),
       ),
     );
@@ -568,20 +525,31 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           reason: reason,
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Row(children: [
-              const Icon(Icons.check_circle_rounded,
-                  color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: Text(result.message,
-                      style: const TextStyle(fontSize: 13))),
-            ]),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF16A34A),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      result.message,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFF16A34A),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
         }
       },
     );
@@ -598,8 +566,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.lock_outline_rounded,
-              size: 18, color: theme.colorScheme.outline),
+          Icon(
+            Icons.lock_outline_rounded,
+            size: 18,
+            color: theme.colorScheme.outline,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -626,12 +597,16 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color:
-                    theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.waving_hand_rounded,
-                  size: 32, color: theme.colorScheme.primary),
+              child: Icon(
+                Icons.waving_hand_rounded,
+                size: 32,
+                color: theme.colorScheme.primary,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -667,10 +642,9 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           _controller.text = text;
           _send();
         },
-        backgroundColor: Theme.of(context)
-            .colorScheme
-            .primaryContainer
-            .withValues(alpha: 0.3),
+        backgroundColor: Theme.of(
+          context,
+        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
@@ -679,17 +653,19 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      duration: const Duration(seconds: 8),
-      action: msg.contains('Sitzung') || msg.contains('einloggen')
-          ? SnackBarAction(
-              label: 'Seite neu laden',
-              textColor: Colors.white,
-              onPressed: () => _loadMessages(),
-            )
-          : null,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        duration: const Duration(seconds: 8),
+        action: msg.contains('Sitzung') || msg.contains('einloggen')
+            ? SnackBarAction(
+                label: 'Seite neu laden',
+                textColor: Colors.white,
+                onPressed: () => _loadMessages(),
+              )
+            : null,
+      ),
+    );
   }
 
   @override
@@ -719,13 +695,20 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.profileName,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
-                  Text(_t('convo_parent_network'),
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: theme.colorScheme.onSurfaceVariant)),
+                  Text(
+                    widget.profileName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    _t('convo_parent_network'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -734,8 +717,9 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded, size: 20),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             onSelected: (value) {
               if (value == 'block') _showBlockDialog();
               if (value == 'report') _showReportSheet();
@@ -743,28 +727,43 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             },
             itemBuilder: (_) => [
               PopupMenuItem(
-                  value: 'refresh',
-                  child: Row(children: [
+                value: 'refresh',
+                child: Row(
+                  children: [
                     const Icon(Icons.refresh_rounded, size: 18),
                     const SizedBox(width: 8),
                     Text(_t('convo_refresh')),
-                  ])),
+                  ],
+                ),
+              ),
               PopupMenuItem(
-                  value: 'report',
-                  child: Row(children: [
-                    const Icon(Icons.flag_rounded,
-                        size: 18, color: Color(0xFFEA580C)),
+                value: 'report',
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.flag_rounded,
+                      size: 18,
+                      color: Color(0xFFEA580C),
+                    ),
                     const SizedBox(width: 8),
                     Text(_t('chat_report')),
-                  ])),
+                  ],
+                ),
+              ),
               PopupMenuItem(
-                  value: 'block',
-                  child: Row(children: [
-                    const Icon(Icons.block_rounded,
-                        size: 18, color: Color(0xFFDC2626)),
+                value: 'block',
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.block_rounded,
+                      size: 18,
+                      color: Color(0xFFDC2626),
+                    ),
                     const SizedBox(width: 8),
                     Text(_t('convo_block')),
-                  ])),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -774,159 +773,171 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : _chatLoadFailed
+                ? Center(child: Text(_t(_chatReadDenied
+                    ? 'chat_access_unavailable' : 'friend_chat_request_failed')))
                 : _messages.isEmpty
-                    ? _buildEmptyState(theme)
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = _messages[index];
-                          final isMe = msg.isMe;
-                          final showAvatar = !isMe &&
-                              (index == 0 ||
-                                  _messages[index - 1].isMe != msg.isMe);
-                          final separator = _needsDaySeparator(index)
-                              ? _formatDaySeparator(msg.createdAt!)
-                              : null;
+                ? _buildEmptyState(theme)
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = _messages[index];
+                      final isMe = msg.isMe;
+                      final showAvatar =
+                          !isMe &&
+                          (index == 0 || _messages[index - 1].isMe != msg.isMe);
+                      final separator = _needsDaySeparator(index)
+                          ? _formatDaySeparator(msg.createdAt!)
+                          : null;
 
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Datums-Trenner (Heute / Gestern / Datum)
-                              if (separator != null)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                  child: Center(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: theme
-                                            .colorScheme.surfaceContainerHighest
-                                            .withValues(alpha: 0.7),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(separator,
-                                          style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: theme.colorScheme
-                                                  .onSurfaceVariant)),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Datums-Trenner (Heute / Gestern / Datum)
+                          if (separator != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme
+                                        .colorScheme
+                                        .surfaceContainerHighest
+                                        .withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    separator,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ),
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: 6,
-                                  left: isMe ? 48 : 0,
-                                  right: isMe ? 0 : 48,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: isMe
-                                      ? MainAxisAlignment.end
-                                      : MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    if (!isMe && showAvatar)
-                                      CircleAvatar(
-                                        radius: 14,
-                                        backgroundColor:
-                                            theme.colorScheme.primaryContainer,
-                                        child: Text(
-                                          widget.profileName.isNotEmpty
-                                              ? widget.profileName[0]
-                                                  .toUpperCase()
-                                              : '?',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w700,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                        ),
-                                      )
-                                    else if (!isMe)
-                                      const SizedBox(width: 28),
-                                    if (!isMe) const SizedBox(width: 8),
-                                    Flexible(
-                                      child: Column(
-                                        crossAxisAlignment: isMe
-                                            ? CrossAxisAlignment.end
-                                            : CrossAxisAlignment.start,
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 14, vertical: 10),
-                                            decoration: BoxDecoration(
-                                              color: isMe
-                                                  ? theme.colorScheme.primary
-                                                  : theme.colorScheme
-                                                      .surfaceContainerHighest,
-                                              borderRadius: BorderRadius.only(
-                                                topLeft:
-                                                    const Radius.circular(16),
-                                                topRight:
-                                                    const Radius.circular(16),
-                                                bottomLeft: Radius.circular(
-                                                    isMe ? 16 : 4),
-                                                bottomRight: Radius.circular(
-                                                    isMe ? 4 : 16),
-                                              ),
-                                            ),
-                                            child: Text(
-                                              msg.text,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: isMe
-                                                    ? Colors.white
-                                                    : theme
-                                                        .colorScheme.onSurface,
-                                                height: 1.4,
-                                              ),
-                                            ),
-                                          ),
-                                          // Uhrzeit + 'gesendet'-Haekchen
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                top: 3, left: 4, right: 4),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                if (msg.createdAt != null)
-                                                  Text(
-                                                    _formatTime(msg.createdAt!),
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: theme.colorScheme
-                                                          .onSurfaceVariant,
-                                                    ),
-                                                  ),
-                                                if (isMe) ...[
-                                                  const SizedBox(width: 3),
-                                                  Icon(
-                                                    msg.sending
-                                                        ? Icons
-                                                            .access_time_rounded
-                                                        : Icons.check_rounded,
-                                                    size: 12,
-                                                    color: theme.colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                              ),
+                            ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              bottom: 6,
+                              left: isMe ? 48 : 0,
+                              right: isMe ? 0 : 48,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: isMe
+                                  ? MainAxisAlignment.end
+                                  : MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (!isMe && showAvatar)
+                                  CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor:
+                                        theme.colorScheme.primaryContainer,
+                                    child: Text(
+                                      widget.profileName.isNotEmpty
+                                          ? widget.profileName[0].toUpperCase()
+                                          : '?',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: theme.colorScheme.primary,
                                       ),
                                     ),
-                                  ],
+                                  )
+                                else if (!isMe)
+                                  const SizedBox(width: 28),
+                                if (!isMe) const SizedBox(width: 8),
+                                Flexible(
+                                  child: Column(
+                                    crossAxisAlignment: isMe
+                                        ? CrossAxisAlignment.end
+                                        : CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isMe
+                                              ? theme.colorScheme.primary
+                                              : theme
+                                                    .colorScheme
+                                                    .surfaceContainerHighest,
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: const Radius.circular(16),
+                                            topRight: const Radius.circular(16),
+                                            bottomLeft: Radius.circular(
+                                              isMe ? 16 : 4,
+                                            ),
+                                            bottomRight: Radius.circular(
+                                              isMe ? 4 : 16,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          msg.text,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: isMe
+                                                ? Colors.white
+                                                : theme.colorScheme.onSurface,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                      // Uhrzeit + 'gesendet'-Haekchen
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 3,
+                                          left: 4,
+                                          right: 4,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (msg.createdAt != null)
+                                              Text(
+                                                _formatTime(msg.createdAt!),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ),
+                                            if (isMe) ...[
+                                              const SizedBox(width: 3),
+                                              Icon(
+                                                msg.sending
+                                                    ? Icons.access_time_rounded
+                                                    : Icons.check_rounded,
+                                                size: 12,
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
           ),
           // Suggestion chips when empty or few messages
           if (_messages.length < 3)
@@ -976,7 +987,9 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                                 borderSide: BorderSide.none,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 18, vertical: 12),
+                                horizontal: 18,
+                                vertical: 12,
+                              ),
                               isDense: true,
                             ),
                             onSubmitted: (_) => _send(),
@@ -992,8 +1005,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
                           ),
                           child: IconButton(
                             onPressed: _send,
-                            icon: const Icon(Icons.send_rounded,
-                                size: 18, color: Colors.white),
+                            icon: const Icon(
+                              Icons.send_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ],

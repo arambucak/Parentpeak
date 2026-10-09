@@ -162,9 +162,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       _loadingMatches = false;
       _matchesErrorKey = null;
       _matchRequest++;
+      _conversations = [];
+      _loadingConversations = false;
       _profileStatus = PlaymateProfileStatus.unavailable;
     });
     unawaited(_refreshProfile());
+    unawaited(_loadConversations());
   }
 
   Future<void> _refreshProfile() async {
@@ -248,18 +251,28 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   /// Lädt die Messenger-Übersicht (alle Unterhaltungen) für den Chats-Tab.
   Future<void> _loadConversations() async {
+    final ticket = ProfileAccountStore.instance.ticket;
     final uid = AuthService.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) {
       if (mounted) setState(() => _loadingConversations = false);
       return;
     }
     if (mounted) setState(() => _loadingConversations = true);
-    final list = await FriendChatService.instance.fetchOverview(uid);
-    if (!mounted) return;
-    setState(() {
-      _conversations = list;
-      _loadingConversations = false;
-    });
+    try {
+      final list = await FriendChatService.instance.fetchOverview(uid);
+      if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) return;
+      setState(() {
+        _conversations = list;
+        _loadingConversations = false;
+      });
+    } catch (error) {
+      debugPrint('Chat overview failed: $error');
+      if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) return;
+      setState(() => _loadingConversations = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_t('friend_chat_request_failed'))),
+      );
+    }
   }
 
   /// Öffnet eine Unterhaltung und markiert sie als gelesen.
@@ -269,6 +282,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     required bool isGroup,
     String? photoUrl,
   }) async {
+    final ticket = ProfileAccountStore.instance.ticket;
     final uid = AuthService.instance.currentUser?.uid ?? '';
     await Navigator.push(
       context,
@@ -287,8 +301,17 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       ),
     );
     // Nach Rückkehr: als gelesen markieren und Übersicht aktualisieren.
+    if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) return;
     if (uid.isNotEmpty) {
-      await FriendChatService.instance.markRead(roomId, uid);
+      try {
+        await FriendChatService.instance.markRead(roomId, uid);
+      } catch (error) {
+        debugPrint('Chat read marker failed: $error');
+        if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('friend_chat_request_failed'))),
+        );
+      }
     }
     await _loadConversations();
   }
@@ -690,6 +713,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     String title, {
     required bool forAll,
   }) async {
+    final ticket = ProfileAccountStore.instance.ticket;
     final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
@@ -720,13 +744,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !ProfileAccountStore.instance.isCurrent(ticket)) return;
     final uid = AuthService.instance.currentUser?.uid ?? '';
     if (uid.isEmpty) return;
     final ok = forAll
         ? await FriendChatService.instance.deleteForAll(c.roomId, uid)
         : await FriendChatService.instance.clearForMe(c.roomId, uid);
-    if (!mounted) return;
+    if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok ? _t('chat_deleted') : _t('chat_delete_failed')),
@@ -1151,6 +1175,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     List<Friend> friends,
     Uint8List? photoBytes,
   ) async {
+    final ticket = ProfileAccountStore.instance.ticket;
     final uid = AuthService.instance.currentUser?.uid;
     if (uid == null || uid.isEmpty) return false;
     final ownerName =
@@ -1166,6 +1191,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       final url = await FriendChatService.instance.uploadGroupPhoto(photoBytes);
       if (url != null) photoUrl = url;
     }
+    if (!ProfileAccountStore.instance.isCurrent(ticket)) return false;
     final group = await FriendChatService.instance.createGroup(
       name: name,
       ownerUserId: uid,
@@ -1174,7 +1200,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       memberNames: memberNames,
       photoUrl: photoUrl,
     );
-    if (!mounted) return false;
+    if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) return false;
     if (group == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -68,6 +68,17 @@ Future<String?> _forceRefreshFirebaseIdToken() async {
 }
 
 class BackendServiceFactory {
+  static BackendApiClient? createVerifiedApiClient() {
+    final baseUrl = APIConfig.getBackendBaseUrl();
+    if (baseUrl == null || baseUrl.isEmpty) return null;
+    return BackendApiClient(
+      baseUrl: baseUrl,
+      authTokenProvider: _getFirebaseIdToken,
+      forceRefreshTokenProvider: _forceRefreshFirebaseIdToken,
+      requireAuthToken: true,
+    );
+  }
+
   static BackendApiClient? createApiClient() {
     final baseUrl = APIConfig.getBackendBaseUrl();
     if (baseUrl == null || baseUrl.isEmpty) {
