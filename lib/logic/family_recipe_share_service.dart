@@ -16,7 +16,10 @@ class FamilyRecipeShareService {
   static final FamilyRecipeShareService instance = FamilyRecipeShareService._();
   FamilyRecipeShareService._();
 
-  final BackendApiClient? _api = BackendServiceFactory.createApiClient();
+  // Verifizierter Client: private Familien-/Freundesrezepte sind owner-geprüft,
+  // daher ist ein echtes Firebase-Token erforderlich (kein statischer Fallback).
+  final BackendApiClient? _api =
+      BackendServiceFactory.createVerifiedApiClient();
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
   String get _myName =>
@@ -31,10 +34,13 @@ class FamilyRecipeShareService {
     final uid = _uid;
     if (api == null || uid == null || uid.isEmpty) return [];
     try {
+      // Die Identität bestimmt der Server aus dem Firebase-Token; kein
+      // userId-Claim mehr in der URL (würde serverseitig 403 auslösen, falls er
+      // abweicht).
       final q = query.trim();
       final path = q.isEmpty
-          ? '/api/recipes?userId=${Uri.encodeComponent(uid)}'
-          : '/api/recipes?userId=${Uri.encodeComponent(uid)}&q=${Uri.encodeComponent(q)}';
+          ? '/api/recipes'
+          : '/api/recipes?q=${Uri.encodeComponent(q)}';
       final res = await api.getJson(path);
       if (res is Map<String, dynamic> && res['recipes'] is List) {
         return (res['recipes'] as List)
