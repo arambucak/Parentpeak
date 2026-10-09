@@ -3,11 +3,23 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     // Verschenkmarkt Bilder — nur eingeloggte User uploaden, alle lesen
-    match /treasures/{allPaths=**} {
+    match /treasures/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   // Recursive v2 matches also include zero segments: exclude legacy objects.
+                   && request.resource.name.matches('treasures/[^/]+/.+')
                    && request.resource.size < 10 * 1024 * 1024  // Max 10MB
                    && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null
+                    && request.auth.uid == userId
+                    && resource.name.matches('treasures/[^/]+/.+');
+    }
+
+    // Flacher Altbestand bleibt lesbar, aber unveraenderlich.
+    match /treasures/{fileName} {
+      allow read: if true;
+      allow write, delete: if false;
     }
 
     // Profil-Bilder — nur eigener User
@@ -16,14 +28,6 @@ service firebase.storage {
       allow write: if request.auth != null
                    && request.auth.uid == userId
                    && request.resource.size < 5 * 1024 * 1024  // Max 5MB
-                   && request.resource.contentType.matches('image/.*');
-    }
-
-    // Event-Bilder — nur eingeloggte User
-    match /events/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null
-                   && request.resource.size < 10 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
     }
 
