@@ -6105,25 +6105,28 @@ app.get('/account/export-data', requireVerifiedUser, async (req, res) => {
   }
 });
 
-app.get('/entitlements/:userId/status', (req, res) => {
-  const userId = (req.params.userId || '').toString().trim();
-  if (!userId) {
-    return res.status(400).json({ error: 'userId ist erforderlich' });
+app.get('/entitlements/:userId/status', requireVerifiedUser, (req, res) => {
+  // Owner-Binding: der Pfad-:userId muss die verifizierte Token-UID sein.
+  const userId = req.firebaseUid;
+  if (req.params.userId && req.params.userId !== userId) {
+    return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt', code: 'not_owner' });
   }
 
-  const hintPremium = `${req.query.isPremium || ''}`.toLowerCase() === 'true';
+  // WICHTIG: Ein GET darf keinen Premium-Zustand setzen. Der frühere
+  // isPremium-Query-Hint wird bewusst ignoriert; Premium wird ausschliesslich
+  // serverseitig (Webhook/Admin) vergeben. registeredAt dient nur der
+  // Trial-Berechnung und kann den gespeicherten Wert nur nach vorne ziehen.
   const record = ensureEntitlement(userId, {
     registeredAt: req.query.registeredAt,
-    isPremium: hintPremium,
   });
   const item = buildEntitlementStatus(record);
   return res.json({ item });
 });
 
-app.post('/entitlements/:userId/activate-premium', (req, res) => {
-  const userId = (req.params.userId || '').toString().trim();
-  if (!userId) {
-    return res.status(400).json({ error: 'userId ist erforderlich' });
+app.post('/entitlements/:userId/activate-premium', requireVerifiedUser, (req, res) => {
+  const userId = req.firebaseUid;
+  if (req.params.userId && req.params.userId !== userId) {
+    return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt', code: 'not_owner' });
   }
 
   const record = ensureEntitlement(userId, {
@@ -8482,8 +8485,11 @@ app.post('/api/recipes', async (req, res) => {
 // Rezept-Liste fuer einen Nutzer: eigene + oeffentliche + von bestaetigten
 // Freunden. Sichtbarkeit wird SERVERSEITIG durchgesetzt. Optional: Suche (q)
 // ueber Titel/Beschreibung/Zutaten und Filter-Tags.
-app.get('/api/recipes', async (req, res) => {
-  const uid = (req.query.userId || '').toString().trim();
+app.get('/api/recipes', requireVerifiedUser, async (req, res) => {
+  // Identitaet aus verifiziertem Token; eine abweichende query.userId wird
+  // bereits von requireVerifiedUser mit 403 abgelehnt. Der oeffentliche
+  // Rezept-Feed laeuft ueber /api/food-feed/recipes und ist davon unberuehrt.
+  const uid = req.firebaseUid;
   const q = (req.query.q || '').toString().trim().toLowerCase();
   try {
     await ensureSocialSchemaReady();
@@ -8530,9 +8536,9 @@ app.get('/api/recipes', async (req, res) => {
 });
 
 // Einzelnes Rezept (mit Sichtbarkeitspruefung).
-app.get('/api/recipes/:id', async (req, res) => {
+app.get('/api/recipes/:id', requireVerifiedUser, async (req, res) => {
   const id = (req.params.id || '').toString().trim();
-  const uid = (req.query.userId || '').toString().trim();
+  const uid = req.firebaseUid;
   if (!id) return res.status(400).json({ error: 'id erforderlich' });
   try {
     await ensureSocialSchemaReady();

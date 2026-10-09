@@ -171,7 +171,9 @@ class AuthService with ChangeNotifier {
   // Singleton
   static final AuthService instance = AuthService._();
   AuthService._()
-      : _apiClient = BackendServiceFactory.createApiClient(),
+      // Entitlement-Routen sind owner-geprüft (Pfad-UID == Token-UID), daher der
+      // verifizierte Client mit erzwungenem Firebase-Token.
+      : _apiClient = BackendServiceFactory.createVerifiedApiClient(),
         _injectedFirebase = false;
 
   @visibleForTesting
@@ -207,44 +209,58 @@ class AuthService with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       try {
         final firebaseUser = auth.currentUser ??
-            await auth.authStateChanges().first.timeout(const Duration(seconds: 10));
+            await auth
+                .authStateChanges()
+                .first
+                .timeout(const Duration(seconds: 10));
         if (epoch != _sessionEpoch) return;
         if (firebaseUser == null) {
           await logout();
           return;
         }
         final raw = prefs.getString(_kUserKey);
-        final expectedUid = raw == null ? null
+        final expectedUid = raw == null
+            ? null
             : ParentUser.fromJson(jsonDecode(raw) as Map<String, dynamic>).uid;
         if (expectedUid != null && expectedUid != firebaseUser.uid) {
-          throw StateError('Restored Firebase UID does not match the local session owner');
+          throw StateError(
+              'Restored Firebase UID does not match the local session owner');
         }
         await firebaseUser.reload();
         final refreshed = auth.currentUser;
-        if (refreshed == null || refreshed.uid != firebaseUser.uid ||
+        if (refreshed == null ||
+            refreshed.uid != firebaseUser.uid ||
             !refreshed.emailVerified) {
-          throw StateError('Restored Firebase session is missing or unverified');
+          throw StateError(
+              'Restored Firebase session is missing or unverified');
         }
         final token = await refreshed.getIdTokenResult(true);
         final tokenOwner = token.claims?['sub'] ?? token.claims?['user_id'];
-        if (token.token?.isNotEmpty != true || tokenOwner != refreshed.uid ||
+        if (token.token?.isNotEmpty != true ||
+            tokenOwner != refreshed.uid ||
             token.expirationTime == null ||
             !token.expirationTime!.isAfter(DateTime.now()) ||
             auth.currentUser?.uid != refreshed.uid) {
-          throw StateError('Restored Firebase token is invalid or belongs to another account');
+          throw StateError(
+              'Restored Firebase token is invalid or belongs to another account');
         }
         if (epoch != _sessionEpoch) return;
         final restored = await _readOrCreateFirebaseUser(refreshed);
-        if (epoch != _sessionEpoch || auth.currentUser?.uid != restored.uid) return;
+        if (epoch != _sessionEpoch || auth.currentUser?.uid != restored.uid) {
+          return;
+        }
         await _persistSession(prefs, restored);
-        if (epoch != _sessionEpoch || auth.currentUser?.uid != restored.uid) return;
+        if (epoch != _sessionEpoch || auth.currentUser?.uid != restored.uid) {
+          return;
+        }
         _currentUser = restored;
         notifyListeners();
         _watchFirebaseSession();
         await refreshEntitlements();
         _triggerFcmInit(restored.uid);
       } catch (error) {
-        _logIgnoredError('AuthService.initialize(): Firebase session rejected', error);
+        _logIgnoredError(
+            'AuthService.initialize(): Firebase session rejected', error);
         if (epoch == _sessionEpoch) await logout();
       }
       return;
@@ -741,7 +757,6 @@ class AuthService with ChangeNotifier {
       } catch (e) {
         _logIgnoredError('AuthService._triggerFcmInit(): FCM init skipped', e);
       }
-
     });
   }
 
@@ -784,7 +799,8 @@ class AuthService with ChangeNotifier {
       try {
         await NotificationService.instance.endAccountSession();
       } catch (error) {
-        _logIgnoredError('AuthService.logout(): notification cleanup failed', error);
+        _logIgnoredError(
+            'AuthService.logout(): notification cleanup failed', error);
       }
     }
     final prefs = await SharedPreferences.getInstance();
@@ -987,8 +1003,10 @@ class AuthService with ChangeNotifier {
     }
 
     try {
+      // Kein isPremium-Hint mehr: Premium wird ausschliesslich serverseitig
+      // vergeben; ein GET darf den Zustand nicht setzen.
       final payload = await _apiClient!.getJson(
-        '${APIConfig.getBackendEntitlementsPath()}/${current.uid}/status?registeredAt=${Uri.encodeQueryComponent(current.registeredAt.toIso8601String())}&isPremium=${current.isPremium}',
+        '${APIConfig.getBackendEntitlementsPath()}/${current.uid}/status?registeredAt=${Uri.encodeQueryComponent(current.registeredAt.toIso8601String())}',
       );
 
       final raw = payload is Map<String, dynamic>
