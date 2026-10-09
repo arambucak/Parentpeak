@@ -94,11 +94,11 @@ class BackendServiceFactory {
   }
 
   static TodoBackendService createTodoService() {
-    return TodoBackendService(apiClient: createApiClient());
+    return TodoBackendService(apiClient: createVerifiedApiClient());
   }
 
   static ShoppingBackendService createShoppingService() {
-    return ShoppingBackendService(apiClient: createApiClient());
+    return ShoppingBackendService(apiClient: createVerifiedApiClient());
   }
 
   static CalendarBackendService createCalendarService() {

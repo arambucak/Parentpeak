@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
-import 'package:parentpeak/config/api_config.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/todo_backend_service.dart';
 
 class TodoScreen extends StatefulWidget {
-  const TodoScreen({super.key});
+  const TodoScreen({super.key, this.todoService, this.accountStore});
+  final TodoBackendService? todoService;
+  final ProfileAccountStore? accountStore;
 
   @override
   State<TodoScreen> createState() => _TodoScreenState();
 }
 
 class _TodoScreenState extends State<TodoScreen> {
-  final TodoBackendService _todoService =
-      BackendServiceFactory.createTodoService();
+  late final TodoBackendService _todoService;
+  ProfileAccountStore get _accountStore => widget.accountStore ?? ProfileAccountStore.instance;
+  int _loadRequest = 0;
   List<Map<String, dynamic>> _todos = [];
   bool _loading = true;
   String? _syncError;
@@ -23,21 +26,45 @@ class _TodoScreenState extends State<TodoScreen> {
   @override
   void initState() {
     super.initState();
+    _todoService = widget.todoService ?? BackendServiceFactory.createTodoService();
+    _accountStore.addListener(_onAccountChanged);
+    _loadTodos();
+  }
+
+  void _onAccountChanged() {
+    if (!mounted) return;
+    setState(() {
+      _todos = [];
+      _controller.clear();
+      _syncError = null;
+      _loading = true;
+    });
     _loadTodos();
   }
 
   Future<void> _loadTodos() async {
-    final todos = await _todoService.fetchTodos();
-    if (!mounted) return;
-    setState(() {
-      _todos = todos;
-      _loading = false;
-      _syncError = _todoService.lastSyncError;
-    });
+    final ticket = _accountStore.ticket;
+    final request = ++_loadRequest;
+    try {
+      final todos = await _todoService.fetchTodos(ticket: ticket);
+      if (!mounted || !_accountStore.isCurrent(ticket) || request != _loadRequest) return;
+      setState(() {
+        _todos = todos;
+        _loading = false;
+        _syncError = null;
+      });
+    } catch (error) {
+      if (!mounted || !_accountStore.isCurrent(ticket) || request != _loadRequest) return;
+      setState(() {
+        _loading = false;
+        _syncError = _todoService.lastSyncError ?? error.toString();
+      });
+    }
   }
 
   @override
   void dispose() {
+    _accountStore.removeListener(_onAccountChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -45,20 +72,22 @@ class _TodoScreenState extends State<TodoScreen> {
   Future<void> _addTodo() async {
     if (_controller.text.trim().isEmpty) return;
     final title = _controller.text.trim();
+    final ticket = _accountStore.ticket;
     try {
       final created = await _todoService.addTodo(
         title: title,
         assignee: 'Familie',
         category: 'Allgemein',
+        ticket: ticket,
       );
-      if (!mounted) return;
+      if (!mounted || !_accountStore.isCurrent(ticket)) return;
       _controller.clear();
       setState(() {
         _todos.insert(0, created);
         _syncError = _todoService.lastSyncError;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_accountStore.isCurrent(ticket)) return;
       setState(() {
         _syncError = _todoService.lastSyncError;
       });
@@ -71,20 +100,22 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Future<void> _toggleDone(int index, bool value) async {
-    final id = _todos[index]['id']?.toString();
+    final ticket = _accountStore.ticket;
+    final todo = _todos[index];
+    final id = todo['id']?.toString();
     if (id == null || id.isEmpty) return;
-    final previous = _todos[index]['done'] as bool;
-    setState(() => _todos[index]['done'] = value);
+    final previous = todo['done'] as bool;
+    setState(() => todo['done'] = value);
     try {
-      await _todoService.updateDone(id, value);
-      if (!mounted) return;
+      await _todoService.updateDone(id, value, ticket: ticket);
+      if (!mounted || !_accountStore.isCurrent(ticket)) return;
       setState(() {
         _syncError = _todoService.lastSyncError;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_accountStore.isCurrent(ticket)) return;
       setState(() {
-        _todos[index]['done'] = previous;
+        todo['done'] = previous;
         _syncError = _todoService.lastSyncError;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -96,21 +127,24 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   Future<void> _removeTodo(int index) async {
+    final ticket = _accountStore.ticket;
     final id = _todos[index]['id']?.toString();
     final removed = _todos[index];
     setState(() => _todos.removeAt(index));
     if (id == null || id.isEmpty) return;
 
     try {
-      await _todoService.deleteTodo(id);
-      if (!mounted) return;
+      await _todoService.deleteTodo(id, ticket: ticket);
+      if (!mounted || !_accountStore.isCurrent(ticket)) return;
       setState(() {
         _syncError = _todoService.lastSyncError;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !_accountStore.isCurrent(ticket)) return;
       setState(() {
-        _todos.insert(index, removed);
+        if (!_todos.any((item) => item['id'] == id)) {
+          _todos.insert(index.clamp(0, _todos.length), removed);
+        }
         _syncError = _todoService.lastSyncError;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -140,7 +174,7 @@ class _TodoScreenState extends State<TodoScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (_syncError != null && APIConfig.isBackendConfigured())
+          if (_syncError != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Material(

@@ -278,16 +278,31 @@ class BackendApiClient {
   }
 
   Future<dynamic> putJson(String path, Map<String, dynamic> body) async {
-    final headers = await _headers();
+    var headers = await _headers();
+    final encoded = jsonEncode(body);
     requestGuard?.call();
-    final response = await _httpClient
-        .put(_uri(path), headers: headers, body: jsonEncode(body))
+    var response = await _httpClient
+        .put(_uri(path), headers: headers, body: encoded)
         .timeout(const Duration(seconds: 8));
     requestGuard?.call();
 
+    if (response.statusCode == 401 && forceRefreshTokenProvider != null) {
+      headers = await _headers(forceRefresh: true);
+      requestGuard?.call();
+      response = await _httpClient
+          .put(_uri(path), headers: headers, body: encoded)
+          .timeout(const Duration(seconds: 8));
+      requestGuard?.call();
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _throwIfSuspended(response);
-      throw Exception('PUT $path failed: ${response.statusCode}');
+      throw BackendApiException(
+        method: 'PUT',
+        path: path,
+        statusCode: response.statusCode,
+        serverMessage: _extractServerError(response.body),
+        serverCode: _extractServerCode(response.body),
+      );
     }
 
     return _decodeResponse(response.body);

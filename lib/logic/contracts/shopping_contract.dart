@@ -12,9 +12,9 @@ class ShoppingContract {
     return '$base/$id';
   }
 
-  static List<Map<String, dynamic>> parseList(dynamic payload) {
+  static List<Map<String, dynamic>> parseList(dynamic payload, {bool strict = false}) {
     final raw = extractListFromPayload(
-        payload, const ['items', 'shopping', 'data', 'results']);
+        payload, const ['items', 'shopping', 'data', 'results'], strict: strict);
     return raw.map(normalize).toList();
   }
 
@@ -41,7 +41,6 @@ class ShoppingContract {
     required String category,
   }) {
     return {
-      'familyId': APIConfig.getBackendFamilyId(),
       'name': name,
       'quantity': 1,
       'unit': 'Stueck',
@@ -57,7 +56,6 @@ class ShoppingContract {
     required bool checked,
   }) {
     return {
-      'familyId': APIConfig.getBackendFamilyId(),
       'checked': checked,
       'updatedAt': DateTime.now().toUtc().toIso8601String(),
       'schemaVersion': APIConfig.getBackendApiVersion(),

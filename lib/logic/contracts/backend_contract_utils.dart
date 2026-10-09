@@ -13,9 +13,13 @@ Map<String, dynamic>? extractFirstMapByKeys(
 
 List<Map<String, dynamic>> extractListFromPayload(
   dynamic payload,
-  List<String> candidateKeys,
-) {
+  List<String> candidateKeys, {
+  bool strict = false,
+}) {
   if (payload is List) {
+    if (strict && payload.any((item) => item is! Map)) {
+      throw const FormatException('Invalid backend list entries');
+    }
     return payload
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
@@ -28,6 +32,9 @@ List<Map<String, dynamic>> extractListFromPayload(
     for (final key in candidateKeys) {
       final value = mapPayload[key];
       if (value is List) {
+        if (strict && value.any((item) => item is! Map)) {
+          throw const FormatException('Invalid backend list entries');
+        }
         return value
             .whereType<Map>()
             .map((item) => Map<String, dynamic>.from(item))
@@ -40,6 +47,9 @@ List<Map<String, dynamic>> extractListFromPayload(
       for (final key in candidateKeys) {
         final value = nested[key];
         if (value is List) {
+          if (strict && value.any((item) => item is! Map)) {
+            throw const FormatException('Invalid backend list entries');
+          }
           return value
               .whereType<Map>()
               .map((item) => Map<String, dynamic>.from(item))
@@ -49,6 +59,9 @@ List<Map<String, dynamic>> extractListFromPayload(
     }
   }
 
+  if (strict) {
+    throw const FormatException('Invalid backend list response');
+  }
   return [];
 }
 

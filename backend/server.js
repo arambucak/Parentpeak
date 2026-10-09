@@ -2313,7 +2313,7 @@ function verifyStripeWebhookSignature({ rawBody, signatureHeader, secret, tolera
 }
 
 // Missing Admin configuration never produces a verified identity.
-async function verifyFirebaseIdToken(req) {
+async function verifyFirebaseIdToken(req, { strictAvailability = false } = {}) {
   if (!firebaseAdmin) return { uid: null, verified: false };
   const authHeader = req.headers.authorization || '';
   if (!authHeader.startsWith('Bearer ')) return { uid: null, verified: false };
@@ -2321,13 +2321,23 @@ async function verifyFirebaseIdToken(req) {
   try {
     const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
     return { uid: decoded.uid, verified: true };
-  } catch (_) {
+  } catch (error) {
+    if (strictAvailability && [
+      'app/network-error', 'app/network-timeout', 'auth/internal-error',
+      'auth/certificate-fetch-failed', 'auth/too-many-requests',
+    ].includes(error?.code)) {
+      console.error('Firebase token verification unavailable:', error.code);
+      return { uid: null, verified: false, unavailable: true };
+    }
     return { uid: null, verified: false };
   }
 }
 
 async function requireVerifiedUser(req, res, next) {
-  const { uid, verified } = await verifyFirebaseIdToken(req);
+  const { uid, verified, unavailable } = await verifyFirebaseIdToken(req, { strictAvailability: true });
+  if (unavailable) {
+    return res.status(503).json({ error: 'Kontopruefung derzeit nicht verfuegbar', code: 'identity_unavailable' });
+  }
   if (!verified || !uid) {
     return res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
   }
@@ -2360,6 +2370,13 @@ function hasExplicitUserMismatch(req, requestedUserId) {
 }
 
 async function authorizeAccountOwner(req, res, userId) {
+  if (req.firebaseUid) {
+    if (req.firebaseUid !== userId) {
+      res.status(403).json({ error: 'Konto-Loeschung nur fuer das eigene Konto erlaubt' });
+      return false;
+    }
+    return true;
+  }
   const authHeader = req.headers.authorization || '';
   if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
     return true;
@@ -4684,31 +4701,142 @@ async function ensureAuthenticatedEventUser(req, userId) {
     throw new Error('Firebase UID stimmt nicht mit userId ueberein');
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+  return ensureVerifiedBackendUser(req.firebaseUid);
+}
+
+class FamilyContextError extends Error {
+  constructor(status, code, message) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
+function ownFamilyId(firebaseUid) {
+  if (typeof firebaseUid !== 'string' || !firebaseUid || firebaseUid !== firebaseUid.trim()) {
+    throw new FamilyContextError(401, 'identity_required', 'Firebase-Anmeldung erforderlich');
+  }
+  return `account-family-v1-${crypto.createHash('sha256').update(firebaseUid).digest('hex')}`;
+}
+
+async function ensureVerifiedBackendUser(firebaseUid) {
+  ownFamilyId(firebaseUid);
+  const existingUser = await prisma.user.findUnique({ where: { id: firebaseUid } });
   if (existingUser) return existingUser.id;
 
-  const account = await firebaseAdmin.auth().getUser(req.firebaseUid);
-  if (account.uid !== req.firebaseUid || account.disabled) {
-    throw new Error('Firebase-Konto ist nicht gueltig');
+  if (!firebaseAdmin) {
+    throw new FamilyContextError(503, 'identity_unavailable', 'Kontopruefung derzeit nicht verfuegbar');
+  }
+  const account = await firebaseAdmin.auth().getUser(firebaseUid);
+  if (account.uid !== firebaseUid || account.disabled) {
+    throw new FamilyContextError(401, 'identity_required', 'Firebase-Konto ist nicht gueltig');
   }
   const email = account.emailVerified && account.email
     ? account.email.trim().toLowerCase()
     : `firebase-${crypto.createHash('sha256').update(account.uid).digest('hex')}@firebase.local.invalid`;
   const [firstName, ...lastName] = (account.displayName || '').trim().split(/\s+/);
   const passwordSalt = crypto.randomBytes(32).toString('hex');
-  const user = await prisma.user.upsert({
-    where: { id: account.uid },
-    update: {},
-    create: {
-      id: account.uid,
-      email,
-      passwordHash: crypto.scryptSync(crypto.randomBytes(32), passwordSalt, 64).toString('hex'),
-      passwordSalt,
-      firstName: firstName || null,
-      lastName: lastName.join(' ') || null,
-    },
+  try {
+    const user = await prisma.user.upsert({
+      where: { id: account.uid },
+      update: {},
+      create: {
+        id: account.uid,
+        email,
+        passwordHash: crypto.scryptSync(crypto.randomBytes(32), passwordSalt, 64).toString('hex'),
+        passwordSalt,
+        firstName: firstName || null,
+        lastName: lastName.join(' ') || null,
+      },
+    });
+    return user.id;
+  } catch (error) {
+    if (error?.code !== 'P2002') throw error;
+    // A concurrent provision of this exact UID is safe; email matching is not.
+    const concurrentUser = await prisma.user.findUnique({ where: { id: firebaseUid } });
+    if (concurrentUser) return concurrentUser.id;
+    throw new FamilyContextError(409, 'account_conflict', 'Backend-Kontozuordnung widerspruechlich');
+  }
+}
+
+function assertOwnFamily(family, firebaseUid) {
+  if (family.createdById !== firebaseUid ||
+      family.memberUsers.length !== 1 || family.memberUsers[0].id !== firebaseUid) {
+    throw new FamilyContextError(409, 'family_conflict', 'Privater Familienkontext widerspruechlich');
+  }
+  return family;
+}
+
+async function resolveOwnFamily(firebaseUid) {
+  const id = ownFamilyId(firebaseUid);
+  await ensureVerifiedBackendUser(firebaseUid);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await prisma.$transaction(async transaction => {
+        const family = await transaction.family.upsert({
+          where: { id },
+          update: {},
+          create: {
+            id,
+            name: 'Familie',
+            createdById: firebaseUid,
+            memberUsers: { connect: [{ id: firebaseUid }] },
+          },
+          include: { memberUsers: { select: { id: true } } },
+        });
+        return assertOwnFamily(family, firebaseUid);
+      }, { isolationLevel: 'Serializable' });
+    } catch (error) {
+      if (attempt < 2 && ['P2034', 'P2002'].includes(error?.code)) continue;
+      throw error;
+    }
+  }
+}
+
+async function requireOwnFamily(req, res, next) {
+  try {
+    const id = ownFamilyId(req.firebaseUid);
+    for (const claimedId of [req.query?.familyId, req.body?.familyId]) {
+      if (claimedId !== undefined &&
+          (typeof claimedId !== 'string' || claimedId !== id)) {
+        throw new FamilyContextError(403, 'not_owner', 'Nur fuer die eigene Familie erlaubt');
+      }
+    }
+    req.ownFamily = await resolveOwnFamily(req.firebaseUid);
+    return next();
+  } catch (error) {
+    return respondFamilyPersistenceError(res, 'Familienkontext', error);
+  }
+}
+
+function respondFamilyPersistenceError(res, label, error) {
+  console.error(`${label}:`, error?.code || error?.name || 'Error');
+  const status = error instanceof FamilyContextError ? error.status : 503;
+  return res.status(status).json({
+    error: error instanceof FamilyContextError ? error.message : 'Familiendaten derzeit nicht verfuegbar',
+    code: error instanceof FamilyContextError ? error.code : 'persistence_unavailable',
   });
-  return user.id;
+}
+
+function allowPrivateFamilyFallback() {
+  return process.env.NODE_ENV !== 'production' && !disableInMemoryFallbacks;
+}
+
+async function exportOwnFamilyItems(firebaseUid) {
+  const id = ownFamilyId(firebaseUid);
+  return prisma.$transaction(async transaction => {
+    const family = await transaction.family.findUnique({
+      where: { id },
+      include: { memberUsers: { select: { id: true } } },
+    });
+    if (!family) return { todos: [], shoppingItems: [] };
+    assertOwnFamily(family, firebaseUid);
+    const [todos, shoppingItems] = await Promise.all([
+      transaction.todo.findMany({ where: { familyId: id }, orderBy: { createdAt: 'desc' } }),
+      transaction.shoppingItem.findMany({ where: { familyId: id }, orderBy: { createdAt: 'desc' } }),
+    ]);
+    return { todos, shoppingItems };
+  }, { isolationLevel: 'Serializable' });
 }
 
 async function ensurePaymentContext(eventId, hosterId) {
@@ -5308,6 +5436,9 @@ function removeMatching(list, predicate) {
 
 function countAccountDataByUserIdInMemory(userId) {
   let removed = 0;
+  const familyId = ownFamilyId(userId);
+  removed += todos.filter(item => item.familyId === familyId).length;
+  removed += shoppingItems.filter(item => item.familyId === familyId).length;
 
   if (userEntitlements.has(userId)) {
     removed += 1;
@@ -5359,6 +5490,9 @@ function countAccountDataByUserIdInMemory(userId) {
 
 function deleteAccountDataByUserIdInMemory(userId) {
   let removed = 0;
+  const familyId = ownFamilyId(userId);
+  removed += removeMatching(todos, item => item.familyId === familyId);
+  removed += removeMatching(shoppingItems, item => item.familyId === familyId);
 
   if (userEntitlements.delete(userId)) {
     removed += 1;
@@ -5534,6 +5668,8 @@ async function deleteUnreferencedAccountMedia(mediaUrls, userId) {
 }
 
 async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
+  const ownItems = await exportOwnFamilyItems(userId);
+  const familyItemCount = ownItems.todos.length + ownItems.shoppingItems.length;
   const [userMedia, hostedEvents, ownedTreasures, ownedRecipes, ownedCommunityEvents] =
     await Promise.all([
       prisma.user.findUnique({
@@ -5615,7 +5751,8 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
         familyRequestCount +
         hostAuditPaymentCount +
         userCount +
-        parentMatchingActionCount,
+        parentMatchingActionCount +
+        familyItemCount,
       parentMatchingActionCount,
       hostedEventIds: hostedEvents.map(item => item.id),
       mediaUrls,
@@ -5688,7 +5825,9 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
     })).count;
   }
 
-  removed += (await prisma.user.deleteMany({ where: { id: userId } })).count;
+  // User -> created Family -> Todo/ShoppingItem cascades are defined in Prisma.
+  const deletedUsers = (await prisma.user.deleteMany({ where: { id: userId } })).count;
+  removed += deletedUsers + (deletedUsers ? familyItemCount : 0);
 
   return {
     removed,
@@ -5698,6 +5837,7 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
 }
 
 async function exportAccountDataByUserIdPrisma(userId) {
+  const ownItems = await exportOwnFamilyItems(userId);
   const [
     user,
     createdFamilies,
@@ -5763,6 +5903,8 @@ async function exportAccountDataByUserIdPrisma(userId) {
   return {
     user,
     createdFamilies,
+    todos: ownItems.todos,
+    shoppingItems: ownItems.shoppingItems,
     hostedEvents,
     eventParticipations,
     messages,
@@ -5861,7 +6003,7 @@ app.delete('/referrals/claim/:code', async (req, res) => {
   }
 });
 
-app.post('/account/delete-data', async (req, res) => {
+app.post('/account/delete-data', requireVerifiedUser, async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
   const dryRun =
     String(req.query.dryRun || req.body.dryRun || '')
@@ -5902,17 +6044,11 @@ app.post('/account/delete-data', async (req, res) => {
       mode: 'prisma',
     });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /account/delete-data', error)) {
-      return;
-    }
-    const removedEntries = dryRun
-      ? countAccountDataByUserIdInMemory(userId)
-      : deleteAccountDataByUserIdInMemory(userId);
-    return res.json({ ok: true, userId, dryRun, removedEntries, mode: 'in-memory' });
+    return respondFamilyPersistenceError(res, 'POST /account/delete-data', error);
   }
 });
 
-app.get('/account/export-data', async (req, res) => {
+app.get('/account/export-data', requireVerifiedUser, async (req, res) => {
   const userId = (req.query.userId || '').toString().trim();
   if (!userId) {
     return res.status(400).json({ error: 'userId ist erforderlich' });
@@ -5927,10 +6063,7 @@ app.get('/account/export-data', async (req, res) => {
       data,
     });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /account/export-data', error)) {
-      return;
-    }
-    return res.status(503).json({ error: 'Datenexport derzeit nicht verfuegbar' });
+    return respondFamilyPersistenceError(res, 'GET /account/export-data', error);
   }
 });
 
@@ -6548,25 +6681,27 @@ app.post('/api/providers/filter', async (req, res) => {
 });
 
 // 8. Todos (Prisma-first with in-memory fallback)
-app.get('/todos', async (req, res) => {
+app.get('/todos', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   try {
-    const familyId = (req.query.familyId || '').toString().trim();
+    const familyId = req.ownFamily.id;
     const items = await prisma.todo.findMany({
-      where: familyId ? { familyId } : undefined,
+      where: { familyId },
       orderBy: { createdAt: 'desc' },
     });
     return res.json({ items: items.map(mapTodoRecordToApiItem) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /todos', error)) {
+    if (!allowPrivateFamilyFallback()) {
+      respondFamilyPersistenceError(res, 'GET /todos', error);
       return;
     }
-    return res.json({ items: todos });
+    console.error('GET /todos: isolated development fallback', error?.code || error?.name);
+    return res.json({ items: todos.filter(item => item.familyId === req.ownFamily.id) });
   }
 });
 
-app.post('/todos', async (req, res) => {
+app.post('/todos', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   try {
-    const familyId = await ensureDemoFamilyContext(req.body.familyId || DEMO_FAMILY_ID);
+    const familyId = req.ownFamily.id;
     const completed = Boolean(req.body.completed);
     const item = await prisma.todo.create({
       data: {
@@ -6582,12 +6717,14 @@ app.post('/todos', async (req, res) => {
     });
     return res.status(201).json({ item: mapTodoRecordToApiItem(item) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /todos', error)) {
+    if (!allowPrivateFamilyFallback()) {
+      respondFamilyPersistenceError(res, 'POST /todos', error);
       return;
     }
+    console.error('POST /todos: isolated development fallback', error?.code || error?.name);
     const item = {
       id: generateId('todo'),
-      familyId: req.body.familyId || DEMO_FAMILY_ID,
+      familyId: req.ownFamily.id,
       title: req.body.title || '',
       completed: Boolean(req.body.completed),
       assigneeName: req.body.assigneeName || 'Familie',
@@ -6599,32 +6736,38 @@ app.post('/todos', async (req, res) => {
   }
 });
 
-app.put('/todos/:id', async (req, res) => {
+app.put('/todos/:id', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   try {
-    const existing = await prisma.todo.findUnique({ where: { id: req.params.id } });
-    if (!existing) {
+    const item = await prisma.$transaction(async transaction => {
+      const where = { id: req.params.id, familyId: req.ownFamily.id };
+      const existing = await transaction.todo.findUnique({ where });
+      if (!existing) return null;
+      const currentMeta = parseTodoDescription(existing.description);
+      const completed = Boolean(req.body.completed);
+      return transaction.todo.update({
+        where,
+        data: {
+          done: completed,
+          completedAt: completed ? (existing.completedAt || new Date()) : null,
+          description: buildTodoDescription({
+            assigneeName: req.body.assigneeName || currentMeta.assigneeName,
+            category: req.body.category || currentMeta.category,
+          }),
+        },
+      });
+    }, { isolationLevel: 'Serializable' });
+    if (!item) {
       return res.status(404).json({ error: 'Todo nicht gefunden' });
     }
-
-    const currentMeta = parseTodoDescription(existing.description);
-    const completed = Boolean(req.body.completed);
-    const item = await prisma.todo.update({
-      where: { id: req.params.id },
-      data: {
-        done: completed,
-        completedAt: completed ? (existing.completedAt || new Date()) : null,
-        description: buildTodoDescription({
-          assigneeName: req.body.assigneeName || currentMeta.assigneeName,
-          category: req.body.category || currentMeta.category,
-        }),
-      },
-    });
     return res.json({ item: mapTodoRecordToApiItem(item) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'PUT /todos/:id', error)) {
+    if (error?.code === 'P2025') return res.status(404).json({ error: 'Todo nicht gefunden' });
+    if (!allowPrivateFamilyFallback() || error?.code === 'P2034') {
+      respondFamilyPersistenceError(res, 'PUT /todos/:id', error);
       return;
     }
-    const index = todos.findIndex(item => item.id === req.params.id);
+    console.error('PUT /todos/:id: isolated development fallback', error?.code || error?.name);
+    const index = todos.findIndex(item => item.id === req.params.id && item.familyId === req.ownFamily.id);
     if (index === -1) {
       return res.status(404).json({ error: 'Todo nicht gefunden' });
     }
@@ -6637,19 +6780,21 @@ app.put('/todos/:id', async (req, res) => {
   }
 });
 
-app.delete('/todos/:id', async (req, res) => {
+app.delete('/todos/:id', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   try {
-    await prisma.todo.delete({ where: { id: req.params.id } });
+    await prisma.todo.delete({ where: { id: req.params.id, familyId: req.ownFamily.id } });
     return res.status(204).send();
   } catch (error) {
     if (error?.code === 'P2025') {
       return res.status(404).json({ error: 'Todo nicht gefunden' });
     }
 
-    if (respondWithStrictPersistenceError(res, 'DELETE /todos/:id', error)) {
+    if (!allowPrivateFamilyFallback()) {
+      respondFamilyPersistenceError(res, 'DELETE /todos/:id', error);
       return;
     }
-    const index = todos.findIndex(item => item.id === req.params.id);
+    console.error('DELETE /todos/:id: isolated development fallback', error?.code || error?.name);
+    const index = todos.findIndex(item => item.id === req.params.id && item.familyId === req.ownFamily.id);
     if (index === -1) {
       return res.status(404).json({ error: 'Todo nicht gefunden' });
     }
@@ -6659,25 +6804,27 @@ app.delete('/todos/:id', async (req, res) => {
 });
 
 // 9. Shopping (Prisma-first with in-memory fallback)
-app.get('/shopping', async (req, res) => {
+app.get('/shopping', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   try {
-    const familyId = (req.query.familyId || '').toString().trim();
+    const familyId = req.ownFamily.id;
     const items = await prisma.shoppingItem.findMany({
-      where: familyId ? { familyId } : undefined,
+      where: { familyId },
       orderBy: { createdAt: 'desc' },
     });
     return res.json({ items: items.map(mapShoppingRecordToApiItem) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /shopping', error)) {
+    if (!allowPrivateFamilyFallback()) {
+      respondFamilyPersistenceError(res, 'GET /shopping', error);
       return;
     }
-    return res.json({ items: shoppingItems });
+    console.error('GET /shopping: isolated development fallback', error?.code || error?.name);
+    return res.json({ items: shoppingItems.filter(item => item.familyId === req.ownFamily.id) });
   }
 });
 
-app.post('/shopping', async (req, res) => {
+app.post('/shopping', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   try {
-    const familyId = await ensureDemoFamilyContext(req.body.familyId || DEMO_FAMILY_ID);
+    const familyId = req.ownFamily.id;
     const checked = Boolean(req.body.checked);
     const item = await prisma.shoppingItem.create({
       data: {
@@ -6690,12 +6837,14 @@ app.post('/shopping', async (req, res) => {
     });
     return res.status(201).json({ item: mapShoppingRecordToApiItem(item) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /shopping', error)) {
+    if (!allowPrivateFamilyFallback()) {
+      respondFamilyPersistenceError(res, 'POST /shopping', error);
       return;
     }
+    console.error('POST /shopping: isolated development fallback', error?.code || error?.name);
     const item = {
       id: generateId('shop'),
-      familyId: req.body.familyId || DEMO_FAMILY_ID,
+      familyId: req.ownFamily.id,
       name: req.body.name || '',
       checked: Boolean(req.body.checked),
       category: req.body.category || 'Allgemein',
@@ -6706,11 +6855,11 @@ app.post('/shopping', async (req, res) => {
   }
 });
 
-app.put('/shopping/:id', async (req, res) => {
+app.put('/shopping/:id', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   try {
     const checked = Boolean(req.body.checked);
     const item = await prisma.shoppingItem.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id, familyId: req.ownFamily.id },
       data: {
         bought: checked,
         boughtAt: checked ? new Date() : null,
@@ -6722,10 +6871,12 @@ app.put('/shopping/:id', async (req, res) => {
       return res.status(404).json({ error: 'Shopping-Item nicht gefunden' });
     }
 
-    if (respondWithStrictPersistenceError(res, 'PUT /shopping/:id', error)) {
+    if (!allowPrivateFamilyFallback()) {
+      respondFamilyPersistenceError(res, 'PUT /shopping/:id', error);
       return;
     }
-    const index = shoppingItems.findIndex(item => item.id === req.params.id);
+    console.error('PUT /shopping/:id: isolated development fallback', error?.code || error?.name);
+    const index = shoppingItems.findIndex(item => item.id === req.params.id && item.familyId === req.ownFamily.id);
     if (index === -1) {
       return res.status(404).json({ error: 'Shopping-Item nicht gefunden' });
     }
@@ -6739,19 +6890,21 @@ app.put('/shopping/:id', async (req, res) => {
   }
 });
 
-app.delete('/shopping/:id', async (req, res) => {
+app.delete('/shopping/:id', requireVerifiedUser, requireOwnFamily, async (req, res) => {
   try {
-    await prisma.shoppingItem.delete({ where: { id: req.params.id } });
+    await prisma.shoppingItem.delete({ where: { id: req.params.id, familyId: req.ownFamily.id } });
     return res.status(204).send();
   } catch (error) {
     if (error?.code === 'P2025') {
       return res.status(404).json({ error: 'Shopping-Item nicht gefunden' });
     }
 
-    if (respondWithStrictPersistenceError(res, 'DELETE /shopping/:id', error)) {
+    if (!allowPrivateFamilyFallback()) {
+      respondFamilyPersistenceError(res, 'DELETE /shopping/:id', error);
       return;
     }
-    const index = shoppingItems.findIndex(item => item.id === req.params.id);
+    console.error('DELETE /shopping/:id: isolated development fallback', error?.code || error?.name);
+    const index = shoppingItems.findIndex(item => item.id === req.params.id && item.familyId === req.ownFamily.id);
     if (index === -1) {
       return res.status(404).json({ error: 'Shopping-Item nicht gefunden' });
     }

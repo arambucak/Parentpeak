@@ -1,34 +1,43 @@
 import 'backend_api_client.dart';
 import 'contracts/shopping_contract.dart';
+import 'family_backend_scope.dart';
+import 'profile_account_store.dart';
 
 class ShoppingBackendService {
-  ShoppingBackendService({this.apiClient});
+  ShoppingBackendService({this.apiClient, ProfileAccountStore? accountStore})
+    : _scope = FamilyBackendScope(accountStore: accountStore);
 
   final BackendApiClient? apiClient;
+  final FamilyBackendScope _scope;
   String? lastSyncError;
 
-  Future<List<Map<String, dynamic>>> fetchItems() async {
+  Future<List<Map<String, dynamic>>> fetchItems({
+    ProfileAccountTicket? ticket,
+  }) async {
     lastSyncError = null;
     if (apiClient == null) {
       lastSyncError = 'Shopping-Backend ist nicht konfiguriert.';
-      return const <Map<String, dynamic>>[];
+      throw StateError(lastSyncError!);
     }
 
     try {
-      final payload = await apiClient!.getJson(ShoppingContract.shoppingPath);
-      return ShoppingContract.parseList(payload);
+      final payload = await _scope
+          .requireClient(apiClient, ticket)
+          .getJson(ShoppingContract.shoppingPath);
+      return ShoppingContract.parseList(payload, strict: true);
     } catch (e) {
       lastSyncError = _friendlySyncError(
         action: 'Server-Sync fehlgeschlagen',
         error: e,
       );
-      return const <Map<String, dynamic>>[];
+      rethrow;
     }
   }
 
   Future<Map<String, dynamic>> addItem({
     required String name,
     required String category,
+    ProfileAccountTicket? ticket,
   }) async {
     lastSyncError = null;
     if (apiClient == null) {
@@ -40,7 +49,8 @@ class ShoppingBackendService {
         name: name,
         category: category,
       );
-      final payload = await apiClient!
+      final payload = await _scope
+          .requireClient(apiClient, ticket)
           .postJsonAny(ShoppingContract.shoppingPath, requestBody);
       final normalized = ShoppingContract.parseSingleItem(payload);
       if (normalized == null) {
@@ -56,17 +66,23 @@ class ShoppingBackendService {
     }
   }
 
-  Future<void> updateChecked(String id, bool checked) async {
+  Future<void> updateChecked(
+    String id,
+    bool checked, {
+    ProfileAccountTicket? ticket,
+  }) async {
     lastSyncError = null;
     if (apiClient == null) {
       throw StateError('Shopping-Backend ist nicht konfiguriert.');
     }
 
     try {
-      await apiClient!.putJson(
-        ShoppingContract.itemByIdPath(id),
-        ShoppingContract.buildUpdatePayload(checked: checked),
-      );
+      await _scope
+          .requireClient(apiClient, ticket)
+          .putJson(
+            ShoppingContract.itemByIdPath(id),
+            ShoppingContract.buildUpdatePayload(checked: checked),
+          );
     } catch (e) {
       lastSyncError = _friendlySyncError(
         action: 'Shopping-Status konnte nicht synchronisiert werden',
@@ -76,14 +92,16 @@ class ShoppingBackendService {
     }
   }
 
-  Future<void> deleteItem(String id) async {
+  Future<void> deleteItem(String id, {ProfileAccountTicket? ticket}) async {
     lastSyncError = null;
     if (apiClient == null) {
       throw StateError('Shopping-Backend ist nicht konfiguriert.');
     }
 
     try {
-      await apiClient!.delete(ShoppingContract.itemByIdPath(id));
+      await _scope
+          .requireClient(apiClient, ticket)
+          .delete(ShoppingContract.itemByIdPath(id));
     } catch (e) {
       lastSyncError = _friendlySyncError(
         action: 'Shopping-Item konnte nicht auf Server gelöscht werden',
@@ -93,10 +111,7 @@ class ShoppingBackendService {
     }
   }
 
-  String _friendlySyncError({
-    required String action,
-    required Object error,
-  }) {
+  String _friendlySyncError({required String action, required Object error}) {
     final raw = error.toString().toLowerCase();
 
     if (raw.contains('handshakeexception') ||
