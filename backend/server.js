@@ -88,9 +88,22 @@ const upload = multer({
 
 const databaseUrl = (process.env.DATABASE_URL || '').trim();
 const useDatabaseSsl = /render\.com/i.test(databaseUrl);
+// Standard: rejectUnauthorized=false, weil Renders DB-Zertifikat die
+// Standard-CA-Pruefung nicht besteht und die Verbindung sonst in Produktion
+// bricht. Sobald Renders CA-Zertifikat vorliegt, kann strikte Pruefung per
+// DATABASE_SSL_STRICT=1 aktiviert werden (optional PG-CA ueber DATABASE_SSL_CA).
+const databaseSslStrict = `${process.env.DATABASE_SSL_STRICT || ''}`.toLowerCase() === '1'
+  || `${process.env.DATABASE_SSL_STRICT || ''}`.toLowerCase() === 'true';
+const databaseSslCa = (process.env.DATABASE_SSL_CA || '').trim();
+const databaseSslConfig = useDatabaseSsl
+  ? {
+      rejectUnauthorized: databaseSslStrict,
+      ...(databaseSslCa ? { ca: databaseSslCa } : {}),
+    }
+  : undefined;
 const prismaPool = new Pool({
   connectionString: databaseUrl,
-  ssl: useDatabaseSsl ? { rejectUnauthorized: false } : undefined,
+  ssl: databaseSslConfig,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
@@ -2463,6 +2476,11 @@ app.use(async (req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  // HSTS nur in Produktion (lokal laeuft HTTP). Render terminiert TLS; dieser
+  // Header weist Browser an, kuenftig ausschliesslich HTTPS zu verwenden.
+  if (isProduction) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   next();
 });
 
@@ -14935,6 +14953,28 @@ app.delete('/api/treasures/:id', async (req, res) => {
     console.error('❌ Treasure delete error:', err.message);
     res.status(500).json({ error: `Failed to delete treasure: ${err.message}` });
   }
+});
+
+// Zentrale Fehler-Middleware: faengt unbehandelte Fehler aus allen Routen ab,
+// liefert dem Client eine generische Meldung (kein err.message-/Stacktrace-Leak)
+// und protokolliert Details nur serverseitig. Muss als LETZTE Middleware nach
+// allen Routen stehen; Express erkennt sie an der 4-Parameter-Signatur.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  // Multer-/Body-Parser-/JSON-Fehler bekommen einen passenden 4xx-Code.
+  const status = Number.isInteger(err?.status) && err.status >= 400 && err.status < 600
+    ? err.status
+    : (err?.type === 'entity.parse.failed' ? 400 : 500);
+  const method = req?.method || 'UNKNOWN';
+  const route = req?.path || 'unknown';
+  console.error(`Unhandled error on ${method} ${route}:`, err?.code || err?.name || err?.message || 'Error');
+  if (res.headersSent) {
+    return next(err);
+  }
+  const clientMessage = status >= 500
+    ? 'Serverfehler. Bitte spaeter erneut versuchen.'
+    : (status === 400 ? 'Ungueltige Anfrage.' : 'Anfrage nicht moeglich.');
+  return res.status(status).json({ error: clientMessage, code: 'request_failed' });
 });
 
 // Server starten mit Prisma Initialization

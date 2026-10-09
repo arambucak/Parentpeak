@@ -39,3 +39,35 @@ privat und ersetzt keine Nutzer-/Owner-Autorisierung. Fuer echte private
 Bilder braucht es einen autorisierten Auslieferungspfad und ein Konzept
 zum Entfernen/Rotieren bestehender Download-Tokens; App Check ist allenfalls
 eine zusaetzliche Schutzschicht.
+
+## Backend-Härtungs-Block (Defense-in-depth)
+
+Keine der folgenden Positionen war ein bestätigter, ausnutzbarer Fehler; es
+sind Best-Practice-Härtungen. Umgesetzt wurde, was echten Nutzen ohne
+Betriebsrisiko bringt. Riskante oder für tote Features gedachte Änderungen
+wurden bewusst nicht erzwungen.
+
+### Umgesetzt
+- **Zentrale Error-Middleware:** Fängt unbehandelte Fehler aus allen Routen ab,
+  liefert dem Client generische Meldungen (kein `err.message`-/Stacktrace-Leak)
+  und protokolliert Details nur serverseitig. 4xx für Parse-Fehler, sonst 500.
+- **HSTS:** `Strict-Transport-Security` (max-age 1 Jahr, includeSubDomains) wird
+  in Produktion gesetzt. Die übrigen Security-Header (nosniff, Frame-DENY,
+  Referrer-Policy, Permissions-Policy) waren bereits aktiv.
+- **DB-TLS konfigurierbar:** `rejectUnauthorized` ist jetzt über
+  `DATABASE_SSL_STRICT=1` aktivierbar (optional `DATABASE_SSL_CA` für Renders
+  CA). Default bleibt das bisherige, funktionierende Verhalten
+  (`rejectUnauthorized: false`), damit die Produktions-DB-Verbindung nicht
+  bricht. **To do (Render-Konfig):** Renders CA-Zertifikat hinterlegen und
+  `DATABASE_SSL_STRICT=1` setzen, um die strikte Zertifikatsprüfung zu aktivieren.
+
+### Bewusst Backlog (nicht umgesetzt, mit Begründung)
+- **npm audit:** 7 high / 13 moderate, 0 critical. Die high-Meldungen sind
+  transitiv (firebase-admin → @google-cloud/storage → retry-request/teeny-request)
+  und auf dem genutzten Pfad nicht als App-Exploit nachgewiesen. `npm audit fix
+  --force` würde Prisma auf 6.19.3 downgraden (Breaking Change) und wird NICHT
+  ausgeführt. Gezielte, kompatible Updates als Wartung einplanen.
+- **OTP-Rate-Limiting an verifizierte UID:** SMS/OTP ist nicht funktionsfähig
+  und wird nicht beworben. Das Rate-Limiting greift erst, wenn das Feature live
+  geht; vor Aktivierung von SMS/OTP nachrüsten (verifizierte UID statt
+  behaupteter UID, Empfänger-/Versand-Cooldown).
