@@ -1475,27 +1475,26 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final ticket = _accounts.ticket;
     final userId = FirebaseAuth.instance.currentUser?.uid;
     try {
+      if (userId == null || userId.trim().isEmpty) {
+        throw const ProfileExportSignInRequired();
+      }
       final localData =
           await ProfileDataExportService(accounts: _accounts).collectLocalData(ticket);
       _accounts.require(ticket);
 
-      Map<String, dynamic>? serverExport;
       final apiClient = BackendServiceFactory.createApiClient();
-      if (userId != null && userId.isNotEmpty) {
-        if (userId != _accounts.userId) {
-          throw const ProfileAccountChanged();
-        }
-        if (apiClient == null) {
-          _showExportError('Server-Datenexport ist derzeit nicht konfiguriert.');
-          return;
-        }
-        final response = await apiClient
-            .withRequestGuard(() => _accounts.require(ticket))
-            .getJson('/account/export-data?userId=${Uri.encodeQueryComponent(userId)}');
-        if (response is! Map<String, dynamic>) {
-          throw const FormatException('Unerwartetes Exportformat');
-        }
-        serverExport = response;
+      if (userId != _accounts.userId) {
+        throw const ProfileAccountChanged();
+      }
+      if (apiClient == null) {
+        _showExportError('Server-Datenexport ist derzeit nicht konfiguriert.');
+        return;
+      }
+      final serverExport = await apiClient
+          .withRequestGuard(() => _accounts.require(ticket))
+          .getJson('/account/export-data?userId=${Uri.encodeQueryComponent(userId)}');
+      if (serverExport is! Map<String, dynamic>) {
+        throw const FormatException('Unerwartetes Exportformat');
       }
 
       _accounts.require(ticket);
@@ -1525,6 +1524,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
+    } on ProfileExportSignInRequired {
+      _showExportError(_t('profile_export_sign_in_required'));
     } on ProfileAccountChanged {
       _showExportError('Kontowechsel erkannt. Bitte starte den Export erneut.');
     } catch (error) {

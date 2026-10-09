@@ -54,7 +54,10 @@ Der lokale Anteil des Profil-Exports wird aus den validierten Owner-Envelopes
 und ausdruecklich kontobezogenen Schluesseln zusammengestellt. Andere
 Account-Envelopes, Gast-/Legacy-Keys ohne Claim und globale SharedPreferences
 werden nicht exportiert. Ein Kontowechsel waehrend des Sammelns oder des
-Serverabrufs bricht den Export ab. Das JSON wird weiterhin in die
+Serverabrufs bricht den Export ab. Ohne angemeldetes Konto wird der Export
+vor dem Lesen lokaler Daten verweigert; der Profil-Handler zeigt einen
+Anmeldehinweis in de/en/tr/ku statt einen Gast-Export zu erstellen.
+Das JSON wird weiterhin in die
 Zwischenablage kopiert; Zwischenablagen koennen synchronisiert oder laenger
 verfuegbar bleiben. Ein expliziter Download-/Teilen-Flow bleibt eine separate
 UX-Verbesserung.

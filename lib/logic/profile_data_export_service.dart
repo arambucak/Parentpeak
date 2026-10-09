@@ -3,6 +3,13 @@ import 'dart:convert';
 import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class ProfileExportSignInRequired implements Exception {
+  const ProfileExportSignInRequired();
+
+  @override
+  String toString() => 'Sign in to export account data.';
+}
+
 class ProfileDataExportService {
   ProfileDataExportService({
     ProfileAccountStore? accounts,
@@ -36,6 +43,10 @@ class ProfileDataExportService {
     ProfileAccountTicket ticket,
   ) async {
     _accounts.require(ticket);
+    if (ticket.scope == 'guest' ||
+        _accounts.userId?.trim().isNotEmpty != true) {
+      throw const ProfileExportSignInRequired();
+    }
     final prefs = await _preferences();
     _accounts.require(ticket);
 

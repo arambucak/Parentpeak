@@ -153,5 +153,27 @@ void main() {
         throwsA(isA<ProfileAccountChanged>()),
       );
     });
+
+    test('rejects guest and missing owners before reading any data', () async {
+      var preferenceReads = 0;
+      final service = ProfileDataExportService(
+        accounts: accounts,
+        preferences: () async {
+          preferenceReads++;
+          return SharedPreferences.getInstance();
+        },
+      );
+
+      for (final missingOwner in <String?>[null, '', '   ']) {
+        userId = missingOwner;
+        final ticket = accounts.ticket;
+        expect(ticket.scope, 'guest');
+        await expectLater(
+          service.collectLocalData(ticket),
+          throwsA(isA<ProfileExportSignInRequired>()),
+        );
+      }
+      expect(preferenceReads, 0);
+    });
   });
 }
