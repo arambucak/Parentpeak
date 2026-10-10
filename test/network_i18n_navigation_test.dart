@@ -109,7 +109,10 @@ void main() {
       networkWizardOptionLabel('ku', 'family', 'kernfamilie', ''),
       'Malbata biçûk',
     );
-    expect(networkWizardOptionLabel('fr', 'child', 'bücher', ''), 'Books');
+    // FR ist seit #188 für die Netzwerk-Optionen übersetzt (nicht mehr
+    // EN-Fallback). Die geprüfte Invariante (EN/TR fallen nicht auf Deutsch
+    // zurück) bleibt in den Zeilen oben erhalten.
+    expect(networkWizardOptionLabel('fr', 'child', 'bücher', ''), '📚 Livres');
     expect(
       networkWizardOptionLabel('en', 'family', 'custom', 'My chosen family'),
       'My chosen family',
