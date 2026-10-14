@@ -1489,7 +1489,7 @@ const appLocalizationsFrExtra = <String, String>{
   'kitchen_view_ingredients_preparation': '🍳 Voir ingrédients et préparation',
   'kitchen_without': '🚫 Sans :',
   'knowledge_content_language_notice':
-      'Le Savoir parental n\'est pas encore entièrement traduit. Les questions, réponses et mots-clés sont majoritairement en allemand. Fais une recherche avec des mots allemands ou choisis une carte thématique.',
+      'Les questions et réponses sont traduites. La recherche fonctionne encore avec des mots-clés allemands : saisis un mot allemand ou choisis une carte thématique.',
   'knowledge_search_hint':
       'Qu\'est-ce qui te préoccupe ? (p. ex. « frappe », « ne dort pas »)',
   'knowledge_tab': 'Savoirs',

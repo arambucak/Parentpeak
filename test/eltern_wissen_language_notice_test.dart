@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/eltern_wissen_localizations.dart';
 import 'package:parentpeak/logic/eltern_wissen_service.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/widgets/eltern_wissen_widget.dart';
@@ -58,10 +59,12 @@ void main() {
         await tester.enterText(find.byType(TextField), 'schlafen');
         await tester.pumpAndSettle();
         expect(find.text(notice), findsOneWidget);
+        // Die Suche läuft weiter über die deutschen Tags, das Ergebnis wird
+        // aber in der aktiven Sprache gerendert.
+        final topHit = ElternWissenService.instance.search('schlafen').first;
+        final localizedHit = localizeElternWissenEntry(topHit, language);
         expect(
-          find.textContaining(
-            ElternWissenService.instance.search('schlafen').first.question,
-          ),
+          find.textContaining(localizedHit.question),
           findsOneWidget,
         );
 

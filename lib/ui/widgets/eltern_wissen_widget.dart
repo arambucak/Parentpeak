@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/logic/eltern_wissen_service.dart';
 import 'package:parentpeak/models/eltern_wissen_faq.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/l10n/eltern_wissen_localizations.dart';
 import 'package:parentpeak/main.dart';
 
 /// Eltern-Wissen Widget — Impuls + Schnelle Hilfe (Suchfeld).
@@ -11,7 +12,7 @@ import 'package:parentpeak/main.dart';
 class ElternWissenWidget extends StatefulWidget {
   final VoidCallback? onOpenChat; // Fallback -> KI-Chat
   final String?
-  initialTopic; // Vorausgefülltes Suchthema (z.B. von Soforthilfe)
+      initialTopic; // Vorausgefülltes Suchthema (z.B. von Soforthilfe)
 
   const ElternWissenWidget({super.key, this.onOpenChat, this.initialTopic});
 
@@ -179,30 +180,8 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
       AppStringsManager.getString(languageService.currentLanguage, key);
 
   ElternWissenEntry? _localizedEntry(ElternWissenEntry? entry) {
-    if (entry == null || languageService.currentLanguage != 'tr') return entry;
-    if (entry.id != 'klein_04') return entry;
-
-    return ElternWissenEntry(
-      id: entry.id,
-      question: 'Çocuğum her şeye hayır diyor',
-      akut:
-          'Bu sağlıklı bir durum! Çocuğunuz kendi iradesi olan bağımsız bir birey olduğunu keşfediyor.',
-      beduerfnis:
-          'Özerklik temel bir ihtiyaçtır. “Hayır” demek, kendini belirlemenin ilk biçimidir.',
-      gfkSatz:
-          'Hayır dediğini duyuyorum. Bazı şeyleri yine de yapmamız gerekiyor; birlikte bir yol bulalım.',
-      aktion: const [
-        'Emir vermek yerine seçenekler sunun (“Kırmızı mı mavi mi ceket?”)',
-        'Gereksiz güç mücadelelerinden kaçının',
-        'Mümkün olduğunda hayır demesine saygı gösterin; bu özgüvenini güçlendirir',
-      ],
-      ermutigung:
-          'Evde hayır demesine izin verilen bir çocuk, yabancılara da hayır demeyi öğrenir.',
-      minAge: entry.minAge,
-      maxAge: entry.maxAge,
-      tags: entry.tags,
-      category: entry.category,
-    );
+    if (entry == null) return null;
+    return localizeElternWissenEntry(entry, languageService.currentLanguage);
   }
 
   @override
@@ -365,10 +344,16 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
             fillColor: theme.colorScheme.surfaceContainerLow,
           ),
         ),
-        // Ergebnisse
+        // Ergebnisse (lokalisiert gerendert; Suche bleibt auf den deutschen
+        // Tags/Kategorien, wie der Sprachhinweis oben erklärt)
         if (_results.isNotEmpty) ...[
           const SizedBox(height: 12),
-          ..._results.map((e) => _resultCard(theme, e)),
+          ..._results.map(
+            (e) => _resultCard(
+              theme,
+              localizeElternWissenEntry(e, languageService.currentLanguage),
+            ),
+          ),
         ],
         // Kein Ergebnis -> KI-Fallback
         if (_searchCtrl.text.trim().length >= 3 && _results.isEmpty) ...[
