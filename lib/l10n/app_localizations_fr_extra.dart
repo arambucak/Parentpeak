@@ -970,7 +970,6 @@ const appLocalizationsFrExtra = <String, String>{
   'finance_content_turkey_name_1': 'Dogum Yardimi',
   'finance_content_turkey_name_5': 'Cocuk Parasi',
   'finance_content_turkey_name_8': 'Aide sociale et économique (SED)',
-  'finance_content_turkey_note_11': 'Cartable, fournitures, uniforme',
   'finance_content_uk_amount_3':
       '27,05 £/semaine (aîné ou enfant unique), 17,90 £/semaine (enfants suivants)',
   'finance_content_uk_amount_6':
