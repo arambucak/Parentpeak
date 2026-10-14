@@ -2,8 +2,7 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsArExtra = <String, String>{
-  'account_suspended_message':
-      'تم تقييد حسابك مؤقتًا. إذا كانت لديك أسئلة، تواصل مع الدعم لدينا — نحن هنا لمساعدتك.',
+  'account_suspended_message': 'تم تقييد حسابك مؤقتًا. إذا كانت لديك أسئلة، تواصل مع الدعم لدينا — نحن هنا لمساعدتك.',
   'account_suspended_title': 'الحساب مقيَّد مؤقتًا',
   'add_friend_code': 'إضافة صديق عبر رمز',
   'add_meal': 'إضافة وجبة',
@@ -11,8 +10,7 @@ const appLocalizationsArExtra = <String, String>{
   'admin_action_failed': 'فشل الإجراء.',
   'admin_cleanup_empty': 'كل شيء نظيف – لم يُعثر على أي إدخالات معطوبة. 🎉',
   'admin_cleanup_failed': 'فشل التنظيف. يُرجى المحاولة لاحقًا.',
-  'admin_cleanup_message':
-      'تم العثور على {count} إدخالات اتصال معطوبة (رموز خاطئة أو يتيمة). وستُزال.\n\nأما المستخدمون الحقيقيون والأسماء والمحادثات فتبقى دون مساس.',
+  'admin_cleanup_message': 'تم العثور على {count} إدخالات اتصال معطوبة (رموز خاطئة أو يتيمة). وستُزال.\n\nأما المستخدمون الحقيقيون والأسماء والمحادثات فتبقى دون مساس.',
   'admin_cleanup_preview_failed': 'فشلت المعاينة. يُرجى المحاولة لاحقًا.',
   'admin_cleanup_success': 'تم تنظيف {count} إدخالات. قاعدة البيانات نظيفة. ✅',
   'admin_cleanup_title': 'تنظيف قاعدة البيانات؟',
@@ -37,8 +35,7 @@ const appLocalizationsArExtra = <String, String>{
   'admin_reports_resolved': 'تم وضع علامة "تمت المراجعة" على البلاغات.',
   'admin_suspend_action': 'حظر',
   'admin_suspend_failed': 'فشل الحظر.',
-  'admin_suspend_message':
-      'سيُخفى الحساب من الشبكة ومن الاكتشاف. ويمكن التراجع عن الحظر – ولن تُحذف أي بيانات.\n\nمُعرّف المستخدم: {userId}',
+  'admin_suspend_message': 'سيُخفى الحساب من الشبكة ومن الاكتشاف. ويمكن التراجع عن الحظر – ولن تُحذف أي بيانات.\n\nمُعرّف المستخدم: {userId}',
   'admin_suspend_title': 'تعليق الحساب؟',
   'admin_suspended': 'تم حظر الحساب.',
   'admin_title': 'الإشراف',
@@ -51,17 +48,14 @@ const appLocalizationsArExtra = <String, String>{
   'ai_disclosure': 'إشعار استخدام الذكاء الاصطناعي',
   'all_events': 'الكل →',
   'all_seen': 'تمت رؤية كل شيء',
-  'antrag_ai_description':
-      'يُنشئ لك الذكاء الاصطناعي رسالة مرافِقة أو تبريرًا – جاهزًا للنسخ.',
-  'antrag_ai_disclaimer':
-      'هذا قالب، وليس استشارة قانونية. عدّل النص بما يلائم وضعك الشخصي.',
+  'antrag_ai_description': 'يُنشئ لك الذكاء الاصطناعي رسالة مرافِقة أو تبريرًا – جاهزًا للنسخ.',
+  'antrag_ai_disclaimer': 'هذا قالب، وليس استشارة قانونية. عدّل النص بما يلائم وضعك الشخصي.',
   'antrag_ai_failed': 'تعذّر إنشاء القالب النصّي. يُرجى المحاولة مرة أخرى.',
   'antrag_ai_tab': 'مساعدة الذكاء الاصطناعي',
   'antrag_ai_template': 'قالب نصّي بالذكاء الاصطناعي',
   'antrag_ai_writing': 'الذكاء الاصطناعي يكتب...',
   'antrag_all_ready': 'كل شيء جاهز!',
-  'antrag_content_limits':
-      'توجيه عام، وليس استشارة قانونية. ليست كل المستندات والمواعيد وتفاصيل الإجراءات مُوثَّقة رسميًا. تحقّق من المتطلّبات الحالية ومواعيد الطعون لدى الجهة المختصة.',
+  'antrag_content_limits': 'توجيه عام، وليس استشارة قانونية. ليست كل المستندات والمواعيد وتفاصيل الإجراءات مُوثَّقة رسميًا. تحقّق من المتطلّبات الحالية ومواعيد الطعون لدى الجهة المختصة.',
   'antrag_copied': '📋 تم النسخ إلى الحافظة!',
   'antrag_copy_failed': 'فشل النسخ. يُرجى المحاولة مرة أخرى.',
   'antrag_documents_count': '{checked} من {total} مستندات جاهزة',
@@ -72,10 +66,8 @@ const appLocalizationsArExtra = <String, String>{
   'antrag_open_link': 'فتح الرابط',
   'antrag_open_online': 'فتح الطلب الإلكتروني',
   'antrag_optional': 'اختياري',
-  'antrag_premium_description':
-      'مع الاشتراك المميّز تحصل على الدليل الكامل، وقوالب الذكاء الاصطناعي، والتذكيرات.',
-  'antrag_premium_soon':
-      'الاشتراك المميّز قريبًا! وخلال الإصدار التجريبي كل شيء مجاني.',
+  'antrag_premium_description': 'مع الاشتراك المميّز تحصل على الدليل الكامل، وقوالب الذكاء الاصطناعي، والتذكيرات.',
+  'antrag_premium_soon': 'الاشتراك المميّز قريبًا! وخلال الإصدار التجريبي كل شيء مجاني.',
   'antrag_processing_time': '⏱️ مدة المعالجة: {time}',
   'antrag_ready_next': 'جمعت كل المستندات. انتقل إلى الخطوة 2!',
   'antrag_regenerate': 'إنشاء من جديد',
@@ -88,8 +80,7 @@ const appLocalizationsArExtra = <String, String>{
   'appointments_tasks': 'المواعيد والمهام',
   'archive': 'الأرشيف',
   'auth_email_address_label': 'البريد الإلكتروني',
-  'auth_email_confirm_instructions':
-      'اضغط على الرابط في البريد الإلكتروني. بعد ذلك يمكنك تسجيل الدخول.',
+  'auth_email_confirm_instructions': 'اضغط على الرابط في البريد الإلكتروني. بعد ذلك يمكنك تسجيل الدخول.',
   'auth_email_confirm_title': 'أكِّد بريدك الإلكتروني 📬',
   'auth_email_invalid': 'يرجى إدخال عنوان بريد إلكتروني صالح.',
   'auth_email_label': 'البريد الإلكتروني',
@@ -114,10 +105,8 @@ const appLocalizationsArExtra = <String, String>{
   'bedtime_subtitle': 'إلى السرير بهدوء خلال 30 دقيقة',
   'bedtime_title': 'روتين المساء',
   'benefit_ai_consent_accept': 'الموافقة واستخدام الذكاء الاصطناعي',
-  'benefit_ai_consent_body':
-      'من أجل التوجيه الشخصي، يُرسَل نصّك الحر، والمعطيات المختارة عن الوضع، والبلد، إضافةً إلى أعمار الأطفال المتوفّرة، عبر خادم ParentPeak إلى Google Gemini. وقد يستخدم Gemini لذلك بحثًا على الويب. وتُزال بعض بيانات الاتصال المعروفة جزئيًا؛ وهذا ليس إخفاءً كاملًا للهوية. يُرجى عدم إدخال أسماء أو عناوين أو تفاصيل صحية. ولا تُحفظ هذه المعطيات هنا كمحادثة. وتسري الموافقة على هذا الحساب أو على وضع الضيف. ودون موافقة تبقى معلومات الدعم العامة متاحة، لكن لن تبدأ أي طلب للذكاء الاصطناعي.',
-  'benefit_ai_consent_failed':
-      'تعذّر حفظ الموافقة. ولم يبدأ أي طلب للذكاء الاصطناعي.',
+  'benefit_ai_consent_body': 'من أجل التوجيه الشخصي، يُرسَل نصّك الحر، والمعطيات المختارة عن الوضع، والبلد، إضافةً إلى أعمار الأطفال المتوفّرة، عبر خادم ParentPeak إلى Google Gemini. وقد يستخدم Gemini لذلك بحثًا على الويب. وتُزال بعض بيانات الاتصال المعروفة جزئيًا؛ وهذا ليس إخفاءً كاملًا للهوية. يُرجى عدم إدخال أسماء أو عناوين أو تفاصيل صحية. ولا تُحفظ هذه المعطيات هنا كمحادثة. وتسري الموافقة على هذا الحساب أو على وضع الضيف. ودون موافقة تبقى معلومات الدعم العامة متاحة، لكن لن تبدأ أي طلب للذكاء الاصطناعي.',
+  'benefit_ai_consent_failed': 'تعذّر حفظ الموافقة. ولم يبدأ أي طلب للذكاء الاصطناعي.',
   'benefit_ai_consent_title': 'استخدام دليل المساعدات بالذكاء الاصطناعي؟',
   'benefit_ask_action': 'اسأل الدليل',
   'benefit_check_link': '🔗 تحقّق هنا →',
@@ -128,24 +117,18 @@ const appLocalizationsArExtra = <String, String>{
   'benefit_chip_salary': 'انخفاض الراتب',
   'benefit_chip_second': 'الطفل الثاني في الطريق',
   'benefit_chip_single': 'والد وحيد',
-  'benefit_disclaimer':
-      'هذا توجيه، وليس استشارة قانونية. والجهة المختصة هي المرجع المُلزِم دائمًا. وتُحسَب المبالغ هناك بشكل فردي.',
-  'benefit_fallback_check':
-      'تحقّق من الجهات الرسمية المرتبطة للاطّلاع على التفاصيل.',
-  'benefit_fallback_notice':
-      'رد الذكاء الاصطناعي غير متاح. هذا توجيه عام محلي لبلدك – وغير مُفصَّل على وضعك.',
-  'benefit_fallback_prepare':
-      'جهّز بطاقة الهوية، وإثباتات الدخل، وشهادة الميلاد.',
+  'benefit_disclaimer': 'هذا توجيه، وليس استشارة قانونية. والجهة المختصة هي المرجع المُلزِم دائمًا. وتُحسَب المبالغ هناك بشكل فردي.',
+  'benefit_fallback_check': 'تحقّق من الجهات الرسمية المرتبطة للاطّلاع على التفاصيل.',
+  'benefit_fallback_notice': 'رد الذكاء الاصطناعي غير متاح. هذا توجيه عام محلي لبلدك – وغير مُفصَّل على وضعك.',
+  'benefit_fallback_prepare': 'جهّز بطاقة الهوية، وإثباتات الدخل، وشهادة الميلاد.',
   'benefit_guide_title': 'دليل المساعدات',
   'benefit_input_required': 'صِف وضعكم باختصار أو اختر فكرة مقترحة.',
   'benefit_loading': 'أنظر فيما قد يناسبكم …',
   'benefit_local_only': 'يبقى على هذا الجهاز',
   'benefit_matches_title': 'قد يكون هذا مناسبًا لكم',
   'benefit_next_steps': 'الخطوات التالية',
-  'benefit_request_failed':
-      'لم أتمكّن من الإجابة الآن. يُرجى المحاولة مجددًا بعد قليل.',
-  'benefit_situation_description':
-      'بكلماتكم الخاصة – مثلًا „الطفل الثاني يأتي في حزيران، والشريك يعمل بدوام جزئي“.',
+  'benefit_request_failed': 'لم أتمكّن من الإجابة الآن. يُرجى المحاولة مجددًا بعد قليل.',
+  'benefit_situation_description': 'بكلماتكم الخاصة – مثلًا „الطفل الثاني يأتي في حزيران، والشريك يعمل بدوام جزئي“.',
   'benefit_situation_hint': 'وضعكم …',
   'benefit_situation_title': 'صِفوا وضعكم باختصار',
   'benefit_sources': 'المصادر',
@@ -158,43 +141,29 @@ const appLocalizationsArExtra = <String, String>{
   'change_action': 'تغيير',
   'chat_access_unavailable': 'هذه المحادثة غير متاحة لهذا الحساب.',
   'chat_always_here': 'دائمًا بجانبك',
-  'chat_boundary_diagnosis':
-      'لا يمكنني تقديم تشخيص. يمكنني تقديم دعم يومي قائم على التعلّق. وللتقييم التشخيصي، استعِن بعيادة طب الأطفال أو بأخصائي نفسي للأطفال والمراهقين.',
-  'chat_boundary_medical':
-      'لا أقدّم أي توصيات طبية أو إرشادات دوائية. استعِن بالاستشارة الطبية أو بخدمة الطوارئ الطبية المحلية.',
-  'chat_boundary_topic':
-      'أنا هنا من أجل الدعم التربوي للوالدين. لا تتردّد في وصف سؤالك العائلي أو التربوي.',
-  'chat_boundary_violence':
-      'لا أقدّم أي إرشادات مؤذية أو تحضّ على العنف. يسعدني دعمك بنهجٍ خالٍ من العنف: الملاحظة والشعور والحاجة والطلب الواضح.',
+  'chat_boundary_diagnosis': 'لا يمكنني تقديم تشخيص. يمكنني تقديم دعم يومي قائم على التعلّق. وللتقييم التشخيصي، استعِن بعيادة طب الأطفال أو بأخصائي نفسي للأطفال والمراهقين.',
+  'chat_boundary_medical': 'لا أقدّم أي توصيات طبية أو إرشادات دوائية. استعِن بالاستشارة الطبية أو بخدمة الطوارئ الطبية المحلية.',
+  'chat_boundary_topic': 'أنا هنا من أجل الدعم التربوي للوالدين. لا تتردّد في وصف سؤالك العائلي أو التربوي.',
+  'chat_boundary_violence': 'لا أقدّم أي إرشادات مؤذية أو تحضّ على العنف. يسعدني دعمك بنهجٍ خالٍ من العنف: الملاحظة والشعور والحاجة والطلب الواضح.',
   'chat_claim_action': 'تأكيد الملكية',
-  'chat_claim_failed':
-      'تعذّر استيراد إحصاء المواضيع. ويبقى الرصيد القديم محفوظًا.',
-  'chat_consent_load_failed':
-      'تعذّر التحقّق من الموافقة على الذكاء الاصطناعي. ولن يُرسَل أي شيء إلى الذكاء الاصطناعي دون موافقة مؤكّدة.',
-  'chat_consent_save_failed':
-      'تعذّر حفظ الموافقة. ولم تبدأ أي طلب للذكاء الاصطناعي. يُرجى المحاولة مرة أخرى.',
-  'chat_daily_limit':
-      'لقد بلغت حدّك اليومي للذكاء الاصطناعي البالغ {limit} طلبًا. يمكنك السؤال مجددًا غدًا.',
+  'chat_claim_failed': 'تعذّر استيراد إحصاء المواضيع. ويبقى الرصيد القديم محفوظًا.',
+  'chat_consent_load_failed': 'تعذّر التحقّق من الموافقة على الذكاء الاصطناعي. ولن يُرسَل أي شيء إلى الذكاء الاصطناعي دون موافقة مؤكّدة.',
+  'chat_consent_save_failed': 'تعذّر حفظ الموافقة. ولم تبدأ أي طلب للذكاء الاصطناعي. يُرجى المحاولة مرة أخرى.',
+  'chat_daily_limit': 'لقد بلغت حدّك اليومي للذكاء الاصطناعي البالغ {limit} طلبًا. يمكنك السؤال مجددًا غدًا.',
   'chat_delete': 'حذف',
   'chat_delete_failed': 'تعذّر الحذف – يُرجى المحاولة لاحقًا.',
   'chat_delete_for_all': 'حذف للجميع',
-  'chat_delete_for_all_confirm':
-      'سيُحذف السجل بالكامل نهائيًا لجميع المشاركين. لا يمكن التراجع عن هذا.',
+  'chat_delete_for_all_confirm': 'سيُحذف السجل بالكامل نهائيًا لجميع المشاركين. لا يمكن التراجع عن هذا.',
   'chat_delete_for_all_hint': 'إزالة السجل لجميع المشاركين',
   'chat_delete_for_me': 'حذف من عندي',
-  'chat_delete_for_me_confirm':
-      'ستُحذف هذه المحادثة من عندك فقط. أما الطرف الآخر فيحتفظ بالسجل.',
+  'chat_delete_for_me_confirm': 'ستُحذف هذه المحادثة من عندك فقط. أما الطرف الآخر فيحتفظ بالسجل.',
   'chat_delete_for_me_hint': 'يختفي عندك فقط',
   'chat_delete_history_confirm': 'هل تريد حقًا حذف سجل المحادثة الحالي؟',
   'chat_deleted': 'تم حذف المحادثة.',
-  'chat_fallback_anger':
-      'أولًا وفّر الأمان، ثم اعكس المشاعر بلطف واقترح بديلًا. مثلًا: „أرى غضبك. لن أسمح بأن يتأذّى أحد. يمكنك أن تدوس بقدميك أو تضغط على الوسادة.“ ماذا يحدث قبل ذلك مباشرة؟',
-  'chat_fallback_general':
-      'أنت لست وحدك في هذا. لا تتردّد في وصف الموقف تحديدًا والعمر المكتمل، دون أسماء أو تواريخ ميلاد دقيقة. عندها يمكن أن تصبح الملاحظة والشعور والحاجة والطلب خطوات يومية ملموسة.',
-  'chat_fallback_label':
-      'توجيه عام منسّق: لم يكن رد الذكاء الاصطناعي مناسبًا. وهذا ليس ردًّا شخصيًا موثوقًا.',
-  'chat_fallback_sleep':
-      'يمكنك تقليل المثيرات في المساء، وتقديم خيار صغير بين كتاب وأغنية، وتكرار عبارة ختامية هادئة. مثلًا: „تريد أن تبقى مستيقظًا. أنا أرافقك الآن نحو الهدوء.“ أي انتقال هو الأصعب عليكم؟',
+  'chat_fallback_anger': 'أولًا وفّر الأمان، ثم اعكس المشاعر بلطف واقترح بديلًا. مثلًا: „أرى غضبك. لن أسمح بأن يتأذّى أحد. يمكنك أن تدوس بقدميك أو تضغط على الوسادة.“ ماذا يحدث قبل ذلك مباشرة؟',
+  'chat_fallback_general': 'أنت لست وحدك في هذا. لا تتردّد في وصف الموقف تحديدًا والعمر المكتمل، دون أسماء أو تواريخ ميلاد دقيقة. عندها يمكن أن تصبح الملاحظة والشعور والحاجة والطلب خطوات يومية ملموسة.',
+  'chat_fallback_label': 'توجيه عام منسّق: لم يكن رد الذكاء الاصطناعي مناسبًا. وهذا ليس ردًّا شخصيًا موثوقًا.',
+  'chat_fallback_sleep': 'يمكنك تقليل المثيرات في المساء، وتقديم خيار صغير بين كتاب وأغنية، وتكرار عبارة ختامية هادئة. مثلًا: „تريد أن تبقى مستيقظًا. أنا أرافقك الآن نحو الهدوء.“ أي انتقال هو الأصعب عليكم؟',
   'chat_feedback_dangerous': 'خطيرة',
   'chat_feedback_helpful': 'مفيدة',
   'chat_feedback_inappropriate': 'غير مناسبة',
@@ -205,8 +174,7 @@ const appLocalizationsArExtra = <String, String>{
   'chat_greeting_morning': 'صباح الخير',
   'chat_greeting_night': 'تصبح على خير',
   'chat_guidelines': 'إرشادات المحادثة',
-  'chat_history_budget':
-      'يتلقّى الذكاء الاصطناعي كحدٍّ أقصى آخر {rounds} جولات حوار و{characters} حرفًا من السجل. وتبقى الرسائل الأقدم مرئية هنا.',
+  'chat_history_budget': 'يتلقّى الذكاء الاصطناعي كحدٍّ أقصى آخر {rounds} جولات حوار و{characters} حرفًا من السجل. وتبقى الرسائل الأقدم مرئية هنا.',
   'chat_how_can_help': 'بماذا يمكنني مساعدتك؟',
   'chat_inappropriate': 'محتوى غير لائق',
   'chat_init_error': 'خطأ: {error}',
@@ -220,21 +188,17 @@ const appLocalizationsArExtra = <String, String>{
   'chat_insight_school': 'المدرسة/الحضانة',
   'chat_insight_siblings': 'الإخوة',
   'chat_insight_sleep': 'النوم',
-  'chat_legacy_body':
-      'يوجد على هذا الجهاز إحصاء مواضيع قديم غير مرتبط بأي حساب. لا تستوردْه إلا إذا كان ملكًا لك. الاستيراد محلي، ولا يرسل شيئًا إلى الذكاء الاصطناعي ولا يستورد أي سجل محادثة. ويبقى الرصيد الأصلي محفوظًا.',
+  'chat_legacy_body': 'يوجد على هذا الجهاز إحصاء مواضيع قديم غير مرتبط بأي حساب. لا تستوردْه إلا إذا كان ملكًا لك. الاستيراد محلي، ولا يرسل شيئًا إلى الذكاء الاصطناعي ولا يستورد أي سجل محادثة. ويبقى الرصيد الأصلي محفوظًا.',
   'chat_legacy_title': 'إحصاءات مواضيع محلية غير مُسنَدة',
-  'chat_medical_de':
-      'في ألمانيا يمكنك الوصول إلى خدمة الطوارئ الطبية على الرقم 116117.',
-  'chat_memory_load_failed':
-      'تعذّر تحميل سياق ذاكرة الذكاء الاصطناعي. يُرجى المحاولة مرة أخرى في إعدادات الذاكرة.',
+  'chat_medical_de': 'في ألمانيا يمكنك الوصول إلى خدمة الطوارئ الطبية على الرقم 116117.',
+  'chat_memory_load_failed': 'تعذّر تحميل سياق ذاكرة الذكاء الاصطناعي. يُرجى المحاولة مرة أخرى في إعدادات الذاكرة.',
   'chat_message_hint': 'أخبرني بما يشغل بالك...',
   'chat_other': 'أخرى',
   'chat_privacy_footer': 'لا تشخيص · المعالجة عبر Google Gemini',
   'chat_provider_authorization': 'لم تُصرّح الخدمة بهذا الطلب.',
   'chat_provider_network': 'فشل الاتصال أو استغرق وقتًا أطول من اللازم.',
   'chat_provider_quota': 'تم بلوغ حصّة الخدمة حاليًا.',
-  'chat_provider_unavailable':
-      'استشارة الذكاء الاصطناعي غير متاحة حاليًا. ولا يتوفّر رد شخصي موثوق. يُرجى المحاولة لاحقًا.',
+  'chat_provider_unavailable': 'استشارة الذكاء الاصطناعي غير متاحة حاليًا. ولا يتوفّر رد شخصي موثوق. يُرجى المحاولة لاحقًا.',
   'chat_provider_unavailable_reason': 'تعذّر على الخدمة تقديم رد صالح.',
   'chat_report': 'إبلاغ',
   'chat_report_message': 'الإبلاغ عن الرسالة',
@@ -246,25 +210,19 @@ const appLocalizationsArExtra = <String, String>{
   'chat_spam': 'رسائل مزعجة',
   'chat_terms_accept': 'الموافقة على معالجة الذكاء الاصطناعي',
   'chat_terms_intro': 'قبل أن تبدأ، يُرجى قراءة ما يلي بإيجاز:',
-  'chat_terms_no_diagnosis_text':
-      'لا يقدّم الذكاء الاصطناعي أي تشخيص طبي أو نفسي. عند وجود مخاوف جدّية، استعِن بأهل الاختصاص.',
+  'chat_terms_no_diagnosis_text': 'لا يقدّم الذكاء الاصطناعي أي تشخيص طبي أو نفسي. عند وجود مخاوف جدّية، استعِن بأهل الاختصاص.',
   'chat_terms_no_diagnosis_title': 'لا تشخيصات',
-  'chat_terms_privacy_text':
-      'تُرسَل رسالتك وسجل المحادثة حتى الآن عبر خادم ParentPeak إلى Google Gemini لإعداد الرد. قد يحتوي النص الحر على أسماء وبيانات صحية؛ والإخفاء التلقائي للهوية ليس كاملًا. ولا يُضيف الخادم تسميات محايدة للطفل والعمر المكتمل والمعلومات العائلية المؤكّدة، بما في ذلك البيانات الصحية، إلا بموافقة إضافية على الذاكرة. أرسِل فقط البيانات التي توافق على معالجتها. تبقى المحادثة مؤقتًا في الذاكرة العاملة، لا كسجل محادثة محفوظ بشكل دائم. أما تكرار المواضيع وموافقتك فيُحفظان محليًا. تسري هذه الموافقة على هذا الحساب على هذا الجهاز؛ وهي لا تنشر أي بيانات.',
+  'chat_terms_privacy_text': 'تُرسَل رسالتك وسجل المحادثة حتى الآن عبر خادم ParentPeak إلى Google Gemini لإعداد الرد. قد يحتوي النص الحر على أسماء وبيانات صحية؛ والإخفاء التلقائي للهوية ليس كاملًا. ولا يُضيف الخادم تسميات محايدة للطفل والعمر المكتمل والمعلومات العائلية المؤكّدة، بما في ذلك البيانات الصحية، إلا بموافقة إضافية على الذاكرة. أرسِل فقط البيانات التي توافق على معالجتها. تبقى المحادثة مؤقتًا في الذاكرة العاملة، لا كسجل محادثة محفوظ بشكل دائم. أما تكرار المواضيع وموافقتك فيُحفظان محليًا. تسري هذه الموافقة على هذا الحساب على هذا الجهاز؛ وهي لا تنشر أي بيانات.',
   'chat_terms_privacy_title': 'المعالجة عبر Google Gemini',
-  'chat_terms_respect_text':
-      'لا يصدر الذكاء الاصطناعي أي حكم عليك أو على طفلك. فهو يرافقك دون إلقاء لوم ودون ضغط.',
+  'chat_terms_respect_text': 'لا يصدر الذكاء الاصطناعي أي حكم عليك أو على طفلك. فهو يرافقك دون إلقاء لوم ودون ضغط.',
   'chat_terms_respect_title': 'محترم ومُقدِّر',
   'chat_tip_message': '💡 نصيحة: „{tip}“',
-  'chat_topic_analysis_privacy':
-      'حفاظًا على خصوصيتك: لا يُحفظ سوى عدّاد المواضيع، دون أي نصوص أصلية.',
+  'chat_topic_analysis_privacy': 'حفاظًا على خصوصيتك: لا يُحفظ سوى عدّاد المواضيع، دون أي نصوص أصلية.',
   'chat_topic_analysis_title': 'تحليل المواضيع',
   'chat_topic_overwhelmed_label': 'لم أعد أحتمل',
-  'chat_topic_overwhelmed_question':
-      'أنا منهك تمامًا وأشعر أن الأمور فوق طاقتي.',
+  'chat_topic_overwhelmed_question': 'أنا منهك تمامًا وأشعر أن الأمور فوق طاقتي.',
   'chat_topic_school_label': 'المدرسة والتعلّم',
-  'chat_topic_school_question':
-      'طفلي يعاني من ضغط المدرسة. كيف يمكنني مساعدته؟',
+  'chat_topic_school_question': 'طفلي يعاني من ضغط المدرسة. كيف يمكنني مساعدته؟',
   'chat_topic_screen_label': 'وقت كثير أمام الشاشة',
   'chat_topic_screen_question': 'طفلي ملتصق بالهاتف دائمًا. كيف أتعامل مع ذلك؟',
   'chat_topic_siblings_label': 'شجار بين الإخوة',
@@ -272,15 +230,11 @@ const appLocalizationsArExtra = <String, String>{
   'chat_topic_sleep_label': 'النوم معركة',
   'chat_topic_sleep_question': 'موعد النوم معركة كل مساء. ماذا يمكنني أن أفعل؟',
   'chat_topic_tantrum_label': 'طفلي يفقد أعصابه',
-  'chat_topic_tantrum_question':
-      'طفلي يفقد أعصابه باستمرار ولم أعد أعرف ماذا أفعل.',
-  'chat_topics_load_failed':
-      'تعذّر تحميل إحصاء المواضيع. يُرجى إعادة التحميل؛ ولن تُستبدل البيانات السابقة.',
-  'chat_topics_save_failed':
-      'تعذّر حفظ إحصاء المواضيع. ولم يتم تأكيد التغيير؛ ويبقى ما أدخلته محفوظًا.',
+  'chat_topic_tantrum_question': 'طفلي يفقد أعصابه باستمرار ولم أعد أعرف ماذا أفعل.',
+  'chat_topics_load_failed': 'تعذّر تحميل إحصاء المواضيع. يُرجى إعادة التحميل؛ ولن تُستبدل البيانات السابقة.',
+  'chat_topics_save_failed': 'تعذّر حفظ إحصاء المواضيع. ولم يتم تأكيد التغيير؛ ويبقى ما أدخلته محفوظًا.',
   'chat_understood': 'فهمت',
-  'chat_welcome_message':
-      'أخبرني بما يشغل بالك الآن. أنا أستمع إليك — دون أي حكم.',
+  'chat_welcome_message': 'أخبرني بما يشغل بالك الآن. أنا أستمع إليك — دون أي حكم.',
   'child_name_example': 'مثلًا إيما',
   'child_role': 'طفل',
   'choose_country_region': 'اختر بلدك ومنطقتك',
@@ -303,18 +257,15 @@ const appLocalizationsArExtra = <String, String>{
   'common_not_now': 'ليس الآن',
   'common_status': 'الحالة',
   'common_understood': 'فهمت',
-  'community_event_ai_recognizes':
-      'يتعرّف الذكاء الاصطناعي تلقائيًا على: العنوان، التاريخ، المكان، الوصف',
+  'community_event_ai_recognizes': 'يتعرّف الذكاء الاصطناعي تلقائيًا على: العنوان، التاريخ، المكان، الوصف',
   'community_event_create_anyway': 'الإنشاء على أي حال',
   'community_event_from_gallery': 'اختيار من المعرض',
-  'community_event_photo_hint':
-      'التقِط صورة → يملأ الذكاء الاصطناعي كل شيء تلقائيًا',
+  'community_event_photo_hint': 'التقِط صورة → يملأ الذكاء الاصطناعي كل شيء تلقائيًا',
   'community_event_published': '✅ تم نشر الفعالية!',
   'community_event_scan_flyer': 'مسح نشرة / ملصق',
   'community_event_similar_found': 'تم العثور على فعالية مشابهة',
   'community_event_take_photo': 'التقاط صورة',
-  'community_flyer_detected':
-      '✅ تم التعرّف على النشرة! يُرجى التحقّق من البيانات.',
+  'community_flyer_detected': '✅ تم التعرّف على النشرة! يُرجى التحقّق من البيانات.',
   'community_title': 'العثور على آباء آخرين',
   'confirm': 'تأكيد',
   'confirm_delete_type': 'اكتب «حذف» للتأكيد:',
@@ -343,8 +294,7 @@ const appLocalizationsArExtra = <String, String>{
   'delete_event_title': 'حذف الموعد؟',
   'delete_final': 'حذف نهائي',
   'delete_permanently': 'حذف نهائي',
-  'delete_person_confirm':
-      'ستتم إزالة الشخص من التقويم. ستُنقل المواعيد المرتبطة إلى «الوالدين».',
+  'delete_person_confirm': 'ستتم إزالة الشخص من التقويم. ستُنقل المواعيد المرتبطة إلى «الوالدين».',
   'delete_profile': 'حذف الملف الشخصي؟',
   'delete_review_confirm': 'سيُحذف الملخّص نهائيًا دون رجعة.',
   'details': 'التفاصيل',
@@ -352,18 +302,13 @@ const appLocalizationsArExtra = <String, String>{
   'development_consent_title': 'إنشاء التقرير بالذكاء الاصطناعي',
   'development_conversation_prompt': 'فكرة للحوار',
   'development_practice_today': 'تطبيق لليوم',
-  'development_questions_remaining':
-      'ما زال {count} أسئلة مفتوحة. أجِب عن جميع الأسئلة للحصول على تقريرك الشخصي من الذكاء الاصطناعي.',
+  'development_questions_remaining': 'ما زال {count} أسئلة مفتوحة. أجِب عن جميع الأسئلة للحصول على تقريرك الشخصي من الذكاء الاصطناعي.',
   'development_report_error': 'تعذّر إنشاء التقرير: {error}',
-  'development_report_language_instruction':
-      'اكتب التقرير بأكمله باللغة العربية.',
-  'development_report_limit_reached':
-      'تم بالفعل إنشاء تقريرك المجاني لهذا العام.',
-  'development_report_next_free':
-      'التقرير المجاني التالي: ابتداءً من كانون الثاني (يناير) {year}.',
+  'development_report_language_instruction': 'اكتب التقرير بأكمله باللغة العربية.',
+  'development_report_limit_reached': 'تم بالفعل إنشاء تقريرك المجاني لهذا العام.',
+  'development_report_next_free': 'التقرير المجاني التالي: ابتداءً من كانون الثاني (يناير) {year}.',
   'development_special_needs': 'طفلي له احتياجات خاصة',
-  'development_special_needs_hint':
-      'مثلًا تأخّر في النمو، أو إعاقة، أو مرض مزمن. عندها يستند التقرير إلى التقدّم الفردي بدلًا من معايير العمر.',
+  'development_special_needs_hint': 'مثلًا تأخّر في النمو، أو إعاقة، أو مرض مزمن. عندها يستند التقرير إلى التقدّم الفردي بدلًا من معايير العمر.',
   'dinner': 'العشاء',
   'done': 'تم',
   'duration_1_min': 'دقيقة واحدة',
@@ -374,59 +319,38 @@ const appLocalizationsArExtra = <String, String>{
   'edit_member': 'تعديل العضو',
   'emergencies': 'الطوارئ',
   'export_data': 'تصدير بياناتي',
-  'fallback_default_reflection':
-      'ما الذي سار على ما يرام اليوم؟ وأي لحظة مع طفلك تودّ أن تحتفظ بها؟',
+  'fallback_default_reflection': 'ما الذي سار على ما يرام اليوم؟ وأي لحظة مع طفلك تودّ أن تحتفظ بها؟',
   'fallback_evening_reflection': 'تأمّل المساء',
-  'fallback_impulse_1_body':
-      'الحدود المحبّة ليست تناقضًا. فالأطفال يحتاجون إلى الاثنين معًا: الشعور بأنهم محبوبون، والتوجيه الواضح. والحدود المقترنة بالتواصل تشبه حواجز الطريق، لا الجدران.',
-  'fallback_impulse_1_reflection':
-      'هل كان هناك اليوم موقف نجح فيه حدٌّ هادئ أكثر من رفضٍ صاخب؟',
-  'fallback_impulse_1_tip':
-      'اليوم سمِّ شعور طفلك أولًا، ثم الحد: „أرى أنك غاضب. ومع ذلك: الضرب ممنوع.“',
+  'fallback_impulse_1_body': 'الحدود المحبّة ليست تناقضًا. فالأطفال يحتاجون إلى الاثنين معًا: الشعور بأنهم محبوبون، والتوجيه الواضح. والحدود المقترنة بالتواصل تشبه حواجز الطريق، لا الجدران.',
+  'fallback_impulse_1_reflection': 'هل كان هناك اليوم موقف نجح فيه حدٌّ هادئ أكثر من رفضٍ صاخب؟',
+  'fallback_impulse_1_tip': 'اليوم سمِّ شعور طفلك أولًا، ثم الحد: „أرى أنك غاضب. ومع ذلك: الضرب ممنوع.“',
   'fallback_impulse_1_title': 'وضع الحدود بمحبة',
-  'fallback_impulse_2_body':
-      'رسائل „أنت“ تثير الدفاعية. أما رسائل „أنا“ فتفتح الأبواب. والأطفال يُصغون أكثر حين لا يشعرون بأنهم مُهاجَمون.',
+  'fallback_impulse_2_body': 'رسائل „أنت“ تثير الدفاعية. أما رسائل „أنا“ فتفتح الأبواب. والأطفال يُصغون أكثر حين لا يشعرون بأنهم مُهاجَمون.',
   'fallback_impulse_2_reflection': 'هل أثارت رسالة „أنا“ اليوم ردّ فعل فاجأك؟',
-  'fallback_impulse_2_tip':
-      'اختر اليوم موقفًا تقول فيه عادةً „أنت دائمًا …“، واستبدله بـ „أنا أشعر …، لأنني أحتاج إلى ….“',
+  'fallback_impulse_2_tip': 'اختر اليوم موقفًا تقول فيه عادةً „أنت دائمًا …“، واستبدله بـ „أنا أشعر …، لأنني أحتاج إلى ….“',
   'fallback_impulse_2_title': 'رسائل الأنا في الحياة اليومية',
-  'fallback_impulse_3_body':
-      'إن كان كل شيء اليوم أكثر من اللازم: اختر لحظة هادئة واحدة مع طفلك وسمِّ شعورًا دون حكم. فهذا التواصل القصير يقوّي الترابط والأمان.',
+  'fallback_impulse_3_body': 'إن كان كل شيء اليوم أكثر من اللازم: اختر لحظة هادئة واحدة مع طفلك وسمِّ شعورًا دون حكم. فهذا التواصل القصير يقوّي الترابط والأمان.',
   'fallback_impulse_3_reflection': 'أي لحظة صغيرة اليوم أسعدت كليكما؟',
-  'fallback_impulse_3_tip':
-      'تنفّسا معًا ثلاث دقائق. ثم اسأل: „ما الذي كان سهلًا عليك اليوم؟“',
+  'fallback_impulse_3_tip': 'تنفّسا معًا ثلاث دقائق. ثم اسأل: „ما الذي كان سهلًا عليك اليوم؟“',
   'fallback_impulse_3_title': 'خطوات صغيرة، أثر كبير',
-  'fallback_impulse_4_body':
-      'لكل طفل مزيج فريد من نقاط القوة. وغالبًا ما نرى أولًا نقاط الضعف، رغم أننا نستطيع أيضًا أن نلمح الإمكانات الكامنة خلفها.',
-  'fallback_impulse_4_reflection':
-      'أي نقطة قوة لدى طفلك فاجأتك أو أثّرت فيك اليوم؟',
-  'fallback_impulse_4_tip':
-      'تحدّث اليوم مع طفلك عن إحدى نقاط قوته، لا كمدح، بل كملاحظة: „رأيت اليوم كيف أنك …“',
+  'fallback_impulse_4_body': 'لكل طفل مزيج فريد من نقاط القوة. وغالبًا ما نرى أولًا نقاط الضعف، رغم أننا نستطيع أيضًا أن نلمح الإمكانات الكامنة خلفها.',
+  'fallback_impulse_4_reflection': 'أي نقطة قوة لدى طفلك فاجأتك أو أثّرت فيك اليوم؟',
+  'fallback_impulse_4_tip': 'تحدّث اليوم مع طفلك عن إحدى نقاط قوته، لا كمدح، بل كملاحظة: „رأيت اليوم كيف أنك …“',
   'fallback_impulse_4_title': 'رؤية نقاط القوة بدل الحكم على نقاط الضعف',
-  'fallback_impulse_5_body':
-      'يصبح الأطفال مستقلين حين نثق بهم. والمهارة هي أن نسلّمهم مزيدًا من المسؤولية خطوةً خطوة، دون أن نتدخّل مبكّرًا جدًا.',
-  'fallback_impulse_5_reflection':
-      'متى تخلّيتم اليوم عن التحكّم، وكيف كان شعوركم بذلك؟',
-  'fallback_impulse_5_tip':
-      'سلّم طفلك اليوم مهمة كنت تؤدّيها بنفسك حتى الآن، ودعه ينجزها بالكامل بنفسه.',
+  'fallback_impulse_5_body': 'يصبح الأطفال مستقلين حين نثق بهم. والمهارة هي أن نسلّمهم مزيدًا من المسؤولية خطوةً خطوة، دون أن نتدخّل مبكّرًا جدًا.',
+  'fallback_impulse_5_reflection': 'متى تخلّيتم اليوم عن التحكّم، وكيف كان شعوركم بذلك؟',
+  'fallback_impulse_5_tip': 'سلّم طفلك اليوم مهمة كنت تؤدّيها بنفسك حتى الآن، ودعه ينجزها بالكامل بنفسه.',
   'fallback_impulse_5_title': 'الاستقلالية: التخلّي أيضًا محبة',
-  'fallback_impulse_6_body':
-      'الأطفال الذين يستطيعون تسمية مشاعرهم يستطيعون التعبير عمّا يحتاجون إليه. والانتقال من الشعور إلى الكلام يحتاج إلى تمرّن ودعم منك.',
-  'fallback_impulse_6_reflection':
-      'أي لحظة شعورية لدى طفلكم تودّون أن تحتفظوا بها اليوم؟',
-  'fallback_impulse_6_tip':
-      'اسأل الليلة: „ما الذي أسعدك؟ وما الذي أحزنك أو أغضبك؟“ ثم اكتفِ بالإصغاء.',
+  'fallback_impulse_6_body': 'الأطفال الذين يستطيعون تسمية مشاعرهم يستطيعون التعبير عمّا يحتاجون إليه. والانتقال من الشعور إلى الكلام يحتاج إلى تمرّن ودعم منك.',
+  'fallback_impulse_6_reflection': 'أي لحظة شعورية لدى طفلكم تودّون أن تحتفظوا بها اليوم؟',
+  'fallback_impulse_6_tip': 'اسأل الليلة: „ما الذي أسعدك؟ وما الذي أحزنك أو أغضبك؟“ ثم اكتفِ بالإصغاء.',
   'fallback_impulse_6_title': 'تسمية المشاعر والاعتراف بها',
-  'fallback_impulse_7_body':
-      'يتعلّم الدماغ بقوة خاصة من الأخطاء. فحين يفشل طفلك وتبقى أنت هادئًا، فإنك تنقل إليه: الفشل آمن. وأنا أحتمل ذلك.',
-  'fallback_impulse_7_reflection':
-      'هل كان هناك اليوم فشل تجاوزه طفلك جيدًا؟ وما الذي ساعد في ذلك؟',
-  'fallback_impulse_7_tip':
-      'احكِ لطفلك اليوم عن فشلٍ خاصٍّ بك، وعمّا تعلّمته منه.',
+  'fallback_impulse_7_body': 'يتعلّم الدماغ بقوة خاصة من الأخطاء. فحين يفشل طفلك وتبقى أنت هادئًا، فإنك تنقل إليه: الفشل آمن. وأنا أحتمل ذلك.',
+  'fallback_impulse_7_reflection': 'هل كان هناك اليوم فشل تجاوزه طفلك جيدًا؟ وما الذي ساعد في ذلك؟',
+  'fallback_impulse_7_tip': 'احكِ لطفلك اليوم عن فشلٍ خاصٍّ بك، وعمّا تعلّمته منه.',
   'fallback_impulse_7_title': 'رؤية الفشل فرصةً للتعلّم',
   'fallback_impulse_headline': 'إلهام اليوم لحياتك اليومية',
-  'fallback_understood_summary':
-      'يتعاون الأطفال بشكل أفضل حين يشعرون أولًا بأنهم مرئيون. فالتواصل يسبق التصحيح.',
+  'fallback_understood_summary': 'يتعاون الأطفال بشكل أفضل حين يشعرون أولًا بأنهم مرئيون. فالتواصل يسبق التصحيح.',
   'fallback_understood_title': 'باختصار',
   'family_action_not_allowed': 'هذا الإجراء غير مسموح به لهذا الدور.',
   'family_delete_account_error': 'خطأ أثناء حذف الحساب: {error}',
@@ -441,8 +365,7 @@ const appLocalizationsArExtra = <String, String>{
   'family_hub_child_fallback': 'طفل',
   'family_hub_child_name': 'اسم الطفل',
   'family_hub_child_name_hint': 'مثلًا ميلا',
-  'family_hub_children_empty_hint':
-      'أنشئ ملفًا في شبكة الآباء لاستخدام ملف الطفل.',
+  'family_hub_children_empty_hint': 'أنشئ ملفًا في شبكة الآباء لاستخدام ملف الطفل.',
   'family_hub_clothing_hint': 'مثلًا 110',
   'family_hub_clothing_size': 'مقاس الملابس',
   'family_hub_clothing_size_short': '👕 مقاس',
@@ -462,12 +385,9 @@ const appLocalizationsArExtra = <String, String>{
   'family_hub_emergency_phone_plain': 'هاتف الطوارئ',
   'family_hub_exam_due': 'مستحق: {exam}',
   'family_hub_legacy_claim': 'تخصّ حسابي – استيراد',
-  'family_hub_legacy_confirm':
-      'أؤكّد أن ملفات الأطفال المخزّنة سابقًا على مستوى الجهاز (بما فيها البيانات الصحية ومعلومات الطوارئ) وقوائم التسوّق والمهام وحساسيات المطبخ تخصّ حسابي المسجَّل حاليًا. وستُربَط محليًا بهذا الحساب فقط. وتبقى بيانات الحساب الحالية محفوظة؛ ولا يُنشر أي شيء.',
-  'family_hub_legacy_failed':
-      'تعذّر استيراد الرصيد القديم بأمان. وتبقى البيانات السابقة محفوظة.',
-  'family_hub_legacy_notice':
-      'يوجد على هذا الجهاز رصيد قديم غير مرتبط بأي حساب. ولا يُستخدَم تلقائيًا. سجّل الدخول لاستيراده بعد التأكيد.',
+  'family_hub_legacy_confirm': 'أؤكّد أن ملفات الأطفال المخزّنة سابقًا على مستوى الجهاز (بما فيها البيانات الصحية ومعلومات الطوارئ) وقوائم التسوّق والمهام وحساسيات المطبخ تخصّ حسابي المسجَّل حاليًا. وستُربَط محليًا بهذا الحساب فقط. وتبقى بيانات الحساب الحالية محفوظة؛ ولا يُنشر أي شيء.',
+  'family_hub_legacy_failed': 'تعذّر استيراد الرصيد القديم بأمان. وتبقى البيانات السابقة محفوظة.',
+  'family_hub_legacy_notice': 'يوجد على هذا الجهاز رصيد قديم غير مرتبط بأي حساب. ولا يُستخدَم تلقائيًا. سجّل الدخول لاستيراده بعد التأكيد.',
   'family_hub_legacy_title': 'اعتماد البيانات المحلية السابقة',
   'family_hub_load_error': 'تعذّر تحميل مركز العائلة بالكامل.',
   'family_hub_none_known': 'لا شيء معروف',
@@ -520,13 +440,11 @@ const appLocalizationsArExtra = <String, String>{
   'family_recipe_steps_hint': 'اسلق البطاطا.\nقطّع البصلة مكعّبات.\n…',
   'family_recipe_steps_label': 'طريقة التحضير (خطوة واحدة في كل سطر)',
   'family_recipe_visibility_friends': 'أصدقائي فقط',
-  'family_recipe_visibility_friends_hint':
-      'موصى به – لا يراها إلا العائلات المرتبطة بك.',
+  'family_recipe_visibility_friends_hint': 'موصى به – لا يراها إلا العائلات المرتبطة بك.',
   'family_recipe_visibility_private': 'لي فقط',
   'family_recipe_visibility_private_hint': 'تبقى خاصة – أنت وحدك من يراها.',
   'family_recipe_visibility_public': 'لجميع العائلات',
-  'family_recipe_visibility_public_hint':
-      'يمكن لجميع عائلات Parentpeak اكتشافها.',
+  'family_recipe_visibility_public_hint': 'يمكن لجميع عائلات Parentpeak اكتشافها.',
   'family_recipe_visibility_title': 'من يمكنه رؤية وصفتك؟',
   'family_scan_qr': 'مسح رمز QR',
   'feedback_thanks': '❤️ شكرًا على ملاحظتك!',
@@ -543,313 +461,190 @@ const appLocalizationsArExtra = <String, String>{
   'finance_add_saving': 'إضافة فرصة ادّخار',
   'finance_amount_per_month': '~{amount}/شهر',
   'finance_amount_per_year': '{amount}/سنة',
-  'finance_amounts_disclaimer':
-      'المبالغ والروابط للتوجيه فقط، دون ضمان. ولم تُراجَع سوى بيانات مفردة رسميًا؛ ولا يوجد ضمان بأن جميع البيانات محدّثة. وتحدّد الجهة المختصة المبلغ الدقيق.',
-  'finance_application_bildungTeilhabe_aiTemplatePrompt_5':
-      'اكتب طلبًا قصيرًا غير رسمي للحصول على مزايا التعليم والمشاركة. طفل يرغب في المشاركة في دورة رياضية. والعائلة تتلقّى علاوة الأطفال. موضوعي، 3-4 جمل.',
-  'finance_application_bildungTeilhabe_benefitName_0':
-      'التعليم والمشاركة (Bildung und Teilhabe, BuT)',
-  'finance_application_bildungTeilhabe_description_14':
-      'يشمل BuT: اللوازم المدرسية (195€/السنة)، الغداء، الرحلات، دروس التقوية، الرياضة/الثقافة (15€/الشهر)، نقل التلاميذ.',
-  'finance_application_bildungTeilhabe_description_16':
-      'احصل على استمارة BuT من مركز العمل أو مكتب الشؤون الاجتماعية (أو تقدّم بطلب غير رسمي عبر رسالة). ولدى بعض المدن استمارات إلكترونية.',
-  'finance_application_bildungTeilhabe_description_18':
-      'أرفِق قرار المزايا + شهادة المدرسة + فاتورة النادي عند الاقتضاء.',
-  'finance_application_bildungTeilhabe_description_20':
-      'تحصل إمّا على قسيمة (مثلًا للنادي) أو يُحوَّل المبلغ مباشرة إلى مقدّم الخدمة.',
-  'finance_application_bildungTeilhabe_name_10':
-      'إثبات التكاليف (مثلًا اشتراك النادي)',
+  'finance_amounts_disclaimer': 'المبالغ والروابط للتوجيه فقط، دون ضمان. ولم تُراجَع سوى بيانات مفردة رسميًا؛ ولا يوجد ضمان بأن جميع البيانات محدّثة. وتحدّد الجهة المختصة المبلغ الدقيق.',
+  'finance_application_bildungTeilhabe_aiTemplatePrompt_5': 'اكتب طلبًا قصيرًا غير رسمي للحصول على مزايا التعليم والمشاركة. طفل يرغب في المشاركة في دورة رياضية. والعائلة تتلقّى علاوة الأطفال. موضوعي، 3-4 جمل.',
+  'finance_application_bildungTeilhabe_benefitName_0': 'التعليم والمشاركة (Bildung und Teilhabe, BuT)',
+  'finance_application_bildungTeilhabe_description_14': 'يشمل BuT: اللوازم المدرسية (195€/السنة)، الغداء، الرحلات، دروس التقوية، الرياضة/الثقافة (15€/الشهر)، نقل التلاميذ.',
+  'finance_application_bildungTeilhabe_description_16': 'احصل على استمارة BuT من مركز العمل أو مكتب الشؤون الاجتماعية (أو تقدّم بطلب غير رسمي عبر رسالة). ولدى بعض المدن استمارات إلكترونية.',
+  'finance_application_bildungTeilhabe_description_18': 'أرفِق قرار المزايا + شهادة المدرسة + فاتورة النادي عند الاقتضاء.',
+  'finance_application_bildungTeilhabe_description_20': 'تحصل إمّا على قسيمة (مثلًا للنادي) أو يُحوَّل المبلغ مباشرة إلى مقدّم الخدمة.',
+  'finance_application_bildungTeilhabe_name_10': 'إثبات التكاليف (مثلًا اشتراك النادي)',
   'finance_application_bildungTeilhabe_name_6': 'إثبات تلقّي المزايا',
   'finance_application_bildungTeilhabe_name_8': 'شهادة الالتحاق بالمدرسة',
-  'finance_application_bildungTeilhabe_proTip_4':
-      'يغطّي BuT أيضًا دورات السباحة ومدرسة الموسيقى ودروس التقوية — لا اللوازم المدرسية فقط! حتى 15€/الشهر للرياضة/الثقافة/الترفيه.',
+  'finance_application_bildungTeilhabe_proTip_4': 'يغطّي BuT أيضًا دورات السباحة ومدرسة الموسيقى ودروس التقوية — لا اللوازم المدرسية فقط! حتى 15€/الشهر للرياضة/الثقافة/الترفيه.',
   'finance_application_bildungTeilhabe_processingTime_2': '2–6 أسابيع',
-  'finance_application_bildungTeilhabe_renewalNote_3':
-      'جدّد الطلب كل سنة دراسية (للوازم المدرسية). أما تكاليف النوادي/الدورات: فكل 6 أشهر.',
-  'finance_application_bildungTeilhabe_responsibleAuthority_1':
-      'مركز العمل أو مكتب الشؤون الاجتماعية في مدينتك/بلديتك (Jobcenter / Sozialamt)',
+  'finance_application_bildungTeilhabe_renewalNote_3': 'جدّد الطلب كل سنة دراسية (للوازم المدرسية). أما تكاليف النوادي/الدورات: فكل 6 أشهر.',
+  'finance_application_bildungTeilhabe_responsibleAuthority_1': 'مركز العمل أو مكتب الشؤون الاجتماعية في مدينتك/بلديتك (Jobcenter / Sozialamt)',
   'finance_application_bildungTeilhabe_title_13': 'التحقّق مما هو ممكن',
   'finance_application_bildungTeilhabe_title_15': 'طلب غير رسمي أو استمارة',
   'finance_application_bildungTeilhabe_title_17': 'إرفاق الإثباتات',
   'finance_application_bildungTeilhabe_title_19': 'قسيمة أو دفع مباشر',
-  'finance_application_bildungTeilhabe_whereToGet_11':
-      'استمارة التسجيل أو فاتورة النادي/الدورة',
-  'finance_application_bildungTeilhabe_whereToGet_7':
-      'قرار علاوة الأطفال، أو بدل السكن، أو Bürgergeld، أو المساعدة الاجتماعية',
+  'finance_application_bildungTeilhabe_whereToGet_11': 'استمارة التسجيل أو فاتورة النادي/الدورة',
+  'finance_application_bildungTeilhabe_whereToGet_7': 'قرار علاوة الأطفال، أو بدل السكن، أو Bürgergeld، أو المساعدة الاجتماعية',
   'finance_application_bildungTeilhabe_whereToGet_9': 'سكرتارية مدرسة طفلك',
-  'finance_application_eingliederungshilfe_aiTemplatePrompt_5':
-      'اكتب طلبًا قصيرًا غير رسمي للحصول على مساعدة الإدماج لطفل. الطفل لديه إعاقة ويحتاج إلى دعم للمشاركة (مثل مرافقة مدرسية، تدخّل مبكّر). موضوعي، 3-4 جمل.',
-  'finance_application_eingliederungshilfe_benefitName_0':
-      'مساعدة الإدماج (Eingliederungshilfe)',
-  'finance_application_eingliederungshilfe_description_15':
-      'الإعاقة النفسية (التوحّد، فرط الحركة، القلق) ← مكتب رعاية الشباب. الإعاقة الجسدية/الذهنية ← مكتب الشؤون الاجتماعية. وعند الشك: اسأل مكتب رعاية الشباب.',
-  'finance_application_eingliederungshilfe_description_17':
-      'رسالة تكفي: "أطلب مساعدة الإدماج لطفلي [الاسم] بسبب [التشخيص]." وأرفِق معها الرأي الطبي.',
-  'finance_application_eingliederungshilfe_description_19':
-      'يدعوك المكتب إلى جلسة. وفيها يُناقَش ما يحتاجه طفلك من مساعدة (تدخّل مبكّر، مرافقة مدرسية، علاج، إلخ).',
-  'finance_application_eingliederungshilfe_description_21':
-      'بعد الموافقة تبدأ المساعدة. وعند الرفض: قدّم اعتراضًا (خلال 4 أسابيع، مجانًا).',
-  'finance_application_eingliederungshilfe_name_10':
-      'تقرير النمو (الحضانة/المدرسة)',
-  'finance_application_eingliederungshilfe_name_12':
-      'رأي المدرسة (في حالة المرافقة المدرسية)',
+  'finance_application_eingliederungshilfe_aiTemplatePrompt_5': 'اكتب طلبًا قصيرًا غير رسمي للحصول على مساعدة الإدماج لطفل. الطفل لديه إعاقة ويحتاج إلى دعم للمشاركة (مثل مرافقة مدرسية، تدخّل مبكّر). موضوعي، 3-4 جمل.',
+  'finance_application_eingliederungshilfe_benefitName_0': 'مساعدة الإدماج (Eingliederungshilfe)',
+  'finance_application_eingliederungshilfe_description_15': 'الإعاقة النفسية (التوحّد، فرط الحركة، القلق) ← مكتب رعاية الشباب. الإعاقة الجسدية/الذهنية ← مكتب الشؤون الاجتماعية. وعند الشك: اسأل مكتب رعاية الشباب.',
+  'finance_application_eingliederungshilfe_description_17': 'رسالة تكفي: "أطلب مساعدة الإدماج لطفلي [الاسم] بسبب [التشخيص]." وأرفِق معها الرأي الطبي.',
+  'finance_application_eingliederungshilfe_description_19': 'يدعوك المكتب إلى جلسة. وفيها يُناقَش ما يحتاجه طفلك من مساعدة (تدخّل مبكّر، مرافقة مدرسية، علاج، إلخ).',
+  'finance_application_eingliederungshilfe_description_21': 'بعد الموافقة تبدأ المساعدة. وعند الرفض: قدّم اعتراضًا (خلال 4 أسابيع، مجانًا).',
+  'finance_application_eingliederungshilfe_name_10': 'تقرير النمو (الحضانة/المدرسة)',
+  'finance_application_eingliederungshilfe_name_12': 'رأي المدرسة (في حالة المرافقة المدرسية)',
   'finance_application_eingliederungshilfe_name_6': 'رأي طبي / تشخيص',
-  'finance_application_eingliederungshilfe_name_8':
-      'طلب غير رسمي للحصول على مساعدة الإدماج',
-  'finance_application_eingliederungshilfe_proTip_4':
-      'في حالة الإعاقة النفسية (مثل التوحّد وفرط الحركة) يكون مكتب رعاية الشباب هو المختص (§35a SGB VIII). وفي حالة الإعاقة الجسدية/الذهنية يكون مكتب الشؤون الاجتماعية.',
+  'finance_application_eingliederungshilfe_name_8': 'طلب غير رسمي للحصول على مساعدة الإدماج',
+  'finance_application_eingliederungshilfe_proTip_4': 'في حالة الإعاقة النفسية (مثل التوحّد وفرط الحركة) يكون مكتب رعاية الشباب هو المختص (§35a SGB VIII). وفي حالة الإعاقة الجسدية/الذهنية يكون مكتب الشؤون الاجتماعية.',
   'finance_application_eingliederungshilfe_processingTime_2': '4–12 أسبوعًا',
-  'finance_application_eingliederungshilfe_renewalNote_3':
-      'تُمنَح لفترة محدّدة. قدّم الطلب اللاحق في الوقت المناسب.',
-  'finance_application_eingliederungshilfe_responsibleAuthority_1':
-      'مكتب الشؤون الاجتماعية أو مكتب رعاية الشباب (حسب نوع الإعاقة)',
+  'finance_application_eingliederungshilfe_renewalNote_3': 'تُمنَح لفترة محدّدة. قدّم الطلب اللاحق في الوقت المناسب.',
+  'finance_application_eingliederungshilfe_responsibleAuthority_1': 'مكتب الشؤون الاجتماعية أو مكتب رعاية الشباب (حسب نوع الإعاقة)',
   'finance_application_eingliederungshilfe_title_14': 'توضيح الجهة المختصة',
   'finance_application_eingliederungshilfe_title_16': 'تقديم طلب غير رسمي',
   'finance_application_eingliederungshilfe_title_18': 'جلسة خطة المساعدة',
   'finance_application_eingliederungshilfe_title_20': 'الموافقة + بدء المساعدة',
-  'finance_application_eingliederungshilfe_whereToGet_11':
-      'يكتب المربّي/ة أو المعلّم/ة تقريرًا قصيرًا',
-  'finance_application_eingliederungshilfe_whereToGet_13':
-      'إدارة المدرسة أو معلّم/ة الصف',
-  'finance_application_eingliederungshilfe_whereToGet_7':
-      'طبيب الأطفال، أو المركز الاجتماعي لطب الأطفال (SPZ)، أو الطبيب الاختصاصي',
-  'finance_application_eingliederungshilfe_whereToGet_9':
-      'رسالة خاصة بك إلى مكتب الشؤون الاجتماعية/رعاية الشباب',
-  'finance_application_elterngeld_aiTemplatePrompt_5':
-      'اكتب رسالة مرافِقة قصيرة لطلب بدل الوالدية. أحد الوالدين يطلب بدل الوالدية الأساسي بعد ولادة الطفل الأول ويخطّط لتقاسم الأشهر مع الشريك. موضوعية وواضحة.',
+  'finance_application_eingliederungshilfe_whereToGet_11': 'يكتب المربّي/ة أو المعلّم/ة تقريرًا قصيرًا',
+  'finance_application_eingliederungshilfe_whereToGet_13': 'إدارة المدرسة أو معلّم/ة الصف',
+  'finance_application_eingliederungshilfe_whereToGet_7': 'طبيب الأطفال، أو المركز الاجتماعي لطب الأطفال (SPZ)، أو الطبيب الاختصاصي',
+  'finance_application_eingliederungshilfe_whereToGet_9': 'رسالة خاصة بك إلى مكتب الشؤون الاجتماعية/رعاية الشباب',
+  'finance_application_elterngeld_aiTemplatePrompt_5': 'اكتب رسالة مرافِقة قصيرة لطلب بدل الوالدية. أحد الوالدين يطلب بدل الوالدية الأساسي بعد ولادة الطفل الأول ويخطّط لتقاسم الأشهر مع الشريك. موضوعية وواضحة.',
   'finance_application_elterngeld_benefitName_0': 'بدل الوالدية (Elterngeld)',
-  'finance_application_elterngeld_description_18':
-      'احسب بالحاسبة الرسمية مقدار بدل الوالدية الذي يحقّ لك، وأي توزيع (أساسي/Plus/علاوة الشراكة) يناسب أكثر.',
-  'finance_application_elterngeld_description_20':
-      'لكل ولاية استمارتها الخاصة. والأسهل عبر ElterngeldDigital (متوفّر في ولايات كثيرة).',
-  'finance_application_elterngeld_description_22':
-      'انسخ شهادة الميلاد وإثباتات الدخل وشهادة بدل الأمومة وبطاقات الهوية.',
-  'finance_application_elterngeld_description_24':
-      'قدّم بالبريد أو رقميًا. وتتفاوت مدة المعالجة كثيرًا (4–12 أسبوعًا). نصيحة: استفسر بعد 6 أسابيع إن لم يصلك شيء.',
-  'finance_application_elterngeld_name_10':
-      'شهادة من صاحب العمل عن المكمّل الإضافي لبدل الأمومة',
-  'finance_application_elterngeld_name_12':
-      'إثباتات الدخل لآخر 12 شهرًا قبل الولادة',
+  'finance_application_elterngeld_description_18': 'احسب بالحاسبة الرسمية مقدار بدل الوالدية الذي يحقّ لك، وأي توزيع (أساسي/Plus/علاوة الشراكة) يناسب أكثر.',
+  'finance_application_elterngeld_description_20': 'لكل ولاية استمارتها الخاصة. والأسهل عبر ElterngeldDigital (متوفّر في ولايات كثيرة).',
+  'finance_application_elterngeld_description_22': 'انسخ شهادة الميلاد وإثباتات الدخل وشهادة بدل الأمومة وبطاقات الهوية.',
+  'finance_application_elterngeld_description_24': 'قدّم بالبريد أو رقميًا. وتتفاوت مدة المعالجة كثيرًا (4–12 أسبوعًا). نصيحة: استفسر بعد 6 أسابيع إن لم يصلك شيء.',
+  'finance_application_elterngeld_name_10': 'شهادة من صاحب العمل عن المكمّل الإضافي لبدل الأمومة',
+  'finance_application_elterngeld_name_12': 'إثباتات الدخل لآخر 12 شهرًا قبل الولادة',
   'finance_application_elterngeld_name_14': 'بطاقة هوية كلا الوالدين (نسخة)',
-  'finance_application_elterngeld_name_15':
-      'تأكيد وقت العمل المخطّط (في حالة Elterngeld Plus)',
-  'finance_application_elterngeld_name_6':
-      'شهادة ميلاد الطفل (أصل أو نسخة مصدّقة)',
-  'finance_application_elterngeld_name_8':
-      'شهادة من صندوق التأمين الصحي عن بدل الأمومة',
-  'finance_application_elterngeld_proTip_4':
-      'يمكنك تجهيز الطلب حتى قبل الولادة — فلا تنقصك عندئذٍ سوى شهادة الميلاد. يوفّر أسابيع!',
-  'finance_application_elterngeld_processingTime_2':
-      '4–12 أسبوعًا (حسب الولاية)',
-  'finance_application_elterngeld_renewalNote_3':
-      'لا طلب لاحق. مرة واحدة لمدة 12–14 شهرًا (الأساسي) أو 24–28 شهرًا (Plus).',
-  'finance_application_elterngeld_responsibleAuthority_1':
-      'مكتب بدل الوالدية في ولايتك (Elterngeldstelle)',
+  'finance_application_elterngeld_name_15': 'تأكيد وقت العمل المخطّط (في حالة Elterngeld Plus)',
+  'finance_application_elterngeld_name_6': 'شهادة ميلاد الطفل (أصل أو نسخة مصدّقة)',
+  'finance_application_elterngeld_name_8': 'شهادة من صندوق التأمين الصحي عن بدل الأمومة',
+  'finance_application_elterngeld_proTip_4': 'يمكنك تجهيز الطلب حتى قبل الولادة — فلا تنقصك عندئذٍ سوى شهادة الميلاد. يوفّر أسابيع!',
+  'finance_application_elterngeld_processingTime_2': '4–12 أسبوعًا (حسب الولاية)',
+  'finance_application_elterngeld_renewalNote_3': 'لا طلب لاحق. مرة واحدة لمدة 12–14 شهرًا (الأساسي) أو 24–28 شهرًا (Plus).',
+  'finance_application_elterngeld_responsibleAuthority_1': 'مكتب بدل الوالدية في ولايتك (Elterngeldstelle)',
   'finance_application_elterngeld_title_17': 'استخدام حاسبة بدل الوالدية',
-  'finance_application_elterngeld_title_19':
-      'تعبئة الطلب (إلكترونيًا أو ورقيًا)',
+  'finance_application_elterngeld_title_19': 'تعبئة الطلب (إلكترونيًا أو ورقيًا)',
   'finance_application_elterngeld_title_21': 'جمع المستندات',
   'finance_application_elterngeld_title_23': 'التقديم + الصبر',
-  'finance_application_elterngeld_whereToGet_11':
-      'قسم الموارد البشرية لدى صاحب عملك',
-  'finance_application_elterngeld_whereToGet_13':
-      'قسيمة الراتب أو إشعار الضريبة',
-  'finance_application_elterngeld_whereToGet_16':
-      'صاحب العمل (إذا كنت تعمل بدوام جزئي)',
-  'finance_application_elterngeld_whereToGet_7':
-      'دائرة الأحوال المدنية (Standesamt)',
-  'finance_application_elterngeld_whereToGet_9':
-      'صندوق تأمينك الصحي (يُطلَب بعد الولادة)',
-  'finance_application_kindergeld_aiTemplatePrompt_5':
-      'اكتب رسالة مرافِقة قصيرة وودودة لطلب بدل الأطفال. أحد الوالدين يطلب بدل الأطفال لأول مرة بعد الولادة. اجعلها بسيطة وموضوعية.',
+  'finance_application_elterngeld_whereToGet_11': 'قسم الموارد البشرية لدى صاحب عملك',
+  'finance_application_elterngeld_whereToGet_13': 'قسيمة الراتب أو إشعار الضريبة',
+  'finance_application_elterngeld_whereToGet_16': 'صاحب العمل (إذا كنت تعمل بدوام جزئي)',
+  'finance_application_elterngeld_whereToGet_7': 'دائرة الأحوال المدنية (Standesamt)',
+  'finance_application_elterngeld_whereToGet_9': 'صندوق تأمينك الصحي (يُطلَب بعد الولادة)',
+  'finance_application_kindergeld_aiTemplatePrompt_5': 'اكتب رسالة مرافِقة قصيرة وودودة لطلب بدل الأطفال. أحد الوالدين يطلب بدل الأطفال لأول مرة بعد الولادة. اجعلها بسيطة وموضوعية.',
   'finance_application_kindergeld_benefitName_0': 'بدل الأطفال (Kindergeld)',
-  'finance_application_kindergeld_description_15':
-      'املأ الطلب "KG1" إلكترونيًا على موقع Familienkasse. يستغرق نحو 10 دقائق.',
-  'finance_application_kindergeld_description_17':
-      'ارفع نسخة ممسوحة من شهادة الميلاد والأرقام الضريبية أو أرسلها بالبريد إلى صندوق الأسرة المختص.',
-  'finance_application_kindergeld_description_19':
-      'ستتلقّى قرارًا بالبريد (4–6 أسابيع). ثم تبدأ أول دفعة شهريًا بعد ذلك.',
-  'finance_application_kindergeld_name_10':
-      'الرقم الضريبي للوالد مقدّم الطلب (Steuer-ID)',
+  'finance_application_kindergeld_description_15': 'املأ الطلب "KG1" إلكترونيًا على موقع Familienkasse. يستغرق نحو 10 دقائق.',
+  'finance_application_kindergeld_description_17': 'ارفع نسخة ممسوحة من شهادة الميلاد والأرقام الضريبية أو أرسلها بالبريد إلى صندوق الأسرة المختص.',
+  'finance_application_kindergeld_description_19': 'ستتلقّى قرارًا بالبريد (4–6 أسابيع). ثم تبدأ أول دفعة شهريًا بعد ذلك.',
+  'finance_application_kindergeld_name_10': 'الرقم الضريبي للوالد مقدّم الطلب (Steuer-ID)',
   'finance_application_kindergeld_name_12': 'بطاقة الهوية أو جواز السفر (نسخة)',
   'finance_application_kindergeld_name_13': 'بيانات الحساب المصرفي (IBAN)',
   'finance_application_kindergeld_name_6': 'شهادة ميلاد الطفل',
   'finance_application_kindergeld_name_8': 'الرقم الضريبي للطفل (Steuer-ID)',
-  'finance_application_kindergeld_proTip_4':
-      'قدّم الطلب مباشرة بعد الولادة — فبدل الأطفال يُدفَع بأثر رجعي لمدة 6 أشهر كحد أقصى.',
+  'finance_application_kindergeld_proTip_4': 'قدّم الطلب مباشرة بعد الولادة — فبدل الأطفال يُدفَع بأثر رجعي لمدة 6 أشهر كحد أقصى.',
   'finance_application_kindergeld_processingTime_2': '4–6 أسابيع',
-  'finance_application_kindergeld_renewalNote_3':
-      'لا حاجة إلى طلب لاحق. يُدفَع تلقائيًا حتى بلوغ 18 (أو 25) عامًا.',
-  'finance_application_kindergeld_responsibleAuthority_1':
-      'صندوق الأسرة التابع لوكالة العمل الاتحادية (Familienkasse der Bundesagentur für Arbeit)',
+  'finance_application_kindergeld_renewalNote_3': 'لا حاجة إلى طلب لاحق. يُدفَع تلقائيًا حتى بلوغ 18 (أو 25) عامًا.',
+  'finance_application_kindergeld_responsibleAuthority_1': 'صندوق الأسرة التابع لوكالة العمل الاتحادية (Familienkasse der Bundesagentur für Arbeit)',
   'finance_application_kindergeld_title_14': 'تعبئة الطلب الإلكتروني',
   'finance_application_kindergeld_title_16': 'رفع المستندات أو إرسالها بالبريد',
   'finance_application_kindergeld_title_18': 'انتظار التأكيد',
-  'finance_application_kindergeld_whereToGet_11':
-      'مدوَّن في إشعار الضريبة أو قسيمة الراتب',
-  'finance_application_kindergeld_whereToGet_7':
-      'دائرة الأحوال المدنية (Standesamt) (تحصل عليها غالبًا في المستشفى)',
-  'finance_application_kindergeld_whereToGet_9':
-      'يصل بالبريد من المكتب الاتحادي المركزي للضرائب (نحو 2–3 أسابيع بعد الولادة)',
-  'finance_application_kinderzuschlag_aiTemplatePrompt_5':
-      'اكتب تبريرًا قصيرًا وموضوعيًا لطلب علاوة الأطفال. العائلة ذات دخل محدود وتحتاج إلى دعم للأطفال. اذكر أن الإيجار يشكّل جزءًا كبيرًا من الدخل.',
-  'finance_application_kinderzuschlag_benefitName_0':
-      'علاوة الأطفال (Kinderzuschlag, KiZ)',
-  'finance_application_kinderzuschlag_description_17':
-      'تحقّق بالدليل الإلكتروني مما إذا كان لديك استحقاق مرجّح. هذا يوفّر عليك الوقت إن لم يكن كذلك.',
-  'finance_application_kinderzuschlag_description_19':
-      'املأ الطلب على موقع Familienkasse. ستحتاج إلى إثباتات الدخل وتكاليف الإيجار في متناول اليد.',
-  'finance_application_kinderzuschlag_description_21':
-      'ارفع قسائم الراتب وعقد الإيجار وكشوف الحساب أو أرسلها بالبريد.',
-  'finance_application_kinderzuschlag_description_23':
-      'بعد 4–8 أسابيع يصل القرار. مهم: لا تنسَ طلب إعادة الموافقة بعد 6 أشهر!',
+  'finance_application_kindergeld_whereToGet_11': 'مدوَّن في إشعار الضريبة أو قسيمة الراتب',
+  'finance_application_kindergeld_whereToGet_7': 'دائرة الأحوال المدنية (Standesamt) (تحصل عليها غالبًا في المستشفى)',
+  'finance_application_kindergeld_whereToGet_9': 'يصل بالبريد من المكتب الاتحادي المركزي للضرائب (نحو 2–3 أسابيع بعد الولادة)',
+  'finance_application_kinderzuschlag_aiTemplatePrompt_5': 'اكتب تبريرًا قصيرًا وموضوعيًا لطلب علاوة الأطفال. العائلة ذات دخل محدود وتحتاج إلى دعم للأطفال. اذكر أن الإيجار يشكّل جزءًا كبيرًا من الدخل.',
+  'finance_application_kinderzuschlag_benefitName_0': 'علاوة الأطفال (Kinderzuschlag, KiZ)',
+  'finance_application_kinderzuschlag_description_17': 'تحقّق بالدليل الإلكتروني مما إذا كان لديك استحقاق مرجّح. هذا يوفّر عليك الوقت إن لم يكن كذلك.',
+  'finance_application_kinderzuschlag_description_19': 'املأ الطلب على موقع Familienkasse. ستحتاج إلى إثباتات الدخل وتكاليف الإيجار في متناول اليد.',
+  'finance_application_kinderzuschlag_description_21': 'ارفع قسائم الراتب وعقد الإيجار وكشوف الحساب أو أرسلها بالبريد.',
+  'finance_application_kinderzuschlag_description_23': 'بعد 4–8 أسابيع يصل القرار. مهم: لا تنسَ طلب إعادة الموافقة بعد 6 أشهر!',
   'finance_application_kinderzuschlag_name_10': 'كشوف الحساب لآخر 3 أشهر',
   'finance_application_kinderzuschlag_name_12': 'قرار بدل الأطفال',
   'finance_application_kinderzuschlag_name_14': 'شهادة/شهادات ميلاد الأطفال',
   'finance_application_kinderzuschlag_name_15': 'بطاقة الهوية (نسخة)',
   'finance_application_kinderzuschlag_name_6': 'إثباتات الدخل لآخر 6 أشهر',
-  'finance_application_kinderzuschlag_name_8':
-      'عقد الإيجار أو إثبات تكاليف السكن',
-  'finance_application_kinderzuschlag_proTip_4':
-      'باستخدام دليل KiZ من صندوق الأسرة يمكنك التحقّق خلال دقيقتين مما إذا كان لديك استحقاق — قبل تعبئة الطلب الكامل.',
+  'finance_application_kinderzuschlag_name_8': 'عقد الإيجار أو إثبات تكاليف السكن',
+  'finance_application_kinderzuschlag_proTip_4': 'باستخدام دليل KiZ من صندوق الأسرة يمكنك التحقّق خلال دقيقتين مما إذا كان لديك استحقاق — قبل تعبئة الطلب الكامل.',
   'finance_application_kinderzuschlag_processingTime_2': '4–8 أسابيع',
-  'finance_application_kinderzuschlag_renewalNote_3':
-      'يجب تجديد الطلب كل 6 أشهر (طلب إعادة الموافقة).',
+  'finance_application_kinderzuschlag_renewalNote_3': 'يجب تجديد الطلب كل 6 أشهر (طلب إعادة الموافقة).',
   'finance_application_kinderzuschlag_title_16': 'استخدام دليل KiZ (دقيقتان)',
   'finance_application_kinderzuschlag_title_20': 'تقديم المستندات',
   'finance_application_kinderzuschlag_title_22': 'القرار + التجديد',
-  'finance_application_kinderzuschlag_whereToGet_11':
-      'الخدمات المصرفية عبر الإنترنت ← طباعة PDF',
-  'finance_application_kinderzuschlag_whereToGet_13':
-      'وصلك بالبريد من صندوق الأسرة',
-  'finance_application_kinderzuschlag_whereToGet_7':
-      'قسيمة الراتب من صاحب العمل، أو قرار بدل الوالدية، أو إشعار الضريبة',
-  'finance_application_kinderzuschlag_whereToGet_9':
-      'نسخة من عقد إيجارك + آخر كشف للنفقات الجانبية',
-  'finance_application_pflegegeld_aiTemplatePrompt_5':
-      'اكتب طلبًا قصيرًا غير رسمي للحصول على مزايا الرعاية لطفل. الطفل لديه إعاقة/مرض مزمن ويحتاج إلى دعم يومي. موضوعي، 3-4 جمل.',
+  'finance_application_kinderzuschlag_whereToGet_11': 'الخدمات المصرفية عبر الإنترنت ← طباعة PDF',
+  'finance_application_kinderzuschlag_whereToGet_13': 'وصلك بالبريد من صندوق الأسرة',
+  'finance_application_kinderzuschlag_whereToGet_7': 'قسيمة الراتب من صاحب العمل، أو قرار بدل الوالدية، أو إشعار الضريبة',
+  'finance_application_kinderzuschlag_whereToGet_9': 'نسخة من عقد إيجارك + آخر كشف للنفقات الجانبية',
+  'finance_application_pflegegeld_aiTemplatePrompt_5': 'اكتب طلبًا قصيرًا غير رسمي للحصول على مزايا الرعاية لطفل. الطفل لديه إعاقة/مرض مزمن ويحتاج إلى دعم يومي. موضوعي، 3-4 جمل.',
   'finance_application_pflegegeld_benefitName_0': 'بدل الرعاية (Pflegegeld)',
-  'finance_application_pflegegeld_description_13':
-      'مكالمة واحدة تكفي كطلب! قل: "أرغب في طلب مزايا الرعاية لطفلي." وتاريخ المكالمة هو ما يُحتسَب.',
-  'finance_application_pflegegeld_description_15':
-      'دوّن يوميًا ما يحتاجه طفلك من مساعدة: الغسل، اللبس، الأكل، الليل، الإشراف. وكلما كان أدقّ، كان أفضل للتقييم.',
-  'finance_application_pflegegeld_description_17':
-      'تأتي الخدمة الطبية إلى منزلكم. أظهِر بصراحة ما يحتاجه طفلك — لا تُظهر "اليوم الجيد" فقط!',
-  'finance_application_pflegegeld_description_19':
-      'يُتّخذ القرار مبدئيًا خلال 25 يوم عمل (§18c SGB XI؛ مع إمكان الاستثناءات). ويسري للاعتراض مبدئيًا شهر واحد من تاريخ الإبلاغ، وثلاثة أشهر عند الإبلاغ في الخارج (§84 SGG). تحقّق من إرشادات الطعن.',
-  'finance_application_pflegegeld_name_10':
-      'مفكّرة رعاية (أسبوعان قبل التقييم)',
-  'finance_application_pflegegeld_name_6':
-      'طلب غير رسمي (يكفي عبر الهاتف أو برسالة)',
+  'finance_application_pflegegeld_description_13': 'مكالمة واحدة تكفي كطلب! قل: "أرغب في طلب مزايا الرعاية لطفلي." وتاريخ المكالمة هو ما يُحتسَب.',
+  'finance_application_pflegegeld_description_15': 'دوّن يوميًا ما يحتاجه طفلك من مساعدة: الغسل، اللبس، الأكل، الليل، الإشراف. وكلما كان أدقّ، كان أفضل للتقييم.',
+  'finance_application_pflegegeld_description_17': 'تأتي الخدمة الطبية إلى منزلكم. أظهِر بصراحة ما يحتاجه طفلك — لا تُظهر "اليوم الجيد" فقط!',
+  'finance_application_pflegegeld_description_19': 'يُتّخذ القرار مبدئيًا خلال 25 يوم عمل (§18c SGB XI؛ مع إمكان الاستثناءات). ويسري للاعتراض مبدئيًا شهر واحد من تاريخ الإبلاغ، وثلاثة أشهر عند الإبلاغ في الخارج (§84 SGG). تحقّق من إرشادات الطعن.',
+  'finance_application_pflegegeld_name_10': 'مفكّرة رعاية (أسبوعان قبل التقييم)',
+  'finance_application_pflegegeld_name_6': 'طلب غير رسمي (يكفي عبر الهاتف أو برسالة)',
   'finance_application_pflegegeld_name_8': 'وثائق طبية / تشخيصات',
-  'finance_application_pflegegeld_proTip_4':
-      'قدّم الطلب بشكل غير رسمي عبر الهاتف — مكالمة واحدة بصندوق الرعاية تكفي! والتاريخ يُحتسَب للدفع بأثر رجعي.',
-  'finance_application_pflegegeld_processingTime_2':
-      '25 يوم عمل مبدئيًا؛ تحقّق من الاستثناءات القانونية (§18c SGB XI).',
-  'finance_application_pflegegeld_renewalNote_3':
-      'لا طلب لاحق. وعند تدهور الحالة: قدّم طلب رفع الدرجة.',
-  'finance_application_pflegegeld_responsibleAuthority_1':
-      'صندوق الرعاية (لدى صندوق تأمينك الصحي)',
+  'finance_application_pflegegeld_proTip_4': 'قدّم الطلب بشكل غير رسمي عبر الهاتف — مكالمة واحدة بصندوق الرعاية تكفي! والتاريخ يُحتسَب للدفع بأثر رجعي.',
+  'finance_application_pflegegeld_processingTime_2': '25 يوم عمل مبدئيًا؛ تحقّق من الاستثناءات القانونية (§18c SGB XI).',
+  'finance_application_pflegegeld_renewalNote_3': 'لا طلب لاحق. وعند تدهور الحالة: قدّم طلب رفع الدرجة.',
+  'finance_application_pflegegeld_responsibleAuthority_1': 'صندوق الرعاية (لدى صندوق تأمينك الصحي)',
   'finance_application_pflegegeld_title_12': 'الاتصال بصندوق الرعاية',
   'finance_application_pflegegeld_title_14': 'إمساك مفكّرة رعاية (أسبوعان)',
   'finance_application_pflegegeld_title_16': 'تقييم MD (زيارة منزلية)',
   'finance_application_pflegegeld_title_18': 'القرار + اعتراض عند الاقتضاء',
-  'finance_application_pflegegeld_whereToGet_11':
-      'قالب من صندوق الرعاية أو عبر الإنترنت',
-  'finance_application_pflegegeld_whereToGet_7':
-      'مكالمة بصندوق تأمينك الصحي/صندوق الرعاية تكفي',
-  'finance_application_pflegegeld_whereToGet_9':
-      'طبيب الأطفال، أو الطبيب الاختصاصي، أو المستشفى',
-  'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5':
-      'اكتب طلبًا قصيرًا وموضوعيًا للحصول على سُلفة النفقة. والد وحيد لا يتلقّى نفقة من الوالد الآخر. اجعله موضوعيًا وواضحًا، 3-4 جمل.',
-  'finance_application_unterhaltsvorschuss_benefitName_0':
-      'سُلفة النفقة (Unterhaltsvorschuss)',
-  'finance_application_unterhaltsvorschuss_description_16':
-      'اتصل بمكتب رعاية الشباب أو اذهب شخصيًا. فهم يساعدونك مباشرة في التعبئة.',
-  'finance_application_unterhaltsvorschuss_description_18':
-      'تحصل على الاستمارة من مكتب رعاية الشباب. وتتيحها بعض المدن أيضًا إلكترونيًا كملف PDF.',
-  'finance_application_unterhaltsvorschuss_description_20':
-      'أرفِق شهادة الميلاد وشهادة التسجيل السكني وإثبات عدم دفع النفقة.',
-  'finance_application_unterhaltsvorschuss_description_22':
-      'بعد 4–8 أسابيع يصل القرار. ويتمّ الدفع شهريًا بأثر رجعي من تاريخ تقديم الطلب.',
+  'finance_application_pflegegeld_whereToGet_11': 'قالب من صندوق الرعاية أو عبر الإنترنت',
+  'finance_application_pflegegeld_whereToGet_7': 'مكالمة بصندوق تأمينك الصحي/صندوق الرعاية تكفي',
+  'finance_application_pflegegeld_whereToGet_9': 'طبيب الأطفال، أو الطبيب الاختصاصي، أو المستشفى',
+  'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5': 'اكتب طلبًا قصيرًا وموضوعيًا للحصول على سُلفة النفقة. والد وحيد لا يتلقّى نفقة من الوالد الآخر. اجعله موضوعيًا وواضحًا، 3-4 جمل.',
+  'finance_application_unterhaltsvorschuss_benefitName_0': 'سُلفة النفقة (Unterhaltsvorschuss)',
+  'finance_application_unterhaltsvorschuss_description_16': 'اتصل بمكتب رعاية الشباب أو اذهب شخصيًا. فهم يساعدونك مباشرة في التعبئة.',
+  'finance_application_unterhaltsvorschuss_description_18': 'تحصل على الاستمارة من مكتب رعاية الشباب. وتتيحها بعض المدن أيضًا إلكترونيًا كملف PDF.',
+  'finance_application_unterhaltsvorschuss_description_20': 'أرفِق شهادة الميلاد وشهادة التسجيل السكني وإثبات عدم دفع النفقة.',
+  'finance_application_unterhaltsvorschuss_description_22': 'بعد 4–8 أسابيع يصل القرار. ويتمّ الدفع شهريًا بأثر رجعي من تاريخ تقديم الطلب.',
   'finance_application_unterhaltsvorschuss_name_11': 'إثبات بعدم دفع النفقة',
-  'finance_application_unterhaltsvorschuss_name_13':
-      'إقرار الأبوّة أو شهادة ميلاد تتضمّن الأب',
-  'finance_application_unterhaltsvorschuss_name_9':
-      'شهادة تسجيل سكني (سكن منفرد)',
-  'finance_application_unterhaltsvorschuss_proTip_4':
-      'يمكنك طلب سُلفة النفقة بأثر رجعي لمدة شهر واحد أيضًا. فلا تنتظر — قدّم الطلب فورًا!',
-  'finance_application_unterhaltsvorschuss_renewalNote_3':
-      'لا حاجة إلى طلب لاحق. يُدفَع تلقائيًا حتى 18 عامًا (طالما بقيت الشروط قائمة).',
-  'finance_application_unterhaltsvorschuss_responsibleAuthority_1':
-      'مكتب رعاية الشباب في مدينتك/بلديتك (Jugendamt)',
-  'finance_application_unterhaltsvorschuss_title_15':
-      'التواصل مع مكتب رعاية الشباب',
+  'finance_application_unterhaltsvorschuss_name_13': 'إقرار الأبوّة أو شهادة ميلاد تتضمّن الأب',
+  'finance_application_unterhaltsvorschuss_name_9': 'شهادة تسجيل سكني (سكن منفرد)',
+  'finance_application_unterhaltsvorschuss_proTip_4': 'يمكنك طلب سُلفة النفقة بأثر رجعي لمدة شهر واحد أيضًا. فلا تنتظر — قدّم الطلب فورًا!',
+  'finance_application_unterhaltsvorschuss_renewalNote_3': 'لا حاجة إلى طلب لاحق. يُدفَع تلقائيًا حتى 18 عامًا (طالما بقيت الشروط قائمة).',
+  'finance_application_unterhaltsvorschuss_responsibleAuthority_1': 'مكتب رعاية الشباب في مدينتك/بلديتك (Jugendamt)',
+  'finance_application_unterhaltsvorschuss_title_15': 'التواصل مع مكتب رعاية الشباب',
   'finance_application_unterhaltsvorschuss_title_17': 'تعبئة الطلب',
   'finance_application_unterhaltsvorschuss_title_21': 'انتظار القرار',
-  'finance_application_unterhaltsvorschuss_whereToGet_10':
-      'مكتب المواطنين (Bürgeramt) — يُثبت أنك تعيش وحدك مع الطفل',
-  'finance_application_unterhaltsvorschuss_whereToGet_12':
-      'مثلًا رسالة إلى الطرف السابق دون رد، أو سند نفقة، أو إقرار خاص بك',
-  'finance_application_unterhaltsvorschuss_whereToGet_14':
-      'دائرة الأحوال المدنية أو مكتب رعاية الشباب',
-  'finance_application_wohngeld_aiTemplatePrompt_5':
-      'اكتب رسالة مرافِقة قصيرة لطلب بدل السكن. عائلة لديها أطفال تطلب بدل السكن لأول مرة لأن الإيجار يشكّل جزءًا كبيرًا من الدخل. موضوعية وودودة.',
+  'finance_application_unterhaltsvorschuss_whereToGet_10': 'مكتب المواطنين (Bürgeramt) — يُثبت أنك تعيش وحدك مع الطفل',
+  'finance_application_unterhaltsvorschuss_whereToGet_12': 'مثلًا رسالة إلى الطرف السابق دون رد، أو سند نفقة، أو إقرار خاص بك',
+  'finance_application_unterhaltsvorschuss_whereToGet_14': 'دائرة الأحوال المدنية أو مكتب رعاية الشباب',
+  'finance_application_wohngeld_aiTemplatePrompt_5': 'اكتب رسالة مرافِقة قصيرة لطلب بدل السكن. عائلة لديها أطفال تطلب بدل السكن لأول مرة لأن الإيجار يشكّل جزءًا كبيرًا من الدخل. موضوعية وودودة.',
   'finance_application_wohngeld_benefitName_0': 'بدل السكن (Wohngeld)',
-  'finance_application_wohngeld_description_16':
-      'تحقّق بحاسبة Wohngeld-Plus الرسمية التابعة لـ BMWSB مما إذا كان يحقّ لك بدل سكن وبأي مقدار.',
-  'finance_application_wohngeld_description_18':
-      'تحصل على الطلب من مجلس المدينة/مكتب المواطنين أو كملف PDF عبر الإنترنت. وتتيح بعض البلديات طلبات إلكترونية أيضًا.',
-  'finance_application_wohngeld_description_20':
-      'أرفِق عقد الإيجار وإثباتات الدخل وكشف النفقات الجانبية. وعند الشك، أرسِل أكثر بدل أن ترسل أقل.',
-  'finance_application_wohngeld_description_22':
-      'بعد 3–8 أسابيع يصل القرار. اضبط تذكيرًا لطلب الاستمرار (بعد 10 أشهر من الموافقة).',
+  'finance_application_wohngeld_description_16': 'تحقّق بحاسبة Wohngeld-Plus الرسمية التابعة لـ BMWSB مما إذا كان يحقّ لك بدل سكن وبأي مقدار.',
+  'finance_application_wohngeld_description_18': 'تحصل على الطلب من مجلس المدينة/مكتب المواطنين أو كملف PDF عبر الإنترنت. وتتيح بعض البلديات طلبات إلكترونية أيضًا.',
+  'finance_application_wohngeld_description_20': 'أرفِق عقد الإيجار وإثباتات الدخل وكشف النفقات الجانبية. وعند الشك، أرسِل أكثر بدل أن ترسل أقل.',
+  'finance_application_wohngeld_description_22': 'بعد 3–8 أسابيع يصل القرار. اضبط تذكيرًا لطلب الاستمرار (بعد 10 أشهر من الموافقة).',
   'finance_application_wohngeld_name_10': 'كشف النفقات الجانبية',
   'finance_application_wohngeld_name_12': 'بطاقات هوية جميع أفراد الأسرة (نسخ)',
   'finance_application_wohngeld_name_13': 'شهادة التسجيل السكني',
   'finance_application_wohngeld_name_6': 'إثباتات دخل جميع أفراد الأسرة',
   'finance_application_wohngeld_name_8': 'عقد الإيجار (نسخة)',
-  'finance_application_wohngeld_name_9':
-      'آخر إيصال إيجار أو كشف حساب يُظهر دفع الإيجار',
-  'finance_application_wohngeld_proTip_4':
-      'منذ إصلاح بدل السكن عام 2023 أصبح لدى عدد أكبر بكثير من العائلات استحقاق — حتى بدخل متوسط. تحقّق ببساطة!',
+  'finance_application_wohngeld_name_9': 'آخر إيصال إيجار أو كشف حساب يُظهر دفع الإيجار',
+  'finance_application_wohngeld_proTip_4': 'منذ إصلاح بدل السكن عام 2023 أصبح لدى عدد أكبر بكثير من العائلات استحقاق — حتى بدخل متوسط. تحقّق ببساطة!',
   'finance_application_wohngeld_processingTime_2': '3–8 أسابيع (حسب البلدية)',
-  'finance_application_wohngeld_renewalNote_3':
-      'مدة الموافقة: 12 شهرًا. قدّم طلب الاستمرار في الوقت المناسب (قبل شهرين).',
-  'finance_application_wohngeld_responsibleAuthority_1':
-      'مكتب بدل السكن في مدينتك/بلديتك (Wohngeldstelle)',
+  'finance_application_wohngeld_renewalNote_3': 'مدة الموافقة: 12 شهرًا. قدّم طلب الاستمرار في الوقت المناسب (قبل شهرين).',
+  'finance_application_wohngeld_responsibleAuthority_1': 'مكتب بدل السكن في مدينتك/بلديتك (Wohngeldstelle)',
   'finance_application_wohngeld_title_15': 'استخدام حاسبة بدل السكن',
   'finance_application_wohngeld_title_17': 'التقديم لدى مكتب بدل السكن',
   'finance_application_wohngeld_title_19': 'إرفاق المستندات',
   'finance_application_wohngeld_title_21': 'انتظار القرار + ضبط تذكير',
   'finance_application_wohngeld_whereToGet_11': 'من المؤجّر (سنويًا)',
-  'finance_application_wohngeld_whereToGet_14':
-      'مكتب المواطنين / دائرة تسجيل السكان (Bürgeramt / Einwohnermeldeamt)',
-  'finance_application_wohngeld_whereToGet_7':
-      'قسائم الراتب، قرار المعاش، قرار بدل الوالدية',
+  'finance_application_wohngeld_whereToGet_14': 'مكتب المواطنين / دائرة تسجيل السكان (Bürgeramt / Einwohnermeldeamt)',
+  'finance_application_wohngeld_whereToGet_7': 'قسائم الراتب، قرار المعاش، قرار بدل الوالدية',
   'finance_apply_positions': 'اعتماد البنود',
   'finance_average_amount': 'المتوسط: ~{amount}',
   'finance_based_on_children_age': 'استنادًا إلى عمر أطفالكم:',
-  'finance_benefit_de_but':
-      'التعليم والمشاركة (Bildung & Teilhabe, BuT)|لوازم مدرسية، رحلات، دروس تقوية، غداء، نادٍ رياضي.|منافع عينية + 195€/السنة للوازم المدرسية|العائلات التي تتلقّى KiZ أو بدل السكن أو Bürgergeld.',
-  'finance_benefit_de_eingliederungshilfe':
-      'مساعدة الإدماج (Eingliederungshilfe)|دعم للأطفال ذوي الإعاقة: علاج، مرافقة مدرسية، تدخّل مبكّر.|فردي (منافع عينية)|الأطفال الذين لديهم إعاقة قائمة أو محتملة.',
-  'finance_benefit_de_elterngeld':
-      'بدل الوالدية (Elterngeld)|تعويض عن الدخل بعد الولادة؛ وللنسختين الأساسية وPlus مدد صرف مختلفة.|الأساسي: 300€–1.800€/الشهر؛ Plus: 150€–900€/الشهر (دون علاوات)|أسرة مشتركة، ورعاية ذاتية للطفل، ودون عمل بدوام كامل؛ تحقّق من الشروط والاستثناءات الإضافية.',
-  'finance_benefit_de_kindergeld':
-      'بدل الأطفال (Kindergeld)|دفعة شهرية للأطفال؛ وتسري شروط إضافية على البالغين.|259€/طفل|للقُصّر مبدئيًا؛ تحقّق من الإعالة والأسرة والإقامة والحالات الخاصة.',
-  'finance_benefit_de_kinderzuschlag':
-      'علاوة الأطفال (Kinderzuschlag, KiZ)|دعم إضافي للعائلات محدودة الدخل.|حتى 297€/طفل/الشهر|طفل دون 25 عامًا في الأسرة، وتلقّي بدل الأطفال؛ ويُقيَّم الدخل والممتلكات وحاجة الأسرة بشكل فردي.',
-  'finance_benefit_de_pflegegeld':
-      'بدل الرعاية (Pflegegeld)|للأطفال ذوي الإعاقة أو المرض المزمن الذين يحتاجون إلى رعاية.|347 / 599 / 800 / 990€/الشهر (درجة الرعاية 2 / 3 / 4 / 5)|درجة الرعاية من 2 إلى 5؛ ويجب تأمين الرعاية المنزلية بنفسك بطريقة مناسبة.',
-  'finance_benefit_de_unterhaltsvorschuss':
-      'سُلفة النفقة (Unterhaltsvorschuss)|عندما لا يدفع الوالد الآخر النفقة أو يدفعها بشكل غير منتظم أو غير كافٍ.|227 / 299 / 394€/الشهر (0–5 / 6–11 / 12–17 سنة)|الطفل يعيش مع والد وحيد؛ وتسري شروط إضافية لمن هم بين 12 و17 سنة.',
-  'finance_benefit_de_wohngeld':
-      'بدل السكن (Wohngeld)|إعانة إيجار للعائلات محدودة الدخل.|يُحسَب بشكل فردي|يعتمد على حجم الأسرة والإيجار/العبء المعتبَر والدخل الإجمالي.',
-  'finance_benefits_country_intro':
-      'قد تكون هذه المزايا ذات صلة بكم في {country}.',
-  'finance_benefits_filtered':
-      'تم حفظ البيانات. وتبقى جميع المزايا مرئية؛ والدخل والعمل ليسا تقييمًا للاستحقاق.',
+  'finance_benefit_de_but': 'التعليم والمشاركة (Bildung & Teilhabe, BuT)|لوازم مدرسية، رحلات، دروس تقوية، غداء، نادٍ رياضي.|منافع عينية + 195€/السنة للوازم المدرسية|العائلات التي تتلقّى KiZ أو بدل السكن أو Bürgergeld.',
+  'finance_benefit_de_eingliederungshilfe': 'مساعدة الإدماج (Eingliederungshilfe)|دعم للأطفال ذوي الإعاقة: علاج، مرافقة مدرسية، تدخّل مبكّر.|فردي (منافع عينية)|الأطفال الذين لديهم إعاقة قائمة أو محتملة.',
+  'finance_benefit_de_elterngeld': 'بدل الوالدية (Elterngeld)|تعويض عن الدخل بعد الولادة؛ وللنسختين الأساسية وPlus مدد صرف مختلفة.|الأساسي: 300€–1.800€/الشهر؛ Plus: 150€–900€/الشهر (دون علاوات)|أسرة مشتركة، ورعاية ذاتية للطفل، ودون عمل بدوام كامل؛ تحقّق من الشروط والاستثناءات الإضافية.',
+  'finance_benefit_de_kindergeld': 'بدل الأطفال (Kindergeld)|دفعة شهرية للأطفال؛ وتسري شروط إضافية على البالغين.|259€/طفل|للقُصّر مبدئيًا؛ تحقّق من الإعالة والأسرة والإقامة والحالات الخاصة.',
+  'finance_benefit_de_kinderzuschlag': 'علاوة الأطفال (Kinderzuschlag, KiZ)|دعم إضافي للعائلات محدودة الدخل.|حتى 297€/طفل/الشهر|طفل دون 25 عامًا في الأسرة، وتلقّي بدل الأطفال؛ ويُقيَّم الدخل والممتلكات وحاجة الأسرة بشكل فردي.',
+  'finance_benefit_de_pflegegeld': 'بدل الرعاية (Pflegegeld)|للأطفال ذوي الإعاقة أو المرض المزمن الذين يحتاجون إلى رعاية.|347 / 599 / 800 / 990€/الشهر (درجة الرعاية 2 / 3 / 4 / 5)|درجة الرعاية من 2 إلى 5؛ ويجب تأمين الرعاية المنزلية بنفسك بطريقة مناسبة.',
+  'finance_benefit_de_unterhaltsvorschuss': 'سُلفة النفقة (Unterhaltsvorschuss)|عندما لا يدفع الوالد الآخر النفقة أو يدفعها بشكل غير منتظم أو غير كافٍ.|227 / 299 / 394€/الشهر (0–5 / 6–11 / 12–17 سنة)|الطفل يعيش مع والد وحيد؛ وتسري شروط إضافية لمن هم بين 12 و17 سنة.',
+  'finance_benefit_de_wohngeld': 'بدل السكن (Wohngeld)|إعانة إيجار للعائلات محدودة الدخل.|يُحسَب بشكل فردي|يعتمد على حجم الأسرة والإيجار/العبء المعتبَر والدخل الإجمالي.',
+  'finance_benefits_country_intro': 'قد تكون هذه المزايا ذات صلة بكم في {country}.',
+  'finance_benefits_filtered': 'تم حفظ البيانات. وتبقى جميع المزايا مرئية؛ والدخل والعمل ليسا تقييمًا للاستحقاق.',
   'finance_camera': 'الكاميرا',
   'finance_care_activities': 'أنشطة الرعاية',
   'finance_care_removed': 'تمت إزالة إدخال الرعاية.',
@@ -864,64 +659,44 @@ const appLocalizationsArExtra = <String, String>{
   'finance_category_sonstiges': 'أخرى',
   'finance_category_wohnen': 'السكن (حصة الطفل)',
   'finance_close': 'إغلاق',
-  'finance_content_austria_amount_10':
-      'حساب: 17,65–41,14€/اليوم؛ مرتبط بالدخل: 80% من آخر الدخل، بحد أقصى 80,12€/اليوم',
-  'finance_content_austria_amount_3':
-      '138,40 / 148 / 171,80 / 200,40€/الشهر (من عمر 0 / 3 / 10 / 19 سنة؛ دون علاوات)',
+  'finance_content_austria_amount_10': 'حساب: 17,65–41,14€/اليوم؛ مرتبط بالدخل: 80% من آخر الدخل، بحد أقصى 80,12€/اليوم',
+  'finance_content_austria_amount_3': '138,40 / 148 / 171,80 / 200,40€/الشهر (من عمر 0 / 3 / 10 / 19 سنة؛ دون علاوات)',
   'finance_content_austria_amount_6': '70,90€/طفل/الشهر',
-  'finance_content_austria_description_2':
-      'دعم شهري لكل طفل، متدرّج حسب العمر.',
+  'finance_content_austria_description_2': 'دعم شهري لكل طفل، متدرّج حسب العمر.',
   'finance_content_austria_description_5': 'مبلغ خصم ضريبي لكل طفل.',
   'finance_content_austria_description_9': 'بعد الولادة، بنماذج مختلفة.',
-  'finance_content_austria_eligibility_7':
-      'يُدفَع مع بدل الأسرة؛ ولا يلزم طلب منفصل.',
+  'finance_content_austria_eligibility_7': 'يُدفَع مع بدل الأسرة؛ ولا يلزم طلب منفصل.',
   'finance_content_austria_name_1': 'بدل الأسرة (Familienbeihilfe)',
   'finance_content_austria_name_4': 'مبلغ خصم الأطفال (Kinderabsetzbetrag)',
   'finance_content_austria_name_8': 'بدل رعاية الأطفال (Kinderbetreuungsgeld)',
-  'finance_content_generic_description_2':
-      'تدفع معظم الدول مزايا عائلية شهرية. تحقّق لدى سلطتك المحلية.',
-  'finance_content_generic_description_4':
-      'تقدّم دول كثيرة إعانات إيجار للعائلات.',
-  'finance_content_generic_description_6':
-      'تحقّق مما إذا كانت دولتك تدعم رعاية الأطفال.',
+  'finance_content_generic_description_2': 'تدفع معظم الدول مزايا عائلية شهرية. تحقّق لدى سلطتك المحلية.',
+  'finance_content_generic_description_4': 'تقدّم دول كثيرة إعانات إيجار للعائلات.',
+  'finance_content_generic_description_6': 'تحقّق مما إذا كانت دولتك تدعم رعاية الأطفال.',
   'finance_content_generic_name_1': 'بدل الأطفال (Child Benefit)',
   'finance_content_generic_name_3': 'دعم السكن',
   'finance_content_generic_name_5': 'إعانة الرعاية',
-  'finance_content_switzerland_amount_3':
-      '215 Fr. على الأقل/طفل/الشهر؛ وقد تكون أعلى حسب الكانتون',
-  'finance_content_switzerland_amount_6':
-      '268 Fr. على الأقل/طفل/الشهر؛ وقد تكون أعلى حسب الكانتون',
+  'finance_content_switzerland_amount_3': '215 Fr. على الأقل/طفل/الشهر؛ وقد تكون أعلى حسب الكانتون',
+  'finance_content_switzerland_amount_6': '268 Fr. على الأقل/طفل/الشهر؛ وقد تكون أعلى حسب الكانتون',
   'finance_content_switzerland_description_2': 'تختلف حسب الكانتون، لكل طفل.',
-  'finance_content_switzerland_description_5':
-      'التعليم بعد الإلزامي، من عمر 15 كحدٍّ أدنى وحتى 25 سنة كحدٍّ أقصى؛ تحقّق من الحدود الشهرية الدقيقة.',
+  'finance_content_switzerland_description_5': 'التعليم بعد الإلزامي، من عمر 15 كحدٍّ أدنى وحتى 25 سنة كحدٍّ أقصى؛ تحقّق من الحدود الشهرية الدقيقة.',
   'finance_content_switzerland_name_1': 'علاوة الأطفال (Kinderzulage)',
   'finance_content_switzerland_name_4': 'علاوة التعليم (Ausbildungszulage)',
-  'finance_content_turkey_amount_3':
-      'الطفل الأول: 5.000₺ مرة واحدة؛ الثاني: 1.500₺/الشهر؛ الثالث فأكثر: 5.000₺/الشهر',
+  'finance_content_turkey_amount_3': 'الطفل الأول: 5.000₺ مرة واحدة؛ الثاني: 1.500₺/الشهر؛ الثالث فأكثر: 5.000₺/الشهر',
   'finance_content_turkey_amount_7': 'مرتبط بالدخل',
-  'finance_content_turkey_description_2':
-      'برنامج جديد للمساعدة عند الولادة للولادات ابتداءً من 01.01.2025؛ دفعات منتظمة من تاريخ الطلب حتى الشهر 60 ضمنًا.',
+  'finance_content_turkey_description_2': 'برنامج جديد للمساعدة عند الولادة للولادات ابتداءً من 01.01.2025؛ دفعات منتظمة من تاريخ الطلب حتى الشهر 60 ضمنًا.',
   'finance_content_turkey_description_6': 'بدل أطفال شهري للعائلات.',
-  'finance_content_turkey_description_9':
-      'دعم اجتماعي واقتصادي عبر İl Müdürlüğü/Sosyal Hizmet Merkezi.',
-  'finance_content_turkey_eligibility_10':
-      'تقييم اجتماعي فردي للوضع العائلي والاقتصادي والإقليمي.',
-  'finance_content_turkey_eligibility_4':
-      'الجنسية التركية والإقامة في Türkiye؛ تحقّق رسميًا من شروط الطلب الإضافية.',
+  'finance_content_turkey_description_9': 'دعم اجتماعي واقتصادي عبر İl Müdürlüğü/Sosyal Hizmet Merkezi.',
+  'finance_content_turkey_eligibility_10': 'تقييم اجتماعي فردي للوضع العائلي والاقتصادي والإقليمي.',
+  'finance_content_turkey_eligibility_4': 'الجنسية التركية والإقامة في Türkiye؛ تحقّق رسميًا من شروط الطلب الإضافية.',
   'finance_content_turkey_name_1': 'Dogum Yardimi',
   'finance_content_turkey_name_5': 'Cocuk Parasi',
-  'finance_content_turkey_name_8':
-      'الدعم الاجتماعي والاقتصادي (Sosyal Yardim, SED)',
-  'finance_content_uk_amount_3':
-      '£27,05/الأسبوع (الطفل الأكبر أو الوحيد)، £17,90/الأسبوع (الأطفال الآخرون)',
-  'finance_content_uk_amount_6':
-      '£303,94/الشهر لكل طفل؛ إضافة £47,94 للطفل الأول المولود قبل 6 نيسان (أبريل) 2017',
-  'finance_content_uk_amount_9':
-      'حتى £500/3 أشهر (£2.000/السنة)؛ وللطفل ذي الإعاقة: £1.000/3 أشهر (£4.000/السنة)',
+  'finance_content_turkey_name_8': 'الدعم الاجتماعي والاقتصادي (Sosyal Yardim, SED)',
+  'finance_content_uk_amount_3': '£27,05/الأسبوع (الطفل الأكبر أو الوحيد)، £17,90/الأسبوع (الأطفال الآخرون)',
+  'finance_content_uk_amount_6': '£303,94/الشهر لكل طفل؛ إضافة £47,94 للطفل الأول المولود قبل 6 نيسان (أبريل) 2017',
+  'finance_content_uk_amount_9': 'حتى £500/3 أشهر (£2.000/السنة)؛ وللطفل ذي الإعاقة: £1.000/3 أشهر (£4.000/السنة)',
   'finance_content_uk_description_2': 'دفعة أسبوعية لكل طفل.',
   'finance_content_uk_description_5': 'دعم إضافي للعائلات محدودة الدخل.',
-  'finance_content_uk_description_8':
-      'تضيف الدولة £2 مقابل كل £8 تودَع في حساب الرعاية.',
+  'finance_content_uk_description_8': 'تضيف الدولة £2 مقابل كل £8 تودَع في حساب الرعاية.',
   'finance_content_uk_name_1': 'Child Benefit',
   'finance_content_uk_name_4': 'Universal Credit (Child Element)',
   'finance_content_uk_name_7': 'Tax-Free Childcare',
@@ -933,16 +708,13 @@ const appLocalizationsArExtra = <String, String>{
   'finance_country_gb': 'المملكة المتحدة',
   'finance_country_generic': 'دولة أخرى',
   'finance_country_tr': 'تركيا',
-  'finance_create_profile_for_milestones':
-      'أنشئ ملفًا في شبكة الآباء لرؤية مراحل مخصّصة.',
+  'finance_create_profile_for_milestones': 'أنشئ ملفًا في شبكة الآباء لرؤية مراحل مخصّصة.',
   'finance_delete_care': 'حذف إدخال الرعاية',
   'finance_delete_expense': 'حذف المصروف',
   'finance_edit_care': 'تعديل إدخال الرعاية',
   'finance_edit_expense': 'تعديل المصروف',
-  'finance_enter_childcare_de':
-      'أدخِل تكاليف الحضانة في الأعلى – عندها أحسب لك وفرك الضريبي.',
-  'finance_enter_childcare_generic':
-      'أدخِل تكاليف رعاية أطفالك – عندها أعرض لك قابلية الخصم.',
+  'finance_enter_childcare_de': 'أدخِل تكاليف الحضانة في الأعلى – عندها أحسب لك وفرك الضريبي.',
+  'finance_enter_childcare_generic': 'أدخِل تكاليف رعاية أطفالك – عندها أعرض لك قابلية الخصم.',
   'finance_entries_in': 'الإدخالات في',
   'finance_estimated_months': 'تقديريًا خلال {months} أشهر ({year})',
   'finance_estimated_one_month': 'تقديريًا خلال شهر واحد ({year})',
@@ -951,27 +723,20 @@ const appLocalizationsArExtra = <String, String>{
   'finance_export_csv': 'تصدير CSV',
   'finance_export_pdf': 'مشاركة PDF',
   'finance_fair_settlement': 'تسوية شهرية عادلة',
-  'finance_familienbonus_body':
-      'في النمسا يوجد Familienbonus Plus — وهو مبلغ خصم ضريبي لكل طفل (حتى 2.000 €/السنة حتى بلوغ 18 عامًا). ويُطلَب عبر الإقرار الضريبي أو لدى صاحب العمل.',
+  'finance_familienbonus_body': 'في النمسا يوجد Familienbonus Plus — وهو مبلغ خصم ضريبي لكل طفل (حتى 2.000 €/السنة حتى بلوغ 18 عامًا). ويُطلَب عبر الإقرار الضريبي أو لدى صاحب العمل.',
   'finance_familienbonus_title': 'علاوة العائلة Plus',
-  'finance_five_year_recommendation':
-      'خلال السنوات الخمس المقبلة ستترتّب عليكم نحو {total}. وبادّخار ~{monthly}/الشهر تكونون مستعدّين.',
+  'finance_five_year_recommendation': 'خلال السنوات الخمس المقبلة ستترتّب عليكم نحو {total}. وبادّخار ~{monthly}/الشهر تكونون مستعدّين.',
   'finance_free_support_in': 'جهات دعم مجانية في {country}:',
   'finance_gallery': 'المعرض',
   'finance_goal_in_one_year': 'بعد سنة واحدة · ~{amount}',
   'finance_goal_in_years': 'بعد {years} سنوات · ~{amount}',
-  'finance_goal_months_on_time':
-      'بادّخار {amount}/الشهر تبلغ على الأرجح الهدف المقدّر خلال {months} أشهر.',
-  'finance_goal_months_shortfall':
-      'بادّخار {amount}/الشهر لن يكفي على الأرجح لبلوغ الهدف المقدّر خلال {months} أشهر.',
-  'finance_goal_projection_almost':
-      'بادّخار {amount}/الشهر تبلغ الهدف تقريبًا خلال {years} سنوات.',
-  'finance_goal_projection_on_time':
-      'بادّخار {amount}/الشهر تبلغ الهدف في موعده خلال {years} سنوات.',
+  'finance_goal_months_on_time': 'بادّخار {amount}/الشهر تبلغ على الأرجح الهدف المقدّر خلال {months} أشهر.',
+  'finance_goal_months_shortfall': 'بادّخار {amount}/الشهر لن يكفي على الأرجح لبلوغ الهدف المقدّر خلال {months} أشهر.',
+  'finance_goal_projection_almost': 'بادّخار {amount}/الشهر تبلغ الهدف تقريبًا خلال {years} سنوات.',
+  'finance_goal_projection_on_time': 'بادّخار {amount}/الشهر تبلغ الهدف في موعده خلال {years} سنوات.',
   'finance_guide_subtitle': 'صِفوا وضعكم — سيساعدكم الدليل.',
   'finance_guide_title': 'ما الذي يحق لنا؟',
-  'finance_hero_subtitle':
-      'جداول أقل ووقت أكثر مع الأطفال: تقسيم عبر OCR، وعدالة الرعاية، وكاشف التوفير في لوحة واحدة.',
+  'finance_hero_subtitle': 'جداول أقل ووقت أكثر مع الأطفال: تقسيم عبر OCR، وعدالة الرعاية، وكاشف التوفير في لوحة واحدة.',
   'finance_hero_title': 'تمويل العائلة بمنظور جديد',
   'finance_in_years': 'بعد {years} سنوات ({year})',
   'finance_in_years_short': 'بعد {years} سنوات',
@@ -994,16 +759,12 @@ const appLocalizationsArExtra = <String, String>{
   'finance_label_secondhand_price': 'سعر المستعمل (€)',
   'finance_label_split_type': 'نوع التقسيم',
   'finance_label_title': 'العنوان',
-  'finance_legacy_confirm':
-      'هل تخصّك القيم المالية وقوائم مراجعة الدليل والطلبات السابقة على هذا الجهاز؟ بتأكيدك تُربَط بهذا الحساب. وتكون الأولوية لقيم الحساب الحالية؛ وتُدمَج قوائم المراجعة. أما القيم من بلد آخر فلا تُستورَد كعملة جديدة. ويبقى الرصيد القديم الأصلي محفوظًا محليًا. ولا يُنشر أي شيء.',
-  'finance_legacy_notice':
-      'يوجد على هذا الجهاز بيانات مالية وقوائم مراجعة غير مرتبطة بأي حساب. ولا تُستخدَم تلقائيًا. سجّل الدخول لاستيرادها بعد تأكيد الملكية.',
+  'finance_legacy_confirm': 'هل تخصّك القيم المالية وقوائم مراجعة الدليل والطلبات السابقة على هذا الجهاز؟ بتأكيدك تُربَط بهذا الحساب. وتكون الأولوية لقيم الحساب الحالية؛ وتُدمَج قوائم المراجعة. أما القيم من بلد آخر فلا تُستورَد كعملة جديدة. ويبقى الرصيد القديم الأصلي محفوظًا محليًا. ولا يُنشر أي شيء.',
+  'finance_legacy_notice': 'يوجد على هذا الجهاز بيانات مالية وقوائم مراجعة غير مرتبطة بأي حساب. ولا تُستخدَم تلقائيًا. سجّل الدخول لاستيرادها بعد تأكيد الملكية.',
   'finance_legacy_title': 'اعتماد البيانات المالية المحلية',
-  'finance_legal_disclaimer':
-      'هذه ليست استشارة قانونية. يُرجى التحقّق من استحقاقاتك لدى الجهة المختصة أو مركز استشارة.',
+  'finance_legal_disclaimer': 'هذه ليست استشارة قانونية. يُرجى التحقّق من استحقاقاتك لدى الجهة المختصة أو مركز استشارة.',
   'finance_link_open_failed': 'تعذّر فتح الرابط. يُرجى المحاولة لاحقًا.',
-  'finance_load_failed':
-      'تعذّر تحميل البيانات المالية المحلية. يُرجى المحاولة مرة أخرى.',
+  'finance_load_failed': 'تعذّر تحميل البيانات المالية المحلية. يُرجى المحاولة مرة أخرى.',
   'finance_mama': 'ماما',
   'finance_milestone_ausbildung': 'التدريب المهني/الجامعة',
   'finance_milestone_ausbildung_note': 'التجهيز الأوّلي، الانتقال، التأمين',
@@ -1014,8 +775,7 @@ const appLocalizationsArExtra = <String, String>{
   'finance_milestone_klassenfahrt': 'أول رحلة مدرسية',
   'finance_milestone_klassenfahrt_note': '3–5 أيام، بما في ذلك مصروف الجيب',
   'finance_milestone_schulstart': 'بدء المدرسة',
-  'finance_milestone_schulstart_note':
-      'حقيبة مدرسية، أقلام، كيس رياضة، مخروط المدرسة',
+  'finance_milestone_schulstart_note': 'حقيبة مدرسية، أقلام، كيس رياضة، مخروط المدرسة',
   'finance_milestone_smartphone': 'أول هاتف ذكي',
   'finance_milestone_smartphone_note': 'الجهاز + الغطاء + أول عقد',
   'finance_month': 'الشهر:',
@@ -1025,12 +785,10 @@ const appLocalizationsArExtra = <String, String>{
   'finance_no_items_recognized': 'لم يُتعرّف على أي بنود قابلة للمعالجة.',
   'finance_no_parental_leave': 'لا / إجازة الوالدية',
   'finance_not_entered': 'لم يُدخَل بعد',
-  'finance_number_invalid':
-      'يُرجى إدخال مبلغ صالح وغير سالب بمنزلتين عشريتين كحد أقصى.',
+  'finance_number_invalid': 'يُرجى إدخال مبلغ صالح وغير سالب بمنزلتين عشريتين كحد أقصى.',
   'finance_ocr_failed': 'فشل استيراد الإيصال. يُرجى المحاولة مرة أخرى.',
   'finance_ocr_split': 'تقسيم OCR (60/40)',
-  'finance_orientation_only':
-      'للتوجيه فقط، وليس تحققًا من الاستحقاق. فالدخل والعمل والحالة العائلية لا تستبعد هنا أي مزية. وتقيّم الجهة المختصة حالتكم الفردية.',
+  'finance_orientation_only': 'للتوجيه فقط، وليس تحققًا من الاستحقاق. فالدخل والعمل والحالة العائلية لا تستبعد هنا أي مزية. وتقيّم الجهة المختصة حالتكم الفردية.',
   'finance_papa': 'بابا',
   'finance_qr_copied': 'تم نسخ بيانات QR.',
   'finance_qr_settlement': 'تسوية عبر QR',
@@ -1038,15 +796,12 @@ const appLocalizationsArExtra = <String, String>{
   'finance_recent_ocr': 'بنود OCR الأخيرة',
   'finance_save_orientation': 'حفظ البيانات للتوجيه',
   'finance_saved_so_far': 'ما تم ادّخاره حتى الآن',
-  'finance_saving_tip_de':
-      'تكاليف رعاية الأطفال المؤهّلة: 80%، بحد أقصى 4.800€/السنة لكل طفل، كنفقة خاصة (§10 EStG). تحقّق من الشروط.',
-  'finance_saving_tip_generic':
-      'تحقّق مما إذا كانت تكاليف رعاية الأطفال قابلة للخصم الضريبي في بلدك.',
+  'finance_saving_tip_de': 'تكاليف رعاية الأطفال المؤهّلة: 80%، بحد أقصى 4.800€/السنة لكل طفل، كنفقة خاصة (§10 EStG). تحقّق من الشروط.',
+  'finance_saving_tip_generic': 'تحقّق مما إذا كانت تكاليف رعاية الأطفال قابلة للخصم الضريبي في بلدك.',
   'finance_savings_rate_month': 'معدّل الادّخار/الشهر',
   'finance_scan_receipt': 'مسح الإيصال',
   'finance_scan_running': 'جارٍ المسح...',
-  'finance_share_failed':
-      'تعذّرت مشاركة النظرة العامة. يُرجى المحاولة مرة أخرى.',
+  'finance_share_failed': 'تعذّرت مشاركة النظرة العامة. يُرجى المحاولة مرة أخرى.',
   'finance_share_footer': '📱 أُنشئ بواسطة ParentPeak — رفيقك في الأبوة',
   'finance_share_monthly_costs': '💰 التكاليف الشهرية للطفل: ~{amount}/شهر',
   'finance_share_next_milestones': '🎯 المحطات القادمة:',
@@ -1075,17 +830,14 @@ const appLocalizationsArExtra = <String, String>{
   'finance_tax_childcare_year': 'تكاليف الحضانة/السنة',
   'finance_tax_deductible_share': 'الحصة المؤهّلة (80%)',
   'finance_tax_estimated_saving': 'الوفر المقدّر (30%)',
-  'finance_tax_example_limits':
-      'مثال لطفل واحد، وليس تحققًا من الاستحقاق ولا توزيعًا للتكاليف بين الأطفال. تكاليف الرعاية المؤهّلة: الطفل في الأسرة ودون 14 عامًا أو مشمول باستثناء الإعاقة القانوني؛ ويلزم وجود فاتورة ودفع إلى الحساب المصرفي لمقدّم الخدمة. أما التعليم والرياضة والترفيه فغير مؤهّلة. ونسبة 30% مجرّد معدّل ضريبي مفترَض.',
+  'finance_tax_example_limits': 'مثال لطفل واحد، وليس تحققًا من الاستحقاق ولا توزيعًا للتكاليف بين الأطفال. تكاليف الرعاية المؤهّلة: الطفل في الأسرة ودون 14 عامًا أو مشمول باستثناء الإعاقة القانوني؛ ويلزم وجود فاتورة ودفع إلى الحساب المصرفي لمقدّم الخدمة. أما التعليم والرياضة والترفيه فغير مؤهّلة. ونسبة 30% مجرّد معدّل ضريبي مفترَض.',
   'finance_tax_max_expense': 'الحد الأقصى للنفقة الخاصة',
   'finance_tax_more_info': '🔗 مزيد من المعلومات لدى مكتب الضرائب →',
   'finance_tax_saving_potential': 'إمكانات الوفر الضريبي',
-  'finance_tax_saving_summary':
-      'مثال: {deductible} نفقة خاصة ← نحو {savings} وفر ضريبي/السنة بافتراض نسبة 30%',
+  'finance_tax_saving_summary': 'مثال: {deductible} نفقة خاصة ← نحو {savings} وفر ضريبي/السنة بافتراض نسبة 30%',
   'finance_title': 'المالية والميزانية',
   'finish': 'إنهاء',
-  'food_empty_nearby_subtitle':
-      'كن الأول! اضغط في الأسفل على «طبخت كمية إضافية!»',
+  'food_empty_nearby_subtitle': 'كن الأول! اضغط في الأسفل على «طبخت كمية إضافية!»',
   'food_empty_nearby_title': 'لا توجد عروض قريبة منك بعد',
   'food_for_you': 'لك',
   'food_moderation_note_hint': 'اختياري: ملاحظة قصيرة للإشراف',
@@ -1100,30 +852,24 @@ const appLocalizationsArExtra = <String, String>{
   'fridge_add_missing_one': 'إضافة المكوّن الناقص إلى قائمة التسوّق',
   'fridge_choose_photo': 'اختيار',
   'fridge_consent_accept': 'موافق، حلّل الصورة',
-  'fridge_consent_body':
-      'للتعرّف على المكوّنات تُرسَل صورتك عبر خادم ParentPeak إلى Google Gemini. ولا يُخفى محتوى الصور؛ فلا تُظهر أشخاصًا أو ملاحظات خاصة أو عناوين. وأما الوصفة اللاحقة فتُرسَل من أجلها المكوّنات المؤكّدة وعمر الطفل وبيانات الحساسية المتوفّرة إلى Google Gemini. ولا يحفظ التطبيق الصورة كمسوّدة دائمة. تسري هذه الموافقة الاختيارية على مسار ذكاء الثلّاجة هذا، وتُحفظ لحسابك الحالي أو لوضع الضيف على هذا الجهاز. وهي لا تنشر الصورة ولا الوصفة. ودون موافقة لن تبدأ أي طلب للذكاء الاصطناعي.',
-  'fridge_consent_failed':
-      'تعذّر تأكيد موافقة ذكاء الثلّاجة. ودون موافقة مؤكّدة لن يبدأ أي طلب جديد للذكاء الاصطناعي.',
+  'fridge_consent_body': 'للتعرّف على المكوّنات تُرسَل صورتك عبر خادم ParentPeak إلى Google Gemini. ولا يُخفى محتوى الصور؛ فلا تُظهر أشخاصًا أو ملاحظات خاصة أو عناوين. وأما الوصفة اللاحقة فتُرسَل من أجلها المكوّنات المؤكّدة وعمر الطفل وبيانات الحساسية المتوفّرة إلى Google Gemini. ولا يحفظ التطبيق الصورة كمسوّدة دائمة. تسري هذه الموافقة الاختيارية على مسار ذكاء الثلّاجة هذا، وتُحفظ لحسابك الحالي أو لوضع الضيف على هذا الجهاز. وهي لا تنشر الصورة ولا الوصفة. ودون موافقة لن تبدأ أي طلب للذكاء الاصطناعي.',
+  'fridge_consent_failed': 'تعذّر تأكيد موافقة ذكاء الثلّاجة. ودون موافقة مؤكّدة لن يبدأ أي طلب جديد للذكاء الاصطناعي.',
   'fridge_consent_title': 'تحليل الصورة بالذكاء الاصطناعي',
   'fridge_detected_ingredients': 'المكوّنات المكتشَفة',
-  'fridge_edit_ingredients_hint':
-      'انقر على ✕ لإزالة عنصر، أو أضِف واحدًا في الأسفل.',
+  'fridge_edit_ingredients_hint': 'انقر على ✕ لإزالة عنصر، أو أضِف واحدًا في الأسفل.',
   'fridge_generating_recipe': 'أُحضّر وصفة …',
   'fridge_ingredients_required': 'يُرجى إضافة مكوّن واحد على الأقل.',
   'fridge_ingredients_title': 'المكوّنات',
   'fridge_inspecting_photo': 'ألقي نظرة على صورتك …',
-  'fridge_intro':
-      'التقِط صورة لأطعمتك – وسأتعرّف على المكوّنات وأقترح وصفة مناسبة للأطفال.',
+  'fridge_intro': 'التقِط صورة لأطعمتك – وسأتعرّف على المكوّنات وأقترح وصفة مناسبة للأطفال.',
   'fridge_missing_title': 'ما زال ينقص',
   'fridge_new_photo': 'صورة جديدة',
   'fridge_no_ingredients': 'لا توجد مكوّنات بعد – أضِف بعضها في الأسفل.',
-  'fridge_no_ingredients_detected':
-      'لم أتمكّن من التعرّف على أي مكوّنات بثقة. يمكنك ببساطة إضافتها بنفسك في الأسفل.',
+  'fridge_no_ingredients_detected': 'لم أتمكّن من التعرّف على أي مكوّنات بثقة. يمكنك ببساطة إضافتها بنفسك في الأسفل.',
   'fridge_photo_processing_failed': 'تعذّرت معالجة الصورة.',
   'fridge_photo_question': 'ماذا يوجد في الثلّاجة؟',
   'fridge_preparation_title': 'طريقة التحضير',
-  'fridge_recipe_generation_failed':
-      'لم أتمكّن الآن من إنشاء وصفة. يُرجى المحاولة مجددًا بعد قليل.',
+  'fridge_recipe_generation_failed': 'لم أتمكّن الآن من إنشاء وصفة. يُرجى المحاولة مجددًا بعد قليل.',
   'fridge_restart': 'البدء من جديد',
   'fridge_save_success': 'الوصفة {destination}. 🍳',
   'fridge_saved_friends': 'تمت مشاركتها مع أصدقائك',
@@ -1131,151 +877,106 @@ const appLocalizationsArExtra = <String, String>{
   'fridge_saved_public': 'تمت مشاركتها مع جميع العائلات',
   'fridge_share_to_family': 'مشاركة في وصفات العائلة',
   'fridge_shared_to_family': 'تم الحفظ في وصفات العائلة',
-  'fridge_shopping_added_many':
-      'تمت إضافة {count} مكوّنات إلى قائمة التسوّق. 🛒',
+  'fridge_shopping_added_many': 'تمت إضافة {count} مكوّنات إلى قائمة التسوّق. 🛒',
   'fridge_shopping_added_one': 'تمت إضافة مكوّن واحد إلى قائمة التسوّق. 🛒',
   'fridge_suggest_recipe': 'اقتراح وصفة',
   'fridge_take_photo': 'التقاط صورة',
   'fridge_title': 'مما هو متوفّر',
-  'friend_chat_request_failed':
-      'فشل طلب المحادثة. يُرجى التحقّق من تسجيل دخولك والمحاولة مرة أخرى.',
+  'friend_chat_request_failed': 'فشل طلب المحادثة. يُرجى التحقّق من تسجيل دخولك والمحاولة مرة أخرى.',
   'hide_action': 'إخفاء',
   'hide_offer': 'إخفاء العرض؟',
   'holiday_settings_title': 'العطل الرسمية والعطل المدرسية',
   'holidays_title': 'العطل الرسمية والعطل المدرسية',
   'home_activity_baby_10_materials': 'كرة طرية',
-  'home_activity_baby_10_tip':
-      'تدحرج الكرة: اجلسا متقابلَين ودحرِجا كرة طرية ذهابًا وإيابًا.',
+  'home_activity_baby_10_tip': 'تدحرج الكرة: اجلسا متقابلَين ودحرِجا كرة طرية ذهابًا وإيابًا.',
   'home_activity_baby_11_materials': 'لا شيء مطلوب',
-  'home_activity_baby_11_tip':
-      'أغنية هزّ: هزّ طفلك على ركبتيك ودندِن لحنًا هادئًا.',
+  'home_activity_baby_11_tip': 'أغنية هزّ: هزّ طفلك على ركبتيك ودندِن لحنًا هادئًا.',
   'home_activity_baby_12_materials': 'لا شيء مطلوب',
-  'home_activity_baby_12_tip':
-      'لعبة أجزاء الجسم: اسأل «أين أنفك؟» وسمّيا أجزاء الجسم معًا.',
+  'home_activity_baby_12_tip': 'لعبة أجزاء الجسم: اسأل «أين أنفك؟» وسمّيا أجزاء الجسم معًا.',
   'home_activity_baby_13_materials': 'زجاجة بلاستيكية، أرز أو عدس',
-  'home_activity_baby_13_tip':
-      'زجاجة خشخشة: ضع أرزًا أو عدسًا في زجاجة بلاستيكية فارغة.',
+  'home_activity_baby_13_tip': 'زجاجة خشخشة: ضع أرزًا أو عدسًا في زجاجة بلاستيكية فارغة.',
   'home_activity_baby_14_materials': 'حمّالة أطفال أو عربة',
-  'home_activity_baby_14_tip':
-      'نزهة الدهشة: امشيا ببطء وسمّيا كل ما ترونه وتسمعونه.',
+  'home_activity_baby_14_tip': 'نزهة الدهشة: امشيا ببطء وسمّيا كل ما ترونه وتسمعونه.',
   'home_activity_baby_15_materials': 'لا شيء مطلوب',
   'home_activity_baby_15_tip': 'إيقاع بالتصفيق: تعلّما معًا لعبة تصفيق بسيطة.',
   'home_activity_baby_1_materials': 'مناديل، بطانية',
-  'home_activity_baby_1_tip':
-      'الغمّيضة بالمناديل: تختبئ وطفلك يبحث. يعزّز إدراك بقاء الأشياء.',
+  'home_activity_baby_1_tip': 'الغمّيضة بالمناديل: تختبئ وطفلك يبحث. يعزّز إدراك بقاء الأشياء.',
   'home_activity_baby_2_materials': 'لا شيء مطلوب',
   'home_activity_baby_2_tip': 'سباق الحبو: احبوا معًا في المنزل. ضحك مضمون.',
   'home_activity_baby_3_materials': 'قدور، ملاعق خشبية',
-  'home_activity_baby_3_tip':
-      'أوركسترا القدور: تصبح القدور والملاعق الخشبية آلات وتنمّي الإحساس بالإيقاع.',
+  'home_activity_baby_3_tip': 'أوركسترا القدور: تصبح القدور والملاعق الخشبية آلات وتنمّي الإحساس بالإيقاع.',
   'home_activity_baby_4_materials': 'فقاعات صابون',
-  'home_activity_baby_4_tip':
-      'مطاردة الفقاعات: درّبا التناسق بين العين واليد بمرح، في الداخل أو الخارج.',
+  'home_activity_baby_4_tip': 'مطاردة الفقاعات: درّبا التناسق بين العين واليد بمرح، في الداخل أو الخارج.',
   'home_activity_baby_5_materials': 'لا شيء مطلوب',
-  'home_activity_baby_5_tip':
-      'ألعاب الأصابع بالغناء: رافِقا أغنية للأطفال بحركات بسيطة للأصابع.',
+  'home_activity_baby_5_tip': 'ألعاب الأصابع بالغناء: رافِقا أغنية للأطفال بحركات بسيطة للأصابع.',
   'home_activity_baby_6_materials': 'أكواب بلاستيكية أو مكعّبات',
-  'home_activity_baby_6_tip':
-      'بناء برج وإسقاطه: كدّس الأكواب ودع طفلك يُسقط البرج.',
+  'home_activity_baby_6_tip': 'بناء برج وإسقاطه: كدّس الأكواب ودع طفلك يُسقط البرج.',
   'home_activity_baby_7_materials': 'مرآة',
-  'home_activity_baby_7_tip':
-      'لعبة المرآة: اجلسا أمام مرآة وقلّدا معًا تعابير الوجه.',
+  'home_activity_baby_7_tip': 'لعبة المرآة: اجلسا أمام مرآة وقلّدا معًا تعابير الوجه.',
   'home_activity_baby_8_materials': 'وعاء، ماء، أكواب، ملاعق',
-  'home_activity_baby_8_tip':
-      'متعة الماء: اغمِسا الأكواب والملاعق في وعاء ماء فاتر.',
+  'home_activity_baby_8_tip': 'متعة الماء: اغمِسا الأكواب والملاعق في وعاء ماء فاتر.',
   'home_activity_baby_9_materials': 'ورق جرائد، ورق ألمنيوم، قطعة قماش طرية',
-  'home_activity_baby_9_tip':
-      'استكشاف الورق الحفّاف: المِسا وجعّدا معًا أنواعًا مختلفة من الورق والأقمشة.',
+  'home_activity_baby_9_tip': 'استكشاف الورق الحفّاف: المِسا وجعّدا معًا أنواعًا مختلفة من الورق والأقمشة.',
   'home_activity_school_10_materials': 'أصيص، تربة، بذور، دفتر صغير',
-  'home_activity_school_10_tip':
-      'مشروع نبتة: ازرعوا البذور ودوّنوا النموّ يوميًا.',
+  'home_activity_school_10_tip': 'مشروع نبتة: ازرعوا البذور ودوّنوا النموّ يوميًا.',
   'home_activity_school_11_materials': 'ورق، ظرف، قلم',
-  'home_activity_school_11_tip':
-      'رسالة إلى المستقبل: اكتبوا اليوم رسالة إلى أنفسكم بعد خمس سنوات.',
+  'home_activity_school_11_tip': 'رسالة إلى المستقبل: اكتبوا اليوم رسالة إلى أنفسكم بعد خمس سنوات.',
   'home_activity_school_12_materials': 'محتويات الثلاجة، أدوات الطبخ',
-  'home_activity_school_12_tip':
-      'تحدّي الطبخ: يحضّر كل فرد من العائلة طبقًا أو جزءًا من الوجبة.',
+  'home_activity_school_12_tip': 'تحدّي الطبخ: يحضّر كل فرد من العائلة طبقًا أو جزءًا من الوجبة.',
   'home_activity_school_13_materials': 'دفتر صغير، أقلام، أقلام تلوين',
-  'home_activity_school_13_tip':
-      'دفتر الطبيعة: ارسموا وسمّوا في الخارج الطيور والحشرات والنباتات.',
+  'home_activity_school_13_tip': 'دفتر الطبيعة: ارسموا وسمّوا في الخارج الطيور والحشرات والنباتات.',
   'home_activity_school_14_materials': 'ورق، أقلام، أغراض يومية',
-  'home_activity_school_14_tip':
-      'غرفة هروب عائلية: ابتكروا وحلّوا معًا ألغازًا بأغراض يومية.',
+  'home_activity_school_14_tip': 'غرفة هروب عائلية: ابتكروا وحلّوا معًا ألغازًا بأغراض يومية.',
   'home_activity_school_15_materials': 'تطبيق السماء المرصّعة بالنجوم، بطانية',
-  'home_activity_school_15_tip':
-      'مراقبة السماء ليلًا: ابحثوا مساءً عن الأبراج بتطبيق.',
+  'home_activity_school_15_tip': 'مراقبة السماء ليلًا: ابحثوا مساءً عن الأبراج بتطبيق.',
   'home_activity_school_1_materials': 'ورق، أقلام، كنز صغير',
-  'home_activity_school_1_tip':
-      'البحث عن الكنز في الحديقة: اكتبوا تلميحات وخطّطوا مسارًا واخبئوا كنزًا.',
+  'home_activity_school_1_tip': 'البحث عن الكنز في الحديقة: اكتبوا تلميحات وخطّطوا مسارًا واخبئوا كنزًا.',
   'home_activity_school_2_materials': 'ورق، أقلام',
-  'home_activity_school_2_tip':
-      'مسابقة عائلية: يكتب كل شخص خمسة أسئلة عن نفسه. من يعرف الآخرين أكثر؟',
+  'home_activity_school_2_tip': 'مسابقة عائلية: يكتب كل شخص خمسة أسئلة عن نفسه. من يعرف الآخرين أكثر؟',
   'home_activity_school_3_materials': 'هاتف ذكي مع تطبيق جيوكاشينغ',
-  'home_activity_school_3_tip':
-      'جيوكاشينغ: ابحثوا في الخارج عن مخابئ حقيقية بتطبيق مجاني.',
+  'home_activity_school_3_tip': 'جيوكاشينغ: ابحثوا في الخارج عن مخابئ حقيقية بتطبيق مجاني.',
   'home_activity_school_4_materials': 'ورق، أقلام، أقلام تلوين',
-  'home_activity_school_4_tip':
-      'رسم قصة مصوّرة: اروُوا معًا قصة قصيرة على شكل شريط مصوّر.',
+  'home_activity_school_4_tip': 'رسم قصة مصوّرة: اروُوا معًا قصة قصيرة على شكل شريط مصوّر.',
   'home_activity_school_5_materials': 'هاتف ذكي، قائمة مطبوعة',
-  'home_activity_school_5_tip':
-      'سفاري التصوير: ابحثوا بالكاميرا عن أشياء حمراء أو مستديرة أو طرية.',
-  'home_activity_school_6_materials':
-      'بيكربونات الصودا، خل، ليمون، كوب، أعواد قطن',
-  'home_activity_school_6_tip':
-      'مختبر العلوم: جرّبوا بركان بيكربونات الصودا أو الكتابة السرية بعصير الليمون.',
+  'home_activity_school_5_tip': 'سفاري التصوير: ابحثوا بالكاميرا عن أشياء حمراء أو مستديرة أو طرية.',
+  'home_activity_school_6_materials': 'بيكربونات الصودا، خل، ليمون، كوب، أعواد قطن',
+  'home_activity_school_6_tip': 'مختبر العلوم: جرّبوا بركان بيكربونات الصودا أو الكتابة السرية بعصير الليمون.',
   'home_activity_school_7_materials': 'بطانيات، وسائد، سلسلة أضواء، مصباح يدوي',
-  'home_activity_school_7_tip':
-      'مخيّم في غرفة المعيشة: ابنوا خيمة من البطانيات والوسائد لمبيت في الداخل.',
+  'home_activity_school_7_tip': 'مخيّم في غرفة المعيشة: ابنوا خيمة من البطانيات والوسائد لمبيت في الداخل.',
   'home_activity_school_8_materials': 'ألعاب لوحية، وجبات خفيفة',
-  'home_activity_school_8_tip':
-      'بطولة ألعاب لوحية: العبوا ثلاث جولات واحسبوا النقاط معًا.',
+  'home_activity_school_8_tip': 'بطولة ألعاب لوحية: العبوا ثلاث جولات واحسبوا النقاط معًا.',
   'home_activity_school_9_materials': 'هاتف ذكي، أزياء اختيارية',
-  'home_activity_school_9_tip':
-      'تصوير فيلم قصير: ابتكروا قصة ووزّعوا الأدوار وصوّروها.',
+  'home_activity_school_9_tip': 'تصوير فيلم قصير: ابتكروا قصة ووزّعوا الأدوار وصوّروها.',
   'home_activity_toddler_10_materials': 'مواد طبيعية',
-  'home_activity_toddler_10_tip':
-      'ماندالا طبيعية: رتّبوا أوراقًا وحصى وأغصانًا بشكل دائري على الأرض.',
+  'home_activity_toddler_10_tip': 'ماندالا طبيعية: رتّبوا أوراقًا وحصى وأغصانًا بشكل دائري على الأرض.',
   'home_activity_toddler_11_materials': 'كراسٍ، بطانيات، وسائد',
-  'home_activity_toddler_11_tip':
-      'مسار عوائق: ابنوا أنفاقًا وجسورًا من الكراسي والبطانيات والوسائد.',
+  'home_activity_toddler_11_tip': 'مسار عوائق: ابنوا أنفاقًا وجسورًا من الكراسي والبطانيات والوسائد.',
   'home_activity_toddler_12_materials': 'ألوان مائية، أكواب، ماء، ورق',
-  'home_activity_toddler_12_tip':
-      'تجارب الألوان: امزجوا الألوان المائية واكتشفوا معًا ألوانًا جديدة.',
+  'home_activity_toddler_12_tip': 'تجارب الألوان: امزجوا الألوان المائية واكتشفوا معًا ألوانًا جديدة.',
   'home_activity_toddler_13_materials': 'دفتر صغير، أقلام',
-  'home_activity_toddler_13_tip':
-      'دفتر الطقس: ارسموا كل يوم شمسًا أو غيومًا أو مطرًا في دفتر.',
+  'home_activity_toddler_13_tip': 'دفتر الطقس: ارسموا كل يوم شمسًا أو غيومًا أو مطرًا في دفتر.',
   'home_activity_toddler_14_materials': 'وعاء، ماء، مواد طبيعية',
-  'home_activity_toddler_14_tip':
-      'مطبخ الطين في الخارج: اطبخوا حساءً خياليًا بالماء والتراب والأوراق.',
+  'home_activity_toddler_14_tip': 'مطبخ الطين في الخارج: اطبخوا حساءً خياليًا بالماء والتراب والأوراق.',
   'home_activity_toddler_15_materials': 'أقلام فلوماستر مناسبة للبشرة، أيادٍ',
-  'home_activity_toddler_15_tip':
-      'مسرح الأصابع: ارسموا وجوهًا على الأصابع وابتكروا معًا قصة.',
+  'home_activity_toddler_15_tip': 'مسرح الأصابع: ارسموا وجوهًا على الأصابع وابتكروا معًا قصة.',
   'home_activity_toddler_1_materials': 'ورق، أقلام، خمسة أشياء صغيرة',
-  'home_activity_toddler_1_tip':
-      'البحث عن الكنز في غرفة المعيشة: اخبئوا خمسة أشياء وارسموا خريطة كنز.',
+  'home_activity_toddler_1_tip': 'البحث عن الكنز في غرفة المعيشة: اخبئوا خمسة أشياء وارسموا خريطة كنز.',
   'home_activity_toddler_2_materials': 'ملابس قديمة، إكسسوارات',
-  'home_activity_toddler_2_tip':
-      'التنكّر من الخزانة: مثّلوا مسرحية بملابس قديمة وقبّعات ومناديل.',
+  'home_activity_toddler_2_tip': 'التنكّر من الخزانة: مثّلوا مسرحية بملابس قديمة وقبّعات ومناديل.',
   'home_activity_toddler_3_materials': 'وسائد، مناشف، شرائح بلاستيكية، بطانيات',
-  'home_activity_toddler_3_tip':
-      'مسار حافي القدمين: اشعروا بأقدامكم بالوسائد والمناشف وأسطح أخرى.',
+  'home_activity_toddler_3_tip': 'مسار حافي القدمين: اشعروا بأقدامكم بالوسائد والمناشف وأسطح أخرى.',
   'home_activity_toddler_4_materials': 'حصى، ألوان مائية، فرشاة',
-  'home_activity_toddler_4_tip':
-      'تلوين الحصى: اجمعوا حصى في الخارج وزيّنوها في الداخل بالألوان المائية.',
+  'home_activity_toddler_4_tip': 'تلوين الحصى: اجمعوا حصى في الخارج وزيّنوها في الداخل بالألوان المائية.',
   'home_activity_toddler_5_materials': 'صناديق كرتونية كبيرة، شريط لاصق، أقلام',
-  'home_activity_toddler_5_tip':
-      'قلعة من الكرتون: حوّلوا الصناديق الكبيرة إلى بيوت أو سيارات أو صواريخ.',
+  'home_activity_toddler_5_tip': 'قلعة من الكرتون: حوّلوا الصناديق الكبيرة إلى بيوت أو سيارات أو صواريخ.',
   'home_activity_toddler_6_materials': 'طحين، ملح، ماء، زيت، ملوّن غذائي',
-  'home_activity_toddler_6_tip':
-      'عجينة لعب منزلية: امزجوا الطحين والملح والماء والملوّن الغذائي.',
+  'home_activity_toddler_6_tip': 'عجينة لعب منزلية: امزجوا الطحين والملح والماء والملوّن الغذائي.',
   'home_activity_toddler_7_materials': 'حذاء مطر، سترة مطر',
-  'home_activity_toddler_7_tip':
-      'القفز في البرك: بعد المطر، البسوا حذاء المطر واقفزوا!',
+  'home_activity_toddler_7_tip': 'القفز في البرك: بعد المطر، البسوا حذاء المطر واقفزوا!',
   'home_activity_toddler_8_materials': 'طحين، بيض، سكر، زبدة، قالب',
   'home_activity_toddler_8_tip': 'الخبز: حضّروا معًا كعكة بسيطة.',
   'home_activity_toddler_9_materials': 'مصباح يدوي، غرفة مظلمة',
-  'home_activity_toddler_9_tip':
-      'مسرح الظلال: شكّلوا حيوانات على الحائط بالأيدي ومصباح يدوي.',
+  'home_activity_toddler_9_tip': 'مسرح الظلال: شكّلوا حيوانات على الحائط بالأيدي ومصباح يدوي.',
   'home_best_moment_hint': 'لحظة مع طفلي…',
   'home_best_moment_question': 'ما أجمل لحظة لديك اليوم؟',
   'home_evening_reassurance': 'أنت هنا. غدًا يوم جديد.',
@@ -1348,8 +1049,7 @@ const appLocalizationsArExtra = <String, String>{
   'kitchen_kids_hits_title': 'أطباق الأطفال المفضّلة',
   'kitchen_kids_hits_tooltip': 'البحث عن وصفات مشابهة',
   'kitchen_minutes': '{minutes} دقيقة',
-  'kitchen_no_safe_recipe_body':
-      'بسبب الحساسيات المسجّلة لم نتمكّن الآن من اقتراح وصفة آمنة. راجِع الحساسيات في ملف الطفل أو حاوِل مرة أخرى.',
+  'kitchen_no_safe_recipe_body': 'بسبب الحساسيات المسجّلة لم نتمكّن الآن من اقتراح وصفة آمنة. راجِع الحساسيات في ملف الطفل أو حاوِل مرة أخرى.',
   'kitchen_no_safe_recipe_title': 'السلامة أولًا',
   'kitchen_rating_liked': '⭐ أُضيفت إلى قائمة أطباق الأطفال المفضّلة.',
   'kitchen_rating_not_liked': '👍 سنتذكّر ذلك.',
@@ -1359,67 +1059,43 @@ const appLocalizationsArExtra = <String, String>{
   'kitchen_table_moment_evening_title': 'حان وقت لحظتكم على المائدة 🕯️',
   'kitchen_table_moment_subtitle': 'طقس مسائي لطيف على مائدة العائلة.',
   'kitchen_table_moment_title': 'لحظتنا على المائدة',
-  'kitchen_tip_budget':
-      'نصيحة للميزانية|البقوليات رخيصة وصحّية وتُشبع. مثالية للعائلات.',
-  'kitchen_tip_cook_together':
-      'اطبخوا معًا|الأطفال الذين يساعدون في الطبخ أميل إلى أكل ما في الطبق. من عمر سنتين: التحريك والغسل. من عمر 4 سنوات: التقطيع بسكّين خاص بالأطفال.',
-  'kitchen_tip_drinking':
-      'لا تنسَ الشرب|قارورة ماء ملوّنة وأوقات شرب ثابتة تساعد الأطفال على شرب ما يكفي.',
-  'kitchen_tip_family_ritual':
-      'طقس عائلي|اطبخوا معًا مرة أسبوعيًا؛ ويختار الأطفال الطبق. هذا يقوّي الترابط والشهية.',
-  'kitchen_tip_frozen_pizza':
-      'بيتزا مجمّدة اليوم؟|لا بأس إطلاقًا. ليس على كل يوم أن يكون مثاليًا. وغدًا يُطبخ طعام طازج.',
-  'kitchen_tip_frozen_vegetables':
-      'الخضار المجمّد مقبول|البازلّاء والبروكلي المجمّدان يحتويان على القدر نفسه من الفيتامينات مقارنةً بالطازج، ويجهزان في 5 دقائق.',
-  'kitchen_tip_healthy_sweets':
-      'تحلية صحّية|عنب مجمّد، أو بوظة الموز، أو كرات الطاقة: حلاوة دون انهيار سكري.',
-  'kitchen_tip_hidden_vegetables':
-      'أخفِ الخضار|ابشُر الكوسا في صلصة البولونيز، والجزر في الفطائر. الأطفال لا يلاحظون — لكنك تلاحظ.',
-  'kitchen_tip_leftovers':
-      'استخدم البقايا بإبداع|تتحوّل البقايا إلى لفائف أو صواني فرن أو أرز مقلي. تبذير أقل وتنوّع أكثر.',
-  'kitchen_tip_meal_prep':
-      'حيلة لتحضير الوجبات|اطبخ ضعف الكمية يوم الأحد وجمّدها. وخلال الأسبوع يكون الطعام الصحّي جاهزًا على المائدة في 10 دقائق.',
-  'kitchen_tip_morning':
-      'حيلة صباحية|حضّر الفطور في المساء: شوفان الليلة، تقطيع الخبز، غسل الفاكهة. هذا يجعل الصباح أقلّ توترًا.',
-  'kitchen_tip_nature':
-      'الأطفال والطبيعة|ازرع الأعشاب على حافة النافذة. ومن يحصد بنفسه أميل إلى التذوّق — حتى البقدونس.',
-  'kitchen_tip_no_food_battle':
-      'لا معركة على المائدة|قدّم الطعام دون إكراه. فالأطفال ينظّمون كمّياتهم بأنفسهم. ثقةٌ بدل الضغط.',
-  'kitchen_tip_picky_eater':
-      'طفل انتقائي في الطعام؟|قد يحتاج الأطفال إلى 15 محاولة قبل أن يحبّوا شيئًا جديدًا. قدّمه مرارًا دون أن تجبرهم أبدًا.',
-  'kitchen_tip_season_autumn':
-      'نصيحة موسمية|اليقطين والتفاح والكمثرى حلوة ورخيصة ومتعدّدة الاستخدام. حساء اليقطين يُحضَّر في 20 دقيقة.',
-  'kitchen_tip_season_spring':
-      'نصيحة موسمية|الهليون والفجل والسبانخ طازجة من السوق. والفجل الذي يحصده الأطفال بأنفسهم أميل إلى تذوّقه.',
-  'kitchen_tip_season_summer':
-      'نصيحة موسمية|الفراولة والكرز والطماطم طازجة ورخيصة الآن. مثالية كوجبة خفيفة دون طبخ.',
-  'kitchen_tip_season_winter':
-      'نصيحة موسمية|الكُحلُربة والجزر والبطاطا: الطبخة تُدفّئ، ورخيصة، وسهلة التحضير مسبقًا.',
-  'kitchen_tip_snack':
-      'فكرة وجبة خفيفة|شرائح تفاح مع زبدة الفول السوداني أو أصابع خيار مع الجبن الطري: سريعة وصحّية وبلا عناء.',
+  'kitchen_tip_budget': 'نصيحة للميزانية|البقوليات رخيصة وصحّية وتُشبع. مثالية للعائلات.',
+  'kitchen_tip_cook_together': 'اطبخوا معًا|الأطفال الذين يساعدون في الطبخ أميل إلى أكل ما في الطبق. من عمر سنتين: التحريك والغسل. من عمر 4 سنوات: التقطيع بسكّين خاص بالأطفال.',
+  'kitchen_tip_drinking': 'لا تنسَ الشرب|قارورة ماء ملوّنة وأوقات شرب ثابتة تساعد الأطفال على شرب ما يكفي.',
+  'kitchen_tip_family_ritual': 'طقس عائلي|اطبخوا معًا مرة أسبوعيًا؛ ويختار الأطفال الطبق. هذا يقوّي الترابط والشهية.',
+  'kitchen_tip_frozen_pizza': 'بيتزا مجمّدة اليوم؟|لا بأس إطلاقًا. ليس على كل يوم أن يكون مثاليًا. وغدًا يُطبخ طعام طازج.',
+  'kitchen_tip_frozen_vegetables': 'الخضار المجمّد مقبول|البازلّاء والبروكلي المجمّدان يحتويان على القدر نفسه من الفيتامينات مقارنةً بالطازج، ويجهزان في 5 دقائق.',
+  'kitchen_tip_healthy_sweets': 'تحلية صحّية|عنب مجمّد، أو بوظة الموز، أو كرات الطاقة: حلاوة دون انهيار سكري.',
+  'kitchen_tip_hidden_vegetables': 'أخفِ الخضار|ابشُر الكوسا في صلصة البولونيز، والجزر في الفطائر. الأطفال لا يلاحظون — لكنك تلاحظ.',
+  'kitchen_tip_leftovers': 'استخدم البقايا بإبداع|تتحوّل البقايا إلى لفائف أو صواني فرن أو أرز مقلي. تبذير أقل وتنوّع أكثر.',
+  'kitchen_tip_meal_prep': 'حيلة لتحضير الوجبات|اطبخ ضعف الكمية يوم الأحد وجمّدها. وخلال الأسبوع يكون الطعام الصحّي جاهزًا على المائدة في 10 دقائق.',
+  'kitchen_tip_morning': 'حيلة صباحية|حضّر الفطور في المساء: شوفان الليلة، تقطيع الخبز، غسل الفاكهة. هذا يجعل الصباح أقلّ توترًا.',
+  'kitchen_tip_nature': 'الأطفال والطبيعة|ازرع الأعشاب على حافة النافذة. ومن يحصد بنفسه أميل إلى التذوّق — حتى البقدونس.',
+  'kitchen_tip_no_food_battle': 'لا معركة على المائدة|قدّم الطعام دون إكراه. فالأطفال ينظّمون كمّياتهم بأنفسهم. ثقةٌ بدل الضغط.',
+  'kitchen_tip_picky_eater': 'طفل انتقائي في الطعام؟|قد يحتاج الأطفال إلى 15 محاولة قبل أن يحبّوا شيئًا جديدًا. قدّمه مرارًا دون أن تجبرهم أبدًا.',
+  'kitchen_tip_season_autumn': 'نصيحة موسمية|اليقطين والتفاح والكمثرى حلوة ورخيصة ومتعدّدة الاستخدام. حساء اليقطين يُحضَّر في 20 دقيقة.',
+  'kitchen_tip_season_spring': 'نصيحة موسمية|الهليون والفجل والسبانخ طازجة من السوق. والفجل الذي يحصده الأطفال بأنفسهم أميل إلى تذوّقه.',
+  'kitchen_tip_season_summer': 'نصيحة موسمية|الفراولة والكرز والطماطم طازجة ورخيصة الآن. مثالية كوجبة خفيفة دون طبخ.',
+  'kitchen_tip_season_winter': 'نصيحة موسمية|الكُحلُربة والجزر والبطاطا: الطبخة تُدفّئ، ورخيصة، وسهلة التحضير مسبقًا.',
+  'kitchen_tip_snack': 'فكرة وجبة خفيفة|شرائح تفاح مع زبدة الفول السوداني أو أصابع خيار مع الجبن الطري: سريعة وصحّية وبلا عناء.',
   'kitchen_try_again': 'إعادة المحاولة',
   'kitchen_view_ingredients_preparation': '🍳 عرض المكوّنات والتحضير',
   'kitchen_without': '🚫 بدون:',
-  'knowledge_content_language_notice':
-      'الأسئلة والأجوبة مُترجَمة. أما البحث فما زال يعمل بكلمات مفتاحية ألمانية: اكتب كلمة ألمانية أو اختر بطاقة موضوع.',
+  'knowledge_content_language_notice': 'الأسئلة والأجوبة مُترجَمة. أما البحث فما زال يعمل بكلمات مفتاحية ألمانية: اكتب كلمة ألمانية أو اختر بطاقة موضوع.',
   'knowledge_search_hint': 'ما الذي يشغلك؟ (مثلًا „الضرب“، „لا ينام“)',
   'knowledge_tab': 'المعرفة',
-  'knowledge_ui_language_notice':
-      'تُعرَض ترجمات عناصر الواجهة الناقصة بالإنجليزية.',
+  'knowledge_ui_language_notice': 'تُعرَض ترجمات عناصر الواجهة الناقصة بالإنجليزية.',
   'language_select': 'اختيار اللغة',
   'legal_info_tmg': 'بيانات وفقًا للمادة § 5 TMG / § 25 MStV',
   'lets_go': 'لنبدأ!',
   'loading': 'جارٍ التحميل…',
   'location_onboarding_detect': 'تحديد الموقع',
-  'location_onboarding_explanation':
-      'بتحديد موقع تقريبي تجد عروضًا بالقرب منك. واختيار الموقع اختياري.',
+  'location_onboarding_explanation': 'بتحديد موقع تقريبي تجد عروضًا بالقرب منك. واختيار الموقع اختياري.',
   'location_onboarding_manual_hint': 'المدينة أو الرمز البريدي',
   'location_onboarding_manual_title': 'أدخل المدينة أو الرمز البريدي',
-  'location_onboarding_privacy':
-      'يُحفظ موقعك بشكل تقريبي فقط (منزلتان عشريتان، نحو 1 كم). ولمعرفة اسم المكان نرسل إحداثيات GPS مقرّبة أو ما أدخلته من مكان إلى OpenStreetMap Nominatim.',
+  'location_onboarding_privacy': 'يُحفظ موقعك بشكل تقريبي فقط (منزلتان عشريتان، نحو 1 كم). ولمعرفة اسم المكان نرسل إحداثيات GPS مقرّبة أو ما أدخلته من مكان إلى OpenStreetMap Nominatim.',
   'location_onboarding_skip': 'تخطّي',
-  'location_osm_notice':
-      'يرسل البحث عن المكان نصوص البحث أو إحداثيات مقرّبة إلى نحو 1 كم إلى OpenStreetMap Nominatim. وتحمّل الخريطة بلاطاتها من OpenStreetMap.',
+  'location_osm_notice': 'يرسل البحث عن المكان نصوص البحث أو إحداثيات مقرّبة إلى نحو 1 كم إلى OpenStreetMap Nominatim. وتحمّل الخريطة بلاطاتها من OpenStreetMap.',
   'location_search_failed': 'فشل البحث عن المكان. يُرجى المحاولة مرة أخرى.',
   'login_brand_tagline': 'آمن. واضح. مصمَّم للعائلات.',
   'login_create_account': 'إنشاء حساب',
@@ -1427,13 +1103,10 @@ const appLocalizationsArExtra = <String, String>{
   'login_forgot_password': 'هل نسيت كلمة المرور؟',
   'login_google_error': 'تسجيل الدخول عبر Google: {message}',
   'login_google_failed': 'فشل تسجيل الدخول عبر Google. يرجى المحاولة مجددًا.',
-  'login_google_popup_blocked':
-      'النوافذ المنبثقة محظورة. استخدم البريد الإلكتروني + كلمة المرور أو افتح الصفحة في Safari.',
-  'login_google_retry':
-      'تسجيل الدخول عبر Google: حاول مجددًا أو استخدم البريد الإلكتروني + كلمة المرور.',
+  'login_google_popup_blocked': 'النوافذ المنبثقة محظورة. استخدم البريد الإلكتروني + كلمة المرور أو افتح الصفحة في Safari.',
+  'login_google_retry': 'تسجيل الدخول عبر Google: حاول مجددًا أو استخدم البريد الإلكتروني + كلمة المرور.',
   'login_new_prompt': 'جديد على Parentpeak؟ ',
-  'login_provider_coming_soon':
-      'سيأتي تسجيل الدخول عبر {provider} في الإصدار القادم.',
+  'login_provider_coming_soon': 'سيأتي تسجيل الدخول عبر {provider} في الإصدار القادم.',
   'login_submit': 'تسجيل الدخول',
   'login_subtitle': 'سجّل الدخول لفتح مساحة عائلتك.',
   'login_technical_error': 'خطأ تقني أثناء تسجيل الدخول. يرجى المحاولة مجددًا.',
@@ -1467,8 +1140,7 @@ const appLocalizationsArExtra = <String, String>{
   'matching_safety_check': 'فحص الأمان',
   'matching_safety_queue': 'قائمة انتظار الأمان',
   'meetup_activity_count': '{count} أنشطة',
-  'meetup_filter_description':
-      'عوامل تصفية واضحة للظهور، مع إمكان التنقيح حسب العمر.',
+  'meetup_filter_description': 'عوامل تصفية واضحة للظهور، مع إمكان التنقيح حسب العمر.',
   'meetup_less_filters': 'عوامل تصفية أقل',
   'meetup_more_filters': 'مزيد من عوامل التصفية',
   'meetup_nearby': 'أنشطة بالقرب منك',
@@ -1477,13 +1149,10 @@ const appLocalizationsArExtra = <String, String>{
   'memory_children': 'ملفات الأطفال',
   'memory_confirmed_count': '{count} معلومات مؤكّدة',
   'memory_consent_accept': 'السماح بالتخزين واستخدام الذكاء الاصطناعي',
-  'memory_consent_body':
-      'اختياري: تُحفظ المعلومات العائلية المؤكّدة، بما فيها البيانات الصحية، بشكل مرتبط بالحساب في خادم ParentPeak، وتُنقَل إلى Google Gemini في طلبات المحادثة المناسبة. وتبقى أسماء الأطفال الجديدة على هذا الجهاز فقط؛ ويتلقّى الذكاء الاصطناعي رموزًا محايدة والعمر المكتمل بدلًا من الأسماء وتاريخ الميلاد. وقد يبقى النص الحر محتويًا على معطيات شخصية. وتبقى البيانات الأصلية القديمة محفوظة. ودون موافقة، تُمنَع الإدخالات الجديدة في الذاكرة وعمليات نقل الذاكرة؛ وتبقى المحادثة العادية ممكنة بموافقتها الخاصة. ويوقف الإيقاف الاستخدام، لكنه لا يحذف البيانات الموجودة. والطلبات المُرسَلة سابقًا لا يمكن استرجاعها. والبيانات المحلية ليست مشفّرة بشكل إضافي من قِبَل التطبيق.',
-  'memory_consent_required':
-      'يُرجى تفعيل الذاكرة بالموافقة الإضافية قبل حفظ بيانات جديدة.',
+  'memory_consent_body': 'اختياري: تُحفظ المعلومات العائلية المؤكّدة، بما فيها البيانات الصحية، بشكل مرتبط بالحساب في خادم ParentPeak، وتُنقَل إلى Google Gemini في طلبات المحادثة المناسبة. وتبقى أسماء الأطفال الجديدة على هذا الجهاز فقط؛ ويتلقّى الذكاء الاصطناعي رموزًا محايدة والعمر المكتمل بدلًا من الأسماء وتاريخ الميلاد. وقد يبقى النص الحر محتويًا على معطيات شخصية. وتبقى البيانات الأصلية القديمة محفوظة. ودون موافقة، تُمنَع الإدخالات الجديدة في الذاكرة وعمليات نقل الذاكرة؛ وتبقى المحادثة العادية ممكنة بموافقتها الخاصة. ويوقف الإيقاف الاستخدام، لكنه لا يحذف البيانات الموجودة. والطلبات المُرسَلة سابقًا لا يمكن استرجاعها. والبيانات المحلية ليست مشفّرة بشكل إضافي من قِبَل التطبيق.',
+  'memory_consent_required': 'يُرجى تفعيل الذاكرة بالموافقة الإضافية قبل حفظ بيانات جديدة.',
   'memory_consent_title': 'موافقة إضافية على ذاكرة الذكاء الاصطناعي',
-  'memory_delete_body':
-      'ستُحذف جميع معلومات الذكاء الاصطناعي المحفوظة عن {name}.',
+  'memory_delete_body': 'ستُحذف جميع معلومات الذكاء الاصطناعي المحفوظة عن {name}.',
   'memory_delete_title': 'حذف ملف الطفل؟',
   'memory_edit_child': 'تعديل ملف الطفل',
   'memory_empty_info': 'لا توجد معلومات محفوظة بعد.',
@@ -1492,17 +1161,13 @@ const appLocalizationsArExtra = <String, String>{
   'memory_load_failed': 'تعذّر تحميل البيانات. يُرجى المحاولة مرة أخرى.',
   'memory_local_name': 'اسم العرض (على هذا الجهاز فقط)',
   'memory_name_required': 'يُرجى إدخال اسم محلي.',
-  'memory_name_save_failed':
-      'تم حفظ الملف المحايد في الخادم، لكن تعذّر تأكيد اسم العرض المحلي. تُعاد الآن تحميل القائمة؛ يُرجى عدم إنشاء إدخال مكرّر.',
+  'memory_name_save_failed': 'تم حفظ الملف المحايد في الخادم، لكن تعذّر تأكيد اسم العرض المحلي. تُعاد الآن تحميل القائمة؛ يُرجى عدم إنشاء إدخال مكرّر.',
   'memory_no_children': 'لم يُنشأ أي ملف طفل بعد.',
   'memory_none_confirmed': 'لا توجد معلومات مؤكّدة',
-  'memory_operation_failed':
-      'لم يتم تأكيد التغيير بالكامل. تُعاد الآن مراجعة الذاكرة؛ يُرجى المحاولة مرة أخرى.',
-  'memory_storage_info':
-      'تبقى البيانات الأصلية الموجودة محفوظة في الخادم. ويمنع الإيقاف التخزين الجديد واستخدام الذكاء الاصطناعي، لا القراءة أو الحذف. وتبقى أسماء العرض الجديدة محلية ومرتبطة بالحساب؛ ولا يوجد تشفير إضافي على مستوى التطبيق.',
+  'memory_operation_failed': 'لم يتم تأكيد التغيير بالكامل. تُعاد الآن مراجعة الذاكرة؛ يُرجى المحاولة مرة أخرى.',
+  'memory_storage_info': 'تبقى البيانات الأصلية الموجودة محفوظة في الخادم. ويمنع الإيقاف التخزين الجديد واستخدام الذكاء الاصطناعي، لا القراءة أو الحذف. وتبقى أسماء العرض الجديدة محلية ومرتبطة بالحساب؛ ولا يوجد تشفير إضافي على مستوى التطبيق.',
   'memory_title': 'ذاكرة الذكاء الاصطناعي والأطفال',
-  'memory_transfer_info':
-      'فقط بموافقة إضافية: تُرسَل القيم المؤكّدة عبر الخادم إلى Google Gemini. وتُقلَّص تسميات الأطفال والعمر.',
+  'memory_transfer_info': 'فقط بموافقة إضافية: تُرسَل القيم المؤكّدة عبر الخادم إلى Google Gemini. وتُقلَّص تسميات الأطفال والعمر.',
   'money_once_hint': 'أدخِله مرة واحدة — لا حاجة إلى إدخال يومي.',
   'mood_exhausted': 'منهَك',
   'mood_great': 'ممتاز',
@@ -1513,11 +1178,9 @@ const appLocalizationsArExtra = <String, String>{
   'mood_level_5': 'رائع',
   'mood_okay': 'لا بأس',
   'mood_support_action': 'التحدّث مع استشارة الذكاء الاصطناعي',
-  'mood_support_message':
-      'أنت تبذل أفضل ما لديك كل يوم. هل تريد نصيحة قصيرة أو التحدّث مع الذكاء الاصطناعي؟',
+  'mood_support_message': 'أنت تبذل أفضل ما لديك كل يوم. هل تريد نصيحة قصيرة أو التحدّث مع الذكاء الاصطناعي؟',
   'mood_support_title': 'الأيام الصعبة أمر طبيعي',
-  'mood_tip_1':
-      'الأيام الصعبة جزء من الطريق. كن اليوم لطيفًا مع نفسك بشكل خاص.',
+  'mood_tip_1': 'الأيام الصعبة جزء من الطريق. كن اليوم لطيفًا مع نفسك بشكل خاص.',
   'mood_tip_2': 'غدًا يوم جديد. استراحة صغيرة هذا المساء تفيد.',
   'mood_tip_3': 'جيد! لا يجب أن يكون كل يوم مثاليًا.',
   'mood_tip_4': 'يوم جميل! استمتع باللحظة.',
@@ -1529,16 +1192,14 @@ const appLocalizationsArExtra = <String, String>{
   'network_age_mixed': '{years} سنة {months} شهر',
   'network_age_months': '{months} شهر',
   'network_age_years': '{years} سنوات',
-  'network_all_friends_in_group':
-      'جميع أصدقائك موجودون بالفعل في هذه المجموعة.',
+  'network_all_friends_in_group': 'جميع أصدقائك موجودون بالفعل في هذه المجموعة.',
   'network_availability_heading': 'متى يكون لديكم وقت؟',
   'network_availability_hint': 'مثلًا في العطل فقط، في الأعياد فقط...',
   'network_back': 'رجوع',
   'network_block': 'حظر',
   'network_blocked': 'تم حظر {name}.',
   'network_chat': 'محادثة',
-  'network_chats_empty_desc':
-      'تواصل مع آباء آخرين وابدأ محادثتك الأولى — فرديًا أو ضمن مجموعة.',
+  'network_chats_empty_desc': 'تواصل مع آباء آخرين وابدأ محادثتك الأولى — فرديًا أو ضمن مجموعة.',
   'network_chats_empty_title': 'لا محادثات بعد',
   'network_child_custom_hint': 'ماذا يحبّ طفلك أيضًا؟',
   'network_child_example': 'مثلًا ميا',
@@ -1549,28 +1210,23 @@ const appLocalizationsArExtra = <String, String>{
   'network_coming_soon': 'قريبًا',
   'network_connect_confirm': 'هل تريد الارتباط بـ {name}؟',
   'network_connected_count': '{count} مرتبط',
-  'network_copy_bio_hint':
-      'احكوا باختصار عنكم: ما الذي يميّز عائلتكم؟ وعمّاذا تبحثون؟',
+  'network_copy_bio_hint': 'احكوا باختصار عنكم: ما الذي يميّز عائلتكم؟ وعمّاذا تبحثون؟',
   'network_copy_bio_title': 'نبذة قصيرة',
   'network_copy_cancel': 'إلغاء',
   'network_copy_connect': 'الارتباط؟',
   'network_copy_connect_button': 'ارتباط',
   'network_copy_create_profile': 'إنشاء ملف',
   'network_copy_custom': 'خاص بكم',
-  'network_copy_custom_example':
-      'مثلًا عائلة بالاختيار، عائلة متعددة الأجيال...',
+  'network_copy_custom_example': 'مثلًا عائلة بالاختيار، عائلة متعددة الأجيال...',
   'network_copy_custom_family': 'شكل عائلتكم',
-  'network_copy_empty_description':
-      'ملفك نشط ومرئي. وبمجرّد انضمام عائلات أخرى قريبة منك، ستظهر هنا تلقائيًا. ادعُ الجيران والأصدقاء - فهكذا تنمو شبكتكم أسرع.',
+  'network_copy_empty_description': 'ملفك نشط ومرئي. وبمجرّد انضمام عائلات أخرى قريبة منك، ستظهر هنا تلقائيًا. ادعُ الجيران والأصدقاء - فهكذا تنمو شبكتكم أسرع.',
   'network_copy_empty_title': 'كن أول عائلة في منطقتك',
   'network_copy_family_form': 'شكل العائلة',
-  'network_copy_invite_hero_description':
-      'شارِك رابطك الشخصي أو رمز QR - نقرة واحدة وتصبحان مرتبطَين.',
+  'network_copy_invite_hero_description': 'شارِك رابطك الشخصي أو رمز QR - نقرة واحدة وتصبحان مرتبطَين.',
   'network_copy_invite_hero_title': 'دعوة أصدقاء',
   'network_copy_invite_playmates': 'دعوة رفاق لعب',
   'network_copy_location_hint': 'اختاروا حيّكم / الرمز البريدي',
-  'network_copy_login_required':
-      'يُرجى تسجيل الدخول لنشر ملف رفاق اللعب الخاص بك.',
+  'network_copy_login_required': 'يُرجى تسجيل الدخول لنشر ملف رفاق اللعب الخاص بك.',
   'network_copy_name_example': 'مثلًا سارة، عائلة مولر',
   'network_copy_name_hint': 'اسمكم الأول / لقبكم',
   'network_copy_no_gender': 'عدم الإفصاح',
@@ -1585,46 +1241,36 @@ const appLocalizationsArExtra = <String, String>{
   'network_copy_request_sent': 'تم إرسال طلبك إلى {name}.',
   'network_copy_same_city': 'في مدينتك',
   'network_copy_save': 'جارٍ الحفظ...',
-  'network_copy_setup_hint':
-      'في 5 خطوات قصيرة تجدون عائلات تشبهكم في طريقة التفكير.',
+  'network_copy_setup_hint': 'في 5 خطوات قصيرة تجدون عائلات تشبهكم في طريقة التفكير.',
   'network_copy_share': 'مشاركة',
   'network_copy_step_1': 'الخطوة 1: عائلتكم',
   'network_copy_step_2': 'الخطوة 2: أطفالكم',
   'network_copy_step_3': 'الخطوة 3: القيم والأسلوب',
   'network_copy_step_4': 'الخطوة 4: عمّاذا تبحثون؟',
   'network_copy_step_5': 'الخطوة 5: اللغات والمزيد',
-  'network_copy_values_tip':
-      'نصيحة: العائلات ذات القيم المتقاربة تتفاهم أفضل. اختاروا ما يهمّكم.',
+  'network_copy_values_tip': 'نصيحة: العائلات ذات القيم المتقاربة تتفاهم أفضل. اختاروا ما يهمّكم.',
   'network_create_group': 'إنشاء مجموعة',
   'network_create_group_hint': 'مثلًا مجموعة الحضانة أو لقاء في الملعب',
   'network_custom_add': 'خاص',
-  'network_delete_failed':
-      'تعذّر حذف الملف. ويبقى محفوظًا. يُرجى المحاولة مرة أخرى.',
-  'network_delete_profile_confirm':
-      'سيُحذف ملف رفاق اللعب الخاص بك نهائيًا. ويمكنك إنشاء ملف جديد في أي وقت.',
-  'network_discovery_auth_failed':
-      'البحث عن العائلات غير مسموح به لهذه الجلسة. يُرجى التحقّق من حسابك وتسجيل دخولك.',
-  'network_discovery_failed':
-      'تعذّر تحميل العائلات. وهذه ليست نتيجة بحث فارغة مؤكّدة. يُرجى المحاولة مرة أخرى.',
+  'network_delete_failed': 'تعذّر حذف الملف. ويبقى محفوظًا. يُرجى المحاولة مرة أخرى.',
+  'network_delete_profile_confirm': 'سيُحذف ملف رفاق اللعب الخاص بك نهائيًا. ويمكنك إنشاء ملف جديد في أي وقت.',
+  'network_discovery_auth_failed': 'البحث عن العائلات غير مسموح به لهذه الجلسة. يُرجى التحقّق من حسابك وتسجيل دخولك.',
+  'network_discovery_failed': 'تعذّر تحميل العائلات. وهذه ليست نتيجة بحث فارغة مؤكّدة. يُرجى المحاولة مرة أخرى.',
   'network_discovery_retry': 'إعادة البحث',
   'network_district_hint': 'اكتب مثلًا Kreuzberg، 10997...',
   'network_district_label': 'الحيّ أو الرمز البريدي',
   'network_draft_assign': 'ربط المسوّدة بحسابي',
-  'network_draft_assign_body':
-      'أكّد أن مسوّدة العائلة المحلية القديمة تخصّ حسابك „{account}“. وستُربَط محليًا بهذا الحساب فقط، وتصبح بعد ذلك متاحة أيضًا للتقويم والمطبخ وسائر وظائف العائلة. ولا تُرفَع أي بيانات. ويتطلّب النشر تأكيدًا منفصلًا.',
+  'network_draft_assign_body': 'أكّد أن مسوّدة العائلة المحلية القديمة تخصّ حسابك „{account}“. وستُربَط محليًا بهذا الحساب فقط، وتصبح بعد ذلك متاحة أيضًا للتقويم والمطبخ وسائر وظائف العائلة. ولا تُرفَع أي بيانات. ويتطلّب النشر تأكيدًا منفصلًا.',
   'network_draft_assign_failed': 'تعذّر ربط المسوّدة. يُرجى المحاولة مرة أخرى.',
   'network_draft_assign_title': 'إسناد المسوّدة المحلية إلى هذا الحساب؟',
-  'network_draft_unassigned':
-      'يوجد على هذا الجهاز ملف قديم غير مرتبط بأي حساب. ولا يُستخدَم أو يُنشر تلقائيًا.',
+  'network_draft_unassigned': 'يوجد على هذا الجهاز ملف قديم غير مرتبط بأي حساب. ولا يُستخدَم أو يُنشر تلقائيًا.',
   'network_families_nearby': 'عائلات بالقرب منك',
   'network_family_fallback': 'هذه العائلة',
   'network_family_name': 'عائلة {name}',
   'network_found': 'تم العثور عليه ✓',
   'network_group': 'مجموعة',
-  'network_group_chat_empty':
-      'لا توجد رسائل بعد. اكتب أول رسالة وأشعل الحوار في المجموعة!',
-  'network_group_create_failed':
-      'تعذّر إنشاء المجموعة — يُرجى المحاولة لاحقًا.',
+  'network_group_chat_empty': 'لا توجد رسائل بعد. اكتب أول رسالة وأشعل الحوار في المجموعة!',
+  'network_group_create_failed': 'تعذّر إنشاء المجموعة — يُرجى المحاولة لاحقًا.',
   'network_group_name': 'اسم المجموعة',
   'network_group_name_hint': 'مثلًا مجموعة حضانة الشمس',
   'network_group_name_required': 'يُرجى إدخال اسم للمجموعة.',
@@ -1635,10 +1281,8 @@ const appLocalizationsArExtra = <String, String>{
   'network_invalid_invite': 'الدعوة غير صالحة أو منتهية الصلاحية.',
   'network_languages_heading': 'ما اللغات التي تتحدّثونها؟',
   'network_leave_group': 'مغادرة المجموعة',
-  'network_leave_group_confirm':
-      'هل تريد حقًا مغادرة هذه المجموعة؟ لن ترى رسائلها بعد الآن.',
-  'network_legacy_link_inactive':
-      'هذا الرابط لم يعد نشطًا. يُرجى استخدام رابط الدعوة الخاص بالعائلة الأخرى.',
+  'network_leave_group_confirm': 'هل تريد حقًا مغادرة هذه المجموعة؟ لن ترى رسائلها بعد الآن.',
+  'network_legacy_link_inactive': 'هذا الرابط لم يعد نشطًا. يُرجى استخدام رابط الدعوة الخاص بالعائلة الأخرى.',
   'network_link_create_failed': 'تعذّر إنشاء الرابط – يُرجى المحاولة لاحقًا.',
   'network_looking_custom_hint': 'ماذا تتمنّون أيضًا؟',
   'network_looking_heading': 'عمّاذا تبحثون؟',
@@ -1734,8 +1378,7 @@ const appLocalizationsArExtra = <String, String>{
   'network_option_specials_fruehchen': '💪 آباء الأطفال الخدّج',
   'network_option_specials_hochsensibel': '🌼 شديد الحساسية',
   'network_option_specials_mehrlinge': '👯 توائم متعددة',
-  'network_option_specials_neurodivergent':
-      '🧠 اختلاف عصبي (فرط الحركة/التوحّد)',
+  'network_option_specials_neurodivergent': '🧠 اختلاف عصبي (فرط الحركة/التوحّد)',
   'network_option_specials_pflegekind': '❤️ طفل بالحضانة',
   'network_option_specials_schreibaby': '👶 رضيع كثير البكاء/اضطراب في التنظيم',
   'network_option_times_abends': '🌙 مساءً (17–21)',
@@ -1744,8 +1387,7 @@ const appLocalizationsArExtra = <String, String>{
   'network_option_times_nach_kita': '🏫 بعد الحضانة/المدرسة',
   'network_option_times_nachmittags': '🌞 بعد الظهر (12–17)',
   'network_option_times_vormittags': '☀️ قبل الظهر (9–12)',
-  'network_option_values_attachment_parenting':
-      '🤗 تربية التعلّق (Attachment Parenting)',
+  'network_option_values_attachment_parenting': '🤗 تربية التعلّق (Attachment Parenting)',
   'network_option_values_bedürfnisorientiert': '💛 تربية قائمة على الاحتياجات',
   'network_option_values_demokratisch': '🗳️ ديمقراطي',
   'network_option_values_feministisch': '♀️ نسوي',
@@ -1766,14 +1408,11 @@ const appLocalizationsArExtra = <String, String>{
   'network_photo_camera': 'التقاط صورة',
   'network_photo_gallery': 'اختيار من المعرض',
   'network_profile_active': 'أكّد الخادم أن الملف نشط.',
-  'network_profile_draft':
-      'لم يُؤكَّد وجود ملف نشط على الخادم. والمسوّدات المحلية لا تُنشر تلقائيًا.',
+  'network_profile_draft': 'لم يُؤكَّد وجود ملف نشط على الخادم. والمسوّدات المحلية لا تُنشر تلقائيًا.',
   'network_profile_retry': 'إعادة التحقّق من الحالة',
-  'network_profile_unverified':
-      'تعذّر التحقّق من حالة الملف. والظهور غير مؤكّد.',
+  'network_profile_unverified': 'تعذّر التحقّق من حالة الملف. والظهور غير مؤكّد.',
   'network_publish_accept': 'نشر الملف',
-  'network_publish_body':
-      'يُحفظ على خادمنا اسمُ العرض الخاص بك، والمنطقة، والموقع المُقرَّب بشكل عام (إن وُجد)، والأعمار التقريبية للأطفال، واللغات، وشكل العائلة، والقيم، والأنشطة المرغوبة، ونبذتك، وتُعرَض لعائلات أخرى في الشبكة. أما أسماء الأطفال وتواريخ ميلادهم وخصوصيّاتهم فتبقى على هذا الجهاز. لا تُدرج أسماء الأطفال أو عنوانك أو بيانات صحية في نبذتك العامة. والتوافق لا يستخدم الذكاء الاصطناعي. ويمكنك حذف ملفك في أي وقت.',
+  'network_publish_body': 'يُحفظ على خادمنا اسمُ العرض الخاص بك، والمنطقة، والموقع المُقرَّب بشكل عام (إن وُجد)، والأعمار التقريبية للأطفال، واللغات، وشكل العائلة، والقيم، والأنشطة المرغوبة، ونبذتك، وتُعرَض لعائلات أخرى في الشبكة. أما أسماء الأطفال وتواريخ ميلادهم وخصوصيّاتهم فتبقى على هذا الجهاز. لا تُدرج أسماء الأطفال أو عنوانك أو بيانات صحية في نبذتك العامة. والتوافق لا يستخدم الذكاء الاصطناعي. ويمكنك حذف ملفك في أي وقت.',
   'network_publish_failed': 'تعذّر نشر الملف. يُرجى المحاولة مرة أخرى.',
   'network_publish_title': 'نشر ملف لقاءات الأطفال؟',
   'network_qr_code': 'رمز QR',
@@ -1790,11 +1429,9 @@ const appLocalizationsArExtra = <String, String>{
   'network_share_message': 'مرحبًا! 👋 تواصل معي على ParentPeak:\n{link}',
   'network_specials_heading': 'خصوصيّات (اختياري)',
   'network_specials_hint': 'ملاحظة عن الخصوصيّات (على هذا الجهاز فقط)',
-  'network_specials_local':
-      'تبقى هذه المعطيات على جهازك فقط. ولا تُنشر ولا تُستخدَم في التوافق على الخادم.',
+  'network_specials_local': 'تبقى هذه المعطيات على جهازك فقط. ولا تُنشر ولا تُستخدَم في التوافق على الخادم.',
   'network_start_direct_chat': 'مراسلة صديق',
-  'network_start_direct_chat_hint':
-      'اختر صديقًا في تبويب الشبكة وابدأ المحادثة.',
+  'network_start_direct_chat_hint': 'اختر صديقًا في تبويب الشبكة وابدأ المحادثة.',
   'network_suggestions_count': '{count} اقتراحات',
   'network_tab_chats': 'المحادثات',
   'network_tab_network': 'الشبكة',
@@ -1827,8 +1464,7 @@ const appLocalizationsArExtra = <String, String>{
   'onboarding_phase': 'في أي مرحلة أنتم؟',
   'onboarding_priorities': 'ما المهم بالنسبة لك؟',
   'onboarding_ready': 'لننطلق!',
-  'onboarding_subtitle':
-      'حياتكم العائلية اليومية. تطبيق واحد.\nلنكتشف معًا ما يساعدكم أكثر.',
+  'onboarding_subtitle': 'حياتكم العائلية اليومية. تطبيق واحد.\nلنكتشف معًا ما يساعدكم أكثر.',
   'onboarding_where': 'أين تعيش عائلتكم؟',
   'open_room': 'فتح الغرفة',
   'open_source_licenses': 'تراخيص المصادر المفتوحة',
@@ -1839,12 +1475,10 @@ const appLocalizationsArExtra = <String, String>{
   'organization_local_mode': 'الوضع المحلي مفعّل',
   'organization_no_shopping_items': 'لا توجد عناصر تسوّق بعد.',
   'organization_no_todos': 'لا توجد مهام بعد.',
-  'organization_offline_notice':
-      'وضع عدم الاتصال — تُحفظ التغييرات محليًا وتُرسَل عند المزامنة التالية.',
+  'organization_offline_notice': 'وضع عدم الاتصال — تُحفظ التغييرات محليًا وتُرسَل عند المزامنة التالية.',
   'organization_title': 'التنظيم',
   'parent_role': 'أحد الوالدين',
-  'password_reset_instructions':
-      'أدخِل عنوان بريدك الإلكتروني. وسنرسل إليك رابطًا لإعادة التعيين.',
+  'password_reset_instructions': 'أدخِل عنوان بريدك الإلكتروني. وسنرسل إليك رابطًا لإعادة التعيين.',
   'password_reset_send_link': 'إرسال الرابط',
   'password_reset_sent': 'تم إرسال البريد الإلكتروني! تحقّق من صندوق الوارد.',
   'password_reset_title': 'إعادة تعيين كلمة المرور',
@@ -1861,25 +1495,21 @@ const appLocalizationsArExtra = <String, String>{
   'planner_capture_moment': 'توثيق لحظة عائلية',
   'planner_import': 'استيراد',
   'planner_moment_saved': 'تم حفظ اللحظة العائلية.',
-  'planner_no_moments':
-      'لا توجد لحظات عائلية محفوظة بعد. ابدؤوا اليوم بأول لحظة مميّزة لكم.',
-  'planner_no_weekday':
-      'لم يُتعرّف على يوم أسبوع صالح. يُرجى التحقّق من التنسيق.',
+  'planner_no_moments': 'لا توجد لحظات عائلية محفوظة بعد. ابدؤوا اليوم بأول لحظة مميّزة لكم.',
+  'planner_no_weekday': 'لم يُتعرّف على يوم أسبوع صالح. يُرجى التحقّق من التنسيق.',
   'planner_title': 'مخطّط الوجبات Pro',
   'planner_tone_clear': 'النبرة: واضحة',
   'planner_tone_premium': 'النبرة: هادئة مميّزة',
   'planner_tone_warm': 'النبرة: دافئة',
   'planner_update_pantry': 'تحديث المؤونة',
   'product_updates': 'تحديثات المنتج',
-  'profile_account_failed':
-      'تعذّر تحميل بيانات الحساب أو حفظها. يُرجى المحاولة مرة أخرى؛ وتبقى البيانات الحالية محفوظة.',
+  'profile_account_failed': 'تعذّر تحميل بيانات الحساب أو حفظها. يُرجى المحاولة مرة أخرى؛ وتبقى البيانات الحالية محفوظة.',
   'profile_account_retry': 'إعادة المحاولة',
   'profile_ai_notice': 'ملاحظة حول استخدام الذكاء الاصطناعي',
   'profile_blocked_contacts': 'جهات الاتصال المحظورة',
   'profile_choose_language': 'اختيار اللغة',
   'profile_claim_confirm': 'ربط بحسابي',
-  'profile_claim_explanation':
-      'أكّد فقط إذا كانت هذه البيانات المحلية السابقة تخصّك. وستُربَط حصريًا بالحساب المسجَّل دخوله حاليًا. ولن تُنشر أي بيانات أو تُرفَع. ولن تُستبدل بيانات الحساب الحالية.',
+  'profile_claim_explanation': 'أكّد فقط إذا كانت هذه البيانات المحلية السابقة تخصّك. وستُربَط حصريًا بالحساب المسجَّل دخوله حاليًا. ولن تُنشر أي بيانات أو تُرفَع. ولن تُستبدل بيانات الحساب الحالية.',
   'profile_claim_title': 'ربط البيانات المحلية؟',
   'profile_confirm': 'تأكيد',
   'profile_confirm_delete': 'اكتب «حذف» للتأكيد:',
@@ -1891,13 +1521,11 @@ const appLocalizationsArExtra = <String, String>{
   'profile_legacy_children': 'قائمة الأطفال المحلية السابقة',
   'profile_legacy_location': 'الموقع المحلي السابق',
   'profile_legacy_onboarding': 'الإعداد المحلي السابق',
-  'profile_legacy_unassigned':
-      'رصيد محلي قديم غير مرتبط. ولا يُستورَد تلقائيًا.',
+  'profile_legacy_unassigned': 'رصيد محلي قديم غير مرتبط. ولا يُستورَد تلقائيًا.',
   'profile_legal_info': 'بيانات وفقًا للمادة § 5 TMG / § 25 MStV',
   'profile_logout_title': 'تسجيل الخروج؟',
   'profile_no_blocked': 'لا جهات اتصال محظورة',
-  'profile_sync_failed':
-      'تم حفظ الإعداد محليًا. وفشلت مزامنة الحساب؛ يُرجى المحاولة لاحقًا.',
+  'profile_sync_failed': 'تم حفظ الإعداد محليًا. وفشلت مزامنة الحساب؛ يُرجى المحاولة لاحقًا.',
   'profile_unblock': 'إلغاء الحظر',
   'public_holiday': 'عطلة رسمية',
   'publish_event': 'نشر الفعالية',
@@ -1906,15 +1534,11 @@ const appLocalizationsArExtra = <String, String>{
   'quick_activity_needs': 'ما تحتاجون إليه',
   'quick_activity_title': 'ماذا نفعل اليوم؟',
   'recipe_ai_consent_accept': 'موافق، استخدِم وصفات الذكاء الاصطناعي',
-  'recipe_ai_consent_body':
-      'من أجل وصفات الذكاء الاصطناعي، يُرسَل عمر الطفل وبيانات الحساسية من ملفات أطفالك المحلية وإعدادات المطبخ عبر خادمنا إلى خدمة الذكاء الاصطناعي (Google Gemini). وعند البحث عن طبق يُنقَل أيضًا نص بحثك. أما الأسماء وبيانات الطبيب والطوارئ من الملفات فلا تُنقَل تلقائيًا. ودون موافقة يبقى إلهام الوصفات محليًا؛ ولا يُرسَل أي طلب للذكاء الاصطناعي.',
-  'recipe_ai_consent_failed':
-      'تعذّر حفظ الموافقة بأمان. ويبقى الذكاء الاصطناعي متوقّفًا.',
+  'recipe_ai_consent_body': 'من أجل وصفات الذكاء الاصطناعي، يُرسَل عمر الطفل وبيانات الحساسية من ملفات أطفالك المحلية وإعدادات المطبخ عبر خادمنا إلى خدمة الذكاء الاصطناعي (Google Gemini). وعند البحث عن طبق يُنقَل أيضًا نص بحثك. أما الأسماء وبيانات الطبيب والطوارئ من الملفات فلا تُنقَل تلقائيًا. ودون موافقة يبقى إلهام الوصفات محليًا؛ ولا يُرسَل أي طلب للذكاء الاصطناعي.',
+  'recipe_ai_consent_failed': 'تعذّر حفظ الموافقة بأمان. ويبقى الذكاء الاصطناعي متوقّفًا.',
   'recipe_ai_consent_title': 'إنشاء وصفات العائلة بالذكاء الاصطناعي',
-  'recipe_ai_local_notice':
-      'إلهام وصفات محلي: لم تُرسَل أي بيانات إلى الذكاء الاصطناعي.',
-  'recipe_ai_request_failed':
-      'تعذّر بدء إنشاء الوصفة. يُرجى المحاولة مرة أخرى.',
+  'recipe_ai_local_notice': 'إلهام وصفات محلي: لم تُرسَل أي بيانات إلى الذكاء الاصطناعي.',
+  'recipe_ai_request_failed': 'تعذّر بدء إنشاء الوصفة. يُرجى المحاولة مرة أخرى.',
   'recipe_generate': 'وصفة جديدة',
   'recipe_ingredients': 'المكوّنات',
   'recipe_steps': 'طريقة التحضير',
@@ -1981,14 +1605,12 @@ const appLocalizationsArExtra = <String, String>{
   'ritual_edit': 'تعديل',
   'ritual_edit_title': 'تعديل {title}',
   'ritual_empty_action': 'إلى ملف العائلة',
-  'ritual_empty_description':
-      'بمجرد إنشاء ملف طفل، يمكن لـ ParentPeak مرافقة الطقوس بما يناسب العمر.',
+  'ritual_empty_description': 'بمجرد إنشاء ملف طفل، يمكن لـ ParentPeak مرافقة الطقوس بما يناسب العمر.',
   'ritual_empty_title': 'لا يوجد ملف طفل بعد',
   'ritual_evening': 'تصبح على خير',
   'ritual_fallback_name_afternoon': 'الوصول بعد الظهر',
   'ritual_fallback_name_morning': 'صباح هادئ',
-  'ritual_fallback_story':
-      'عندما نظر {name} من النافذة مساءً، تلألأ نجم صغير. ذكّر بأن لكل يوم لحظاته الجميلة: ابتسامة وبيت يمكن أن يكون المرء فيه على سجيّته. همس الريح: اليوم يكفي. ثم ساد الهدوء والسلام.',
+  'ritual_fallback_story': 'عندما نظر {name} من النافذة مساءً، تلألأ نجم صغير. ذكّر بأن لكل يوم لحظاته الجميلة: ابتسامة وبيت يمكن أن يكون المرء فيه على سجيّته. همس الريح: اليوم يكفي. ثم ساد الهدوء والسلام.',
   'ritual_gratitude_hint': 'كان جميلًا اليوم أن…',
   'ritual_gratitude_placeholder': 'تكفي جملة صغيرة',
   'ritual_gratitude_title': 'لحظة جميلة',
@@ -2137,17 +1759,43 @@ const appLocalizationsArExtra = <String, String>{
   'tooltip_sync': 'مزامنة',
   'tooltip_tone': 'أسلوب اللغة',
   'tooltip_topic_analysis': 'تحليل المواضيع',
+  'treasureAddMorePhotos': 'المزيد من الصور',
+  'treasureAiAccept': 'استخدام الاقتراح',
+  'treasureAiHelper': 'نقترح لك الفئة واللون مباشرةً.',
+  'treasureAiTitle': 'تم التعرف بسرعة',
+  'treasureBlockAction': 'إخفاء',
+  'treasureBlockSuccess': 'تم إخفاء العرض من ملخصك.',
+  'treasureBlockText': 'سيتم إخفاء هذا العرض محليًا ولن يظهر في الملخص بعد الآن.',
+  'treasureBlockTitle': 'إخفاء العرض؟',
   'treasureCancelReservation': 'إلغاء الحجز',
   'treasureCategoryBooks': 'الكتب',
   'treasureCategoryClothing': 'الملابس',
   'treasureCategoryEquipment': 'التجهيزات',
+  'treasureCategoryLabel': 'الفئة',
   'treasureCategoryOther': 'أخرى',
   'treasureCategoryToys': 'الألعاب',
   'treasureCategoryVehicles': 'المركبات',
+  'treasureChooseFromLibrary': 'من المكتبة',
   'treasureCoffeeSlotHint': 'اختارا وقتًا يناسب كلتا العائلتين.',
+  'treasureColorLabel': 'اللون',
+  'treasureColorLine': 'اللون: {color}',
+  'treasureColorPlaceholder': 'مثل: أحمر، أخضر مريمي، خشب طبيعي',
   'treasureCompleteHandover': 'وضع علامة "تم التسليم"',
+  'treasureConditionGood': 'مستعمل بحالة جيدة',
+  'treasureConditionGoodHint': 'عليه آثار استخدام واضحة، لكنه جاهز تمامًا للاستعمال.',
+  'treasureConditionHelper': 'الصدق هو الأفضل.',
+  'treasureConditionLabel': 'الحالة',
+  'treasureConditionLikeNew': 'كالجديد',
+  'treasureConditionLikeNewHint': 'محافظ عليه جيدًا، يكاد يكون كالجديد.',
+  'treasureConditionLine': '',
+  'treasureConditionRaider': 'عليه آثار استخدام',
+  'treasureConditionRaiderHint': 'عليه آثار استخدام، لكنه جاهز للمغامرة القادمة.',
   'treasureConfirmHandover': 'تأكيد التسليم',
+  'treasureContactlessHint': 'ممكن التسليم بدون تلامس',
+  'treasureContactlessPointLabel': 'نقطة الاستلام',
+  'treasureCoverPhotoLabel': 'صورة الغلاف',
   'treasureCurrentRadius': 'نصف قطر البحث الحالي: {radius}',
+  'treasureDateOrSwap': 'لقاء سريع أو تبادل هادئ',
   'treasureDefaultColor': 'أحمر',
   'treasureDefaultSizeAge': '2-4 سنوات',
   'treasureDefaultTitle': 'دراجة توازن حمراء',
@@ -2156,107 +1804,155 @@ const appLocalizationsArExtra = <String, String>{
   'treasureDeleteSuccess': 'تم حذف إعلانك.',
   'treasureDeleteText': 'سيُزال الإعلان نهائيًا. وتُلغى الحجوزات القائمة.',
   'treasureDeleteTitle': 'حذف الإعلان؟',
-  'treasureDiscoveryInvite':
-      'ادعُ أصدقاءك أو شارِك عروضك الخاصة كي يتوفّر مزيد من الكنوز بالقرب منك.',
-  'treasureDiscoveryScopeInvite':
-      'المدى الحالي: {radius}. ادعُ أصدقاءك للعثور على مزيد من الكنوز بالقرب منك.',
+  'treasureDetailSectionAbout': 'نظرة سريعة',
+  'treasureDetailSectionPickup': 'الاستلام والتسليم',
+  'treasureDetailSelectedHint': 'هذا الكنز محجوز حاليًا لتسليمك.',
+  'treasureDiscard': 'تجاهل',
+  'treasureDiscardDraftText': 'سيتم حذف ما أدخلته في النموذج والمسودة المحفوظة محليًا.',
+  'treasureDiscardDraftTitle': 'تجاهل المسودة؟',
+  'treasureDiscoveryInvite': 'ادعُ أصدقاءك أو شارِك عروضك الخاصة كي يتوفّر مزيد من الكنوز بالقرب منك.',
+  'treasureDiscoveryScopeInvite': 'المدى الحالي: {radius}. ادعُ أصدقاءك للعثور على مزيد من الكنوز بالقرب منك.',
   'treasureDistanceApproximate': 'على بُعد نحو {distance}',
   'treasureDistanceAway': 'على بُعد {distance}',
   'treasureDistanceNearby': 'بالقرب منك',
   'treasureDistanceUnknown': 'المسافة غير معروفة',
+  'treasureDraftDiscarded': 'تم تجاهل المسودة.',
   'treasureDraftRestored': 'عادت مسوّدتك الأخيرة.',
   'treasureDraftSaved': 'تم حفظ المسوّدة. يمكنك المتابعة لاحقًا.',
   'treasureDropKitaLocker': 'خزانة الحضانة (الدرج „النورس“)',
   'treasureDropMailbox': 'صندوق البريد عند المدخل',
   'treasureDropPointHint': 'اختر مكان استلام بلا تلامس يشعرك بالأمان.',
   'treasureDropRetterBox': 'صندوق الإنقاذ أمام باب المنزل',
+  'treasureFamilyNoteTitle': 'ملاحظة من العائلة',
+  'treasureFeedEmptyText': 'ابدأ ببساطة بأول غرض جاهز في عائلتك لينتقل إلى عائلة أخرى.',
+  'treasureFeedEmptyTitle': 'لا توجد كنوز قريبة منك بعد',
+  'treasureFeedSubtitle': 'محلي، صادق، وواضح على الفور',
+  'treasureFeedTitle': 'كنوز قريبة منك',
+  'treasureFilterAll': 'الكل',
+  'treasureFilterDistance250': 'حتى 250 m',
+  'treasureFilterDistance500': 'حتى 500 m',
+  'treasureFilterDistanceAll': 'أي مسافة',
+  'treasureFreshToday': 'جديد اليوم',
   'treasureGlobalMode': 'العرض: الوضع الرقمي العالمي',
+  'treasureGuidelineCommunity': 'هكذا تصبح المشاركة في الحي أمرًا سهلًا.',
+  'treasureGuidelineHonest': 'شارك بصدق بدلًا من السعي إلى الكمال.',
+  'treasureGuidelineNoPressure': 'آثار الاستخدام أمر طبيعي تمامًا.',
+  'treasureGuidelineTempo': 'القرار لكم: لقاء سريع أو تبادل هادئ.',
+  'treasureHandoverCoffeeMode': 'لقاء سريع',
+  'treasureHandoverCoffeeModeText': 'تحية قصيرة، تسليم، وانتهى الأمر.',
+  'treasureHandoverFlyingSwap': 'تبادل هادئ',
+  'treasureHandoverFlyingSwapText': 'استلام بدون تلامس في الوقت الذي يناسبك.',
+  'treasureHandoverQuestion': 'كيف تريدون التسليم؟',
   'treasureHandoverUpdateFailed': 'تعذّر تحديث التسليم.',
   'treasureHandoverUpdated': 'تم تحديث التسليم.',
+  'treasureHoursAgoShort': 'قبل {count} ساعة',
+  'treasureImageUploadFailed': 'فشل رفع الصورة. يرجى المحاولة مرة أخرى.',
   'treasureInsertNoteSuggestion': 'إدراج اقتراح نصّي',
-  'treasureLegalNotice':
-      'إشعار قانوني: Parentpeak مجرّد وسيط في سوق الإهداء. والمستخدمون المعنيّون وحدهم مسؤولون عن حالة الأغراض وسلامتها وتسليمها.',
+  'treasureJustListed': 'أُضيف للتو',
+  'treasureLegalNotice': 'إشعار قانوني: Parentpeak مجرّد وسيط في سوق الإهداء. والمستخدمون المعنيّون وحدهم مسؤولون عن حالة الأغراض وسلامتها وتسليمها.',
+  'treasureListedAgoLine': 'أُضيف: {time}',
+  'treasureLoadingHint': 'نحمّل الآن عروضًا مناسبة من محيطك.',
+  'treasureMinutesAgoShort': 'قبل {count} دقيقة',
   'treasureMyListings': 'إعلاناتي',
   'treasureMyListingsEmpty': 'ليس لديك أي إعلانات أو حجوزات بعد.',
+  'treasureNetworkError': 'انقطع الاتصال لحظيًا. يرجى المحاولة مرة أخرى بعد قليل.',
   'treasureNeutralColor': 'محايد',
+  'treasureNoResultsText': 'جرّب مسافة أوسع أو عد لاحقًا للتحقق مرة أخرى.',
+  'treasureNoResultsTitle': 'لا يوجد شيء مناسب حاليًا',
   'treasureNoteEditable': 'تم إدراج الملاحظة. يمكنك تعديلها.',
-  'treasureNoteSuggestion':
-      '{title}، {sizeAge}. يمكنك إضافة مزيد من ملاحظات التسليم هنا.',
-  'treasureNoteSuggestionHint':
-      'يُدرِج قالبًا نصّيًا قابلًا للتعديل ويستبدل الملاحظة الحالية. لا تسجيل صوتي.',
+  'treasureNoteSuggestion': '{title}، {sizeAge}. يمكنك إضافة مزيد من ملاحظات التسليم هنا.',
+  'treasureNoteSuggestionHint': 'يُدرِج قالبًا نصّيًا قابلًا للتعديل ويستبدل الملاحظة الحالية. لا تسجيل صوتي.',
+  'treasureOpenGallery': 'فتح المعرض',
+  'treasureOptionalNoteHelper': 'جملة صادقة واحدة تساعد العائلات القريبة على الفور.',
+  'treasureOptionalNoteLabel': 'ملاحظة قصيرة',
+  'treasureOptionalNotePlaceholder': 'مثل: مقاس 92، يميل إلى الصغر قليلًا.',
   'treasurePhotoAnalyzing': 'يجري تحليل الصورة...',
+  'treasurePhotoCount': '{count} صور',
+  'treasurePhotoGalleryHint': 'اختر صورة غلاف أو احذف الصور الإضافية.',
+  'treasurePhotoMissing': 'أضف صورة أولًا كي ترى العائلات على الفور ما تشاركه.',
+  'treasurePhotoReady': 'الصورة جاهزة',
+  'treasurePhotoSectionHint': 'اعرض الغرض كما هو الآن تمامًا.',
+  'treasurePickupAreaLine': '',
+  'treasurePickupLocationHint': 'موقعك يحدد العائلات التي سترى عرضك.',
+  'treasurePickupLocationTitle': 'منطقة الاستلام',
+  'treasurePreviewNoteLabel': 'ملاحظة العائلة',
+  'treasurePreviewTitle': 'معاينة الملخص',
   'treasurePublishNow': 'المشاركة الآن',
+  'treasureRatingLine': '',
+  'treasureReportAction': 'إبلاغ',
+  'treasureReportLocalOnly': 'تم تسجيل البلاغ محليًا. ستتم المزامنة مع الخادم بمجرد توفرها.',
+  'treasureReportNoteHint': 'اختياري: ملاحظة قصيرة للمراجعة',
   'treasureReportReason_false_info': 'بيانات خاطئة',
   'treasureReportReason_hostile': 'سلوك غير ودّي',
   'treasureReportReason_inappropriate': 'محتوى غير لائق',
   'treasureReportReason_other': 'أخرى',
+  'treasureReportSubmit': 'إبلاغ',
+  'treasureReportSuccess': 'شكرًا لك، سنراجع هذا البلاغ.',
+  'treasureReportTitle': 'الإبلاغ عن العرض',
+  'treasureReportedFlag': 'تم الإبلاغ',
   'treasureReservationConfirmed': 'تم تأكيد التسليم',
   'treasureReservationOpen': 'الحجز مفتوح',
-  'treasureReservationSuccessDetail':
-      '✅ {title} محجوز لك! {detailType}: {detail}. وستُبلَّغ العائلة المُهدية.',
+  'treasureReservationSuccessDetail': '✅ {title} محجوز لك! {detailType}: {detail}. وستُبلَّغ العائلة المُهدية.',
   'treasureReservations': 'الحجوزات',
+  'treasureReserveAndPickup': 'عرض وحجز',
   'treasureReserveCoffeeMode': 'تأمين اللقاء',
+  'treasureReserveFlyingSwap': 'حجز التبادل الهادئ',
+  'treasureReserveTitle': 'تخطيط التسليم',
   'treasureReserved': 'محجوز ✓',
   'treasureReservedByYou': 'محجوز من قِبَلك',
   'treasureSaveDraft': 'حفظ المسوّدة',
   'treasureSelectForHandover': 'اختيار للتسليم',
-  'treasureShareRadiusHelper':
-      'حدّد المدى الذي ترى فيه العائلات عرضك. ويستخدم الحساب مواقع مقرّبة بشكل عام وهو تقريبي فقط؛ بحد أقصى 25 كم.',
+  'treasureSelectedForHandover': 'محجوز',
+  'treasureSelectionConfirmed': '{title} محجوز الآن لتسليمك.',
+  'treasureShareRadiusHelper': 'حدّد المدى الذي ترى فيه العائلات عرضك. ويستخدم الحساب مواقع مقرّبة بشكل عام وهو تقريبي فقط؛ بحد أقصى 25 كم.',
   'treasureShareRadiusKm': 'ضمن مدى نحو {radius} كم',
   'treasureShareRadiusLabel': 'نصف قطر النشر',
+  'treasureSizeAgeLabel': 'المقاس أو العمر',
+  'treasureSizeAgeLine': '',
+  'treasureSizeAgePlaceholder': 'مثل: مقاس 92 أو من سنتين إلى 3 سنوات',
   'treasureSlotMonday': 'الإثنين، 17:30 - 18:15',
   'treasureSlotSunday': 'الأحد، 10:00 - 11:30 صباحًا',
   'treasureSlotTuesday': 'الثلاثاء، 08:15 - 08:45 صباحًا',
+  'treasureSyncHintFallback': 'المزامنة المباشرة محدودة حاليًا. اسحب للأسفل للتحديث.',
+  'treasureTakePhoto': 'التقاط صورة',
   'treasureTileSubtitle': 'الإهداء والتبادل وربط الآباء',
   'treasureTileTitle': 'سوق الإهداء',
+  'treasureTimeWindowLabel': 'الأوقات المتاحة',
+  'treasureTitleLabel': 'العنوان',
+  'treasureTitlePlaceholder': 'مثل: دراجة توازن حمراء',
+  'treasureUploadHeadline': 'شارك ما لم تعد عائلتك بحاجة إليه',
+  'treasureUploadSubline': 'صورة واحدة، فحص سريع، وانتهى الأمر',
+  'treasureUploadSubtitle': 'صورة واحدة تكفي للبدء',
   'treasureUploadSuccess': 'أصبح كنزك مرئيًا الآن.',
+  'treasureUploadTitle': 'مشاركة كنز',
+  'treasureViewsLine': '',
   'treasure_account_changed': 'تم تغيير الحساب. يُرجى إغلاق هذا العرض.',
-  'treasure_cancel_local_failed':
-      'أكّد الخادم الإلغاء، لكن تعذّرت إزالة العلامة المحلية. وقد تظهر مؤقتًا بشكل قديم.',
-  'treasure_created_archived':
-      'تم حفظ إعلانك، لكن الخادم أرشفه. وهو غير متاح في السوق. راجِع „إعلاناتي“.',
-  'treasure_created_local_failed':
-      'حفظ الخادم الإعلان، لكن لم يؤكّد توفّره. وفشلت المعالجة اللاحقة محليًا؛ وتبقى الصور محفوظة. راجِع „إعلاناتي“ قبل المحاولة مرة أخرى.',
-  'treasure_created_not_available':
-      'تم حفظ إعلانك، لكن لم يُؤكَّد توفّره. راجِع „إعلاناتي“.',
-  'treasure_draft_images_missing':
-      'تم تحميل نصوص المسوّدة، لكن الصور السابقة لم تعد متاحة. يُرجى إضافتها مرة أخرى.',
-  'treasure_legacy_body':
-      'المسوّدات المحلية وعلامات الحجز والأمان لا تخصّ أي حساب بعد. وبعد تسجيل الدخول يمكنك تأكيد ملكيّتها.',
+  'treasure_cancel_local_failed': 'أكّد الخادم الإلغاء، لكن تعذّرت إزالة العلامة المحلية. وقد تظهر مؤقتًا بشكل قديم.',
+  'treasure_created_archived': 'تم حفظ إعلانك، لكن الخادم أرشفه. وهو غير متاح في السوق. راجِع „إعلاناتي“.',
+  'treasure_created_local_failed': 'حفظ الخادم الإعلان، لكن لم يؤكّد توفّره. وفشلت المعالجة اللاحقة محليًا؛ وتبقى الصور محفوظة. راجِع „إعلاناتي“ قبل المحاولة مرة أخرى.',
+  'treasure_created_not_available': 'تم حفظ إعلانك، لكن لم يُؤكَّد توفّره. راجِع „إعلاناتي“.',
+  'treasure_draft_images_missing': 'تم تحميل نصوص المسوّدة، لكن الصور السابقة لم تعد متاحة. يُرجى إضافتها مرة أخرى.',
+  'treasure_legacy_body': 'المسوّدات المحلية وعلامات الحجز والأمان لا تخصّ أي حساب بعد. وبعد تسجيل الدخول يمكنك تأكيد ملكيّتها.',
   'treasure_legacy_claim': 'تأكيد الملكية',
-  'treasure_legacy_confirm':
-      'هل تؤكّد أن هذه البيانات تخصّك؟ ستُربَط بهذا الحساب. وتكون الأولوية لأي مسوّدة حساب موجودة. وتبقى البيانات الأصلية محفوظة؛ ولا يُنشر أي شيء.',
+  'treasure_legacy_confirm': 'هل تؤكّد أن هذه البيانات تخصّك؟ ستُربَط بهذا الحساب. وتكون الأولوية لأي مسوّدة حساب موجودة. وتبقى البيانات الأصلية محفوظة؛ ولا يُنشر أي شيء.',
   'treasure_legacy_title': 'بيانات محلية غير مُسنَدة',
   'treasure_location_required': 'يلزم تحديد موقع من أجل العروض القريبة منك.',
   'treasure_market_unavailable': 'سوق الإهداء غير متاح حاليًا. ولم يُنشر عرضك.',
-  'treasure_photo_analysis_failed':
-      'تعذّر إكمال تحليل الصورة. وتبقى صورتك وإدخالاتك اليدوية محفوظة.',
+  'treasure_photo_analysis_failed': 'تعذّر إكمال تحليل الصورة. وتبقى صورتك وإدخالاتك اليدوية محفوظة.',
   'treasure_photo_consent_accept': 'الموافقة وتحليل الصورة',
-  'treasure_photo_consent_body':
-      'لتقديم اقتراحات حول غرضك، تُرسَل هذه الصورة عبر خادم ParentPeak إلى Google Gemini. ولا يُخفى محتوى الصور. استخدم فقط صور الأغراض الخالية من الأشخاص والمستندات الخاصة والعناوين الواضحة. والتحليل اختياري؛ ودون موافقة يمكنك الاحتفاظ بالصورة وتعبئة الإعلان يدويًا. تسري هذه الموافقة فقط على ذكاء الصور في سوق الإهداء، وتُحفظ لهذا الحساب. وهي لا تنشر الصورة ولا الإعلان.',
-  'treasure_photo_consent_failed':
-      'تعذّر حفظ الموافقة. ولم تُرسَل أي صورة إلى الذكاء الاصطناعي.',
+  'treasure_photo_consent_body': 'لتقديم اقتراحات حول غرضك، تُرسَل هذه الصورة عبر خادم ParentPeak إلى Google Gemini. ولا يُخفى محتوى الصور. استخدم فقط صور الأغراض الخالية من الأشخاص والمستندات الخاصة والعناوين الواضحة. والتحليل اختياري؛ ودون موافقة يمكنك الاحتفاظ بالصورة وتعبئة الإعلان يدويًا. تسري هذه الموافقة فقط على ذكاء الصور في سوق الإهداء، وتُحفظ لهذا الحساب. وهي لا تنشر الصورة ولا الإعلان.',
+  'treasure_photo_consent_failed': 'تعذّر حفظ الموافقة. ولم تُرسَل أي صورة إلى الذكاء الاصطناعي.',
   'treasure_photo_consent_title': 'تحليل الصورة بالذكاء الاصطناعي؟',
-  'treasure_photos_public_info':
-      'عند النشر تُرفَع الصور علنًا. وقد تبقى متاحة حتى عند حدوث خطأ لاحق. لا تُظهر أشخاصًا أو مستندات خاصة أو عناوين.',
-  'treasure_publish_unavailable':
-      'للنشر تحتاج إلى حساب مسجَّل دخوله وإلى خادم سوق متاح. ولم تُرفَع أي صور.',
-  'treasure_publish_uncertain':
-      'تعذّر تأكيد الإنشاء. وقد تكون الصور المرفوعة متاحة للعموم. يُرجى مراجعة „إعلاناتي“ قبل المحاولة مرة أخرى.',
-  'treasure_published_local_failed':
-      'أنشأ الخادم الإعلان، لكن تعذّر تحديث البيانات المحلية. يُرجى مراجعة „إعلاناتي“؛ ولا تنشره مرة أخرى.',
-  'treasure_reservation_offline':
-      'دون اتصال بخادم السوق لم يُحجَز أي شيء. يُرجى المحاولة مرة أخرى عبر الإنترنت.',
-  'treasure_reserve_local_failed':
-      'أكّد الخادم الحجز، لكن تعذّر حفظ العلامة المحلية. راجِع „إعلاناتي“ قبل أن تحجز مرة أخرى.',
-  'treasure_signin_required':
-      'يُرجى تسجيل الدخول لتنفيذ هذا الإجراء في سوق الإهداء.',
-  'treasure_storage_failed':
-      'تعذّر تحميل بيانات السوق أو حفظها. يُرجى المحاولة مرة أخرى.',
-  'treasure_upload_batch_failed':
-      'تعذّر رفع جميع الصور. وأُزيلت الصور المرفوعة؛ ولم يُرسَل أي إعلان.',
-  'treasure_upload_cleanup_failed':
-      'فشل رفع الصور. ولم يُرسَل أي إعلان، لكن تعذّرت إزالة بعض الصور المرفوعة وقد تبقى متاحة للعموم.',
+  'treasure_photos_public_info': 'عند النشر تُرفَع الصور علنًا. وقد تبقى متاحة حتى عند حدوث خطأ لاحق. لا تُظهر أشخاصًا أو مستندات خاصة أو عناوين.',
+  'treasure_publish_unavailable': 'للنشر تحتاج إلى حساب مسجَّل دخوله وإلى خادم سوق متاح. ولم تُرفَع أي صور.',
+  'treasure_publish_uncertain': 'تعذّر تأكيد الإنشاء. وقد تكون الصور المرفوعة متاحة للعموم. يُرجى مراجعة „إعلاناتي“ قبل المحاولة مرة أخرى.',
+  'treasure_published_local_failed': 'أنشأ الخادم الإعلان، لكن تعذّر تحديث البيانات المحلية. يُرجى مراجعة „إعلاناتي“؛ ولا تنشره مرة أخرى.',
+  'treasure_reservation_offline': 'دون اتصال بخادم السوق لم يُحجَز أي شيء. يُرجى المحاولة مرة أخرى عبر الإنترنت.',
+  'treasure_reserve_local_failed': 'أكّد الخادم الحجز، لكن تعذّر حفظ العلامة المحلية. راجِع „إعلاناتي“ قبل أن تحجز مرة أخرى.',
+  'treasure_signin_required': 'يُرجى تسجيل الدخول لتنفيذ هذا الإجراء في سوق الإهداء.',
+  'treasure_storage_failed': 'تعذّر تحميل بيانات السوق أو حفظها. يُرجى المحاولة مرة أخرى.',
+  'treasure_upload_batch_failed': 'تعذّر رفع جميع الصور. وأُزيلت الصور المرفوعة؛ ولم يُرسَل أي إعلان.',
+  'treasure_upload_cleanup_failed': 'فشل رفع الصور. ولم يُرسَل أي إعلان، لكن تعذّرت إزالة بعض الصور المرفوعة وقد تبقى متاحة للعموم.',
   'uexam_window_j1': 'العمر 12–14 سنة',
   'uexam_window_j2': 'العمر 16–17 سنة',
   'uexam_window_u1': 'مباشرة بعد الولادة',

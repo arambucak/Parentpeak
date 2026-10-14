@@ -47,9 +47,9 @@ class AppLocalizations {
   }
 
   static String _toCamelCase(String key) => key.replaceAllMapped(
-    RegExp(r'_([a-z])'),
-    (match) => match.group(1)!.toUpperCase(),
-  );
+        RegExp(r'_([a-z])'),
+        (match) => match.group(1)!.toUpperCase(),
+      );
 
   String get appTitle => _stringsForLocale()['appTitle'] ?? 'Parentpeak';
   String get trustedDevicesTitle =>
@@ -197,6 +197,9 @@ class AppLocalizations {
       'treasureAiAccept': 'Use suggestion',
       'treasureAiEdit': 'Adjust',
       'treasureCategoryVehicles': 'Vehicles',
+      'treasureCategoryLabel': 'Category',
+      'treasureConditionLabel': 'Condition',
+      'treasureSizeAgeLabel': 'Size or age',
       'treasureTitleLabel': 'Title',
       'treasureTitlePlaceholder': 'e.g. Red balance bike',
       'treasureColorLabel': 'Color',
