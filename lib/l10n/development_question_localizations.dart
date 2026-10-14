@@ -1,7 +1,12 @@
 import 'package:parentpeak/models/child_development_data.dart';
+import 'package:parentpeak/l10n/development_question_localizations_fr.dart';
+import 'package:parentpeak/l10n/development_question_localizations_es.dart';
+import 'package:parentpeak/l10n/development_question_localizations_it.dart';
+import 'package:parentpeak/l10n/development_question_localizations_ar.dart';
 
 /// Localized copy for the development check-in question bank.
-/// Covers every age group in [DevelopmentQuestionBank] for en/tr/ku.
+/// Covers every age group in [DevelopmentQuestionBank] for
+/// en/tr/ku/fr/es/it/ar.
 List<DevDomain> localizeDevelopmentDomains(
   List<DevDomain> domains,
   String language,
@@ -25,8 +30,10 @@ List<DevDomain> localizeDevelopmentDomains(
   }).toList();
 }
 
-class _DomainText {
-  const _DomainText(this.title, this.description, this.questions, this.tips);
+/// Localized title/description/questions/tips for one development domain.
+/// Public so the per-language maps in sibling files can reuse the same type.
+class DevDomainText {
+  const DevDomainText(this.title, this.description, this.questions, this.tips);
 
   final String title;
   final String description;
@@ -34,18 +41,22 @@ class _DomainText {
   final List<String> tips;
 }
 
-const Map<String, Map<String, Map<String, _DomainText>>> _translations = {
+const Map<String, Map<String, Map<String, DevDomainText>>> _translations = {
   'en': _en,
   'tr': _tr,
   'ku': _ku,
+  'fr': developmentDomainsFr,
+  'es': developmentDomainsEs,
+  'it': developmentDomainsIt,
+  'ar': developmentDomainsAr,
 };
 
 // ═══════════════════════════════════════════════════════════════════════
 // ENGLISH
 // ═══════════════════════════════════════════════════════════════════════
-const Map<String, Map<String, _DomainText>> _en = {
+const Map<String, Map<String, DevDomainText>> _en = {
   '0-12m': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Movement & Senses',
       'Grasping, rolling, crawling & first steps',
       [
@@ -60,7 +71,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Practice tummy time daily — it strengthens neck and back',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Sounds & Understanding',
       'First sounds, response to speech & communication',
       [
@@ -75,7 +86,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Sing songs and repeat the sounds your baby makes',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Discovering & Understanding',
       'Curiosity, cause and effect & object permanence',
       [
@@ -90,7 +101,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Let your baby explore different materials (safely!)',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Bonding & Feelings',
       'Attachment behavior, smiling & stranger anxiety',
       [
@@ -105,7 +116,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Physical closeness and skin contact matter most at this age',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'First Steps to Independence',
       'Eating, sleeping & simple self-directed activity',
       [
@@ -122,7 +133,7 @@ const Map<String, Map<String, _DomainText>> _en = {
     ),
   },
   '1-2y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Movement & Body',
       'Walking, climbing & first fine motor skills',
       [
@@ -139,7 +150,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Sand play and pouring water support fine motor skills',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Language & Expression',
       'First words, pointing & understanding',
       [
@@ -156,7 +167,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Don\'t correct, just repeat correctly: Child: "Woof!" — You: "Yes, a dog!"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Thinking & Play',
       'Imitation, sorting & pretend play',
       [
@@ -172,7 +183,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Let your child "help" in everyday tasks (loading the washing machine, stirring)',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Feelings & Connection',
       'Showing emotions, comforting & first empathy',
       [
@@ -188,7 +199,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Comfort instead of distracting — feelings are allowed',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Independence',
       'Eating, dressing & "doing it myself!"',
       [
@@ -206,7 +217,7 @@ const Map<String, Map<String, _DomainText>> _en = {
     ),
   },
   '2-3y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Movement & Body',
       'Gross motor, fine motor and body awareness',
       [
@@ -223,7 +234,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Let your child walk barefoot — it strengthens balance and body awareness',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Language & Understanding',
       'Vocabulary, sentences and language comprehension',
       [
@@ -240,7 +251,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Name everything you do: "I\'m cutting the banana"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Thinking & Exploring',
       'Problem solving, curiosity and attention',
       [
@@ -257,7 +268,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Don\'t interrupt focused play — even if it\'s "just" squishing mud',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Feelings & Togetherness',
       'Emotions, empathy and social behavior',
       [
@@ -274,7 +285,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Parallel play (side by side) is completely normal and valuable at 2-3 years',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Independence',
       'Everyday skills and doing things independently',
       [
@@ -293,7 +304,7 @@ const Map<String, Map<String, _DomainText>> _en = {
     ),
   },
   '3-4y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Movement & Skill',
       'Balance, climbing & fine motor skills',
       [
@@ -309,7 +320,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Crafting with scissors and glue — even if it\'s not perfect',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Language & Storytelling',
       'Sentences, asking questions & stories',
       [
@@ -325,7 +336,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Make up stories together: "And then...?"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Thinking & Imagination',
       'Pretend play, counting & connections',
       [
@@ -341,7 +352,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Count in everyday life: stairs, apples, shoes',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Feelings & Friendship',
       'Sharing, conflicts & frustration tolerance',
       [
@@ -357,7 +368,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Support children through conflicts instead of solving them for them',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Everyday Life & Responsibility',
       'Dressing, hygiene & small tasks',
       [
@@ -375,7 +386,7 @@ const Map<String, Map<String, _DomainText>> _en = {
     ),
   },
   '4-6y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Body & Coordination',
       'Sports, writing & dexterity',
       [
@@ -391,7 +402,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'At least 1 hour of outdoor movement daily',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Language & Comprehension',
       'Storytelling, grammar & vocabulary',
       [
@@ -407,7 +418,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Rhyming games and clapping syllables prepare for school',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Thinking & School Readiness',
       'Logic, concentration & preschool skills',
       [
@@ -423,7 +434,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Don\'t push academics too early — playing IS learning',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Social Skills & Empathy',
       'Friendships, rules & perspective-taking',
       [
@@ -439,7 +450,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Strengthen empathy: "How do you think the other child feels right now?"',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Independence & Maturity',
       'Responsibility, planning & everyday skills',
       [
@@ -457,7 +468,7 @@ const Map<String, Map<String, _DomainText>> _en = {
     ),
   },
   '6-10y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Body & Sports',
       'Coordination, stamina & fine motor skills',
       [
@@ -472,7 +483,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Limiting screen time = more natural movement',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Language & Reading',
       'Reading, writing & expression',
       [
@@ -487,7 +498,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Talk about the day: not just "How was school?"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Learning & Thinking',
       'School, concentration & problem solving',
       [
@@ -502,7 +513,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Allow their own solution paths, even if they seem roundabout',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Friendship & Feelings',
       'Friend group, conflicts & self-regulation',
       [
@@ -517,7 +528,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Validate feelings: "I understand that this bothers you"',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Responsibility & Everyday Life',
       'Duties, sense of time & self-organization',
       [
@@ -534,7 +545,7 @@ const Map<String, Map<String, _DomainText>> _en = {
     ),
   },
   '10-14y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Body & Health',
       'Puberty, body image & movement',
       [
@@ -549,7 +560,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Normalize body changes — talk about them openly',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Expression & Communication',
       'Arguing, reflecting & media literacy',
       [
@@ -564,7 +575,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Develop media literacy together, not just ban things',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Thinking & Learning',
       'Abstract thinking, planning & learning strategies',
       [
@@ -579,7 +590,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Offer planning tools: calendar, to-do lists',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Identity & Relationships',
       'Friend group, identity & boundaries',
       [
@@ -594,7 +605,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Listen without immediately trying to fix things — presence is often enough',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Autonomy & Responsibility',
       'Self-organization, money & decisions',
       [
@@ -611,7 +622,7 @@ const Map<String, Map<String, _DomainText>> _en = {
     ),
   },
   '14-18y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Health & Wellbeing',
       'Body, sleep, nutrition & movement',
       [
@@ -626,7 +637,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Talk openly about mental health — remove the stigma',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Expression & Reflection',
       'Self-reflection, argumentation & communication',
       [
@@ -641,7 +652,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Ask questions instead of accusations: "What do you need?" instead of "Why do you...?"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Future & Orientation',
       'Career orientation, values & own goals',
       [
@@ -656,7 +667,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Enable practical experience: internships, part-time jobs, volunteering',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Relationships & Identity',
       'Partnership, identity & role in society',
       [
@@ -671,7 +682,7 @@ const Map<String, Map<String, _DomainText>> _en = {
         'Respect relationships — even if you don\'t like them',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Independence & Maturity',
       'Life skills, finances & responsibility',
       [
@@ -692,9 +703,9 @@ const Map<String, Map<String, _DomainText>> _en = {
 // ═══════════════════════════════════════════════════════════════════════
 // TÜRKÇE
 // ═══════════════════════════════════════════════════════════════════════
-const Map<String, Map<String, _DomainText>> _tr = {
+const Map<String, Map<String, DevDomainText>> _tr = {
   '0-12m': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Hareket ve Duyular',
       'Kavrama, dönme, emekleme ve ilk adımlar',
       [
@@ -709,7 +720,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Her gün yüzükoyun pozisyonu uygulayın — boyun ve sırtı güçlendirir',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Sesler ve Anlama',
       'İlk sesler, konuşmaya tepki ve iletişim',
       [
@@ -724,7 +735,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Şarkılar söyleyin ve bebeğinizin çıkardığı sesleri tekrarlayın',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Keşfetme ve Kavrama',
       'Merak, neden-sonuç ilişkisi ve nesne devamlılığı',
       [
@@ -739,7 +750,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Bebeğinizin farklı materyalleri keşfetmesine izin verin (güvenli şekilde!)',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Bağlanma ve Duygular',
       'Bağlanma davranışı, gülümseme ve yabancı kaygısı',
       [
@@ -754,7 +765,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Bu yaşta en önemli şey fiziksel yakınlık ve ten teması',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'İlk Bağımsızlık Adımları',
       'Yeme, uyku ve basit bağımsız etkinlikler',
       [
@@ -771,7 +782,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
     ),
   },
   '1-2y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Hareket ve Vücut',
       'Yürüme, tırmanma ve ilk ince motor beceriler',
       [
@@ -788,7 +799,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Kum oyunu ve su dökme ince motor becerileri destekler',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Dil ve İfade',
       'İlk kelimeler, işaret etme ve anlama',
       [
@@ -805,7 +816,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Düzeltmek yerine doğrusunu tekrarlayın: Çocuk: "Hav hav!" — Siz: "Evet, bir köpek!"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Düşünme ve Oyun',
       'Taklit, sıralama ve rol yapma',
       [
@@ -821,7 +832,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Çocuğunuzun günlük işlerde "yardım etmesine" izin verin (çamaşır makinesini doldurmak, karıştırmak)',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Duygular ve İletişim',
       'Duyguları gösterme, teselli etme ve ilk empati',
       [
@@ -837,7 +848,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Dikkatini dağıtmak yerine teselli edin — duygulara izin verilmeli',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Bağımsızlık',
       'Yeme, giyinme ve "kendim yaparım!"',
       [
@@ -855,7 +866,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
     ),
   },
   '2-3y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Hareket ve Beden',
       'Kaba motor, ince motor ve beden farkındalığı',
       [
@@ -872,7 +883,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Çocuğunuzun yalın ayak yürümesine izin verin — bu dengeyi ve beden farkındalığını güçlendirir',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Dil ve Anlama',
       'Kelime dağarcığı, cümle kurma ve dil anlama',
       [
@@ -889,7 +900,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Yaptığınız her şeyi adlandırın: "Muzu kesiyorum"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Düşünme ve Keşfetme',
       'Problem çözme, merak ve dikkat',
       [
@@ -906,7 +917,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Yoğunlaşmış oyunu bölmeyin — "sadece" çamurla oynasa bile',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Duygular ve Birlikte Yaşam',
       'Duygular, empati ve sosyal davranış',
       [
@@ -923,7 +934,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Paralel oyun (yan yana oynama) 2-3 yaş için tamamen normal ve değerlidir',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Bağımsızlık',
       'Günlük yaşam becerileri ve kendi başına yapma',
       [
@@ -942,7 +953,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
     ),
   },
   '3-4y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Hareket ve Beceri',
       'Denge, tırmanma ve ince motor beceriler',
       [
@@ -958,7 +969,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Makas ve yapıştırıcıyla el işi — mükemmel olmasa bile',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Dil ve Anlatma',
       'Cümleler, soru sorma ve hikayeler',
       [
@@ -974,7 +985,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Birlikte hikaye uydurun: "Ve sonra...?"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Düşünme ve Hayal Gücü',
       'Rol yapma, sayma ve ilişkiler',
       [
@@ -990,7 +1001,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Günlük hayatta sayın: merdiven basamakları, elmalar, ayakkabılar',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Duygular ve Arkadaşlık',
       'Paylaşma, çatışmalar ve hayal kırıklığına tahammül',
       [
@@ -1006,7 +1017,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Çocuklar arasındaki çatışmalara eşlik edin, onları sizin için çözmeyin',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Günlük Yaşam ve Sorumluluk',
       'Giyinme, hijyen ve küçük görevler',
       [
@@ -1024,7 +1035,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
     ),
   },
   '4-6y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Vücut ve Koordinasyon',
       'Spor, yazma ve beceri',
       [
@@ -1040,7 +1051,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Her gün en az 1 saat dışarıda hareket',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Dil ve Anlama',
       'Anlatma, dil bilgisi ve kelime dağarcığı',
       [
@@ -1056,7 +1067,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Kafiye oyunları ve hece alkışlama okula hazırlar',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Düşünme ve Okul Olgunluğu',
       'Mantık, dikkat ve okul öncesi beceriler',
       [
@@ -1072,7 +1083,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Çok erken akademik baskı yapmayın — oyun oynamak öğrenmenin ta kendisidir',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Sosyal Beceriler ve Empati',
       'Arkadaşlıklar, kurallar ve bakış açısı alma',
       [
@@ -1088,7 +1099,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Empatiyi güçlendirin: "Diğer çocuk şu anda nasıl hissediyor olabilir?"',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Bağımsızlık ve Olgunluk',
       'Sorumluluk, planlama ve günlük beceriler',
       [
@@ -1106,7 +1117,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
     ),
   },
   '6-10y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Vücut ve Spor',
       'Koordinasyon, dayanıklılık ve ince motor beceriler',
       [
@@ -1121,7 +1132,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Ekran süresini sınırlamak = daha doğal hareket',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Dil ve Okuma',
       'Okuma, yazma ve ifade',
       [
@@ -1136,7 +1147,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Gün hakkında konuşun: sadece "Okul nasıldı?" değil',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Öğrenme ve Düşünme',
       'Okul, dikkat ve problem çözme',
       [
@@ -1151,7 +1162,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Dolambaçlı görünse bile kendi çözüm yollarına izin verin',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Arkadaşlık ve Duygular',
       'Arkadaş çevresi, çatışmalar ve öz düzenleme',
       [
@@ -1166,7 +1177,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Duyguları onaylayın: "Bunun seni rahatsız ettiğini anlıyorum"',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Sorumluluk ve Günlük Yaşam',
       'Görevler, zaman duygusu ve kendi kendini organize etme',
       [
@@ -1183,7 +1194,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
     ),
   },
   '10-14y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Vücut ve Sağlık',
       'Ergenlik, beden algısı ve hareket',
       [
@@ -1198,7 +1209,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Beden değişikliklerini normalleştirin — bunlar hakkında açıkça konuşun',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'İfade ve İletişim',
       'Tartışma, öz yansıtma ve medya okuryazarlığı',
       [
@@ -1213,7 +1224,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Medya okuryazarlığını sadece yasaklamak yerine birlikte geliştirin',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Düşünme ve Öğrenme',
       'Soyut düşünme, planlama ve öğrenme stratejileri',
       [
@@ -1228,7 +1239,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Planlama araçları sunun: takvim, yapılacaklar listesi',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Kimlik ve İlişkiler',
       'Arkadaş çevresi, kimlik ve sınır koyma',
       [
@@ -1243,7 +1254,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Hemen çözüm üretmeden dinleyin — genellikle sadece orada olmak yeterlidir',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Özerklik ve Sorumluluk',
       'Kendi kendini organize etme, para ve kararlar',
       [
@@ -1260,7 +1271,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
     ),
   },
   '14-18y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Sağlık ve İyi Oluş',
       'Beden, uyku, beslenme ve hareket',
       [
@@ -1275,7 +1286,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Ruh sağlığı hakkında açıkça konuşun — damgalamayı ortadan kaldırın',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'İfade ve Öz Yansıtma',
       'Öz yansıtma, tartışma ve iletişim',
       [
@@ -1290,7 +1301,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Suçlama yerine soru sorun: "Neye ihtiyacın var?" yerine "Neden ... yapıyorsun?"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Gelecek ve Yönelim',
       'Meslek yönelimi, değerler ve kendi hedefleri',
       [
@@ -1305,7 +1316,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'Pratik deneyimlere olanak tanıyın: stajlar, yarı zamanlı işler, gönüllülük',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'İlişkiler ve Kimlik',
       'Partnerlik, kimlik ve toplumsal rol',
       [
@@ -1320,7 +1331,7 @@ const Map<String, Map<String, _DomainText>> _tr = {
         'İlişkilere saygı gösterin — hoşunuza gitmese bile',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Bağımsızlık ve Olgunluk',
       'Yaşam becerileri, finans ve sorumluluk',
       [
@@ -1341,9 +1352,9 @@ const Map<String, Map<String, _DomainText>> _tr = {
 // ═══════════════════════════════════════════════════════════════════════
 // KURMANCÎ
 // ═══════════════════════════════════════════════════════════════════════
-const Map<String, Map<String, _DomainText>> _ku = {
+const Map<String, Map<String, DevDomainText>> _ku = {
   '0-12m': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Tevger û Hest',
       'Girtin, zivirîn, xwe kişandin û gavên ewilî',
       [
@@ -1358,7 +1369,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Rojane rewşa li ser zikê biceribîne — stûyê û pişt xurt dike',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Deng û Fêmkirin',
       'Dengên ewilî, bersiva zimanî û ragihandin',
       [
@@ -1373,7 +1384,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Stranan bibêje û dengên ku pitikê te derdixe dubare bike',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Vedîtin û Têgihiştin',
       'Meraq, sedem-encam û mayîna heyberan',
       [
@@ -1388,7 +1399,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Bihêle pitikê te materyalên cihê (bi ewlehî!) keşif bike',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Girêdan û Hest',
       'Tevgera girêdanê, kenandin û tirsa ji biyaniyan',
       [
@@ -1403,7 +1414,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Nêzîkbûna laşî û pêwendiya çermî di vê temenê de herî girîng in',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Serbixwebûna Ewilî',
       'Xwarin, xew û çalakiya xwe ya sade',
       [
@@ -1420,7 +1431,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
     ),
   },
   '1-2y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Tevger û Laş',
       'Meşîn, hilkişîn û motorîka biçûk a ewilî',
       [
@@ -1437,7 +1448,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Listika qûm û rijandina avê motorîka biçûk xurt dike',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Ziman û Vegotin',
       'Peyvên ewilî, nîşandan û fêmkirin',
       [
@@ -1454,7 +1465,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Rast neke, tenê rastiya wê dubare bike: Zarok: "Haw haw!" — Tu: "Erê, kûçikek!"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Fikirîn û Lîstin',
       'Teqlîdkirin, rêzkirin û ji xwe re bi hev anîn',
       [
@@ -1470,7 +1481,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Bihêle zarokê te di jiyana rojane de "alîkarî" bike (dagirtina makîneya cilşuştinê, tevlihev kirin)',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Hest û Têkilî',
       'Nîşandana hestan, teselîkirin û empatiya ewilî',
       [
@@ -1486,7 +1497,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Teselî bike li şûna ku bala wî bidî cihekî din — hest divê hebin',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Serbixwebûn',
       'Xwarin, cilûberg û "bi serê xwe bikim!"',
       [
@@ -1504,7 +1515,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
     ),
   },
   '2-3y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Tevger û Laş',
       'Motorîka mezin, motorîka biçûk û haydariya laş',
       [
@@ -1521,7 +1532,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Bihêle zarokê te bi lingên vala bimeşe — ev bîlansê û haydariya laş xurt dike',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Ziman û Fêmkirin',
       'Ferheng, çêkirina hevokan û fêmkirina zimanê',
       [
@@ -1538,7 +1549,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Her tiştê ku tu dikî bi nav bike: "Ez mûzê dibirim"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Fikirîn û Vedîtin',
       'Çareserkirina pirsgirêkan, meraq û baldarî',
       [
@@ -1555,7 +1566,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Lîstika baldar li navîne — her çend "tenê" tevlihevkirin be jî',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Hest û Bihevrebûn',
       'Hest, empati û tevgera civakî',
       [
@@ -1572,7 +1583,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Lîstika paralel (li kêleka hev) ji bo temenê 2-3 salî tam normal û bihagiran e',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Serbixwebûn',
       'Jêhatîbûnên rojane û bi serê xwe kirin',
       [
@@ -1591,7 +1602,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
     ),
   },
   '3-4y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Tevger û Jêhatîbûn',
       'Bîlans, hilkişîn û motorîka biçûk',
       [
@@ -1607,7 +1618,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Hunerê bi meqes û çewalê bike — her çend ne bêkêmasî be jî',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Ziman û Vegotin',
       'Hevok, pirsan kirin û çîrok',
       [
@@ -1623,7 +1634,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Bi hev re çîrokan çêke: "Û paşê...?"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Fikirîn û Xeyal',
       'Rola lîstinê, jimartin û têkilî',
       [
@@ -1639,7 +1650,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Di jiyana rojane de bijmêre: gavên derence, sêv, pêlav',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Hest û Hevaltî',
       'Parvekirin, pevçûn û tehemûla dilşikestinê',
       [
@@ -1655,7 +1666,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Di pevçûnên di navbera zarokan de hevrê be, ne çareserkir',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Jiyana Rojane û Berpirsyarî',
       'Cilûberg, paqijî û karên biçûk',
       [
@@ -1673,7 +1684,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
     ),
   },
   '4-6y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Laş û Hevahengî',
       'Werzîş, nivîsandin û jêhatîbûn',
       [
@@ -1689,7 +1700,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Rojane herî kêm 1 saet tevgera li derve',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Ziman û Têgihiştin',
       'Vegotin, rêziman û ferheng',
       [
@@ -1705,7 +1716,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Lîstikên qafiyeyê û lêdana kevaran ji bo dibistanê amade dike',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Fikirîn û Amadebûna Dibistanê',
       'Mantiq, baldarî û jêhatîbûna pêş-dibistanê',
       [
@@ -1721,7 +1732,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Zû perwerdehiya dibistanê meke — lîstin bi xwe fêrbûn e',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Civakî û Empatî',
       'Hevaltî, qaîde û dîtina ji alîyê din',
       [
@@ -1737,7 +1748,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Empatiyê xurt bike: "Zarokê din niha çawa hîs dike?"',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Serbixwebûn û Mezinbûn',
       'Berpirsyarî, plansazî û jêhatîbûna rojane',
       [
@@ -1755,7 +1766,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
     ),
   },
   '6-10y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Laş û Werzîş',
       'Hevahengî, tehemûl û motorîka biçûk',
       [
@@ -1770,7 +1781,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Sînordarkirina dema ekranê = tevgera xwezayî ya zêdetir',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Ziman û Xwendin',
       'Xwendin, nivîsandin û vegotin',
       [
@@ -1785,7 +1796,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Li ser rojê biaxive: ne tenê "Dibistan çawa bû?"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Fêrbûn û Fikirîn',
       'Dibistan, baldarî û çareserkirina pirsgirêkan',
       [
@@ -1800,7 +1811,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Bihêle rêyên çareseriyê yên taybet, her çend dûrûdirêj xuya bikin',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Hevaltî û Hest',
       'Hevalgeh, pevçûn û xweregulasyon',
       [
@@ -1815,7 +1826,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Hestan piştrast bike: "Ez fêm dikim ku vê tiştê te aciz kir"',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Berpirsyarî û Jiyana Rojane',
       'Erk, hesta demê û xweorganîzekirin',
       [
@@ -1832,7 +1843,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
     ),
   },
   '10-14y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Laş û Tenduristî',
       'Mezinbûna cinsî, wêneya laş û tevger',
       [
@@ -1847,7 +1858,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Guherînên laşî normal bike — bi eşkereyî li ser wan biaxive',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Îfade û Ragihandin',
       'Nîqaşkirin, xwenirxandin û jêhatîbûna medyayê',
       [
@@ -1862,7 +1873,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Jêhatîbûna medyayê bi hev re pêş bixe, ne tenê qedexe bike',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Fikirîn û Fêrbûn',
       'Fikra razber, plansazî û stratejiyên fêrbûnê',
       [
@@ -1877,7 +1888,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Amûrên plansaziyê pêşkêş bike: salname, lîsteya karan',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Nasname û Têkilî',
       'Hevalgeh, nasname û sînor danîn',
       [
@@ -1892,7 +1903,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Bêyî ku tavilê çareser bike guhdarî bike — hebûn bi tenê bes e gelek caran',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Serbixwebûn û Berpirsyarî',
       'Xweorganîzekirin, pere û biryar',
       [
@@ -1909,7 +1920,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
     ),
   },
   '14-18y': {
-    'motorik': _DomainText(
+    'motorik': DevDomainText(
       'Tenduristî û Başbûn',
       'Laş, xew, xwarin û tevger',
       [
@@ -1924,7 +1935,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Bi eşkereyî li ser tenduristiya derûnî biaxive — dûrî dawîlêanîna şerm',
       ],
     ),
-    'sprache': _DomainText(
+    'sprache': DevDomainText(
       'Îfade û Xwenirxandin',
       'Xwenirxandin, gotûbêj û ragihandin',
       [
@@ -1939,7 +1950,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Li şûna sûcdarkirinê pirsan bike: "Tu çi hewce dikî?" li şûna "Tu çima ... dikî?"',
       ],
     ),
-    'denken': _DomainText(
+    'denken': DevDomainText(
       'Pêşerojê û Rêon',
       'Rêona pîşeyî, nirx û armancên taybet',
       [
@@ -1954,7 +1965,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Rê bide ezmûnên pratîkî: staj, karên demjimêrî, dilxwazî',
       ],
     ),
-    'sozial': _DomainText(
+    'sozial': DevDomainText(
       'Têkilî û Nasname',
       'Hevaltî, nasname û rola civakî',
       [
@@ -1969,7 +1980,7 @@ const Map<String, Map<String, _DomainText>> _ku = {
         'Rêzê bide têkiliyan — her çend ji te re xweş nebin jî',
       ],
     ),
-    'selbst': _DomainText(
+    'selbst': DevDomainText(
       'Serbixwebûn û Mezinbûn',
       'Jêhatîbûna jiyanê, dara mal û berpirsyarî',
       [
