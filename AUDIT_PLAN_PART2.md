@@ -113,6 +113,41 @@ Alle vormals offenen Ebenen sind pro Sprache übersetzt:
   CH/TR/UK, Beträge, Antragswege) mit Fachprüfungs-Vermerk im Text. Amtliche
   Leistungsnamen bleiben im Original (in Klammern), Rechtsverweise wörtlich.
 
+### Inhaltliche Datensätze (nicht nur l10n-Keys) — nachgezogen
+
+Die PRs #183–#194 übersetzten die l10n-Keys. Danach fiel auf, dass mehrere
+Bildschirme trotz übersetztem UI-Rahmen weiter Deutsch/Englisch zeigten, weil
+ihre **Inhalte** über eigene Mechanismen laufen (nicht über die
+`*_extra.dart`-Keys). Diese wurden separat für FR/ES/IT/AR nachgezogen:
+
+| Inhalt | Screen | Quelle/Mechanismus | PR |
+|--------|--------|--------------------|-----|
+| Entwicklungs-Check-Fragen (8 Altersgruppen, 5 Bereiche, ~220 Fragen) | Développement-Tab | `development_question_localizations_<lang>.dart` (ID-basierter Overlay, zuvor nur en/tr/ku) | #196 |
+| Eltern-Wissen-FAQ (32 GfK-Einträge) | Savoirs/Wissen-Tab | `eltern_wissen_localizations_<lang>.dart` (neuer Overlay; Suche bleibt deutsch-term-basiert) | #197 |
+| Verschenkmarkt-UI (101 Keys) | Marché du don / Share a treasure | fehlende `treasure*`-Keys im Legacy-`AppLocalizations.t()`-System + 3 EN-Legacy-Labels | #198 |
+| Tagesimpuls (29 Themen × 7 Felder) | Impulsion du jour | Backend `DAILY_IMPULSE_TRANSLATIONS` in `backend/server.js` | #199 |
+
+Begleitende Fixes:
+- **Verschenkmarkt**: `treasureCategoryLabel`/`treasureConditionLabel`/
+  `treasureSizeAgeLabel` existierten nur im `ku`-Legacy-Block → sie zeigten in
+  EN **und** TR den deutschen Code-Fallback. EN-Werte nachgetragen.
+- **Tagesimpuls (Bug)**: `localizeWeeklyImpulseTopic` las die verwaiste
+  `WEEKLY_IMPULSE_TRANSLATIONS` (nur 1 von 29 Themen). Die vollständige
+  `DAILY_IMPULSE_TRANSLATIONS` (en/tr/ku) war definiert, wurde aber nie
+  gelesen → der Impuls war selbst für EN/TR/KU fast immer deutsch. Verdrahtung
+  korrigiert, verwaiste Map entfernt. Der Fix bringt FR/ES/IT/AR **und**
+  EN/TR/KU erstmals vollständig.
+- Regressionstests ergänzt: `test/development_question_localization_test.dart`,
+  `test/eltern_wissen_localization_test.dart`,
+  `test/treasure_localization_test.dart`,
+  `backend/tests/unit/weekly-impulse-i18n.test.js`.
+
+**Deploy-Hinweis:** #196–#198 sind reiner Pages-Weg (live). #199 ist ein
+**Backend-Change** und wurde per Render-Deploy wirksam gemacht. Der
+Tagesimpuls wird pro Sprache 2 Tage client-seitig gecacht
+(`pp_weekly_impulse_cache_<lang>`); nach dem Deploy ggf. App-Neustart/
+Cache-Leerung nötig, um den frischen Impuls zu sehen.
+
 ### Bewusst NICHT übersetzt — Fallback auf DE/EN
 - **KI-System-Prompts** (22 chat-Keys): reine Backend-Instruktionen, nie
   nutzersichtbar; bleiben Deutsch (Gemini ist mehrsprachig).
@@ -132,3 +167,7 @@ Alle vormals offenen Ebenen sind pro Sprache übersetzt:
 - Die Übersetzungs-Pipeline (`.tmp/` Skripte, `missing_template.json`,
   `core_source.json`) kann für Nachträge oder einen externen Dienst
   wiederverwendet werden.
+- Die inhaltlichen Datensätze (#196–#199: Entwicklungs-Check, Wissen-FAQ,
+  Verschenkmarkt, Tagesimpuls) sind ebenfalls nicht muttersprachlich
+  abgenommen. Für AR gilt der RTL-/Muttersprachler-Review-Vorbehalt genauso;
+  die FAQ-Suche bleibt bewusst deutsch-term-basiert (Hinweistext erklärt das).
