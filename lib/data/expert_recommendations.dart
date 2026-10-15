@@ -57,56 +57,70 @@ class ExpertRecommendations {
   }
 
   static String categoryLabel(ExpertCategory cat, String lang) {
-    switch (cat) {
-      case ExpertCategory.wutKonflikte:
-        return lang == 'en'
-            ? 'Anger & Conflicts'
-            : lang == 'tr'
-                ? 'Öfke & Çatışmalar'
-                : lang == 'ku'
-                    ? 'Hêrs & Nakokî'
-                    : 'Wut & Konflikte';
-      case ExpertCategory.schlafen:
-        return lang == 'en'
-            ? 'Sleep'
-            : lang == 'tr'
-                ? 'Uyku'
-                : lang == 'ku'
-                    ? 'Xew'
-                    : 'Schlafen';
-      case ExpertCategory.geschwister:
-        return lang == 'en'
-            ? 'Siblings'
-            : lang == 'tr'
-                ? 'Kardeşler'
-                : lang == 'ku'
-                    ? 'Xwişk û bira'
-                    : 'Geschwister';
-      case ExpertCategory.schuleLernen:
-        return lang == 'en'
-            ? 'School & Learning'
-            : lang == 'tr'
-                ? 'Okul & Öğrenme'
-                : lang == 'ku'
-                    ? 'Dibistan & Fêrbûn'
-                    : 'Schule & Lernen';
-      case ExpertCategory.ichAmLimit:
-        return lang == 'en'
-            ? "I'm at my limit"
-            : lang == 'tr'
-                ? 'Sınırımdayım'
-                : lang == 'ku'
-                    ? 'Ez di sînorê xwe de me'
-                    : 'Ich am Limit';
-      case ExpertCategory.spielenBindung:
-        return lang == 'en'
-            ? 'Play & Bonding'
-            : lang == 'tr'
-                ? 'Oyun & Bağlanma'
-                : lang == 'ku'
-                    ? 'Lîstik & Girêdan'
-                    : 'Spielen & Bindung';
-    }
+    const labels = <ExpertCategory, Map<String, String>>{
+      ExpertCategory.wutKonflikte: {
+        'de': 'Wut & Konflikte',
+        'en': 'Anger & Conflicts',
+        'tr': 'Öfke & Çatışmalar',
+        'ku': 'Hêrs & Nakokî',
+        'fr': 'Colère & conflits',
+        'es': 'Enfado & conflictos',
+        'it': 'Rabbia & conflitti',
+        'ar': 'الغضب والنزاعات',
+      },
+      ExpertCategory.schlafen: {
+        'de': 'Schlafen',
+        'en': 'Sleep',
+        'tr': 'Uyku',
+        'ku': 'Xew',
+        'fr': 'Sommeil',
+        'es': 'Sueño',
+        'it': 'Sonno',
+        'ar': 'النوم',
+      },
+      ExpertCategory.geschwister: {
+        'de': 'Geschwister',
+        'en': 'Siblings',
+        'tr': 'Kardeşler',
+        'ku': 'Xwişk û bira',
+        'fr': 'Fratrie',
+        'es': 'Hermanos',
+        'it': 'Fratelli',
+        'ar': 'الإخوة',
+      },
+      ExpertCategory.schuleLernen: {
+        'de': 'Schule & Lernen',
+        'en': 'School & Learning',
+        'tr': 'Okul & Öğrenme',
+        'ku': 'Dibistan & Fêrbûn',
+        'fr': 'École & apprentissage',
+        'es': 'Escuela & aprendizaje',
+        'it': 'Scuola & apprendimento',
+        'ar': 'المدرسة والتعلّم',
+      },
+      ExpertCategory.ichAmLimit: {
+        'de': 'Ich am Limit',
+        'en': "I'm at my limit",
+        'tr': 'Sınırımdayım',
+        'ku': 'Ez di sînorê xwe de me',
+        'fr': 'Je suis à bout',
+        'es': 'Estoy al límite',
+        'it': 'Sono al limite',
+        'ar': 'بلغتُ حدّي',
+      },
+      ExpertCategory.spielenBindung: {
+        'de': 'Spielen & Bindung',
+        'en': 'Play & Bonding',
+        'tr': 'Oyun & Bağlanma',
+        'ku': 'Lîstik & Girêdan',
+        'fr': 'Jeu & lien',
+        'es': 'Juego & vínculo',
+        'it': 'Gioco & legame',
+        'ar': 'اللعب والترابط',
+      },
+    };
+    final map = labels[cat]!;
+    return map[lang] ?? map['en']!;
   }
 
   static String categoryEmoji(ExpertCategory cat) {
