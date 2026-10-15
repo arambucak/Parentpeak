@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/data/expert_recommendations.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
 
 /// Eltern-Bibliothek — kuratierte Experten-Empfehlungen.
@@ -19,17 +20,29 @@ class ExpertBibliothekSection extends StatefulWidget {
 class _ExpertBibliothekSectionState extends State<ExpertBibliothekSection> {
   ExpertCategory? _selectedCategory;
 
-  String get _lang {
+  // UI language of the surrounding chrome (headings, chips, buttons).
+  String get _uiLang => languageService.currentLanguage;
+
+  // Content language of the curated resources. Recommendations only exist in
+  // de/en/tr/ku; for other UI languages we show the English resources (they
+  // are English-language resources) and flag that with a short notice.
+  String get _contentLang {
     final l = languageService.currentLanguage;
     if (l == 'de' || l == 'en' || l == 'tr' || l == 'ku') return l;
-    return 'en'; // Fallback
+    return 'en';
   }
+
+  bool get _contentDiffersFromUi => _contentLang != _uiLang;
+
+  String _t(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
 
   List<ExpertRecommendation> get _filteredItems {
     if (_selectedCategory == null) {
-      return ExpertRecommendations.getByLanguage(_lang);
+      return ExpertRecommendations.getByLanguage(_contentLang);
     }
-    return ExpertRecommendations.getByCategory(_lang, _selectedCategory!);
+    return ExpertRecommendations.getByCategory(
+        _contentLang, _selectedCategory!);
   }
 
   Future<void> _openUrl(String url) async {
@@ -67,24 +80,12 @@ class _ExpertBibliothekSectionState extends State<ExpertBibliothekSection> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _lang == 'en'
-                        ? 'Expert Library'
-                        : _lang == 'tr'
-                            ? 'Uzman Kütüphanesi'
-                            : _lang == 'ku'
-                                ? 'Pirtûkxaneya Pisporan'
-                                : 'Eltern-Bibliothek',
+                    _t('expert_library_title'),
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   Text(
-                    _lang == 'en'
-                        ? 'Podcasts, videos & books that really help.'
-                        : _lang == 'tr'
-                            ? 'Gerçekten yardımcı olan podcast, video ve kitaplar.'
-                            : _lang == 'ku'
-                                ? 'Podcast, vîdyo û pirtûkên ku bi rastî dibin alîkar.'
-                                : 'Podcasts, Videos & Bücher die wirklich helfen.',
+                    _t('expert_library_subtitle'),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.outline),
                   ),
@@ -93,18 +94,36 @@ class _ExpertBibliothekSectionState extends State<ExpertBibliothekSection> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+
+        // Notice when the curated resources are in another language than the UI.
+        if (_contentDiffersFromUi)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              _t('expert_library_content_english_notice'),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.outline),
+            ),
+          ),
+        const SizedBox(height: 12),
 
         // Category chips
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _categoryChip(theme, null, _lang == 'en' ? 'All' : 'Alle'),
+              _categoryChip(theme, null, _t('expert_library_filter_all')),
               ...ExpertCategory.values.map((cat) => _categoryChip(
                     theme,
                     cat,
-                    '${ExpertRecommendations.categoryEmoji(cat)} ${ExpertRecommendations.categoryLabel(cat, _lang)}',
+                    '${ExpertRecommendations.categoryEmoji(cat)} ${ExpertRecommendations.categoryLabel(cat, _uiLang)}',
                   )),
             ],
           ),
@@ -121,9 +140,7 @@ class _ExpertBibliothekSectionState extends State<ExpertBibliothekSection> {
             ),
             child: Center(
               child: Text(
-                _lang == 'en'
-                    ? 'No recommendations for this category yet.'
-                    : 'Noch keine Empfehlungen für diese Kategorie.',
+                _t('expert_library_empty'),
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.outline),
               ),
@@ -201,8 +218,7 @@ class _ExpertBibliothekSectionState extends State<ExpertBibliothekSection> {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: typeColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
@@ -277,13 +293,12 @@ class _ExpertBibliothekSectionState extends State<ExpertBibliothekSection> {
                 size: 16,
               ),
               label: Text(
-                item.type == ExpertContentType.podcast
-                    ? (_lang == 'en' ? 'Listen' : 'Anhören')
-                    : item.type == ExpertContentType.youtube
-                        ? (_lang == 'en' ? 'Watch' : 'Ansehen')
-                        : item.type == ExpertContentType.book
-                            ? (_lang == 'en' ? 'More info' : 'Mehr erfahren')
-                            : (_lang == 'en' ? 'Read' : 'Lesen'),
+                switch (item.type) {
+                  ExpertContentType.podcast => _t('expert_action_listen'),
+                  ExpertContentType.youtube => _t('expert_action_watch'),
+                  ExpertContentType.book => _t('expert_action_more_info'),
+                  ExpertContentType.article => _t('expert_action_read'),
+                },
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: typeColor,

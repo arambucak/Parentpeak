@@ -80,100 +80,30 @@ class _ElternWissenWidgetState extends State<ElternWissenWidget> {
     setState(() => _results = results);
   }
 
-  static const _topicCards = [
-    {
-      'emoji': '\u{1F4A2}',
-      'label': 'Wut & Trotz',
-      'hint': 'Wutanfaelle, Hauen',
-      'search': 'wut',
-      'color': '0xFFDC2626',
-    },
-    {
-      'emoji': '\u{1F634}',
-      'label': 'Schlafen',
-      'hint': 'Einschlafen, Nacht',
-      'search': 'schlafen',
-      'color': '0xFF8B5CF6',
-    },
-    {
-      'emoji': '\u{1F6AB}',
-      'label': 'Grenzen',
-      'hint': 'Nein sagen, Regeln',
-      'search': 'grenzen',
-      'color': '0xFF2563EB',
-    },
-    {
-      'emoji': '\u{1F35D}',
-      'label': 'Essen',
-      'hint': 'Picky Eater',
-      'search': 'essen',
-      'color': '0xFFF97316',
-    },
-    {
-      'emoji': '\u{1F46B}',
-      'label': 'Geschwister',
-      'hint': 'Streit, Eifersucht',
-      'search': 'geschwister',
-      'color': '0xFF0EA5A4',
-    },
-    {
-      'emoji': '\u{1F4F1}',
-      'label': 'Medien',
-      'hint': 'Bildschirmzeit',
-      'search': 'bildschirm',
-      'color': '0xFF6B21A8',
-    },
+  // Topic cards: emoji/color/search are fixed; label+hint come from l10n.
+  // The `search` term stays German on purpose — the FAQ fuzzy search runs on
+  // the German tags/questions (the notice above the search explains this).
+  static const _topicCardDefs = [
+    ('\u{1F4A2}', 'knowledge_topic_anger', 'wut', '0xFFDC2626'),
+    ('\u{1F634}', 'knowledge_topic_sleep', 'schlafen', '0xFF8B5CF6'),
+    ('\u{1F6AB}', 'knowledge_topic_boundaries', 'grenzen', '0xFF2563EB'),
+    ('\u{1F35D}', 'knowledge_topic_eating', 'essen', '0xFFF97316'),
+    ('\u{1F46B}', 'knowledge_topic_siblings', 'geschwister', '0xFF0EA5A4'),
+    ('\u{1F4F1}', 'knowledge_topic_media', 'bildschirm', '0xFF6B21A8'),
   ];
 
   List<Map<String, String>> _localizedTopicCards() {
-    final language = languageService.currentLanguage;
-    if (language == 'tr') {
-      return [
-        {
-          'emoji': '💢',
-          'label': _t('topic_defiance_anger'),
-          'hint': 'Öfke nöbetleri, vurma',
-          'search': 'wut',
-          'color': '0xFFDC2626',
-        },
-        {
-          'emoji': '😴',
-          'label': _t('topic_sleep_issues'),
-          'hint': 'Uykuya dalma, gece',
-          'search': 'schlafen',
-          'color': '0xFF8B5CF6',
-        },
-        {
-          'emoji': '🚫',
-          'label': 'Sınırlar',
-          'hint': 'Hayır demek, kurallar',
-          'search': 'grenzen',
-          'color': '0xFF2563EB',
-        },
-        {
-          'emoji': '🍝',
-          'label': 'Yemek',
-          'hint': 'Seçici yeme',
-          'search': 'essen',
-          'color': '0xFFF97316',
-        },
-        {
-          'emoji': '💑',
-          'label': 'Kardeşler',
-          'hint': 'Kavga, kıskançlık',
-          'search': 'geschwister',
-          'color': '0xFF0EA5A4',
-        },
-        {
-          'emoji': '📱',
-          'label': 'Medya',
-          'hint': 'Ekran süresi',
-          'search': 'bildschirm',
-          'color': '0xFF6B21A8',
-        },
-      ];
-    }
-    return _topicCards.map((card) => Map<String, String>.from(card)).toList();
+    return _topicCardDefs
+        .map(
+          (def) => {
+            'emoji': def.$1,
+            'label': _t('${def.$2}_label'),
+            'hint': _t('${def.$2}_hint'),
+            'search': def.$3,
+            'color': def.$4,
+          },
+        )
+        .toList();
   }
 
   String _t(String key) =>

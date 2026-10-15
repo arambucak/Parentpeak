@@ -586,7 +586,8 @@ class AppStringsManager {
       'finance_guide_title': 'Was steht uns zu?',
       'finance_guide_subtitle':
           'Schildert eure Situation – der Wegweiser hilft euch weiter.',
-      'finance_status_universal': 'Allgemeine Leistung · Voraussetzungen prüfen',
+      'finance_status_universal':
+          'Allgemeine Leistung · Voraussetzungen prüfen',
       'finance_status_income_dependent': 'Einkommensabhängig',
       'finance_status_check_required': 'Prüfung nötig',
       'finance_start_application_helper': 'Antragshelfer starten',
@@ -837,6 +838,29 @@ class AppStringsManager {
       'topic_defiance_anger': 'Trotz &\nWut',
       'topic_sleep_issues': 'Schlafen\nklappt nicht',
       'topic_hits_bites': 'Haut ·\nBeißt',
+      'knowledge_topic_anger_label': 'Wut & Trotz',
+      'knowledge_topic_anger_hint': 'Wutanfälle, Hauen',
+      'knowledge_topic_sleep_label': 'Schlafen',
+      'knowledge_topic_sleep_hint': 'Einschlafen, Nacht',
+      'knowledge_topic_boundaries_label': 'Grenzen',
+      'knowledge_topic_boundaries_hint': 'Nein sagen, Regeln',
+      'knowledge_topic_eating_label': 'Essen',
+      'knowledge_topic_eating_hint': 'Wählerisch essen',
+      'knowledge_topic_siblings_label': 'Geschwister',
+      'knowledge_topic_siblings_hint': 'Streit, Eifersucht',
+      'knowledge_topic_media_label': 'Medien',
+      'knowledge_topic_media_hint': 'Bildschirmzeit',
+      'expert_library_title': 'Eltern-Bibliothek',
+      'expert_library_subtitle':
+          'Podcasts, Videos & Bücher die wirklich helfen.',
+      'expert_library_content_english_notice':
+          'Die empfohlenen Inhalte sind auf Englisch. Oberfläche und Kategorien erscheinen in deiner Sprache.',
+      'expert_library_filter_all': 'Alle',
+      'expert_library_empty': 'Noch keine Empfehlungen für diese Kategorie.',
+      'expert_action_listen': 'Anhören',
+      'expert_action_watch': 'Ansehen',
+      'expert_action_more_info': 'Mehr erfahren',
+      'expert_action_read': 'Lesen',
       'mood_exhausted_suffix': ' — auch erschöpfte Eltern sind gute Eltern. 💛',
       'mood_present_suffix': ' — schön, dass du heute dabei bist.',
       'mood_energetic_suffix':
@@ -1238,8 +1262,10 @@ class AppStringsManager {
       'network_members_add_failed':
           'Mitglieder konnten nicht hinzugefügt werden.',
       'network_group_not_member': 'Du bist kein Mitglied dieser Gruppe.',
-      'chat_access_unavailable': 'Diese Unterhaltung ist für dieses Konto nicht verfügbar.',
-      'friend_chat_request_failed': 'Die Chat-Anfrage ist fehlgeschlagen. Bitte prüfe deine Anmeldung und versuche es erneut.',
+      'chat_access_unavailable':
+          'Diese Unterhaltung ist für dieses Konto nicht verfügbar.',
+      'friend_chat_request_failed':
+          'Die Chat-Anfrage ist fehlgeschlagen. Bitte prüfe deine Anmeldung und versuche es erneut.',
       'network_group_chat_empty':
           'Noch keine Nachrichten. Schreib die erste und bring die Gruppe ins Gespräch!',
       'network_sending': 'Senden…',
@@ -1268,17 +1294,24 @@ class AppStringsManager {
           'Dein Anzeigename, Ort, grob gerundeter Standort (falls vorhanden), ungefähre Kinderalter, Sprachen, Familienform, Werte, gewünschte Aktivitäten und deine Bio werden auf unserem Backend gespeichert und anderen Familien im Netzwerk angezeigt. Kindnamen, Geburtsdaten und Besonderheiten bleiben auf diesem Gerät. Trage keine Kindnamen, Adresse oder Gesundheitsdaten in deine öffentliche Bio ein. Das Matching verwendet keine KI. Du kannst dein Profil jederzeit löschen.',
       'network_publish_accept': 'Profil veröffentlichen',
       'network_profile_active': 'Profil vom Server als aktiv bestätigt.',
-      'network_profile_draft': 'Kein aktives Profil auf dem Server bestätigt. Lokale Entwürfe werden nicht automatisch veröffentlicht.',
-      'network_profile_unverified': 'Profilstatus konnte nicht geprüft werden. Sichtbarkeit ist nicht bestätigt.',
+      'network_profile_draft':
+          'Kein aktives Profil auf dem Server bestätigt. Lokale Entwürfe werden nicht automatisch veröffentlicht.',
+      'network_profile_unverified':
+          'Profilstatus konnte nicht geprüft werden. Sichtbarkeit ist nicht bestätigt.',
       'network_profile_retry': 'Status erneut prüfen',
-      'network_discovery_failed': 'Familien konnten nicht geladen werden. Das ist kein bestätigtes leeres Suchergebnis. Bitte versuche es erneut.',
-      'network_discovery_auth_failed': 'Die Familiensuche ist für diese Sitzung nicht erlaubt. Bitte prüfe dein Konto und deine Anmeldung.',
+      'network_discovery_failed':
+          'Familien konnten nicht geladen werden. Das ist kein bestätigtes leeres Suchergebnis. Bitte versuche es erneut.',
+      'network_discovery_auth_failed':
+          'Die Familiensuche ist für diese Sitzung nicht erlaubt. Bitte prüfe dein Konto und deine Anmeldung.',
       'network_discovery_retry': 'Suche erneut versuchen',
-      'network_draft_unassigned': 'Auf diesem Gerät liegt ein altes Profil ohne Kontozuordnung. Es wird nicht automatisch verwendet oder veröffentlicht.',
+      'network_draft_unassigned':
+          'Auf diesem Gerät liegt ein altes Profil ohne Kontozuordnung. Es wird nicht automatisch verwendet oder veröffentlicht.',
       'network_draft_assign_title': 'Lokalen Entwurf diesem Konto zuordnen?',
-      'network_draft_assign_body': 'Bestätige, dass der alte lokale Familienentwurf zu deinem Konto „{account}“ gehört. Er wird nur lokal diesem Konto zugeordnet und steht danach auch Kalender, Küche und den anderen Familienfunktionen zur Verfügung. Es werden keine Daten hochgeladen. Eine Veröffentlichung erfordert eine separate Bestätigung.',
+      'network_draft_assign_body':
+          'Bestätige, dass der alte lokale Familienentwurf zu deinem Konto „{account}“ gehört. Er wird nur lokal diesem Konto zugeordnet und steht danach auch Kalender, Küche und den anderen Familienfunktionen zur Verfügung. Es werden keine Daten hochgeladen. Eine Veröffentlichung erfordert eine separate Bestätigung.',
       'network_draft_assign': 'Entwurf meinem Konto zuordnen',
-      'network_draft_assign_failed': 'Der Entwurf konnte nicht zugeordnet werden. Bitte versuche es erneut.',
+      'network_draft_assign_failed':
+          'Der Entwurf konnte nicht zugeordnet werden. Bitte versuche es erneut.',
       'network_child_name_local': 'Name / Spitzname (nur auf diesem Gerät)',
       'network_specials_hint': 'Notiz zu Besonderheiten (nur auf diesem Gerät)',
       'network_publish_failed':
@@ -1563,7 +1596,8 @@ class AppStringsManager {
       'fridge_consent_body':
           'Für die Zutaten-Erkennung wird dein Foto über das ParentPeak-Backend an Google Gemini gesendet. Bildinhalte werden nicht anonymisiert; zeige keine Personen, privaten Notizen oder Adressen. Für das anschließende Rezept werden die bestätigten Zutaten, das Kindesalter und vorhandene Allergie-Angaben an Google Gemini gesendet. Die App speichert das Foto nicht als dauerhaften Entwurf. Diese optionale Zustimmung gilt für diesen Kühlschrank-KI-Ablauf und wird für dein aktuelles Konto beziehungsweise den Gastmodus auf diesem Gerät gespeichert. Sie veröffentlicht weder Foto noch Rezept. Ohne Zustimmung wird keine KI-Anfrage gestartet.',
       'fridge_consent_accept': 'Einverstanden, Foto auswerten',
-      'fridge_consent_failed': 'Die Kühlschrank-KI-Zustimmung konnte nicht bestätigt werden. Ohne bestätigte Zustimmung wird keine neue KI-Anfrage gestartet.',
+      'fridge_consent_failed':
+          'Die Kühlschrank-KI-Zustimmung konnte nicht bestätigt werden. Ohne bestätigte Zustimmung wird keine neue KI-Anfrage gestartet.',
       'fridge_choose_photo': 'Auswählen',
       'fridge_no_ingredients_detected':
           'Ich konnte keine Zutaten sicher erkennen. Du kannst sie unten einfach selbst ergänzen.',
@@ -1971,8 +2005,10 @@ class AppStringsManager {
       'network_withdraw': 'Zurückziehen',
       'network_suggestions_count': '{count} Vorschläge',
       'network_matching_suggestions': 'Veröffentlichte Spielfreunde-Profile',
-      'location_osm_notice': 'Die Ortssuche sendet Suchtexte oder auf etwa 1 km gerundete Koordinaten an OpenStreetMap Nominatim. Die Karte lädt Kacheln von OpenStreetMap.',
-      'location_search_failed': 'Die Ortssuche ist fehlgeschlagen. Bitte versuche es erneut.',
+      'location_osm_notice':
+          'Die Ortssuche sendet Suchtexte oder auf etwa 1 km gerundete Koordinaten an OpenStreetMap Nominatim. Die Karte lädt Kacheln von OpenStreetMap.',
+      'location_search_failed':
+          'Die Ortssuche ist fehlgeschlagen. Bitte versuche es erneut.',
       'network_copy_step_1': 'Schritt 1: Eure Familie',
       'network_copy_step_2': 'Schritt 2: Eure Kinder',
       'network_copy_step_3': 'Schritt 3: Werte & Stil',
@@ -1988,16 +2024,21 @@ class AppStringsManager {
       'network_copy_cancel': 'Abbrechen',
       'network_copy_connect_button': 'Verbinden',
       'network_copy_playmates': 'Spielfreunde',
-      'network_copy_login_required': 'Bitte melde dich an, um dein Spielfreunde-Profil zu veröffentlichen.',
-      'network_copy_setup_hint': 'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.',
+      'network_copy_login_required':
+          'Bitte melde dich an, um dein Spielfreunde-Profil zu veröffentlichen.',
+      'network_copy_setup_hint':
+          'In 5 kurzen Schritten findet ihr Familien die so ticken wie ihr.',
       'network_copy_empty_title': 'Sei die erste Familie in deiner Gegend',
-      'network_copy_empty_description': 'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in deiner Nähe dabei sind, erscheinen sie hier automatisch. Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.',
+      'network_copy_empty_description':
+          'Dein Profil ist aktiv und sichtbar. Sobald andere Familien in deiner Nähe dabei sind, erscheinen sie hier automatisch. Lade Nachbarn & Freunde ein - so wächst euer Netzwerk am schnellsten.',
       'network_copy_invite_playmates': 'Spielkameraden einladen',
       'network_copy_same_city': 'In deiner Stadt',
       'network_copy_request_sent': 'Deine Anfrage wurde an {name} gesendet.',
-      'network_copy_request_failed': 'Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.',
+      'network_copy_request_failed':
+          'Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.',
       'network_copy_invite_hero_title': 'Freunde einladen',
-      'network_copy_invite_hero_description': 'Teile deinen persönlichen Link oder QR-Code - ein Tap und ihr seid verbunden.',
+      'network_copy_invite_hero_description':
+          'Teile deinen persönlichen Link oder QR-Code - ein Tap und ihr seid verbunden.',
       'network_copy_share': 'Teilen',
       'network_copy_save': 'Speichern...',
       'network_copy_create_profile': 'Profil erstellen',
@@ -2009,9 +2050,11 @@ class AppStringsManager {
       'network_copy_custom_family': 'Eure Familienform',
       'network_copy_custom_example': 'z.B. Wahlfamilie, Mehrgenerationen...',
       'network_copy_no_gender': 'Keine Angabe',
-      'network_copy_values_tip': 'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.',
+      'network_copy_values_tip':
+          'Tipp: Familien mit ähnlichen Werten verstehen sich am besten. Wähle was euch wichtig ist.',
       'network_copy_bio_title': 'Kurze Bio',
-      'network_copy_bio_hint': 'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?',
+      'network_copy_bio_hint':
+          'Erzaehlt kurz von euch: Was macht eure Familie besonders? Was wuenscht ihr euch?',
       'network_option_family_kernfamilie': '👪 Kernfamilie',
       'network_option_family_alleinerziehend': '💪 Alleinerziehend',
       'network_option_family_patchwork': '🧩 Patchwork',
@@ -2065,7 +2108,8 @@ class AppStringsManager {
       'network_option_looking_vorlesen': '📖 Vorlesen & Geschichten',
       'network_option_looking_eltern_austausch': '☕ Eltern-Austausch',
       'network_option_looking_babysitting_tausch': '🤝 Babysitting-Tausch',
-      'network_option_looking_kita_fahrgemeinschaft': '🚗 Kita-Fahrgemeinschaft',
+      'network_option_looking_kita_fahrgemeinschaft':
+          '🚗 Kita-Fahrgemeinschaft',
       'network_option_looking_kindergeburtstage': '🎂 Kindergeburtstage',
       'network_option_looking_ausflug': '🏞️ Ausflüge & Reisen',
       'network_option_looking_indoor_treffen': '🏠 Indoor-Treffen',
@@ -2086,7 +2130,8 @@ class AppStringsManager {
       'network_option_times_nach_kita': '🏫 Nach Kita/Schule',
       'network_option_times_flexibel': '💫 Flexibel',
       'network_option_specials_behinderung': '♿ Kind mit Behinderung',
-      'network_option_specials_neurodivergent': '🧠 Neurodivergent (ADHS/Autismus)',
+      'network_option_specials_neurodivergent':
+          '🧠 Neurodivergent (ADHS/Autismus)',
       'network_option_specials_hochsensibel': '🌼 Hochsensibel',
       'network_option_specials_fruehchen': '💪 Fruehchen-Eltern',
       'network_option_specials_mehrlinge': '👯 Mehrlinge',
@@ -2122,7 +2167,8 @@ class AppStringsManager {
       'network_option_language_vi': '🇻🇳 Tieng Viet',
       'network_option_language_sw': '🇰🇪 Kiswahili',
       'network_family_fallback': 'diese Familie',
-      'network_legacy_link_inactive': 'Dieser Link ist nicht mehr aktiv. Bitte nutze den Einladungslink der anderen Familie.',
+      'network_legacy_link_inactive':
+          'Dieser Link ist nicht mehr aktiv. Bitte nutze den Einladungslink der anderen Familie.',
       'network_radius': 'Im Umkreis von ~{distance} km',
       'network_wide_radius': 'Im Umkreis von ~1200 km',
       'network_say_hello': 'Hallo sagen',
@@ -2198,297 +2244,500 @@ class AppStringsManager {
       'events_price_label': 'Preis: {price}',
       'events_for_age': 'Für: {age}',
       'family_hub_shopping_list': 'Einkaufsliste',
-      'family_hub_save_error': 'Die Änderung konnte nicht gespeichert werden. Bitte versuche es erneut.',
+      'family_hub_save_error':
+          'Die Änderung konnte nicht gespeichert werden. Bitte versuche es erneut.',
       'family_hub_child_fallback': 'Kind',
       'benefit_ai_consent_title': 'KI-Leistungswegweiser verwenden?',
-      'finance_load_failed': 'Die lokalen Finanzdaten konnten nicht geladen werden. Bitte versuche es erneut.',
-      'finance_number_invalid': 'Bitte einen gültigen, nicht negativen Betrag mit höchstens zwei Nachkommastellen eingeben.',
-      'finance_tax_example_limits': 'Beispiel für ein Kind, keine Anspruchsprüfung oder Kostenaufteilung zwischen Kindern. Begünstigte Betreuungskosten: Kind im Haushalt und unter 14 Jahren oder gesetzliche Behinderungsausnahme; Rechnung und Zahlung auf das Konto des Anbieters erforderlich. Unterricht, Sport und Freizeit sind nicht begünstigt. 30% ist nur ein angenommener Steuersatz.',
-      'finance_orientation_only': 'Nur Orientierung, keine Anspruchsprüfung. Einkommen, Berufstätigkeit und Familienstatus schließen hier keine Leistung aus. Die zuständige Stelle prüft euren Einzelfall.',
+      'finance_load_failed':
+          'Die lokalen Finanzdaten konnten nicht geladen werden. Bitte versuche es erneut.',
+      'finance_number_invalid':
+          'Bitte einen gültigen, nicht negativen Betrag mit höchstens zwei Nachkommastellen eingeben.',
+      'finance_tax_example_limits':
+          'Beispiel für ein Kind, keine Anspruchsprüfung oder Kostenaufteilung zwischen Kindern. Begünstigte Betreuungskosten: Kind im Haushalt und unter 14 Jahren oder gesetzliche Behinderungsausnahme; Rechnung und Zahlung auf das Konto des Anbieters erforderlich. Unterricht, Sport und Freizeit sind nicht begünstigt. 30% ist nur ein angenommener Steuersatz.',
+      'finance_orientation_only':
+          'Nur Orientierung, keine Anspruchsprüfung. Einkommen, Berufstätigkeit und Familienstatus schließen hier keine Leistung aus. Die zuständige Stelle prüft euren Einzelfall.',
       'finance_save_orientation': 'Angaben zur Orientierung speichern',
       'finance_application_kindergeld_benefitName_0': 'Kindergeld',
-      'finance_application_kindergeld_responsibleAuthority_1': 'Familienkasse der Bundesagentur für Arbeit',
+      'finance_application_kindergeld_responsibleAuthority_1':
+          'Familienkasse der Bundesagentur für Arbeit',
       'finance_application_kindergeld_processingTime_2': '4–6 Wochen',
-      'finance_application_kindergeld_renewalNote_3': 'Kein Folgeantrag nötig. Wird automatisch bis zum 18. (bzw. 25.) Geburtstag gezahlt.',
-      'finance_application_kindergeld_proTip_4': 'Antrag direkt nach der Geburt stellen — Kindergeld wird max. 6 Monate rückwirkend gezahlt.',
-      'finance_application_kindergeld_aiTemplatePrompt_5': 'Schreibe einen kurzen, freundlichen Begleitbrief für einen Kindergeldantrag. Elternteil beantragt erstmalig Kindergeld nach der Geburt. Halte es einfach und sachlich.',
+      'finance_application_kindergeld_renewalNote_3':
+          'Kein Folgeantrag nötig. Wird automatisch bis zum 18. (bzw. 25.) Geburtstag gezahlt.',
+      'finance_application_kindergeld_proTip_4':
+          'Antrag direkt nach der Geburt stellen — Kindergeld wird max. 6 Monate rückwirkend gezahlt.',
+      'finance_application_kindergeld_aiTemplatePrompt_5':
+          'Schreibe einen kurzen, freundlichen Begleitbrief für einen Kindergeldantrag. Elternteil beantragt erstmalig Kindergeld nach der Geburt. Halte es einfach und sachlich.',
       'finance_application_kindergeld_name_6': 'Geburtsurkunde des Kindes',
-      'finance_application_kindergeld_whereToGet_7': 'Standesamt (bekommst du meist im Krankenhaus)',
+      'finance_application_kindergeld_whereToGet_7':
+          'Standesamt (bekommst du meist im Krankenhaus)',
       'finance_application_kindergeld_name_8': 'Steuer-ID des Kindes',
-      'finance_application_kindergeld_whereToGet_9': 'Kommt per Post vom Bundeszentralamt für Steuern (ca. 2–3 Wochen nach Geburt)',
-      'finance_application_kindergeld_name_10': 'Steuer-ID des antragstellenden Elternteils',
-      'finance_application_kindergeld_whereToGet_11': 'Steht auf deinem Steuerbescheid oder Lohnzettel',
-      'finance_application_kindergeld_name_12': 'Personalausweis oder Reisepass (Kopie)',
+      'finance_application_kindergeld_whereToGet_9':
+          'Kommt per Post vom Bundeszentralamt für Steuern (ca. 2–3 Wochen nach Geburt)',
+      'finance_application_kindergeld_name_10':
+          'Steuer-ID des antragstellenden Elternteils',
+      'finance_application_kindergeld_whereToGet_11':
+          'Steht auf deinem Steuerbescheid oder Lohnzettel',
+      'finance_application_kindergeld_name_12':
+          'Personalausweis oder Reisepass (Kopie)',
       'finance_application_kindergeld_name_13': 'Bankverbindung (IBAN)',
       'finance_application_kindergeld_title_14': 'Online-Antrag ausfüllen',
-      'finance_application_kindergeld_description_15': 'Auf der Website der Familienkasse den Antrag "KG1" online ausfüllen. Dauert ca. 10 Minuten.',
-      'finance_application_kindergeld_title_16': 'Unterlagen hochladen oder per Post',
-      'finance_application_kindergeld_description_17': 'Geburtsurkunde und Steuer-IDs als Scan hochladen oder per Post an deine zuständige Familienkasse schicken.',
+      'finance_application_kindergeld_description_15':
+          'Auf der Website der Familienkasse den Antrag "KG1" online ausfüllen. Dauert ca. 10 Minuten.',
+      'finance_application_kindergeld_title_16':
+          'Unterlagen hochladen oder per Post',
+      'finance_application_kindergeld_description_17':
+          'Geburtsurkunde und Steuer-IDs als Scan hochladen oder per Post an deine zuständige Familienkasse schicken.',
       'finance_application_kindergeld_title_18': 'Bestätigung abwarten',
-      'finance_application_kindergeld_description_19': 'Du bekommst einen Bescheid per Post (4–6 Wochen). Die erste Auszahlung kommt danach monatlich.',
-      'finance_application_kinderzuschlag_benefitName_0': 'Kinderzuschlag (KiZ)',
+      'finance_application_kindergeld_description_19':
+          'Du bekommst einen Bescheid per Post (4–6 Wochen). Die erste Auszahlung kommt danach monatlich.',
+      'finance_application_kinderzuschlag_benefitName_0':
+          'Kinderzuschlag (KiZ)',
       'finance_application_kinderzuschlag_processingTime_2': '4–8 Wochen',
-      'finance_application_kinderzuschlag_renewalNote_3': 'Muss alle 6 Monate neu beantragt werden (Weiterbewilligungsantrag).',
-      'finance_application_kinderzuschlag_proTip_4': 'Mit dem KiZ-Lotsen der Familienkasse kannst du in 2 Minuten prüfen ob du Anspruch hast — bevor du den vollen Antrag ausfüllst.',
-      'finance_application_kinderzuschlag_aiTemplatePrompt_5': 'Schreibe eine kurze sachliche Begründung für einen Kinderzuschlag-Antrag. Die Familie hat ein geringes Einkommen und benötigt Unterstützung für die Kinder. Erwähne dass die Miete einen großen Teil des Einkommens ausmacht.',
-      'finance_application_kinderzuschlag_name_6': 'Einkommensnachweise der letzten 6 Monate',
-      'finance_application_kinderzuschlag_whereToGet_7': 'Lohnzettel vom Arbeitgeber, Elterngeldbescheid, oder Steuerbescheid',
-      'finance_application_kinderzuschlag_name_8': 'Mietvertrag oder Wohnkostennachweis',
-      'finance_application_kinderzuschlag_whereToGet_9': 'Kopie deines Mietvertrags + letzte Nebenkostenabrechnung',
-      'finance_application_kinderzuschlag_name_10': 'Kontoauszüge der letzten 3 Monate',
-      'finance_application_kinderzuschlag_whereToGet_11': 'Online-Banking → PDF drucken',
+      'finance_application_kinderzuschlag_renewalNote_3':
+          'Muss alle 6 Monate neu beantragt werden (Weiterbewilligungsantrag).',
+      'finance_application_kinderzuschlag_proTip_4':
+          'Mit dem KiZ-Lotsen der Familienkasse kannst du in 2 Minuten prüfen ob du Anspruch hast — bevor du den vollen Antrag ausfüllst.',
+      'finance_application_kinderzuschlag_aiTemplatePrompt_5':
+          'Schreibe eine kurze sachliche Begründung für einen Kinderzuschlag-Antrag. Die Familie hat ein geringes Einkommen und benötigt Unterstützung für die Kinder. Erwähne dass die Miete einen großen Teil des Einkommens ausmacht.',
+      'finance_application_kinderzuschlag_name_6':
+          'Einkommensnachweise der letzten 6 Monate',
+      'finance_application_kinderzuschlag_whereToGet_7':
+          'Lohnzettel vom Arbeitgeber, Elterngeldbescheid, oder Steuerbescheid',
+      'finance_application_kinderzuschlag_name_8':
+          'Mietvertrag oder Wohnkostennachweis',
+      'finance_application_kinderzuschlag_whereToGet_9':
+          'Kopie deines Mietvertrags + letzte Nebenkostenabrechnung',
+      'finance_application_kinderzuschlag_name_10':
+          'Kontoauszüge der letzten 3 Monate',
+      'finance_application_kinderzuschlag_whereToGet_11':
+          'Online-Banking → PDF drucken',
       'finance_application_kinderzuschlag_name_12': 'Kindergeldbescheid',
-      'finance_application_kinderzuschlag_whereToGet_13': 'Hast du per Post von der Familienkasse bekommen',
-      'finance_application_kinderzuschlag_name_14': 'Geburtsurkunde(n) der Kinder',
+      'finance_application_kinderzuschlag_whereToGet_13':
+          'Hast du per Post von der Familienkasse bekommen',
+      'finance_application_kinderzuschlag_name_14':
+          'Geburtsurkunde(n) der Kinder',
       'finance_application_kinderzuschlag_name_15': 'Personalausweis (Kopie)',
-      'finance_application_kinderzuschlag_title_16': 'KiZ-Lotse nutzen (2 Min.)',
-      'finance_application_kinderzuschlag_description_17': 'Prüfe mit dem Online-Lotsen ob du voraussichtlich Anspruch hast. Das spart dir Zeit falls nicht.',
-      'finance_application_kinderzuschlag_description_19': 'Antrag auf der Familienkasse-Website ausfüllen. Du brauchst Einkommensnachweise und Mietkosten griffbereit.',
+      'finance_application_kinderzuschlag_title_16':
+          'KiZ-Lotse nutzen (2 Min.)',
+      'finance_application_kinderzuschlag_description_17':
+          'Prüfe mit dem Online-Lotsen ob du voraussichtlich Anspruch hast. Das spart dir Zeit falls nicht.',
+      'finance_application_kinderzuschlag_description_19':
+          'Antrag auf der Familienkasse-Website ausfüllen. Du brauchst Einkommensnachweise und Mietkosten griffbereit.',
       'finance_application_kinderzuschlag_title_20': 'Unterlagen einreichen',
-      'finance_application_kinderzuschlag_description_21': 'Lohnzettel, Mietvertrag und Kontoauszüge hochladen oder per Post schicken.',
-      'finance_application_kinderzuschlag_title_22': 'Bescheid + Weiterbewilligung',
-      'finance_application_kinderzuschlag_description_23': 'Nach 4–8 Wochen kommt der Bescheid. Wichtig: Nach 6 Monaten den Weiterbewilligungsantrag nicht vergessen!',
+      'finance_application_kinderzuschlag_description_21':
+          'Lohnzettel, Mietvertrag und Kontoauszüge hochladen oder per Post schicken.',
+      'finance_application_kinderzuschlag_title_22':
+          'Bescheid + Weiterbewilligung',
+      'finance_application_kinderzuschlag_description_23':
+          'Nach 4–8 Wochen kommt der Bescheid. Wichtig: Nach 6 Monaten den Weiterbewilligungsantrag nicht vergessen!',
       'finance_application_wohngeld_benefitName_0': 'Wohngeld',
-      'finance_application_wohngeld_responsibleAuthority_1': 'Wohngeldstelle deiner Stadt/Gemeinde',
-      'finance_application_wohngeld_processingTime_2': '3–8 Wochen (je nach Kommune)',
-      'finance_application_wohngeld_renewalNote_3': 'Bewilligungszeitraum: 12 Monate. Rechtzeitig Weiterleistungsantrag stellen (2 Monate vorher).',
-      'finance_application_wohngeld_proTip_4': 'Seit der Wohngeld-Reform 2023 haben deutlich mehr Familien Anspruch — auch mit mittlerem Einkommen. Einfach mal prüfen!',
-      'finance_application_wohngeld_aiTemplatePrompt_5': 'Schreibe einen kurzen Begleitbrief für einen Wohngeldantrag. Eine Familie mit Kindern beantragt erstmalig Wohngeld weil die Miete einen großen Teil des Einkommens ausmacht. Sachlich und freundlich.',
-      'finance_application_wohngeld_name_6': 'Einkommensnachweise aller Haushaltsmitglieder',
-      'finance_application_wohngeld_whereToGet_7': 'Lohnzettel, Rentenbescheid, Elterngeldbescheid',
+      'finance_application_wohngeld_responsibleAuthority_1':
+          'Wohngeldstelle deiner Stadt/Gemeinde',
+      'finance_application_wohngeld_processingTime_2':
+          '3–8 Wochen (je nach Kommune)',
+      'finance_application_wohngeld_renewalNote_3':
+          'Bewilligungszeitraum: 12 Monate. Rechtzeitig Weiterleistungsantrag stellen (2 Monate vorher).',
+      'finance_application_wohngeld_proTip_4':
+          'Seit der Wohngeld-Reform 2023 haben deutlich mehr Familien Anspruch — auch mit mittlerem Einkommen. Einfach mal prüfen!',
+      'finance_application_wohngeld_aiTemplatePrompt_5':
+          'Schreibe einen kurzen Begleitbrief für einen Wohngeldantrag. Eine Familie mit Kindern beantragt erstmalig Wohngeld weil die Miete einen großen Teil des Einkommens ausmacht. Sachlich und freundlich.',
+      'finance_application_wohngeld_name_6':
+          'Einkommensnachweise aller Haushaltsmitglieder',
+      'finance_application_wohngeld_whereToGet_7':
+          'Lohnzettel, Rentenbescheid, Elterngeldbescheid',
       'finance_application_wohngeld_name_8': 'Mietvertrag (Kopie)',
-      'finance_application_wohngeld_name_9': 'Letzte Mietquittung oder Kontoauszug mit Mietzahlung',
+      'finance_application_wohngeld_name_9':
+          'Letzte Mietquittung oder Kontoauszug mit Mietzahlung',
       'finance_application_wohngeld_name_10': 'Nebenkostenabrechnung',
       'finance_application_wohngeld_whereToGet_11': 'Vom Vermieter (jährlich)',
-      'finance_application_wohngeld_name_12': 'Personalausweise aller Haushaltsmitglieder (Kopie)',
+      'finance_application_wohngeld_name_12':
+          'Personalausweise aller Haushaltsmitglieder (Kopie)',
       'finance_application_wohngeld_name_13': 'Meldebestätigung',
-      'finance_application_wohngeld_whereToGet_14': 'Bürgeramt / Einwohnermeldeamt',
+      'finance_application_wohngeld_whereToGet_14':
+          'Bürgeramt / Einwohnermeldeamt',
       'finance_application_wohngeld_title_15': 'Wohngeldrechner nutzen',
-      'finance_application_wohngeld_description_16': 'Mit dem offiziellen Wohngeld-Plus-Rechner des BMWSB prüfen ob und wieviel Wohngeld dir zusteht.',
-      'finance_application_wohngeld_title_17': 'Antrag bei deiner Wohngeldstelle',
-      'finance_application_wohngeld_description_18': 'Den Antrag bekommst du bei deinem Rathaus/Bürgeramt oder als PDF online. Manche Kommunen bieten auch Online-Anträge an.',
+      'finance_application_wohngeld_description_16':
+          'Mit dem offiziellen Wohngeld-Plus-Rechner des BMWSB prüfen ob und wieviel Wohngeld dir zusteht.',
+      'finance_application_wohngeld_title_17':
+          'Antrag bei deiner Wohngeldstelle',
+      'finance_application_wohngeld_description_18':
+          'Den Antrag bekommst du bei deinem Rathaus/Bürgeramt oder als PDF online. Manche Kommunen bieten auch Online-Anträge an.',
       'finance_application_wohngeld_title_19': 'Unterlagen beifügen',
-      'finance_application_wohngeld_description_20': 'Mietvertrag, Einkommensnachweise und Nebenkostenabrechnung beifügen. Im Zweifel lieber zu viel als zu wenig mitschicken.',
-      'finance_application_wohngeld_title_21': 'Bescheid abwarten + Erinnerung setzen',
-      'finance_application_wohngeld_description_22': 'Nach 3–8 Wochen kommt der Bescheid. Setze dir eine Erinnerung für den Weiterleistungsantrag (10 Monate nach Bewilligung).',
-      'finance_application_bildungTeilhabe_benefitName_0': 'Bildung und Teilhabe (BuT)',
-      'finance_application_bildungTeilhabe_responsibleAuthority_1': 'Jobcenter oder Sozialamt deiner Stadt/Gemeinde',
+      'finance_application_wohngeld_description_20':
+          'Mietvertrag, Einkommensnachweise und Nebenkostenabrechnung beifügen. Im Zweifel lieber zu viel als zu wenig mitschicken.',
+      'finance_application_wohngeld_title_21':
+          'Bescheid abwarten + Erinnerung setzen',
+      'finance_application_wohngeld_description_22':
+          'Nach 3–8 Wochen kommt der Bescheid. Setze dir eine Erinnerung für den Weiterleistungsantrag (10 Monate nach Bewilligung).',
+      'finance_application_bildungTeilhabe_benefitName_0':
+          'Bildung und Teilhabe (BuT)',
+      'finance_application_bildungTeilhabe_responsibleAuthority_1':
+          'Jobcenter oder Sozialamt deiner Stadt/Gemeinde',
       'finance_application_bildungTeilhabe_processingTime_2': '2–6 Wochen',
-      'finance_application_bildungTeilhabe_renewalNote_3': 'Pro Schuljahr neu beantragen (für Schulbedarf). Vereins-/Kurskosten: alle 6 Monate.',
-      'finance_application_bildungTeilhabe_proTip_4': 'BuT deckt auch Schwimmkurse, Musikschule und Nachhilfe ab — nicht nur Schulbedarf! Bis 15€/Monat für Sport/Kultur/Freizeit.',
-      'finance_application_bildungTeilhabe_aiTemplatePrompt_5': 'Schreibe einen kurzen formlosen Antrag auf Leistungen für Bildung und Teilhabe. Ein Kind soll an einem Sportkurs teilnehmen. Die Familie bezieht Kinderzuschlag. Sachlich, 3-4 Sätze.',
-      'finance_application_bildungTeilhabe_name_6': 'Nachweis über Leistungsbezug',
-      'finance_application_bildungTeilhabe_whereToGet_7': 'Bescheid über Kindergeldzuschlag, Wohngeld, Bürgergeld oder Sozialhilfe',
+      'finance_application_bildungTeilhabe_renewalNote_3':
+          'Pro Schuljahr neu beantragen (für Schulbedarf). Vereins-/Kurskosten: alle 6 Monate.',
+      'finance_application_bildungTeilhabe_proTip_4':
+          'BuT deckt auch Schwimmkurse, Musikschule und Nachhilfe ab — nicht nur Schulbedarf! Bis 15€/Monat für Sport/Kultur/Freizeit.',
+      'finance_application_bildungTeilhabe_aiTemplatePrompt_5':
+          'Schreibe einen kurzen formlosen Antrag auf Leistungen für Bildung und Teilhabe. Ein Kind soll an einem Sportkurs teilnehmen. Die Familie bezieht Kinderzuschlag. Sachlich, 3-4 Sätze.',
+      'finance_application_bildungTeilhabe_name_6':
+          'Nachweis über Leistungsbezug',
+      'finance_application_bildungTeilhabe_whereToGet_7':
+          'Bescheid über Kindergeldzuschlag, Wohngeld, Bürgergeld oder Sozialhilfe',
       'finance_application_bildungTeilhabe_name_8': 'Schulbescheinigung',
-      'finance_application_bildungTeilhabe_whereToGet_9': 'Sekretariat der Schule deines Kindes',
-      'finance_application_bildungTeilhabe_name_10': 'Nachweis über Kosten (z.B. Vereinsbeitrag)',
-      'finance_application_bildungTeilhabe_whereToGet_11': 'Anmeldeformular oder Rechnung des Vereins/Kurses',
+      'finance_application_bildungTeilhabe_whereToGet_9':
+          'Sekretariat der Schule deines Kindes',
+      'finance_application_bildungTeilhabe_name_10':
+          'Nachweis über Kosten (z.B. Vereinsbeitrag)',
+      'finance_application_bildungTeilhabe_whereToGet_11':
+          'Anmeldeformular oder Rechnung des Vereins/Kurses',
       'finance_application_bildungTeilhabe_title_13': 'Prüfen was möglich ist',
-      'finance_application_bildungTeilhabe_description_14': 'BuT umfasst: Schulbedarf (195€/Jahr), Mittagessen, Ausflüge, Nachhilfe, Sport/Kultur (15€/Monat), Schülerbeförderung.',
-      'finance_application_bildungTeilhabe_title_15': 'Formloser Antrag oder Formular',
-      'finance_application_bildungTeilhabe_description_16': 'Beim Jobcenter oder Sozialamt das BuT-Formular holen (oder formlos per Brief beantragen). Manche Städte haben Online-Formulare.',
+      'finance_application_bildungTeilhabe_description_14':
+          'BuT umfasst: Schulbedarf (195€/Jahr), Mittagessen, Ausflüge, Nachhilfe, Sport/Kultur (15€/Monat), Schülerbeförderung.',
+      'finance_application_bildungTeilhabe_title_15':
+          'Formloser Antrag oder Formular',
+      'finance_application_bildungTeilhabe_description_16':
+          'Beim Jobcenter oder Sozialamt das BuT-Formular holen (oder formlos per Brief beantragen). Manche Städte haben Online-Formulare.',
       'finance_application_bildungTeilhabe_title_17': 'Nachweise beifügen',
-      'finance_application_bildungTeilhabe_description_18': 'Leistungsbescheid + Schulbescheinigung + ggf. Vereinsrechnung beifügen.',
-      'finance_application_bildungTeilhabe_title_19': 'Gutschein oder Direktzahlung',
-      'finance_application_bildungTeilhabe_description_20': 'Du bekommst entweder einen Gutschein (z.B. für den Verein) oder das Geld wird direkt an den Anbieter überwiesen.',
+      'finance_application_bildungTeilhabe_description_18':
+          'Leistungsbescheid + Schulbescheinigung + ggf. Vereinsrechnung beifügen.',
+      'finance_application_bildungTeilhabe_title_19':
+          'Gutschein oder Direktzahlung',
+      'finance_application_bildungTeilhabe_description_20':
+          'Du bekommst entweder einen Gutschein (z.B. für den Verein) oder das Geld wird direkt an den Anbieter überwiesen.',
       'finance_application_elterngeld_benefitName_0': 'Elterngeld',
-      'finance_application_elterngeld_responsibleAuthority_1': 'Elterngeldstelle deines Bundeslandes',
-      'finance_application_elterngeld_processingTime_2': '4–12 Wochen (je nach Bundesland)',
-      'finance_application_elterngeld_renewalNote_3': 'Kein Folgeantrag. Einmalig für 12–14 Monate (Basis) oder 24–28 Monate (Plus).',
-      'finance_application_elterngeld_proTip_4': 'Den Antrag kannst du schon VOR der Geburt vorbereiten — nur die Geburtsurkunde fehlt dann noch. Spart Wochen!',
-      'finance_application_elterngeld_aiTemplatePrompt_5': 'Schreibe einen kurzen Begleitbrief für einen Elterngeldantrag. Ein Elternteil beantragt Basiselterngeld nach der Geburt des ersten Kindes und plant die Aufteilung der Monate mit dem Partner. Sachlich und klar.',
-      'finance_application_elterngeld_name_6': 'Geburtsurkunde des Kindes (Original oder beglaubigte Kopie)',
+      'finance_application_elterngeld_responsibleAuthority_1':
+          'Elterngeldstelle deines Bundeslandes',
+      'finance_application_elterngeld_processingTime_2':
+          '4–12 Wochen (je nach Bundesland)',
+      'finance_application_elterngeld_renewalNote_3':
+          'Kein Folgeantrag. Einmalig für 12–14 Monate (Basis) oder 24–28 Monate (Plus).',
+      'finance_application_elterngeld_proTip_4':
+          'Den Antrag kannst du schon VOR der Geburt vorbereiten — nur die Geburtsurkunde fehlt dann noch. Spart Wochen!',
+      'finance_application_elterngeld_aiTemplatePrompt_5':
+          'Schreibe einen kurzen Begleitbrief für einen Elterngeldantrag. Ein Elternteil beantragt Basiselterngeld nach der Geburt des ersten Kindes und plant die Aufteilung der Monate mit dem Partner. Sachlich und klar.',
+      'finance_application_elterngeld_name_6':
+          'Geburtsurkunde des Kindes (Original oder beglaubigte Kopie)',
       'finance_application_elterngeld_whereToGet_7': 'Standesamt',
-      'finance_application_elterngeld_name_8': 'Bescheinigung der Krankenkasse über Mutterschaftsgeld',
-      'finance_application_elterngeld_whereToGet_9': 'Deine Krankenkasse (nach der Geburt beantragen)',
-      'finance_application_elterngeld_name_10': 'Arbeitgeberbescheinigung über Zuschuss zum Mutterschaftsgeld',
-      'finance_application_elterngeld_whereToGet_11': 'Personalabteilung deines Arbeitgebers',
-      'finance_application_elterngeld_name_12': 'Einkommensnachweise der letzten 12 Monate vor Geburt',
-      'finance_application_elterngeld_whereToGet_13': 'Lohnzettel oder Steuerbescheid',
-      'finance_application_elterngeld_name_14': 'Personalausweis beider Elternteile (Kopie)',
-      'finance_application_elterngeld_name_15': 'Bestätigung über geplante Arbeitszeit (bei Elterngeld Plus)',
-      'finance_application_elterngeld_whereToGet_16': 'Arbeitgeber (wenn du in Teilzeit arbeitest)',
+      'finance_application_elterngeld_name_8':
+          'Bescheinigung der Krankenkasse über Mutterschaftsgeld',
+      'finance_application_elterngeld_whereToGet_9':
+          'Deine Krankenkasse (nach der Geburt beantragen)',
+      'finance_application_elterngeld_name_10':
+          'Arbeitgeberbescheinigung über Zuschuss zum Mutterschaftsgeld',
+      'finance_application_elterngeld_whereToGet_11':
+          'Personalabteilung deines Arbeitgebers',
+      'finance_application_elterngeld_name_12':
+          'Einkommensnachweise der letzten 12 Monate vor Geburt',
+      'finance_application_elterngeld_whereToGet_13':
+          'Lohnzettel oder Steuerbescheid',
+      'finance_application_elterngeld_name_14':
+          'Personalausweis beider Elternteile (Kopie)',
+      'finance_application_elterngeld_name_15':
+          'Bestätigung über geplante Arbeitszeit (bei Elterngeld Plus)',
+      'finance_application_elterngeld_whereToGet_16':
+          'Arbeitgeber (wenn du in Teilzeit arbeitest)',
       'finance_application_elterngeld_title_17': 'Elterngeld-Rechner nutzen',
-      'finance_application_elterngeld_description_18': 'Berechne mit dem offiziellen Rechner wie viel Elterngeld dir zusteht und welche Aufteilung (Basis/Plus/Partnerschaftsbonus) am besten passt.',
-      'finance_application_elterngeld_title_19': 'Antrag ausfüllen (online oder Papier)',
-      'finance_application_elterngeld_description_20': 'Jedes Bundesland hat ein eigenes Formular. Am einfachsten über ElterngeldDigital (in vielen Bundesländern verfügbar).',
+      'finance_application_elterngeld_description_18':
+          'Berechne mit dem offiziellen Rechner wie viel Elterngeld dir zusteht und welche Aufteilung (Basis/Plus/Partnerschaftsbonus) am besten passt.',
+      'finance_application_elterngeld_title_19':
+          'Antrag ausfüllen (online oder Papier)',
+      'finance_application_elterngeld_description_20':
+          'Jedes Bundesland hat ein eigenes Formular. Am einfachsten über ElterngeldDigital (in vielen Bundesländern verfügbar).',
       'finance_application_elterngeld_title_21': 'Unterlagen zusammenstellen',
-      'finance_application_elterngeld_description_22': 'Geburtsurkunde, Einkommensnachweise, Mutterschaftsgeld-Bescheinigung und Ausweise kopieren.',
+      'finance_application_elterngeld_description_22':
+          'Geburtsurkunde, Einkommensnachweise, Mutterschaftsgeld-Bescheinigung und Ausweise kopieren.',
       'finance_application_elterngeld_title_23': 'Einreichen + Geduld',
-      'finance_application_elterngeld_description_24': 'Per Post oder digital einreichen. Bearbeitungszeit variiert stark (4–12 Wochen). Tipp: Nachfragen nach 6 Wochen wenn nichts kommt.',
-      'finance_application_unterhaltsvorschuss_benefitName_0': 'Unterhaltsvorschuss',
-      'finance_application_unterhaltsvorschuss_responsibleAuthority_1': 'Jugendamt deiner Stadt/Gemeinde',
-      'finance_application_unterhaltsvorschuss_renewalNote_3': 'Kein Folgeantrag nötig. Wird automatisch bis 18 gezahlt (solange Voraussetzungen bestehen).',
-      'finance_application_unterhaltsvorschuss_proTip_4': 'Du kannst Unterhaltsvorschuss auch rückwirkend für 1 Monat beantragen. Also nicht warten — sofort stellen!',
-      'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5': 'Schreibe einen kurzen sachlichen Antrag auf Unterhaltsvorschuss. Ein alleinerziehender Elternteil erhält keinen Unterhalt vom anderen Elternteil. Halte es sachlich und klar, 3-4 Sätze.',
-      'finance_application_unterhaltsvorschuss_name_9': 'Meldebestätigung (alleinige Wohnung)',
-      'finance_application_unterhaltsvorschuss_whereToGet_10': 'Bürgeramt — zeigt dass du allein mit dem Kind wohnst',
-      'finance_application_unterhaltsvorschuss_name_11': 'Nachweis über ausbleibenden Unterhalt',
-      'finance_application_unterhaltsvorschuss_whereToGet_12': 'z.B. Schreiben an den Ex ohne Antwort, Unterhaltstitel, oder eigene Erklärung',
-      'finance_application_unterhaltsvorschuss_name_13': 'Vaterschaftsanerkennung oder Geburtsurkunde mit Vater',
-      'finance_application_unterhaltsvorschuss_whereToGet_14': 'Standesamt oder Jugendamt',
-      'finance_application_unterhaltsvorschuss_title_15': 'Jugendamt kontaktieren',
-      'finance_application_unterhaltsvorschuss_description_16': 'Ruf bei deinem Jugendamt an oder geh persönlich hin. Die helfen dir direkt beim Ausfüllen.',
+      'finance_application_elterngeld_description_24':
+          'Per Post oder digital einreichen. Bearbeitungszeit variiert stark (4–12 Wochen). Tipp: Nachfragen nach 6 Wochen wenn nichts kommt.',
+      'finance_application_unterhaltsvorschuss_benefitName_0':
+          'Unterhaltsvorschuss',
+      'finance_application_unterhaltsvorschuss_responsibleAuthority_1':
+          'Jugendamt deiner Stadt/Gemeinde',
+      'finance_application_unterhaltsvorschuss_renewalNote_3':
+          'Kein Folgeantrag nötig. Wird automatisch bis 18 gezahlt (solange Voraussetzungen bestehen).',
+      'finance_application_unterhaltsvorschuss_proTip_4':
+          'Du kannst Unterhaltsvorschuss auch rückwirkend für 1 Monat beantragen. Also nicht warten — sofort stellen!',
+      'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5':
+          'Schreibe einen kurzen sachlichen Antrag auf Unterhaltsvorschuss. Ein alleinerziehender Elternteil erhält keinen Unterhalt vom anderen Elternteil. Halte es sachlich und klar, 3-4 Sätze.',
+      'finance_application_unterhaltsvorschuss_name_9':
+          'Meldebestätigung (alleinige Wohnung)',
+      'finance_application_unterhaltsvorschuss_whereToGet_10':
+          'Bürgeramt — zeigt dass du allein mit dem Kind wohnst',
+      'finance_application_unterhaltsvorschuss_name_11':
+          'Nachweis über ausbleibenden Unterhalt',
+      'finance_application_unterhaltsvorschuss_whereToGet_12':
+          'z.B. Schreiben an den Ex ohne Antwort, Unterhaltstitel, oder eigene Erklärung',
+      'finance_application_unterhaltsvorschuss_name_13':
+          'Vaterschaftsanerkennung oder Geburtsurkunde mit Vater',
+      'finance_application_unterhaltsvorschuss_whereToGet_14':
+          'Standesamt oder Jugendamt',
+      'finance_application_unterhaltsvorschuss_title_15':
+          'Jugendamt kontaktieren',
+      'finance_application_unterhaltsvorschuss_description_16':
+          'Ruf bei deinem Jugendamt an oder geh persönlich hin. Die helfen dir direkt beim Ausfüllen.',
       'finance_application_unterhaltsvorschuss_title_17': 'Antrag ausfüllen',
-      'finance_application_unterhaltsvorschuss_description_18': 'Das Formular bekommst du beim Jugendamt. Manche Städte bieten es auch online als PDF an.',
-      'finance_application_unterhaltsvorschuss_description_20': 'Geburtsurkunde, Meldebestätigung und Nachweis über fehlenden Unterhalt beifügen.',
+      'finance_application_unterhaltsvorschuss_description_18':
+          'Das Formular bekommst du beim Jugendamt. Manche Städte bieten es auch online als PDF an.',
+      'finance_application_unterhaltsvorschuss_description_20':
+          'Geburtsurkunde, Meldebestätigung und Nachweis über fehlenden Unterhalt beifügen.',
       'finance_application_unterhaltsvorschuss_title_21': 'Bescheid abwarten',
-      'finance_application_unterhaltsvorschuss_description_22': 'Nach 4–8 Wochen kommt der Bescheid. Die Zahlung erfolgt monatlich rückwirkend ab Antragstellung.',
+      'finance_application_unterhaltsvorschuss_description_22':
+          'Nach 4–8 Wochen kommt der Bescheid. Die Zahlung erfolgt monatlich rückwirkend ab Antragstellung.',
       'finance_application_pflegegeld_benefitName_0': 'Pflegegeld',
-      'finance_application_pflegegeld_responsibleAuthority_1': 'Pflegekasse (bei deiner Krankenkasse)',
-      'finance_application_pflegegeld_processingTime_2': 'Grundsätzlich 25 Arbeitstage; gesetzliche Ausnahmen prüfen (§18c SGB XI).',
-      'finance_application_pflegegeld_renewalNote_3': 'Kein Folgeantrag. Bei Verschlechterung: Höherstufungsantrag stellen.',
-      'finance_application_pflegegeld_proTip_4': 'Den Antrag formlos per Telefon stellen — ein Anruf bei der Pflegekasse reicht! Das Datum zählt für die rückwirkende Zahlung.',
-      'finance_application_pflegegeld_aiTemplatePrompt_5': 'Schreibe einen kurzen formlosen Antrag auf Pflegeleistungen für ein Kind. Das Kind hat eine Behinderung/chronische Erkrankung und braucht tägliche Unterstützung. Sachlich, 3-4 Sätze.',
-      'finance_application_pflegegeld_name_6': 'Formloser Antrag (reicht per Telefon oder Brief)',
-      'finance_application_pflegegeld_whereToGet_7': 'Anruf bei deiner Krankenkasse/Pflegekasse genügt',
-      'finance_application_pflegegeld_name_8': 'Ärztliche Unterlagen / Diagnosen',
-      'finance_application_pflegegeld_whereToGet_9': 'Kinderarzt, Facharzt oder Krankenhaus',
-      'finance_application_pflegegeld_name_10': 'Pflegetagebuch (2 Wochen vor Begutachtung)',
-      'finance_application_pflegegeld_whereToGet_11': 'Vorlage von der Pflegekasse oder online',
+      'finance_application_pflegegeld_responsibleAuthority_1':
+          'Pflegekasse (bei deiner Krankenkasse)',
+      'finance_application_pflegegeld_processingTime_2':
+          'Grundsätzlich 25 Arbeitstage; gesetzliche Ausnahmen prüfen (§18c SGB XI).',
+      'finance_application_pflegegeld_renewalNote_3':
+          'Kein Folgeantrag. Bei Verschlechterung: Höherstufungsantrag stellen.',
+      'finance_application_pflegegeld_proTip_4':
+          'Den Antrag formlos per Telefon stellen — ein Anruf bei der Pflegekasse reicht! Das Datum zählt für die rückwirkende Zahlung.',
+      'finance_application_pflegegeld_aiTemplatePrompt_5':
+          'Schreibe einen kurzen formlosen Antrag auf Pflegeleistungen für ein Kind. Das Kind hat eine Behinderung/chronische Erkrankung und braucht tägliche Unterstützung. Sachlich, 3-4 Sätze.',
+      'finance_application_pflegegeld_name_6':
+          'Formloser Antrag (reicht per Telefon oder Brief)',
+      'finance_application_pflegegeld_whereToGet_7':
+          'Anruf bei deiner Krankenkasse/Pflegekasse genügt',
+      'finance_application_pflegegeld_name_8':
+          'Ärztliche Unterlagen / Diagnosen',
+      'finance_application_pflegegeld_whereToGet_9':
+          'Kinderarzt, Facharzt oder Krankenhaus',
+      'finance_application_pflegegeld_name_10':
+          'Pflegetagebuch (2 Wochen vor Begutachtung)',
+      'finance_application_pflegegeld_whereToGet_11':
+          'Vorlage von der Pflegekasse oder online',
       'finance_application_pflegegeld_title_12': 'Pflegekasse anrufen',
-      'finance_application_pflegegeld_description_13': 'Ein Anruf reicht als Antrag! Sage: "Ich möchte Pflegeleistungen für mein Kind beantragen." Das Datum des Anrufs zählt.',
-      'finance_application_pflegegeld_title_14': 'Pflegetagebuch führen (2 Wochen)',
-      'finance_application_pflegegeld_description_15': 'Notiere täglich was dein Kind an Hilfe braucht: Waschen, Anziehen, Essen, Nacht, Aufsicht. Je genauer, desto besser für die Begutachtung.',
+      'finance_application_pflegegeld_description_13':
+          'Ein Anruf reicht als Antrag! Sage: "Ich möchte Pflegeleistungen für mein Kind beantragen." Das Datum des Anrufs zählt.',
+      'finance_application_pflegegeld_title_14':
+          'Pflegetagebuch führen (2 Wochen)',
+      'finance_application_pflegegeld_description_15':
+          'Notiere täglich was dein Kind an Hilfe braucht: Waschen, Anziehen, Essen, Nacht, Aufsicht. Je genauer, desto besser für die Begutachtung.',
       'finance_application_pflegegeld_title_16': 'MD-Begutachtung (Hausbesuch)',
-      'finance_application_pflegegeld_description_17': 'Der Medizinische Dienst kommt zu euch nach Hause. Zeige offen was dein Kind braucht — nicht den "guten Tag" zeigen!',
+      'finance_application_pflegegeld_description_17':
+          'Der Medizinische Dienst kommt zu euch nach Hause. Zeige offen was dein Kind braucht — nicht den "guten Tag" zeigen!',
       'finance_application_pflegegeld_title_18': 'Bescheid + ggf. Widerspruch',
-      'finance_application_pflegegeld_description_19': 'Grundsätzlich erfolgt die Entscheidung binnen 25 Arbeitstagen (§18c SGB XI; Ausnahmen möglich). Für den Widerspruch gilt grundsätzlich ein Monat ab Bekanntgabe, bei Bekanntgabe im Ausland drei Monate (§84 SGG). Rechtsbehelfsbelehrung prüfen.',
-      'finance_application_eingliederungshilfe_benefitName_0': 'Eingliederungshilfe',
-      'finance_application_eingliederungshilfe_responsibleAuthority_1': 'Sozialamt oder Jugendamt (je nach Art der Behinderung)',
+      'finance_application_pflegegeld_description_19':
+          'Grundsätzlich erfolgt die Entscheidung binnen 25 Arbeitstagen (§18c SGB XI; Ausnahmen möglich). Für den Widerspruch gilt grundsätzlich ein Monat ab Bekanntgabe, bei Bekanntgabe im Ausland drei Monate (§84 SGG). Rechtsbehelfsbelehrung prüfen.',
+      'finance_application_eingliederungshilfe_benefitName_0':
+          'Eingliederungshilfe',
+      'finance_application_eingliederungshilfe_responsibleAuthority_1':
+          'Sozialamt oder Jugendamt (je nach Art der Behinderung)',
       'finance_application_eingliederungshilfe_processingTime_2': '4–12 Wochen',
-      'finance_application_eingliederungshilfe_renewalNote_3': 'Wird für einen festgelegten Zeitraum bewilligt. Rechtzeitig Folgeantrag stellen.',
-      'finance_application_eingliederungshilfe_proTip_4': 'Bei seelischer Behinderung (z.B. Autismus, ADHS) ist das Jugendamt zuständig (§35a SGB VIII). Bei körperlicher/geistiger Behinderung das Sozialamt.',
-      'finance_application_eingliederungshilfe_aiTemplatePrompt_5': 'Schreibe einen kurzen formlosen Antrag auf Eingliederungshilfe für ein Kind. Das Kind hat eine Behinderung und braucht Unterstützung für Teilhabe (z.B. Schulbegleitung, Frühförderung). Sachlich, 3-4 Sätze.',
-      'finance_application_eingliederungshilfe_name_6': 'Ärztliche Stellungnahme / Diagnose',
-      'finance_application_eingliederungshilfe_whereToGet_7': 'Kinderarzt, SPZ (Sozialpädiatrisches Zentrum) oder Facharzt',
-      'finance_application_eingliederungshilfe_name_8': 'Formloser Antrag auf Eingliederungshilfe',
-      'finance_application_eingliederungshilfe_whereToGet_9': 'Eigener Brief an das Sozialamt/Jugendamt',
-      'finance_application_eingliederungshilfe_name_10': 'Entwicklungsbericht (Kita/Schule)',
-      'finance_application_eingliederungshilfe_whereToGet_11': 'Erzieher*in oder Lehrkraft schreibt einen kurzen Bericht',
-      'finance_application_eingliederungshilfe_name_12': 'Stellungnahme der Schule (bei Schulbegleitung)',
-      'finance_application_eingliederungshilfe_whereToGet_13': 'Schulleitung oder Klassenlehrer*in',
-      'finance_application_eingliederungshilfe_title_14': 'Zuständigkeit klären',
-      'finance_application_eingliederungshilfe_description_15': 'Seelische Behinderung (Autismus, ADHS, Ängste) → Jugendamt. Körperliche/geistige Behinderung → Sozialamt. Im Zweifel: Jugendamt fragen.',
-      'finance_application_eingliederungshilfe_title_16': 'Formloser Antrag stellen',
-      'finance_application_eingliederungshilfe_description_17': 'Ein Brief reicht: "Ich beantrage Eingliederungshilfe für mein Kind [Name] wegen [Diagnose]." Dazu die ärztliche Stellungnahme beifügen.',
+      'finance_application_eingliederungshilfe_renewalNote_3':
+          'Wird für einen festgelegten Zeitraum bewilligt. Rechtzeitig Folgeantrag stellen.',
+      'finance_application_eingliederungshilfe_proTip_4':
+          'Bei seelischer Behinderung (z.B. Autismus, ADHS) ist das Jugendamt zuständig (§35a SGB VIII). Bei körperlicher/geistiger Behinderung das Sozialamt.',
+      'finance_application_eingliederungshilfe_aiTemplatePrompt_5':
+          'Schreibe einen kurzen formlosen Antrag auf Eingliederungshilfe für ein Kind. Das Kind hat eine Behinderung und braucht Unterstützung für Teilhabe (z.B. Schulbegleitung, Frühförderung). Sachlich, 3-4 Sätze.',
+      'finance_application_eingliederungshilfe_name_6':
+          'Ärztliche Stellungnahme / Diagnose',
+      'finance_application_eingliederungshilfe_whereToGet_7':
+          'Kinderarzt, SPZ (Sozialpädiatrisches Zentrum) oder Facharzt',
+      'finance_application_eingliederungshilfe_name_8':
+          'Formloser Antrag auf Eingliederungshilfe',
+      'finance_application_eingliederungshilfe_whereToGet_9':
+          'Eigener Brief an das Sozialamt/Jugendamt',
+      'finance_application_eingliederungshilfe_name_10':
+          'Entwicklungsbericht (Kita/Schule)',
+      'finance_application_eingliederungshilfe_whereToGet_11':
+          'Erzieher*in oder Lehrkraft schreibt einen kurzen Bericht',
+      'finance_application_eingliederungshilfe_name_12':
+          'Stellungnahme der Schule (bei Schulbegleitung)',
+      'finance_application_eingliederungshilfe_whereToGet_13':
+          'Schulleitung oder Klassenlehrer*in',
+      'finance_application_eingliederungshilfe_title_14':
+          'Zuständigkeit klären',
+      'finance_application_eingliederungshilfe_description_15':
+          'Seelische Behinderung (Autismus, ADHS, Ängste) → Jugendamt. Körperliche/geistige Behinderung → Sozialamt. Im Zweifel: Jugendamt fragen.',
+      'finance_application_eingliederungshilfe_title_16':
+          'Formloser Antrag stellen',
+      'finance_application_eingliederungshilfe_description_17':
+          'Ein Brief reicht: "Ich beantrage Eingliederungshilfe für mein Kind [Name] wegen [Diagnose]." Dazu die ärztliche Stellungnahme beifügen.',
       'finance_application_eingliederungshilfe_title_18': 'Hilfeplan-Gespräch',
-      'finance_application_eingliederungshilfe_description_19': 'Das Amt lädt dich zu einem Gespräch ein. Dort wird besprochen welche Hilfe dein Kind braucht (Frühförderung, Schulbegleitung, Therapie etc.).',
-      'finance_application_eingliederungshilfe_title_20': 'Bewilligung + Beginn der Hilfe',
-      'finance_application_eingliederungshilfe_description_21': 'Nach der Bewilligung beginnt die Hilfe. Bei Ablehnung: Widerspruch einlegen (innerhalb 4 Wochen, kostenlos).',
+      'finance_application_eingliederungshilfe_description_19':
+          'Das Amt lädt dich zu einem Gespräch ein. Dort wird besprochen welche Hilfe dein Kind braucht (Frühförderung, Schulbegleitung, Therapie etc.).',
+      'finance_application_eingliederungshilfe_title_20':
+          'Bewilligung + Beginn der Hilfe',
+      'finance_application_eingliederungshilfe_description_21':
+          'Nach der Bewilligung beginnt die Hilfe. Bei Ablehnung: Widerspruch einlegen (innerhalb 4 Wochen, kostenlos).',
       'finance_content_austria_name_1': 'Familienbeihilfe',
-      'finance_content_austria_description_2': 'Monatliche Unterstützung pro Kind, gestaffelt nach Alter.',
-      'finance_content_austria_amount_3': '138,40 / 148 / 171,80 / 200,40€/Monat (ab 0 / 3 / 10 / 19 Jahren; ohne Zuschläge)',
+      'finance_content_austria_description_2':
+          'Monatliche Unterstützung pro Kind, gestaffelt nach Alter.',
+      'finance_content_austria_amount_3':
+          '138,40 / 148 / 171,80 / 200,40€/Monat (ab 0 / 3 / 10 / 19 Jahren; ohne Zuschläge)',
       'finance_content_austria_name_4': 'Kinderabsetzbetrag',
-      'finance_content_austria_description_5': 'Steuerlicher Absetzbetrag pro Kind.',
+      'finance_content_austria_description_5':
+          'Steuerlicher Absetzbetrag pro Kind.',
       'finance_content_austria_amount_6': '70,90€/Kind/Monat',
-      'finance_content_austria_eligibility_7': 'Wird gemeinsam mit der Familienbeihilfe ausgezahlt; kein gesonderter Antrag.',
+      'finance_content_austria_eligibility_7':
+          'Wird gemeinsam mit der Familienbeihilfe ausgezahlt; kein gesonderter Antrag.',
       'finance_content_austria_name_8': 'Kinderbetreuungsgeld',
-      'finance_content_austria_description_9': 'Nach der Geburt, verschiedene Modelle.',
-      'finance_content_austria_amount_10': 'Konto: 17,65–41,14€/Tag; einkommensabhängig: 80% der Letzteinkünfte, max. 80,12€/Tag',
+      'finance_content_austria_description_9':
+          'Nach der Geburt, verschiedene Modelle.',
+      'finance_content_austria_amount_10':
+          'Konto: 17,65–41,14€/Tag; einkommensabhängig: 80% der Letzteinkünfte, max. 80,12€/Tag',
       'finance_content_switzerland_name_1': 'Kinderzulage',
-      'finance_content_switzerland_description_2': 'Kantonal unterschiedlich, pro Kind.',
-      'finance_content_switzerland_amount_3': 'mindestens 215 Fr./Kind/Monat; kantonal ggf. höher',
+      'finance_content_switzerland_description_2':
+          'Kantonal unterschiedlich, pro Kind.',
+      'finance_content_switzerland_amount_3':
+          'mindestens 215 Fr./Kind/Monat; kantonal ggf. höher',
       'finance_content_switzerland_name_4': 'Ausbildungszulage',
-      'finance_content_switzerland_description_5': 'Nachobligatorische Ausbildung, frühestens ab 15 bis längstens 25 Jahre; genaue Monatsgrenzen prüfen.',
-      'finance_content_switzerland_amount_6': 'mindestens 268 Fr./Kind/Monat; kantonal ggf. höher',
+      'finance_content_switzerland_description_5':
+          'Nachobligatorische Ausbildung, frühestens ab 15 bis längstens 25 Jahre; genaue Monatsgrenzen prüfen.',
+      'finance_content_switzerland_amount_6':
+          'mindestens 268 Fr./Kind/Monat; kantonal ggf. höher',
       'finance_content_turkey_name_1': 'Dogum Yardimi',
-      'finance_content_turkey_description_2': 'Neues Geburtshilfeprogramm für Geburten ab 01.01.2025; regelmäßige Zahlungen ab Antrag bis einschließlich 60. Monat.',
-      'finance_content_turkey_amount_3': '1. Kind: einmalig 5.000₺; 2.: 1.500₺/Monat; 3.+: 5.000₺/Monat',
-      'finance_content_turkey_eligibility_4': 'Türkische Staatsangehörigkeit und Wohnsitz in Türkiye; weitere Antragsvoraussetzungen amtlich prüfen.',
+      'finance_content_turkey_description_2':
+          'Neues Geburtshilfeprogramm für Geburten ab 01.01.2025; regelmäßige Zahlungen ab Antrag bis einschließlich 60. Monat.',
+      'finance_content_turkey_amount_3':
+          '1. Kind: einmalig 5.000₺; 2.: 1.500₺/Monat; 3.+: 5.000₺/Monat',
+      'finance_content_turkey_eligibility_4':
+          'Türkische Staatsangehörigkeit und Wohnsitz in Türkiye; weitere Antragsvoraussetzungen amtlich prüfen.',
       'finance_content_turkey_name_5': 'Cocuk Parasi',
-      'finance_content_turkey_description_6': 'Monatliches Kindergeld für Familien.',
+      'finance_content_turkey_description_6':
+          'Monatliches Kindergeld für Familien.',
       'finance_content_turkey_amount_7': 'einkommensabhängig',
       'finance_content_turkey_name_8': 'Sosyal Yardim (SED)',
-      'finance_content_turkey_description_9': 'Soziale und wirtschaftliche Unterstützung über İl Müdürlüğü/Sosyal Hizmet Merkezi.',
-      'finance_content_turkey_eligibility_10': 'Individuelle soziale Prüfung der familiären, wirtschaftlichen und regionalen Situation.',
+      'finance_content_turkey_description_9':
+          'Soziale und wirtschaftliche Unterstützung über İl Müdürlüğü/Sosyal Hizmet Merkezi.',
+      'finance_content_turkey_eligibility_10':
+          'Individuelle soziale Prüfung der familiären, wirtschaftlichen und regionalen Situation.',
       'finance_content_turkey_note_11': 'Schultasche, Schreibwaren, Uniform',
       'finance_content_uk_name_1': 'Child Benefit',
-      'finance_content_uk_description_2': 'Wöchentliche Zahlung für jedes Kind.',
-      'finance_content_uk_amount_3': '£27,05/Woche (ältestes oder einziges Kind), £17,90/Woche (weitere Kinder)',
+      'finance_content_uk_description_2':
+          'Wöchentliche Zahlung für jedes Kind.',
+      'finance_content_uk_amount_3':
+          '£27,05/Woche (ältestes oder einziges Kind), £17,90/Woche (weitere Kinder)',
       'finance_content_uk_name_4': 'Universal Credit (Child Element)',
-      'finance_content_uk_description_5': 'Zusätzliche Unterstützung für Familien mit geringem Einkommen.',
-      'finance_content_uk_amount_6': '£303,94/Monat je Kind; zusätzlich £47,94 für das erste Kind, geboren vor dem 6. April 2017',
+      'finance_content_uk_description_5':
+          'Zusätzliche Unterstützung für Familien mit geringem Einkommen.',
+      'finance_content_uk_amount_6':
+          '£303,94/Monat je Kind; zusätzlich £47,94 für das erste Kind, geboren vor dem 6. April 2017',
       'finance_content_uk_name_7': 'Tax-Free Childcare',
-      'finance_content_uk_description_8': 'Der Staat ergänzt £2 je £8 Einzahlung auf das Betreuungskonto.',
-      'finance_content_uk_amount_9': 'bis £500/3 Monate (£2.000/Jahr); behindertes Kind: £1.000/3 Monate (£4.000/Jahr)',
+      'finance_content_uk_description_8':
+          'Der Staat ergänzt £2 je £8 Einzahlung auf das Betreuungskonto.',
+      'finance_content_uk_amount_9':
+          'bis £500/3 Monate (£2.000/Jahr); behindertes Kind: £1.000/3 Monate (£4.000/Jahr)',
       'finance_content_uk_note_10': 'Uniform, Tasche, Schuhe, Schreibwaren',
       'finance_content_generic_name_1': 'Kindergeld / Child Benefit',
-      'finance_content_generic_description_2': 'Die meisten Länder zahlen monatliche Familienleistungen. Prüfe bei deiner lokalen Behörde.',
+      'finance_content_generic_description_2':
+          'Die meisten Länder zahlen monatliche Familienleistungen. Prüfe bei deiner lokalen Behörde.',
       'finance_content_generic_name_3': 'Wohn-Unterstützung',
-      'finance_content_generic_description_4': 'Viele Länder bieten Mietzuschüsse für Familien an.',
+      'finance_content_generic_description_4':
+          'Viele Länder bieten Mietzuschüsse für Familien an.',
       'finance_content_generic_name_5': 'Betreuungs-Zuschuss',
-      'finance_content_generic_description_6': 'Prüfe ob dein Land Kinderbetreuung subventioniert.',
+      'finance_content_generic_description_6':
+          'Prüfe ob dein Land Kinderbetreuung subventioniert.',
       'benefit_chip_leave': 'Elternzeit',
       'benefit_chip_salary': 'Gehalt sinkt',
       'benefit_chip_single': 'Alleinerziehend',
       'benefit_chip_move': 'Umzug',
       'benefit_chip_second': 'Zweites Kind kommt',
       'benefit_chip_income': 'Wenig Einkommen',
-      'benefit_fallback_notice': 'Die KI-Antwort ist nicht verfügbar. Dies ist eine allgemeine, lokale Orientierung für dein Land – nicht auf deine Situation abgestimmt.',
-      'benefit_fallback_check': 'Prüfe die verlinkten offiziellen Stellen für die Details.',
-      'benefit_fallback_prepare': 'Halte Ausweis, Nachweise zu Einkommen und Geburtsurkunde bereit.',
-      'finance_share_failed': 'Die Übersicht konnte nicht geteilt werden. Bitte erneut versuchen.',
+      'benefit_fallback_notice':
+          'Die KI-Antwort ist nicht verfügbar. Dies ist eine allgemeine, lokale Orientierung für dein Land – nicht auf deine Situation abgestimmt.',
+      'benefit_fallback_check':
+          'Prüfe die verlinkten offiziellen Stellen für die Details.',
+      'benefit_fallback_prepare':
+          'Halte Ausweis, Nachweise zu Einkommen und Geburtsurkunde bereit.',
+      'finance_share_failed':
+          'Die Übersicht konnte nicht geteilt werden. Bitte erneut versuchen.',
       'antrag_documents_tab': 'Unterlagen',
       'antrag_guide_tab': 'Anleitung',
       'antrag_ai_tab': 'KI-Hilfe',
       'antrag_all_ready': 'Alles bereit!',
       'antrag_need_documents': 'Das brauchst du',
-      'antrag_ready_next': 'Du hast alle Unterlagen zusammen. Weiter zu Schritt 2!',
+      'antrag_ready_next':
+          'Du hast alle Unterlagen zusammen. Weiter zu Schritt 2!',
       'antrag_documents_count': '{checked} von {total} Unterlagen bereit',
       'antrag_processing_time': '⏱️ Bearbeitungszeit: {time}',
       'antrag_step_guide': 'Schritt-für-Schritt Anleitung',
-      'antrag_ai_description': 'Die KI erstellt dir einen Begleitbrief oder eine Begründung – fertig zum Kopieren.',
+      'antrag_ai_description':
+          'Die KI erstellt dir einen Begleitbrief oder eine Begründung – fertig zum Kopieren.',
       'antrag_copied': '📋 In die Zwischenablage kopiert!',
       'antrag_copy_failed': 'Kopieren fehlgeschlagen. Bitte erneut versuchen.',
-      'antrag_ai_disclaimer': 'Dies ist eine Vorlage, keine Rechtsberatung. Passe den Text an deine persönliche Situation an.',
-      'antrag_ai_failed': 'Textvorlage konnte nicht erstellt werden. Bitte erneut versuchen.',
-      'antrag_premium_description': 'Mit Premium bekommst du die volle Anleitung, KI-Textvorlagen und Erinnerungen.',
-      'antrag_content_limits': 'Allgemeine Orientierung, keine Rechtsberatung. Nicht alle Unterlagen, Fristen und Verfahrensdetails sind amtlich verifiziert. Prüfe die aktuellen Anforderungen und Rechtsbehelfsfristen bei der zuständigen Stelle.',
+      'antrag_ai_disclaimer':
+          'Dies ist eine Vorlage, keine Rechtsberatung. Passe den Text an deine persönliche Situation an.',
+      'antrag_ai_failed':
+          'Textvorlage konnte nicht erstellt werden. Bitte erneut versuchen.',
+      'antrag_premium_description':
+          'Mit Premium bekommst du die volle Anleitung, KI-Textvorlagen und Erinnerungen.',
+      'antrag_content_limits':
+          'Allgemeine Orientierung, keine Rechtsberatung. Nicht alle Unterlagen, Fristen und Verfahrensdetails sind amtlich verifiziert. Prüfe die aktuellen Anforderungen und Rechtsbehelfsfristen bei der zuständigen Stelle.',
       'finance_estimated_months': 'Geschätzt in {months} Monaten ({year})',
       'finance_estimated_one_month': 'Geschätzt in einem Monat ({year})',
-      'finance_goal_months_on_time': 'Mit {amount}/Monat erreichst du das geschätzte Ziel voraussichtlich innerhalb von {months} Monaten.',
-      'finance_goal_months_shortfall': 'Mit {amount}/Monat reicht es voraussichtlich noch nicht für das geschätzte Ziel in {months} Monaten.',
+      'finance_goal_months_on_time':
+          'Mit {amount}/Monat erreichst du das geschätzte Ziel voraussichtlich innerhalb von {months} Monaten.',
+      'finance_goal_months_shortfall':
+          'Mit {amount}/Monat reicht es voraussichtlich noch nicht für das geschätzte Ziel in {months} Monaten.',
       'finance_legacy_title': 'Lokale Finanzdaten übernehmen',
-      'finance_legacy_notice': 'Auf diesem Gerät liegen unzugeordnete Finanzdaten und Checklisten. Sie werden nicht automatisch verwendet. Melde dich an, um sie nach Eigentumsbestätigung zu übernehmen.',
-      'finance_legacy_confirm': 'Gehören dir die bisherigen Finanzwerte, Wegweiser- und Antragschecklisten auf diesem Gerät? Mit deiner Bestätigung werden sie diesem Konto zugeordnet. Bestehende Kontowerte haben Vorrang; Checklisten werden zusammengeführt. Werte aus einem anderen Land werden nicht als neue Währung übernommen. Der ursprüngliche Altbestand bleibt lokal erhalten. Es wird nichts veröffentlicht.',
-      'benefit_ai_consent_body': 'Für die persönliche Orientierung werden dein Freitext, ausgewählte Situationsangaben, das Land sowie vorhandene Kinderalter über den ParentPeak-Server an Google Gemini gesendet. Gemini kann dazu eine Websuche verwenden. Bekannte Kontaktdaten werden teilweise entfernt; das ist keine vollständige Anonymisierung. Bitte gib keine Namen, Adressen oder Gesundheitsdetails ein. Die Angaben werden hier nicht als Gespräch gespeichert. Die Zustimmung gilt für dieses Konto beziehungsweise den Gastmodus. Ohne Zustimmung bleiben die allgemeinen Leistungsinformationen verfügbar, aber es wird keine KI-Anfrage gestartet.',
+      'finance_legacy_notice':
+          'Auf diesem Gerät liegen unzugeordnete Finanzdaten und Checklisten. Sie werden nicht automatisch verwendet. Melde dich an, um sie nach Eigentumsbestätigung zu übernehmen.',
+      'finance_legacy_confirm':
+          'Gehören dir die bisherigen Finanzwerte, Wegweiser- und Antragschecklisten auf diesem Gerät? Mit deiner Bestätigung werden sie diesem Konto zugeordnet. Bestehende Kontowerte haben Vorrang; Checklisten werden zusammengeführt. Werte aus einem anderen Land werden nicht als neue Währung übernommen. Der ursprüngliche Altbestand bleibt lokal erhalten. Es wird nichts veröffentlicht.',
+      'benefit_ai_consent_body':
+          'Für die persönliche Orientierung werden dein Freitext, ausgewählte Situationsangaben, das Land sowie vorhandene Kinderalter über den ParentPeak-Server an Google Gemini gesendet. Gemini kann dazu eine Websuche verwenden. Bekannte Kontaktdaten werden teilweise entfernt; das ist keine vollständige Anonymisierung. Bitte gib keine Namen, Adressen oder Gesundheitsdetails ein. Die Angaben werden hier nicht als Gespräch gespeichert. Die Zustimmung gilt für dieses Konto beziehungsweise den Gastmodus. Ohne Zustimmung bleiben die allgemeinen Leistungsinformationen verfügbar, aber es wird keine KI-Anfrage gestartet.',
       'benefit_ai_consent_accept': 'Zustimmen und KI verwenden',
-      'benefit_ai_consent_failed': 'Die Zustimmung konnte nicht gespeichert werden. Es wurde keine KI-Anfrage gestartet.',
+      'benefit_ai_consent_failed':
+          'Die Zustimmung konnte nicht gespeichert werden. Es wurde keine KI-Anfrage gestartet.',
       'treasure_photo_consent_title': 'Foto mit KI analysieren?',
-      'treasure_account_changed': 'Das Konto wurde gewechselt. Bitte schließe diese Ansicht.',
+      'treasure_account_changed':
+          'Das Konto wurde gewechselt. Bitte schließe diese Ansicht.',
       'treasure_legacy_title': 'Unzugeordneter lokaler Altbestand',
-      'treasure_legacy_body': 'Lokale Entwürfe, Reservierungs- und Sicherheitsmarkierungen gehören noch keinem Konto. Nach Anmeldung kannst du ihre Eigentümerschaft bestätigen.',
-      'treasure_legacy_confirm': 'Bestätigst du, dass diese Daten dir gehören? Sie werden diesem Konto zugeordnet. Ein vorhandener Kontoentwurf hat Vorrang. Originaldaten bleiben erhalten; nichts wird veröffentlicht.',
+      'treasure_legacy_body':
+          'Lokale Entwürfe, Reservierungs- und Sicherheitsmarkierungen gehören noch keinem Konto. Nach Anmeldung kannst du ihre Eigentümerschaft bestätigen.',
+      'treasure_legacy_confirm':
+          'Bestätigst du, dass diese Daten dir gehören? Sie werden diesem Konto zugeordnet. Ein vorhandener Kontoentwurf hat Vorrang. Originaldaten bleiben erhalten; nichts wird veröffentlicht.',
       'treasure_legacy_claim': 'Eigentümerschaft bestätigen',
-      'treasure_storage_failed': 'Die Marktdaten konnten nicht geladen oder gespeichert werden. Bitte versuche es erneut.',
-      'treasure_reservation_offline': 'Ohne Verbindung zum Marktserver wurde nichts reserviert. Bitte versuche es online erneut.',
-      'treasure_reserve_local_failed': 'Der Server hat die Reservierung bestätigt, aber die lokale Markierung konnte nicht gespeichert werden. Prüfe „Meine Anzeigen“, bevor du erneut reservierst.',
-      'treasure_cancel_local_failed': 'Der Server hat das Storno bestätigt, aber die lokale Markierung konnte nicht entfernt werden. Sie kann noch veraltet angezeigt werden.',
-      'treasure_upload_batch_failed': 'Nicht alle Fotos konnten hochgeladen werden. Hochgeladene Fotos wurden entfernt; es wurde keine Anzeige gesendet.',
-      'treasure_upload_cleanup_failed': 'Der Foto-Upload ist fehlgeschlagen. Es wurde keine Anzeige gesendet, aber einige hochgeladene Fotos konnten nicht entfernt werden und können weiterhin öffentlich erreichbar sein.',
-      'treasure_published_local_failed': 'Der Server hat die Anzeige erstellt, aber lokale Daten konnten nicht aktualisiert werden. Bitte prüfe „Meine Anzeigen“; nicht erneut veröffentlichen.',
-      'treasure_publish_uncertain': 'Die Erstellung konnte nicht bestätigt werden. Hochgeladene Fotos können öffentlich erreichbar sein. Bitte prüfe „Meine Anzeigen“, bevor du es erneut versuchst.',
-      'treasure_publish_unavailable': 'Zum Veröffentlichen brauchst du ein angemeldetes Konto und einen verfügbaren Marktserver. Es wurden keine Fotos hochgeladen.',
+      'treasure_storage_failed':
+          'Die Marktdaten konnten nicht geladen oder gespeichert werden. Bitte versuche es erneut.',
+      'treasure_reservation_offline':
+          'Ohne Verbindung zum Marktserver wurde nichts reserviert. Bitte versuche es online erneut.',
+      'treasure_reserve_local_failed':
+          'Der Server hat die Reservierung bestätigt, aber die lokale Markierung konnte nicht gespeichert werden. Prüfe „Meine Anzeigen“, bevor du erneut reservierst.',
+      'treasure_cancel_local_failed':
+          'Der Server hat das Storno bestätigt, aber die lokale Markierung konnte nicht entfernt werden. Sie kann noch veraltet angezeigt werden.',
+      'treasure_upload_batch_failed':
+          'Nicht alle Fotos konnten hochgeladen werden. Hochgeladene Fotos wurden entfernt; es wurde keine Anzeige gesendet.',
+      'treasure_upload_cleanup_failed':
+          'Der Foto-Upload ist fehlgeschlagen. Es wurde keine Anzeige gesendet, aber einige hochgeladene Fotos konnten nicht entfernt werden und können weiterhin öffentlich erreichbar sein.',
+      'treasure_published_local_failed':
+          'Der Server hat die Anzeige erstellt, aber lokale Daten konnten nicht aktualisiert werden. Bitte prüfe „Meine Anzeigen“; nicht erneut veröffentlichen.',
+      'treasure_publish_uncertain':
+          'Die Erstellung konnte nicht bestätigt werden. Hochgeladene Fotos können öffentlich erreichbar sein. Bitte prüfe „Meine Anzeigen“, bevor du es erneut versuchst.',
+      'treasure_publish_unavailable':
+          'Zum Veröffentlichen brauchst du ein angemeldetes Konto und einen verfügbaren Marktserver. Es wurden keine Fotos hochgeladen.',
       'treasurePublishNow': 'Jetzt teilen',
       'treasureSaveDraft': 'Entwurf speichern',
-      'treasureDraftSaved': 'Entwurf gespeichert. Du kannst später weitermachen.',
+      'treasureDraftSaved':
+          'Entwurf gespeichert. Du kannst später weitermachen.',
       'treasureDraftRestored': 'Dein letzter Entwurf ist wieder da.',
       'treasureUploadSuccess': 'Dein Schatz ist jetzt sichtbar.',
       'treasureSelectForHandover': 'Für Übergabe wählen',
       'treasureReserveCoffeeMode': 'Treffen sichern',
-      'treasure_draft_images_missing': 'Die Entwurfstexte wurden geladen, aber frühere Fotos sind nicht mehr verfügbar. Bitte füge sie erneut hinzu.',
-      'treasure_photos_public_info': 'Beim Veröffentlichen werden die Fotos öffentlich hochgeladen. Auch bei einem anschließenden Fehler können sie erreichbar bleiben. Zeige keine Personen, privaten Dokumente oder Adressen.',
-      'treasure_photo_consent_body': 'Für Vorschläge zu deinem Gegenstand wird dieses Foto über das ParentPeak-Backend an Google Gemini gesendet. Bildinhalte werden dabei nicht anonymisiert. Verwende nur Gegenstandsfotos ohne Personen, private Dokumente oder erkennbare Adressen. Die Analyse ist optional; ohne Zustimmung kannst du das Foto behalten und die Anzeige manuell ausfüllen. Diese Zustimmung gilt nur für die Foto-KI im Verschenkmarkt und wird für dieses Konto gespeichert. Sie veröffentlicht weder Foto noch Anzeige.',
+      'treasure_draft_images_missing':
+          'Die Entwurfstexte wurden geladen, aber frühere Fotos sind nicht mehr verfügbar. Bitte füge sie erneut hinzu.',
+      'treasure_photos_public_info':
+          'Beim Veröffentlichen werden die Fotos öffentlich hochgeladen. Auch bei einem anschließenden Fehler können sie erreichbar bleiben. Zeige keine Personen, privaten Dokumente oder Adressen.',
+      'treasure_photo_consent_body':
+          'Für Vorschläge zu deinem Gegenstand wird dieses Foto über das ParentPeak-Backend an Google Gemini gesendet. Bildinhalte werden dabei nicht anonymisiert. Verwende nur Gegenstandsfotos ohne Personen, private Dokumente oder erkennbare Adressen. Die Analyse ist optional; ohne Zustimmung kannst du das Foto behalten und die Anzeige manuell ausfüllen. Diese Zustimmung gilt nur für die Foto-KI im Verschenkmarkt und wird für dieses Konto gespeichert. Sie veröffentlicht weder Foto noch Anzeige.',
       'treasure_photo_consent_accept': 'Zustimmen und Foto analysieren',
-      'treasure_photo_consent_failed': 'Die Zustimmung konnte nicht gespeichert werden. Es wurde kein Foto an die KI gesendet.',
-      'treasure_photo_analysis_failed': 'Die Fotoanalyse konnte nicht abgeschlossen werden. Foto und manuelle Eingaben bleiben erhalten.',
-      'family_hub_account_changed': 'Das Konto hat gewechselt. Bitte schließe diese Ansicht.',
+      'treasure_photo_consent_failed':
+          'Die Zustimmung konnte nicht gespeichert werden. Es wurde kein Foto an die KI gesendet.',
+      'treasure_photo_analysis_failed':
+          'Die Fotoanalyse konnte nicht abgeschlossen werden. Foto und manuelle Eingaben bleiben erhalten.',
+      'family_hub_account_changed':
+          'Das Konto hat gewechselt. Bitte schließe diese Ansicht.',
       'family_hub_legacy_title': 'Lokalen Altbestand übernehmen',
-      'family_hub_legacy_notice': 'Auf diesem Gerät liegt ein unzugeordneter Altbestand. Er wird nicht automatisch verwendet. Melde dich an, um ihn nach Bestätigung zu übernehmen.',
-      'family_hub_legacy_confirm': 'Ich bestätige, dass die bisher geräteweit gespeicherten Kind-Dossiers (einschließlich Gesundheits- und Notfallangaben), Einkaufslisten, To-dos und Küchen-Allergien zu meinem aktuell angemeldeten Konto gehören. Sie werden nur diesem Konto lokal zugeordnet. Bestehende Kontodaten bleiben erhalten; nichts wird veröffentlicht.',
+      'family_hub_legacy_notice':
+          'Auf diesem Gerät liegt ein unzugeordneter Altbestand. Er wird nicht automatisch verwendet. Melde dich an, um ihn nach Bestätigung zu übernehmen.',
+      'family_hub_legacy_confirm':
+          'Ich bestätige, dass die bisher geräteweit gespeicherten Kind-Dossiers (einschließlich Gesundheits- und Notfallangaben), Einkaufslisten, To-dos und Küchen-Allergien zu meinem aktuell angemeldeten Konto gehören. Sie werden nur diesem Konto lokal zugeordnet. Bestehende Kontodaten bleiben erhalten; nichts wird veröffentlicht.',
       'family_hub_legacy_claim': 'Gehört zu meinem Konto – übernehmen',
-      'family_hub_legacy_failed': 'Der Altbestand konnte nicht sicher übernommen werden. Die bisherigen Daten bleiben erhalten.',
+      'family_hub_legacy_failed':
+          'Der Altbestand konnte nicht sicher übernommen werden. Die bisherigen Daten bleiben erhalten.',
       'family_hub_tab_shopping': 'Einkauf',
       'family_hub_tab_todo': 'To-do',
       'family_hub_tab_children': 'Kinder',
@@ -2614,79 +2863,131 @@ class AppStringsManager {
       'chat_consent_save_failed':
           'Die Zustimmung konnte nicht gespeichert werden. Es wurde keine KI-Anfrage gestartet. Bitte versuche es erneut.',
       'chat_legacy_title': 'Unzugeordnete lokale Themenstatistik',
-      'chat_legacy_body': 'Auf diesem Gerät liegt eine alte Themenstatistik ohne Kontozuordnung. Übernimm sie nur, wenn sie dir gehört. Die Übernahme ist lokal, sendet nichts an die KI und übernimmt keine Gesprächshistorie. Der Originalbestand bleibt erhalten.',
+      'chat_legacy_body':
+          'Auf diesem Gerät liegt eine alte Themenstatistik ohne Kontozuordnung. Übernimm sie nur, wenn sie dir gehört. Die Übernahme ist lokal, sendet nichts an die KI und übernimmt keine Gesprächshistorie. Der Originalbestand bleibt erhalten.',
       'chat_claim_action': 'Eigentum bestätigen',
-      'chat_claim_failed': 'Die Themenstatistik konnte nicht übernommen werden. Der Altbestand bleibt erhalten.',
-      'chat_topics_load_failed': 'Die Themenstatistik konnte nicht geladen werden. Bitte erneut laden; bisherige Daten werden nicht überschrieben.',
-      'chat_topics_save_failed': 'Die Themenstatistik konnte nicht gespeichert werden. Die Änderung wurde nicht bestätigt; deine Eingabe bleibt erhalten.',
-      'chat_memory_load_failed': 'Der KI-Gedächtniskontext konnte nicht geladen werden. Bitte in den Gedächtniseinstellungen erneut versuchen.',
+      'chat_claim_failed':
+          'Die Themenstatistik konnte nicht übernommen werden. Der Altbestand bleibt erhalten.',
+      'chat_topics_load_failed':
+          'Die Themenstatistik konnte nicht geladen werden. Bitte erneut laden; bisherige Daten werden nicht überschrieben.',
+      'chat_topics_save_failed':
+          'Die Themenstatistik konnte nicht gespeichert werden. Die Änderung wurde nicht bestätigt; deine Eingabe bleibt erhalten.',
+      'chat_memory_load_failed':
+          'Der KI-Gedächtniskontext konnte nicht geladen werden. Bitte in den Gedächtniseinstellungen erneut versuchen.',
       'memory_consent_title': 'Zusätzliche Zustimmung zum KI-Gedächtnis',
-      'memory_consent_body': 'Optional: Bestätigte Familieninformationen, auch Gesundheitsangaben, werden kontobezogen im ParentPeak-Backend gespeichert und für passende Chat-Anfragen an Google Gemini übertragen. Neue Kindernamen bleiben nur auf diesem Gerät; die KI erhält neutrale Platzhalter und vollendetes Alter statt Namen und Geburtstag. Freitext kann weiterhin personenbezogene Angaben enthalten. Alte Originaldaten bleiben erhalten. Ohne Zustimmung sind neue Memory-Einträge und Memory-Übertragungen gesperrt; normales Chatten mit seiner eigenen Zustimmung bleibt möglich. Ausschalten beendet die Nutzung, löscht bestehende Daten aber nicht. Bereits gesendete Anfragen sind nicht rückholbar. Lokale Daten sind nicht zusätzlich durch die App verschlüsselt.',
+      'memory_consent_body':
+          'Optional: Bestätigte Familieninformationen, auch Gesundheitsangaben, werden kontobezogen im ParentPeak-Backend gespeichert und für passende Chat-Anfragen an Google Gemini übertragen. Neue Kindernamen bleiben nur auf diesem Gerät; die KI erhält neutrale Platzhalter und vollendetes Alter statt Namen und Geburtstag. Freitext kann weiterhin personenbezogene Angaben enthalten. Alte Originaldaten bleiben erhalten. Ohne Zustimmung sind neue Memory-Einträge und Memory-Übertragungen gesperrt; normales Chatten mit seiner eigenen Zustimmung bleibt möglich. Ausschalten beendet die Nutzung, löscht bestehende Daten aber nicht. Bereits gesendete Anfragen sind nicht rückholbar. Lokale Daten sind nicht zusätzlich durch die App verschlüsselt.',
       'memory_consent_accept': 'Speicherung und KI-Nutzung erlauben',
-      'memory_operation_failed': 'Die Änderung wurde nicht vollständig bestätigt. Das Gedächtnis wird neu geprüft; bitte erneut versuchen.',
-      'memory_consent_required': 'Bitte aktiviere das Gedächtnis mit der zusätzlichen Zustimmung, bevor du neue Daten speicherst.',
+      'memory_operation_failed':
+          'Die Änderung wurde nicht vollständig bestätigt. Das Gedächtnis wird neu geprüft; bitte erneut versuchen.',
+      'memory_consent_required':
+          'Bitte aktiviere das Gedächtnis mit der zusätzlichen Zustimmung, bevor du neue Daten speicherst.',
       'memory_local_name': 'Anzeigename (nur auf diesem Gerät)',
-      'memory_name_save_failed': 'Das neutrale Profil wurde im Backend gespeichert, aber der lokale Anzeigename konnte nicht bestätigt werden. Die Liste wird neu geladen; bitte keinen doppelten Eintrag anlegen.',
+      'memory_name_save_failed':
+          'Das neutrale Profil wurde im Backend gespeichert, aber der lokale Anzeigename konnte nicht bestätigt werden. Die Liste wird neu geladen; bitte keinen doppelten Eintrag anlegen.',
       'memory_enable': 'KI-Gedächtnis aktivieren',
-      'memory_transfer_info': 'Nur mit zusätzlicher Zustimmung: bestätigte Werte über das Backend an Google Gemini. Kindbezeichnungen und Alter werden reduziert.',
-      'memory_storage_info': 'Vorhandene Originaldaten bleiben im Backend erhalten. Ausschalten sperrt neue Speicherung und KI-Nutzung, nicht das Lesen oder Löschen. Neue Anzeigenamen bleiben kontobezogen lokal; keine zusätzliche App-Verschlüsselung.',
-      'chat_request_failed': 'Die Antwort konnte nicht geladen werden. Bitte versuche es erneut.',
+      'memory_transfer_info':
+          'Nur mit zusätzlicher Zustimmung: bestätigte Werte über das Backend an Google Gemini. Kindbezeichnungen und Alter werden reduziert.',
+      'memory_storage_info':
+          'Vorhandene Originaldaten bleiben im Backend erhalten. Ausschalten sperrt neue Speicherung und KI-Nutzung, nicht das Lesen oder Löschen. Neue Anzeigenamen bleiben kontobezogen lokal; keine zusätzliche App-Verschlüsselung.',
+      'chat_request_failed':
+          'Die Antwort konnte nicht geladen werden. Bitte versuche es erneut.',
       'chat_retry_later': 'Du kannst es später erneut versuchen.',
       'chat_always_here': 'Immer für dich da',
-      'chat_privacy_footer': 'Keine Diagnosen · Verarbeitung durch Google Gemini',
+      'chat_privacy_footer':
+          'Keine Diagnosen · Verarbeitung durch Google Gemini',
       'chat_init_error': 'Fehler: {error}',
       'chat_tip_message': '💡 Tipp: „{tip}“',
-      'chat_history_budget': 'Die KI erhält höchstens die letzten {rounds} Gesprächsrunden und {characters} Zeichen Verlauf. Ältere Nachrichten bleiben hier sichtbar.',
-      'chat_daily_limit': 'Dein tägliches KI-Limit von {limit} Anfragen ist erreicht. Morgen kannst du wieder fragen.',
-      'chat_provider_unavailable': 'Die KI-Beratung ist aktuell nicht verfügbar. Es liegt keine verlässliche persönliche Antwort vor. Bitte versuche es später erneut.',
-      'chat_provider_authorization': 'Der Dienst hat die Anfrage nicht autorisiert.',
-      'chat_provider_quota': 'Das Kontingent des Dienstes ist derzeit erreicht.',
-      'chat_provider_network': 'Die Verbindung ist fehlgeschlagen oder hat zu lange gedauert.',
-      'chat_provider_unavailable_reason': 'Der Dienst konnte keine gültige Antwort liefern.',
-      'chat_system_prompt': 'Du bist der warme, wertfreie ParentPeak Eltern-Coach für den Alltag mit Kindern (0–18 Jahre). Antworte in der angeforderten Sprache, persönlich und nicht belehrend.\nGrundlagen: Hüther – Verbundenheit und Autonomie, Begeisterung und emotionale Beteiligung statt Druck/Angst; Kinder lernen durch Vorbild, nicht Belehrung. Kein Kind zum Objekt von Erwartungen machen. Lösbare Hindernisse nicht wegnehmen, Eltern stehen daneben; echte Bedürfnisse von materiellen Wünschen unterscheiden. Beziehung, Präsenz und Vorbild statt Belohnung/Bestrafung. Rosenbergs GfK: Beobachtung, Gefühl, Bedürfnis, Bitte; konkrete Sätze für heute. Gefühle/Bedürfnisse vorsichtig spiegeln, nicht als Fakten behaupten. Juul: Kinder als vollwertige Menschen, liebevolle Führung, Selbstverantwortung statt Gehorsam.\nOptional passend: Montessori – eigenes Tempo, vorbereitete Umgebung, Selbstständigkeit; Reggio – viele Ausdrucksformen, Beobachtung statt Bewertung, Prozess/Neugier; Freinet – echte Erfahrungen, freier Ausdruck, Selbstbestimmung; Froebel – Spiel/Natur/Kreativität als Lernen; Situationsansatz – aktuelle Lebenswelt statt starrem Lehrplan.\nKurz, konkret, höchstens 8–10 Zeilen, kleine sofort nutzbare Schritte. Empathie vor Strategie; keine Moralpredigt, Urteile oder Textwände. Keine Diagnosen/Medikamente, Grenzen ehrlich benennen. Bei akuter Gefahr direkte menschliche Hilfe empfehlen; keine unbestätigten länderspezifischen Telefonnummern erfinden. Die Rückfrageregel der aktuellen Coachinganweisung gilt; nicht zusätzlich immer eine Frage stellen.',
-      'chat_coaching_prompt': 'Nutzeranliegen:\n{message}\n\nHaltung: empathisch, warm, wertfrei nach GfK, Hüther und Juul. Hüther-Linse: Verbundenheit oder Autonomie? Beziehung vor Druck, Vorbild statt Belehrung, Begeisterung fürs Lernen; Eltern stehen neben dem Kind statt alle Hindernisse zu lösen.\nFormat: zuerst 1–2 empathische Sätze; Gefühle/Bedürfnisse nur als Vermutung. Eine kurze entwicklungs-/bindungsorientierte Einordnung, genau EIN GfK-Schritt, 1–2 kleine Optionen in Kann-Form. {followUp}\nFokus: {focus}\nWeitere pädagogische Linsen nur OPTIONAL passend, ohne Theorievortrag.\nKeine Moralpredigt, Floskeln, vorschnellen Urteile oder „Du musst“. Selbstvorwürfe empathisch in Gefühl/Bedürfnis übersetzen. Konkrete Angaben zu Alter, Tageszeit und Situation beibehalten. Kurze Absätze, höchstens 3–4 Sätze; keine Sternchen/Markdown, ruhiger professioneller Ton, 0–2 Emojis, einfache Listen erlaubt. {continuation}\nKontextanker: {context}\nVerlaufskontext: {history}',
-      'chat_focus_anger': 'Co-Regulation, klare Grenzen ohne Beschämung und kurze Deeskalation; Juul: respektvoll führen statt Gehorsam erzwingen.',
-      'chat_focus_siblings': 'Trennen ohne Strafe, Gefühle spiegeln, faire Wiederannäherung/Wiedergutmachung; Juul: beide Kinder vollwertig ernst nehmen.',
-      'chat_focus_sleep': 'Realistische Entlastung, kleine Routinen und energiesparende Schritte; Juul: authentisch, respektvoll begleiten.',
-      'chat_focus_media': 'Vorab vereinbarte klare Grenzen und kooperative Übergänge statt Machtkampf; Juul: respektvoll führen.',
-      'chat_focus_school': 'Kindgerechte Struktur und Kooperation mit Fachkräften; Situationsansatz: Lebenswelt des Kindes; Juul: Kooperation statt Gehorsam.',
-      'chat_focus_learning': 'Montessori: „Hilf mir, es selbst zu tun“, Umgebung vorbereiten und Alltagsaufgaben als Lernchance; Situationsansatz: aktuelle Lebenswelt.',
-      'chat_focus_play': 'Froebel: Spiel als Lernen; Reggio: viele Ausdrucksformen, Prozess vor Ergebnis; Freinet: echte Alltagserfahrungen.',
-      'chat_focus_general': 'Sofort nutzbare bindungsorientierte Entlastung; optional passende Linse aus Montessori, Reggio, Froebel, Freinet, Juul oder Situationsansatz.',
-      'chat_ask_one': 'Stelle am Ende genau EINE kurze, offene Rückfrage für den nächsten hilfreichen Schritt.',
-      'chat_ask_none': 'Stelle keine Rückfrage; die Angaben reichen für konkrete Schritte.',
-      'chat_new_context': 'Bleibe beim aktuellen Anliegen, ohne erfundenen Rückblick.',
-      'chat_continue_context': 'Knüpfe an relevante Muster und Altersangaben aus dem ausgewählten Verlauf an; keine Klarnamen erfinden.',
+      'chat_history_budget':
+          'Die KI erhält höchstens die letzten {rounds} Gesprächsrunden und {characters} Zeichen Verlauf. Ältere Nachrichten bleiben hier sichtbar.',
+      'chat_daily_limit':
+          'Dein tägliches KI-Limit von {limit} Anfragen ist erreicht. Morgen kannst du wieder fragen.',
+      'chat_provider_unavailable':
+          'Die KI-Beratung ist aktuell nicht verfügbar. Es liegt keine verlässliche persönliche Antwort vor. Bitte versuche es später erneut.',
+      'chat_provider_authorization':
+          'Der Dienst hat die Anfrage nicht autorisiert.',
+      'chat_provider_quota':
+          'Das Kontingent des Dienstes ist derzeit erreicht.',
+      'chat_provider_network':
+          'Die Verbindung ist fehlgeschlagen oder hat zu lange gedauert.',
+      'chat_provider_unavailable_reason':
+          'Der Dienst konnte keine gültige Antwort liefern.',
+      'chat_system_prompt':
+          'Du bist der warme, wertfreie ParentPeak Eltern-Coach für den Alltag mit Kindern (0–18 Jahre). Antworte in der angeforderten Sprache, persönlich und nicht belehrend.\nGrundlagen: Hüther – Verbundenheit und Autonomie, Begeisterung und emotionale Beteiligung statt Druck/Angst; Kinder lernen durch Vorbild, nicht Belehrung. Kein Kind zum Objekt von Erwartungen machen. Lösbare Hindernisse nicht wegnehmen, Eltern stehen daneben; echte Bedürfnisse von materiellen Wünschen unterscheiden. Beziehung, Präsenz und Vorbild statt Belohnung/Bestrafung. Rosenbergs GfK: Beobachtung, Gefühl, Bedürfnis, Bitte; konkrete Sätze für heute. Gefühle/Bedürfnisse vorsichtig spiegeln, nicht als Fakten behaupten. Juul: Kinder als vollwertige Menschen, liebevolle Führung, Selbstverantwortung statt Gehorsam.\nOptional passend: Montessori – eigenes Tempo, vorbereitete Umgebung, Selbstständigkeit; Reggio – viele Ausdrucksformen, Beobachtung statt Bewertung, Prozess/Neugier; Freinet – echte Erfahrungen, freier Ausdruck, Selbstbestimmung; Froebel – Spiel/Natur/Kreativität als Lernen; Situationsansatz – aktuelle Lebenswelt statt starrem Lehrplan.\nKurz, konkret, höchstens 8–10 Zeilen, kleine sofort nutzbare Schritte. Empathie vor Strategie; keine Moralpredigt, Urteile oder Textwände. Keine Diagnosen/Medikamente, Grenzen ehrlich benennen. Bei akuter Gefahr direkte menschliche Hilfe empfehlen; keine unbestätigten länderspezifischen Telefonnummern erfinden. Die Rückfrageregel der aktuellen Coachinganweisung gilt; nicht zusätzlich immer eine Frage stellen.',
+      'chat_coaching_prompt':
+          'Nutzeranliegen:\n{message}\n\nHaltung: empathisch, warm, wertfrei nach GfK, Hüther und Juul. Hüther-Linse: Verbundenheit oder Autonomie? Beziehung vor Druck, Vorbild statt Belehrung, Begeisterung fürs Lernen; Eltern stehen neben dem Kind statt alle Hindernisse zu lösen.\nFormat: zuerst 1–2 empathische Sätze; Gefühle/Bedürfnisse nur als Vermutung. Eine kurze entwicklungs-/bindungsorientierte Einordnung, genau EIN GfK-Schritt, 1–2 kleine Optionen in Kann-Form. {followUp}\nFokus: {focus}\nWeitere pädagogische Linsen nur OPTIONAL passend, ohne Theorievortrag.\nKeine Moralpredigt, Floskeln, vorschnellen Urteile oder „Du musst“. Selbstvorwürfe empathisch in Gefühl/Bedürfnis übersetzen. Konkrete Angaben zu Alter, Tageszeit und Situation beibehalten. Kurze Absätze, höchstens 3–4 Sätze; keine Sternchen/Markdown, ruhiger professioneller Ton, 0–2 Emojis, einfache Listen erlaubt. {continuation}\nKontextanker: {context}\nVerlaufskontext: {history}',
+      'chat_focus_anger':
+          'Co-Regulation, klare Grenzen ohne Beschämung und kurze Deeskalation; Juul: respektvoll führen statt Gehorsam erzwingen.',
+      'chat_focus_siblings':
+          'Trennen ohne Strafe, Gefühle spiegeln, faire Wiederannäherung/Wiedergutmachung; Juul: beide Kinder vollwertig ernst nehmen.',
+      'chat_focus_sleep':
+          'Realistische Entlastung, kleine Routinen und energiesparende Schritte; Juul: authentisch, respektvoll begleiten.',
+      'chat_focus_media':
+          'Vorab vereinbarte klare Grenzen und kooperative Übergänge statt Machtkampf; Juul: respektvoll führen.',
+      'chat_focus_school':
+          'Kindgerechte Struktur und Kooperation mit Fachkräften; Situationsansatz: Lebenswelt des Kindes; Juul: Kooperation statt Gehorsam.',
+      'chat_focus_learning':
+          'Montessori: „Hilf mir, es selbst zu tun“, Umgebung vorbereiten und Alltagsaufgaben als Lernchance; Situationsansatz: aktuelle Lebenswelt.',
+      'chat_focus_play':
+          'Froebel: Spiel als Lernen; Reggio: viele Ausdrucksformen, Prozess vor Ergebnis; Freinet: echte Alltagserfahrungen.',
+      'chat_focus_general':
+          'Sofort nutzbare bindungsorientierte Entlastung; optional passende Linse aus Montessori, Reggio, Froebel, Freinet, Juul oder Situationsansatz.',
+      'chat_ask_one':
+          'Stelle am Ende genau EINE kurze, offene Rückfrage für den nächsten hilfreichen Schritt.',
+      'chat_ask_none':
+          'Stelle keine Rückfrage; die Angaben reichen für konkrete Schritte.',
+      'chat_new_context':
+          'Bleibe beim aktuellen Anliegen, ohne erfundenen Rückblick.',
+      'chat_continue_context':
+          'Knüpfe an relevante Muster und Altersangaben aus dem ausgewählten Verlauf an; keine Klarnamen erfinden.',
       'chat_no_context': 'keine',
-      'chat_quality_retry': 'Antworte konkreter und authentisch: Empathie zuerst, ein GfK-Schritt, 1–2 kleine Optionen, Gefühle/Bedürfnisse als Vermutung. Fokus: {focus} Kurze Absätze mit höchstens 3–4 Sätzen, keine Textwand/Grenzfloskel oder „Du musst“. {followUp}',
-      'chat_context_retry': 'Antworte erneut und greife diese wichtigen Angaben sichtbar auf: {context}. Bleibe empathisch, konkret und alltagsnah.',
-      'chat_boundary_retry': 'Antworte nicht mit einer allgemeinen Grenzformel, sondern konkret, empathisch und lösungsorientiert für den Elternalltag.',
-      'chat_repair_prompt': 'Formuliere rein gewaltfrei, bindungsorientiert und nach GfK neu. Kein Schimpfen, Drohen oder Strafen. Gib drei konkrete Alltagsschritte und zwei Beispielsätze. Fokus: {focus}',
-      'chat_boundary_topic': 'Ich bin für pädagogische Elternberatung da. Beschreibe gern deine Familien- oder Erziehungsfrage.',
-      'chat_boundary_violence': 'Ich gebe keine verletzenden oder gewaltfördernden Anleitungen. Ich unterstütze dich gern mit einem gewaltfreien Vorgehen: Beobachtung, Gefühl, Bedürfnis und konkrete Bitte.',
-      'chat_boundary_diagnosis': 'Ich kann keine Diagnose stellen. Ich kann bindungsorientierte Alltagshilfe geben. Für diagnostische Klärung wende dich an Kinderarztpraxis oder Kinder- und Jugendpsychologie.',
-      'chat_boundary_medical': 'Ich gebe keine medizinischen Empfehlungen oder Medikamentenhinweise. Nutze ärztliche Beratung oder den örtlichen medizinischen Bereitschaftsdienst.',
-      'chat_medical_de': 'In Deutschland erreichst du den ärztlichen Bereitschaftsdienst unter 116117.',
-      'chat_fallback_label': 'Allgemeine, kuratierte Orientierung: Die KI-Antwort war nicht geeignet. Dies ist keine verlässlich personalisierte Antwort.',
-      'chat_fallback_sleep': 'Du könntest abends Reize reduzieren, eine kleine Wahl zwischen Buch und Lied anbieten und eine ruhige Abschlussformulierung wiederholen. Zum Beispiel: „Du möchtest noch wach bleiben. Ich begleite dich jetzt in die Ruhe.“ Welcher Übergang fällt euch am schwersten?',
-      'chat_fallback_anger': 'Zuerst Sicherheit herstellen, dann Gefühle vorsichtig spiegeln und eine Alternative anbieten. Zum Beispiel: „Ich sehe deine Wut. Ich lasse nicht zu, dass jemand verletzt wird. Du kannst stampfen oder ins Kissen drücken.“ Was geschieht direkt davor?',
-      'chat_fallback_general': 'Du bist damit nicht allein. Beschreibe gern die konkrete Situation und das vollendete Alter, ohne Namen oder genaue Geburtstage. Dann können Beobachtung, Gefühl, Bedürfnis und Bitte für den Alltag konkret werden.',
+      'chat_quality_retry':
+          'Antworte konkreter und authentisch: Empathie zuerst, ein GfK-Schritt, 1–2 kleine Optionen, Gefühle/Bedürfnisse als Vermutung. Fokus: {focus} Kurze Absätze mit höchstens 3–4 Sätzen, keine Textwand/Grenzfloskel oder „Du musst“. {followUp}',
+      'chat_context_retry':
+          'Antworte erneut und greife diese wichtigen Angaben sichtbar auf: {context}. Bleibe empathisch, konkret und alltagsnah.',
+      'chat_boundary_retry':
+          'Antworte nicht mit einer allgemeinen Grenzformel, sondern konkret, empathisch und lösungsorientiert für den Elternalltag.',
+      'chat_repair_prompt':
+          'Formuliere rein gewaltfrei, bindungsorientiert und nach GfK neu. Kein Schimpfen, Drohen oder Strafen. Gib drei konkrete Alltagsschritte und zwei Beispielsätze. Fokus: {focus}',
+      'chat_boundary_topic':
+          'Ich bin für pädagogische Elternberatung da. Beschreibe gern deine Familien- oder Erziehungsfrage.',
+      'chat_boundary_violence':
+          'Ich gebe keine verletzenden oder gewaltfördernden Anleitungen. Ich unterstütze dich gern mit einem gewaltfreien Vorgehen: Beobachtung, Gefühl, Bedürfnis und konkrete Bitte.',
+      'chat_boundary_diagnosis':
+          'Ich kann keine Diagnose stellen. Ich kann bindungsorientierte Alltagshilfe geben. Für diagnostische Klärung wende dich an Kinderarztpraxis oder Kinder- und Jugendpsychologie.',
+      'chat_boundary_medical':
+          'Ich gebe keine medizinischen Empfehlungen oder Medikamentenhinweise. Nutze ärztliche Beratung oder den örtlichen medizinischen Bereitschaftsdienst.',
+      'chat_medical_de':
+          'In Deutschland erreichst du den ärztlichen Bereitschaftsdienst unter 116117.',
+      'chat_fallback_label':
+          'Allgemeine, kuratierte Orientierung: Die KI-Antwort war nicht geeignet. Dies ist keine verlässlich personalisierte Antwort.',
+      'chat_fallback_sleep':
+          'Du könntest abends Reize reduzieren, eine kleine Wahl zwischen Buch und Lied anbieten und eine ruhige Abschlussformulierung wiederholen. Zum Beispiel: „Du möchtest noch wach bleiben. Ich begleite dich jetzt in die Ruhe.“ Welcher Übergang fällt euch am schwersten?',
+      'chat_fallback_anger':
+          'Zuerst Sicherheit herstellen, dann Gefühle vorsichtig spiegeln und eine Alternative anbieten. Zum Beispiel: „Ich sehe deine Wut. Ich lasse nicht zu, dass jemand verletzt wird. Du kannst stampfen oder ins Kissen drücken.“ Was geschieht direkt davor?',
+      'chat_fallback_general':
+          'Du bist damit nicht allein. Beschreibe gern die konkrete Situation und das vollendete Alter, ohne Namen oder genaue Geburtstage. Dann können Beobachtung, Gefühl, Bedürfnis und Bitte für den Alltag konkret werden.',
       'memory_title': 'KI-Gedächtnis & Kinder',
       'memory_add_child': 'Kind hinzufügen',
       'memory_edit_child': 'Kinderprofil bearbeiten',
       'memory_name_required': 'Bitte einen lokalen Namen eingeben.',
       'memory_gender': 'Geschlecht (optional)',
       'memory_delete_title': 'Kinderprofil löschen?',
-      'memory_delete_body': 'Alle gespeicherten KI-Informationen zu {name} werden gelöscht.',
+      'memory_delete_body':
+          'Alle gespeicherten KI-Informationen zu {name} werden gelöscht.',
       'memory_empty_info': 'Noch keine gespeicherten Informationen.',
-      'memory_load_failed': 'Daten konnten nicht geladen werden. Bitte versuche es erneut.',
+      'memory_load_failed':
+          'Daten konnten nicht geladen werden. Bitte versuche es erneut.',
       'memory_children': 'Kinderprofile',
       'memory_no_children': 'Noch kein Kinderprofil angelegt.',
       'memory_none_confirmed': 'Keine bestätigten Informationen',
       'memory_confirmed_count': '{count} bestätigte Informationen',
-      'chat_tip_age_known': 'Das Kind ist {age} vollendete Jahre alt. Passe die Beispiele daran an.',
-      'chat_tip_age_unknown': 'Das Alter ist nicht bekannt. Erfinde keines; frage bei Bedarf nach.',
-      'chat_tip_prompt': 'Die Eltern möchten diesen Tipp vertiefen:\n"{tip}"\n{ageContext}\nErkläre kurz die Relevanz, drei konkrete Alltagssituationen und eine Übung für heute. Praktisch, gewaltfrei, höchstens 12 Zeilen.',
+      'chat_tip_age_known':
+          'Das Kind ist {age} vollendete Jahre alt. Passe die Beispiele daran an.',
+      'chat_tip_age_unknown':
+          'Das Alter ist nicht bekannt. Erfinde keines; frage bei Bedarf nach.',
+      'chat_tip_prompt':
+          'Die Eltern möchten diesen Tipp vertiefen:\n"{tip}"\n{ageContext}\nErkläre kurz die Relevanz, drei konkrete Alltagssituationen und eine Übung für heute. Praktisch, gewaltfrei, höchstens 12 Zeilen.',
       'chat_insight_autonomy': 'Autonomiephase',
       'chat_insight_sleep': 'Schlaf',
       'chat_insight_conflicts': 'Konflikte',
@@ -2745,25 +3046,36 @@ class AppStringsManager {
       'treasureCategoryBooks': 'Bücher',
       'treasureCategoryEquipment': 'Ausstattung',
       'treasureDefaultTitle': 'Rotes Laufrad',
-      'treasure_created_archived': 'Deine Anzeige wurde gespeichert, aber vom Server archiviert. Sie ist nicht im Markt verfügbar. Prüfe „Meine Anzeigen“.',
-      'treasure_created_not_available': 'Deine Anzeige wurde gespeichert, aber nicht als verfügbar bestätigt. Prüfe „Meine Anzeigen“.',
-      'treasure_created_local_failed': 'Der Server hat die Anzeige gespeichert, aber nicht als verfügbar bestätigt. Die lokale Nachbereitung ist fehlgeschlagen; Fotos bleiben erhalten. Prüfe „Meine Anzeigen“ vor einem erneuten Versuch.',
+      'treasure_created_archived':
+          'Deine Anzeige wurde gespeichert, aber vom Server archiviert. Sie ist nicht im Markt verfügbar. Prüfe „Meine Anzeigen“.',
+      'treasure_created_not_available':
+          'Deine Anzeige wurde gespeichert, aber nicht als verfügbar bestätigt. Prüfe „Meine Anzeigen“.',
+      'treasure_created_local_failed':
+          'Der Server hat die Anzeige gespeichert, aber nicht als verfügbar bestätigt. Die lokale Nachbereitung ist fehlgeschlagen; Fotos bleiben erhalten. Prüfe „Meine Anzeigen“ vor einem erneuten Versuch.',
       'treasurePhotoAnalyzing': 'Das Foto wird analysiert...',
       'treasureDefaultColor': 'Rot',
       'treasureDefaultSizeAge': '2-4 Jahre',
       'treasureNeutralColor': 'Neutral',
       'treasureNoteEditable': 'Notiz eingefügt. Du kannst sie bearbeiten.',
-      'treasureNoteSuggestionHint': 'Setzt eine bearbeitbare Textvorlage ein und ersetzt die aktuelle Notiz. Keine Sprachaufnahme.',
+      'treasureNoteSuggestionHint':
+          'Setzt eine bearbeitbare Textvorlage ein und ersetzt die aktuelle Notiz. Keine Sprachaufnahme.',
       'treasureInsertNoteSuggestion': 'Textvorschlag einsetzen',
-      'treasureNoteSuggestion': '{title}, {sizeAge}. Weitere Hinweise zur Übergabe kannst du hier ergänzen.',
-      'treasureDiscoveryInvite': 'Lade Freunde ein oder teile eigene Angebote, damit es mehr Schätze in deiner Nähe gibt.',
-      'treasureDiscoveryScopeInvite': 'Aktuelle Reichweite: {radius}. Lade Freunde ein, um mehr Schätze in deiner Nähe zu finden.',
-      'treasure_location_required': 'Ein Standort wird für Angebote in deiner Nähe benötigt.',
-      'treasure_market_unavailable': 'Der Verschenkmarkt ist gerade nicht verfügbar. Dein Angebot wurde nicht veröffentlicht.',
-      'treasure_signin_required': 'Bitte melde dich an, um diese Aktion im Verschenkmarkt auszuführen.',
+      'treasureNoteSuggestion':
+          '{title}, {sizeAge}. Weitere Hinweise zur Übergabe kannst du hier ergänzen.',
+      'treasureDiscoveryInvite':
+          'Lade Freunde ein oder teile eigene Angebote, damit es mehr Schätze in deiner Nähe gibt.',
+      'treasureDiscoveryScopeInvite':
+          'Aktuelle Reichweite: {radius}. Lade Freunde ein, um mehr Schätze in deiner Nähe zu finden.',
+      'treasure_location_required':
+          'Ein Standort wird für Angebote in deiner Nähe benötigt.',
+      'treasure_market_unavailable':
+          'Der Verschenkmarkt ist gerade nicht verfügbar. Dein Angebot wurde nicht veröffentlicht.',
+      'treasure_signin_required':
+          'Bitte melde dich an, um diese Aktion im Verschenkmarkt auszuführen.',
       'treasureCategoryOther': 'Sonstiges',
       'treasureShareRadiusLabel': 'Veröffentlichungsradius',
-      'treasureShareRadiusHelper': 'Bestimme, in welchem Umkreis Familien dein Angebot sehen. Die Berechnung nutzt grob gerundete Standorte und ist nur ungefähr; maximal 25 km.',
+      'treasureShareRadiusHelper':
+          'Bestimme, in welchem Umkreis Familien dein Angebot sehen. Die Berechnung nutzt grob gerundete Standorte und ist nur ungefähr; maximal 25 km.',
       'treasureShareRadiusKm': 'Umkreis ca. {radius} km',
       'treasureDistanceApproximate': 'Ca. {distance} entfernt',
       'treasureDistanceUnknown': 'Entfernung unbekannt',
@@ -3624,7 +3936,8 @@ class AppStringsManager {
       'finance_tax_actual_deductible': 'Special expense in this example',
       'finance_tax_estimated_saving': 'Estimated savings (30%)',
       'finance_tax_more_info': '🔗 More information from the tax authority →',
-      'finance_benefits_filtered': 'Details saved. All benefits remain visible; income and employment are not an entitlement assessment.',
+      'finance_benefits_filtered':
+          'Details saved. All benefits remain visible; income and employment are not an entitlement assessment.',
       'finance_no_parental_leave': 'No / parental leave',
       'finance_income_low': 'Under €2,000',
       'finance_income_medium': '€2,000–4,000',
@@ -3851,6 +4164,28 @@ class AppStringsManager {
       'topic_defiance_anger': 'Defiance &\nAnger',
       'topic_sleep_issues': 'Sleep\nwon\'t work',
       'topic_hits_bites': 'Hits ·\nBites',
+      'knowledge_topic_anger_label': 'Anger & defiance',
+      'knowledge_topic_anger_hint': 'Tantrums, hitting',
+      'knowledge_topic_sleep_label': 'Sleep',
+      'knowledge_topic_sleep_hint': 'Falling asleep, night',
+      'knowledge_topic_boundaries_label': 'Boundaries',
+      'knowledge_topic_boundaries_hint': 'Saying no, rules',
+      'knowledge_topic_eating_label': 'Eating',
+      'knowledge_topic_eating_hint': 'Picky eating',
+      'knowledge_topic_siblings_label': 'Siblings',
+      'knowledge_topic_siblings_hint': 'Conflict, jealousy',
+      'knowledge_topic_media_label': 'Screens',
+      'knowledge_topic_media_hint': 'Screen time',
+      'expert_library_title': 'Expert Library',
+      'expert_library_subtitle': 'Podcasts, videos & books that really help.',
+      'expert_library_content_english_notice':
+          'The recommended content is in English. The interface and categories appear in your language.',
+      'expert_library_filter_all': 'All',
+      'expert_library_empty': 'No recommendations for this category yet.',
+      'expert_action_listen': 'Listen',
+      'expert_action_watch': 'Watch',
+      'expert_action_more_info': 'More info',
+      'expert_action_read': 'Read',
       'mood_exhausted_suffix': ' — even exhausted parents are good parents. 💛',
       'mood_present_suffix': ' — good to have you here today.',
       'mood_energetic_suffix':
@@ -3965,8 +4300,7 @@ class AppStringsManager {
       'location_onboarding_detect': 'Find my location',
       'location_onboarding_manual_title': 'Enter a place or postcode',
       'location_onboarding_manual_hint': 'City or postcode',
-      'profile_export_sign_in_required':
-          'Please sign in to export your data.',
+      'profile_export_sign_in_required': 'Please sign in to export your data.',
       'open_source_licenses': 'Open Source Licenses',
       'contact_support': 'Contact & Support',
       'language_select': 'Choose language',
@@ -4036,7 +4370,8 @@ class AppStringsManager {
       'fridge_consent_body':
           'To detect ingredients, your photo is sent through the ParentPeak backend to Google Gemini. Image contents are not anonymized; do not show people, private notes or addresses. For the subsequent recipe, confirmed ingredients, child age and available allergy details are sent to Google Gemini. The app does not save the photo as a permanent draft. This optional consent applies to this fridge AI flow and is saved for your current account or guest mode on this device. It does not publish the photo or recipe. Without consent, no AI request is started.',
       'fridge_consent_accept': 'Agree and analyze photo',
-      'fridge_consent_failed': 'Fridge AI consent could not be confirmed. Without confirmed consent, no new AI request is started.',
+      'fridge_consent_failed':
+          'Fridge AI consent could not be confirmed. Without confirmed consent, no new AI request is started.',
       'fridge_choose_photo': 'Choose',
       'fridge_no_ingredients_detected':
           'I could not identify any ingredients reliably. You can add them manually below.',
@@ -4435,7 +4770,8 @@ class AppStringsManager {
       'network_withdraw': 'Withdraw',
       'network_suggestions_count': '{count} suggestions',
       'network_matching_suggestions': 'Published playmate profiles',
-      'location_osm_notice': 'Location search sends search text or coordinates rounded to roughly 1 km to OpenStreetMap Nominatim. The map loads tiles from OpenStreetMap.',
+      'location_osm_notice':
+          'Location search sends search text or coordinates rounded to roughly 1 km to OpenStreetMap Nominatim. The map loads tiles from OpenStreetMap.',
       'location_search_failed': 'Location search failed. Please try again.',
       'network_copy_step_1': 'Step 1: Your family',
       'network_copy_step_2': 'Step 2: Your children',
@@ -4452,16 +4788,21 @@ class AppStringsManager {
       'network_copy_cancel': 'Cancel',
       'network_copy_connect_button': 'Connect',
       'network_copy_playmates': 'Playmates',
-      'network_copy_login_required': 'Please sign in to publish your playmate profile.',
-      'network_copy_setup_hint': 'In 5 short steps, you will find families who are a good fit for you.',
+      'network_copy_login_required':
+          'Please sign in to publish your playmate profile.',
+      'network_copy_setup_hint':
+          'In 5 short steps, you will find families who are a good fit for you.',
       'network_copy_empty_title': 'Be the first family in your area',
-      'network_copy_empty_description': 'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
+      'network_copy_empty_description':
+          'Your profile is active and visible. As soon as other families nearby join, they will appear here automatically. Invite neighbors and friends to grow your network.',
       'network_copy_invite_playmates': 'Invite playmates',
       'network_copy_same_city': 'In your city',
       'network_copy_request_sent': 'Your request was sent to {name}.',
-      'network_copy_request_failed': 'Your request could not be sent. Please try again later.',
+      'network_copy_request_failed':
+          'Your request could not be sent. Please try again later.',
       'network_copy_invite_hero_title': 'Invite friends',
-      'network_copy_invite_hero_description': 'Share your personal link or QR code - one tap and you are connected.',
+      'network_copy_invite_hero_description':
+          'Share your personal link or QR code - one tap and you are connected.',
       'network_copy_share': 'Share',
       'network_copy_save': 'Save...',
       'network_copy_create_profile': 'Create profile',
@@ -4473,9 +4814,11 @@ class AppStringsManager {
       'network_copy_custom_family': 'Your family type',
       'network_copy_custom_example': 'e.g. chosen family, multigenerational...',
       'network_copy_no_gender': 'Prefer not to say',
-      'network_copy_values_tip': 'Tip: Families with similar values understand each other best. Choose what matters to you.',
+      'network_copy_values_tip':
+          'Tip: Families with similar values understand each other best. Choose what matters to you.',
       'network_copy_bio_title': 'Short bio',
-      'network_copy_bio_hint': 'Tell us about yourselves: What makes your family special? What are you looking for?',
+      'network_copy_bio_hint':
+          'Tell us about yourselves: What makes your family special? What are you looking for?',
       'network_option_family_kernfamilie': 'Nuclear family',
       'network_option_family_alleinerziehend': 'Single parent',
       'network_option_family_patchwork': 'Blended family',
@@ -4550,13 +4893,15 @@ class AppStringsManager {
       'network_option_times_nach_kita': 'After nursery / school',
       'network_option_times_flexibel': 'Flexible',
       'network_option_specials_behinderung': 'Child with a disability',
-      'network_option_specials_neurodivergent': 'Neurodivergent (ADHD / autism)',
+      'network_option_specials_neurodivergent':
+          'Neurodivergent (ADHD / autism)',
       'network_option_specials_hochsensibel': 'Highly sensitive',
       'network_option_specials_fruehchen': 'Parents of premature babies',
       'network_option_specials_mehrlinge': 'Multiples',
       'network_option_specials_chronisch_krank': 'Chronic condition',
       'network_option_specials_allergien': 'Allergies / intolerances',
-      'network_option_specials_schreibaby': 'Excessive crying / regulation difficulties',
+      'network_option_specials_schreibaby':
+          'Excessive crying / regulation difficulties',
       'network_option_specials_pflegekind': 'Foster child',
       'network_option_language_de': 'German',
       'network_option_language_en': 'English',
@@ -4586,7 +4931,8 @@ class AppStringsManager {
       'network_option_language_vi': 'Vietnamese',
       'network_option_language_sw': 'Swahili',
       'network_family_fallback': 'this family',
-      'network_legacy_link_inactive': 'This link is no longer active. Please use the other family’s invitation link.',
+      'network_legacy_link_inactive':
+          'This link is no longer active. Please use the other family’s invitation link.',
       'network_radius': 'Within ~{distance} km',
       'network_wide_radius': 'Within ~1200 km',
       'network_say_hello': 'Say hello',
@@ -4600,7 +4946,8 @@ class AppStringsManager {
       'network_looking_heading': 'What are you looking for?',
       'network_looking_custom_hint': 'What else would you like?',
       'network_availability_heading': 'When are you available?',
-      'network_availability_hint': 'e.g. holidays only, public holidays only...',
+      'network_availability_hint':
+          'e.g. holidays only, public holidays only...',
       'network_district_label': 'District or postal code',
       'network_district_hint': 'Type e.g. Kreuzberg, 10997...',
       'network_age_months': '{months} mo.',
@@ -4662,236 +5009,410 @@ class AppStringsManager {
       'events_price_label': 'Price: {price}',
       'events_for_age': 'For: {age}',
       'family_hub_shopping_list': 'Shopping list',
-      'family_hub_save_error': 'The change could not be saved. Please try again.',
+      'family_hub_save_error':
+          'The change could not be saved. Please try again.',
       'family_hub_child_fallback': 'Child',
       'benefit_ai_consent_title': 'Use the AI benefits guide?',
-      'finance_load_failed': 'Local financial data could not be loaded. Please try again.',
-      'finance_number_invalid': 'Enter a valid non-negative amount with at most two decimal places.',
-      'finance_tax_example_limits': 'Example for one child, not an entitlement check or allocation of costs between children. Qualifying care: child in your household and under 14 or covered by the statutory disability exception; invoice and payment to the provider’s bank account required. Tuition, sports and leisure are excluded. 30% is only an assumed tax rate.',
-      'finance_orientation_only': 'Orientation only, not an entitlement check. Income, employment and family status do not exclude any benefit here. The responsible authority assesses your individual case.',
+      'finance_load_failed':
+          'Local financial data could not be loaded. Please try again.',
+      'finance_number_invalid':
+          'Enter a valid non-negative amount with at most two decimal places.',
+      'finance_tax_example_limits':
+          'Example for one child, not an entitlement check or allocation of costs between children. Qualifying care: child in your household and under 14 or covered by the statutory disability exception; invoice and payment to the provider’s bank account required. Tuition, sports and leisure are excluded. 30% is only an assumed tax rate.',
+      'finance_orientation_only':
+          'Orientation only, not an entitlement check. Income, employment and family status do not exclude any benefit here. The responsible authority assesses your individual case.',
       'finance_save_orientation': 'Save details for orientation',
       'finance_application_kindergeld_benefitName_0': 'Child Benefit',
-      'finance_application_kindergeld_responsibleAuthority_1': 'Family Benefits Office of the Federal Employment Agency',
+      'finance_application_kindergeld_responsibleAuthority_1':
+          'Family Benefits Office of the Federal Employment Agency',
       'finance_application_kindergeld_processingTime_2': '4–6 weeks',
-      'finance_application_kindergeld_renewalNote_3': 'No renewal application needed. Paid automatically until the 18th (or 25th) birthday.',
-      'finance_application_kindergeld_proTip_4': 'Apply immediately after birth — Child Benefit is paid retroactively for at most 6 months.',
-      'finance_application_kindergeld_aiTemplatePrompt_5': 'Write a short, friendly cover letter for a first Child Benefit application after birth. Keep it simple and factual.',
+      'finance_application_kindergeld_renewalNote_3':
+          'No renewal application needed. Paid automatically until the 18th (or 25th) birthday.',
+      'finance_application_kindergeld_proTip_4':
+          'Apply immediately after birth — Child Benefit is paid retroactively for at most 6 months.',
+      'finance_application_kindergeld_aiTemplatePrompt_5':
+          'Write a short, friendly cover letter for a first Child Benefit application after birth. Keep it simple and factual.',
       'finance_application_kindergeld_name_6': 'Child’s birth certificate',
-      'finance_application_kindergeld_whereToGet_7': 'Civil registry office (usually provided at the hospital)',
+      'finance_application_kindergeld_whereToGet_7':
+          'Civil registry office (usually provided at the hospital)',
       'finance_application_kindergeld_name_8': 'Child’s tax ID',
-      'finance_application_kindergeld_whereToGet_9': 'Sent by the Federal Central Tax Office (about 2–3 weeks after birth)',
+      'finance_application_kindergeld_whereToGet_9':
+          'Sent by the Federal Central Tax Office (about 2–3 weeks after birth)',
       'finance_application_kindergeld_name_10': 'Applying parent’s tax ID',
-      'finance_application_kindergeld_whereToGet_11': 'On your tax assessment or payslip',
+      'finance_application_kindergeld_whereToGet_11':
+          'On your tax assessment or payslip',
       'finance_application_kindergeld_name_12': 'ID card or passport (copy)',
       'finance_application_kindergeld_name_13': 'Bank details (IBAN)',
-      'finance_application_kindergeld_title_14': 'Complete the online application',
-      'finance_application_kindergeld_description_15': 'Complete form “KG1” online on the Family Benefits Office website. Takes about 10 minutes.',
-      'finance_application_kindergeld_title_16': 'Upload documents or send by post',
-      'finance_application_kindergeld_description_17': 'Upload scans of the birth certificate and tax IDs or post them to your Family Benefits Office.',
+      'finance_application_kindergeld_title_14':
+          'Complete the online application',
+      'finance_application_kindergeld_description_15':
+          'Complete form “KG1” online on the Family Benefits Office website. Takes about 10 minutes.',
+      'finance_application_kindergeld_title_16':
+          'Upload documents or send by post',
+      'finance_application_kindergeld_description_17':
+          'Upload scans of the birth certificate and tax IDs or post them to your Family Benefits Office.',
       'finance_application_kindergeld_title_18': 'Wait for confirmation',
-      'finance_application_kindergeld_description_19': 'You receive a decision by post (4–6 weeks). Monthly payments then begin.',
-      'finance_application_kinderzuschlag_benefitName_0': 'Child Supplement (KiZ)',
+      'finance_application_kindergeld_description_19':
+          'You receive a decision by post (4–6 weeks). Monthly payments then begin.',
+      'finance_application_kinderzuschlag_benefitName_0':
+          'Child Supplement (KiZ)',
       'finance_application_kinderzuschlag_processingTime_2': '4–8 weeks',
-      'finance_application_kinderzuschlag_renewalNote_3': 'Reapply every 6 months (renewal application).',
-      'finance_application_kinderzuschlag_proTip_4': 'The Family Benefits Office’s KiZ guide lets you check entitlement in 2 minutes before completing the full application.',
-      'finance_application_kinderzuschlag_aiTemplatePrompt_5': 'Write a short factual explanation for a Child Supplement application. The low-income family needs support for the children. Mention that rent takes a large share of income.',
-      'finance_application_kinderzuschlag_name_6': 'Income evidence for the last 6 months',
-      'finance_application_kinderzuschlag_whereToGet_7': 'Employer payslips, parental allowance decision or tax assessment',
-      'finance_application_kinderzuschlag_name_8': 'Tenancy agreement or evidence of housing costs',
-      'finance_application_kinderzuschlag_whereToGet_9': 'Copy of your tenancy agreement + latest service-charge statement',
-      'finance_application_kinderzuschlag_name_10': 'Bank statements for the last 3 months',
-      'finance_application_kinderzuschlag_whereToGet_11': 'Online banking → print PDF',
+      'finance_application_kinderzuschlag_renewalNote_3':
+          'Reapply every 6 months (renewal application).',
+      'finance_application_kinderzuschlag_proTip_4':
+          'The Family Benefits Office’s KiZ guide lets you check entitlement in 2 minutes before completing the full application.',
+      'finance_application_kinderzuschlag_aiTemplatePrompt_5':
+          'Write a short factual explanation for a Child Supplement application. The low-income family needs support for the children. Mention that rent takes a large share of income.',
+      'finance_application_kinderzuschlag_name_6':
+          'Income evidence for the last 6 months',
+      'finance_application_kinderzuschlag_whereToGet_7':
+          'Employer payslips, parental allowance decision or tax assessment',
+      'finance_application_kinderzuschlag_name_8':
+          'Tenancy agreement or evidence of housing costs',
+      'finance_application_kinderzuschlag_whereToGet_9':
+          'Copy of your tenancy agreement + latest service-charge statement',
+      'finance_application_kinderzuschlag_name_10':
+          'Bank statements for the last 3 months',
+      'finance_application_kinderzuschlag_whereToGet_11':
+          'Online banking → print PDF',
       'finance_application_kinderzuschlag_name_12': 'Child Benefit decision',
-      'finance_application_kinderzuschlag_whereToGet_13': 'Received by post from the Family Benefits Office',
-      'finance_application_kinderzuschlag_name_14': 'Children’s birth certificate(s)',
+      'finance_application_kinderzuschlag_whereToGet_13':
+          'Received by post from the Family Benefits Office',
+      'finance_application_kinderzuschlag_name_14':
+          'Children’s birth certificate(s)',
       'finance_application_kinderzuschlag_name_15': 'ID card (copy)',
-      'finance_application_kinderzuschlag_title_16': 'Use the KiZ guide (2 min.)',
-      'finance_application_kinderzuschlag_description_17': 'Check likely entitlement with the online guide. This saves time if you are not eligible.',
-      'finance_application_kinderzuschlag_description_19': 'Complete the application on the Family Benefits Office website. Have income evidence and rent costs ready.',
+      'finance_application_kinderzuschlag_title_16':
+          'Use the KiZ guide (2 min.)',
+      'finance_application_kinderzuschlag_description_17':
+          'Check likely entitlement with the online guide. This saves time if you are not eligible.',
+      'finance_application_kinderzuschlag_description_19':
+          'Complete the application on the Family Benefits Office website. Have income evidence and rent costs ready.',
       'finance_application_kinderzuschlag_title_20': 'Submit documents',
-      'finance_application_kinderzuschlag_description_21': 'Upload payslips, tenancy agreement and bank statements or send them by post.',
+      'finance_application_kinderzuschlag_description_21':
+          'Upload payslips, tenancy agreement and bank statements or send them by post.',
       'finance_application_kinderzuschlag_title_22': 'Decision + renewal',
-      'finance_application_kinderzuschlag_description_23': 'The decision arrives after 4–8 weeks. Remember to reapply after 6 months!',
+      'finance_application_kinderzuschlag_description_23':
+          'The decision arrives after 4–8 weeks. Remember to reapply after 6 months!',
       'finance_application_wohngeld_benefitName_0': 'Housing Benefit',
-      'finance_application_wohngeld_responsibleAuthority_1': 'Your city or municipality’s Housing Benefit office',
-      'finance_application_wohngeld_processingTime_2': '3–8 weeks (depending on the municipality)',
-      'finance_application_wohngeld_renewalNote_3': 'Award period: 12 months. Submit a renewal application in good time (2 months beforehand).',
-      'finance_application_wohngeld_proTip_4': 'Since the 2023 reform, more families qualify, including middle-income families. Check it!',
-      'finance_application_wohngeld_aiTemplatePrompt_5': 'Write a short factual, friendly cover letter for a first Housing Benefit application by a family with children whose rent takes a large share of income.',
-      'finance_application_wohngeld_name_6': 'Income evidence for all household members',
-      'finance_application_wohngeld_whereToGet_7': 'Payslips, pension decision, parental allowance decision',
+      'finance_application_wohngeld_responsibleAuthority_1':
+          'Your city or municipality’s Housing Benefit office',
+      'finance_application_wohngeld_processingTime_2':
+          '3–8 weeks (depending on the municipality)',
+      'finance_application_wohngeld_renewalNote_3':
+          'Award period: 12 months. Submit a renewal application in good time (2 months beforehand).',
+      'finance_application_wohngeld_proTip_4':
+          'Since the 2023 reform, more families qualify, including middle-income families. Check it!',
+      'finance_application_wohngeld_aiTemplatePrompt_5':
+          'Write a short factual, friendly cover letter for a first Housing Benefit application by a family with children whose rent takes a large share of income.',
+      'finance_application_wohngeld_name_6':
+          'Income evidence for all household members',
+      'finance_application_wohngeld_whereToGet_7':
+          'Payslips, pension decision, parental allowance decision',
       'finance_application_wohngeld_name_8': 'Tenancy agreement (copy)',
-      'finance_application_wohngeld_name_9': 'Latest rent receipt or bank statement showing rent payment',
+      'finance_application_wohngeld_name_9':
+          'Latest rent receipt or bank statement showing rent payment',
       'finance_application_wohngeld_name_10': 'Service-charge statement',
-      'finance_application_wohngeld_whereToGet_11': 'From the landlord (annually)',
-      'finance_application_wohngeld_name_12': 'ID cards of all household members (copies)',
-      'finance_application_wohngeld_name_13': 'Residence registration certificate',
-      'finance_application_wohngeld_whereToGet_14': 'Citizens’ office / population register office',
-      'finance_application_wohngeld_title_15': 'Use the Housing Benefit calculator',
-      'finance_application_wohngeld_description_16': 'Use the official BMWSB Housing Benefit Plus calculator to check whether and how much Housing Benefit you qualify for.',
-      'finance_application_wohngeld_title_17': 'Apply to your Housing Benefit office',
-      'finance_application_wohngeld_description_18': 'Get the form from your town hall/citizens’ office or online as a PDF. Some municipalities offer online applications.',
+      'finance_application_wohngeld_whereToGet_11':
+          'From the landlord (annually)',
+      'finance_application_wohngeld_name_12':
+          'ID cards of all household members (copies)',
+      'finance_application_wohngeld_name_13':
+          'Residence registration certificate',
+      'finance_application_wohngeld_whereToGet_14':
+          'Citizens’ office / population register office',
+      'finance_application_wohngeld_title_15':
+          'Use the Housing Benefit calculator',
+      'finance_application_wohngeld_description_16':
+          'Use the official BMWSB Housing Benefit Plus calculator to check whether and how much Housing Benefit you qualify for.',
+      'finance_application_wohngeld_title_17':
+          'Apply to your Housing Benefit office',
+      'finance_application_wohngeld_description_18':
+          'Get the form from your town hall/citizens’ office or online as a PDF. Some municipalities offer online applications.',
       'finance_application_wohngeld_title_19': 'Attach documents',
-      'finance_application_wohngeld_description_20': 'Attach the tenancy agreement, income evidence and service-charge statement. If unsure, send more rather than less.',
-      'finance_application_wohngeld_title_21': 'Wait for the decision + set a reminder',
-      'finance_application_wohngeld_description_22': 'The decision arrives after 3–8 weeks. Set a renewal reminder for 10 months after approval.',
-      'finance_application_bildungTeilhabe_benefitName_0': 'Education and Participation (BuT)',
-      'finance_application_bildungTeilhabe_responsibleAuthority_1': 'Your city or municipality’s Jobcentre or social welfare office',
+      'finance_application_wohngeld_description_20':
+          'Attach the tenancy agreement, income evidence and service-charge statement. If unsure, send more rather than less.',
+      'finance_application_wohngeld_title_21':
+          'Wait for the decision + set a reminder',
+      'finance_application_wohngeld_description_22':
+          'The decision arrives after 3–8 weeks. Set a renewal reminder for 10 months after approval.',
+      'finance_application_bildungTeilhabe_benefitName_0':
+          'Education and Participation (BuT)',
+      'finance_application_bildungTeilhabe_responsibleAuthority_1':
+          'Your city or municipality’s Jobcentre or social welfare office',
       'finance_application_bildungTeilhabe_processingTime_2': '2–6 weeks',
-      'finance_application_bildungTeilhabe_renewalNote_3': 'Reapply each school year for school supplies; club/course costs every 6 months.',
-      'finance_application_bildungTeilhabe_proTip_4': 'BuT also covers swimming, music school and tutoring — not just school supplies! Up to €15/month for sport/culture/leisure.',
-      'finance_application_bildungTeilhabe_aiTemplatePrompt_5': 'Write a short informal application for Education and Participation support. A child wants to attend a sports course. The family receives Child Supplement. Factual, 3–4 sentences.',
-      'finance_application_bildungTeilhabe_name_6': 'Evidence of benefits received',
-      'finance_application_bildungTeilhabe_whereToGet_7': 'Decision for Child Supplement, Housing Benefit, Bürgergeld or social assistance',
-      'finance_application_bildungTeilhabe_name_8': 'School attendance certificate',
-      'finance_application_bildungTeilhabe_whereToGet_9': 'Your child’s school office',
-      'finance_application_bildungTeilhabe_name_10': 'Evidence of costs (e.g. club fees)',
-      'finance_application_bildungTeilhabe_whereToGet_11': 'Registration form or invoice from the club/course',
+      'finance_application_bildungTeilhabe_renewalNote_3':
+          'Reapply each school year for school supplies; club/course costs every 6 months.',
+      'finance_application_bildungTeilhabe_proTip_4':
+          'BuT also covers swimming, music school and tutoring — not just school supplies! Up to €15/month for sport/culture/leisure.',
+      'finance_application_bildungTeilhabe_aiTemplatePrompt_5':
+          'Write a short informal application for Education and Participation support. A child wants to attend a sports course. The family receives Child Supplement. Factual, 3–4 sentences.',
+      'finance_application_bildungTeilhabe_name_6':
+          'Evidence of benefits received',
+      'finance_application_bildungTeilhabe_whereToGet_7':
+          'Decision for Child Supplement, Housing Benefit, Bürgergeld or social assistance',
+      'finance_application_bildungTeilhabe_name_8':
+          'School attendance certificate',
+      'finance_application_bildungTeilhabe_whereToGet_9':
+          'Your child’s school office',
+      'finance_application_bildungTeilhabe_name_10':
+          'Evidence of costs (e.g. club fees)',
+      'finance_application_bildungTeilhabe_whereToGet_11':
+          'Registration form or invoice from the club/course',
       'finance_application_bildungTeilhabe_title_13': 'Check what is possible',
-      'finance_application_bildungTeilhabe_description_14': 'BuT includes school supplies (€195/year), lunch, trips, tutoring, sport/culture (€15/month) and school transport.',
-      'finance_application_bildungTeilhabe_title_15': 'Informal application or form',
-      'finance_application_bildungTeilhabe_description_16': 'Get the BuT form from the Jobcentre/social welfare office or apply by letter. Some cities have online forms.',
+      'finance_application_bildungTeilhabe_description_14':
+          'BuT includes school supplies (€195/year), lunch, trips, tutoring, sport/culture (€15/month) and school transport.',
+      'finance_application_bildungTeilhabe_title_15':
+          'Informal application or form',
+      'finance_application_bildungTeilhabe_description_16':
+          'Get the BuT form from the Jobcentre/social welfare office or apply by letter. Some cities have online forms.',
       'finance_application_bildungTeilhabe_title_17': 'Attach evidence',
-      'finance_application_bildungTeilhabe_description_18': 'Attach the benefit decision, school certificate and, if applicable, club invoice.',
-      'finance_application_bildungTeilhabe_title_19': 'Voucher or direct payment',
-      'finance_application_bildungTeilhabe_description_20': 'You receive a voucher (e.g. for the club), or payment goes directly to the provider.',
+      'finance_application_bildungTeilhabe_description_18':
+          'Attach the benefit decision, school certificate and, if applicable, club invoice.',
+      'finance_application_bildungTeilhabe_title_19':
+          'Voucher or direct payment',
+      'finance_application_bildungTeilhabe_description_20':
+          'You receive a voucher (e.g. for the club), or payment goes directly to the provider.',
       'finance_application_elterngeld_benefitName_0': 'Parental Allowance',
-      'finance_application_elterngeld_responsibleAuthority_1': 'Your federal state’s Parental Allowance office',
-      'finance_application_elterngeld_processingTime_2': '4–12 weeks (depending on the federal state)',
-      'finance_application_elterngeld_renewalNote_3': 'No renewal application. One award for 12–14 months (basic) or 24–28 months (Plus).',
-      'finance_application_elterngeld_proTip_4': 'Prepare the application BEFORE birth — only the birth certificate will still be missing. Saves weeks!',
-      'finance_application_elterngeld_aiTemplatePrompt_5': 'Write a short factual cover letter for a basic Parental Allowance application after the first child’s birth. The parent plans to share the months with their partner.',
-      'finance_application_elterngeld_name_6': 'Child’s birth certificate (original or certified copy)',
+      'finance_application_elterngeld_responsibleAuthority_1':
+          'Your federal state’s Parental Allowance office',
+      'finance_application_elterngeld_processingTime_2':
+          '4–12 weeks (depending on the federal state)',
+      'finance_application_elterngeld_renewalNote_3':
+          'No renewal application. One award for 12–14 months (basic) or 24–28 months (Plus).',
+      'finance_application_elterngeld_proTip_4':
+          'Prepare the application BEFORE birth — only the birth certificate will still be missing. Saves weeks!',
+      'finance_application_elterngeld_aiTemplatePrompt_5':
+          'Write a short factual cover letter for a basic Parental Allowance application after the first child’s birth. The parent plans to share the months with their partner.',
+      'finance_application_elterngeld_name_6':
+          'Child’s birth certificate (original or certified copy)',
       'finance_application_elterngeld_whereToGet_7': 'Civil registry office',
-      'finance_application_elterngeld_name_8': 'Health insurer’s maternity benefit certificate',
-      'finance_application_elterngeld_whereToGet_9': 'Your health insurer (apply after birth)',
-      'finance_application_elterngeld_name_10': 'Employer’s certificate of maternity benefit top-up',
-      'finance_application_elterngeld_whereToGet_11': 'Your employer’s HR department',
-      'finance_application_elterngeld_name_12': 'Income evidence for the 12 months before birth',
-      'finance_application_elterngeld_whereToGet_13': 'Payslips or tax assessment',
-      'finance_application_elterngeld_name_14': 'Both parents’ ID cards (copies)',
-      'finance_application_elterngeld_name_15': 'Confirmation of planned working hours (for Elterngeld Plus)',
-      'finance_application_elterngeld_whereToGet_16': 'Employer (if you work part-time)',
-      'finance_application_elterngeld_title_17': 'Use the Parental Allowance calculator',
-      'finance_application_elterngeld_description_18': 'Use the official calculator to estimate Parental Allowance and the best split between basic, Plus and partnership bonus.',
-      'finance_application_elterngeld_title_19': 'Complete the application (online or paper)',
-      'finance_application_elterngeld_description_20': 'Each federal state has its own form. ElterngeldDigital is easiest and available in many states.',
+      'finance_application_elterngeld_name_8':
+          'Health insurer’s maternity benefit certificate',
+      'finance_application_elterngeld_whereToGet_9':
+          'Your health insurer (apply after birth)',
+      'finance_application_elterngeld_name_10':
+          'Employer’s certificate of maternity benefit top-up',
+      'finance_application_elterngeld_whereToGet_11':
+          'Your employer’s HR department',
+      'finance_application_elterngeld_name_12':
+          'Income evidence for the 12 months before birth',
+      'finance_application_elterngeld_whereToGet_13':
+          'Payslips or tax assessment',
+      'finance_application_elterngeld_name_14':
+          'Both parents’ ID cards (copies)',
+      'finance_application_elterngeld_name_15':
+          'Confirmation of planned working hours (for Elterngeld Plus)',
+      'finance_application_elterngeld_whereToGet_16':
+          'Employer (if you work part-time)',
+      'finance_application_elterngeld_title_17':
+          'Use the Parental Allowance calculator',
+      'finance_application_elterngeld_description_18':
+          'Use the official calculator to estimate Parental Allowance and the best split between basic, Plus and partnership bonus.',
+      'finance_application_elterngeld_title_19':
+          'Complete the application (online or paper)',
+      'finance_application_elterngeld_description_20':
+          'Each federal state has its own form. ElterngeldDigital is easiest and available in many states.',
       'finance_application_elterngeld_title_21': 'Gather documents',
-      'finance_application_elterngeld_description_22': 'Copy the birth certificate, income evidence, maternity benefit certificate and IDs.',
+      'finance_application_elterngeld_description_22':
+          'Copy the birth certificate, income evidence, maternity benefit certificate and IDs.',
       'finance_application_elterngeld_title_23': 'Submit + be patient',
-      'finance_application_elterngeld_description_24': 'Submit by post or digitally. Processing varies (4–12 weeks). Ask after 6 weeks if you hear nothing.',
-      'finance_application_unterhaltsvorschuss_benefitName_0': 'Advance Maintenance Payment',
-      'finance_application_unterhaltsvorschuss_responsibleAuthority_1': 'Your city or municipality’s Youth Welfare Office',
-      'finance_application_unterhaltsvorschuss_renewalNote_3': 'No renewal application needed. Paid automatically until 18 while conditions continue to be met.',
-      'finance_application_unterhaltsvorschuss_proTip_4': 'You can apply retroactively for 1 month. Do not wait — apply now!',
-      'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5': 'Write a short factual maintenance advance application. A single parent receives no maintenance from the other parent. Clear, 3–4 sentences.',
-      'finance_application_unterhaltsvorschuss_name_9': 'Residence registration certificate (sole residence)',
-      'finance_application_unterhaltsvorschuss_whereToGet_10': 'Citizens’ office — shows you live alone with the child',
-      'finance_application_unterhaltsvorschuss_name_11': 'Evidence of unpaid maintenance',
-      'finance_application_unterhaltsvorschuss_whereToGet_12': 'For example an unanswered letter to your ex, maintenance order or your own declaration',
-      'finance_application_unterhaltsvorschuss_name_13': 'Acknowledgement of paternity or birth certificate naming the father',
-      'finance_application_unterhaltsvorschuss_whereToGet_14': 'Civil registry office or Youth Welfare Office',
-      'finance_application_unterhaltsvorschuss_title_15': 'Contact the Youth Welfare Office',
-      'finance_application_unterhaltsvorschuss_description_16': 'Call or visit the Youth Welfare Office. They help you complete the form.',
-      'finance_application_unterhaltsvorschuss_title_17': 'Complete the application',
-      'finance_application_unterhaltsvorschuss_description_18': 'Get the form from the Youth Welfare Office. Some cities offer it online as a PDF.',
-      'finance_application_unterhaltsvorschuss_description_20': 'Attach the birth certificate, residence certificate and evidence of unpaid maintenance.',
-      'finance_application_unterhaltsvorschuss_title_21': 'Wait for the decision',
-      'finance_application_unterhaltsvorschuss_description_22': 'The decision arrives after 4–8 weeks. Monthly payments are retroactive from the application date.',
+      'finance_application_elterngeld_description_24':
+          'Submit by post or digitally. Processing varies (4–12 weeks). Ask after 6 weeks if you hear nothing.',
+      'finance_application_unterhaltsvorschuss_benefitName_0':
+          'Advance Maintenance Payment',
+      'finance_application_unterhaltsvorschuss_responsibleAuthority_1':
+          'Your city or municipality’s Youth Welfare Office',
+      'finance_application_unterhaltsvorschuss_renewalNote_3':
+          'No renewal application needed. Paid automatically until 18 while conditions continue to be met.',
+      'finance_application_unterhaltsvorschuss_proTip_4':
+          'You can apply retroactively for 1 month. Do not wait — apply now!',
+      'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5':
+          'Write a short factual maintenance advance application. A single parent receives no maintenance from the other parent. Clear, 3–4 sentences.',
+      'finance_application_unterhaltsvorschuss_name_9':
+          'Residence registration certificate (sole residence)',
+      'finance_application_unterhaltsvorschuss_whereToGet_10':
+          'Citizens’ office — shows you live alone with the child',
+      'finance_application_unterhaltsvorschuss_name_11':
+          'Evidence of unpaid maintenance',
+      'finance_application_unterhaltsvorschuss_whereToGet_12':
+          'For example an unanswered letter to your ex, maintenance order or your own declaration',
+      'finance_application_unterhaltsvorschuss_name_13':
+          'Acknowledgement of paternity or birth certificate naming the father',
+      'finance_application_unterhaltsvorschuss_whereToGet_14':
+          'Civil registry office or Youth Welfare Office',
+      'finance_application_unterhaltsvorschuss_title_15':
+          'Contact the Youth Welfare Office',
+      'finance_application_unterhaltsvorschuss_description_16':
+          'Call or visit the Youth Welfare Office. They help you complete the form.',
+      'finance_application_unterhaltsvorschuss_title_17':
+          'Complete the application',
+      'finance_application_unterhaltsvorschuss_description_18':
+          'Get the form from the Youth Welfare Office. Some cities offer it online as a PDF.',
+      'finance_application_unterhaltsvorschuss_description_20':
+          'Attach the birth certificate, residence certificate and evidence of unpaid maintenance.',
+      'finance_application_unterhaltsvorschuss_title_21':
+          'Wait for the decision',
+      'finance_application_unterhaltsvorschuss_description_22':
+          'The decision arrives after 4–8 weeks. Monthly payments are retroactive from the application date.',
       'finance_application_pflegegeld_benefitName_0': 'Care Allowance',
-      'finance_application_pflegegeld_responsibleAuthority_1': 'Long-term care insurance fund (with your health insurer)',
-      'finance_application_pflegegeld_processingTime_2': 'Generally 25 working days; check statutory exceptions (§18c SGB XI).',
-      'finance_application_pflegegeld_renewalNote_3': 'No renewal application. If needs worsen, apply for a higher care level.',
-      'finance_application_pflegegeld_proTip_4': 'Apply informally by phone — a call to the care fund is enough! The date counts for retroactive payment.',
-      'finance_application_pflegegeld_aiTemplatePrompt_5': 'Write a short informal application for a child’s care benefits. The child has a disability/chronic illness and needs daily support. Factual, 3–4 sentences.',
-      'finance_application_pflegegeld_name_6': 'Informal application (phone or letter is enough)',
-      'finance_application_pflegegeld_whereToGet_7': 'A call to your health insurer/care fund is enough',
+      'finance_application_pflegegeld_responsibleAuthority_1':
+          'Long-term care insurance fund (with your health insurer)',
+      'finance_application_pflegegeld_processingTime_2':
+          'Generally 25 working days; check statutory exceptions (§18c SGB XI).',
+      'finance_application_pflegegeld_renewalNote_3':
+          'No renewal application. If needs worsen, apply for a higher care level.',
+      'finance_application_pflegegeld_proTip_4':
+          'Apply informally by phone — a call to the care fund is enough! The date counts for retroactive payment.',
+      'finance_application_pflegegeld_aiTemplatePrompt_5':
+          'Write a short informal application for a child’s care benefits. The child has a disability/chronic illness and needs daily support. Factual, 3–4 sentences.',
+      'finance_application_pflegegeld_name_6':
+          'Informal application (phone or letter is enough)',
+      'finance_application_pflegegeld_whereToGet_7':
+          'A call to your health insurer/care fund is enough',
       'finance_application_pflegegeld_name_8': 'Medical records / diagnoses',
-      'finance_application_pflegegeld_whereToGet_9': 'Paediatrician, specialist or hospital',
-      'finance_application_pflegegeld_name_10': 'Care diary (2 weeks before assessment)',
-      'finance_application_pflegegeld_whereToGet_11': 'Template from your care fund or online',
+      'finance_application_pflegegeld_whereToGet_9':
+          'Paediatrician, specialist or hospital',
+      'finance_application_pflegegeld_name_10':
+          'Care diary (2 weeks before assessment)',
+      'finance_application_pflegegeld_whereToGet_11':
+          'Template from your care fund or online',
       'finance_application_pflegegeld_title_12': 'Call the care fund',
-      'finance_application_pflegegeld_description_13': 'A call is enough! Say: “I would like to apply for care benefits for my child.” The call date counts.',
+      'finance_application_pflegegeld_description_13':
+          'A call is enough! Say: “I would like to apply for care benefits for my child.” The call date counts.',
       'finance_application_pflegegeld_title_14': 'Keep a care diary (2 weeks)',
-      'finance_application_pflegegeld_description_15': 'Record daily help needed: washing, dressing, eating, nights, supervision. Greater detail helps the assessment.',
-      'finance_application_pflegegeld_title_16': 'Medical Service assessment (home visit)',
-      'finance_application_pflegegeld_description_17': 'The Medical Service visits your home. Show the child’s real needs, not only a “good day”!',
-      'finance_application_pflegegeld_title_18': 'Decision + appeal if necessary',
-      'finance_application_pflegegeld_description_19': 'Generally a decision within 25 working days (§18c SGB XI; exceptions possible). Appeals generally within one month of notification, or three months if notified abroad (§84 SGG). Check the appeal notice.',
-      'finance_application_eingliederungshilfe_benefitName_0': 'Integration Assistance',
-      'finance_application_eingliederungshilfe_responsibleAuthority_1': 'Social welfare or Youth Welfare Office (depending on disability type)',
+      'finance_application_pflegegeld_description_15':
+          'Record daily help needed: washing, dressing, eating, nights, supervision. Greater detail helps the assessment.',
+      'finance_application_pflegegeld_title_16':
+          'Medical Service assessment (home visit)',
+      'finance_application_pflegegeld_description_17':
+          'The Medical Service visits your home. Show the child’s real needs, not only a “good day”!',
+      'finance_application_pflegegeld_title_18':
+          'Decision + appeal if necessary',
+      'finance_application_pflegegeld_description_19':
+          'Generally a decision within 25 working days (§18c SGB XI; exceptions possible). Appeals generally within one month of notification, or three months if notified abroad (§84 SGG). Check the appeal notice.',
+      'finance_application_eingliederungshilfe_benefitName_0':
+          'Integration Assistance',
+      'finance_application_eingliederungshilfe_responsibleAuthority_1':
+          'Social welfare or Youth Welfare Office (depending on disability type)',
       'finance_application_eingliederungshilfe_processingTime_2': '4–12 weeks',
-      'finance_application_eingliederungshilfe_renewalNote_3': 'Awarded for a defined period. Apply for renewal in good time.',
-      'finance_application_eingliederungshilfe_proTip_4': 'For mental disabilities (e.g. autism, ADHD), the Youth Welfare Office is responsible (§35a SGB VIII). For physical/intellectual disabilities, the social welfare office.',
-      'finance_application_eingliederungshilfe_aiTemplatePrompt_5': 'Write a short informal integration assistance application for a child with a disability needing participation support (e.g. school assistance, early intervention). Factual, 3–4 sentences.',
-      'finance_application_eingliederungshilfe_name_6': 'Medical opinion / diagnosis',
-      'finance_application_eingliederungshilfe_whereToGet_7': 'Paediatrician, SPZ (social paediatric centre) or specialist',
-      'finance_application_eingliederungshilfe_name_8': 'Informal integration assistance application',
-      'finance_application_eingliederungshilfe_whereToGet_9': 'Your own letter to the social welfare/Youth Welfare Office',
-      'finance_application_eingliederungshilfe_name_10': 'Development report (nursery/school)',
-      'finance_application_eingliederungshilfe_whereToGet_11': 'A short report from the educator or teacher',
-      'finance_application_eingliederungshilfe_name_12': 'School statement (for school assistance)',
-      'finance_application_eingliederungshilfe_whereToGet_13': 'Headteacher or class teacher',
-      'finance_application_eingliederungshilfe_title_14': 'Clarify responsibility',
-      'finance_application_eingliederungshilfe_description_15': 'Mental disabilities (autism, ADHD, anxiety) → Youth Welfare Office. Physical/intellectual disabilities → social welfare office. If unsure, ask the Youth Welfare Office.',
-      'finance_application_eingliederungshilfe_title_16': 'Make an informal application',
-      'finance_application_eingliederungshilfe_description_17': 'A letter is enough: “I apply for integration assistance for my child [Name] due to [Diagnosis].” Attach the medical opinion.',
-      'finance_application_eingliederungshilfe_title_18': 'Support planning meeting',
-      'finance_application_eingliederungshilfe_description_19': 'The office invites you to discuss the child’s support needs (early intervention, school assistance, therapy, etc.).',
-      'finance_application_eingliederungshilfe_title_20': 'Approval + start of support',
-      'finance_application_eingliederungshilfe_description_21': 'Support starts after approval. If refused, appeal within 4 weeks, free of charge.',
+      'finance_application_eingliederungshilfe_renewalNote_3':
+          'Awarded for a defined period. Apply for renewal in good time.',
+      'finance_application_eingliederungshilfe_proTip_4':
+          'For mental disabilities (e.g. autism, ADHD), the Youth Welfare Office is responsible (§35a SGB VIII). For physical/intellectual disabilities, the social welfare office.',
+      'finance_application_eingliederungshilfe_aiTemplatePrompt_5':
+          'Write a short informal integration assistance application for a child with a disability needing participation support (e.g. school assistance, early intervention). Factual, 3–4 sentences.',
+      'finance_application_eingliederungshilfe_name_6':
+          'Medical opinion / diagnosis',
+      'finance_application_eingliederungshilfe_whereToGet_7':
+          'Paediatrician, SPZ (social paediatric centre) or specialist',
+      'finance_application_eingliederungshilfe_name_8':
+          'Informal integration assistance application',
+      'finance_application_eingliederungshilfe_whereToGet_9':
+          'Your own letter to the social welfare/Youth Welfare Office',
+      'finance_application_eingliederungshilfe_name_10':
+          'Development report (nursery/school)',
+      'finance_application_eingliederungshilfe_whereToGet_11':
+          'A short report from the educator or teacher',
+      'finance_application_eingliederungshilfe_name_12':
+          'School statement (for school assistance)',
+      'finance_application_eingliederungshilfe_whereToGet_13':
+          'Headteacher or class teacher',
+      'finance_application_eingliederungshilfe_title_14':
+          'Clarify responsibility',
+      'finance_application_eingliederungshilfe_description_15':
+          'Mental disabilities (autism, ADHD, anxiety) → Youth Welfare Office. Physical/intellectual disabilities → social welfare office. If unsure, ask the Youth Welfare Office.',
+      'finance_application_eingliederungshilfe_title_16':
+          'Make an informal application',
+      'finance_application_eingliederungshilfe_description_17':
+          'A letter is enough: “I apply for integration assistance for my child [Name] due to [Diagnosis].” Attach the medical opinion.',
+      'finance_application_eingliederungshilfe_title_18':
+          'Support planning meeting',
+      'finance_application_eingliederungshilfe_description_19':
+          'The office invites you to discuss the child’s support needs (early intervention, school assistance, therapy, etc.).',
+      'finance_application_eingliederungshilfe_title_20':
+          'Approval + start of support',
+      'finance_application_eingliederungshilfe_description_21':
+          'Support starts after approval. If refused, appeal within 4 weeks, free of charge.',
       'finance_content_austria_name_1': 'Family Allowance (Familienbeihilfe)',
-      'finance_content_austria_description_2': 'Monthly support per child, depending on age.',
-      'finance_content_austria_amount_3': '€138.40 / 148 / 171.80 / 200.40/month (from ages 0 / 3 / 10 / 19; excluding supplements)',
+      'finance_content_austria_description_2':
+          'Monthly support per child, depending on age.',
+      'finance_content_austria_amount_3':
+          '€138.40 / 148 / 171.80 / 200.40/month (from ages 0 / 3 / 10 / 19; excluding supplements)',
       'finance_content_austria_name_4': 'Child Tax Credit (Kinderabsetzbetrag)',
       'finance_content_austria_description_5': 'Tax credit per child.',
       'finance_content_austria_amount_6': '€70.90/child/month',
-      'finance_content_austria_eligibility_7': 'Paid together with Family Allowance; no separate application.',
-      'finance_content_austria_name_8': 'Childcare Allowance (Kinderbetreuungsgeld)',
-      'finance_content_austria_description_9': 'After birth, with different models.',
-      'finance_content_austria_amount_10': 'Account: €17.65–41.14/day; income-related: 80% of previous earnings, max. €80.12/day',
+      'finance_content_austria_eligibility_7':
+          'Paid together with Family Allowance; no separate application.',
+      'finance_content_austria_name_8':
+          'Childcare Allowance (Kinderbetreuungsgeld)',
+      'finance_content_austria_description_9':
+          'After birth, with different models.',
+      'finance_content_austria_amount_10':
+          'Account: €17.65–41.14/day; income-related: 80% of previous earnings, max. €80.12/day',
       'finance_content_switzerland_name_1': 'Child Allowance (Kinderzulage)',
-      'finance_content_switzerland_description_2': 'Varies by canton, per child.',
-      'finance_content_switzerland_amount_3': 'At least CHF 215/child/month; cantonal amounts may be higher',
-      'finance_content_switzerland_name_4': 'Education Allowance (Ausbildungszulage)',
-      'finance_content_switzerland_description_5': 'Post-compulsory education, from age 15 at the earliest up to 25 at the latest; check exact monthly boundaries.',
-      'finance_content_switzerland_amount_6': 'At least CHF 268/child/month; cantonal amounts may be higher',
+      'finance_content_switzerland_description_2':
+          'Varies by canton, per child.',
+      'finance_content_switzerland_amount_3':
+          'At least CHF 215/child/month; cantonal amounts may be higher',
+      'finance_content_switzerland_name_4':
+          'Education Allowance (Ausbildungszulage)',
+      'finance_content_switzerland_description_5':
+          'Post-compulsory education, from age 15 at the earliest up to 25 at the latest; check exact monthly boundaries.',
+      'finance_content_switzerland_amount_6':
+          'At least CHF 268/child/month; cantonal amounts may be higher',
       'finance_content_turkey_name_1': 'Dogum Yardimi',
-      'finance_content_turkey_description_2': 'New birth assistance programme for births from 01.01.2025; recurring payments from application through the 60th month inclusive.',
-      'finance_content_turkey_amount_3': '1st child: TRY 5,000 once; 2nd: TRY 1,500/month; 3rd+: TRY 5,000/month',
-      'finance_content_turkey_eligibility_4': 'Turkish citizenship and residence in Türkiye; check further official application conditions.',
+      'finance_content_turkey_description_2':
+          'New birth assistance programme for births from 01.01.2025; recurring payments from application through the 60th month inclusive.',
+      'finance_content_turkey_amount_3':
+          '1st child: TRY 5,000 once; 2nd: TRY 1,500/month; 3rd+: TRY 5,000/month',
+      'finance_content_turkey_eligibility_4':
+          'Turkish citizenship and residence in Türkiye; check further official application conditions.',
       'finance_content_turkey_name_5': 'Cocuk Parasi',
-      'finance_content_turkey_description_6': 'Monthly child benefit for families.',
+      'finance_content_turkey_description_6':
+          'Monthly child benefit for families.',
       'finance_content_turkey_amount_7': 'Income-dependent',
       'finance_content_turkey_name_8': 'Social and Economic Support (SED)',
-      'finance_content_turkey_description_9': 'Social and economic support through İl Müdürlüğü/Sosyal Hizmet Merkezi.',
-      'finance_content_turkey_eligibility_10': 'Individual social assessment of family, economic and regional circumstances.',
+      'finance_content_turkey_description_9':
+          'Social and economic support through İl Müdürlüğü/Sosyal Hizmet Merkezi.',
+      'finance_content_turkey_eligibility_10':
+          'Individual social assessment of family, economic and regional circumstances.',
       'finance_content_turkey_note_11': 'Bag, stationery, uniform',
       'finance_content_uk_name_1': 'Child Benefit',
       'finance_content_uk_description_2': 'Weekly payment for each child.',
-      'finance_content_uk_amount_3': '£27.05/week (eldest or only), £17.90/week (additional children)',
+      'finance_content_uk_amount_3':
+          '£27.05/week (eldest or only), £17.90/week (additional children)',
       'finance_content_uk_name_4': 'Universal Credit (Child Element)',
-      'finance_content_uk_description_5': 'Extra support for families on low income.',
-      'finance_content_uk_amount_6': '£303.94/month per child; extra £47.94 for first child born before 6 April 2017',
+      'finance_content_uk_description_5':
+          'Extra support for families on low income.',
+      'finance_content_uk_amount_6':
+          '£303.94/month per child; extra £47.94 for first child born before 6 April 2017',
       'finance_content_uk_name_7': 'Tax-Free Childcare',
-      'finance_content_uk_description_8': 'Government adds £2 for each £8 paid into the childcare account.',
-      'finance_content_uk_amount_9': 'Up to £500/3 months (£2,000/year); disabled child: £1,000/3 months (£4,000/year)',
+      'finance_content_uk_description_8':
+          'Government adds £2 for each £8 paid into the childcare account.',
+      'finance_content_uk_amount_9':
+          'Up to £500/3 months (£2,000/year); disabled child: £1,000/3 months (£4,000/year)',
       'finance_content_uk_note_10': 'Uniform, bag, shoes, stationery',
       'finance_content_generic_name_1': 'Child Benefit',
-      'finance_content_generic_description_2': 'Most countries pay monthly family benefits. Check with your local authority.',
+      'finance_content_generic_description_2':
+          'Most countries pay monthly family benefits. Check with your local authority.',
       'finance_content_generic_name_3': 'Housing support',
-      'finance_content_generic_description_4': 'Many countries offer rent support for families.',
+      'finance_content_generic_description_4':
+          'Many countries offer rent support for families.',
       'finance_content_generic_name_5': 'Childcare subsidy',
-      'finance_content_generic_description_6': 'Check whether your country subsidises childcare.',
+      'finance_content_generic_description_6':
+          'Check whether your country subsidises childcare.',
       'benefit_chip_leave': 'Parental leave',
       'benefit_chip_salary': 'Salary decreasing',
       'benefit_chip_single': 'Single parent',
       'benefit_chip_move': 'Moving home',
       'benefit_chip_second': 'Second child on the way',
       'benefit_chip_income': 'Low income',
-      'benefit_fallback_notice': 'The AI response is unavailable. This is general, local guidance for your country, not tailored to your situation.',
-      'benefit_fallback_check': 'Check the linked official authorities for details.',
-      'benefit_fallback_prepare': 'Have your ID, income evidence and birth certificate ready.',
+      'benefit_fallback_notice':
+          'The AI response is unavailable. This is general, local guidance for your country, not tailored to your situation.',
+      'benefit_fallback_check':
+          'Check the linked official authorities for details.',
+      'benefit_fallback_prepare':
+          'Have your ID, income evidence and birth certificate ready.',
       'finance_share_failed': 'Could not share the overview. Please try again.',
       'antrag_documents_tab': 'Documents',
       'antrag_guide_tab': 'Guide',
@@ -4902,38 +5423,61 @@ class AppStringsManager {
       'antrag_documents_count': '{checked} of {total} documents ready',
       'antrag_processing_time': '⏱️ Processing time: {time}',
       'antrag_step_guide': 'Step-by-step guide',
-      'antrag_ai_description': 'AI creates a cover letter or explanation, ready to copy.',
+      'antrag_ai_description':
+          'AI creates a cover letter or explanation, ready to copy.',
       'antrag_copied': '📋 Copied to clipboard!',
       'antrag_copy_failed': 'Copy failed. Please try again.',
-      'antrag_ai_disclaimer': 'This is a template, not legal advice. Adapt it to your personal situation.',
-      'antrag_ai_failed': 'Could not create the text template. Please try again.',
-      'antrag_premium_description': 'Premium includes the full guide, AI templates and reminders.',
-      'antrag_content_limits': 'General guidance, not legal advice. Not all documents, deadlines and procedure details have been officially verified. Check current requirements and appeal deadlines with the responsible authority.',
+      'antrag_ai_disclaimer':
+          'This is a template, not legal advice. Adapt it to your personal situation.',
+      'antrag_ai_failed':
+          'Could not create the text template. Please try again.',
+      'antrag_premium_description':
+          'Premium includes the full guide, AI templates and reminders.',
+      'antrag_content_limits':
+          'General guidance, not legal advice. Not all documents, deadlines and procedure details have been officially verified. Check current requirements and appeal deadlines with the responsible authority.',
       'finance_estimated_months': 'Estimated in {months} months ({year})',
       'finance_estimated_one_month': 'Estimated in 1 month ({year})',
-      'finance_goal_months_on_time': 'At {amount}/month, you are on track to reach the estimated goal within {months} months.',
-      'finance_goal_months_shortfall': 'At {amount}/month, you are not yet on track to reach the estimated goal in {months} months.',
+      'finance_goal_months_on_time':
+          'At {amount}/month, you are on track to reach the estimated goal within {months} months.',
+      'finance_goal_months_shortfall':
+          'At {amount}/month, you are not yet on track to reach the estimated goal in {months} months.',
       'finance_legacy_title': 'Claim local financial data',
-      'finance_legacy_notice': 'This device has unassigned financial data and checklists. They are not used automatically. Sign in to claim them after confirming ownership.',
-      'finance_legacy_confirm': 'Do the previous financial values, benefits guide and application checklists on this device belong to you? Your confirmation assigns them to this account. Existing account values take priority; checklists are merged. Values from a different country are not imported as a new currency. The original legacy data remains locally. Nothing is published.',
-      'benefit_ai_consent_body': 'For personal guidance, your free text, selected situation details, country and available child ages are sent through the ParentPeak server to Google Gemini. Gemini may use web search. Some recognized contact details are removed; this is not complete anonymization. Please do not enter names, addresses or health details. These details are not saved here as a conversation. Consent applies to this account or guest mode. Without consent, general benefit information remains available, but no AI request is started.',
+      'finance_legacy_notice':
+          'This device has unassigned financial data and checklists. They are not used automatically. Sign in to claim them after confirming ownership.',
+      'finance_legacy_confirm':
+          'Do the previous financial values, benefits guide and application checklists on this device belong to you? Your confirmation assigns them to this account. Existing account values take priority; checklists are merged. Values from a different country are not imported as a new currency. The original legacy data remains locally. Nothing is published.',
+      'benefit_ai_consent_body':
+          'For personal guidance, your free text, selected situation details, country and available child ages are sent through the ParentPeak server to Google Gemini. Gemini may use web search. Some recognized contact details are removed; this is not complete anonymization. Please do not enter names, addresses or health details. These details are not saved here as a conversation. Consent applies to this account or guest mode. Without consent, general benefit information remains available, but no AI request is started.',
       'benefit_ai_consent_accept': 'Agree and use AI',
-      'benefit_ai_consent_failed': 'Consent could not be saved. No AI request was started.',
+      'benefit_ai_consent_failed':
+          'Consent could not be saved. No AI request was started.',
       'treasure_photo_consent_title': 'Analyse this photo with AI?',
-      'treasure_account_changed': 'The account has changed. Please close this view.',
+      'treasure_account_changed':
+          'The account has changed. Please close this view.',
       'treasure_legacy_title': 'Unassigned local data',
-      'treasure_legacy_body': 'Local drafts, reservation and safety markers do not yet belong to an account. Sign in to confirm ownership.',
-      'treasure_legacy_confirm': 'Do you confirm these data belong to you? They will be assigned to this account. An existing account draft takes priority. Originals are retained; nothing is published.',
+      'treasure_legacy_body':
+          'Local drafts, reservation and safety markers do not yet belong to an account. Sign in to confirm ownership.',
+      'treasure_legacy_confirm':
+          'Do you confirm these data belong to you? They will be assigned to this account. An existing account draft takes priority. Originals are retained; nothing is published.',
       'treasure_legacy_claim': 'Confirm ownership',
-      'treasure_storage_failed': 'Market data could not be loaded or saved. Please try again.',
-      'treasure_reservation_offline': 'Nothing was reserved without a connection to the market server. Please try again online.',
-      'treasure_reserve_local_failed': 'The server confirmed the reservation, but its local marker could not be saved. Check My listings before reserving again.',
-      'treasure_cancel_local_failed': 'The server confirmed cancellation, but its local marker could not be removed. An outdated marker may still appear.',
-      'treasure_upload_batch_failed': 'Not all photos could be uploaded. Uploaded photos were removed; no listing was sent.',
-      'treasure_upload_cleanup_failed': 'Photo upload failed. No listing was sent, but some uploaded photos could not be removed and may remain publicly accessible.',
-      'treasure_published_local_failed': 'The server created the listing, but local data could not be updated. Please check My listings; do not publish again.',
-      'treasure_publish_uncertain': 'Creation could not be confirmed. Uploaded photos may be publicly accessible. Please check My listings before trying again.',
-      'treasure_publish_unavailable': 'Publishing requires a signed-in account and an available market server. No photos were uploaded.',
+      'treasure_storage_failed':
+          'Market data could not be loaded or saved. Please try again.',
+      'treasure_reservation_offline':
+          'Nothing was reserved without a connection to the market server. Please try again online.',
+      'treasure_reserve_local_failed':
+          'The server confirmed the reservation, but its local marker could not be saved. Check My listings before reserving again.',
+      'treasure_cancel_local_failed':
+          'The server confirmed cancellation, but its local marker could not be removed. An outdated marker may still appear.',
+      'treasure_upload_batch_failed':
+          'Not all photos could be uploaded. Uploaded photos were removed; no listing was sent.',
+      'treasure_upload_cleanup_failed':
+          'Photo upload failed. No listing was sent, but some uploaded photos could not be removed and may remain publicly accessible.',
+      'treasure_published_local_failed':
+          'The server created the listing, but local data could not be updated. Please check My listings; do not publish again.',
+      'treasure_publish_uncertain':
+          'Creation could not be confirmed. Uploaded photos may be publicly accessible. Please check My listings before trying again.',
+      'treasure_publish_unavailable':
+          'Publishing requires a signed-in account and an available market server. No photos were uploaded.',
       'treasurePublishNow': 'Publish now',
       'treasureSaveDraft': 'Save draft',
       'treasureDraftSaved': 'Draft saved. You can continue later.',
@@ -4941,18 +5485,27 @@ class AppStringsManager {
       'treasureUploadSuccess': 'Your item is now visible.',
       'treasureSelectForHandover': 'Choose for handover',
       'treasureReserveCoffeeMode': 'Reserve meetup',
-      'treasure_draft_images_missing': 'Draft text was loaded, but earlier photos are no longer available. Please add them again.',
-      'treasure_photos_public_info': 'Publishing uploads photos publicly. They may remain accessible if a later step fails. Do not show people, private documents or addresses.',
-      'treasure_photo_consent_body': 'To suggest details about your item, this photo will be sent through the ParentPeak backend to Google Gemini. Image contents are not anonymised. Use item photos without people, private documents or visible addresses. Analysis is optional; without consent you can keep the photo and complete the listing manually. This consent applies only to giveaway-market photo AI and is saved for this account. It does not publish the photo or listing.',
+      'treasure_draft_images_missing':
+          'Draft text was loaded, but earlier photos are no longer available. Please add them again.',
+      'treasure_photos_public_info':
+          'Publishing uploads photos publicly. They may remain accessible if a later step fails. Do not show people, private documents or addresses.',
+      'treasure_photo_consent_body':
+          'To suggest details about your item, this photo will be sent through the ParentPeak backend to Google Gemini. Image contents are not anonymised. Use item photos without people, private documents or visible addresses. Analysis is optional; without consent you can keep the photo and complete the listing manually. This consent applies only to giveaway-market photo AI and is saved for this account. It does not publish the photo or listing.',
       'treasure_photo_consent_accept': 'Agree and analyse photo',
-      'treasure_photo_consent_failed': 'Consent could not be saved. No photo was sent to AI.',
-      'treasure_photo_analysis_failed': 'Photo analysis could not be completed. Your photo and manual entries are kept.',
-      'family_hub_account_changed': 'The account has changed. Please close this view.',
+      'treasure_photo_consent_failed':
+          'Consent could not be saved. No photo was sent to AI.',
+      'treasure_photo_analysis_failed':
+          'Photo analysis could not be completed. Your photo and manual entries are kept.',
+      'family_hub_account_changed':
+          'The account has changed. Please close this view.',
       'family_hub_legacy_title': 'Claim local legacy data',
-      'family_hub_legacy_notice': 'This device has unassigned legacy data. It is not used automatically. Sign in to claim it after confirming ownership.',
-      'family_hub_legacy_confirm': 'I confirm that the child dossiers (including health and emergency details), shopping lists, to-dos and kitchen allergies previously stored for this device belong to my currently signed-in account. They will be assigned locally only to this account. Existing account data is preserved; nothing is published.',
+      'family_hub_legacy_notice':
+          'This device has unassigned legacy data. It is not used automatically. Sign in to claim it after confirming ownership.',
+      'family_hub_legacy_confirm':
+          'I confirm that the child dossiers (including health and emergency details), shopping lists, to-dos and kitchen allergies previously stored for this device belong to my currently signed-in account. They will be assigned locally only to this account. Existing account data is preserved; nothing is published.',
       'family_hub_legacy_claim': 'Belongs to my account – claim data',
-      'family_hub_legacy_failed': 'Legacy data could not be claimed safely. The original data is preserved.',
+      'family_hub_legacy_failed':
+          'Legacy data could not be claimed safely. The original data is preserved.',
       'family_hub_tab_shopping': 'Shopping',
       'family_hub_tab_todo': 'To-do',
       'family_hub_tab_children': 'Children',
@@ -5075,79 +5628,126 @@ class AppStringsManager {
       'chat_consent_save_failed':
           'Consent could not be saved. No AI request was started. Please try again.',
       'chat_legacy_title': 'Unassigned local topic statistics',
-      'chat_legacy_body': 'This device has old topic statistics without an account owner. Adopt them only if they belong to you. Adoption is local, sends nothing to AI and does not import conversation history. The original data is kept.',
+      'chat_legacy_body':
+          'This device has old topic statistics without an account owner. Adopt them only if they belong to you. Adoption is local, sends nothing to AI and does not import conversation history. The original data is kept.',
       'chat_claim_action': 'Confirm ownership',
-      'chat_claim_failed': 'Topic statistics could not be adopted. The original data is kept.',
-      'chat_topics_load_failed': 'Topic statistics could not be loaded. Please reload; existing data will not be overwritten.',
-      'chat_topics_save_failed': 'Topic statistics could not be saved. The change was not confirmed; your input is kept.',
-      'chat_memory_load_failed': 'AI memory context could not be loaded. Please retry in memory settings.',
+      'chat_claim_failed':
+          'Topic statistics could not be adopted. The original data is kept.',
+      'chat_topics_load_failed':
+          'Topic statistics could not be loaded. Please reload; existing data will not be overwritten.',
+      'chat_topics_save_failed':
+          'Topic statistics could not be saved. The change was not confirmed; your input is kept.',
+      'chat_memory_load_failed':
+          'AI memory context could not be loaded. Please retry in memory settings.',
       'memory_consent_title': 'Additional consent for AI memory',
-      'memory_consent_body': 'Optional: confirmed family information, including health details, is stored for your account in the ParentPeak backend and sent to Google Gemini for relevant chat requests. New child names stay on this device; AI receives neutral placeholders and completed age instead of names and birthdays. Free text may still contain personal information. Existing original data is retained. Without consent, new memory entries and memory transfers are blocked; ordinary chat remains possible with its separate consent. Switching off stops use but does not delete existing data. Already sent requests cannot be recalled. Local data has no additional app-level encryption.',
+      'memory_consent_body':
+          'Optional: confirmed family information, including health details, is stored for your account in the ParentPeak backend and sent to Google Gemini for relevant chat requests. New child names stay on this device; AI receives neutral placeholders and completed age instead of names and birthdays. Free text may still contain personal information. Existing original data is retained. Without consent, new memory entries and memory transfers are blocked; ordinary chat remains possible with its separate consent. Switching off stops use but does not delete existing data. Already sent requests cannot be recalled. Local data has no additional app-level encryption.',
       'memory_consent_accept': 'Allow storage and AI use',
-      'memory_operation_failed': 'The change was not fully confirmed. Memory settings are being checked again; please retry.',
-      'memory_consent_required': 'Please enable memory with the additional consent before saving new data.',
+      'memory_operation_failed':
+          'The change was not fully confirmed. Memory settings are being checked again; please retry.',
+      'memory_consent_required':
+          'Please enable memory with the additional consent before saving new data.',
       'memory_local_name': 'Display name (only on this device)',
-      'memory_name_save_failed': 'The neutral profile was saved in the backend, but its local display name could not be confirmed. The list is being reloaded; please do not create a duplicate entry.',
+      'memory_name_save_failed':
+          'The neutral profile was saved in the backend, but its local display name could not be confirmed. The list is being reloaded; please do not create a duplicate entry.',
       'memory_enable': 'Enable AI memory',
-      'memory_transfer_info': 'Only with additional consent: confirmed values via the backend to Google Gemini. Child identifiers and age are minimized.',
-      'memory_storage_info': 'Existing original data is retained in the backend. Switching off blocks new storage and AI use, not reading or deletion. New display names stay local to your account; no additional app-level encryption.',
+      'memory_transfer_info':
+          'Only with additional consent: confirmed values via the backend to Google Gemini. Child identifiers and age are minimized.',
+      'memory_storage_info':
+          'Existing original data is retained in the backend. Switching off blocks new storage and AI use, not reading or deletion. New display names stay local to your account; no additional app-level encryption.',
       'chat_request_failed': 'The reply could not be loaded. Please try again.',
       'chat_retry_later': 'You can try again later.',
       'chat_always_here': 'Always here for you',
       'chat_privacy_footer': 'No diagnoses · Processing by Google Gemini',
       'chat_init_error': 'Error: {error}',
       'chat_tip_message': '💡 Tip: “{tip}”',
-      'chat_history_budget': 'The AI receives at most the last {rounds} conversation rounds and {characters} characters of history. Older messages remain visible here.',
-      'chat_daily_limit': 'Your daily AI limit of {limit} requests has been reached. You can ask again tomorrow.',
-      'chat_provider_unavailable': 'AI advice is currently unavailable. No valid personal reply is available. Please try again later.',
-      'chat_provider_authorization': 'The service did not authorize this request.',
+      'chat_history_budget':
+          'The AI receives at most the last {rounds} conversation rounds and {characters} characters of history. Older messages remain visible here.',
+      'chat_daily_limit':
+          'Your daily AI limit of {limit} requests has been reached. You can ask again tomorrow.',
+      'chat_provider_unavailable':
+          'AI advice is currently unavailable. No valid personal reply is available. Please try again later.',
+      'chat_provider_authorization':
+          'The service did not authorize this request.',
       'chat_provider_quota': 'The service quota has currently been reached.',
       'chat_provider_network': 'The connection failed or took too long.',
-      'chat_provider_unavailable_reason': 'The service could not provide a valid reply.',
-      'chat_system_prompt': 'You are the warm, nonjudgmental ParentPeak parenting coach for everyday life with children (0–18 years). Reply in the requested language, personally, without lecturing.\nFoundations: Hüther – connection and autonomy, enthusiasm and emotional involvement rather than pressure/fear; children learn through role models, not lectures. Do not make children objects of expectations. Leave manageable obstacles in place, help parents stand beside the child; distinguish real needs from material wishes. Relationship, presence and example instead of rewards/punishment. Rosenberg NVC/GfK: observation, feeling, need, request; concrete phrases for today. Reflect feelings/needs tentatively, not as facts. Juul: children as full people, loving leadership, responsibility rather than obedience.\nOptional appropriate approaches: Montessori – own pace, prepared environment, independence; Reggio – many forms of expression, observation rather than judgment, process/curiosity; Freinet – real experiences, free expression, self-determination; Froebel – play/nature/creativity as learning; situational approach – current lived experience rather than rigid curriculum.\nBrief, concrete, at most 8–10 lines, small immediately useful steps. Empathy before strategy; no moralizing, judgments or walls of text. No diagnoses/medication; state boundaries honestly. For acute danger recommend direct human help; never invent unverified country-specific telephone numbers. Follow the current coaching instruction on questions; do not always add one.',
-      'chat_coaching_prompt': 'Parent concern:\n{message}\n\nStance: empathetic, warm, nonjudgmental, following NVC/GfK, Hüther and Juul. Hüther lens: connection or autonomy? Relationship before pressure, role models instead of lectures, enthusiasm for learning; parents stand beside children rather than removing every obstacle.\nFormat: first 1–2 empathetic sentences; feelings/needs only as tentative reflections. One brief developmental/attachment perspective, exactly ONE NVC step, 1–2 small optional actions. {followUp}\nFocus: {focus}\nOther educational approaches only OPTIONALLY when helpful, without lecturing.\nNo moralizing, empty phrases, premature judgments or “You must”. Translate self-blame empathetically into feelings/needs. Preserve specific age, time and situation details. Short paragraphs, at most 3–4 sentences; no asterisks/Markdown, calm professional tone, 0–2 emojis, simple lists allowed. {continuation}\nContext anchors: {context}\nSelected history: {history}',
-      'chat_focus_anger': 'Co-regulation, clear boundaries without shame and brief de-escalation; Juul: respectful leadership rather than enforced obedience.',
-      'chat_focus_siblings': 'Separate without punishment, reflect feelings, fair reconnection/repair; Juul: take both children seriously as full people.',
-      'chat_focus_sleep': 'Realistic relief, small routines and energy-saving steps; Juul: authentic, respectful support.',
-      'chat_focus_media': 'Clear boundaries agreed in advance and cooperative transitions instead of power struggles; Juul: respectful leadership.',
-      'chat_focus_school': 'Child-appropriate structure and cooperation with professionals; situational approach: lived experience; Juul: cooperation instead of obedience.',
-      'chat_focus_learning': 'Montessori: “Help me do it myself”, prepare the environment and use everyday tasks for learning; situational approach: current lived experience.',
-      'chat_focus_play': 'Froebel: play as learning; Reggio: many forms of expression, process before outcome; Freinet: real everyday experiences.',
-      'chat_focus_general': 'Immediately useful attachment-focused relief; optional suitable lens from Montessori, Reggio, Froebel, Freinet, Juul or the situational approach.',
-      'chat_ask_one': 'Finish with exactly ONE brief, open question supporting the next helpful step.',
-      'chat_ask_none': 'Do not ask a follow-up question; the details suffice for concrete steps.',
-      'chat_new_context': 'Stay with the current concern without inventing earlier history.',
-      'chat_continue_context': 'Connect relevant patterns and ages from the selected history; never invent real names.',
+      'chat_provider_unavailable_reason':
+          'The service could not provide a valid reply.',
+      'chat_system_prompt':
+          'You are the warm, nonjudgmental ParentPeak parenting coach for everyday life with children (0–18 years). Reply in the requested language, personally, without lecturing.\nFoundations: Hüther – connection and autonomy, enthusiasm and emotional involvement rather than pressure/fear; children learn through role models, not lectures. Do not make children objects of expectations. Leave manageable obstacles in place, help parents stand beside the child; distinguish real needs from material wishes. Relationship, presence and example instead of rewards/punishment. Rosenberg NVC/GfK: observation, feeling, need, request; concrete phrases for today. Reflect feelings/needs tentatively, not as facts. Juul: children as full people, loving leadership, responsibility rather than obedience.\nOptional appropriate approaches: Montessori – own pace, prepared environment, independence; Reggio – many forms of expression, observation rather than judgment, process/curiosity; Freinet – real experiences, free expression, self-determination; Froebel – play/nature/creativity as learning; situational approach – current lived experience rather than rigid curriculum.\nBrief, concrete, at most 8–10 lines, small immediately useful steps. Empathy before strategy; no moralizing, judgments or walls of text. No diagnoses/medication; state boundaries honestly. For acute danger recommend direct human help; never invent unverified country-specific telephone numbers. Follow the current coaching instruction on questions; do not always add one.',
+      'chat_coaching_prompt':
+          'Parent concern:\n{message}\n\nStance: empathetic, warm, nonjudgmental, following NVC/GfK, Hüther and Juul. Hüther lens: connection or autonomy? Relationship before pressure, role models instead of lectures, enthusiasm for learning; parents stand beside children rather than removing every obstacle.\nFormat: first 1–2 empathetic sentences; feelings/needs only as tentative reflections. One brief developmental/attachment perspective, exactly ONE NVC step, 1–2 small optional actions. {followUp}\nFocus: {focus}\nOther educational approaches only OPTIONALLY when helpful, without lecturing.\nNo moralizing, empty phrases, premature judgments or “You must”. Translate self-blame empathetically into feelings/needs. Preserve specific age, time and situation details. Short paragraphs, at most 3–4 sentences; no asterisks/Markdown, calm professional tone, 0–2 emojis, simple lists allowed. {continuation}\nContext anchors: {context}\nSelected history: {history}',
+      'chat_focus_anger':
+          'Co-regulation, clear boundaries without shame and brief de-escalation; Juul: respectful leadership rather than enforced obedience.',
+      'chat_focus_siblings':
+          'Separate without punishment, reflect feelings, fair reconnection/repair; Juul: take both children seriously as full people.',
+      'chat_focus_sleep':
+          'Realistic relief, small routines and energy-saving steps; Juul: authentic, respectful support.',
+      'chat_focus_media':
+          'Clear boundaries agreed in advance and cooperative transitions instead of power struggles; Juul: respectful leadership.',
+      'chat_focus_school':
+          'Child-appropriate structure and cooperation with professionals; situational approach: lived experience; Juul: cooperation instead of obedience.',
+      'chat_focus_learning':
+          'Montessori: “Help me do it myself”, prepare the environment and use everyday tasks for learning; situational approach: current lived experience.',
+      'chat_focus_play':
+          'Froebel: play as learning; Reggio: many forms of expression, process before outcome; Freinet: real everyday experiences.',
+      'chat_focus_general':
+          'Immediately useful attachment-focused relief; optional suitable lens from Montessori, Reggio, Froebel, Freinet, Juul or the situational approach.',
+      'chat_ask_one':
+          'Finish with exactly ONE brief, open question supporting the next helpful step.',
+      'chat_ask_none':
+          'Do not ask a follow-up question; the details suffice for concrete steps.',
+      'chat_new_context':
+          'Stay with the current concern without inventing earlier history.',
+      'chat_continue_context':
+          'Connect relevant patterns and ages from the selected history; never invent real names.',
       'chat_no_context': 'none',
-      'chat_quality_retry': 'Reply more concretely and authentically: empathy first, one NVC/GfK step, 1–2 small options, feelings/needs as tentative reflections. Focus: {focus} Short paragraphs of at most 3–4 sentences, no walls of text, defensive phrases or “You must”. {followUp}',
-      'chat_context_retry': 'Reply again and visibly retain these important details: {context}. Stay empathetic, concrete and practical.',
-      'chat_boundary_retry': 'Do not give a generic boundary statement; respond concretely, empathetically and constructively for everyday parenting.',
-      'chat_repair_prompt': 'Rewrite using nonviolent, attachment-focused NVC/GfK. No yelling, threatening or punishment. Provide three practical steps and two example phrases. Focus: {focus}',
-      'chat_boundary_topic': 'I provide educational parenting support. Feel free to describe your family or parenting question.',
-      'chat_boundary_violence': 'I do not provide hurtful or violence-promoting instructions. I can support a nonviolent approach: observation, feeling, need and concrete request.',
-      'chat_boundary_diagnosis': 'I cannot diagnose. I can offer attachment-focused everyday support. For diagnostic assessment, contact a pediatrician or child and adolescent psychologist.',
-      'chat_boundary_medical': 'I do not provide medical or medication advice. Seek medical advice or contact your local out-of-hours medical service.',
-      'chat_medical_de': 'In Germany, the out-of-hours medical service is available on 116117.',
-      'chat_fallback_label': 'General, curated guidance: the AI reply was unsuitable. This is not a reliably personalized reply.',
-      'chat_fallback_sleep': 'You could reduce stimulation in the evening, offer a small choice between a book and a song, and repeat a calm closing phrase. For example: “You want to stay awake. I am helping you settle now.” Which transition is hardest?',
-      'chat_fallback_anger': 'First establish safety, then tentatively reflect feelings and offer an alternative. For example: “I see your anger. I will not let anyone get hurt. You can stamp or press into a cushion.” What happens just before?',
-      'chat_fallback_general': 'You are not alone. Feel free to describe the specific situation and completed age, without names or exact birthdays. Observation, feeling, need and request can then become concrete everyday steps.',
+      'chat_quality_retry':
+          'Reply more concretely and authentically: empathy first, one NVC/GfK step, 1–2 small options, feelings/needs as tentative reflections. Focus: {focus} Short paragraphs of at most 3–4 sentences, no walls of text, defensive phrases or “You must”. {followUp}',
+      'chat_context_retry':
+          'Reply again and visibly retain these important details: {context}. Stay empathetic, concrete and practical.',
+      'chat_boundary_retry':
+          'Do not give a generic boundary statement; respond concretely, empathetically and constructively for everyday parenting.',
+      'chat_repair_prompt':
+          'Rewrite using nonviolent, attachment-focused NVC/GfK. No yelling, threatening or punishment. Provide three practical steps and two example phrases. Focus: {focus}',
+      'chat_boundary_topic':
+          'I provide educational parenting support. Feel free to describe your family or parenting question.',
+      'chat_boundary_violence':
+          'I do not provide hurtful or violence-promoting instructions. I can support a nonviolent approach: observation, feeling, need and concrete request.',
+      'chat_boundary_diagnosis':
+          'I cannot diagnose. I can offer attachment-focused everyday support. For diagnostic assessment, contact a pediatrician or child and adolescent psychologist.',
+      'chat_boundary_medical':
+          'I do not provide medical or medication advice. Seek medical advice or contact your local out-of-hours medical service.',
+      'chat_medical_de':
+          'In Germany, the out-of-hours medical service is available on 116117.',
+      'chat_fallback_label':
+          'General, curated guidance: the AI reply was unsuitable. This is not a reliably personalized reply.',
+      'chat_fallback_sleep':
+          'You could reduce stimulation in the evening, offer a small choice between a book and a song, and repeat a calm closing phrase. For example: “You want to stay awake. I am helping you settle now.” Which transition is hardest?',
+      'chat_fallback_anger':
+          'First establish safety, then tentatively reflect feelings and offer an alternative. For example: “I see your anger. I will not let anyone get hurt. You can stamp or press into a cushion.” What happens just before?',
+      'chat_fallback_general':
+          'You are not alone. Feel free to describe the specific situation and completed age, without names or exact birthdays. Observation, feeling, need and request can then become concrete everyday steps.',
       'memory_title': 'AI memory & children',
       'memory_add_child': 'Add child',
       'memory_edit_child': 'Edit child profile',
       'memory_name_required': 'Please enter a local name.',
       'memory_gender': 'Gender (optional)',
       'memory_delete_title': 'Delete child profile?',
-      'memory_delete_body': 'All saved AI information about {name} will be deleted.',
+      'memory_delete_body':
+          'All saved AI information about {name} will be deleted.',
       'memory_empty_info': 'No saved information yet.',
       'memory_load_failed': 'Data could not be loaded. Please try again.',
       'memory_children': 'Child profiles',
       'memory_no_children': 'No child profile yet.',
       'memory_none_confirmed': 'No confirmed information',
       'memory_confirmed_count': '{count} confirmed pieces of information',
-      'chat_tip_age_known': 'The child is {age} completed years old. Adapt the examples accordingly.',
-      'chat_tip_age_unknown': 'The age is unknown. Do not invent it; ask if needed.',
-      'chat_tip_prompt': 'The parents want to explore this tip:\n"{tip}"\n{ageContext}\nBriefly explain its relevance, three concrete everyday situations and one exercise for today. Practical, nonviolent, at most 12 lines.',
+      'chat_tip_age_known':
+          'The child is {age} completed years old. Adapt the examples accordingly.',
+      'chat_tip_age_unknown':
+          'The age is unknown. Do not invent it; ask if needed.',
+      'chat_tip_prompt':
+          'The parents want to explore this tip:\n"{tip}"\n{ageContext}\nBriefly explain its relevance, three concrete everyday situations and one exercise for today. Practical, nonviolent, at most 12 lines.',
       'chat_insight_autonomy': 'Independence phase',
       'chat_insight_sleep': 'Sleep',
       'chat_insight_conflicts': 'Conflicts',
@@ -5205,25 +5805,36 @@ class AppStringsManager {
       'treasureCategoryBooks': 'Books',
       'treasureCategoryEquipment': 'Equipment',
       'treasureDefaultTitle': 'Red balance bike',
-      'treasure_created_archived': 'Your offer was saved, but archived by the server. It is not available in the market. Check “My offers”.',
-      'treasure_created_not_available': 'Your offer was saved, but availability was not confirmed. Check “My offers”.',
-      'treasure_created_local_failed': 'The server saved the offer, but did not confirm availability. Local follow-up failed; photos are kept. Check “My offers” before retrying.',
+      'treasure_created_archived':
+          'Your offer was saved, but archived by the server. It is not available in the market. Check “My offers”.',
+      'treasure_created_not_available':
+          'Your offer was saved, but availability was not confirmed. Check “My offers”.',
+      'treasure_created_local_failed':
+          'The server saved the offer, but did not confirm availability. Local follow-up failed; photos are kept. Check “My offers” before retrying.',
       'treasurePhotoAnalyzing': 'Analysing the photo...',
       'treasureDefaultColor': 'Red',
       'treasureDefaultSizeAge': '2-4 years',
       'treasureNeutralColor': 'Neutral',
       'treasureNoteEditable': 'Note inserted. You can edit it.',
-      'treasureNoteSuggestionHint': 'Inserts an editable text template and replaces your current note. No voice recording.',
+      'treasureNoteSuggestionHint':
+          'Inserts an editable text template and replaces your current note. No voice recording.',
       'treasureInsertNoteSuggestion': 'Insert text suggestion',
-      'treasureNoteSuggestion': '{title}, {sizeAge}. You can add more handover details here.',
-      'treasureDiscoveryInvite': 'Invite friends or share your own offers to find more treasures nearby.',
-      'treasureDiscoveryScopeInvite': 'Current range: {radius}. Invite friends to find more treasures nearby.',
-      'treasure_location_required': 'A location is required for offers near you.',
-      'treasure_market_unavailable': 'The market is currently unavailable. Your offer was not published.',
-      'treasure_signin_required': 'Please sign in to perform this action in the market.',
+      'treasureNoteSuggestion':
+          '{title}, {sizeAge}. You can add more handover details here.',
+      'treasureDiscoveryInvite':
+          'Invite friends or share your own offers to find more treasures nearby.',
+      'treasureDiscoveryScopeInvite':
+          'Current range: {radius}. Invite friends to find more treasures nearby.',
+      'treasure_location_required':
+          'A location is required for offers near you.',
+      'treasure_market_unavailable':
+          'The market is currently unavailable. Your offer was not published.',
+      'treasure_signin_required':
+          'Please sign in to perform this action in the market.',
       'treasureCategoryOther': 'Other',
       'treasureShareRadiusLabel': 'Publication radius',
-      'treasureShareRadiusHelper': 'Choose how far away families can see your offer. Calculations use coarsely rounded locations and are approximate; maximum 25 km.',
+      'treasureShareRadiusHelper':
+          'Choose how far away families can see your offer. Calculations use coarsely rounded locations and are approximate; maximum 25 km.',
       'treasureShareRadiusKm': 'Radius approx. {radius} km',
       'treasureDistanceApproximate': 'Approx. {distance} away',
       'treasureDistanceUnknown': 'Distance unknown',
@@ -5745,8 +6356,10 @@ class AppStringsManager {
       'network_members_added': 'Members added.',
       'network_members_add_failed': 'Could not add members.',
       'network_group_not_member': 'You are not a member of this group.',
-      'chat_access_unavailable': 'This conversation is not available for this account.',
-      'friend_chat_request_failed': 'The chat request failed. Please check your sign-in and try again.',
+      'chat_access_unavailable':
+          'This conversation is not available for this account.',
+      'friend_chat_request_failed':
+          'The chat request failed. Please check your sign-in and try again.',
       'network_group_chat_empty':
           'No messages yet. Write the first one and get the group talking!',
       'network_sending': 'Sending…',
@@ -5773,17 +6386,24 @@ class AppStringsManager {
           'Your display name, area, coarsely rounded location (if available), approximate child ages, languages, family type, values, activities you are looking for and bio will be stored on our backend and shown to other families in the network. Child names, dates of birth and special circumstances stay on this device. Do not include child names, your address or health details in your public bio. Matching does not use AI. You can delete your profile at any time.',
       'network_publish_accept': 'Publish profile',
       'network_profile_active': 'Server confirmed that the profile is active.',
-      'network_profile_draft': 'No active server profile confirmed. Local drafts are not published automatically.',
-      'network_profile_unverified': 'Could not check profile status. Visibility is not confirmed.',
+      'network_profile_draft':
+          'No active server profile confirmed. Local drafts are not published automatically.',
+      'network_profile_unverified':
+          'Could not check profile status. Visibility is not confirmed.',
       'network_profile_retry': 'Check status again',
-      'network_discovery_failed': 'Could not load families. This is not a confirmed empty search result. Please try again.',
-      'network_discovery_auth_failed': 'Family discovery is not authorized for this session. Please check your account and sign-in.',
+      'network_discovery_failed':
+          'Could not load families. This is not a confirmed empty search result. Please try again.',
+      'network_discovery_auth_failed':
+          'Family discovery is not authorized for this session. Please check your account and sign-in.',
       'network_discovery_retry': 'Retry search',
-      'network_draft_unassigned': 'This device has an old profile without an account assignment. It is not used or published automatically.',
+      'network_draft_unassigned':
+          'This device has an old profile without an account assignment. It is not used or published automatically.',
       'network_draft_assign_title': 'Assign the local draft to this account?',
-      'network_draft_assign_body': 'Confirm that the old local family draft belongs to your account "{account}". It will only be assigned locally and will then be available to the calendar, kitchen and other family features. No data is uploaded. Publishing requires a separate confirmation.',
+      'network_draft_assign_body':
+          'Confirm that the old local family draft belongs to your account "{account}". It will only be assigned locally and will then be available to the calendar, kitchen and other family features. No data is uploaded. Publishing requires a separate confirmation.',
       'network_draft_assign': 'Assign draft to my account',
-      'network_draft_assign_failed': 'Could not assign the draft. Please try again.',
+      'network_draft_assign_failed':
+          'Could not assign the draft. Please try again.',
       'network_child_name_local': 'Name / nickname (only on this device)',
       'network_specials_hint': 'Note about special circumstances (device only)',
       'network_publish_failed':
@@ -12528,6 +13148,29 @@ class AppStringsManager {
       'topic_defiance_anger': 'Serhişkî &\nHêrs',
       'topic_sleep_issues': 'Xew\nnakeve',
       'topic_hits_bites': 'Lêdixe ·\nDigeze',
+      'knowledge_topic_anger_label': 'Hêrs & tûrebûn',
+      'knowledge_topic_anger_hint': 'Hêrsa zarokan, lêdan',
+      'knowledge_topic_sleep_label': 'Raketin',
+      'knowledge_topic_sleep_hint': 'Bi xew ketin, şev',
+      'knowledge_topic_boundaries_label': 'Sînor',
+      'knowledge_topic_boundaries_hint': 'Na gotin, rêzik',
+      'knowledge_topic_eating_label': 'Xwarin',
+      'knowledge_topic_eating_hint': 'Xwarina bijartî',
+      'knowledge_topic_siblings_label': 'Xwişk û bira',
+      'knowledge_topic_siblings_hint': 'Pevçûn, çavnebarî',
+      'knowledge_topic_media_label': 'Ekran',
+      'knowledge_topic_media_hint': 'Dema ekranê',
+      'expert_library_title': 'Pirtûkxaneya Pisporan',
+      'expert_library_subtitle':
+          'Podcast, vîdyo û pirtûkên ku bi rastî dibin alîkar.',
+      'expert_library_content_english_notice':
+          'Naveroka pêşniyarkirî bi Îngilîzî ye. Navrû û kategorî bi zimanê te xuya dibin.',
+      'expert_library_filter_all': 'Hemû',
+      'expert_library_empty': 'Hêj ji bo vê kategoriyê pêşniyar tune.',
+      'expert_action_listen': 'Guhdarî bike',
+      'expert_action_watch': 'Temaşe bike',
+      'expert_action_more_info': 'Zêdetir agahî',
+      'expert_action_read': 'Bixwîne',
       'mood_exhausted_suffix': ' — dêûbavên westiyayî jî dêûbavên baş in. 💛',
       'mood_present_suffix': ' — xweş e ku tu îro li vir î.',
       'mood_energetic_suffix':
@@ -12929,7 +13572,8 @@ class AppStringsManager {
       'network_members_add_failed': 'Endam nehatin zêdekirin.',
       'network_group_not_member': 'Tu ne endamê vê komê yî.',
       'chat_access_unavailable': 'Ev sohbet ji bo vê hesabê ne berdest e.',
-      'friend_chat_request_failed': 'Daxwaza sohbetê bi ser neket. Têketina xwe kontrol bike û dîsa biceribîne.',
+      'friend_chat_request_failed':
+          'Daxwaza sohbetê bi ser neket. Têketina xwe kontrol bike û dîsa biceribîne.',
       'network_group_chat_empty':
           'Hêj peyam tune. Ya yekem binivîse û komê bîne axaftinê!',
       'network_sending': 'Dişîne…',
@@ -12957,17 +13601,25 @@ class AppStringsManager {
           'Navê te yê xuyangê, herêm, cihê nêzîk (heke hebe), temenê nêzîk yê zarokan, ziman, cureya malbatê, nirx, çalakiyên ku hûn dixwazin û biyografiya te li ser backendê me tên tomarkirin û ji malbatên din re tên nîşandan. Navên zarokan, rojên jidayikbûnê û taybetmendî li ser vê amûrê dimînin. Navên zarokan, navnîşan an agahiyên tenduristiyê di biyografiya gelemperî de nenivîse. Lihevkirin AI bi kar nayîne. Tu dikarî profîla xwe her dem jê bibî.',
       'network_publish_accept': 'Profîlê biweşîne',
       'network_profile_active': 'Serverê piştrast kir ku profîl çalak e.',
-      'network_profile_draft': 'Profîleke çalak li ser serverê nehat piştrastkirin. Reşnivîsên herêmî bixweber nayên belavkirin.',
-      'network_profile_unverified': 'Rewşa profîlê nehat kontrolkirin. Xuyabûn nehat piştrastkirin.',
+      'network_profile_draft':
+          'Profîleke çalak li ser serverê nehat piştrastkirin. Reşnivîsên herêmî bixweber nayên belavkirin.',
+      'network_profile_unverified':
+          'Rewşa profîlê nehat kontrolkirin. Xuyabûn nehat piştrastkirin.',
       'network_profile_retry': 'Rewşê dîsa kontrol bike',
-      'network_discovery_failed': 'Malbat nehatin barkirin. Ev encameke vala ya piştrastkirî nîne. Ji kerema xwe dîsa biceribîne.',
-      'network_discovery_auth_failed': 'Lêgerîna malbatan ji bo vê danişînê nayê destûrkirin. Ji kerema xwe hesab û têketina xwe kontrol bike.',
+      'network_discovery_failed':
+          'Malbat nehatin barkirin. Ev encameke vala ya piştrastkirî nîne. Ji kerema xwe dîsa biceribîne.',
+      'network_discovery_auth_failed':
+          'Lêgerîna malbatan ji bo vê danişînê nayê destûrkirin. Ji kerema xwe hesab û têketina xwe kontrol bike.',
       'network_discovery_retry': 'Lêgerînê dîsa biceribîne',
-      'network_draft_unassigned': 'Li ser vê cîhazê profîleke kevn heye ku bi hesabekê ve ne girêdayî ye. Ew bixweber nayê bikaranîn an belavkirin.',
-      'network_draft_assign_title': 'Reşnivîsa herêmî bi vî hesabî ve were girêdan?',
-      'network_draft_assign_body': 'Piştrast bike ku reşnivîsa malbatê ya kevn a herêmî ya hesabê te "{account}" ye. Ew tenê li ser cîhazê bi hesabî ve tê girêdan û paşê di salname, metbex û taybetmendiyên din ên malbatê de tê bikaranîn. Tu dane nayên şandin. Belavkirin piştrastkirineke cuda dixwaze.',
+      'network_draft_unassigned':
+          'Li ser vê cîhazê profîleke kevn heye ku bi hesabekê ve ne girêdayî ye. Ew bixweber nayê bikaranîn an belavkirin.',
+      'network_draft_assign_title':
+          'Reşnivîsa herêmî bi vî hesabî ve were girêdan?',
+      'network_draft_assign_body':
+          'Piştrast bike ku reşnivîsa malbatê ya kevn a herêmî ya hesabê te "{account}" ye. Ew tenê li ser cîhazê bi hesabî ve tê girêdan û paşê di salname, metbex û taybetmendiyên din ên malbatê de tê bikaranîn. Tu dane nayên şandin. Belavkirin piştrastkirineke cuda dixwaze.',
       'network_draft_assign': 'Reşnivîsê bi hesabê min ve girêde',
-      'network_draft_assign_failed': 'Reşnivîs nehat girêdan. Ji kerema xwe dîsa biceribîne.',
+      'network_draft_assign_failed':
+          'Reşnivîs nehat girêdan. Ji kerema xwe dîsa biceribîne.',
       'network_child_name_local': 'Nav / navê nasnav (tenê li ser vê amûrê)',
       'network_specials_hint': 'Nîşe li ser taybetmendiyan (tenê li ser amûrê)',
       'network_publish_failed':
@@ -13231,7 +13883,8 @@ class AppStringsManager {
       'fridge_consent_body':
           'Ji bo naskirina pêkhateyan, wêneyê te bi backend-a ParentPeak ji Google Gemini re tê şandin. Naveroka wêneyê nayê anonîmkirin; kes, notên taybet an navnîşanan nîşan nede. Ji bo reçeteya paşê, pêkhateyên pejirandî, temenê zarokê û agahiyên alerjiyê yên heyî ji Google Gemini re tên şandin. Sepan wêneyê wekî pêşnivîseke domdar tomar nake. Ev razîbûna bijarte ji bo vê rêya AI ya sarincê ye û li ser vê cîhazê ji bo hesabê te yê niha an moda mêvan tê tomarkirin. Wêne an reçete nayê weşandin. Bê razîbûn daxwaza AI nayê destpêkirin.',
       'fridge_consent_accept': 'Razî me, wêne binirxîne',
-      'fridge_consent_failed': 'Razîbûna AI ya sarincê nehat pejirandin. Bê razîbûna pejirandî daxwazeke nû ya AI nayê destpêkirin.',
+      'fridge_consent_failed':
+          'Razîbûna AI ya sarincê nehat pejirandin. Bê razîbûna pejirandî daxwazeke nû ya AI nayê destpêkirin.',
       'fridge_choose_photo': 'Hilbijêre',
       'fridge_no_ingredients_detected':
           'Min pêkhate bi ewlehî nas nekirin. Tu dikarî li jêr bixwe wan lê zêde bikî.',
@@ -13635,8 +14288,10 @@ class AppStringsManager {
       'network_withdraw': 'Paşve bikişîne',
       'network_suggestions_count': '{count} pêşniyar',
       'network_matching_suggestions': 'Profilên hevalên lîstikê yên weşandî',
-      'location_osm_notice': 'Lêgerîna cihê nivîsa lêgerînê an koordînatên dorvekirî yên nêzîkî 1 km ji OpenStreetMap Nominatim re dişîne. Nexşe parçe ji OpenStreetMap bar dike.',
-      'location_search_failed': 'Lêgerîna cihê bi ser neket. Ji kerema xwe dîsa biceribîne.',
+      'location_osm_notice':
+          'Lêgerîna cihê nivîsa lêgerînê an koordînatên dorvekirî yên nêzîkî 1 km ji OpenStreetMap Nominatim re dişîne. Nexşe parçe ji OpenStreetMap bar dike.',
+      'location_search_failed':
+          'Lêgerîna cihê bi ser neket. Ji kerema xwe dîsa biceribîne.',
       'network_copy_step_1': 'Gav 1: Malbata we',
       'network_copy_step_2': 'Gav 2: Zarokên we',
       'network_copy_step_3': 'Gav 3: Nirx û şêwaz',
@@ -13652,16 +14307,21 @@ class AppStringsManager {
       'network_copy_cancel': 'Betal bike',
       'network_copy_connect_button': 'Girêde',
       'network_copy_playmates': 'Hevalên lîstikê',
-      'network_copy_login_required': 'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
-      'network_copy_setup_hint': 'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
+      'network_copy_login_required':
+          'Ji bo weşandina profîla hevalên lîstikê têkeve hesabê xwe.',
+      'network_copy_setup_hint':
+          'Di 5 gavên kurt de hûn ê malbatên ku bi we re guncaw in bibînin.',
       'network_copy_empty_title': 'Di herêma xwe de malbata yekem bibe',
-      'network_copy_empty_description': 'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
+      'network_copy_empty_description':
+          'Profîla we çalak û xuya ye. Gava malbatên din li nêzîkê beşdar bibin, ew dê li vir bixuyan. Cîran û hevalan vexwînin da ku tora we mezin bibe.',
       'network_copy_invite_playmates': 'Hevalên lîstikê vexwîne',
       'network_copy_same_city': 'Di bajarê te de',
       'network_copy_request_sent': 'Daxwaza te ji {name} re hat şandin.',
-      'network_copy_request_failed': 'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
+      'network_copy_request_failed':
+          'Daxwaza te nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
       'network_copy_invite_hero_title': 'Hevalan vexwîne',
-      'network_copy_invite_hero_description': 'Girêdana xwe ya kesane an koda QR parve bike - bi yek pêlê hûn tên girêdan.',
+      'network_copy_invite_hero_description':
+          'Girêdana xwe ya kesane an koda QR parve bike - bi yek pêlê hûn tên girêdan.',
       'network_copy_share': 'Parve bike',
       'network_copy_save': 'Tê tomarkirin...',
       'network_copy_create_profile': 'Profîlê çêbike',
@@ -13673,9 +14333,11 @@ class AppStringsManager {
       'network_copy_custom_family': 'Şêwaza malbata we',
       'network_copy_custom_example': 'mînak: malbata hilbijartî, çend-neslî...',
       'network_copy_no_gender': 'Naxwazim bibêjim',
-      'network_copy_values_tip': 'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
+      'network_copy_values_tip':
+          'Şîret: Malbatên bi nirxên wekhev herî baş hev fam dikin. Ya ku ji we re girîng e hilbijêrin.',
       'network_copy_bio_title': 'Bioya kurt',
-      'network_copy_bio_hint': 'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
+      'network_copy_bio_hint':
+          'Kurte ji me re behsa xwe bikin: Çi malbata we taybet dike? Hûn çi dixwazin?',
       'network_option_family_kernfamilie': 'Malbata biçûk',
       'network_option_family_alleinerziehend': 'Tenê dêûbav',
       'network_option_family_patchwork': 'Malbata tevlihev',
@@ -13728,8 +14390,10 @@ class AppStringsManager {
       'network_option_looking_musik': 'Muzîk û stran',
       'network_option_looking_vorlesen': 'Xwendin û çîrok',
       'network_option_looking_eltern_austausch': 'Axaftina dêûbavan',
-      'network_option_looking_babysitting_tausch': 'Alîkariya hevpar a lênihêrînê',
-      'network_option_looking_kita_fahrgemeinschaft': 'Rêwîtiya hevpar a dibistanê',
+      'network_option_looking_babysitting_tausch':
+          'Alîkariya hevpar a lênihêrînê',
+      'network_option_looking_kita_fahrgemeinschaft':
+          'Rêwîtiya hevpar a dibistanê',
       'network_option_looking_kindergeburtstage': 'Rojbûnên zarokan',
       'network_option_looking_ausflug': 'Ger û rêwîtî',
       'network_option_looking_indoor_treffen': 'Hevdîtina hundir',
@@ -13786,7 +14450,8 @@ class AppStringsManager {
       'network_option_language_vi': 'Viyetnamî',
       'network_option_language_sw': 'Swahilî',
       'network_family_fallback': 'ev malbat',
-      'network_legacy_link_inactive': 'Ev girêdan êdî ne çalak e. Ji kerema xwe girêdana vexwendinê ya malbata din bikar bîne.',
+      'network_legacy_link_inactive':
+          'Ev girêdan êdî ne çalak e. Ji kerema xwe girêdana vexwendinê ya malbata din bikar bîne.',
       'network_radius': 'Di nav ~{distance} km de',
       'network_wide_radius': 'Di nav ~1200 km de',
       'network_say_hello': 'Silav bike',
@@ -13862,237 +14527,409 @@ class AppStringsManager {
       'events_price_label': 'Biha: {price}',
       'events_for_age': 'Ji bo: {age}',
       'family_hub_shopping_list': 'Lîsteya kirînê',
-      'family_hub_save_error': 'Guherîn nehat tomarkirin. Ji kerema xwe dîsa biceribîne.',
+      'family_hub_save_error':
+          'Guherîn nehat tomarkirin. Ji kerema xwe dîsa biceribîne.',
       'family_hub_child_fallback': 'Zarok',
       'benefit_ai_consent_title': 'Rêberê alîkariyan ê KI bikar bînî?',
-      'finance_load_failed': 'Daneyên darayî yên herêmî nehatin barkirin. Ji kerema xwe dîsa biceribîne.',
-      'finance_number_invalid': 'Ji kerema xwe nirxekî derbasdar ê ne neyînî bi herî zêde du hejmarên dehanî binivîse.',
-      'finance_tax_example_limits': 'Mînak ji bo zarokekî, ne kontrola mafê alîkariyê an parvekirina xercan di nav zarokan de ye. Lênêrîna guncaw: zarok di malê de û di bin 14 salî de an di îstîsnaya qanûnî ya seqetiyê de; fatura û dayîna drav bo hesabê peydaker pêwîst in. Ders, spor û demên vala ne guncaw in. 30% tenê texmîna bacê ye.',
-      'finance_orientation_only': 'Tenê rêberî ye, ne kontrola mafê alîkariyê ye. Dahat, kar û rewşa malbatê li vir tu alîkariyê dernake. Dezgeha berpirsiyar rewşa we ya kesane kontrol dike.',
+      'finance_load_failed':
+          'Daneyên darayî yên herêmî nehatin barkirin. Ji kerema xwe dîsa biceribîne.',
+      'finance_number_invalid':
+          'Ji kerema xwe nirxekî derbasdar ê ne neyînî bi herî zêde du hejmarên dehanî binivîse.',
+      'finance_tax_example_limits':
+          'Mînak ji bo zarokekî, ne kontrola mafê alîkariyê an parvekirina xercan di nav zarokan de ye. Lênêrîna guncaw: zarok di malê de û di bin 14 salî de an di îstîsnaya qanûnî ya seqetiyê de; fatura û dayîna drav bo hesabê peydaker pêwîst in. Ders, spor û demên vala ne guncaw in. 30% tenê texmîna bacê ye.',
+      'finance_orientation_only':
+          'Tenê rêberî ye, ne kontrola mafê alîkariyê ye. Dahat, kar û rewşa malbatê li vir tu alîkariyê dernake. Dezgeha berpirsiyar rewşa we ya kesane kontrol dike.',
       'finance_save_orientation': 'Agahiyan ji bo rêberiyê tomar bike',
       'finance_application_kindergeld_benefitName_0': 'Alîkariya zarokan',
-      'finance_application_kindergeld_responsibleAuthority_1': 'Ofîsa alîkariyên malbatê ya Ajansa Federal a Kar',
+      'finance_application_kindergeld_responsibleAuthority_1':
+          'Ofîsa alîkariyên malbatê ya Ajansa Federal a Kar',
       'finance_application_kindergeld_processingTime_2': '4–6 hefte',
-      'finance_application_kindergeld_renewalNote_3': 'Serlêdana nûkirinê ne pêwîst e. Heta rojbûna 18 (an 25) salî bixweber tê dayîn.',
-      'finance_application_kindergeld_proTip_4': 'Piştî zayînê yekser serlêdan bike — alîkariya zarokan herî zêde 6 meh paşve tê dayîn.',
-      'finance_application_kindergeld_aiTemplatePrompt_5': 'Ji bo serlêdana yekem a alîkariya zarokan piştî zayînê nameyek kurt û dostane binivîse. Hêsan û rastîparêz be.',
+      'finance_application_kindergeld_renewalNote_3':
+          'Serlêdana nûkirinê ne pêwîst e. Heta rojbûna 18 (an 25) salî bixweber tê dayîn.',
+      'finance_application_kindergeld_proTip_4':
+          'Piştî zayînê yekser serlêdan bike — alîkariya zarokan herî zêde 6 meh paşve tê dayîn.',
+      'finance_application_kindergeld_aiTemplatePrompt_5':
+          'Ji bo serlêdana yekem a alîkariya zarokan piştî zayînê nameyek kurt û dostane binivîse. Hêsan û rastîparêz be.',
       'finance_application_kindergeld_name_6': 'Belgeya zayîna zarokî',
-      'finance_application_kindergeld_whereToGet_7': 'Ofîsa qeydên sivîl (bi gelemperî li nexweşxaneyê tê dayîn)',
+      'finance_application_kindergeld_whereToGet_7':
+          'Ofîsa qeydên sivîl (bi gelemperî li nexweşxaneyê tê dayîn)',
       'finance_application_kindergeld_name_8': 'Hejmara bacê ya zarokî',
-      'finance_application_kindergeld_whereToGet_9': 'Ji Ofîsa Navendî ya Bacê bi posteyê tê (nêzîkî 2–3 hefte piştî zayînê)',
-      'finance_application_kindergeld_name_10': 'Hejmara bacê ya dêûbavê serlêdêr',
-      'finance_application_kindergeld_whereToGet_11': 'Li biryara bacê an belgeya meaşê ye',
+      'finance_application_kindergeld_whereToGet_9':
+          'Ji Ofîsa Navendî ya Bacê bi posteyê tê (nêzîkî 2–3 hefte piştî zayînê)',
+      'finance_application_kindergeld_name_10':
+          'Hejmara bacê ya dêûbavê serlêdêr',
+      'finance_application_kindergeld_whereToGet_11':
+          'Li biryara bacê an belgeya meaşê ye',
       'finance_application_kindergeld_name_12': 'Nasname an pasaport (kopî)',
       'finance_application_kindergeld_name_13': 'Agahiyên bankê (IBAN)',
       'finance_application_kindergeld_title_14': 'Serlêdana serhêl dagire',
-      'finance_application_kindergeld_description_15': 'Li malpera ofîsa alîkariyên malbatê forma “KG1” serhêl dagire. Nêzîkî 10 deqîqe digire.',
-      'finance_application_kindergeld_title_16': 'Belgeyan bar bike an bi posteyê bişîne',
-      'finance_application_kindergeld_description_17': 'Kopiyên belgeya zayînê û hejmarên bacê bar bike an bi posteyê ji ofîsa xwe re bişîne.',
+      'finance_application_kindergeld_description_15':
+          'Li malpera ofîsa alîkariyên malbatê forma “KG1” serhêl dagire. Nêzîkî 10 deqîqe digire.',
+      'finance_application_kindergeld_title_16':
+          'Belgeyan bar bike an bi posteyê bişîne',
+      'finance_application_kindergeld_description_17':
+          'Kopiyên belgeya zayînê û hejmarên bacê bar bike an bi posteyê ji ofîsa xwe re bişîne.',
       'finance_application_kindergeld_title_18': 'Li pejirandinê bisekine',
-      'finance_application_kindergeld_description_19': 'Biryar bi posteyê tê (4–6 hefte). Paşê dayînên mehane dest pê dikin.',
-      'finance_application_kinderzuschlag_benefitName_0': 'Piştgiriya zarokan (KiZ)',
+      'finance_application_kindergeld_description_19':
+          'Biryar bi posteyê tê (4–6 hefte). Paşê dayînên mehane dest pê dikin.',
+      'finance_application_kinderzuschlag_benefitName_0':
+          'Piştgiriya zarokan (KiZ)',
       'finance_application_kinderzuschlag_processingTime_2': '4–8 hefte',
-      'finance_application_kinderzuschlag_renewalNote_3': 'Her 6 mehan dîsa serlêdan bike (serlêdana nûkirinê).',
-      'finance_application_kinderzuschlag_proTip_4': 'Bi rêberê KiZ yê ofîsê dikarî berî serlêdana temam di 2 deqîqeyan de mafê xwe kontrol bikî.',
-      'finance_application_kinderzuschlag_aiTemplatePrompt_5': 'Ji bo serlêdana KiZ ravekirinek kurt û rastîparêz binivîse. Malbata kêm-dahat ji bo zarokan piştgirî dixwaze. Bêje ku kirê beşeke mezin a dahatê digire.',
-      'finance_application_kinderzuschlag_name_6': 'Belgeyên dahata 6 mehên dawî',
-      'finance_application_kinderzuschlag_whereToGet_7': 'Belgeyên meaşê, biryara alîkariya dêûbavan an biryara bacê',
-      'finance_application_kinderzuschlag_name_8': 'Peymana kirê an belgeya xercên xanî',
-      'finance_application_kinderzuschlag_whereToGet_9': 'Kopiya peymana kirê + belgeya dawî ya xercên zêde',
-      'finance_application_kinderzuschlag_name_10': 'Belgeyên hesabê bankê yên 3 mehên dawî',
-      'finance_application_kinderzuschlag_whereToGet_11': 'Bankeya serhêl → PDF çap bike',
+      'finance_application_kinderzuschlag_renewalNote_3':
+          'Her 6 mehan dîsa serlêdan bike (serlêdana nûkirinê).',
+      'finance_application_kinderzuschlag_proTip_4':
+          'Bi rêberê KiZ yê ofîsê dikarî berî serlêdana temam di 2 deqîqeyan de mafê xwe kontrol bikî.',
+      'finance_application_kinderzuschlag_aiTemplatePrompt_5':
+          'Ji bo serlêdana KiZ ravekirinek kurt û rastîparêz binivîse. Malbata kêm-dahat ji bo zarokan piştgirî dixwaze. Bêje ku kirê beşeke mezin a dahatê digire.',
+      'finance_application_kinderzuschlag_name_6':
+          'Belgeyên dahata 6 mehên dawî',
+      'finance_application_kinderzuschlag_whereToGet_7':
+          'Belgeyên meaşê, biryara alîkariya dêûbavan an biryara bacê',
+      'finance_application_kinderzuschlag_name_8':
+          'Peymana kirê an belgeya xercên xanî',
+      'finance_application_kinderzuschlag_whereToGet_9':
+          'Kopiya peymana kirê + belgeya dawî ya xercên zêde',
+      'finance_application_kinderzuschlag_name_10':
+          'Belgeyên hesabê bankê yên 3 mehên dawî',
+      'finance_application_kinderzuschlag_whereToGet_11':
+          'Bankeya serhêl → PDF çap bike',
       'finance_application_kinderzuschlag_name_12': 'Biryara alîkariya zarokan',
-      'finance_application_kinderzuschlag_whereToGet_13': 'Ji ofîsa alîkariyên malbatê bi posteyê hatiye',
+      'finance_application_kinderzuschlag_whereToGet_13':
+          'Ji ofîsa alîkariyên malbatê bi posteyê hatiye',
       'finance_application_kinderzuschlag_name_14': 'Belgeyên zayîna zarokan',
       'finance_application_kinderzuschlag_name_15': 'Nasname (kopî)',
-      'finance_application_kinderzuschlag_title_16': 'Rêberê KiZ bi kar bîne (2 deq.)',
-      'finance_application_kinderzuschlag_description_17': 'Bi rêberê serhêl mafê gengaz kontrol bike. Ger maf tune be demê diparêze.',
-      'finance_application_kinderzuschlag_description_19': 'Serlêdanê li malpera ofîsê dagire. Belgeyên dahatê û xercên kirê amade bike.',
+      'finance_application_kinderzuschlag_title_16':
+          'Rêberê KiZ bi kar bîne (2 deq.)',
+      'finance_application_kinderzuschlag_description_17':
+          'Bi rêberê serhêl mafê gengaz kontrol bike. Ger maf tune be demê diparêze.',
+      'finance_application_kinderzuschlag_description_19':
+          'Serlêdanê li malpera ofîsê dagire. Belgeyên dahatê û xercên kirê amade bike.',
       'finance_application_kinderzuschlag_title_20': 'Belgeyan bişîne',
-      'finance_application_kinderzuschlag_description_21': 'Belgeyên meaşê, peymana kirê û belgeyên bankê bar bike an bi posteyê bişîne.',
+      'finance_application_kinderzuschlag_description_21':
+          'Belgeyên meaşê, peymana kirê û belgeyên bankê bar bike an bi posteyê bişîne.',
       'finance_application_kinderzuschlag_title_22': 'Biryar + nûkirin',
-      'finance_application_kinderzuschlag_description_23': 'Biryar piştî 4–8 hefteyan tê. Piştî 6 mehan serlêdana nûkirinê ji bîr neke!',
+      'finance_application_kinderzuschlag_description_23':
+          'Biryar piştî 4–8 hefteyan tê. Piştî 6 mehan serlêdana nûkirinê ji bîr neke!',
       'finance_application_wohngeld_benefitName_0': 'Alîkariya kirê',
-      'finance_application_wohngeld_responsibleAuthority_1': 'Ofîsa alîkariya kirê ya bajar an şaredariya te',
-      'finance_application_wohngeld_processingTime_2': '3–8 hefte (li gorî şaredariyê)',
-      'finance_application_wohngeld_renewalNote_3': 'Dema pejirandinê: 12 meh. Serlêdana nûkirinê di dema xwe de bike (2 meh berî wê).',
-      'finance_application_wohngeld_proTip_4': 'Ji reforma 2023 ve bêtir malbat, herwiha yên dahata navîn, maf distînin. Kontrol bike!',
-      'finance_application_wohngeld_aiTemplatePrompt_5': 'Ji bo serlêdana yekem a alîkariya kirê ya malbateke bi zarok nameyek kurt, rastîparêz û dostane binivîse; kirê beşeke mezin a dahatê digire.',
-      'finance_application_wohngeld_name_6': 'Belgeyên dahata hemû endamên malê',
-      'finance_application_wohngeld_whereToGet_7': 'Belgeyên meaşê, biryara teqawidiyê, biryara alîkariya dêûbavan',
+      'finance_application_wohngeld_responsibleAuthority_1':
+          'Ofîsa alîkariya kirê ya bajar an şaredariya te',
+      'finance_application_wohngeld_processingTime_2':
+          '3–8 hefte (li gorî şaredariyê)',
+      'finance_application_wohngeld_renewalNote_3':
+          'Dema pejirandinê: 12 meh. Serlêdana nûkirinê di dema xwe de bike (2 meh berî wê).',
+      'finance_application_wohngeld_proTip_4':
+          'Ji reforma 2023 ve bêtir malbat, herwiha yên dahata navîn, maf distînin. Kontrol bike!',
+      'finance_application_wohngeld_aiTemplatePrompt_5':
+          'Ji bo serlêdana yekem a alîkariya kirê ya malbateke bi zarok nameyek kurt, rastîparêz û dostane binivîse; kirê beşeke mezin a dahatê digire.',
+      'finance_application_wohngeld_name_6':
+          'Belgeyên dahata hemû endamên malê',
+      'finance_application_wohngeld_whereToGet_7':
+          'Belgeyên meaşê, biryara teqawidiyê, biryara alîkariya dêûbavan',
       'finance_application_wohngeld_name_8': 'Peymana kirê (kopî)',
-      'finance_application_wohngeld_name_9': 'Receya dawî ya kirê an belgeya bankê ya dayîna kirê',
+      'finance_application_wohngeld_name_9':
+          'Receya dawî ya kirê an belgeya bankê ya dayîna kirê',
       'finance_application_wohngeld_name_10': 'Belgeya xercên zêde',
       'finance_application_wohngeld_whereToGet_11': 'Ji xwediyê xanî (salane)',
-      'finance_application_wohngeld_name_12': 'Nasnameyên hemû endamên malê (kopî)',
+      'finance_application_wohngeld_name_12':
+          'Nasnameyên hemû endamên malê (kopî)',
       'finance_application_wohngeld_name_13': 'Belgeya qeyda rûniştinê',
-      'finance_application_wohngeld_whereToGet_14': 'Ofîsa hemwelatiyan / qeyda nifûsê',
-      'finance_application_wohngeld_title_15': 'Hesabkerê alîkariya kirê bi kar bîne',
-      'finance_application_wohngeld_description_16': 'Bi hesabkerê fermî yê BMWSB kontrol bike ka mafê alîkariya kirê heye û çiqas e.',
-      'finance_application_wohngeld_title_17': 'Serlêdanê li ofîsa alîkariya kirê bike',
-      'finance_application_wohngeld_description_18': 'Formê ji şaredarî/ofîsa hemwelatiyan an wek PDF serhêl bistîne. Hin şaredarî serlêdana serhêl pêşkêş dikin.',
+      'finance_application_wohngeld_whereToGet_14':
+          'Ofîsa hemwelatiyan / qeyda nifûsê',
+      'finance_application_wohngeld_title_15':
+          'Hesabkerê alîkariya kirê bi kar bîne',
+      'finance_application_wohngeld_description_16':
+          'Bi hesabkerê fermî yê BMWSB kontrol bike ka mafê alîkariya kirê heye û çiqas e.',
+      'finance_application_wohngeld_title_17':
+          'Serlêdanê li ofîsa alîkariya kirê bike',
+      'finance_application_wohngeld_description_18':
+          'Formê ji şaredarî/ofîsa hemwelatiyan an wek PDF serhêl bistîne. Hin şaredarî serlêdana serhêl pêşkêş dikin.',
       'finance_application_wohngeld_title_19': 'Belgeyan pê ve bike',
-      'finance_application_wohngeld_description_20': 'Peymana kirê, belgeyên dahatê û xercên zêde pê ve bike. Ger ne piştrast be, bêtir bişîne.',
-      'finance_application_wohngeld_title_21': 'Li biryarê bisekine + bîranînê saz bike',
-      'finance_application_wohngeld_description_22': 'Biryar piştî 3–8 hefteyan tê. Ji bo 10 meh piştî pejirandinê bîranîna nûkirinê saz bike.',
-      'finance_application_bildungTeilhabe_benefitName_0': 'Perwerde û beşdarî (BuT)',
-      'finance_application_bildungTeilhabe_responsibleAuthority_1': 'Jobcenter an ofîsa sosyal a bajar an şaredariya te',
+      'finance_application_wohngeld_description_20':
+          'Peymana kirê, belgeyên dahatê û xercên zêde pê ve bike. Ger ne piştrast be, bêtir bişîne.',
+      'finance_application_wohngeld_title_21':
+          'Li biryarê bisekine + bîranînê saz bike',
+      'finance_application_wohngeld_description_22':
+          'Biryar piştî 3–8 hefteyan tê. Ji bo 10 meh piştî pejirandinê bîranîna nûkirinê saz bike.',
+      'finance_application_bildungTeilhabe_benefitName_0':
+          'Perwerde û beşdarî (BuT)',
+      'finance_application_bildungTeilhabe_responsibleAuthority_1':
+          'Jobcenter an ofîsa sosyal a bajar an şaredariya te',
       'finance_application_bildungTeilhabe_processingTime_2': '2–6 hefte',
-      'finance_application_bildungTeilhabe_renewalNote_3': 'Ji bo pêdiviyên dibistanê her sala dibistanê; ji bo klûb/kurs her 6 mehan dîsa serlêdan bike.',
-      'finance_application_bildungTeilhabe_proTip_4': 'BuT avjenî, dibistana muzîkê û dersa alîkar jî digire — ne tenê pêdiviyên dibistanê! Heta 15€/meh ji bo spor/çand/dema vala.',
-      'finance_application_bildungTeilhabe_aiTemplatePrompt_5': 'Ji bo alîkariya BuT serlêdaneke kurt û bêform binivîse. Zarok dixwaze beşdarî kursa sporê bibe. Malbat KiZ distîne. Rastîparêz, 3–4 hevok.',
-      'finance_application_bildungTeilhabe_name_6': 'Belgeya alîkariya ku tê wergirtin',
-      'finance_application_bildungTeilhabe_whereToGet_7': 'Biryara KiZ, alîkariya kirê, Bürgergeld an alîkariya sosyal',
+      'finance_application_bildungTeilhabe_renewalNote_3':
+          'Ji bo pêdiviyên dibistanê her sala dibistanê; ji bo klûb/kurs her 6 mehan dîsa serlêdan bike.',
+      'finance_application_bildungTeilhabe_proTip_4':
+          'BuT avjenî, dibistana muzîkê û dersa alîkar jî digire — ne tenê pêdiviyên dibistanê! Heta 15€/meh ji bo spor/çand/dema vala.',
+      'finance_application_bildungTeilhabe_aiTemplatePrompt_5':
+          'Ji bo alîkariya BuT serlêdaneke kurt û bêform binivîse. Zarok dixwaze beşdarî kursa sporê bibe. Malbat KiZ distîne. Rastîparêz, 3–4 hevok.',
+      'finance_application_bildungTeilhabe_name_6':
+          'Belgeya alîkariya ku tê wergirtin',
+      'finance_application_bildungTeilhabe_whereToGet_7':
+          'Biryara KiZ, alîkariya kirê, Bürgergeld an alîkariya sosyal',
       'finance_application_bildungTeilhabe_name_8': 'Belgeya dibistanê',
-      'finance_application_bildungTeilhabe_whereToGet_9': 'Sekreteriya dibistana zarokê te',
-      'finance_application_bildungTeilhabe_name_10': 'Belgeya xercan (mînak: pereyê klûbê)',
-      'finance_application_bildungTeilhabe_whereToGet_11': 'Forma qeydê an fatura klûb/kursê',
-      'finance_application_bildungTeilhabe_title_13': 'Kontrol bike ka çi gengaz e',
-      'finance_application_bildungTeilhabe_description_14': 'BuT: pêdiviyên dibistanê (195€/sal), xwarina nîvro, ger, dersa alîkar, spor/çand (15€/meh), veguhestina dibistanê.',
-      'finance_application_bildungTeilhabe_title_15': 'Serlêdana bêform an form',
-      'finance_application_bildungTeilhabe_description_16': 'Forma BuT ji Jobcenter/ofîsa sosyal bistîne an bi nameyê serlêdan bike. Hin bajar formên serhêl hene.',
+      'finance_application_bildungTeilhabe_whereToGet_9':
+          'Sekreteriya dibistana zarokê te',
+      'finance_application_bildungTeilhabe_name_10':
+          'Belgeya xercan (mînak: pereyê klûbê)',
+      'finance_application_bildungTeilhabe_whereToGet_11':
+          'Forma qeydê an fatura klûb/kursê',
+      'finance_application_bildungTeilhabe_title_13':
+          'Kontrol bike ka çi gengaz e',
+      'finance_application_bildungTeilhabe_description_14':
+          'BuT: pêdiviyên dibistanê (195€/sal), xwarina nîvro, ger, dersa alîkar, spor/çand (15€/meh), veguhestina dibistanê.',
+      'finance_application_bildungTeilhabe_title_15':
+          'Serlêdana bêform an form',
+      'finance_application_bildungTeilhabe_description_16':
+          'Forma BuT ji Jobcenter/ofîsa sosyal bistîne an bi nameyê serlêdan bike. Hin bajar formên serhêl hene.',
       'finance_application_bildungTeilhabe_title_17': 'Belgeyan pê ve bike',
-      'finance_application_bildungTeilhabe_description_18': 'Biryara alîkariyê, belgeya dibistanê û heke hebe fatura klûbê pê ve bike.',
-      'finance_application_bildungTeilhabe_title_19': 'Kûpon an dayîna rasterast',
-      'finance_application_bildungTeilhabe_description_20': 'Kûpon distînî (mînak ji bo klûbê) an drav rasterast ji peydaker re tê dayîn.',
+      'finance_application_bildungTeilhabe_description_18':
+          'Biryara alîkariyê, belgeya dibistanê û heke hebe fatura klûbê pê ve bike.',
+      'finance_application_bildungTeilhabe_title_19':
+          'Kûpon an dayîna rasterast',
+      'finance_application_bildungTeilhabe_description_20':
+          'Kûpon distînî (mînak ji bo klûbê) an drav rasterast ji peydaker re tê dayîn.',
       'finance_application_elterngeld_benefitName_0': 'Alîkariya dêûbavan',
-      'finance_application_elterngeld_responsibleAuthority_1': 'Ofîsa alîkariya dêûbavan ya eyaleta te',
-      'finance_application_elterngeld_processingTime_2': '4–12 hefte (li gorî eyaletê)',
-      'finance_application_elterngeld_renewalNote_3': 'Serlêdana nûkirinê tune. Carekê ji bo 12–14 meh (Basis) an 24–28 meh (Plus).',
-      'finance_application_elterngeld_proTip_4': 'Serlêdanê BERÎ zayînê amade bike — tenê belgeya zayînê kêm e. Hefteyan diparêze!',
-      'finance_application_elterngeld_aiTemplatePrompt_5': 'Ji bo serlêdana Basiselterngeld piştî zayîna zarokê yekem nameyek kurt û rastîparêz binivîse. Dêûbav mehên xwe bi hevkar re plan dike.',
-      'finance_application_elterngeld_name_6': 'Belgeya zayîna zarokî (orîjînal an kopiya pejirandî)',
+      'finance_application_elterngeld_responsibleAuthority_1':
+          'Ofîsa alîkariya dêûbavan ya eyaleta te',
+      'finance_application_elterngeld_processingTime_2':
+          '4–12 hefte (li gorî eyaletê)',
+      'finance_application_elterngeld_renewalNote_3':
+          'Serlêdana nûkirinê tune. Carekê ji bo 12–14 meh (Basis) an 24–28 meh (Plus).',
+      'finance_application_elterngeld_proTip_4':
+          'Serlêdanê BERÎ zayînê amade bike — tenê belgeya zayînê kêm e. Hefteyan diparêze!',
+      'finance_application_elterngeld_aiTemplatePrompt_5':
+          'Ji bo serlêdana Basiselterngeld piştî zayîna zarokê yekem nameyek kurt û rastîparêz binivîse. Dêûbav mehên xwe bi hevkar re plan dike.',
+      'finance_application_elterngeld_name_6':
+          'Belgeya zayîna zarokî (orîjînal an kopiya pejirandî)',
       'finance_application_elterngeld_whereToGet_7': 'Ofîsa qeydên sivîl',
-      'finance_application_elterngeld_name_8': 'Belgeya alîkariya dayîktiyê ya sîgorteya tenduristiyê',
-      'finance_application_elterngeld_whereToGet_9': 'Sîgorteya tenduristiya te (piştî zayînê serlêdan bike)',
-      'finance_application_elterngeld_name_10': 'Belgeya işveren a zêdekirina alîkariya dayîktiyê',
-      'finance_application_elterngeld_whereToGet_11': 'Beşa personelê ya işverenê te',
-      'finance_application_elterngeld_name_12': 'Belgeyên dahata 12 mehên berî zayînê',
-      'finance_application_elterngeld_whereToGet_13': 'Belgeyên meaşê an biryara bacê',
-      'finance_application_elterngeld_name_14': 'Nasnameyên her du dêûbavan (kopî)',
-      'finance_application_elterngeld_name_15': 'Belgeya saetên kar ên plankirî (ji bo Elterngeld Plus)',
-      'finance_application_elterngeld_whereToGet_16': 'İşveren (heke nîvdem dixebitî)',
-      'finance_application_elterngeld_title_17': 'Hesabkerê alîkariya dêûbavan bi kar bîne',
-      'finance_application_elterngeld_description_18': 'Bi hesabkerê fermî alîkariya dêûbavan û parvekirina guncaw a Basis/Plus/bonûsa hevkariyê hesab bike.',
-      'finance_application_elterngeld_title_19': 'Serlêdanê dagire (serhêl an kaxez)',
-      'finance_application_elterngeld_description_20': 'Her eyalet forma xwe heye. ElterngeldDigital hêsantir e û li gelek eyaletan heye.',
+      'finance_application_elterngeld_name_8':
+          'Belgeya alîkariya dayîktiyê ya sîgorteya tenduristiyê',
+      'finance_application_elterngeld_whereToGet_9':
+          'Sîgorteya tenduristiya te (piştî zayînê serlêdan bike)',
+      'finance_application_elterngeld_name_10':
+          'Belgeya işveren a zêdekirina alîkariya dayîktiyê',
+      'finance_application_elterngeld_whereToGet_11':
+          'Beşa personelê ya işverenê te',
+      'finance_application_elterngeld_name_12':
+          'Belgeyên dahata 12 mehên berî zayînê',
+      'finance_application_elterngeld_whereToGet_13':
+          'Belgeyên meaşê an biryara bacê',
+      'finance_application_elterngeld_name_14':
+          'Nasnameyên her du dêûbavan (kopî)',
+      'finance_application_elterngeld_name_15':
+          'Belgeya saetên kar ên plankirî (ji bo Elterngeld Plus)',
+      'finance_application_elterngeld_whereToGet_16':
+          'İşveren (heke nîvdem dixebitî)',
+      'finance_application_elterngeld_title_17':
+          'Hesabkerê alîkariya dêûbavan bi kar bîne',
+      'finance_application_elterngeld_description_18':
+          'Bi hesabkerê fermî alîkariya dêûbavan û parvekirina guncaw a Basis/Plus/bonûsa hevkariyê hesab bike.',
+      'finance_application_elterngeld_title_19':
+          'Serlêdanê dagire (serhêl an kaxez)',
+      'finance_application_elterngeld_description_20':
+          'Her eyalet forma xwe heye. ElterngeldDigital hêsantir e û li gelek eyaletan heye.',
       'finance_application_elterngeld_title_21': 'Belgeyan kom bike',
-      'finance_application_elterngeld_description_22': 'Belgeya zayînê, dahatê, alîkariya dayîktiyê û nasnameyan kopî bike.',
+      'finance_application_elterngeld_description_22':
+          'Belgeya zayînê, dahatê, alîkariya dayîktiyê û nasnameyan kopî bike.',
       'finance_application_elterngeld_title_23': 'Bişîne + sebr bike',
-      'finance_application_elterngeld_description_24': 'Bi posteyê an dîjîtal bişîne. Dem cuda ye (4–12 hefte). Ger piştî 6 hefteyan deng tune be bipirse.',
-      'finance_application_unterhaltsvorschuss_benefitName_0': 'Pêşdana nafqeyê',
-      'finance_application_unterhaltsvorschuss_responsibleAuthority_1': 'Ofîsa ciwanan ya bajar an şaredariya te',
-      'finance_application_unterhaltsvorschuss_renewalNote_3': 'Serlêdana nûkirinê ne pêwîst e. Heta 18 salî, heta ku merc hene, bixweber tê dayîn.',
-      'finance_application_unterhaltsvorschuss_proTip_4': 'Dikarî ji bo 1 meh paşve serlêdan bikî. Li bendê nemîne — niha serlêdan bike!',
-      'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5': 'Ji bo pêşdana nafqeyê serlêdaneke kurt û rastîparêz binivîse. Dêûbavekî tenê ji yê din nafqe nastîne. Zelal, 3–4 hevok.',
-      'finance_application_unterhaltsvorschuss_name_9': 'Belgeya rûniştinê (mala tenê)',
-      'finance_application_unterhaltsvorschuss_whereToGet_10': 'Ofîsa hemwelatiyan — nîşan dide ku bi zarokî re tenê dijî',
-      'finance_application_unterhaltsvorschuss_name_11': 'Belgeya nafqeya nedayî',
-      'finance_application_unterhaltsvorschuss_whereToGet_12': 'Mînak: nameya bêbersiv ji hevkarê berê re, biryara nafqeyê an daxuyaniya te',
-      'finance_application_unterhaltsvorschuss_name_13': 'Pejirandina bavîtiyê an belgeya zayînê bi navê bav',
-      'finance_application_unterhaltsvorschuss_whereToGet_14': 'Ofîsa qeydên sivîl an ciwanan',
-      'finance_application_unterhaltsvorschuss_title_15': 'Bi ofîsa ciwanan re têkilî bike',
-      'finance_application_unterhaltsvorschuss_description_16': 'Ofîsa ciwanan bigere an serdan bike. Ew di dagirtina formê de alîkar in.',
+      'finance_application_elterngeld_description_24':
+          'Bi posteyê an dîjîtal bişîne. Dem cuda ye (4–12 hefte). Ger piştî 6 hefteyan deng tune be bipirse.',
+      'finance_application_unterhaltsvorschuss_benefitName_0':
+          'Pêşdana nafqeyê',
+      'finance_application_unterhaltsvorschuss_responsibleAuthority_1':
+          'Ofîsa ciwanan ya bajar an şaredariya te',
+      'finance_application_unterhaltsvorschuss_renewalNote_3':
+          'Serlêdana nûkirinê ne pêwîst e. Heta 18 salî, heta ku merc hene, bixweber tê dayîn.',
+      'finance_application_unterhaltsvorschuss_proTip_4':
+          'Dikarî ji bo 1 meh paşve serlêdan bikî. Li bendê nemîne — niha serlêdan bike!',
+      'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5':
+          'Ji bo pêşdana nafqeyê serlêdaneke kurt û rastîparêz binivîse. Dêûbavekî tenê ji yê din nafqe nastîne. Zelal, 3–4 hevok.',
+      'finance_application_unterhaltsvorschuss_name_9':
+          'Belgeya rûniştinê (mala tenê)',
+      'finance_application_unterhaltsvorschuss_whereToGet_10':
+          'Ofîsa hemwelatiyan — nîşan dide ku bi zarokî re tenê dijî',
+      'finance_application_unterhaltsvorschuss_name_11':
+          'Belgeya nafqeya nedayî',
+      'finance_application_unterhaltsvorschuss_whereToGet_12':
+          'Mînak: nameya bêbersiv ji hevkarê berê re, biryara nafqeyê an daxuyaniya te',
+      'finance_application_unterhaltsvorschuss_name_13':
+          'Pejirandina bavîtiyê an belgeya zayînê bi navê bav',
+      'finance_application_unterhaltsvorschuss_whereToGet_14':
+          'Ofîsa qeydên sivîl an ciwanan',
+      'finance_application_unterhaltsvorschuss_title_15':
+          'Bi ofîsa ciwanan re têkilî bike',
+      'finance_application_unterhaltsvorschuss_description_16':
+          'Ofîsa ciwanan bigere an serdan bike. Ew di dagirtina formê de alîkar in.',
       'finance_application_unterhaltsvorschuss_title_17': 'Serlêdanê dagire',
-      'finance_application_unterhaltsvorschuss_description_18': 'Formê ji ofîsa ciwanan bistîne. Hin bajar wê serhêl wek PDF pêşkêş dikin.',
-      'finance_application_unterhaltsvorschuss_description_20': 'Belgeya zayînê, rûniştinê û nafqeya nedayî pê ve bike.',
+      'finance_application_unterhaltsvorschuss_description_18':
+          'Formê ji ofîsa ciwanan bistîne. Hin bajar wê serhêl wek PDF pêşkêş dikin.',
+      'finance_application_unterhaltsvorschuss_description_20':
+          'Belgeya zayînê, rûniştinê û nafqeya nedayî pê ve bike.',
       'finance_application_unterhaltsvorschuss_title_21': 'Li biryarê bisekine',
-      'finance_application_unterhaltsvorschuss_description_22': 'Biryar piştî 4–8 hefteyan tê. Dayînên mehane ji roja serlêdanê paşve ne.',
+      'finance_application_unterhaltsvorschuss_description_22':
+          'Biryar piştî 4–8 hefteyan tê. Dayînên mehane ji roja serlêdanê paşve ne.',
       'finance_application_pflegegeld_benefitName_0': 'Alîkariya lênêrînê',
-      'finance_application_pflegegeld_responsibleAuthority_1': 'Sîgorteya lênêrînê (li sîgorteya tenduristiya te)',
-      'finance_application_pflegegeld_processingTime_2': 'Bi gelemperî 25 rojên kar; îstîsnayên qanûnî kontrol bike (§18c SGB XI).',
-      'finance_application_pflegegeld_renewalNote_3': 'Serlêdana nûkirinê tune. Ger rewş xirabtir bibe ji bo asta lênêrînê ya bilindtir serlêdan bike.',
-      'finance_application_pflegegeld_proTip_4': 'Bêform bi telefonê serlêdan bike — bangek bo sîgorteya lênêrînê bes e! Dîrok ji bo dayîna paşve tê hesibandin.',
-      'finance_application_pflegegeld_aiTemplatePrompt_5': 'Ji bo alîkariyên lênêrîna zarokî serlêdaneke kurt û bêform binivîse. Zarok seqetî/nexweşiya kronîk heye û piştgiriya rojane dixwaze. Rastîparêz, 3–4 hevok.',
-      'finance_application_pflegegeld_name_6': 'Serlêdana bêform (telefon an name bes e)',
-      'finance_application_pflegegeld_whereToGet_7': 'Bangek bo sîgorteya tenduristî/lênêrînê bes e',
+      'finance_application_pflegegeld_responsibleAuthority_1':
+          'Sîgorteya lênêrînê (li sîgorteya tenduristiya te)',
+      'finance_application_pflegegeld_processingTime_2':
+          'Bi gelemperî 25 rojên kar; îstîsnayên qanûnî kontrol bike (§18c SGB XI).',
+      'finance_application_pflegegeld_renewalNote_3':
+          'Serlêdana nûkirinê tune. Ger rewş xirabtir bibe ji bo asta lênêrînê ya bilindtir serlêdan bike.',
+      'finance_application_pflegegeld_proTip_4':
+          'Bêform bi telefonê serlêdan bike — bangek bo sîgorteya lênêrînê bes e! Dîrok ji bo dayîna paşve tê hesibandin.',
+      'finance_application_pflegegeld_aiTemplatePrompt_5':
+          'Ji bo alîkariyên lênêrîna zarokî serlêdaneke kurt û bêform binivîse. Zarok seqetî/nexweşiya kronîk heye û piştgiriya rojane dixwaze. Rastîparêz, 3–4 hevok.',
+      'finance_application_pflegegeld_name_6':
+          'Serlêdana bêform (telefon an name bes e)',
+      'finance_application_pflegegeld_whereToGet_7':
+          'Bangek bo sîgorteya tenduristî/lênêrînê bes e',
       'finance_application_pflegegeld_name_8': 'Belgeyên bijîşkî / teşxîs',
-      'finance_application_pflegegeld_whereToGet_9': 'Bijîşkê zarokan, pispor an nexweşxane',
-      'finance_application_pflegegeld_name_10': 'Rojnivîsa lênêrînê (2 hefte berî nirxandinê)',
-      'finance_application_pflegegeld_whereToGet_11': 'Şablon ji sîgorteya lênêrînê an serhêl',
+      'finance_application_pflegegeld_whereToGet_9':
+          'Bijîşkê zarokan, pispor an nexweşxane',
+      'finance_application_pflegegeld_name_10':
+          'Rojnivîsa lênêrînê (2 hefte berî nirxandinê)',
+      'finance_application_pflegegeld_whereToGet_11':
+          'Şablon ji sîgorteya lênêrînê an serhêl',
       'finance_application_pflegegeld_title_12': 'Sîgorteya lênêrînê bigere',
-      'finance_application_pflegegeld_description_13': 'Bangek bes e! Bêje: “Ez dixwazim ji bo zarokê xwe alîkariya lênêrînê bixwazim.” Roja bangê tê hesibandin.',
-      'finance_application_pflegegeld_title_14': 'Rojnivîsa lênêrînê binivîse (2 hefte)',
-      'finance_application_pflegegeld_description_15': 'Alîkariya rojane tomar bike: şuştin, cilkirin, xwarin, şev, çavdêrî. Hûrgulî nirxandinê hêsan dike.',
-      'finance_application_pflegegeld_title_16': 'Nirxandina Xizmeta Bijîşkî (serdana malê)',
-      'finance_application_pflegegeld_description_17': 'Xizmeta Bijîşkî tê mala we. Hewcedariyên rast nîşan bide, ne tenê “roja baş”!',
-      'finance_application_pflegegeld_title_18': 'Biryar + heke pêwîst be îtîraz',
-      'finance_application_pflegegeld_description_19': 'Bi gelemperî biryar di 25 rojên kar de (§18c SGB XI; îstîsna gengaz in). Îtîraz bi gelemperî di mehekê piştî agahdarkirinê de, li derveyî welêt sê meh (§84 SGG). Agahdariya îtîrazê kontrol bike.',
-      'finance_application_eingliederungshilfe_benefitName_0': 'Alîkariya entegrasyonê',
-      'finance_application_eingliederungshilfe_responsibleAuthority_1': 'Ofîsa sosyal an ciwanan (li gorî cureya seqetiyê)',
+      'finance_application_pflegegeld_description_13':
+          'Bangek bes e! Bêje: “Ez dixwazim ji bo zarokê xwe alîkariya lênêrînê bixwazim.” Roja bangê tê hesibandin.',
+      'finance_application_pflegegeld_title_14':
+          'Rojnivîsa lênêrînê binivîse (2 hefte)',
+      'finance_application_pflegegeld_description_15':
+          'Alîkariya rojane tomar bike: şuştin, cilkirin, xwarin, şev, çavdêrî. Hûrgulî nirxandinê hêsan dike.',
+      'finance_application_pflegegeld_title_16':
+          'Nirxandina Xizmeta Bijîşkî (serdana malê)',
+      'finance_application_pflegegeld_description_17':
+          'Xizmeta Bijîşkî tê mala we. Hewcedariyên rast nîşan bide, ne tenê “roja baş”!',
+      'finance_application_pflegegeld_title_18':
+          'Biryar + heke pêwîst be îtîraz',
+      'finance_application_pflegegeld_description_19':
+          'Bi gelemperî biryar di 25 rojên kar de (§18c SGB XI; îstîsna gengaz in). Îtîraz bi gelemperî di mehekê piştî agahdarkirinê de, li derveyî welêt sê meh (§84 SGG). Agahdariya îtîrazê kontrol bike.',
+      'finance_application_eingliederungshilfe_benefitName_0':
+          'Alîkariya entegrasyonê',
+      'finance_application_eingliederungshilfe_responsibleAuthority_1':
+          'Ofîsa sosyal an ciwanan (li gorî cureya seqetiyê)',
       'finance_application_eingliederungshilfe_processingTime_2': '4–12 hefte',
-      'finance_application_eingliederungshilfe_renewalNote_3': 'Ji bo demeke diyarkirî tê pejirandin. Di dema xwe de ji bo nûkirinê serlêdan bike.',
-      'finance_application_eingliederungshilfe_proTip_4': 'Ji bo seqetiya derûnî (mînak: otîzm, ADHD) ofîsa ciwanan berpirsiyar e (§35a SGB VIII). Ji bo seqetiya bedenî/aqilî ofîsa sosyal.',
-      'finance_application_eingliederungshilfe_aiTemplatePrompt_5': 'Ji bo zarokê seqet ku piştgiriya beşdariyê dixwaze (mînak: alîkariya dibistanê, destwerdana zû) serlêdaneke kurt û bêform binivîse. Rastîparêz, 3–4 hevok.',
-      'finance_application_eingliederungshilfe_name_6': 'Nêrîna bijîşkî / teşxîs',
-      'finance_application_eingliederungshilfe_whereToGet_7': 'Bijîşkê zarokan, SPZ (navenda pediatriya sosyal) an pispor',
-      'finance_application_eingliederungshilfe_name_8': 'Serlêdana bêform a alîkariya entegrasyonê',
-      'finance_application_eingliederungshilfe_whereToGet_9': 'Nameya te bo ofîsa sosyal/ciwanan',
-      'finance_application_eingliederungshilfe_name_10': 'Rapora pêşketinê (baxçeya zarokan/dibistan)',
-      'finance_application_eingliederungshilfe_whereToGet_11': 'Raporek kurt ji perwerdekar an mamoste',
-      'finance_application_eingliederungshilfe_name_12': 'Nêrîna dibistanê (ji bo alîkariya dibistanê)',
-      'finance_application_eingliederungshilfe_whereToGet_13': 'Rêveberê dibistanê an mamosteyê polê',
-      'finance_application_eingliederungshilfe_title_14': 'Berpisyarî zelal bike',
-      'finance_application_eingliederungshilfe_description_15': 'Seqetiya derûnî (otîzm, ADHD, tirs) → ofîsa ciwanan. Bedenî/aqilî → ofîsa sosyal. Ger ne piştrast be, ji ofîsa ciwanan bipirse.',
-      'finance_application_eingliederungshilfe_title_16': 'Serlêdana bêform bike',
-      'finance_application_eingliederungshilfe_description_17': 'Nameyek bes e: “Ez ji bo zarokê xwe [Name] ji ber [Diagnose] alîkariya entegrasyonê dixwazim.” Nêrîna bijîşkî pê ve bike.',
-      'finance_application_eingliederungshilfe_title_18': 'Hevdîtina plana alîkariyê',
-      'finance_application_eingliederungshilfe_description_19': 'Ofîs we ji bo axaftina hewcedariyên zarokî vedixwîne (destwerdana zû, alîkariya dibistanê, terapî û hwd.).',
-      'finance_application_eingliederungshilfe_title_20': 'Pejirandin + destpêka alîkariyê',
-      'finance_application_eingliederungshilfe_description_21': 'Piştî pejirandinê alîkarî dest pê dike. Ger red bibe di 4 hefteyan de bêpere îtîraz bike.',
+      'finance_application_eingliederungshilfe_renewalNote_3':
+          'Ji bo demeke diyarkirî tê pejirandin. Di dema xwe de ji bo nûkirinê serlêdan bike.',
+      'finance_application_eingliederungshilfe_proTip_4':
+          'Ji bo seqetiya derûnî (mînak: otîzm, ADHD) ofîsa ciwanan berpirsiyar e (§35a SGB VIII). Ji bo seqetiya bedenî/aqilî ofîsa sosyal.',
+      'finance_application_eingliederungshilfe_aiTemplatePrompt_5':
+          'Ji bo zarokê seqet ku piştgiriya beşdariyê dixwaze (mînak: alîkariya dibistanê, destwerdana zû) serlêdaneke kurt û bêform binivîse. Rastîparêz, 3–4 hevok.',
+      'finance_application_eingliederungshilfe_name_6':
+          'Nêrîna bijîşkî / teşxîs',
+      'finance_application_eingliederungshilfe_whereToGet_7':
+          'Bijîşkê zarokan, SPZ (navenda pediatriya sosyal) an pispor',
+      'finance_application_eingliederungshilfe_name_8':
+          'Serlêdana bêform a alîkariya entegrasyonê',
+      'finance_application_eingliederungshilfe_whereToGet_9':
+          'Nameya te bo ofîsa sosyal/ciwanan',
+      'finance_application_eingliederungshilfe_name_10':
+          'Rapora pêşketinê (baxçeya zarokan/dibistan)',
+      'finance_application_eingliederungshilfe_whereToGet_11':
+          'Raporek kurt ji perwerdekar an mamoste',
+      'finance_application_eingliederungshilfe_name_12':
+          'Nêrîna dibistanê (ji bo alîkariya dibistanê)',
+      'finance_application_eingliederungshilfe_whereToGet_13':
+          'Rêveberê dibistanê an mamosteyê polê',
+      'finance_application_eingliederungshilfe_title_14':
+          'Berpisyarî zelal bike',
+      'finance_application_eingliederungshilfe_description_15':
+          'Seqetiya derûnî (otîzm, ADHD, tirs) → ofîsa ciwanan. Bedenî/aqilî → ofîsa sosyal. Ger ne piştrast be, ji ofîsa ciwanan bipirse.',
+      'finance_application_eingliederungshilfe_title_16':
+          'Serlêdana bêform bike',
+      'finance_application_eingliederungshilfe_description_17':
+          'Nameyek bes e: “Ez ji bo zarokê xwe [Name] ji ber [Diagnose] alîkariya entegrasyonê dixwazim.” Nêrîna bijîşkî pê ve bike.',
+      'finance_application_eingliederungshilfe_title_18':
+          'Hevdîtina plana alîkariyê',
+      'finance_application_eingliederungshilfe_description_19':
+          'Ofîs we ji bo axaftina hewcedariyên zarokî vedixwîne (destwerdana zû, alîkariya dibistanê, terapî û hwd.).',
+      'finance_application_eingliederungshilfe_title_20':
+          'Pejirandin + destpêka alîkariyê',
+      'finance_application_eingliederungshilfe_description_21':
+          'Piştî pejirandinê alîkarî dest pê dike. Ger red bibe di 4 hefteyan de bêpere îtîraz bike.',
       'finance_content_austria_name_1': 'Alîkariya malbatê (Familienbeihilfe)',
-      'finance_content_austria_description_2': 'Piştgiriya mehane ji bo her zarokî, li gorî temenê.',
-      'finance_content_austria_amount_3': '138,40 / 148 / 171,80 / 200,40€/meh (ji 0 / 3 / 10 / 19 salî; bê zêdeyan)',
-      'finance_content_austria_name_4': 'Daxistina baca zarokan (Kinderabsetzbetrag)',
-      'finance_content_austria_description_5': 'Daxistina bacê ji bo her zarokî.',
+      'finance_content_austria_description_2':
+          'Piştgiriya mehane ji bo her zarokî, li gorî temenê.',
+      'finance_content_austria_amount_3':
+          '138,40 / 148 / 171,80 / 200,40€/meh (ji 0 / 3 / 10 / 19 salî; bê zêdeyan)',
+      'finance_content_austria_name_4':
+          'Daxistina baca zarokan (Kinderabsetzbetrag)',
+      'finance_content_austria_description_5':
+          'Daxistina bacê ji bo her zarokî.',
       'finance_content_austria_amount_6': '70,90€/zarok/meh',
-      'finance_content_austria_eligibility_7': 'Bi alîkariya malbatê re tê dayîn; serlêdana cuda ne pêwîst e.',
-      'finance_content_austria_name_8': 'Alîkariya lênêrîna zarokan (Kinderbetreuungsgeld)',
+      'finance_content_austria_eligibility_7':
+          'Bi alîkariya malbatê re tê dayîn; serlêdana cuda ne pêwîst e.',
+      'finance_content_austria_name_8':
+          'Alîkariya lênêrîna zarokan (Kinderbetreuungsgeld)',
       'finance_content_austria_description_9': 'Piştî zayînê, bi modelên cuda.',
-      'finance_content_austria_amount_10': 'Konto: 17,65–41,14€/roj; girêdayî dahatê: 80% ji dahata berê, herî zêde 80,12€/roj',
+      'finance_content_austria_amount_10':
+          'Konto: 17,65–41,14€/roj; girêdayî dahatê: 80% ji dahata berê, herî zêde 80,12€/roj',
       'finance_content_switzerland_name_1': 'Alîkariya zarokan (Kinderzulage)',
-      'finance_content_switzerland_description_2': 'Li gorî kantonê cuda ye, ji bo her zarokî.',
-      'finance_content_switzerland_amount_3': 'Herî kêm 215 Fr./zarok/meh; li kantonan dikare bilindtir be',
-      'finance_content_switzerland_name_4': 'Alîkariya perwerdeyê (Ausbildungszulage)',
-      'finance_content_switzerland_description_5': 'Perwerdeya piştî mecbûrî, herî zû ji 15 heta herî dereng 25 salî; sînorên mehane kontrol bike.',
-      'finance_content_switzerland_amount_6': 'Herî kêm 268 Fr./zarok/meh; li kantonan dikare bilindtir be',
+      'finance_content_switzerland_description_2':
+          'Li gorî kantonê cuda ye, ji bo her zarokî.',
+      'finance_content_switzerland_amount_3':
+          'Herî kêm 215 Fr./zarok/meh; li kantonan dikare bilindtir be',
+      'finance_content_switzerland_name_4':
+          'Alîkariya perwerdeyê (Ausbildungszulage)',
+      'finance_content_switzerland_description_5':
+          'Perwerdeya piştî mecbûrî, herî zû ji 15 heta herî dereng 25 salî; sînorên mehane kontrol bike.',
+      'finance_content_switzerland_amount_6':
+          'Herî kêm 268 Fr./zarok/meh; li kantonan dikare bilindtir be',
       'finance_content_turkey_name_1': 'Dogum Yardimi',
-      'finance_content_turkey_description_2': 'Programa nû ji bo zayînên ji 01.01.2025 ve; dayînên domdar ji serlêdanê heta meha 60, bi wê re.',
-      'finance_content_turkey_amount_3': 'Zarokê 1: carekê 5.000₺; 2: 1.500₺/meh; 3+: 5.000₺/meh',
-      'finance_content_turkey_eligibility_4': 'Hemwelatiya Tirkiyeyê û rûniştina li Türkiye; mercên din ên fermî kontrol bike.',
+      'finance_content_turkey_description_2':
+          'Programa nû ji bo zayînên ji 01.01.2025 ve; dayînên domdar ji serlêdanê heta meha 60, bi wê re.',
+      'finance_content_turkey_amount_3':
+          'Zarokê 1: carekê 5.000₺; 2: 1.500₺/meh; 3+: 5.000₺/meh',
+      'finance_content_turkey_eligibility_4':
+          'Hemwelatiya Tirkiyeyê û rûniştina li Türkiye; mercên din ên fermî kontrol bike.',
       'finance_content_turkey_name_5': 'Cocuk Parasi',
-      'finance_content_turkey_description_6': 'Alîkariya mehane ya zarokan ji bo malbatan.',
+      'finance_content_turkey_description_6':
+          'Alîkariya mehane ya zarokan ji bo malbatan.',
       'finance_content_turkey_amount_7': 'Girêdayî dahatê',
       'finance_content_turkey_name_8': 'Piştgiriya sosyal û aborî (SED)',
-      'finance_content_turkey_description_9': 'Piştgiriya sosyal û aborî bi İl Müdürlüğü/Sosyal Hizmet Merkezi.',
-      'finance_content_turkey_eligibility_10': 'Nirxandina sosyal a kesane ya rewşa malbatî, aborî û herêmî.',
+      'finance_content_turkey_description_9':
+          'Piştgiriya sosyal û aborî bi İl Müdürlüğü/Sosyal Hizmet Merkezi.',
+      'finance_content_turkey_eligibility_10':
+          'Nirxandina sosyal a kesane ya rewşa malbatî, aborî û herêmî.',
       'finance_content_turkey_note_11': 'Çente, pêdiviyên nivîsê, forma',
       'finance_content_uk_name_1': 'Alîkariya zarokan',
       'finance_content_uk_description_2': 'Dayîna heftane ji bo her zarokî.',
-      'finance_content_uk_amount_3': '£27.05/hefte (mezin an tenê), £17.90/hefte (zarokên din)',
+      'finance_content_uk_amount_3':
+          '£27.05/hefte (mezin an tenê), £17.90/hefte (zarokên din)',
       'finance_content_uk_name_4': 'Universal Credit (beşa zarokan)',
-      'finance_content_uk_description_5': 'Piştgiriya zêde ji bo malbatên kêm-dahat.',
-      'finance_content_uk_amount_6': '£303.94/meh ji bo her zarokî; £47.94 zêde ji bo zarokê yekem ê berî 6 Nîsan 2017 hatiye dinyayê',
+      'finance_content_uk_description_5':
+          'Piştgiriya zêde ji bo malbatên kêm-dahat.',
+      'finance_content_uk_amount_6':
+          '£303.94/meh ji bo her zarokî; £47.94 zêde ji bo zarokê yekem ê berî 6 Nîsan 2017 hatiye dinyayê',
       'finance_content_uk_name_7': 'Lênêrîna zarokan bêbac',
-      'finance_content_uk_description_8': 'Dewlet ji bo her £8 li hesabê lênêrînê £2 zêde dike.',
-      'finance_content_uk_amount_9': 'Heta £500/3 meh (£2,000/sal); zarokê seqet: £1,000/3 meh (£4,000/sal)',
+      'finance_content_uk_description_8':
+          'Dewlet ji bo her £8 li hesabê lênêrînê £2 zêde dike.',
+      'finance_content_uk_amount_9':
+          'Heta £500/3 meh (£2,000/sal); zarokê seqet: £1,000/3 meh (£4,000/sal)',
       'finance_content_uk_note_10': 'Forma, çente, pêlav, pêdiviyên nivîsê',
       'finance_content_generic_name_1': 'Alîkariya zarokan',
-      'finance_content_generic_description_2': 'Piraniya welatan alîkariyên malbatê mehane didin. Ji dezgeha herêmî bipirse.',
+      'finance_content_generic_description_2':
+          'Piraniya welatan alîkariyên malbatê mehane didin. Ji dezgeha herêmî bipirse.',
       'finance_content_generic_name_3': 'Piştgiriya xanî',
-      'finance_content_generic_description_4': 'Gelek welat ji malbatan re alîkariya kirê pêşkêş dikin.',
+      'finance_content_generic_description_4':
+          'Gelek welat ji malbatan re alîkariya kirê pêşkêş dikin.',
       'finance_content_generic_name_5': 'Piştgiriya lênêrîna zarokan',
-      'finance_content_generic_description_6': 'Kontrol bike ka welatê te lênêrîna zarokan piştgirî dike.',
+      'finance_content_generic_description_6':
+          'Kontrol bike ka welatê te lênêrîna zarokan piştgirî dike.',
       'benefit_chip_leave': 'Betlaneya dêûbavan',
       'benefit_chip_salary': 'Meaş kêm dibe',
       'benefit_chip_single': 'Dêûbavê tenê',
       'benefit_chip_move': 'Koçkirin',
       'benefit_chip_second': 'Zarokê duyem tê',
       'benefit_chip_income': 'Dahata kêm',
-      'benefit_fallback_notice': 'Bersiva AI ne amade ye. Ev rêberiya giştî û herêmî ji bo welatê te ye, ne li gorî rewşa te ye.',
-      'benefit_fallback_check': 'Ji bo hûrguliyan dezgehên fermî yên bi lînk kontrol bike.',
-      'benefit_fallback_prepare': 'Nasname, belgeyên dahatê û zayînê amade bike.',
-      'finance_share_failed': 'Kurte nehate parvekirin. Ji kerema xwe dîsa biceribîne.',
+      'benefit_fallback_notice':
+          'Bersiva AI ne amade ye. Ev rêberiya giştî û herêmî ji bo welatê te ye, ne li gorî rewşa te ye.',
+      'benefit_fallback_check':
+          'Ji bo hûrguliyan dezgehên fermî yên bi lînk kontrol bike.',
+      'benefit_fallback_prepare':
+          'Nasname, belgeyên dahatê û zayînê amade bike.',
+      'finance_share_failed':
+          'Kurte nehate parvekirin. Ji kerema xwe dîsa biceribîne.',
       'antrag_documents_tab': 'Belge',
       'antrag_guide_tab': 'Rêbername',
       'antrag_ai_tab': 'Alîkariya AI',
@@ -14102,38 +14939,60 @@ class AppStringsManager {
       'antrag_documents_count': '{checked} ji {total} belgeyan amade ne',
       'antrag_processing_time': '⏱️ Dema pêvajoyê: {time}',
       'antrag_step_guide': 'Rêbernameya gav bi gav',
-      'antrag_ai_description': 'AI nameyek an ravekirinek ji bo kopîkirinê çêdike.',
+      'antrag_ai_description':
+          'AI nameyek an ravekirinek ji bo kopîkirinê çêdike.',
       'antrag_copied': '📋 Li clipboardê hate kopîkirin!',
       'antrag_copy_failed': 'Kopîkirin têk çû. Dîsa biceribîne.',
-      'antrag_ai_disclaimer': 'Ev şablon e, ne şîreta qanûnî ye. Nivîsê li gorî rewşa xwe biguherîne.',
+      'antrag_ai_disclaimer':
+          'Ev şablon e, ne şîreta qanûnî ye. Nivîsê li gorî rewşa xwe biguherîne.',
       'antrag_ai_failed': 'Şablona nivîsê nehate çêkirin. Dîsa biceribîne.',
-      'antrag_premium_description': 'Premium rêbernameya temam, şablonên AI û bîranînan digire.',
-      'antrag_content_limits': 'Rêberiya giştî ye, ne şîreta qanûnî. Hemû belge, dem û hûrguliyên pêvajoyê fermî nehatine kontrolkirin. Pêdivî û demên îtîrazê ji dezgeha berpirsiyar bipirse.',
+      'antrag_premium_description':
+          'Premium rêbernameya temam, şablonên AI û bîranînan digire.',
+      'antrag_content_limits':
+          'Rêberiya giştî ye, ne şîreta qanûnî. Hemû belge, dem û hûrguliyên pêvajoyê fermî nehatine kontrolkirin. Pêdivî û demên îtîrazê ji dezgeha berpirsiyar bipirse.',
       'finance_estimated_months': 'Bi texmîn di {months} mehan de ({year})',
       'finance_estimated_one_month': 'Bi texmîn di mehekê de ({year})',
-      'finance_goal_months_on_time': 'Bi {amount}/meh, tu dikarî di nav {months} mehan de bigihîjî armanca texmînkirî.',
-      'finance_goal_months_shortfall': 'Bi {amount}/meh, hîn têrê nake ku di {months} mehan de bigihîjî armanca texmînkirî.',
+      'finance_goal_months_on_time':
+          'Bi {amount}/meh, tu dikarî di nav {months} mehan de bigihîjî armanca texmînkirî.',
+      'finance_goal_months_shortfall':
+          'Bi {amount}/meh, hîn têrê nake ku di {months} mehan de bigihîjî armanca texmînkirî.',
       'finance_legacy_title': 'Daneyên darayî yên herêmî werbigire',
-      'finance_legacy_notice': 'Li ser vê cîhazê daneyên darayî û lîsteyên bêhesab hene. Ew bi xwe nayên bikaranîn. Têkeve hesabê da ku piştî piştrastkirina xwedîtiyê wan werbigirî.',
-      'finance_legacy_confirm': 'Gelo nirxên darayî, lîsteyên rêberê alîkariyan û serlêdanê yên berê li ser vê cîhazê yên te ne? Bi piştrastkirina te ew bi vê hesabê ve tên girêdan. Nirxên heyî yên hesabê pêşî ne; lîste tên yekirin. Nirxên welatekî din wek pereyeke nû nayên veguhastin. Daneyên kevn ên bingehîn li ser cîhazê dimînin. Tiştek nayê weşandin.',
-      'benefit_ai_consent_body': 'Ji bo rêberiya kesane, nivîsa te, agahiyên rewşa hilbijartî, welat û temenên zarokan ên heyî bi rêya servera ParentPeak ji Google Gemini re tên şandin. Gemini dikare lêgerîna webê bikar bîne. Hin agahiyên têkiliyê yên naskirî tên rakirin; ev anonîmkirina temam nîne. Ji kerema xwe nav, navnîşan an hûrgiliyên tenduristiyê nenivîse. Ev agahî li vir wek sohbet nayên tomarkirin. Razîbûn ji bo vê hesabê an moda mêvan e. Bê razîbûn agahiyên giştî yên alîkariyan hene, lê daxwaza KI nayê destpêkirin.',
+      'finance_legacy_notice':
+          'Li ser vê cîhazê daneyên darayî û lîsteyên bêhesab hene. Ew bi xwe nayên bikaranîn. Têkeve hesabê da ku piştî piştrastkirina xwedîtiyê wan werbigirî.',
+      'finance_legacy_confirm':
+          'Gelo nirxên darayî, lîsteyên rêberê alîkariyan û serlêdanê yên berê li ser vê cîhazê yên te ne? Bi piştrastkirina te ew bi vê hesabê ve tên girêdan. Nirxên heyî yên hesabê pêşî ne; lîste tên yekirin. Nirxên welatekî din wek pereyeke nû nayên veguhastin. Daneyên kevn ên bingehîn li ser cîhazê dimînin. Tiştek nayê weşandin.',
+      'benefit_ai_consent_body':
+          'Ji bo rêberiya kesane, nivîsa te, agahiyên rewşa hilbijartî, welat û temenên zarokan ên heyî bi rêya servera ParentPeak ji Google Gemini re tên şandin. Gemini dikare lêgerîna webê bikar bîne. Hin agahiyên têkiliyê yên naskirî tên rakirin; ev anonîmkirina temam nîne. Ji kerema xwe nav, navnîşan an hûrgiliyên tenduristiyê nenivîse. Ev agahî li vir wek sohbet nayên tomarkirin. Razîbûn ji bo vê hesabê an moda mêvan e. Bê razîbûn agahiyên giştî yên alîkariyan hene, lê daxwaza KI nayê destpêkirin.',
       'benefit_ai_consent_accept': 'Razî bim û KI bikar bînim',
-      'benefit_ai_consent_failed': 'Razîbûn nehat tomarkirin. Daxwaza KI nehat destpêkirin.',
+      'benefit_ai_consent_failed':
+          'Razîbûn nehat tomarkirin. Daxwaza KI nehat destpêkirin.',
       'treasure_photo_consent_title': 'Ev wêne bi KI were analîzkirin?',
-      'treasure_account_changed': 'Hesab hate guhertin. Ji kerema xwe vê dîtinê bigire.',
+      'treasure_account_changed':
+          'Hesab hate guhertin. Ji kerema xwe vê dîtinê bigire.',
       'treasure_legacy_title': 'Daneyên herêmî yên bê hesab',
-      'treasure_legacy_body': 'Reşnivîs, nîşaneyên rezervasyon û ewlehiyê yên herêmî hê ne girêdayî hesabekê ne. Têkeve da xwedîtiyê piştrast bikî.',
-      'treasure_legacy_confirm': 'Tu piştrast dikî ku ev dane yên te ne? Ew ê bi vî hesabî ve werin girêdan. Reşnivîsa heyî ya hesabê pêşî ye. Daneyên orîjînal dimînin; tiştek nayê weşandin.',
+      'treasure_legacy_body':
+          'Reşnivîs, nîşaneyên rezervasyon û ewlehiyê yên herêmî hê ne girêdayî hesabekê ne. Têkeve da xwedîtiyê piştrast bikî.',
+      'treasure_legacy_confirm':
+          'Tu piştrast dikî ku ev dane yên te ne? Ew ê bi vî hesabî ve werin girêdan. Reşnivîsa heyî ya hesabê pêşî ye. Daneyên orîjînal dimînin; tiştek nayê weşandin.',
       'treasure_legacy_claim': 'Xwedîtiyê piştrast bike',
-      'treasure_storage_failed': 'Daneyên bazarê nehatin barkirin an tomarkirin. Ji kerema xwe dîsa biceribîne.',
-      'treasure_reservation_offline': 'Bê girêdana bi servera bazarê tiştek nehat rezervasyonkirin. Ji kerema xwe online dîsa biceribîne.',
-      'treasure_reserve_local_failed': 'Serverê rezervasyon piştrast kir, lê nîşaneya herêmî nehat tomarkirin. Berî rezervasyona nû, agahdariyên Min kontrol bike.',
-      'treasure_cancel_local_failed': 'Serverê betalkirin piştrast kir, lê nîşaneya herêmî nehat jêbirin. Dibe ku nîşaneya kevn hê were dîtin.',
-      'treasure_upload_batch_failed': 'Hemû wêne nehatin barkirin. Wêneyên barkirî hatin jêbirin; agahdarî nehat şandin.',
-      'treasure_upload_cleanup_failed': 'Barkirina wêneyan têk çû. Agahdarî nehat şandin, lê hin wêneyên barkirî nehatin jêbirin û dibe ku hê ji bo giştî vekirî bin.',
-      'treasure_published_local_failed': 'Serverê agahdarî çêkir, lê daneyên herêmî nehatin nûkirin. Agahdariyên Min kontrol bike; dîsa ne weşîne.',
-      'treasure_publish_uncertain': 'Çêkirin nehat piştrastkirin. Dibe ku wêneyên barkirî ji bo giştî vekirî bin. Berî ceribandina nû, agahdariyên Min kontrol bike.',
-      'treasure_publish_unavailable': 'Ji bo weşandinê hesabekî vekirî û servera bazarê ya amade pêwîst in. Wêne nehatin barkirin.',
+      'treasure_storage_failed':
+          'Daneyên bazarê nehatin barkirin an tomarkirin. Ji kerema xwe dîsa biceribîne.',
+      'treasure_reservation_offline':
+          'Bê girêdana bi servera bazarê tiştek nehat rezervasyonkirin. Ji kerema xwe online dîsa biceribîne.',
+      'treasure_reserve_local_failed':
+          'Serverê rezervasyon piştrast kir, lê nîşaneya herêmî nehat tomarkirin. Berî rezervasyona nû, agahdariyên Min kontrol bike.',
+      'treasure_cancel_local_failed':
+          'Serverê betalkirin piştrast kir, lê nîşaneya herêmî nehat jêbirin. Dibe ku nîşaneya kevn hê were dîtin.',
+      'treasure_upload_batch_failed':
+          'Hemû wêne nehatin barkirin. Wêneyên barkirî hatin jêbirin; agahdarî nehat şandin.',
+      'treasure_upload_cleanup_failed':
+          'Barkirina wêneyan têk çû. Agahdarî nehat şandin, lê hin wêneyên barkirî nehatin jêbirin û dibe ku hê ji bo giştî vekirî bin.',
+      'treasure_published_local_failed':
+          'Serverê agahdarî çêkir, lê daneyên herêmî nehatin nûkirin. Agahdariyên Min kontrol bike; dîsa ne weşîne.',
+      'treasure_publish_uncertain':
+          'Çêkirin nehat piştrastkirin. Dibe ku wêneyên barkirî ji bo giştî vekirî bin. Berî ceribandina nû, agahdariyên Min kontrol bike.',
+      'treasure_publish_unavailable':
+          'Ji bo weşandinê hesabekî vekirî û servera bazarê ya amade pêwîst in. Wêne nehatin barkirin.',
       'treasurePublishNow': 'Niha weşîne',
       'treasureSaveDraft': 'Reşnivîsê tomar bike',
       'treasureDraftSaved': 'Reşnivîs hat tomarkirin. Tu dikarî paşê bidomînî.',
@@ -14141,18 +15000,27 @@ class AppStringsManager {
       'treasureUploadSuccess': 'Tiştê te niha xuya ye.',
       'treasureSelectForHandover': 'Ji bo radestkirinê hilbijêre',
       'treasureReserveCoffeeMode': 'Hevdîtinê rezervasyon bike',
-      'treasure_draft_images_missing': 'Nivîsa reşnivîsê hat barkirin, lê wêneyên berê êdî tune ne. Ji kerema xwe wan dîsa lê zêde bike.',
-      'treasure_photos_public_info': 'Di weşandinê de wêne ji bo giştî têne barkirin. Ger paşê çewtî çêbibe, dibe ku hê vekirî bin. Kes, belgeyên taybet an navnîşanan nîşan nede.',
-      'treasure_photo_consent_body': 'Ji bo pêşniyaran li ser tiştê te, ev wêne bi rêya backendê ParentPeak ji Google Gemini re tê şandin. Naveroka wêneyê anonîm nayê kirin. Wêneyên tiştan bê kes, belgeyên taybet an navnîşanên xuya bikar bîne. Analîz ne mecbûrî ye; bê razîbûn tu dikarî wêneyê biparêzî û daxuyaniyê bi destê xwe tijî bikî. Ev razîbûn tenê ji bo KI ya wêneyan li bazara diyariyan e û ji bo vî hesabî tê tomarkirin. Ew ne wêneyê ne jî daxuyaniyê diweşîne.',
+      'treasure_draft_images_missing':
+          'Nivîsa reşnivîsê hat barkirin, lê wêneyên berê êdî tune ne. Ji kerema xwe wan dîsa lê zêde bike.',
+      'treasure_photos_public_info':
+          'Di weşandinê de wêne ji bo giştî têne barkirin. Ger paşê çewtî çêbibe, dibe ku hê vekirî bin. Kes, belgeyên taybet an navnîşanan nîşan nede.',
+      'treasure_photo_consent_body':
+          'Ji bo pêşniyaran li ser tiştê te, ev wêne bi rêya backendê ParentPeak ji Google Gemini re tê şandin. Naveroka wêneyê anonîm nayê kirin. Wêneyên tiştan bê kes, belgeyên taybet an navnîşanên xuya bikar bîne. Analîz ne mecbûrî ye; bê razîbûn tu dikarî wêneyê biparêzî û daxuyaniyê bi destê xwe tijî bikî. Ev razîbûn tenê ji bo KI ya wêneyan li bazara diyariyan e û ji bo vî hesabî tê tomarkirin. Ew ne wêneyê ne jî daxuyaniyê diweşîne.',
       'treasure_photo_consent_accept': 'Razî bibe û wêneyê analîz bike',
-      'treasure_photo_consent_failed': 'Razîbûn nehat tomarkirin. Tu wêne ji KI re nehat şandin.',
-      'treasure_photo_analysis_failed': 'Analîza wêneyê nehat temamkirin. Wêne û nivîsên te yên bi destê xwe hatine nivîsîn tên parastin.',
-      'family_hub_account_changed': 'Hesab guherî. Ji kerema xwe vê dîtinê bigire.',
+      'treasure_photo_consent_failed':
+          'Razîbûn nehat tomarkirin. Tu wêne ji KI re nehat şandin.',
+      'treasure_photo_analysis_failed':
+          'Analîza wêneyê nehat temamkirin. Wêne û nivîsên te yên bi destê xwe hatine nivîsîn tên parastin.',
+      'family_hub_account_changed':
+          'Hesab guherî. Ji kerema xwe vê dîtinê bigire.',
       'family_hub_legacy_title': 'Daneyên kevn ên li ser cîhazê werbigire',
-      'family_hub_legacy_notice': 'Li ser vê cîhazê daneyên kevn ên bêhesab hene. Ew bi xwe nayên bikaranîn. Têkeve hesabê da ku piştî piştrastkirina xwedîtiyê wan werbigirî.',
-      'family_hub_legacy_confirm': 'Ez piştrast dikim ku dosyeyên zarokan (tevî agahiyên tenduristî û acîl), lîsteyên kirînê, kar û alerjiyên metbexê yên berê li ser vê cîhazê hatine tomarkirin, yên hesabê min ê niha vekirî ne. Ew tenê li ser cîhazê ji vê hesabê re tên veqetandin. Daneyên heyî yên hesabê diparêzin; tu tişt nayê weşandin.',
+      'family_hub_legacy_notice':
+          'Li ser vê cîhazê daneyên kevn ên bêhesab hene. Ew bi xwe nayên bikaranîn. Têkeve hesabê da ku piştî piştrastkirina xwedîtiyê wan werbigirî.',
+      'family_hub_legacy_confirm':
+          'Ez piştrast dikim ku dosyeyên zarokan (tevî agahiyên tenduristî û acîl), lîsteyên kirînê, kar û alerjiyên metbexê yên berê li ser vê cîhazê hatine tomarkirin, yên hesabê min ê niha vekirî ne. Ew tenê li ser cîhazê ji vê hesabê re tên veqetandin. Daneyên heyî yên hesabê diparêzin; tu tişt nayê weşandin.',
       'family_hub_legacy_claim': 'Ya hesabê min e – daneyan werbigire',
-      'family_hub_legacy_failed': 'Daneyên kevn bi ewlehî nehatin veguhastin. Daneyên berê tên parastin.',
+      'family_hub_legacy_failed':
+          'Daneyên kevn bi ewlehî nehatin veguhastin. Daneyên berê tên parastin.',
       'family_hub_tab_shopping': 'Kirîn',
       'family_hub_tab_todo': 'Kar',
       'family_hub_tab_children': 'Zarok',
@@ -14277,79 +15145,125 @@ class AppStringsManager {
       'chat_consent_save_failed':
           'Razîbûn nehat tomarkirin. Daxwazeke AI nehat destpêkirin. Ji kerema xwe dîsa biceribîne.',
       'chat_legacy_title': 'Statîstîka mijaran a herêmî ya bê xwedî',
-      'chat_legacy_body': 'Li ser vê amûrê statîstîka mijaran a kevn heye ku bi hesabekî ve ne girêdayî ye. Tenê heke ya te be wê bistîne. Guhestin herêmî ye, tiştek ji AI re naşîne û dîroka sohbetê naguhêze. Daneyên orîjînal dimînin.',
+      'chat_legacy_body':
+          'Li ser vê amûrê statîstîka mijaran a kevn heye ku bi hesabekî ve ne girêdayî ye. Tenê heke ya te be wê bistîne. Guhestin herêmî ye, tiştek ji AI re naşîne û dîroka sohbetê naguhêze. Daneyên orîjînal dimînin.',
       'chat_claim_action': 'Xwedîtiyê piştrast bike',
-      'chat_claim_failed': 'Statîstîka mijaran nehat guhestin. Daneyên orîjînal dimînin.',
-      'chat_topics_load_failed': 'Statîstîka mijaran nehat barkirin. Ji kerema xwe dîsa bar bike; daneyên heyî nayên guherandin.',
-      'chat_topics_save_failed': 'Statîstîka mijaran nehat tomarkirin. Guherîn nehat pejirandin; nivîsa te dimîne.',
-      'chat_memory_load_failed': 'Konteksta bîra AI nehat barkirin. Ji kerema xwe di mîhengên bîrê de dîsa biceribîne.',
+      'chat_claim_failed':
+          'Statîstîka mijaran nehat guhestin. Daneyên orîjînal dimînin.',
+      'chat_topics_load_failed':
+          'Statîstîka mijaran nehat barkirin. Ji kerema xwe dîsa bar bike; daneyên heyî nayên guherandin.',
+      'chat_topics_save_failed':
+          'Statîstîka mijaran nehat tomarkirin. Guherîn nehat pejirandin; nivîsa te dimîne.',
+      'chat_memory_load_failed':
+          'Konteksta bîra AI nehat barkirin. Ji kerema xwe di mîhengên bîrê de dîsa biceribîne.',
       'memory_consent_title': 'Razîbûna zêde ji bo bîra AI',
-      'memory_consent_body': 'Bijarte ye: agahiyên malbatê yên pejirandî, di nav de agahiyên tenduristiyê, ji bo hesabê te di backendê ParentPeak de tên tomarkirin û ji bo pirsên têkildar ji Google Gemini re tên şandin. Navên nû yên zarokan tenê li vê cîhazê dimînin; AI cihgirên bêalî û temenê temamkirî distîne, ne nav û roja jidayikbûnê. Nivîsa azad dikare hîn agahiyên kesane hebe. Daneyên kevn tên parastin. Bê razîbûnê tomarkirin û veguhastina bîrê ya nû asteng in; sohbet bi razîbûna xwe ya cuda gengaz e. Vemirandin bikaranînê rawestîne lê daneyên heyî jê nabe. Daxwazên şandî nayên paşvekişandin. Daneyên herêmî bi sepanê bi şîfreyek zêde nayên parastin.',
+      'memory_consent_body':
+          'Bijarte ye: agahiyên malbatê yên pejirandî, di nav de agahiyên tenduristiyê, ji bo hesabê te di backendê ParentPeak de tên tomarkirin û ji bo pirsên têkildar ji Google Gemini re tên şandin. Navên nû yên zarokan tenê li vê cîhazê dimînin; AI cihgirên bêalî û temenê temamkirî distîne, ne nav û roja jidayikbûnê. Nivîsa azad dikare hîn agahiyên kesane hebe. Daneyên kevn tên parastin. Bê razîbûnê tomarkirin û veguhastina bîrê ya nû asteng in; sohbet bi razîbûna xwe ya cuda gengaz e. Vemirandin bikaranînê rawestîne lê daneyên heyî jê nabe. Daxwazên şandî nayên paşvekişandin. Daneyên herêmî bi sepanê bi şîfreyek zêde nayên parastin.',
       'memory_consent_accept': 'Destûr bide tomarkirin û bikaranîna AI',
-      'memory_operation_failed': 'Guhertin bi tevahî nehat pejirandin. Mîhengên bîrê dîsa tên kontrolkirin; dîsa biceribîne.',
-      'memory_consent_required': 'Berî tomarkirina daneyên nû, bîrê bi razîbûna zêde çalak bike.',
+      'memory_operation_failed':
+          'Guhertin bi tevahî nehat pejirandin. Mîhengên bîrê dîsa tên kontrolkirin; dîsa biceribîne.',
+      'memory_consent_required':
+          'Berî tomarkirina daneyên nû, bîrê bi razîbûna zêde çalak bike.',
       'memory_local_name': 'Navê nîşandanê (tenê li vê cîhazê)',
-      'memory_name_save_failed': 'Profîla bêalî di backendê de hat tomarkirin, lê navê herêmî nehat pejirandin. Lîste dîsa tê barkirin; ji kerema xwe profîlek dubare çêneke.',
+      'memory_name_save_failed':
+          'Profîla bêalî di backendê de hat tomarkirin, lê navê herêmî nehat pejirandin. Lîste dîsa tê barkirin; ji kerema xwe profîlek dubare çêneke.',
       'memory_enable': 'Bîra AI çalak bike',
-      'memory_transfer_info': 'Tenê bi razîbûna zêde: nirxên pejirandî bi backendê ji Google Gemini re. Nasnameya zarok û temen tên kêmkirin.',
-      'memory_storage_info': 'Daneyên orîjînal di backendê de dimînin. Vemirandin tomarkirina nû û bikaranîna AI asteng dike, ne xwendin an jêbirin. Navên nû ji bo hesabê te herêmî dimînin; şîfrekirina zêde ya sepanê tune ye.',
-      'chat_request_failed': 'Bersiv nehat barkirin. Ji kerema xwe dîsa biceribîne.',
+      'memory_transfer_info':
+          'Tenê bi razîbûna zêde: nirxên pejirandî bi backendê ji Google Gemini re. Nasnameya zarok û temen tên kêmkirin.',
+      'memory_storage_info':
+          'Daneyên orîjînal di backendê de dimînin. Vemirandin tomarkirina nû û bikaranîna AI asteng dike, ne xwendin an jêbirin. Navên nû ji bo hesabê te herêmî dimînin; şîfrekirina zêde ya sepanê tune ye.',
+      'chat_request_failed':
+          'Bersiv nehat barkirin. Ji kerema xwe dîsa biceribîne.',
       'chat_retry_later': 'Tu dikarî paşê dîsa biceribînî.',
       'chat_always_here': 'Her dem ji bo te li vir e',
       'chat_privacy_footer': 'Teşxîs tune · Pêvajokirin bi Google Gemini',
       'chat_init_error': 'Çewtî: {error}',
       'chat_tip_message': '💡 Şîret: “{tip}”',
-      'chat_history_budget': 'AI herî zêde {rounds} dorên dawîn ên axaftinê û {characters} tîpên dîrokê distîne. Peyamên kevintir li vir xuya dimînin.',
-      'chat_daily_limit': 'Sînorê rojane yê AI ya te, {limit} daxwaz, tijî bû. Tu dikarî sibê dîsa bipirsî.',
-      'chat_provider_unavailable': 'Şêwirmendiya AI niha ne berdest e. Bersiveke kesane ya pêbawer tune ye. Ji kerema xwe paşê dîsa biceribîne.',
+      'chat_history_budget':
+          'AI herî zêde {rounds} dorên dawîn ên axaftinê û {characters} tîpên dîrokê distîne. Peyamên kevintir li vir xuya dimînin.',
+      'chat_daily_limit':
+          'Sînorê rojane yê AI ya te, {limit} daxwaz, tijî bû. Tu dikarî sibê dîsa bipirsî.',
+      'chat_provider_unavailable':
+          'Şêwirmendiya AI niha ne berdest e. Bersiveke kesane ya pêbawer tune ye. Ji kerema xwe paşê dîsa biceribîne.',
       'chat_provider_authorization': 'Xizmetê destûr neda vê daxwazê.',
       'chat_provider_quota': 'Sînorê xizmetê niha tijî bûye.',
       'chat_provider_network': 'Girêdan têk çû an pir dirêj kir.',
-      'chat_provider_unavailable_reason': 'Xizmetê nikarî bersiveke derbasdar bide.',
-      'chat_system_prompt': 'Tu şêwirmendê germ û bê darizandin ê ParentPeak ji bo jiyana rojane bi zarokan (0–18 sal) î. Bi zimanê daxwazkirî, kesane û bê dersdayîn bersiv bide.\nBingeh: Hüther – girêdan û serxwebûn, dilxweşî û beşdariya hestî li şûna zext/tirsê; zarok bi nimûneyan fêr dibin, ne bi dersdayînê. Zarokan neke amûrê hêviyên dêûbavan. Astengên çareserkirî ji holê raneke; dêûbav li kêleka zarokê bisekinin. Pêdiviyên rast ji daxwazên madî cuda bike. Têkilî, amadebûn û nimûne li şûna xelat/cezayê. Rosenberg NVC/GfK: çavdêrî, hest, pêdivî, daxwaz; hevokên ji bo îro. Hest/pêdivî wekî texmîn, ne wek rastiyê. Juul: zarok mirovên temam in, rêberiya bi evîn û berpirsiyariya xwe li şûna guhdariyê.\nRêbazên guncaw ên vebijarkî: Montessori – leza xwe, hawîrdora amade, serxwebûn; Reggio – gelek awayên vegotinê, çavdêrî li şûna darizandinê, pêvajo/mera q; Freinet – ezmûnên rast, vegotina azad, xwebiryardayîn; Froebel – lîstik/xweza/afirînerî wek fêrbûn; nêzîkatiya rewşê – jiyana niha li şûna bernameya hişk.\nKurt û şênber, herî zêde 8–10 rêz, gavên biçûk ên bikêr. Empatî berî stratejiyê; bê darizandin û nivîsa dirêj. Teşxîs/derman nede; sînoran bi rastî bibêje. Di xetereya lezgîn de alîkariya mirovî pêşniyar bike; hejmarên telefonê yên welatan ên nepiştrast çêneke. Rêgeza pirsa şîretê ya niha bişopîne; her gav pirsek zêde neke.',
-      'chat_coaching_prompt': 'Pirsa dêûbav:\n{message}\n\nHelwest: empatîk, germ û bê darizandin li gor NVC/GfK, Hüther û Juul. Nêrîna Hüther: girêdan an serxwebûn? Têkilî berî zextê, nimûne li şûna dersdayînê, dilxweşiya fêrbûnê; dêûbav li kêleka zarokê, ne rakirina hemû astengan.\nŞêwe: pêşî 1–2 hevokên empatîk; hest/pêdivî tenê wek texmîn. Nêrîneke kurt a pêşketin/girêdanê, tenê YEK gava NVC û 1–2 vebijarkên biçûk. {followUp}\nBaldarî: {focus}\nRêbazên din tenê VEBIJARKÎ heke bikêr bin, bê dersdayîn.\nBê darizandin, hevokên vala an „Divê tu“. Xwe-sûcdarkirin bi empatî veguherîne hest/pêdivî. Agahiyên temen, dem û rewşê biparêze. Paragrafên kurt, herî zêde 3–4 hevok; bê stêrk/Markdown, dengê aram ê pispor, 0–2 emoji, lîsteyên sade dikarin hebin. {continuation}\nAgahiyên girîng: {context}\nDîroka hilbijartî: {history}',
-      'chat_focus_anger': 'Rêkxistina hevbeş, sînorên zelal bê şermandin û aramkirina kurt; Juul: rêberiya bi rêz, ne guhdariya bi zorê.',
-      'chat_focus_siblings': 'Cudakirin bê ceza, vegotina hestan û lihevhatin; Juul: her du zarokan wek mirovên temam bibîne.',
-      'chat_focus_sleep': 'Rehetkirina rast, rûtînên biçûk û gavên kêmenerjî; Juul: piştgiriya rast û bi rêz.',
-      'chat_focus_media': 'Sînorên berê li ser lihevkirî û derbasbûna bi hevkariya, ne şerê desthilatê; Juul: rêberiya bi rêz.',
-      'chat_focus_school': 'Avahiya guncaw ji bo zarokan û hevkarî bi pisporan; nêzîkatiya rewşê: jiyana zarokê; Juul: hevkarî ne guhdarî.',
-      'chat_focus_learning': 'Montessori: „Alîkarî bike ez bixwe bikim“, hawîrdorê amade bike û karên rojane ji bo fêrbûnê; nêzîkatiya rewşê: jiyana niha.',
-      'chat_focus_play': 'Froebel: lîstik wek fêrbûn; Reggio: gelek vegotin, pêvajo berî encamê; Freinet: ezmûnên rojane yên rast.',
-      'chat_focus_general': 'Rehetkirina girêdanê ya niha bikêr; nêrîna guncaw a vebijarkî ji Montessori, Reggio, Froebel, Freinet, Juul an nêzîkatiya rewşê.',
-      'chat_ask_one': 'Di dawiyê de tenê YEK pirsa kurt û vekirî ji bo gava bikêr a paşîn bipirse.',
+      'chat_provider_unavailable_reason':
+          'Xizmetê nikarî bersiveke derbasdar bide.',
+      'chat_system_prompt':
+          'Tu şêwirmendê germ û bê darizandin ê ParentPeak ji bo jiyana rojane bi zarokan (0–18 sal) î. Bi zimanê daxwazkirî, kesane û bê dersdayîn bersiv bide.\nBingeh: Hüther – girêdan û serxwebûn, dilxweşî û beşdariya hestî li şûna zext/tirsê; zarok bi nimûneyan fêr dibin, ne bi dersdayînê. Zarokan neke amûrê hêviyên dêûbavan. Astengên çareserkirî ji holê raneke; dêûbav li kêleka zarokê bisekinin. Pêdiviyên rast ji daxwazên madî cuda bike. Têkilî, amadebûn û nimûne li şûna xelat/cezayê. Rosenberg NVC/GfK: çavdêrî, hest, pêdivî, daxwaz; hevokên ji bo îro. Hest/pêdivî wekî texmîn, ne wek rastiyê. Juul: zarok mirovên temam in, rêberiya bi evîn û berpirsiyariya xwe li şûna guhdariyê.\nRêbazên guncaw ên vebijarkî: Montessori – leza xwe, hawîrdora amade, serxwebûn; Reggio – gelek awayên vegotinê, çavdêrî li şûna darizandinê, pêvajo/mera q; Freinet – ezmûnên rast, vegotina azad, xwebiryardayîn; Froebel – lîstik/xweza/afirînerî wek fêrbûn; nêzîkatiya rewşê – jiyana niha li şûna bernameya hişk.\nKurt û şênber, herî zêde 8–10 rêz, gavên biçûk ên bikêr. Empatî berî stratejiyê; bê darizandin û nivîsa dirêj. Teşxîs/derman nede; sînoran bi rastî bibêje. Di xetereya lezgîn de alîkariya mirovî pêşniyar bike; hejmarên telefonê yên welatan ên nepiştrast çêneke. Rêgeza pirsa şîretê ya niha bişopîne; her gav pirsek zêde neke.',
+      'chat_coaching_prompt':
+          'Pirsa dêûbav:\n{message}\n\nHelwest: empatîk, germ û bê darizandin li gor NVC/GfK, Hüther û Juul. Nêrîna Hüther: girêdan an serxwebûn? Têkilî berî zextê, nimûne li şûna dersdayînê, dilxweşiya fêrbûnê; dêûbav li kêleka zarokê, ne rakirina hemû astengan.\nŞêwe: pêşî 1–2 hevokên empatîk; hest/pêdivî tenê wek texmîn. Nêrîneke kurt a pêşketin/girêdanê, tenê YEK gava NVC û 1–2 vebijarkên biçûk. {followUp}\nBaldarî: {focus}\nRêbazên din tenê VEBIJARKÎ heke bikêr bin, bê dersdayîn.\nBê darizandin, hevokên vala an „Divê tu“. Xwe-sûcdarkirin bi empatî veguherîne hest/pêdivî. Agahiyên temen, dem û rewşê biparêze. Paragrafên kurt, herî zêde 3–4 hevok; bê stêrk/Markdown, dengê aram ê pispor, 0–2 emoji, lîsteyên sade dikarin hebin. {continuation}\nAgahiyên girîng: {context}\nDîroka hilbijartî: {history}',
+      'chat_focus_anger':
+          'Rêkxistina hevbeş, sînorên zelal bê şermandin û aramkirina kurt; Juul: rêberiya bi rêz, ne guhdariya bi zorê.',
+      'chat_focus_siblings':
+          'Cudakirin bê ceza, vegotina hestan û lihevhatin; Juul: her du zarokan wek mirovên temam bibîne.',
+      'chat_focus_sleep':
+          'Rehetkirina rast, rûtînên biçûk û gavên kêmenerjî; Juul: piştgiriya rast û bi rêz.',
+      'chat_focus_media':
+          'Sînorên berê li ser lihevkirî û derbasbûna bi hevkariya, ne şerê desthilatê; Juul: rêberiya bi rêz.',
+      'chat_focus_school':
+          'Avahiya guncaw ji bo zarokan û hevkarî bi pisporan; nêzîkatiya rewşê: jiyana zarokê; Juul: hevkarî ne guhdarî.',
+      'chat_focus_learning':
+          'Montessori: „Alîkarî bike ez bixwe bikim“, hawîrdorê amade bike û karên rojane ji bo fêrbûnê; nêzîkatiya rewşê: jiyana niha.',
+      'chat_focus_play':
+          'Froebel: lîstik wek fêrbûn; Reggio: gelek vegotin, pêvajo berî encamê; Freinet: ezmûnên rojane yên rast.',
+      'chat_focus_general':
+          'Rehetkirina girêdanê ya niha bikêr; nêrîna guncaw a vebijarkî ji Montessori, Reggio, Froebel, Freinet, Juul an nêzîkatiya rewşê.',
+      'chat_ask_one':
+          'Di dawiyê de tenê YEK pirsa kurt û vekirî ji bo gava bikêr a paşîn bipirse.',
       'chat_ask_none': 'Pirsa din neke; agahî ji bo gavên şênber têr in.',
       'chat_new_context': 'Li ser pirsa niha bimîne, dîroka berê çêneke.',
-      'chat_continue_context': 'Bi şêweyên girîng û temenên dîroka hilbijartî ve girêbide; navên rast çêneke.',
+      'chat_continue_context':
+          'Bi şêweyên girîng û temenên dîroka hilbijartî ve girêbide; navên rast çêneke.',
       'chat_no_context': 'tune',
-      'chat_quality_retry': 'Şênbertir û rasttir bersiv bide: pêşî empatî, yek gava NVC/GfK, 1–2 vebijarkên biçûk, hest/pêdivî wek texmîn. Baldarî: {focus} Paragrafên kurt ên herî zêde 3–4 hevok, bê nivîsa dirêj, hevokên parastinê an „Divê tu“. {followUp}',
-      'chat_context_retry': 'Dîsa bersiv bide û van agahiyên girîng xuya bike: {context}. Empatîk, şênber û bikêr bimîne.',
-      'chat_boundary_retry': 'Bi sînoreke giştî bersiv nede; ji bo jiyana dêûbavan şênber, empatîk û çareserîdar bersiv bide.',
-      'chat_repair_prompt': 'Bê şîdet, li gor girêdanê û NVC/GfK ji nû ve binivîse. Bê qêrîn, tehdît an ceza. Sê gavên rojane û du hevokên nimûne bide. Baldarî: {focus}',
-      'chat_boundary_topic': 'Ez piştgiriya perwerdeyî ya dêûbavan didim. Tu dikarî pirsa malbat an perwerdeyê bibêjî.',
-      'chat_boundary_violence': 'Ez rêberiya zirardar an şîdetê didomîne nadim. Ez dikarim bê şîdet alîkarî bikim: çavdêrî, hest, pêdivî û daxwaza şênber.',
-      'chat_boundary_diagnosis': 'Ez nikarim teşxîs bikim. Ez dikarim piştgiriya rojane ya girêdanê bidim. Ji bo teşxîsê bi bijîşkê zarokan an derûnnasê zarok/ciwanan re biaxive.',
-      'chat_boundary_medical': 'Ez şîreta bijîşkî an dermanan nadim. Şîreta bijîşkî bistîne an bi xizmeta bijîşkî ya herêmê re têkilî bike.',
-      'chat_medical_de': 'Li Almanyayê xizmeta bijîşkî ya derveyî demên karê li 116117 heye.',
-      'chat_fallback_label': 'Rêberiya giştî ya hilbijartî: bersiva AI ne guncaw bû. Ev ne bersiveke kesane ya pêbawer e.',
-      'chat_fallback_sleep': 'Tu dikarî êvarê teşwîqan kêm bikî, hilbijartina pirtûk an stranê bidî û hevokeke aram dubare bikî. Mînak: „Tu dixwazî şiyar bimînî. Ez niha alîkarî dikim tu aram bibî.“ Kîjan derbasbûn herî dijwar e?',
-      'chat_fallback_anger': 'Pêşî ewlehiyê çêbike, paşê hestan bi nermî bibêje û vebijarkekê bide. Mînak: „Ez hêrsa te dibînim. Ez nahêlim kes birîndar bibe. Tu dikarî lingên xwe li erdê bidî an balîfê bifetisînî.“ Berî wê çi dibe?',
-      'chat_fallback_general': 'Tu ne tenê yî. Rewşa şênber û temenê temamkirî bê nav an rojbûnên tam bibêje. Çavdêrî, hest, pêdivî û daxwaz dikarin bibin gavên rojane.',
+      'chat_quality_retry':
+          'Şênbertir û rasttir bersiv bide: pêşî empatî, yek gava NVC/GfK, 1–2 vebijarkên biçûk, hest/pêdivî wek texmîn. Baldarî: {focus} Paragrafên kurt ên herî zêde 3–4 hevok, bê nivîsa dirêj, hevokên parastinê an „Divê tu“. {followUp}',
+      'chat_context_retry':
+          'Dîsa bersiv bide û van agahiyên girîng xuya bike: {context}. Empatîk, şênber û bikêr bimîne.',
+      'chat_boundary_retry':
+          'Bi sînoreke giştî bersiv nede; ji bo jiyana dêûbavan şênber, empatîk û çareserîdar bersiv bide.',
+      'chat_repair_prompt':
+          'Bê şîdet, li gor girêdanê û NVC/GfK ji nû ve binivîse. Bê qêrîn, tehdît an ceza. Sê gavên rojane û du hevokên nimûne bide. Baldarî: {focus}',
+      'chat_boundary_topic':
+          'Ez piştgiriya perwerdeyî ya dêûbavan didim. Tu dikarî pirsa malbat an perwerdeyê bibêjî.',
+      'chat_boundary_violence':
+          'Ez rêberiya zirardar an şîdetê didomîne nadim. Ez dikarim bê şîdet alîkarî bikim: çavdêrî, hest, pêdivî û daxwaza şênber.',
+      'chat_boundary_diagnosis':
+          'Ez nikarim teşxîs bikim. Ez dikarim piştgiriya rojane ya girêdanê bidim. Ji bo teşxîsê bi bijîşkê zarokan an derûnnasê zarok/ciwanan re biaxive.',
+      'chat_boundary_medical':
+          'Ez şîreta bijîşkî an dermanan nadim. Şîreta bijîşkî bistîne an bi xizmeta bijîşkî ya herêmê re têkilî bike.',
+      'chat_medical_de':
+          'Li Almanyayê xizmeta bijîşkî ya derveyî demên karê li 116117 heye.',
+      'chat_fallback_label':
+          'Rêberiya giştî ya hilbijartî: bersiva AI ne guncaw bû. Ev ne bersiveke kesane ya pêbawer e.',
+      'chat_fallback_sleep':
+          'Tu dikarî êvarê teşwîqan kêm bikî, hilbijartina pirtûk an stranê bidî û hevokeke aram dubare bikî. Mînak: „Tu dixwazî şiyar bimînî. Ez niha alîkarî dikim tu aram bibî.“ Kîjan derbasbûn herî dijwar e?',
+      'chat_fallback_anger':
+          'Pêşî ewlehiyê çêbike, paşê hestan bi nermî bibêje û vebijarkekê bide. Mînak: „Ez hêrsa te dibînim. Ez nahêlim kes birîndar bibe. Tu dikarî lingên xwe li erdê bidî an balîfê bifetisînî.“ Berî wê çi dibe?',
+      'chat_fallback_general':
+          'Tu ne tenê yî. Rewşa şênber û temenê temamkirî bê nav an rojbûnên tam bibêje. Çavdêrî, hest, pêdivî û daxwaz dikarin bibin gavên rojane.',
       'memory_title': 'Bîra AI û zarok',
       'memory_add_child': 'Zarok zêde bike',
       'memory_edit_child': 'Profîla zarokê biguherîne',
       'memory_name_required': 'Ji kerema xwe navekî herêmî binivîse.',
       'memory_gender': 'Zayend (vebijarkî)',
       'memory_delete_title': 'Profîla zarokê jê bibe?',
-      'memory_delete_body': 'Hemû agahiyên AI yên tomarkirî yên {name} dê werin jêbirin.',
+      'memory_delete_body':
+          'Hemû agahiyên AI yên tomarkirî yên {name} dê werin jêbirin.',
       'memory_empty_info': 'Hêj agahiyên tomarkirî tune ne.',
-      'memory_load_failed': 'Dane nehatin barkirin. Ji kerema xwe dîsa biceribîne.',
+      'memory_load_failed':
+          'Dane nehatin barkirin. Ji kerema xwe dîsa biceribîne.',
       'memory_children': 'Profîlên zarokan',
       'memory_no_children': 'Hêj profîla zarokê tune ye.',
       'memory_none_confirmed': 'Agahiyên pejirandî tune ne',
       'memory_confirmed_count': '{count} agahiyên pejirandî',
-      'chat_tip_age_known': 'Zarok {age} salên temamkirî ye. Mînakan li gor vê biguherîne.',
-      'chat_tip_age_unknown': 'Temen nayê zanîn. Temenekê ji xwe çêneke; ger pêwîst be bipirse.',
-      'chat_tip_prompt': 'Dêûbav dixwazin vê şîretê kûrtir fêm bikin:\n"{tip}"\n{ageContext}\nBi kurtî girîngiya wê, sê rewşên rojane û yek rahênana ji bo îro rave bike. Bikêr, bê şîdet, herî zêde 12 rêz.',
+      'chat_tip_age_known':
+          'Zarok {age} salên temamkirî ye. Mînakan li gor vê biguherîne.',
+      'chat_tip_age_unknown':
+          'Temen nayê zanîn. Temenekê ji xwe çêneke; ger pêwîst be bipirse.',
+      'chat_tip_prompt':
+          'Dêûbav dixwazin vê şîretê kûrtir fêm bikin:\n"{tip}"\n{ageContext}\nBi kurtî girîngiya wê, sê rewşên rojane û yek rahênana ji bo îro rave bike. Bikêr, bê şîdet, herî zêde 12 rêz.',
       'chat_insight_autonomy': 'Dema serxwebûnê',
       'chat_insight_sleep': 'Xew',
       'chat_insight_conflicts': 'Nakokî',
@@ -14406,25 +15320,35 @@ class AppStringsManager {
       'treasureCategoryBooks': 'Pirtûk',
       'treasureCategoryEquipment': 'Amûr',
       'treasureDefaultTitle': 'Bisîkleta hevsengiyê ya sor',
-      'treasure_created_archived': 'Pêşniyara te hat tomarkirin, lê serverê ew arşîv kir. Ew li bazarê ne amade ye. „Pêşniyarên min“ kontrol bike.',
-      'treasure_created_not_available': 'Pêşniyara te hat tomarkirin, lê amadeyiya wê nehat piştrastkirin. „Pêşniyarên min“ kontrol bike.',
-      'treasure_created_local_failed': 'Serverê pêşniyar tomar kir, lê amadeyiya wê piştrast nekir. Karên paşîn ên herêmî bi ser neketin; wêne tên parastin. Berî dîsa biceribînî „Pêşniyarên min“ kontrol bike.',
+      'treasure_created_archived':
+          'Pêşniyara te hat tomarkirin, lê serverê ew arşîv kir. Ew li bazarê ne amade ye. „Pêşniyarên min“ kontrol bike.',
+      'treasure_created_not_available':
+          'Pêşniyara te hat tomarkirin, lê amadeyiya wê nehat piştrastkirin. „Pêşniyarên min“ kontrol bike.',
+      'treasure_created_local_failed':
+          'Serverê pêşniyar tomar kir, lê amadeyiya wê piştrast nekir. Karên paşîn ên herêmî bi ser neketin; wêne tên parastin. Berî dîsa biceribînî „Pêşniyarên min“ kontrol bike.',
       'treasurePhotoAnalyzing': 'Wêne tê analîzkirin...',
       'treasureDefaultColor': 'Sor',
       'treasureDefaultSizeAge': '2-4 sal',
       'treasureNeutralColor': 'Bêalî',
       'treasureNoteEditable': 'Not hat danîn. Tu dikarî wê biguherînî.',
-      'treasureNoteSuggestionHint': 'Şablona nivîsê ya guherbar dixe û nota heyî diguherîne. Deng nayê tomarkirin.',
+      'treasureNoteSuggestionHint':
+          'Şablona nivîsê ya guherbar dixe û nota heyî diguherîne. Deng nayê tomarkirin.',
       'treasureInsertNoteSuggestion': 'Pêşniyara nivîsê têxe',
-      'treasureNoteSuggestion': '{title}, {sizeAge}. Tu dikarî agahiyên din ên radestkirinê li vir zêde bikî.',
-      'treasureDiscoveryInvite': 'Hevalan vexwîne an pêşniyarên xwe parve bike da ku li nêzîkê tiştên zêdetir hebin.',
-      'treasureDiscoveryScopeInvite': 'Qada heyî: {radius}. Hevalan vexwîne da ku li nêzîkê tiştên zêdetir bibînî.',
+      'treasureNoteSuggestion':
+          '{title}, {sizeAge}. Tu dikarî agahiyên din ên radestkirinê li vir zêde bikî.',
+      'treasureDiscoveryInvite':
+          'Hevalan vexwîne an pêşniyarên xwe parve bike da ku li nêzîkê tiştên zêdetir hebin.',
+      'treasureDiscoveryScopeInvite':
+          'Qada heyî: {radius}. Hevalan vexwîne da ku li nêzîkê tiştên zêdetir bibînî.',
       'treasure_location_required': 'Ji bo pêşniyarên nêzîkî te cih pêwîst e.',
-      'treasure_market_unavailable': 'Bazar niha nayê bikaranîn. Pêşniyara te nehat weşandin.',
-      'treasure_signin_required': 'Ji kerema xwe têkeve hesabê xwe da ku vê karê li bazarê bikî.',
+      'treasure_market_unavailable':
+          'Bazar niha nayê bikaranîn. Pêşniyara te nehat weşandin.',
+      'treasure_signin_required':
+          'Ji kerema xwe têkeve hesabê xwe da ku vê karê li bazarê bikî.',
       'treasureCategoryOther': 'Yên din',
       'treasureShareRadiusLabel': 'Çembera weşandinê',
-      'treasureShareRadiusHelper': 'Diyar bike ku malbat di çi çemberê de pêşniyara te bibînin. Hesab cihên bi awayekî giştî hatine dor kirin bi kar tîne û tenê texmîn e; herî zêde 25 km.',
+      'treasureShareRadiusHelper':
+          'Diyar bike ku malbat di çi çemberê de pêşniyara te bibînin. Hesab cihên bi awayekî giştî hatine dor kirin bi kar tîne û tenê texmîn e; herî zêde 25 km.',
       'treasureShareRadiusKm': 'Çember nêzî {radius} km',
       'treasureDistanceApproximate': 'Nêzî {distance} dûr',
       'treasureDistanceUnknown': 'Dûrahî nayê zanîn',
@@ -18409,7 +19333,8 @@ class AppStringsManager {
       'finance_tax_actual_deductible': 'Bu örnekte özel gider',
       'finance_tax_estimated_saving': 'Tahmini tasarruf (%30)',
       'finance_tax_more_info': '🔗 Vergi kurumundan daha fazla bilgi →',
-      'finance_benefits_filtered': 'Bilgiler kaydedildi. Tüm yardımlar görünür; gelir ve çalışma durumu hak değerlendirmesi değildir.',
+      'finance_benefits_filtered':
+          'Bilgiler kaydedildi. Tüm yardımlar görünür; gelir ve çalışma durumu hak değerlendirmesi değildir.',
       'finance_no_parental_leave': 'Hayır / ebeveyn izni',
       'finance_income_low': '2.000€ altında',
       'finance_income_medium': '2.000–4.000€',
@@ -18681,6 +19606,29 @@ class AppStringsManager {
       'topic_defiance_anger': 'İnat &\nÖfke',
       'topic_sleep_issues': 'Uyku\nsorunu',
       'topic_hits_bites': 'Vuruyor ·\nIsırıyor',
+      'knowledge_topic_anger_label': 'Öfke & inatlaşma',
+      'knowledge_topic_anger_hint': 'Öfke nöbetleri, vurma',
+      'knowledge_topic_sleep_label': 'Uyku',
+      'knowledge_topic_sleep_hint': 'Uykuya dalma, gece',
+      'knowledge_topic_boundaries_label': 'Sınırlar',
+      'knowledge_topic_boundaries_hint': 'Hayır demek, kurallar',
+      'knowledge_topic_eating_label': 'Yemek',
+      'knowledge_topic_eating_hint': 'Seçici yeme',
+      'knowledge_topic_siblings_label': 'Kardeşler',
+      'knowledge_topic_siblings_hint': 'Kavga, kıskançlık',
+      'knowledge_topic_media_label': 'Ekranlar',
+      'knowledge_topic_media_hint': 'Ekran süresi',
+      'expert_library_title': 'Uzman Kütüphanesi',
+      'expert_library_subtitle':
+          'Gerçekten yardımcı olan podcast, video ve kitaplar.',
+      'expert_library_content_english_notice':
+          'Önerilen içerikler İngilizcedir. Arayüz ve kategoriler kendi dilinde görünür.',
+      'expert_library_filter_all': 'Tümü',
+      'expert_library_empty': 'Bu kategori için henüz öneri yok.',
+      'expert_action_listen': 'Dinle',
+      'expert_action_watch': 'İzle',
+      'expert_action_more_info': 'Daha fazla bilgi',
+      'expert_action_read': 'Oku',
       'mood_exhausted_suffix': ' — yorgun ebeveynler de iyi ebeveynlerdir. 💛',
       'mood_present_suffix': ' — bugün burada olman güzel.',
       'mood_energetic_suffix': ' — bu enerjiyle çok şey başarabilirsin! 🌟',
@@ -19077,7 +20025,8 @@ class AppStringsManager {
       'network_members_add_failed': 'Üyeler eklenemedi.',
       'network_group_not_member': 'Bu grubun üyesi değilsin.',
       'chat_access_unavailable': 'Bu konuşma bu hesap için kullanılamıyor.',
-      'friend_chat_request_failed': 'Sohbet isteği başarısız oldu. Girişini kontrol edip tekrar dene.',
+      'friend_chat_request_failed':
+          'Sohbet isteği başarısız oldu. Girişini kontrol edip tekrar dene.',
       'network_group_chat_empty':
           'Henüz mesaj yok. İlkini yaz ve grubu sohbete başlat!',
       'network_sending': 'Gönderiliyor…',
@@ -19103,21 +20052,26 @@ class AppStringsManager {
           'Görünen adınız, bölgeniz, kabaca yuvarlanmış konumunuz (varsa), çocukların yaklaşık yaşları, diller, aile türü, değerler, aradığınız etkinlikler ve biyografiniz sunucumuzda saklanır ve ağdaki diğer ailelere gösterilir. Çocuk adları, doğum tarihleri ve özel durumlar bu cihazda kalır. Herkese açık biyografinize çocuk adları, adres veya sağlık bilgileri yazmayın. Eşleştirmede yapay zekâ kullanılmaz. Profilinizi istediğiniz zaman silebilirsiniz.',
       'network_publish_accept': 'Profili yayınla',
       'network_profile_active': 'Sunucu profilin aktif olduğunu doğruladı.',
-      'network_profile_draft': 'Sunucuda aktif bir profil doğrulanmadı. Yerel taslaklar otomatik olarak yayınlanmaz.',
-      'network_profile_unverified': 'Profil durumu kontrol edilemedi. Görünürlük doğrulanmadı.',
+      'network_profile_draft':
+          'Sunucuda aktif bir profil doğrulanmadı. Yerel taslaklar otomatik olarak yayınlanmaz.',
+      'network_profile_unverified':
+          'Profil durumu kontrol edilemedi. Görünürlük doğrulanmadı.',
       'network_profile_retry': 'Durumu tekrar kontrol et',
-      'network_discovery_failed': 'Aileler yüklenemedi. Bu, doğrulanmış boş bir arama sonucu değildir. Lütfen tekrar dene.',
-      'network_discovery_auth_failed': 'Bu oturum için aile aramasına izin verilmiyor. Lütfen hesabını ve girişini kontrol et.',
+      'network_discovery_failed':
+          'Aileler yüklenemedi. Bu, doğrulanmış boş bir arama sonucu değildir. Lütfen tekrar dene.',
+      'network_discovery_auth_failed':
+          'Bu oturum için aile aramasına izin verilmiyor. Lütfen hesabını ve girişini kontrol et.',
       'network_discovery_retry': 'Aramayı tekrar dene',
-      'network_draft_unassigned': 'Bu cihazda bir hesaba atanmamış eski bir profil var. Otomatik olarak kullanılmaz veya yayınlanmaz.',
+      'network_draft_unassigned':
+          'Bu cihazda bir hesaba atanmamış eski bir profil var. Otomatik olarak kullanılmaz veya yayınlanmaz.',
       'network_draft_assign_title': 'Yerel taslak bu hesaba atansın mı?',
-      'network_draft_assign_body': 'Eski yerel aile taslağının "{account}" hesabına ait olduğunu doğrula. Yalnızca yerel olarak atanır ve ardından takvim, mutfak ve diğer aile özelliklerinde kullanılabilir. Hiçbir veri yüklenmez. Yayınlamak için ayrı bir onay gerekir.',
+      'network_draft_assign_body':
+          'Eski yerel aile taslağının "{account}" hesabına ait olduğunu doğrula. Yalnızca yerel olarak atanır ve ardından takvim, mutfak ve diğer aile özelliklerinde kullanılabilir. Hiçbir veri yüklenmez. Yayınlamak için ayrı bir onay gerekir.',
       'network_draft_assign': 'Taslağı hesabıma ata',
       'network_draft_assign_failed': 'Taslak atanamadı. Lütfen tekrar dene.',
       'network_child_name_local': 'Ad / takma ad (yalnızca bu cihazda)',
       'network_specials_hint': 'Özel durumlar hakkında not (yalnızca cihazda)',
-      'network_publish_failed':
-          'Profil yayınlanamadı. Lütfen tekrar deneyin.',
+      'network_publish_failed': 'Profil yayınlanamadı. Lütfen tekrar deneyin.',
       'network_specials_local':
           'Bu bilgiler yalnızca cihazınızda kalır. Yayınlanmaz ve sunucudaki eşleştirme için kullanılmaz.',
       'network_delete_failed':
@@ -19397,7 +20351,8 @@ class AppStringsManager {
       'fridge_consent_body':
           'Malzemeleri tanımak için fotoğrafınız ParentPeak sunucusu üzerinden Google Gemini’ye gönderilir. Görüntü içeriği anonimleştirilmez; kişileri, özel notları veya adresleri göstermeyin. Sonraki tarif için onaylanan malzemeler, çocuğun yaşı ve mevcut alerji bilgileri Google Gemini’ye gönderilir. Uygulama fotoğrafı kalıcı taslak olarak kaydetmez. Bu isteğe bağlı onay, bu buzdolabı yapay zekâ akışı için geçerlidir ve bu cihazda mevcut hesabınız veya misafir modu için saklanır. Fotoğrafı veya tarifi yayımlamaz. Onay olmadan yapay zekâ isteği başlatılmaz.',
       'fridge_consent_accept': 'Kabul ediyorum, fotoğrafı analiz et',
-      'fridge_consent_failed': 'Buzdolabı yapay zekâ onayı doğrulanamadı. Doğrulanmış onay olmadan yeni yapay zekâ isteği başlatılmaz.',
+      'fridge_consent_failed':
+          'Buzdolabı yapay zekâ onayı doğrulanamadı. Doğrulanmış onay olmadan yeni yapay zekâ isteği başlatılmaz.',
       'fridge_choose_photo': 'Fotoğraf seç',
       'fridge_no_ingredients_detected':
           'Malzemeleri güvenilir biçimde tanıyamadım. Aşağıdan kendin kolayca ekleyebilirsin.',
@@ -19801,8 +20756,10 @@ class AppStringsManager {
       'network_withdraw': 'Geri çek',
       'network_suggestions_count': '{count} öneri',
       'network_matching_suggestions': 'Yayımlanmış oyun arkadaşı profilleri',
-      'location_osm_notice': 'Konum araması, arama metnini veya yaklaşık 1 km hassasiyetine yuvarlanan koordinatları OpenStreetMap Nominatim’e gönderir. Harita, OpenStreetMap’ten harita parçaları yükler.',
-      'location_search_failed': 'Konum araması başarısız oldu. Lütfen tekrar deneyin.',
+      'location_osm_notice':
+          'Konum araması, arama metnini veya yaklaşık 1 km hassasiyetine yuvarlanan koordinatları OpenStreetMap Nominatim’e gönderir. Harita, OpenStreetMap’ten harita parçaları yükler.',
+      'location_search_failed':
+          'Konum araması başarısız oldu. Lütfen tekrar deneyin.',
       'network_copy_step_1': '1. Adım: Aileniz',
       'network_copy_step_2': '2. Adım: Çocuklarınız',
       'network_copy_step_3': '3. Adım: Değerler ve yaklaşım',
@@ -19818,16 +20775,20 @@ class AppStringsManager {
       'network_copy_cancel': 'İptal',
       'network_copy_connect_button': 'Bağlan',
       'network_copy_playmates': 'Oyun arkadaşları',
-      'network_copy_login_required': 'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
+      'network_copy_login_required':
+          'Oyun arkadaşı profilinizi yayınlamak için giriş yapın.',
       'network_copy_setup_hint': '5 kısa adımda size uygun aileleri bulun.',
       'network_copy_empty_title': 'Bölgenizdeki ilk aile siz olun',
-      'network_copy_empty_description': 'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
+      'network_copy_empty_description':
+          'Profiliniz aktif ve görünür. Yakınınızdaki diğer aileler katıldığında burada otomatik olarak görünürler. Ağınızı büyütmek için komşularınızı ve arkadaşlarınızı davet edin.',
       'network_copy_invite_playmates': 'Oyun arkadaşlarını davet et',
       'network_copy_same_city': 'Şehrinizde',
       'network_copy_request_sent': '{name} için isteğiniz gönderildi.',
-      'network_copy_request_failed': 'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
+      'network_copy_request_failed':
+          'İsteğiniz gönderilemedi. Lütfen daha sonra tekrar deneyin.',
       'network_copy_invite_hero_title': 'Arkadaşlarını davet et',
-      'network_copy_invite_hero_description': 'Kişisel bağlantını veya QR kodunu paylaş - tek dokunuşla bağlantı kurun.',
+      'network_copy_invite_hero_description':
+          'Kişisel bağlantını veya QR kodunu paylaş - tek dokunuşla bağlantı kurun.',
       'network_copy_share': 'Paylaş',
       'network_copy_save': 'Kaydediliyor...',
       'network_copy_create_profile': 'Profil oluştur',
@@ -19839,9 +20800,11 @@ class AppStringsManager {
       'network_copy_custom_family': 'Aile biçiminiz',
       'network_copy_custom_example': 'örn. seçilmiş aile, çok kuşaklı aile...',
       'network_copy_no_gender': 'Belirtmek istemiyorum',
-      'network_copy_values_tip': 'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
+      'network_copy_values_tip':
+          'İpucu: Benzer değerlere sahip aileler birbirini daha iyi anlar. Sizin için önemli olanı seçin.',
       'network_copy_bio_title': 'Kısa biyografi',
-      'network_copy_bio_hint': 'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
+      'network_copy_bio_hint':
+          'Kendinizden kısaca bahsedin: Ailenizi özel kılan nedir? Ne arıyorsunuz?',
       'network_option_family_kernfamilie': 'Çekirdek aile',
       'network_option_family_alleinerziehend': 'Tek ebeveyn',
       'network_option_family_patchwork': 'Birleşik aile',
@@ -19872,7 +20835,8 @@ class AppStringsManager {
       'network_option_child_experimente': 'Deneyler',
       'network_option_values_gfk': 'Şiddetsiz iletişim',
       'network_option_values_bedürfnisorientiert': 'İhtiyaç odaklı ebeveynlik',
-      'network_option_values_attachment_parenting': 'Bağlanma odaklı ebeveynlik',
+      'network_option_values_attachment_parenting':
+          'Bağlanma odaklı ebeveynlik',
       'network_option_values_unerzogen': 'Yönlendirmesiz ebeveynlik',
       'network_option_values_montessori': 'Montessori',
       'network_option_values_waldorf': 'Waldorf',
@@ -19922,7 +20886,8 @@ class AppStringsManager {
       'network_option_specials_mehrlinge': 'İkizler / çoğul doğum',
       'network_option_specials_chronisch_krank': 'Kronik hastalık',
       'network_option_specials_allergien': 'Alerjiler / intoleranslar',
-      'network_option_specials_schreibaby': 'Aşırı ağlama / düzenleme güçlükleri',
+      'network_option_specials_schreibaby':
+          'Aşırı ağlama / düzenleme güçlükleri',
       'network_option_specials_pflegekind': 'Koruyucu aile çocuğu',
       'network_option_language_de': 'Almanca',
       'network_option_language_en': 'İngilizce',
@@ -19952,7 +20917,8 @@ class AppStringsManager {
       'network_option_language_vi': 'Vietnamca',
       'network_option_language_sw': 'Svahili',
       'network_family_fallback': 'bu aile',
-      'network_legacy_link_inactive': 'Bu bağlantı artık aktif değil. Lütfen diğer ailenin davet bağlantısını kullanın.',
+      'network_legacy_link_inactive':
+          'Bu bağlantı artık aktif değil. Lütfen diğer ailenin davet bağlantısını kullanın.',
       'network_radius': 'Yaklaşık {distance} km içinde',
       'network_wide_radius': 'Yaklaşık 1200 km içinde',
       'network_say_hello': 'Merhaba de',
@@ -19966,7 +20932,8 @@ class AppStringsManager {
       'network_looking_heading': 'Ne arıyorsunuz?',
       'network_looking_custom_hint': 'Başka neler istersiniz?',
       'network_availability_heading': 'Ne zaman müsaitsiniz?',
-      'network_availability_hint': 'örn. yalnızca tatillerde, resmî tatillerde...',
+      'network_availability_hint':
+          'örn. yalnızca tatillerde, resmî tatillerde...',
       'network_district_label': 'Mahalle veya posta kodu',
       'network_district_hint': 'Örn. Kreuzberg, 10997 yazın...',
       'network_age_months': '{months} ay',
@@ -20028,236 +20995,401 @@ class AppStringsManager {
       'events_price_label': 'Fiyat: {price}',
       'events_for_age': 'Yaş: {age}',
       'family_hub_shopping_list': 'Alışveriş listesi',
-      'family_hub_save_error': 'Değişiklik kaydedilemedi. Lütfen tekrar deneyin.',
+      'family_hub_save_error':
+          'Değişiklik kaydedilemedi. Lütfen tekrar deneyin.',
       'family_hub_child_fallback': 'Çocuk',
       'benefit_ai_consent_title': 'Yapay zekâ yardım rehberi kullanılsın mı?',
-      'finance_load_failed': 'Yerel mali veriler yüklenemedi. Lütfen tekrar deneyin.',
-      'finance_number_invalid': 'En fazla iki ondalık basamaklı, geçerli ve negatif olmayan bir tutar girin.',
-      'finance_tax_example_limits': 'Tek çocuk için örnek; hak değerlendirmesi veya giderlerin çocuklar arasında dağılımı değildir. Uygun bakım: çocuk hanede ve 14 yaşından küçük olmalı veya yasal engellilik istisnasına girmelidir; fatura ve sağlayıcının hesabına ödeme gerekir. Ders, spor ve boş zaman etkinlikleri dahil değildir. %30 yalnızca varsayılan vergi oranıdır.',
-      'finance_orientation_only': 'Yalnızca yol gösterir, hak değerlendirmesi değildir. Gelir, çalışma ve aile durumu burada hiçbir yardımı dışlamaz. Yetkili kurum kişisel durumunuzu inceler.',
+      'finance_load_failed':
+          'Yerel mali veriler yüklenemedi. Lütfen tekrar deneyin.',
+      'finance_number_invalid':
+          'En fazla iki ondalık basamaklı, geçerli ve negatif olmayan bir tutar girin.',
+      'finance_tax_example_limits':
+          'Tek çocuk için örnek; hak değerlendirmesi veya giderlerin çocuklar arasında dağılımı değildir. Uygun bakım: çocuk hanede ve 14 yaşından küçük olmalı veya yasal engellilik istisnasına girmelidir; fatura ve sağlayıcının hesabına ödeme gerekir. Ders, spor ve boş zaman etkinlikleri dahil değildir. %30 yalnızca varsayılan vergi oranıdır.',
+      'finance_orientation_only':
+          'Yalnızca yol gösterir, hak değerlendirmesi değildir. Gelir, çalışma ve aile durumu burada hiçbir yardımı dışlamaz. Yetkili kurum kişisel durumunuzu inceler.',
       'finance_save_orientation': 'Yol göstermek için bilgileri kaydet',
       'finance_application_kindergeld_benefitName_0': 'Çocuk Parası',
-      'finance_application_kindergeld_responsibleAuthority_1': 'Federal İş Ajansı Aile Yardımları Kurumu',
+      'finance_application_kindergeld_responsibleAuthority_1':
+          'Federal İş Ajansı Aile Yardımları Kurumu',
       'finance_application_kindergeld_processingTime_2': '4–6 hafta',
-      'finance_application_kindergeld_renewalNote_3': 'Yenileme başvurusu gerekmez. 18. (veya 25.) doğum gününe kadar otomatik ödenir.',
-      'finance_application_kindergeld_proTip_4': 'Doğumdan hemen sonra başvurun — çocuk parası en fazla 6 ay geriye dönük ödenir.',
-      'finance_application_kindergeld_aiTemplatePrompt_5': 'Doğum sonrası ilk çocuk parası başvurusu için kısa, nazik bir ön yazı yaz. Basit ve nesnel olsun.',
+      'finance_application_kindergeld_renewalNote_3':
+          'Yenileme başvurusu gerekmez. 18. (veya 25.) doğum gününe kadar otomatik ödenir.',
+      'finance_application_kindergeld_proTip_4':
+          'Doğumdan hemen sonra başvurun — çocuk parası en fazla 6 ay geriye dönük ödenir.',
+      'finance_application_kindergeld_aiTemplatePrompt_5':
+          'Doğum sonrası ilk çocuk parası başvurusu için kısa, nazik bir ön yazı yaz. Basit ve nesnel olsun.',
       'finance_application_kindergeld_name_6': 'Çocuğun doğum belgesi',
-      'finance_application_kindergeld_whereToGet_7': 'Nüfus dairesi (genellikle hastanede verilir)',
+      'finance_application_kindergeld_whereToGet_7':
+          'Nüfus dairesi (genellikle hastanede verilir)',
       'finance_application_kindergeld_name_8': 'Çocuğun vergi kimlik numarası',
-      'finance_application_kindergeld_whereToGet_9': 'Federal Merkez Vergi Dairesinden postayla gelir (doğumdan yaklaşık 2–3 hafta sonra)',
-      'finance_application_kindergeld_name_10': 'Başvuran ebeveynin vergi kimlik numarası',
-      'finance_application_kindergeld_whereToGet_11': 'Vergi bildiriminizde veya maaş bordronuzda yer alır',
+      'finance_application_kindergeld_whereToGet_9':
+          'Federal Merkez Vergi Dairesinden postayla gelir (doğumdan yaklaşık 2–3 hafta sonra)',
+      'finance_application_kindergeld_name_10':
+          'Başvuran ebeveynin vergi kimlik numarası',
+      'finance_application_kindergeld_whereToGet_11':
+          'Vergi bildiriminizde veya maaş bordronuzda yer alır',
       'finance_application_kindergeld_name_12': 'Kimlik veya pasaport (kopya)',
       'finance_application_kindergeld_name_13': 'Banka bilgileri (IBAN)',
       'finance_application_kindergeld_title_14': 'Online başvuruyu doldurun',
-      'finance_application_kindergeld_description_15': 'Aile Yardımları Kurumunun sitesinde “KG1” formunu online doldurun. Yaklaşık 10 dakika sürer.',
-      'finance_application_kindergeld_title_16': 'Belgeleri yükleyin veya postayla gönderin',
-      'finance_application_kindergeld_description_17': 'Doğum belgesi ve vergi kimliklerini tarayıp yükleyin veya ilgili Aile Yardımları Kurumuna postayla gönderin.',
+      'finance_application_kindergeld_description_15':
+          'Aile Yardımları Kurumunun sitesinde “KG1” formunu online doldurun. Yaklaşık 10 dakika sürer.',
+      'finance_application_kindergeld_title_16':
+          'Belgeleri yükleyin veya postayla gönderin',
+      'finance_application_kindergeld_description_17':
+          'Doğum belgesi ve vergi kimliklerini tarayıp yükleyin veya ilgili Aile Yardımları Kurumuna postayla gönderin.',
       'finance_application_kindergeld_title_18': 'Onayı bekleyin',
-      'finance_application_kindergeld_description_19': 'Karar postayla gelir (4–6 hafta). Ardından aylık ödemeler başlar.',
-      'finance_application_kinderzuschlag_benefitName_0': 'Çocuk Ek Yardımı (KiZ)',
+      'finance_application_kindergeld_description_19':
+          'Karar postayla gelir (4–6 hafta). Ardından aylık ödemeler başlar.',
+      'finance_application_kinderzuschlag_benefitName_0':
+          'Çocuk Ek Yardımı (KiZ)',
       'finance_application_kinderzuschlag_processingTime_2': '4–8 hafta',
-      'finance_application_kinderzuschlag_renewalNote_3': 'Her 6 ayda bir yeniden başvurun (yenileme başvurusu).',
-      'finance_application_kinderzuschlag_proTip_4': 'Aile Yardımları Kurumunun KiZ rehberiyle tam başvurudan önce 2 dakikada hakkınızı kontrol edebilirsiniz.',
-      'finance_application_kinderzuschlag_aiTemplatePrompt_5': 'Çocuk ek yardımı başvurusu için kısa, nesnel bir gerekçe yaz. Düşük gelirli aile çocukları için desteğe ihtiyaç duyuyor. Kiranın gelirin büyük kısmını oluşturduğunu belirt.',
+      'finance_application_kinderzuschlag_renewalNote_3':
+          'Her 6 ayda bir yeniden başvurun (yenileme başvurusu).',
+      'finance_application_kinderzuschlag_proTip_4':
+          'Aile Yardımları Kurumunun KiZ rehberiyle tam başvurudan önce 2 dakikada hakkınızı kontrol edebilirsiniz.',
+      'finance_application_kinderzuschlag_aiTemplatePrompt_5':
+          'Çocuk ek yardımı başvurusu için kısa, nesnel bir gerekçe yaz. Düşük gelirli aile çocukları için desteğe ihtiyaç duyuyor. Kiranın gelirin büyük kısmını oluşturduğunu belirt.',
       'finance_application_kinderzuschlag_name_6': 'Son 6 ayın gelir belgeleri',
-      'finance_application_kinderzuschlag_whereToGet_7': 'İşveren maaş bordroları, ebeveyn parası kararı veya vergi bildirimi',
-      'finance_application_kinderzuschlag_name_8': 'Kira sözleşmesi veya konut gideri belgesi',
-      'finance_application_kinderzuschlag_whereToGet_9': 'Kira sözleşmesi kopyası + son yan gider dökümü',
-      'finance_application_kinderzuschlag_name_10': 'Son 3 ayın banka hesap dökümleri',
-      'finance_application_kinderzuschlag_whereToGet_11': 'Online bankacılık → PDF yazdırın',
+      'finance_application_kinderzuschlag_whereToGet_7':
+          'İşveren maaş bordroları, ebeveyn parası kararı veya vergi bildirimi',
+      'finance_application_kinderzuschlag_name_8':
+          'Kira sözleşmesi veya konut gideri belgesi',
+      'finance_application_kinderzuschlag_whereToGet_9':
+          'Kira sözleşmesi kopyası + son yan gider dökümü',
+      'finance_application_kinderzuschlag_name_10':
+          'Son 3 ayın banka hesap dökümleri',
+      'finance_application_kinderzuschlag_whereToGet_11':
+          'Online bankacılık → PDF yazdırın',
       'finance_application_kinderzuschlag_name_12': 'Çocuk parası kararı',
-      'finance_application_kinderzuschlag_whereToGet_13': 'Aile Yardımları Kurumundan postayla gelir',
-      'finance_application_kinderzuschlag_name_14': 'Çocukların doğum belgeleri',
+      'finance_application_kinderzuschlag_whereToGet_13':
+          'Aile Yardımları Kurumundan postayla gelir',
+      'finance_application_kinderzuschlag_name_14':
+          'Çocukların doğum belgeleri',
       'finance_application_kinderzuschlag_name_15': 'Kimlik (kopya)',
-      'finance_application_kinderzuschlag_title_16': 'KiZ rehberini kullanın (2 dk.)',
-      'finance_application_kinderzuschlag_description_17': 'Online rehberle olası hakkınızı kontrol edin. Uygun değilseniz zaman kazandırır.',
-      'finance_application_kinderzuschlag_description_19': 'Aile Yardımları Kurumunun sitesinde başvuruyu doldurun. Gelir belgeleri ve kira giderleri hazır olsun.',
+      'finance_application_kinderzuschlag_title_16':
+          'KiZ rehberini kullanın (2 dk.)',
+      'finance_application_kinderzuschlag_description_17':
+          'Online rehberle olası hakkınızı kontrol edin. Uygun değilseniz zaman kazandırır.',
+      'finance_application_kinderzuschlag_description_19':
+          'Aile Yardımları Kurumunun sitesinde başvuruyu doldurun. Gelir belgeleri ve kira giderleri hazır olsun.',
       'finance_application_kinderzuschlag_title_20': 'Belgeleri teslim edin',
-      'finance_application_kinderzuschlag_description_21': 'Maaş bordroları, kira sözleşmesi ve hesap dökümlerini yükleyin veya postayla gönderin.',
+      'finance_application_kinderzuschlag_description_21':
+          'Maaş bordroları, kira sözleşmesi ve hesap dökümlerini yükleyin veya postayla gönderin.',
       'finance_application_kinderzuschlag_title_22': 'Karar + yenileme',
-      'finance_application_kinderzuschlag_description_23': 'Karar 4–8 haftada gelir. 6 ay sonra yenileme başvurusunu unutmayın!',
+      'finance_application_kinderzuschlag_description_23':
+          'Karar 4–8 haftada gelir. 6 ay sonra yenileme başvurusunu unutmayın!',
       'finance_application_wohngeld_benefitName_0': 'Konut Yardımı',
-      'finance_application_wohngeld_responsibleAuthority_1': 'Şehrinizin veya belediyenizin konut yardımı dairesi',
-      'finance_application_wohngeld_processingTime_2': '3–8 hafta (belediyeye göre)',
-      'finance_application_wohngeld_renewalNote_3': 'Ödeme dönemi: 12 ay. Yenileme başvurusunu zamanında yapın (2 ay önce).',
-      'finance_application_wohngeld_proTip_4': '2023 reformundan beri orta gelirli aileler dahil daha fazla aile hak kazanıyor. Kontrol edin!',
-      'finance_application_wohngeld_aiTemplatePrompt_5': 'Çocuklu bir ailenin, kiranın gelirin büyük kısmını oluşturması nedeniyle yaptığı ilk konut yardımı başvurusu için kısa, nesnel ve nazik ön yazı yaz.',
-      'finance_application_wohngeld_name_6': 'Tüm hane üyelerinin gelir belgeleri',
-      'finance_application_wohngeld_whereToGet_7': 'Maaş bordroları, emeklilik kararı, ebeveyn parası kararı',
+      'finance_application_wohngeld_responsibleAuthority_1':
+          'Şehrinizin veya belediyenizin konut yardımı dairesi',
+      'finance_application_wohngeld_processingTime_2':
+          '3–8 hafta (belediyeye göre)',
+      'finance_application_wohngeld_renewalNote_3':
+          'Ödeme dönemi: 12 ay. Yenileme başvurusunu zamanında yapın (2 ay önce).',
+      'finance_application_wohngeld_proTip_4':
+          '2023 reformundan beri orta gelirli aileler dahil daha fazla aile hak kazanıyor. Kontrol edin!',
+      'finance_application_wohngeld_aiTemplatePrompt_5':
+          'Çocuklu bir ailenin, kiranın gelirin büyük kısmını oluşturması nedeniyle yaptığı ilk konut yardımı başvurusu için kısa, nesnel ve nazik ön yazı yaz.',
+      'finance_application_wohngeld_name_6':
+          'Tüm hane üyelerinin gelir belgeleri',
+      'finance_application_wohngeld_whereToGet_7':
+          'Maaş bordroları, emeklilik kararı, ebeveyn parası kararı',
       'finance_application_wohngeld_name_8': 'Kira sözleşmesi (kopya)',
-      'finance_application_wohngeld_name_9': 'Son kira makbuzu veya kira ödemesini gösteren hesap dökümü',
+      'finance_application_wohngeld_name_9':
+          'Son kira makbuzu veya kira ödemesini gösteren hesap dökümü',
       'finance_application_wohngeld_name_10': 'Yan gider dökümü',
       'finance_application_wohngeld_whereToGet_11': 'Ev sahibinden (yıllık)',
-      'finance_application_wohngeld_name_12': 'Tüm hane üyelerinin kimlikleri (kopya)',
+      'finance_application_wohngeld_name_12':
+          'Tüm hane üyelerinin kimlikleri (kopya)',
       'finance_application_wohngeld_name_13': 'İkamet kayıt belgesi',
-      'finance_application_wohngeld_whereToGet_14': 'Vatandaşlık veya nüfus kayıt dairesi',
-      'finance_application_wohngeld_title_15': 'Konut yardımı hesaplayıcısını kullanın',
-      'finance_application_wohngeld_description_16': 'BMWSB resmi Wohngeld-Plus hesaplayıcısıyla hak kazanıp kazanmadığınızı ve tutarı kontrol edin.',
-      'finance_application_wohngeld_title_17': 'Konut yardımı dairenize başvurun',
-      'finance_application_wohngeld_description_18': 'Formu belediye veya vatandaşlık dairesinden ya da online PDF olarak alın. Bazı belediyelerde online başvuru vardır.',
+      'finance_application_wohngeld_whereToGet_14':
+          'Vatandaşlık veya nüfus kayıt dairesi',
+      'finance_application_wohngeld_title_15':
+          'Konut yardımı hesaplayıcısını kullanın',
+      'finance_application_wohngeld_description_16':
+          'BMWSB resmi Wohngeld-Plus hesaplayıcısıyla hak kazanıp kazanmadığınızı ve tutarı kontrol edin.',
+      'finance_application_wohngeld_title_17':
+          'Konut yardımı dairenize başvurun',
+      'finance_application_wohngeld_description_18':
+          'Formu belediye veya vatandaşlık dairesinden ya da online PDF olarak alın. Bazı belediyelerde online başvuru vardır.',
       'finance_application_wohngeld_title_19': 'Belgeleri ekleyin',
-      'finance_application_wohngeld_description_20': 'Kira sözleşmesi, gelir belgeleri ve yan gider dökümünü ekleyin. Emin değilseniz az yerine fazla gönderin.',
-      'finance_application_wohngeld_title_21': 'Kararı bekleyin + hatırlatıcı kurun',
-      'finance_application_wohngeld_description_22': 'Karar 3–8 haftada gelir. Onaydan 10 ay sonra yenileme için hatırlatıcı kurun.',
-      'finance_application_bildungTeilhabe_benefitName_0': 'Eğitim ve Katılım (BuT)',
-      'finance_application_bildungTeilhabe_responsibleAuthority_1': 'Şehrinizin veya belediyenizin Jobcenter veya sosyal yardım dairesi',
+      'finance_application_wohngeld_description_20':
+          'Kira sözleşmesi, gelir belgeleri ve yan gider dökümünü ekleyin. Emin değilseniz az yerine fazla gönderin.',
+      'finance_application_wohngeld_title_21':
+          'Kararı bekleyin + hatırlatıcı kurun',
+      'finance_application_wohngeld_description_22':
+          'Karar 3–8 haftada gelir. Onaydan 10 ay sonra yenileme için hatırlatıcı kurun.',
+      'finance_application_bildungTeilhabe_benefitName_0':
+          'Eğitim ve Katılım (BuT)',
+      'finance_application_bildungTeilhabe_responsibleAuthority_1':
+          'Şehrinizin veya belediyenizin Jobcenter veya sosyal yardım dairesi',
       'finance_application_bildungTeilhabe_processingTime_2': '2–6 hafta',
-      'finance_application_bildungTeilhabe_renewalNote_3': 'Okul malzemeleri için her okul yılında; kulüp/kurs giderleri için her 6 ayda yeniden başvurun.',
-      'finance_application_bildungTeilhabe_proTip_4': 'BuT yalnız okul malzemelerini değil, yüzme, müzik okulu ve özel dersi de kapsar! Spor/kültür/boş zaman için ayda en fazla 15€.',
-      'finance_application_bildungTeilhabe_aiTemplatePrompt_5': 'Eğitim ve katılım yardımı için kısa, resmi formsuz başvuru yaz. Çocuk spor kursuna katılacak. Aile çocuk ek yardımı alıyor. Nesnel, 3–4 cümle.',
+      'finance_application_bildungTeilhabe_renewalNote_3':
+          'Okul malzemeleri için her okul yılında; kulüp/kurs giderleri için her 6 ayda yeniden başvurun.',
+      'finance_application_bildungTeilhabe_proTip_4':
+          'BuT yalnız okul malzemelerini değil, yüzme, müzik okulu ve özel dersi de kapsar! Spor/kültür/boş zaman için ayda en fazla 15€.',
+      'finance_application_bildungTeilhabe_aiTemplatePrompt_5':
+          'Eğitim ve katılım yardımı için kısa, resmi formsuz başvuru yaz. Çocuk spor kursuna katılacak. Aile çocuk ek yardımı alıyor. Nesnel, 3–4 cümle.',
       'finance_application_bildungTeilhabe_name_6': 'Alınan yardımın belgesi',
-      'finance_application_bildungTeilhabe_whereToGet_7': 'Çocuk ek yardımı, konut yardımı, Bürgergeld veya sosyal yardım kararı',
+      'finance_application_bildungTeilhabe_whereToGet_7':
+          'Çocuk ek yardımı, konut yardımı, Bürgergeld veya sosyal yardım kararı',
       'finance_application_bildungTeilhabe_name_8': 'Okul belgesi',
-      'finance_application_bildungTeilhabe_whereToGet_9': 'Çocuğunuzun okul sekreterliği',
-      'finance_application_bildungTeilhabe_name_10': 'Gider belgesi (ör. kulüp ücreti)',
-      'finance_application_bildungTeilhabe_whereToGet_11': 'Kulüp veya kurs kayıt formu ya da faturası',
-      'finance_application_bildungTeilhabe_title_13': 'Olasılıkları kontrol edin',
-      'finance_application_bildungTeilhabe_description_14': 'BuT: okul malzemeleri (195€/yıl), öğle yemeği, geziler, özel ders, spor/kültür (15€/ay), okul ulaşımı.',
-      'finance_application_bildungTeilhabe_title_15': 'Formsuz başvuru veya form',
-      'finance_application_bildungTeilhabe_description_16': 'BuT formunu Jobcenter/sosyal yardım dairesinden alın veya mektupla başvurun. Bazı şehirlerde online form vardır.',
+      'finance_application_bildungTeilhabe_whereToGet_9':
+          'Çocuğunuzun okul sekreterliği',
+      'finance_application_bildungTeilhabe_name_10':
+          'Gider belgesi (ör. kulüp ücreti)',
+      'finance_application_bildungTeilhabe_whereToGet_11':
+          'Kulüp veya kurs kayıt formu ya da faturası',
+      'finance_application_bildungTeilhabe_title_13':
+          'Olasılıkları kontrol edin',
+      'finance_application_bildungTeilhabe_description_14':
+          'BuT: okul malzemeleri (195€/yıl), öğle yemeği, geziler, özel ders, spor/kültür (15€/ay), okul ulaşımı.',
+      'finance_application_bildungTeilhabe_title_15':
+          'Formsuz başvuru veya form',
+      'finance_application_bildungTeilhabe_description_16':
+          'BuT formunu Jobcenter/sosyal yardım dairesinden alın veya mektupla başvurun. Bazı şehirlerde online form vardır.',
       'finance_application_bildungTeilhabe_title_17': 'Kanıtları ekleyin',
-      'finance_application_bildungTeilhabe_description_18': 'Yardım kararı, okul belgesi ve varsa kulüp faturasını ekleyin.',
-      'finance_application_bildungTeilhabe_title_19': 'Kupon veya doğrudan ödeme',
-      'finance_application_bildungTeilhabe_description_20': 'Kupon alırsınız (ör. kulüp için) veya ödeme doğrudan sağlayıcıya yapılır.',
+      'finance_application_bildungTeilhabe_description_18':
+          'Yardım kararı, okul belgesi ve varsa kulüp faturasını ekleyin.',
+      'finance_application_bildungTeilhabe_title_19':
+          'Kupon veya doğrudan ödeme',
+      'finance_application_bildungTeilhabe_description_20':
+          'Kupon alırsınız (ör. kulüp için) veya ödeme doğrudan sağlayıcıya yapılır.',
       'finance_application_elterngeld_benefitName_0': 'Ebeveyn Parası',
-      'finance_application_elterngeld_responsibleAuthority_1': 'Eyaletinizin ebeveyn parası dairesi',
-      'finance_application_elterngeld_processingTime_2': '4–12 hafta (eyalete göre)',
-      'finance_application_elterngeld_renewalNote_3': 'Yenileme başvurusu yok. Tek seferlik 12–14 ay (Basis) veya 24–28 ay (Plus).',
-      'finance_application_elterngeld_proTip_4': 'Başvuruyu doğumdan ÖNCE hazırlayın — yalnız doğum belgesi eksik kalır. Haftalar kazandırır!',
-      'finance_application_elterngeld_aiTemplatePrompt_5': 'İlk çocuğun doğumundan sonra Basiselterngeld başvurusu için kısa, nesnel ön yazı yaz. Ebeveyn ayları eşiyle paylaşmayı planlıyor.',
-      'finance_application_elterngeld_name_6': 'Çocuğun doğum belgesi (asıl veya onaylı kopya)',
+      'finance_application_elterngeld_responsibleAuthority_1':
+          'Eyaletinizin ebeveyn parası dairesi',
+      'finance_application_elterngeld_processingTime_2':
+          '4–12 hafta (eyalete göre)',
+      'finance_application_elterngeld_renewalNote_3':
+          'Yenileme başvurusu yok. Tek seferlik 12–14 ay (Basis) veya 24–28 ay (Plus).',
+      'finance_application_elterngeld_proTip_4':
+          'Başvuruyu doğumdan ÖNCE hazırlayın — yalnız doğum belgesi eksik kalır. Haftalar kazandırır!',
+      'finance_application_elterngeld_aiTemplatePrompt_5':
+          'İlk çocuğun doğumundan sonra Basiselterngeld başvurusu için kısa, nesnel ön yazı yaz. Ebeveyn ayları eşiyle paylaşmayı planlıyor.',
+      'finance_application_elterngeld_name_6':
+          'Çocuğun doğum belgesi (asıl veya onaylı kopya)',
       'finance_application_elterngeld_whereToGet_7': 'Nüfus dairesi',
-      'finance_application_elterngeld_name_8': 'Sağlık sigortasının analık ödeneği belgesi',
-      'finance_application_elterngeld_whereToGet_9': 'Sağlık sigortanız (doğumdan sonra başvurun)',
-      'finance_application_elterngeld_name_10': 'İşverenin analık ödeneği katkı belgesi',
-      'finance_application_elterngeld_whereToGet_11': 'İşvereninizin insan kaynakları bölümü',
-      'finance_application_elterngeld_name_12': 'Doğumdan önceki 12 ayın gelir belgeleri',
-      'finance_application_elterngeld_whereToGet_13': 'Maaş bordroları veya vergi bildirimi',
-      'finance_application_elterngeld_name_14': 'Her iki ebeveynin kimlikleri (kopya)',
-      'finance_application_elterngeld_name_15': 'Planlanan çalışma saatleri belgesi (Elterngeld Plus için)',
-      'finance_application_elterngeld_whereToGet_16': 'İşveren (yarı zamanlı çalışıyorsanız)',
-      'finance_application_elterngeld_title_17': 'Ebeveyn parası hesaplayıcısını kullanın',
-      'finance_application_elterngeld_description_18': 'Resmi hesaplayıcıyla ebeveyn parasını ve Basis/Plus/ortaklık bonusu dağılımını hesaplayın.',
-      'finance_application_elterngeld_title_19': 'Başvuruyu doldurun (online veya kağıt)',
-      'finance_application_elterngeld_description_20': 'Her eyaletin kendi formu vardır. Birçok eyalette bulunan ElterngeldDigital en kolay yoldur.',
+      'finance_application_elterngeld_name_8':
+          'Sağlık sigortasının analık ödeneği belgesi',
+      'finance_application_elterngeld_whereToGet_9':
+          'Sağlık sigortanız (doğumdan sonra başvurun)',
+      'finance_application_elterngeld_name_10':
+          'İşverenin analık ödeneği katkı belgesi',
+      'finance_application_elterngeld_whereToGet_11':
+          'İşvereninizin insan kaynakları bölümü',
+      'finance_application_elterngeld_name_12':
+          'Doğumdan önceki 12 ayın gelir belgeleri',
+      'finance_application_elterngeld_whereToGet_13':
+          'Maaş bordroları veya vergi bildirimi',
+      'finance_application_elterngeld_name_14':
+          'Her iki ebeveynin kimlikleri (kopya)',
+      'finance_application_elterngeld_name_15':
+          'Planlanan çalışma saatleri belgesi (Elterngeld Plus için)',
+      'finance_application_elterngeld_whereToGet_16':
+          'İşveren (yarı zamanlı çalışıyorsanız)',
+      'finance_application_elterngeld_title_17':
+          'Ebeveyn parası hesaplayıcısını kullanın',
+      'finance_application_elterngeld_description_18':
+          'Resmi hesaplayıcıyla ebeveyn parasını ve Basis/Plus/ortaklık bonusu dağılımını hesaplayın.',
+      'finance_application_elterngeld_title_19':
+          'Başvuruyu doldurun (online veya kağıt)',
+      'finance_application_elterngeld_description_20':
+          'Her eyaletin kendi formu vardır. Birçok eyalette bulunan ElterngeldDigital en kolay yoldur.',
       'finance_application_elterngeld_title_21': 'Belgeleri hazırlayın',
-      'finance_application_elterngeld_description_22': 'Doğum belgesi, gelir belgeleri, analık ödeneği belgesi ve kimliklerin kopyalarını hazırlayın.',
+      'finance_application_elterngeld_description_22':
+          'Doğum belgesi, gelir belgeleri, analık ödeneği belgesi ve kimliklerin kopyalarını hazırlayın.',
       'finance_application_elterngeld_title_23': 'Teslim edin + sabırlı olun',
-      'finance_application_elterngeld_description_24': 'Postayla veya dijital teslim edin. İşlem süresi değişir (4–12 hafta). 6 hafta haber gelmezse sorun.',
+      'finance_application_elterngeld_description_24':
+          'Postayla veya dijital teslim edin. İşlem süresi değişir (4–12 hafta). 6 hafta haber gelmezse sorun.',
       'finance_application_unterhaltsvorschuss_benefitName_0': 'Nafaka Avansı',
-      'finance_application_unterhaltsvorschuss_responsibleAuthority_1': 'Şehrinizin veya belediyenizin gençlik dairesi',
-      'finance_application_unterhaltsvorschuss_renewalNote_3': 'Yenileme başvurusu gerekmez. Koşullar devam ettiği sürece 18 yaşına kadar otomatik ödenir.',
-      'finance_application_unterhaltsvorschuss_proTip_4': '1 ay geriye dönük başvurabilirsiniz. Beklemeyin — hemen başvurun!',
-      'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5': 'Nafaka avansı için kısa, nesnel başvuru yaz. Tek ebeveyn diğer ebeveynden nafaka alamıyor. Açık, 3–4 cümle.',
-      'finance_application_unterhaltsvorschuss_name_9': 'İkamet kayıt belgesi (tek hane)',
-      'finance_application_unterhaltsvorschuss_whereToGet_10': 'Vatandaşlık dairesi — çocukla yalnız yaşadığınızı gösterir',
-      'finance_application_unterhaltsvorschuss_name_11': 'Ödenmeyen nafakanın belgesi',
-      'finance_application_unterhaltsvorschuss_whereToGet_12': 'Ör. eski eşe yanıtsız mektup, nafaka kararı veya kendi beyanınız',
-      'finance_application_unterhaltsvorschuss_name_13': 'Babalık tanıması veya baba adı bulunan doğum belgesi',
-      'finance_application_unterhaltsvorschuss_whereToGet_14': 'Nüfus veya gençlik dairesi',
-      'finance_application_unterhaltsvorschuss_title_15': 'Gençlik dairesine ulaşın',
-      'finance_application_unterhaltsvorschuss_description_16': 'Gençlik dairesini arayın veya gidin. Formu doldurmanıza yardımcı olurlar.',
+      'finance_application_unterhaltsvorschuss_responsibleAuthority_1':
+          'Şehrinizin veya belediyenizin gençlik dairesi',
+      'finance_application_unterhaltsvorschuss_renewalNote_3':
+          'Yenileme başvurusu gerekmez. Koşullar devam ettiği sürece 18 yaşına kadar otomatik ödenir.',
+      'finance_application_unterhaltsvorschuss_proTip_4':
+          '1 ay geriye dönük başvurabilirsiniz. Beklemeyin — hemen başvurun!',
+      'finance_application_unterhaltsvorschuss_aiTemplatePrompt_5':
+          'Nafaka avansı için kısa, nesnel başvuru yaz. Tek ebeveyn diğer ebeveynden nafaka alamıyor. Açık, 3–4 cümle.',
+      'finance_application_unterhaltsvorschuss_name_9':
+          'İkamet kayıt belgesi (tek hane)',
+      'finance_application_unterhaltsvorschuss_whereToGet_10':
+          'Vatandaşlık dairesi — çocukla yalnız yaşadığınızı gösterir',
+      'finance_application_unterhaltsvorschuss_name_11':
+          'Ödenmeyen nafakanın belgesi',
+      'finance_application_unterhaltsvorschuss_whereToGet_12':
+          'Ör. eski eşe yanıtsız mektup, nafaka kararı veya kendi beyanınız',
+      'finance_application_unterhaltsvorschuss_name_13':
+          'Babalık tanıması veya baba adı bulunan doğum belgesi',
+      'finance_application_unterhaltsvorschuss_whereToGet_14':
+          'Nüfus veya gençlik dairesi',
+      'finance_application_unterhaltsvorschuss_title_15':
+          'Gençlik dairesine ulaşın',
+      'finance_application_unterhaltsvorschuss_description_16':
+          'Gençlik dairesini arayın veya gidin. Formu doldurmanıza yardımcı olurlar.',
       'finance_application_unterhaltsvorschuss_title_17': 'Başvuruyu doldurun',
-      'finance_application_unterhaltsvorschuss_description_18': 'Formu gençlik dairesinden alın. Bazı şehirlerde online PDF olarak vardır.',
-      'finance_application_unterhaltsvorschuss_description_20': 'Doğum belgesi, ikamet belgesi ve ödenmeyen nafaka belgesini ekleyin.',
+      'finance_application_unterhaltsvorschuss_description_18':
+          'Formu gençlik dairesinden alın. Bazı şehirlerde online PDF olarak vardır.',
+      'finance_application_unterhaltsvorschuss_description_20':
+          'Doğum belgesi, ikamet belgesi ve ödenmeyen nafaka belgesini ekleyin.',
       'finance_application_unterhaltsvorschuss_title_21': 'Kararı bekleyin',
-      'finance_application_unterhaltsvorschuss_description_22': 'Karar 4–8 haftada gelir. Başvuru tarihinden itibaren geriye dönük aylık ödenir.',
+      'finance_application_unterhaltsvorschuss_description_22':
+          'Karar 4–8 haftada gelir. Başvuru tarihinden itibaren geriye dönük aylık ödenir.',
       'finance_application_pflegegeld_benefitName_0': 'Bakım Parası',
-      'finance_application_pflegegeld_responsibleAuthority_1': 'Bakım sigortası kurumu (sağlık sigortanızda)',
-      'finance_application_pflegegeld_processingTime_2': 'Genellikle 25 iş günü; yasal istisnaları kontrol edin (§18c SGB XI).',
-      'finance_application_pflegegeld_renewalNote_3': 'Yenileme başvurusu yok. Durum kötüleşirse daha yüksek bakım seviyesi için başvurun.',
-      'finance_application_pflegegeld_proTip_4': 'Telefonla formsuz başvurun — bakım kurumunu aramak yeterli! Tarih geriye dönük ödeme için geçerlidir.',
-      'finance_application_pflegegeld_aiTemplatePrompt_5': 'Çocuğun bakım yardımı için kısa, formsuz başvuru yaz. Çocuk engelli/kronik hasta ve günlük destek gerekiyor. Nesnel, 3–4 cümle.',
-      'finance_application_pflegegeld_name_6': 'Formsuz başvuru (telefon veya mektup yeterli)',
-      'finance_application_pflegegeld_whereToGet_7': 'Sağlık/bakım sigortanızı aramak yeterli',
+      'finance_application_pflegegeld_responsibleAuthority_1':
+          'Bakım sigortası kurumu (sağlık sigortanızda)',
+      'finance_application_pflegegeld_processingTime_2':
+          'Genellikle 25 iş günü; yasal istisnaları kontrol edin (§18c SGB XI).',
+      'finance_application_pflegegeld_renewalNote_3':
+          'Yenileme başvurusu yok. Durum kötüleşirse daha yüksek bakım seviyesi için başvurun.',
+      'finance_application_pflegegeld_proTip_4':
+          'Telefonla formsuz başvurun — bakım kurumunu aramak yeterli! Tarih geriye dönük ödeme için geçerlidir.',
+      'finance_application_pflegegeld_aiTemplatePrompt_5':
+          'Çocuğun bakım yardımı için kısa, formsuz başvuru yaz. Çocuk engelli/kronik hasta ve günlük destek gerekiyor. Nesnel, 3–4 cümle.',
+      'finance_application_pflegegeld_name_6':
+          'Formsuz başvuru (telefon veya mektup yeterli)',
+      'finance_application_pflegegeld_whereToGet_7':
+          'Sağlık/bakım sigortanızı aramak yeterli',
       'finance_application_pflegegeld_name_8': 'Tıbbi belgeler / tanılar',
-      'finance_application_pflegegeld_whereToGet_9': 'Çocuk doktoru, uzman veya hastane',
-      'finance_application_pflegegeld_name_10': 'Bakım günlüğü (değerlendirmeden 2 hafta önce)',
-      'finance_application_pflegegeld_whereToGet_11': 'Bakım sigortanızdan veya online şablon',
+      'finance_application_pflegegeld_whereToGet_9':
+          'Çocuk doktoru, uzman veya hastane',
+      'finance_application_pflegegeld_name_10':
+          'Bakım günlüğü (değerlendirmeden 2 hafta önce)',
+      'finance_application_pflegegeld_whereToGet_11':
+          'Bakım sigortanızdan veya online şablon',
       'finance_application_pflegegeld_title_12': 'Bakım sigortasını arayın',
-      'finance_application_pflegegeld_description_13': 'Aramak yeterli! “Çocuğum için bakım yardımına başvurmak istiyorum” deyin. Arama tarihi geçerlidir.',
-      'finance_application_pflegegeld_title_14': 'Bakım günlüğü tutun (2 hafta)',
-      'finance_application_pflegegeld_description_15': 'Günlük yardım ihtiyacını kaydedin: yıkanma, giyinme, yemek, gece, gözetim. Ayrıntı değerlendirmeyi kolaylaştırır.',
-      'finance_application_pflegegeld_title_16': 'Tıbbi Hizmet değerlendirmesi (ev ziyareti)',
-      'finance_application_pflegegeld_description_17': 'Tıbbi Hizmet eve gelir. Yalnız “iyi günü” değil, çocuğun gerçek ihtiyaçlarını gösterin!',
+      'finance_application_pflegegeld_description_13':
+          'Aramak yeterli! “Çocuğum için bakım yardımına başvurmak istiyorum” deyin. Arama tarihi geçerlidir.',
+      'finance_application_pflegegeld_title_14':
+          'Bakım günlüğü tutun (2 hafta)',
+      'finance_application_pflegegeld_description_15':
+          'Günlük yardım ihtiyacını kaydedin: yıkanma, giyinme, yemek, gece, gözetim. Ayrıntı değerlendirmeyi kolaylaştırır.',
+      'finance_application_pflegegeld_title_16':
+          'Tıbbi Hizmet değerlendirmesi (ev ziyareti)',
+      'finance_application_pflegegeld_description_17':
+          'Tıbbi Hizmet eve gelir. Yalnız “iyi günü” değil, çocuğun gerçek ihtiyaçlarını gösterin!',
       'finance_application_pflegegeld_title_18': 'Karar + gerekirse itiraz',
-      'finance_application_pflegegeld_description_19': 'Genellikle 25 iş gününde karar (§18c SGB XI; istisnalar olabilir). İtiraz bildirimin ardından genellikle bir ay, yurt dışında bildirimde üç ay (§84 SGG). İtiraz bilgilendirmesini kontrol edin.',
+      'finance_application_pflegegeld_description_19':
+          'Genellikle 25 iş gününde karar (§18c SGB XI; istisnalar olabilir). İtiraz bildirimin ardından genellikle bir ay, yurt dışında bildirimde üç ay (§84 SGG). İtiraz bilgilendirmesini kontrol edin.',
       'finance_application_eingliederungshilfe_benefitName_0': 'Uyum Yardımı',
-      'finance_application_eingliederungshilfe_responsibleAuthority_1': 'Sosyal yardım veya gençlik dairesi (engellilik türüne göre)',
+      'finance_application_eingliederungshilfe_responsibleAuthority_1':
+          'Sosyal yardım veya gençlik dairesi (engellilik türüne göre)',
       'finance_application_eingliederungshilfe_processingTime_2': '4–12 hafta',
-      'finance_application_eingliederungshilfe_renewalNote_3': 'Belirli bir dönem için verilir. Yenilemeye zamanında başvurun.',
-      'finance_application_eingliederungshilfe_proTip_4': 'Ruhsal engellilikte (ör. otizm, DEHB) gençlik dairesi yetkilidir (§35a SGB VIII). Fiziksel/zihinsel engellilikte sosyal yardım dairesi.',
-      'finance_application_eingliederungshilfe_aiTemplatePrompt_5': 'Katılım desteğine (ör. okul desteği, erken müdahale) ihtiyaç duyan engelli çocuk için kısa, formsuz uyum yardımı başvurusu yaz. Nesnel, 3–4 cümle.',
+      'finance_application_eingliederungshilfe_renewalNote_3':
+          'Belirli bir dönem için verilir. Yenilemeye zamanında başvurun.',
+      'finance_application_eingliederungshilfe_proTip_4':
+          'Ruhsal engellilikte (ör. otizm, DEHB) gençlik dairesi yetkilidir (§35a SGB VIII). Fiziksel/zihinsel engellilikte sosyal yardım dairesi.',
+      'finance_application_eingliederungshilfe_aiTemplatePrompt_5':
+          'Katılım desteğine (ör. okul desteği, erken müdahale) ihtiyaç duyan engelli çocuk için kısa, formsuz uyum yardımı başvurusu yaz. Nesnel, 3–4 cümle.',
       'finance_application_eingliederungshilfe_name_6': 'Tıbbi görüş / tanı',
-      'finance_application_eingliederungshilfe_whereToGet_7': 'Çocuk doktoru, SPZ (sosyal pediatri merkezi) veya uzman',
-      'finance_application_eingliederungshilfe_name_8': 'Formsuz uyum yardımı başvurusu',
-      'finance_application_eingliederungshilfe_whereToGet_9': 'Sosyal yardım/gençlik dairesine kendi mektubunuz',
-      'finance_application_eingliederungshilfe_name_10': 'Gelişim raporu (kreş/okul)',
-      'finance_application_eingliederungshilfe_whereToGet_11': 'Eğitimci veya öğretmenden kısa rapor',
-      'finance_application_eingliederungshilfe_name_12': 'Okul görüşü (okul desteği için)',
-      'finance_application_eingliederungshilfe_whereToGet_13': 'Okul müdürü veya sınıf öğretmeni',
-      'finance_application_eingliederungshilfe_title_14': 'Yetkili kurumu belirleyin',
-      'finance_application_eingliederungshilfe_description_15': 'Ruhsal engellilik (otizm, DEHB, kaygı) → gençlik dairesi. Fiziksel/zihinsel → sosyal yardım dairesi. Emin değilseniz gençlik dairesine sorun.',
+      'finance_application_eingliederungshilfe_whereToGet_7':
+          'Çocuk doktoru, SPZ (sosyal pediatri merkezi) veya uzman',
+      'finance_application_eingliederungshilfe_name_8':
+          'Formsuz uyum yardımı başvurusu',
+      'finance_application_eingliederungshilfe_whereToGet_9':
+          'Sosyal yardım/gençlik dairesine kendi mektubunuz',
+      'finance_application_eingliederungshilfe_name_10':
+          'Gelişim raporu (kreş/okul)',
+      'finance_application_eingliederungshilfe_whereToGet_11':
+          'Eğitimci veya öğretmenden kısa rapor',
+      'finance_application_eingliederungshilfe_name_12':
+          'Okul görüşü (okul desteği için)',
+      'finance_application_eingliederungshilfe_whereToGet_13':
+          'Okul müdürü veya sınıf öğretmeni',
+      'finance_application_eingliederungshilfe_title_14':
+          'Yetkili kurumu belirleyin',
+      'finance_application_eingliederungshilfe_description_15':
+          'Ruhsal engellilik (otizm, DEHB, kaygı) → gençlik dairesi. Fiziksel/zihinsel → sosyal yardım dairesi. Emin değilseniz gençlik dairesine sorun.',
       'finance_application_eingliederungshilfe_title_16': 'Formsuz başvurun',
-      'finance_application_eingliederungshilfe_description_17': 'Mektup yeterli: “Çocuğum [Name] için [Diagnose] nedeniyle uyum yardımına başvuruyorum.” Tıbbi görüşü ekleyin.',
-      'finance_application_eingliederungshilfe_title_18': 'Destek planlama görüşmesi',
-      'finance_application_eingliederungshilfe_description_19': 'Kurum sizi çocuğun destek ihtiyaçlarını görüşmeye çağırır (erken müdahale, okul desteği, terapi vb.).',
-      'finance_application_eingliederungshilfe_title_20': 'Onay + desteğin başlaması',
-      'finance_application_eingliederungshilfe_description_21': 'Onaydan sonra destek başlar. Ret halinde 4 hafta içinde ücretsiz itiraz edin.',
+      'finance_application_eingliederungshilfe_description_17':
+          'Mektup yeterli: “Çocuğum [Name] için [Diagnose] nedeniyle uyum yardımına başvuruyorum.” Tıbbi görüşü ekleyin.',
+      'finance_application_eingliederungshilfe_title_18':
+          'Destek planlama görüşmesi',
+      'finance_application_eingliederungshilfe_description_19':
+          'Kurum sizi çocuğun destek ihtiyaçlarını görüşmeye çağırır (erken müdahale, okul desteği, terapi vb.).',
+      'finance_application_eingliederungshilfe_title_20':
+          'Onay + desteğin başlaması',
+      'finance_application_eingliederungshilfe_description_21':
+          'Onaydan sonra destek başlar. Ret halinde 4 hafta içinde ücretsiz itiraz edin.',
       'finance_content_austria_name_1': 'Aile Yardımı (Familienbeihilfe)',
-      'finance_content_austria_description_2': 'Yaşa göre çocuk başına aylık destek.',
-      'finance_content_austria_amount_3': '138,40 / 148 / 171,80 / 200,40€/ay (0 / 3 / 10 / 19 yaştan itibaren; ek ödemeler hariç)',
-      'finance_content_austria_name_4': 'Çocuk Vergi İndirimi (Kinderabsetzbetrag)',
+      'finance_content_austria_description_2':
+          'Yaşa göre çocuk başına aylık destek.',
+      'finance_content_austria_amount_3':
+          '138,40 / 148 / 171,80 / 200,40€/ay (0 / 3 / 10 / 19 yaştan itibaren; ek ödemeler hariç)',
+      'finance_content_austria_name_4':
+          'Çocuk Vergi İndirimi (Kinderabsetzbetrag)',
       'finance_content_austria_description_5': 'Çocuk başına vergi indirimi.',
       'finance_content_austria_amount_6': '70,90€/çocuk/ay',
-      'finance_content_austria_eligibility_7': 'Aile yardımıyla birlikte ödenir; ayrı başvuru gerekmez.',
-      'finance_content_austria_name_8': 'Çocuk Bakım Parası (Kinderbetreuungsgeld)',
-      'finance_content_austria_description_9': 'Doğumdan sonra, farklı modeller.',
-      'finance_content_austria_amount_10': 'Konto: 17,65–41,14€/gün; gelire bağlı: önceki kazancın %80’i, en fazla 80,12€/gün',
+      'finance_content_austria_eligibility_7':
+          'Aile yardımıyla birlikte ödenir; ayrı başvuru gerekmez.',
+      'finance_content_austria_name_8':
+          'Çocuk Bakım Parası (Kinderbetreuungsgeld)',
+      'finance_content_austria_description_9':
+          'Doğumdan sonra, farklı modeller.',
+      'finance_content_austria_amount_10':
+          'Konto: 17,65–41,14€/gün; gelire bağlı: önceki kazancın %80’i, en fazla 80,12€/gün',
       'finance_content_switzerland_name_1': 'Çocuk Yardımı (Kinderzulage)',
-      'finance_content_switzerland_description_2': 'Kantona göre değişir, çocuk başına.',
-      'finance_content_switzerland_amount_3': 'En az 215 Fr./çocuk/ay; kanton tutarı daha yüksek olabilir',
-      'finance_content_switzerland_name_4': 'Eğitim Yardımı (Ausbildungszulage)',
-      'finance_content_switzerland_description_5': 'Zorunlu eğitim sonrası, en erken 15 en geç 25 yaşa kadar; kesin ay sınırlarını kontrol edin.',
-      'finance_content_switzerland_amount_6': 'En az 268 Fr./çocuk/ay; kanton tutarı daha yüksek olabilir',
+      'finance_content_switzerland_description_2':
+          'Kantona göre değişir, çocuk başına.',
+      'finance_content_switzerland_amount_3':
+          'En az 215 Fr./çocuk/ay; kanton tutarı daha yüksek olabilir',
+      'finance_content_switzerland_name_4':
+          'Eğitim Yardımı (Ausbildungszulage)',
+      'finance_content_switzerland_description_5':
+          'Zorunlu eğitim sonrası, en erken 15 en geç 25 yaşa kadar; kesin ay sınırlarını kontrol edin.',
+      'finance_content_switzerland_amount_6':
+          'En az 268 Fr./çocuk/ay; kanton tutarı daha yüksek olabilir',
       'finance_content_turkey_name_1': 'Doğum Yardımı',
-      'finance_content_turkey_description_2': '01.01.2025 itibarıyla doğumlar için yeni doğum yardımı; düzenli ödemeler başvurudan 60. ay dahil devam eder.',
-      'finance_content_turkey_amount_3': '1. çocuk: bir defa 5.000₺; 2.: 1.500₺/ay; 3.+: 5.000₺/ay',
-      'finance_content_turkey_eligibility_4': 'Türk vatandaşlığı ve Türkiye’de ikamet; diğer resmi başvuru koşullarını kontrol edin.',
+      'finance_content_turkey_description_2':
+          '01.01.2025 itibarıyla doğumlar için yeni doğum yardımı; düzenli ödemeler başvurudan 60. ay dahil devam eder.',
+      'finance_content_turkey_amount_3':
+          '1. çocuk: bir defa 5.000₺; 2.: 1.500₺/ay; 3.+: 5.000₺/ay',
+      'finance_content_turkey_eligibility_4':
+          'Türk vatandaşlığı ve Türkiye’de ikamet; diğer resmi başvuru koşullarını kontrol edin.',
       'finance_content_turkey_name_5': 'Cocuk Parasi',
-      'finance_content_turkey_description_6': 'Aileler için aylık çocuk parası.',
+      'finance_content_turkey_description_6':
+          'Aileler için aylık çocuk parası.',
       'finance_content_turkey_amount_7': 'Gelire bağlı',
       'finance_content_turkey_name_8': 'Sosyal ve Ekonomik Destek (SED)',
-      'finance_content_turkey_description_9': 'İl Müdürlüğü/Sosyal Hizmet Merkezi aracılığıyla sosyal ve ekonomik destek.',
-      'finance_content_turkey_eligibility_10': 'Aile, ekonomik ve bölgesel durumun bireysel sosyal değerlendirmesi.',
+      'finance_content_turkey_description_9':
+          'İl Müdürlüğü/Sosyal Hizmet Merkezi aracılığıyla sosyal ve ekonomik destek.',
+      'finance_content_turkey_eligibility_10':
+          'Aile, ekonomik ve bölgesel durumun bireysel sosyal değerlendirmesi.',
       'finance_content_turkey_note_11': 'Çanta, kırtasiye, forma',
       'finance_content_uk_name_1': 'Çocuk Parası',
       'finance_content_uk_description_2': 'Her çocuk için haftalık ödeme.',
-      'finance_content_uk_amount_3': '£27.05/hafta (en büyük veya tek çocuk), £17.90/hafta (diğer çocuklar)',
+      'finance_content_uk_amount_3':
+          '£27.05/hafta (en büyük veya tek çocuk), £17.90/hafta (diğer çocuklar)',
       'finance_content_uk_name_4': 'Universal Credit (Çocuk Payı)',
-      'finance_content_uk_description_5': 'Düşük gelirli aileler için ek destek.',
-      'finance_content_uk_amount_6': 'Çocuk başına £303.94/ay; 6 Nisan 2017’den önce doğan ilk çocuk için ek £47.94',
+      'finance_content_uk_description_5':
+          'Düşük gelirli aileler için ek destek.',
+      'finance_content_uk_amount_6':
+          'Çocuk başına £303.94/ay; 6 Nisan 2017’den önce doğan ilk çocuk için ek £47.94',
       'finance_content_uk_name_7': 'Vergisiz Çocuk Bakımı',
-      'finance_content_uk_description_8': 'Devlet bakım hesabına yatırılan her £8 için £2 ekler.',
-      'finance_content_uk_amount_9': 'En fazla £500/3 ay (£2,000/yıl); engelli çocuk: £1,000/3 ay (£4,000/yıl)',
+      'finance_content_uk_description_8':
+          'Devlet bakım hesabına yatırılan her £8 için £2 ekler.',
+      'finance_content_uk_amount_9':
+          'En fazla £500/3 ay (£2,000/yıl); engelli çocuk: £1,000/3 ay (£4,000/yıl)',
       'finance_content_uk_note_10': 'Üniforma, çanta, ayakkabı, kırtasiye',
       'finance_content_generic_name_1': 'Çocuk Parası',
-      'finance_content_generic_description_2': 'Çoğu ülke aylık aile yardımı öder. Yerel kurumunuza danışın.',
+      'finance_content_generic_description_2':
+          'Çoğu ülke aylık aile yardımı öder. Yerel kurumunuza danışın.',
       'finance_content_generic_name_3': 'Konut desteği',
-      'finance_content_generic_description_4': 'Birçok ülke ailelere kira desteği sunar.',
+      'finance_content_generic_description_4':
+          'Birçok ülke ailelere kira desteği sunar.',
       'finance_content_generic_name_5': 'Çocuk bakım desteği',
-      'finance_content_generic_description_6': 'Ülkenizin çocuk bakımını destekleyip desteklemediğini kontrol edin.',
+      'finance_content_generic_description_6':
+          'Ülkenizin çocuk bakımını destekleyip desteklemediğini kontrol edin.',
       'benefit_chip_leave': 'Ebeveyn izni',
       'benefit_chip_salary': 'Maaş azalıyor',
       'benefit_chip_single': 'Tek ebeveyn',
       'benefit_chip_move': 'Taşınma',
       'benefit_chip_second': 'İkinci çocuk geliyor',
       'benefit_chip_income': 'Düşük gelir',
-      'benefit_fallback_notice': 'Yapay zeka yanıtı kullanılamıyor. Bu, ülkeniz için genel ve yerel rehberdir; durumunuza özel değildir.',
-      'benefit_fallback_check': 'Ayrıntıları bağlantıdaki resmi kurumlardan kontrol edin.',
-      'benefit_fallback_prepare': 'Kimlik, gelir belgeleri ve doğum belgesini hazır tutun.',
+      'benefit_fallback_notice':
+          'Yapay zeka yanıtı kullanılamıyor. Bu, ülkeniz için genel ve yerel rehberdir; durumunuza özel değildir.',
+      'benefit_fallback_check':
+          'Ayrıntıları bağlantıdaki resmi kurumlardan kontrol edin.',
+      'benefit_fallback_prepare':
+          'Kimlik, gelir belgeleri ve doğum belgesini hazır tutun.',
       'finance_share_failed': 'Özet paylaşılamadı. Lütfen tekrar deneyin.',
       'antrag_documents_tab': 'Belgeler',
       'antrag_guide_tab': 'Rehber',
@@ -20268,57 +21400,89 @@ class AppStringsManager {
       'antrag_documents_count': '{total} belgeden {checked} hazır',
       'antrag_processing_time': '⏱️ İşlem süresi: {time}',
       'antrag_step_guide': 'Adım adım rehber',
-      'antrag_ai_description': 'Yapay zeka kopyalanabilir ön yazı veya gerekçe oluşturur.',
+      'antrag_ai_description':
+          'Yapay zeka kopyalanabilir ön yazı veya gerekçe oluşturur.',
       'antrag_copied': '📋 Panoya kopyalandı!',
       'antrag_copy_failed': 'Kopyalama başarısız. Tekrar deneyin.',
-      'antrag_ai_disclaimer': 'Bu bir şablondur, hukuki danışmanlık değildir. Metni kişisel durumunuza uyarlayın.',
+      'antrag_ai_disclaimer':
+          'Bu bir şablondur, hukuki danışmanlık değildir. Metni kişisel durumunuza uyarlayın.',
       'antrag_ai_failed': 'Metin şablonu oluşturulamadı. Tekrar deneyin.',
-      'antrag_premium_description': 'Premium tam rehber, yapay zeka şablonları ve hatırlatıcıları içerir.',
-      'antrag_content_limits': 'Genel rehberdir, hukuki danışmanlık değildir. Tüm belgeler, süreler ve işlem ayrıntıları resmi olarak doğrulanmadı. Güncel gereklilikleri ve itiraz sürelerini yetkili kurumdan kontrol edin.',
+      'antrag_premium_description':
+          'Premium tam rehber, yapay zeka şablonları ve hatırlatıcıları içerir.',
+      'antrag_content_limits':
+          'Genel rehberdir, hukuki danışmanlık değildir. Tüm belgeler, süreler ve işlem ayrıntıları resmi olarak doğrulanmadı. Güncel gereklilikleri ve itiraz sürelerini yetkili kurumdan kontrol edin.',
       'finance_estimated_months': 'Tahminen {months} ay içinde ({year})',
       'finance_estimated_one_month': 'Tahminen 1 ay içinde ({year})',
-      'finance_goal_months_on_time': 'Ayda {amount} ile tahmini hedefe {months} ay içinde ulaşman bekleniyor.',
-      'finance_goal_months_shortfall': 'Ayda {amount} ile {months} ay içindeki tahmini hedefe ulaşmak için henüz yeterli birikim oluşmuyor.',
+      'finance_goal_months_on_time':
+          'Ayda {amount} ile tahmini hedefe {months} ay içinde ulaşman bekleniyor.',
+      'finance_goal_months_shortfall':
+          'Ayda {amount} ile {months} ay içindeki tahmini hedefe ulaşmak için henüz yeterli birikim oluşmuyor.',
       'finance_legacy_title': 'Yerel mali verileri devral',
-      'finance_legacy_notice': 'Bu cihazda hesaba atanmamış mali veriler ve kontrol listeleri var. Otomatik olarak kullanılmazlar. Sahipliğinizi onaylayarak devralmak için giriş yapın.',
-      'finance_legacy_confirm': 'Bu cihazdaki önceki mali değerler, yardım rehberi ve başvuru kontrol listeleri size mi ait? Onayınızla bu hesaba atanırlar. Mevcut hesap değerleri önceliklidir; listeler birleştirilir. Başka bir ülkenin değerleri yeni para birimi olarak devralınmaz. Eski verilerin aslı cihazda kalır. Hiçbir şey yayımlanmaz.',
-      'benefit_ai_consent_body': 'Kişisel rehberlik için serbest metniniz, seçilen durum bilgileri, ülke ve mevcut çocuk yaşları ParentPeak sunucusu üzerinden Google Gemini’ye gönderilir. Gemini web aramasını kullanabilir. Tanınan bazı iletişim bilgileri kaldırılır; bu tam anonimleştirme değildir. Lütfen ad, adres veya sağlık ayrıntıları yazmayın. Bu bilgiler burada sohbet olarak kaydedilmez. Onay bu hesap veya misafir modu için geçerlidir. Onay olmadan genel yardım bilgileri kullanılabilir, ancak yapay zekâ isteği başlatılmaz.',
+      'finance_legacy_notice':
+          'Bu cihazda hesaba atanmamış mali veriler ve kontrol listeleri var. Otomatik olarak kullanılmazlar. Sahipliğinizi onaylayarak devralmak için giriş yapın.',
+      'finance_legacy_confirm':
+          'Bu cihazdaki önceki mali değerler, yardım rehberi ve başvuru kontrol listeleri size mi ait? Onayınızla bu hesaba atanırlar. Mevcut hesap değerleri önceliklidir; listeler birleştirilir. Başka bir ülkenin değerleri yeni para birimi olarak devralınmaz. Eski verilerin aslı cihazda kalır. Hiçbir şey yayımlanmaz.',
+      'benefit_ai_consent_body':
+          'Kişisel rehberlik için serbest metniniz, seçilen durum bilgileri, ülke ve mevcut çocuk yaşları ParentPeak sunucusu üzerinden Google Gemini’ye gönderilir. Gemini web aramasını kullanabilir. Tanınan bazı iletişim bilgileri kaldırılır; bu tam anonimleştirme değildir. Lütfen ad, adres veya sağlık ayrıntıları yazmayın. Bu bilgiler burada sohbet olarak kaydedilmez. Onay bu hesap veya misafir modu için geçerlidir. Onay olmadan genel yardım bilgileri kullanılabilir, ancak yapay zekâ isteği başlatılmaz.',
       'benefit_ai_consent_accept': 'Onayla ve yapay zekâyı kullan',
-      'benefit_ai_consent_failed': 'Onay kaydedilemedi. Yapay zekâ isteği başlatılmadı.',
-      'treasure_photo_consent_title': 'Fotoğraf yapay zekâyla analiz edilsin mi?',
+      'benefit_ai_consent_failed':
+          'Onay kaydedilemedi. Yapay zekâ isteği başlatılmadı.',
+      'treasure_photo_consent_title':
+          'Fotoğraf yapay zekâyla analiz edilsin mi?',
       'treasure_account_changed': 'Hesap değişti. Lütfen bu görünümü kapatın.',
       'treasure_legacy_title': 'Hesaba atanmamış yerel veriler',
-      'treasure_legacy_body': 'Yerel taslaklar, rezervasyon ve güvenlik işaretleri henüz bir hesaba ait değil. Sahipliği doğrulamak için giriş yapın.',
-      'treasure_legacy_confirm': 'Bu verilerin size ait olduğunu doğruluyor musunuz? Bu hesaba atanacaklar. Mevcut hesap taslağı önceliklidir. Orijinal veriler korunur; hiçbir şey yayımlanmaz.',
+      'treasure_legacy_body':
+          'Yerel taslaklar, rezervasyon ve güvenlik işaretleri henüz bir hesaba ait değil. Sahipliği doğrulamak için giriş yapın.',
+      'treasure_legacy_confirm':
+          'Bu verilerin size ait olduğunu doğruluyor musunuz? Bu hesaba atanacaklar. Mevcut hesap taslağı önceliklidir. Orijinal veriler korunur; hiçbir şey yayımlanmaz.',
       'treasure_legacy_claim': 'Sahipliği doğrula',
-      'treasure_storage_failed': 'Pazar verileri yüklenemedi veya kaydedilemedi. Lütfen tekrar deneyin.',
-      'treasure_reservation_offline': 'Pazar sunucusuna bağlantı olmadan rezervasyon yapılmadı. Lütfen çevrimiçi tekrar deneyin.',
-      'treasure_reserve_local_failed': 'Sunucu rezervasyonu onayladı, ancak yerel işaret kaydedilemedi. Yeniden rezervasyon yapmadan önce İlanlarım bölümünü kontrol edin.',
-      'treasure_cancel_local_failed': 'Sunucu iptali onayladı, ancak yerel işaret kaldırılamadı. Eski işaret hâlâ görünebilir.',
-      'treasure_upload_batch_failed': 'Tüm fotoğraflar yüklenemedi. Yüklenen fotoğraflar kaldırıldı; ilan gönderilmedi.',
-      'treasure_upload_cleanup_failed': 'Fotoğraf yükleme başarısız. İlan gönderilmedi, ancak bazı yüklenen fotoğraflar kaldırılamadı ve herkese açık kalabilir.',
-      'treasure_published_local_failed': 'Sunucu ilanı oluşturdu, ancak yerel veriler güncellenemedi. Lütfen İlanlarım bölümünü kontrol edin; yeniden yayımlamayın.',
-      'treasure_publish_uncertain': 'Oluşturma onaylanamadı. Yüklenen fotoğraflar herkese açık olabilir. Tekrar denemeden önce İlanlarım bölümünü kontrol edin.',
-      'treasure_publish_unavailable': 'Yayımlamak için giriş yapılmış bir hesap ve kullanılabilir pazar sunucusu gerekir. Fotoğraf yüklenmedi.',
+      'treasure_storage_failed':
+          'Pazar verileri yüklenemedi veya kaydedilemedi. Lütfen tekrar deneyin.',
+      'treasure_reservation_offline':
+          'Pazar sunucusuna bağlantı olmadan rezervasyon yapılmadı. Lütfen çevrimiçi tekrar deneyin.',
+      'treasure_reserve_local_failed':
+          'Sunucu rezervasyonu onayladı, ancak yerel işaret kaydedilemedi. Yeniden rezervasyon yapmadan önce İlanlarım bölümünü kontrol edin.',
+      'treasure_cancel_local_failed':
+          'Sunucu iptali onayladı, ancak yerel işaret kaldırılamadı. Eski işaret hâlâ görünebilir.',
+      'treasure_upload_batch_failed':
+          'Tüm fotoğraflar yüklenemedi. Yüklenen fotoğraflar kaldırıldı; ilan gönderilmedi.',
+      'treasure_upload_cleanup_failed':
+          'Fotoğraf yükleme başarısız. İlan gönderilmedi, ancak bazı yüklenen fotoğraflar kaldırılamadı ve herkese açık kalabilir.',
+      'treasure_published_local_failed':
+          'Sunucu ilanı oluşturdu, ancak yerel veriler güncellenemedi. Lütfen İlanlarım bölümünü kontrol edin; yeniden yayımlamayın.',
+      'treasure_publish_uncertain':
+          'Oluşturma onaylanamadı. Yüklenen fotoğraflar herkese açık olabilir. Tekrar denemeden önce İlanlarım bölümünü kontrol edin.',
+      'treasure_publish_unavailable':
+          'Yayımlamak için giriş yapılmış bir hesap ve kullanılabilir pazar sunucusu gerekir. Fotoğraf yüklenmedi.',
       'treasurePublishNow': 'Şimdi yayımla',
       'treasureSaveDraft': 'Taslağı kaydet',
-      'treasureDraftSaved': 'Taslak kaydedildi. Daha sonra devam edebilirsiniz.',
+      'treasureDraftSaved':
+          'Taslak kaydedildi. Daha sonra devam edebilirsiniz.',
       'treasureDraftRestored': 'Son taslağınız geri yüklendi.',
       'treasureUploadSuccess': 'Eşyanız artık görünür.',
       'treasureSelectForHandover': 'Teslim için seç',
       'treasureReserveCoffeeMode': 'Buluşmayı rezerve et',
-      'treasure_draft_images_missing': 'Taslak metni yüklendi, ancak önceki fotoğraflar artık mevcut değil. Lütfen yeniden ekleyin.',
-      'treasure_photos_public_info': 'Yayımlama sırasında fotoğraflar herkese açık yüklenir. Sonraki bir adım başarısız olsa bile erişilebilir kalabilirler. Kişileri, özel belgeleri veya adresleri göstermeyin.',
-      'treasure_photo_consent_body': 'Eşyanızla ilgili öneriler için bu fotoğraf ParentPeak sunucusu üzerinden Google Gemini’ye gönderilir. Görsel içerikler anonimleştirilmez. İnsanların, özel belgelerin veya görünür adreslerin olmadığı eşya fotoğrafları kullanın. Analiz isteğe bağlıdır; onay vermeden fotoğrafı tutabilir ve ilanı elle doldurabilirsiniz. Bu onay yalnızca hediye pazarındaki fotoğraf yapay zekâsı için geçerlidir ve bu hesaba kaydedilir. Fotoğrafı veya ilanı yayımlamaz.',
+      'treasure_draft_images_missing':
+          'Taslak metni yüklendi, ancak önceki fotoğraflar artık mevcut değil. Lütfen yeniden ekleyin.',
+      'treasure_photos_public_info':
+          'Yayımlama sırasında fotoğraflar herkese açık yüklenir. Sonraki bir adım başarısız olsa bile erişilebilir kalabilirler. Kişileri, özel belgeleri veya adresleri göstermeyin.',
+      'treasure_photo_consent_body':
+          'Eşyanızla ilgili öneriler için bu fotoğraf ParentPeak sunucusu üzerinden Google Gemini’ye gönderilir. Görsel içerikler anonimleştirilmez. İnsanların, özel belgelerin veya görünür adreslerin olmadığı eşya fotoğrafları kullanın. Analiz isteğe bağlıdır; onay vermeden fotoğrafı tutabilir ve ilanı elle doldurabilirsiniz. Bu onay yalnızca hediye pazarındaki fotoğraf yapay zekâsı için geçerlidir ve bu hesaba kaydedilir. Fotoğrafı veya ilanı yayımlamaz.',
       'treasure_photo_consent_accept': 'Onayla ve fotoğrafı analiz et',
-      'treasure_photo_consent_failed': 'Onay kaydedilemedi. Yapay zekâya fotoğraf gönderilmedi.',
-      'treasure_photo_analysis_failed': 'Fotoğraf analizi tamamlanamadı. Fotoğrafınız ve elle girdiğiniz bilgiler korunur.',
-      'family_hub_account_changed': 'Hesap değişti. Lütfen bu görünümü kapatın.',
+      'treasure_photo_consent_failed':
+          'Onay kaydedilemedi. Yapay zekâya fotoğraf gönderilmedi.',
+      'treasure_photo_analysis_failed':
+          'Fotoğraf analizi tamamlanamadı. Fotoğrafınız ve elle girdiğiniz bilgiler korunur.',
+      'family_hub_account_changed':
+          'Hesap değişti. Lütfen bu görünümü kapatın.',
       'family_hub_legacy_title': 'Yerel eski verileri devral',
-      'family_hub_legacy_notice': 'Bu cihazda hesaba atanmamış eski veriler var. Otomatik olarak kullanılmazlar. Sahipliğinizi onaylayarak devralmak için giriş yapın.',
-      'family_hub_legacy_confirm': 'Daha önce bu cihaz için kaydedilen çocuk dosyalarının (sağlık ve acil durum bilgileri dahil), alışveriş listelerinin, yapılacak işlerin ve mutfak alerjilerinin şu anda giriş yaptığım hesaba ait olduğunu onaylıyorum. Veriler yalnızca bu hesaba yerel olarak atanır. Mevcut hesap verileri korunur; hiçbir şey yayımlanmaz.',
+      'family_hub_legacy_notice':
+          'Bu cihazda hesaba atanmamış eski veriler var. Otomatik olarak kullanılmazlar. Sahipliğinizi onaylayarak devralmak için giriş yapın.',
+      'family_hub_legacy_confirm':
+          'Daha önce bu cihaz için kaydedilen çocuk dosyalarının (sağlık ve acil durum bilgileri dahil), alışveriş listelerinin, yapılacak işlerin ve mutfak alerjilerinin şu anda giriş yaptığım hesaba ait olduğunu onaylıyorum. Veriler yalnızca bu hesaba yerel olarak atanır. Mevcut hesap verileri korunur; hiçbir şey yayımlanmaz.',
       'family_hub_legacy_claim': 'Hesabıma ait – verileri devral',
-      'family_hub_legacy_failed': 'Eski veriler güvenli şekilde devralınamadı. Önceki veriler korunuyor.',
+      'family_hub_legacy_failed':
+          'Eski veriler güvenli şekilde devralınamadı. Önceki veriler korunuyor.',
       'family_hub_tab_shopping': 'Alışveriş',
       'family_hub_tab_todo': 'Yapılacaklar',
       'family_hub_tab_children': 'Çocuklar',
@@ -20442,79 +21606,123 @@ class AppStringsManager {
       'chat_consent_save_failed':
           'Onay kaydedilemedi. Yapay zeka isteği başlatılmadı. Lütfen yeniden dene.',
       'chat_legacy_title': 'Hesaba atanmamış yerel konu istatistiği',
-      'chat_legacy_body': 'Bu cihazda bir hesaba atanmamış eski konu istatistiği var. Yalnızca sana aitse devral. Devralma yereldir, yapay zekaya veri göndermez ve sohbet geçmişini aktarmaz. Orijinal veriler korunur.',
+      'chat_legacy_body':
+          'Bu cihazda bir hesaba atanmamış eski konu istatistiği var. Yalnızca sana aitse devral. Devralma yereldir, yapay zekaya veri göndermez ve sohbet geçmişini aktarmaz. Orijinal veriler korunur.',
       'chat_claim_action': 'Sahipliği onayla',
-      'chat_claim_failed': 'Konu istatistiği devralınamadı. Orijinal veriler korunur.',
-      'chat_topics_load_failed': 'Konu istatistiği yüklenemedi. Lütfen yeniden yükle; mevcut verilerin üzerine yazılmaz.',
-      'chat_topics_save_failed': 'Konu istatistiği kaydedilemedi. Değişiklik onaylanmadı; yazdığın metin korunur.',
-      'chat_memory_load_failed': 'Yapay zeka bellek bağlamı yüklenemedi. Lütfen bellek ayarlarında yeniden dene.',
+      'chat_claim_failed':
+          'Konu istatistiği devralınamadı. Orijinal veriler korunur.',
+      'chat_topics_load_failed':
+          'Konu istatistiği yüklenemedi. Lütfen yeniden yükle; mevcut verilerin üzerine yazılmaz.',
+      'chat_topics_save_failed':
+          'Konu istatistiği kaydedilemedi. Değişiklik onaylanmadı; yazdığın metin korunur.',
+      'chat_memory_load_failed':
+          'Yapay zeka bellek bağlamı yüklenemedi. Lütfen bellek ayarlarında yeniden dene.',
       'memory_consent_title': 'Yapay zeka belleği için ek onay',
-      'memory_consent_body': 'İsteğe bağlı: sağlık bilgileri dahil onaylanmış aile bilgileri, hesabınıza bağlı olarak ParentPeak sunucusunda saklanır ve ilgili sohbet isteklerinde Google Gemini’ye aktarılır. Yeni çocuk adları yalnızca bu cihazda kalır; yapay zeka ad ve doğum tarihi yerine tarafsız yer tutucular ve tamamlanmış yaş alır. Serbest metin hâlâ kişisel bilgi içerebilir. Eski özgün veriler korunur. Onay olmadan yeni bellek kaydı ve aktarımı engellenir; normal sohbet kendi ayrı onayıyla mümkündür. Kapatmak kullanımı durdurur ama mevcut verileri silmez. Gönderilmiş istekler geri alınamaz. Yerel veriler uygulama tarafından ayrıca şifrelenmez.',
+      'memory_consent_body':
+          'İsteğe bağlı: sağlık bilgileri dahil onaylanmış aile bilgileri, hesabınıza bağlı olarak ParentPeak sunucusunda saklanır ve ilgili sohbet isteklerinde Google Gemini’ye aktarılır. Yeni çocuk adları yalnızca bu cihazda kalır; yapay zeka ad ve doğum tarihi yerine tarafsız yer tutucular ve tamamlanmış yaş alır. Serbest metin hâlâ kişisel bilgi içerebilir. Eski özgün veriler korunur. Onay olmadan yeni bellek kaydı ve aktarımı engellenir; normal sohbet kendi ayrı onayıyla mümkündür. Kapatmak kullanımı durdurur ama mevcut verileri silmez. Gönderilmiş istekler geri alınamaz. Yerel veriler uygulama tarafından ayrıca şifrelenmez.',
       'memory_consent_accept': 'Saklamaya ve yapay zeka kullanımına izin ver',
-      'memory_operation_failed': 'Değişiklik tam olarak doğrulanmadı. Bellek ayarları yeniden kontrol ediliyor; lütfen tekrar dene.',
-      'memory_consent_required': 'Yeni veri kaydetmeden önce belleği ek onayla etkinleştir.',
+      'memory_operation_failed':
+          'Değişiklik tam olarak doğrulanmadı. Bellek ayarları yeniden kontrol ediliyor; lütfen tekrar dene.',
+      'memory_consent_required':
+          'Yeni veri kaydetmeden önce belleği ek onayla etkinleştir.',
       'memory_local_name': 'Görünen ad (yalnızca bu cihazda)',
-      'memory_name_save_failed': 'Tarafsız profil sunucuda kaydedildi, ancak yerel görünen ad doğrulanamadı. Liste yeniden yükleniyor; lütfen yinelenen kayıt oluşturma.',
+      'memory_name_save_failed':
+          'Tarafsız profil sunucuda kaydedildi, ancak yerel görünen ad doğrulanamadı. Liste yeniden yükleniyor; lütfen yinelenen kayıt oluşturma.',
       'memory_enable': 'Yapay zeka belleğini etkinleştir',
-      'memory_transfer_info': 'Yalnızca ek onayla: onaylanmış değerler sunucu üzerinden Google Gemini’ye aktarılır. Çocuk tanımları ve yaş en aza indirilir.',
-      'memory_storage_info': 'Mevcut özgün veriler sunucuda korunur. Kapatmak yeni kayıt ve yapay zeka kullanımını engeller, okumayı veya silmeyi değil. Yeni görünen adlar hesabınıza bağlı olarak yerel kalır; ek uygulama şifrelemesi yoktur.',
+      'memory_transfer_info':
+          'Yalnızca ek onayla: onaylanmış değerler sunucu üzerinden Google Gemini’ye aktarılır. Çocuk tanımları ve yaş en aza indirilir.',
+      'memory_storage_info':
+          'Mevcut özgün veriler sunucuda korunur. Kapatmak yeni kayıt ve yapay zeka kullanımını engeller, okumayı veya silmeyi değil. Yeni görünen adlar hesabınıza bağlı olarak yerel kalır; ek uygulama şifrelemesi yoktur.',
       'chat_request_failed': 'Yanıt yüklenemedi. Lütfen yeniden dene.',
       'chat_retry_later': 'Daha sonra tekrar deneyebilirsin.',
       'chat_always_here': 'Her zaman yanında',
       'chat_privacy_footer': 'Tanı koymaz · Google Gemini tarafından işleme',
       'chat_init_error': 'Hata: {error}',
       'chat_tip_message': '💡 İpucu: “{tip}”',
-      'chat_history_budget': 'Yapay zekâ en fazla son {rounds} konuşma turunu ve {characters} karakter geçmişi alır. Eski mesajlar burada görünmeye devam eder.',
-      'chat_daily_limit': 'Günlük {limit} yapay zekâ isteği sınırına ulaştın. Yarın tekrar sorabilirsin.',
-      'chat_provider_unavailable': 'Yapay zekâ danışmanlığı şu anda kullanılamıyor. Güvenilir bir kişisel yanıt mevcut değil. Lütfen daha sonra tekrar dene.',
+      'chat_history_budget':
+          'Yapay zekâ en fazla son {rounds} konuşma turunu ve {characters} karakter geçmişi alır. Eski mesajlar burada görünmeye devam eder.',
+      'chat_daily_limit':
+          'Günlük {limit} yapay zekâ isteği sınırına ulaştın. Yarın tekrar sorabilirsin.',
+      'chat_provider_unavailable':
+          'Yapay zekâ danışmanlığı şu anda kullanılamıyor. Güvenilir bir kişisel yanıt mevcut değil. Lütfen daha sonra tekrar dene.',
       'chat_provider_authorization': 'Hizmet bu isteğe izin vermedi.',
       'chat_provider_quota': 'Hizmetin kotasına şu anda ulaşıldı.',
       'chat_provider_network': 'Bağlantı başarısız oldu veya çok uzun sürdü.',
-      'chat_provider_unavailable_reason': 'Hizmet geçerli bir yanıt sağlayamadı.',
-      'chat_system_prompt': 'Sen çocuklarla (0–18 yaş) günlük yaşam için sıcak ve yargılamayan ParentPeak ebeveyn koçusun. İstenen dilde, kişisel ve ders vermeden yanıtla.\nTemeller: Hüther – bağ ve özerklik, baskı/korku yerine coşku ve duygusal katılım; çocuklar öğütle değil örneklerle öğrenir. Çocukları beklentilerin nesnesi yapma. Çözülebilir engelleri kaldırma; ebeveyn çocuğun yanında dursun. Gerçek ihtiyaçlarla maddi istekleri ayır. Ödül/ceza yerine ilişki, varlık ve örnek olma. Rosenberg NVC/GfK: gözlem, duygu, ihtiyaç, rica; bugün kullanılacak somut cümleler. Duygu/ihtiyaçları gerçek gibi değil, ihtimal olarak yansıt. Juul: çocuklar tam bireylerdir, sevgiyle liderlik, itaat yerine öz sorumluluk.\nUygun isteğe bağlı yaklaşımlar: Montessori – kendi hızında, hazırlanmış ortam, bağımsızlık; Reggio – çoklu ifade, yargı yerine gözlem, süreç/merak; Freinet – gerçek deneyimler, özgür ifade, öz karar; Froebel – oyun/doğa/yaratıcılık ile öğrenme; durum yaklaşımı – katı müfredat yerine güncel yaşam.\nKısa ve somut, en fazla 8–10 satır, hemen uygulanacak küçük adımlar. Stratejiden önce empati; ahlak dersi, yargı veya uzun metin yok. Tanı/ilaç verme; sınırları dürüstçe belirt. Acil tehlikede doğrudan insani yardım öner; doğrulanmamış ülkeye özgü telefon numarası uydurma. Güncel koçluk yönergesinin soru kuralına uy; her zaman fazladan soru ekleme.',
-      'chat_coaching_prompt': 'Ebeveynin sorusu:\n{message}\n\nTutum: NVC/GfK, Hüther ve Juul doğrultusunda empatik, sıcak, yargısız. Hüther bakışı: bağ mı özerklik mi? Baskıdan önce ilişki, öğüt yerine örnek, öğrenme coşkusu; ebeveynler her engeli kaldırmak yerine çocuğun yanında durur.\nBiçim: önce 1–2 empatik cümle; duygu/ihtiyaçları yalnızca ihtimal olarak belirt. Kısa bir gelişim/bağlanma açıklaması, tam BİR NVC adımı ve 1–2 küçük seçenek. {followUp}\nOdak: {focus}\nDiğer pedagojik yaklaşımlar yalnızca uygun olduğunda İSTEĞE BAĞLI, teorik ders vermeden.\nAhlak dersi, boş söz, erken yargı veya “Yapmalısın” yok. Öz suçlamayı empatiyle duygu/ihtiyaca çevir. Somut yaş, zaman ve durum bilgilerini koru. Kısa paragraflar, en fazla 3–4 cümle; yıldız/Markdown yok, sakin profesyonel üslup, 0–2 emoji, basit listeler olabilir. {continuation}\nBağlam bilgileri: {context}\nSeçili geçmiş: {history}',
-      'chat_focus_anger': 'Birlikte düzenleme, utandırmadan net sınırlar ve kısa yatıştırma; Juul: zorla itaat yerine saygılı liderlik.',
-      'chat_focus_siblings': 'Cezasız ayırma, duyguları yansıtma, adil yeniden yakınlaşma/telafi; Juul: iki çocuğu da tam bireyler olarak ciddiye alma.',
-      'chat_focus_sleep': 'Gerçekçi rahatlama, küçük rutinler ve enerji tasarruflu adımlar; Juul: samimi, saygılı destek.',
-      'chat_focus_media': 'Önceden anlaşılmış net sınırlar ve güç mücadelesi yerine işbirlikçi geçişler; Juul: saygılı liderlik.',
-      'chat_focus_school': 'Çocuğa uygun düzen ve uzmanlarla işbirliği; durum yaklaşımı: çocuğun yaşamı; Juul: itaat yerine işbirliği.',
-      'chat_focus_learning': 'Montessori: “Kendim yapmama yardım et”, ortamı hazırla, günlük işleri öğrenme fırsatı yap; durum yaklaşımı: güncel yaşam.',
-      'chat_focus_play': 'Froebel: oyunla öğrenme; Reggio: çoklu ifade, sonuçtan önce süreç; Freinet: gerçek günlük deneyimler.',
-      'chat_focus_general': 'Hemen kullanılabilecek bağlanma odaklı rahatlama; Montessori, Reggio, Froebel, Freinet, Juul veya durum yaklaşımından uygun isteğe bağlı bakış.',
-      'chat_ask_one': 'Sonunda bir sonraki yararlı adım için tam BİR kısa ve açık soru sor.',
-      'chat_ask_none': 'Takip sorusu sorma; bilgiler somut adımlar için yeterli.',
+      'chat_provider_unavailable_reason':
+          'Hizmet geçerli bir yanıt sağlayamadı.',
+      'chat_system_prompt':
+          'Sen çocuklarla (0–18 yaş) günlük yaşam için sıcak ve yargılamayan ParentPeak ebeveyn koçusun. İstenen dilde, kişisel ve ders vermeden yanıtla.\nTemeller: Hüther – bağ ve özerklik, baskı/korku yerine coşku ve duygusal katılım; çocuklar öğütle değil örneklerle öğrenir. Çocukları beklentilerin nesnesi yapma. Çözülebilir engelleri kaldırma; ebeveyn çocuğun yanında dursun. Gerçek ihtiyaçlarla maddi istekleri ayır. Ödül/ceza yerine ilişki, varlık ve örnek olma. Rosenberg NVC/GfK: gözlem, duygu, ihtiyaç, rica; bugün kullanılacak somut cümleler. Duygu/ihtiyaçları gerçek gibi değil, ihtimal olarak yansıt. Juul: çocuklar tam bireylerdir, sevgiyle liderlik, itaat yerine öz sorumluluk.\nUygun isteğe bağlı yaklaşımlar: Montessori – kendi hızında, hazırlanmış ortam, bağımsızlık; Reggio – çoklu ifade, yargı yerine gözlem, süreç/merak; Freinet – gerçek deneyimler, özgür ifade, öz karar; Froebel – oyun/doğa/yaratıcılık ile öğrenme; durum yaklaşımı – katı müfredat yerine güncel yaşam.\nKısa ve somut, en fazla 8–10 satır, hemen uygulanacak küçük adımlar. Stratejiden önce empati; ahlak dersi, yargı veya uzun metin yok. Tanı/ilaç verme; sınırları dürüstçe belirt. Acil tehlikede doğrudan insani yardım öner; doğrulanmamış ülkeye özgü telefon numarası uydurma. Güncel koçluk yönergesinin soru kuralına uy; her zaman fazladan soru ekleme.',
+      'chat_coaching_prompt':
+          'Ebeveynin sorusu:\n{message}\n\nTutum: NVC/GfK, Hüther ve Juul doğrultusunda empatik, sıcak, yargısız. Hüther bakışı: bağ mı özerklik mi? Baskıdan önce ilişki, öğüt yerine örnek, öğrenme coşkusu; ebeveynler her engeli kaldırmak yerine çocuğun yanında durur.\nBiçim: önce 1–2 empatik cümle; duygu/ihtiyaçları yalnızca ihtimal olarak belirt. Kısa bir gelişim/bağlanma açıklaması, tam BİR NVC adımı ve 1–2 küçük seçenek. {followUp}\nOdak: {focus}\nDiğer pedagojik yaklaşımlar yalnızca uygun olduğunda İSTEĞE BAĞLI, teorik ders vermeden.\nAhlak dersi, boş söz, erken yargı veya “Yapmalısın” yok. Öz suçlamayı empatiyle duygu/ihtiyaca çevir. Somut yaş, zaman ve durum bilgilerini koru. Kısa paragraflar, en fazla 3–4 cümle; yıldız/Markdown yok, sakin profesyonel üslup, 0–2 emoji, basit listeler olabilir. {continuation}\nBağlam bilgileri: {context}\nSeçili geçmiş: {history}',
+      'chat_focus_anger':
+          'Birlikte düzenleme, utandırmadan net sınırlar ve kısa yatıştırma; Juul: zorla itaat yerine saygılı liderlik.',
+      'chat_focus_siblings':
+          'Cezasız ayırma, duyguları yansıtma, adil yeniden yakınlaşma/telafi; Juul: iki çocuğu da tam bireyler olarak ciddiye alma.',
+      'chat_focus_sleep':
+          'Gerçekçi rahatlama, küçük rutinler ve enerji tasarruflu adımlar; Juul: samimi, saygılı destek.',
+      'chat_focus_media':
+          'Önceden anlaşılmış net sınırlar ve güç mücadelesi yerine işbirlikçi geçişler; Juul: saygılı liderlik.',
+      'chat_focus_school':
+          'Çocuğa uygun düzen ve uzmanlarla işbirliği; durum yaklaşımı: çocuğun yaşamı; Juul: itaat yerine işbirliği.',
+      'chat_focus_learning':
+          'Montessori: “Kendim yapmama yardım et”, ortamı hazırla, günlük işleri öğrenme fırsatı yap; durum yaklaşımı: güncel yaşam.',
+      'chat_focus_play':
+          'Froebel: oyunla öğrenme; Reggio: çoklu ifade, sonuçtan önce süreç; Freinet: gerçek günlük deneyimler.',
+      'chat_focus_general':
+          'Hemen kullanılabilecek bağlanma odaklı rahatlama; Montessori, Reggio, Froebel, Freinet, Juul veya durum yaklaşımından uygun isteğe bağlı bakış.',
+      'chat_ask_one':
+          'Sonunda bir sonraki yararlı adım için tam BİR kısa ve açık soru sor.',
+      'chat_ask_none':
+          'Takip sorusu sorma; bilgiler somut adımlar için yeterli.',
       'chat_new_context': 'Önceki geçmişi uydurmadan güncel soruda kal.',
-      'chat_continue_context': 'Seçili geçmişteki ilgili örüntü ve yaşlara bağlan; gerçek isimler uydurma.',
+      'chat_continue_context':
+          'Seçili geçmişteki ilgili örüntü ve yaşlara bağlan; gerçek isimler uydurma.',
       'chat_no_context': 'yok',
-      'chat_quality_retry': 'Daha somut ve samimi yanıtla: önce empati, bir NVC/GfK adımı, 1–2 küçük seçenek, duygu/ihtiyaçları ihtimal olarak belirt. Odak: {focus} En fazla 3–4 cümlelik kısa paragraflar, uzun metin, savunmacı söz veya “Yapmalısın” yok. {followUp}',
-      'chat_context_retry': 'Yeniden yanıtla ve şu önemli bilgileri görünür biçimde koru: {context}. Empatik, somut ve günlük yaşama uygun kal.',
-      'chat_boundary_retry': 'Genel bir sınır cümlesi yerine ebeveynlerin günlük yaşamına somut, empatik ve çözüm odaklı yanıt ver.',
-      'chat_repair_prompt': 'Şiddetsiz, bağlanma odaklı NVC/GfK ile yeniden yaz. Bağırma, tehdit veya ceza yok. Üç günlük adım ve iki örnek cümle ver. Odak: {focus}',
-      'chat_boundary_topic': 'Pedagojik ebeveyn desteği sunuyorum. Aile veya çocuk yetiştirme sorunu anlatabilirsin.',
-      'chat_boundary_violence': 'İncitici veya şiddeti destekleyen yönergeler vermem. Şiddetsiz bir yaklaşımda destek olabilirim: gözlem, duygu, ihtiyaç ve somut rica.',
-      'chat_boundary_diagnosis': 'Tanı koyamam. Günlük yaşamda bağlanma odaklı destek verebilirim. Tanısal değerlendirme için çocuk doktoruna veya çocuk ve ergen psikoloğuna başvur.',
-      'chat_boundary_medical': 'Tıbbi veya ilaç tavsiyesi vermem. Bir doktora ya da yerel nöbetçi sağlık hizmetine başvur.',
-      'chat_medical_de': 'Almanya’da mesai dışı sağlık hizmetine 116117 üzerinden ulaşabilirsin.',
-      'chat_fallback_label': 'Genel, özenle seçilmiş rehberlik: yapay zekâ yanıtı uygun değildi. Bu güvenilir biçimde kişiselleştirilmiş bir yanıt değildir.',
-      'chat_fallback_sleep': 'Akşam uyaranları azaltabilir, kitap ve şarkı arasında küçük bir seçim sunabilir ve sakin bir kapanış cümlesini tekrarlayabilirsin. Örneğin: “Uyanık kalmak istiyorsun. Şimdi sakinleşmene eşlik ediyorum.” Hangi geçiş daha zor?',
-      'chat_fallback_anger': 'Önce güvenliği sağla, sonra duyguları ihtimal olarak yansıt ve bir alternatif sun. Örneğin: “Öfkeni görüyorum. Kimsenin incinmesine izin vermem. Ayağını yere vurabilir veya yastığa bastırabilirsin.” Hemen öncesinde ne oluyor?',
-      'chat_fallback_general': 'Yalnız değilsin. İsim veya tam doğum günü vermeden somut durumu ve tamamlanmış yaşı anlatabilirsin. Gözlem, duygu, ihtiyaç ve rica günlük adımlara dönüşebilir.',
+      'chat_quality_retry':
+          'Daha somut ve samimi yanıtla: önce empati, bir NVC/GfK adımı, 1–2 küçük seçenek, duygu/ihtiyaçları ihtimal olarak belirt. Odak: {focus} En fazla 3–4 cümlelik kısa paragraflar, uzun metin, savunmacı söz veya “Yapmalısın” yok. {followUp}',
+      'chat_context_retry':
+          'Yeniden yanıtla ve şu önemli bilgileri görünür biçimde koru: {context}. Empatik, somut ve günlük yaşama uygun kal.',
+      'chat_boundary_retry':
+          'Genel bir sınır cümlesi yerine ebeveynlerin günlük yaşamına somut, empatik ve çözüm odaklı yanıt ver.',
+      'chat_repair_prompt':
+          'Şiddetsiz, bağlanma odaklı NVC/GfK ile yeniden yaz. Bağırma, tehdit veya ceza yok. Üç günlük adım ve iki örnek cümle ver. Odak: {focus}',
+      'chat_boundary_topic':
+          'Pedagojik ebeveyn desteği sunuyorum. Aile veya çocuk yetiştirme sorunu anlatabilirsin.',
+      'chat_boundary_violence':
+          'İncitici veya şiddeti destekleyen yönergeler vermem. Şiddetsiz bir yaklaşımda destek olabilirim: gözlem, duygu, ihtiyaç ve somut rica.',
+      'chat_boundary_diagnosis':
+          'Tanı koyamam. Günlük yaşamda bağlanma odaklı destek verebilirim. Tanısal değerlendirme için çocuk doktoruna veya çocuk ve ergen psikoloğuna başvur.',
+      'chat_boundary_medical':
+          'Tıbbi veya ilaç tavsiyesi vermem. Bir doktora ya da yerel nöbetçi sağlık hizmetine başvur.',
+      'chat_medical_de':
+          'Almanya’da mesai dışı sağlık hizmetine 116117 üzerinden ulaşabilirsin.',
+      'chat_fallback_label':
+          'Genel, özenle seçilmiş rehberlik: yapay zekâ yanıtı uygun değildi. Bu güvenilir biçimde kişiselleştirilmiş bir yanıt değildir.',
+      'chat_fallback_sleep':
+          'Akşam uyaranları azaltabilir, kitap ve şarkı arasında küçük bir seçim sunabilir ve sakin bir kapanış cümlesini tekrarlayabilirsin. Örneğin: “Uyanık kalmak istiyorsun. Şimdi sakinleşmene eşlik ediyorum.” Hangi geçiş daha zor?',
+      'chat_fallback_anger':
+          'Önce güvenliği sağla, sonra duyguları ihtimal olarak yansıt ve bir alternatif sun. Örneğin: “Öfkeni görüyorum. Kimsenin incinmesine izin vermem. Ayağını yere vurabilir veya yastığa bastırabilirsin.” Hemen öncesinde ne oluyor?',
+      'chat_fallback_general':
+          'Yalnız değilsin. İsim veya tam doğum günü vermeden somut durumu ve tamamlanmış yaşı anlatabilirsin. Gözlem, duygu, ihtiyaç ve rica günlük adımlara dönüşebilir.',
       'memory_title': 'Yapay zekâ hafızası ve çocuklar',
       'memory_add_child': 'Çocuk ekle',
       'memory_edit_child': 'Çocuk profilini düzenle',
       'memory_name_required': 'Lütfen yerel bir isim gir.',
       'memory_gender': 'Cinsiyet (isteğe bağlı)',
       'memory_delete_title': 'Çocuk profili silinsin mi?',
-      'memory_delete_body': '{name} hakkında kaydedilmiş tüm yapay zekâ bilgileri silinecek.',
+      'memory_delete_body':
+          '{name} hakkında kaydedilmiş tüm yapay zekâ bilgileri silinecek.',
       'memory_empty_info': 'Henüz kaydedilmiş bilgi yok.',
       'memory_load_failed': 'Veriler yüklenemedi. Lütfen yeniden dene.',
       'memory_children': 'Çocuk profilleri',
       'memory_no_children': 'Henüz çocuk profili yok.',
       'memory_none_confirmed': 'Onaylanmış bilgi yok',
       'memory_confirmed_count': '{count} onaylanmış bilgi',
-      'chat_tip_age_known': 'Çocuk {age} yaşını tamamlamıştır. Örnekleri buna göre uyarla.',
+      'chat_tip_age_known':
+          'Çocuk {age} yaşını tamamlamıştır. Örnekleri buna göre uyarla.',
       'chat_tip_age_unknown': 'Yaş bilinmiyor. Bir yaş uydurma; gerekirse sor.',
-      'chat_tip_prompt': 'Ebeveynler bu ipucunu daha iyi anlamak istiyor:\n"{tip}"\n{ageContext}\nÖnemini, üç somut günlük durumu ve bugün için bir alıştırmayı kısaca açıkla. Pratik, şiddetsiz, en fazla 12 satır.',
+      'chat_tip_prompt':
+          'Ebeveynler bu ipucunu daha iyi anlamak istiyor:\n"{tip}"\n{ageContext}\nÖnemini, üç somut günlük durumu ve bugün için bir alıştırmayı kısaca açıkla. Pratik, şiddetsiz, en fazla 12 satır.',
       'chat_insight_autonomy': 'Özerklik dönemi',
       'chat_insight_sleep': 'Uyku',
       'chat_insight_conflicts': 'Çatışmalar',
@@ -20571,25 +21779,36 @@ class AppStringsManager {
       'treasureCategoryBooks': 'Kitaplar',
       'treasureCategoryEquipment': 'Ekipman',
       'treasureDefaultTitle': 'Kırmızı denge bisikleti',
-      'treasure_created_archived': 'İlanın kaydedildi, ancak sunucu tarafından arşivlendi. Pazarda mevcut değil. “İlanlarım” bölümünü kontrol et.',
-      'treasure_created_not_available': 'İlanın kaydedildi, ancak kullanılabilirliği doğrulanmadı. “İlanlarım” bölümünü kontrol et.',
-      'treasure_created_local_failed': 'Sunucu ilanı kaydetti, ancak kullanılabilirliğini doğrulamadı. Yerel takip işlemi başarısız oldu; fotoğraflar korunuyor. Yeniden denemeden önce “İlanlarım” bölümünü kontrol et.',
+      'treasure_created_archived':
+          'İlanın kaydedildi, ancak sunucu tarafından arşivlendi. Pazarda mevcut değil. “İlanlarım” bölümünü kontrol et.',
+      'treasure_created_not_available':
+          'İlanın kaydedildi, ancak kullanılabilirliği doğrulanmadı. “İlanlarım” bölümünü kontrol et.',
+      'treasure_created_local_failed':
+          'Sunucu ilanı kaydetti, ancak kullanılabilirliğini doğrulamadı. Yerel takip işlemi başarısız oldu; fotoğraflar korunuyor. Yeniden denemeden önce “İlanlarım” bölümünü kontrol et.',
       'treasurePhotoAnalyzing': 'Fotoğraf analiz ediliyor...',
       'treasureDefaultColor': 'Kırmızı',
       'treasureDefaultSizeAge': '2-4 yaş',
       'treasureNeutralColor': 'Nötr',
       'treasureNoteEditable': 'Not eklendi. Düzenleyebilirsin.',
-      'treasureNoteSuggestionHint': 'Düzenlenebilir bir metin şablonu ekler ve mevcut notunun yerine geçer. Ses kaydı yapılmaz.',
+      'treasureNoteSuggestionHint':
+          'Düzenlenebilir bir metin şablonu ekler ve mevcut notunun yerine geçer. Ses kaydı yapılmaz.',
       'treasureInsertNoteSuggestion': 'Metin önerisi ekle',
-      'treasureNoteSuggestion': '{title}, {sizeAge}. Teslimatla ilgili ek bilgileri buraya ekleyebilirsin.',
-      'treasureDiscoveryInvite': 'Yakınında daha fazla ürün bulmak için arkadaşlarını davet et veya kendi ilanlarını paylaş.',
-      'treasureDiscoveryScopeInvite': 'Mevcut kapsam: {radius}. Yakınında daha fazla ürün bulmak için arkadaşlarını davet et.',
-      'treasure_location_required': 'Yakınındaki ilanlar için bir konum gerekli.',
-      'treasure_market_unavailable': 'Pazar şu anda kullanılamıyor. İlanın yayımlanmadı.',
-      'treasure_signin_required': 'Pazarda bu işlemi yapmak için lütfen giriş yap.',
+      'treasureNoteSuggestion':
+          '{title}, {sizeAge}. Teslimatla ilgili ek bilgileri buraya ekleyebilirsin.',
+      'treasureDiscoveryInvite':
+          'Yakınında daha fazla ürün bulmak için arkadaşlarını davet et veya kendi ilanlarını paylaş.',
+      'treasureDiscoveryScopeInvite':
+          'Mevcut kapsam: {radius}. Yakınında daha fazla ürün bulmak için arkadaşlarını davet et.',
+      'treasure_location_required':
+          'Yakınındaki ilanlar için bir konum gerekli.',
+      'treasure_market_unavailable':
+          'Pazar şu anda kullanılamıyor. İlanın yayımlanmadı.',
+      'treasure_signin_required':
+          'Pazarda bu işlemi yapmak için lütfen giriş yap.',
       'treasureCategoryOther': 'Diğer',
       'treasureShareRadiusLabel': 'Yayın yarıçapı',
-      'treasureShareRadiusHelper': 'Ailelerin ilanını hangi çevrede görebileceğini seç. Hesaplama kabaca yuvarlanmış konumları kullanır ve yaklaşık değer verir; en fazla 25 km.',
+      'treasureShareRadiusHelper':
+          'Ailelerin ilanını hangi çevrede görebileceğini seç. Hesaplama kabaca yuvarlanmış konumları kullanır ve yaklaşık değer verir; en fazla 25 km.',
       'treasureShareRadiusKm': 'Yaklaşık {radius} km çevre',
       'treasureDistanceApproximate': 'Yaklaşık {distance} uzakta',
       'treasureDistanceUnknown': 'Mesafe bilinmiyor',
