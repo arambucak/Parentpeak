@@ -176,7 +176,12 @@ void main() {
 
   testWidgets('UTC community occurrence renders local time and Berlin date',
       (tester) async {
-    final utc = DateTime.utc(2026, 10, 14, 8);
+    // Zukünftiger UTC-Zeitpunkt (08:00 UTC), damit das Event nicht als
+    // vergangen aus dem Feed gefiltert wird. Datum relativ zu "jetzt" statt
+    // hart kodiert — sonst kippt der Test an der Tagesgrenze.
+    final nowUtc = DateTime.now().toUtc();
+    final utc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day, 8)
+        .add(const Duration(days: 3));
     final local = utc.toLocal();
     final event = MeetupEvent.fromJson({
       ..._event('UTC picnic').toJson(),
@@ -193,9 +198,12 @@ void main() {
         '${local.minute.toString().padLeft(2, '0')}';
     expect(find.text('$date  $time'), findsOneWidget);
     if (Platform.environment['TZ'] == 'Europe/Berlin') {
-      expect(local.timeZoneOffset, const Duration(hours: 2));
-      expect(find.text('14.10.2026  10:00'), findsOneWidget);
-      expect(find.text('14.10.2026  08:00'), findsNothing);
+      // Oktober: Berlin ist UTC+2 (Sommerzeit bis letzten Sonntag im Okt.),
+      // sonst UTC+1. Statt eines festen Datums die lokale Stunde prüfen.
+      final expectedHour =
+          local.timeZoneOffset.inHours == 2 ? '10:00' : '09:00';
+      expect(find.text('$date  $expectedHour'), findsOneWidget);
+      expect(find.text('$date  08:00'), findsNothing);
     }
     expect(event.eventDate.isUtc, isTrue);
     expect(event.eventDate, utc);
