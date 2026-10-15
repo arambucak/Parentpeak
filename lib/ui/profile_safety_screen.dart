@@ -109,11 +109,17 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
 
   void _accountUpdated() {
     final next = _accounts.ticket;
-    if (next.scope != _session.scope || next.generation != _session.generation) {
+    if (next.scope != _session.scope ||
+        next.generation != _session.generation) {
       _session = next;
       _avatarRevision++;
-      setState(() { _children = []; _avatarUrl = null; _avatarVersion = null;
-        _avatarBusy = false; _childrenFailed = false; });
+      setState(() {
+        _children = [];
+        _avatarUrl = null;
+        _avatarVersion = null;
+        _avatarBusy = false;
+        _childrenFailed = false;
+      });
       _loadAvatar();
     }
     _loadChildren();
@@ -233,23 +239,31 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     final ticket = _accounts.ticket;
     final request = ++_childrenRequest;
     try {
-    final data = await _accounts.read(ticket);
-    final saved = List<String>.from(data[ProfileAccountStore.childrenKey] ?? []);
-    final children = <_ChildInfo>[];
-    for (final raw in saved) {
-      final parts = raw.split('|');
-      if (parts.length >= 2) {
-        children.add(_ChildInfo(name: parts[0], age: parts[1]));
+      final data = await _accounts.read(ticket);
+      final saved =
+          List<String>.from(data[ProfileAccountStore.childrenKey] ?? []);
+      final children = <_ChildInfo>[];
+      for (final raw in saved) {
+        final parts = raw.split('|');
+        if (parts.length >= 2) {
+          children.add(_ChildInfo(name: parts[0], age: parts[1]));
+        }
       }
-    }
-    if (mounted && request == _childrenRequest && _accounts.isCurrent(ticket)) {
-      setState(() { _children = children; _childrenFailed = false; });
-    }
+      if (mounted &&
+          request == _childrenRequest &&
+          _accounts.isCurrent(ticket)) {
+        setState(() {
+          _children = children;
+          _childrenFailed = false;
+        });
+      }
     } on ProfileAccountChanged {
       // A newer account load owns the UI.
     } catch (error) {
       debugPrint('Account children load failed: $error');
-      if (mounted && request == _childrenRequest && _accounts.isCurrent(ticket)) {
+      if (mounted &&
+          request == _childrenRequest &&
+          _accounts.isCurrent(ticket)) {
         setState(() => _childrenFailed = true);
       }
     }
@@ -261,7 +275,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (result == null || !mounted || !_accounts.isCurrent(ticket)) return;
     try {
       await _accounts.update(ticket, (data) {
-        final saved = List<String>.from(data[ProfileAccountStore.childrenKey] ?? []);
+        final saved =
+            List<String>.from(data[ProfileAccountStore.childrenKey] ?? []);
         saved.add('${result.name}|${result.age}');
         data[ProfileAccountStore.childrenKey] = saved;
       });
@@ -272,7 +287,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       debugPrint('Account child save failed: $error');
       if (mounted && _accounts.isCurrent(ticket)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('profile_account_failed'))));
+            SnackBar(content: Text(_t('profile_account_failed'))));
       }
     }
   }
@@ -429,25 +444,28 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(24),
                               child: _avatarBusy
-                                ? const Center(
-                                    child: CircularProgressIndicator(),
-                                  )
-                                : avatarUrl != null
-                                    ? Image.network(
-                                        avatarUrl,
-                                        fit: BoxFit.cover,
-                                        width: 102,
-                                        height: 102,
-                                      webHtmlElementStrategy:
-                                        WebHtmlElementStrategy.prefer,
-                                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) =>
-                                          wasSynchronouslyLoaded || frame != null
-                                            ? child
-                                            : avatarFallback,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            avatarFallback,
-                                      )
-                                    : avatarFallback,
+                                  ? const Center(
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : avatarUrl != null
+                                      ? Image.network(
+                                          avatarUrl,
+                                          fit: BoxFit.cover,
+                                          width: 102,
+                                          height: 102,
+                                          webHtmlElementStrategy:
+                                              WebHtmlElementStrategy.prefer,
+                                          frameBuilder: (context, child, frame,
+                                                  wasSynchronouslyLoaded) =>
+                                              wasSynchronouslyLoaded ||
+                                                      frame != null
+                                                  ? child
+                                                  : avatarFallback,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  avatarFallback,
+                                        )
+                                      : avatarFallback,
                             ),
                           ),
                         ),
@@ -459,9 +477,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                             onPressed: _avatarBusy ? null : _chooseAvatarSource,
                             iconSize: 17,
                             style: IconButton.styleFrom(
-                              backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHigh,
                               foregroundColor: theme.colorScheme.primary,
-                              side: BorderSide(color: theme.colorScheme.outlineVariant),
+                              side: BorderSide(
+                                  color: theme.colorScheme.outlineVariant),
                               minimumSize: const Size(40, 40),
                               padding: EdgeInsets.zero,
                             ),
@@ -578,11 +598,15 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     ),
                   )),
               const SizedBox(height: 10),
-              ProfileLegacyClaim(domain: ProfileLegacyDomain.children, store: _accounts),
-              ProfileLegacyClaim(domain: ProfileLegacyDomain.onboarding, store: _accounts),
-              ProfileLegacyClaim(domain: ProfileLegacyDomain.location, store: _accounts),
+              ProfileLegacyClaim(
+                  domain: ProfileLegacyDomain.children, store: _accounts),
+              ProfileLegacyClaim(
+                  domain: ProfileLegacyDomain.onboarding, store: _accounts),
+              ProfileLegacyClaim(
+                  domain: ProfileLegacyDomain.location, store: _accounts),
               if (_childrenFailed)
-                TextButton(onPressed: _loadChildren,
+                TextButton(
+                    onPressed: _loadChildren,
                     child: Text(_t('profile_account_failed'))),
               if (_children.isEmpty && !_childrenFailed)
                 Container(
@@ -1081,10 +1105,13 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
 
   // ─── Sprach-Auswahl ─────────────────────────────────────────────────────────
 
-  static const _allLanguages = AppLanguages.supported;
+  // Picker shows only fully translated languages; the full list is still used
+  // for resolving a previously saved language label.
+  static final _allLanguages = AppLanguages.launchReady;
 
   String _getLanguageLabel(String code) {
-    final match = _allLanguages.where((l) => l.code == code).firstOrNull;
+    final match =
+        AppLanguages.supported.where((l) => l.code == code).firstOrNull;
     return match?.nativeName ?? code;
   }
 
@@ -1197,8 +1224,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 const Icon(Icons.business_rounded, size: 22),
                 const SizedBox(width: 10),
                 Text(_t('profile_imprint'),
-                    style:
-                        const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
               Text(_t('profile_legal_info'),
@@ -1285,8 +1312,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 const Text('\u{1F916}', style: TextStyle(fontSize: 22)),
                 const SizedBox(width: 10),
                 Text(_t('profile_ai_notice'),
-                    style:
-                        const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
               ]),
               const SizedBox(height: 16),
               const Text(
@@ -1405,8 +1432,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       ),
     );
     ctrl.dispose();
-    if (!mounted || !_accounts.isCurrent(ticket) ||
-        newName == null || newName.isEmpty || newName == current) {
+    if (!mounted ||
+        !_accounts.isCurrent(ticket) ||
+        newName == null ||
+        newName.isEmpty ||
+        newName == current) {
       return;
     }
     final messenger = ScaffoldMessenger.of(context);
@@ -1418,7 +1448,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     } catch (error) {
       debugPrint('Account display name update failed: $error');
       if (mounted && _accounts.isCurrent(ticket)) {
-        messenger.showSnackBar(SnackBar(content: Text(_t('profile_account_failed'))));
+        messenger.showSnackBar(
+            SnackBar(content: Text(_t('profile_account_failed'))));
       }
       return;
     }
@@ -1478,8 +1509,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       if (userId == null || userId.trim().isEmpty) {
         throw const ProfileExportSignInRequired();
       }
-      final localData =
-          await ProfileDataExportService(accounts: _accounts).collectLocalData(ticket);
+      final localData = await ProfileDataExportService(accounts: _accounts)
+          .collectLocalData(ticket);
       _accounts.require(ticket);
 
       final apiClient = BackendServiceFactory.createApiClient();
@@ -1492,7 +1523,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       }
       final serverExport = await apiClient
           .withRequestGuard(() => _accounts.require(ticket))
-          .getJson('/account/export-data?userId=${Uri.encodeQueryComponent(userId)}');
+          .getJson(
+              '/account/export-data?userId=${Uri.encodeQueryComponent(userId)}');
       if (serverExport is! Map<String, dynamic>) {
         throw const FormatException('Unerwartetes Exportformat');
       }
@@ -1521,7 +1553,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
           ]),
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFF16A34A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     } on ProfileExportSignInRequired {
@@ -1610,7 +1643,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
             ),
             const SizedBox(height: 16),
             Text(_t('profile_blocked_contacts'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
             if (blocked.isEmpty)
               Padding(

@@ -2,6 +2,77 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsFrExtra = <String, String>{
+  'chat_ask_none':
+      'Ne pose pas de question de suivi ; les informations suffisent pour des étapes concrètes.',
+  'chat_ask_one':
+      'Pose à la fin exactement UNE question courte et ouverte pour la prochaine étape utile.',
+  'chat_boundary_retry':
+      'Ne réponds pas par une formule de limite générale, mais de façon concrète, empathique et orientée vers des solutions pour le quotidien des parents.',
+  'chat_coaching_prompt':
+      'Demande du parent :\n{message}\n\nPosture : empathique, chaleureuse, sans jugement selon la CNV, Hüther et Juul. Lentille de Hüther : lien ou autonomie ? La relation avant la pression, l\'exemple plutôt que la leçon, l\'enthousiasme d\'apprendre ; les parents se tiennent à côté de l\'enfant au lieu de résoudre tous les obstacles.\nFormat : d\'abord 1 à 2 phrases empathiques ; les sentiments/besoins seulement comme hypothèse. Une courte lecture axée sur le développement et l\'attachement, exactement UNE étape de CNV, 1 à 2 petites options sous forme de proposition. {followUp}\nFocus : {focus}\nD\'autres approches pédagogiques seulement de façon OPTIONNELLE si pertinentes, sans exposé théorique.\nPas de leçon de morale, de formules toutes faites, de jugements hâtifs ni de « Tu dois ». Traduire avec empathie les reproches envers soi-même en sentiment/besoin. Conserver les indications concrètes d\'âge, de moment de la journée et de situation. Paragraphes courts, 3 à 4 phrases au maximum ; pas d\'astérisques/Markdown, ton calme et professionnel, 0 à 2 emojis, listes simples autorisées. {continuation}\nAncre de contexte : {context}\nContexte de l\'historique : {history}',
+  'chat_context_retry':
+      'Réponds à nouveau et reprends visiblement ces informations importantes : {context}. Reste empathique, concret et proche du quotidien.',
+  'chat_continue_context':
+      'Reprends les schémas pertinents et les indications d\'âge issus de l\'historique sélectionné ; n\'invente aucun nom réel.',
+  'chat_focus_anger':
+      'Co-régulation, limites claires sans humiliation et désescalade brève ; Juul : guider avec respect plutôt que d\'imposer l\'obéissance.',
+  'chat_focus_general':
+      'Soulagement immédiatement utilisable et axé sur l\'attachement ; en option, une lentille adaptée parmi Montessori, Reggio, Froebel, Freinet, Juul ou l\'approche situationnelle.',
+  'chat_focus_learning':
+      'Montessori : « Aide-moi à faire seul », préparer l\'environnement et voir les tâches du quotidien comme des occasions d\'apprendre ; approche situationnelle : le monde de vie actuel.',
+  'chat_focus_media':
+      'Des limites claires convenues à l\'avance et des transitions coopératives plutôt qu\'un rapport de force ; Juul : guider avec respect.',
+  'chat_focus_play':
+      'Froebel : le jeu comme apprentissage ; Reggio : de multiples formes d\'expression, le processus avant le résultat ; Freinet : de vraies expériences du quotidien.',
+  'chat_focus_school':
+      'Une structure adaptée à l\'enfant et une coopération avec les professionnels ; approche situationnelle : le monde de vie de l\'enfant ; Juul : coopération plutôt qu\'obéissance.',
+  'chat_focus_siblings':
+      'Séparer sans punir, refléter les sentiments, favoriser un rapprochement/une réparation équitable ; Juul : prendre les deux enfants pleinement au sérieux.',
+  'chat_focus_sleep':
+      'Un soulagement réaliste, de petits rituels et des étapes qui ménagent l\'énergie ; Juul : accompagner de façon authentique et respectueuse.',
+  'chat_new_context':
+      'Reste sur la demande actuelle, sans rétrospective inventée.',
+  'chat_no_context': 'aucun',
+  'chat_quality_retry':
+      'Réponds plus concrètement et de façon authentique : l\'empathie d\'abord, une étape de CNV, 1 à 2 petites options, les sentiments/besoins comme hypothèse. Focus : {focus} Des paragraphes courts de 3 à 4 phrases au maximum, pas de mur de texte, de formule de limite ni de « Tu dois ». {followUp}',
+  'chat_repair_prompt':
+      'Reformule de façon purement non violente, axée sur l\'attachement et selon la CNV. Pas de reproches, de menaces ni de punitions. Donne trois étapes concrètes du quotidien et deux exemples de phrases. Focus : {focus}',
+  'chat_system_prompt':
+      'Tu es le coach parental ParentPeak, chaleureux et sans jugement, pour le quotidien avec les enfants (0 à 18 ans). Réponds dans la langue demandée, de manière personnelle et sans faire la leçon.\nFondements : Hüther – lien et autonomie, enthousiasme et implication émotionnelle plutôt que pression/peur ; les enfants apprennent par l\'exemple, pas par la leçon. Ne pas faire de l\'enfant l\'objet d\'attentes. Ne pas retirer les obstacles surmontables, les parents se tiennent à côté ; distinguer les vrais besoins des désirs matériels. Relation, présence et exemple plutôt que récompense/punition. CNV de Rosenberg : observation, sentiment, besoin, demande ; des phrases concrètes pour aujourd\'hui. Refléter les sentiments/besoins avec prudence, sans les affirmer comme des faits. Juul : les enfants comme des personnes à part entière, une guidance aimante, la responsabilité de soi plutôt que l\'obéissance.\nEn option si pertinent : Montessori – rythme propre, environnement préparé, autonomie ; Reggio – de multiples formes d\'expression, l\'observation plutôt que le jugement, le processus/la curiosité ; Freinet – de vraies expériences, l\'expression libre, l\'autodétermination ; Froebel – le jeu/la nature/la créativité comme apprentissage ; approche situationnelle – le monde de vie actuel plutôt qu\'un programme rigide.\nBref, concret, 8 à 10 lignes au maximum, de petites étapes immédiatement utilisables. L\'empathie avant la stratégie ; pas de leçon de morale, de jugements ni de murs de texte. Pas de diagnostics/médicaments, nommer les limites honnêtement. En cas de danger aigu, recommander une aide humaine directe ; ne pas inventer de numéros de téléphone spécifiques à un pays non vérifiés. La règle de question de l\'instruction de coaching actuelle s\'applique ; ne pas poser systématiquement une question en plus.',
+  'chat_tip_age_known':
+      'L\'enfant a {age} années révolues. Adapte les exemples en conséquence.',
+  'chat_tip_age_unknown':
+      'L\'âge n\'est pas connu. N\'en invente pas ; demande au besoin.',
+  'chat_tip_prompt':
+      'Les parents souhaitent approfondir ce conseil :\n"{tip}"\n{ageContext}\nExplique brièvement sa pertinence, trois situations concrètes du quotidien et un exercice pour aujourd\'hui. Pratique, non violent, 12 lignes au maximum.',
+  'dev_answer_not_yet': 'Pas encore',
+  'dev_answer_sometimes': 'Parfois',
+  'dev_answer_yes': 'Oui',
+  'development_consent_body':
+      'Pour le rapport, les réponses de ce bilan de développement sont envoyées à notre service d\'IA (Google Gemini). Le prénom de ton enfant reste sur ton appareil et n\'est pas transmis. Tes informations sont uniquement traitées pour établir le rapport et ne sont pas conservées pour t\'identifier.',
+  'development_consent_save_failed':
+      'Le consentement n\'a pas pu être enregistré en toute sécurité ou le compte a changé. Aucun rapport d\'IA ne sera créé.',
+  'development_report_special_needs':
+      '- IMPORTANT : cet enfant a des besoins particuliers. Ne compare PAS aux normes d\'âge. Décris uniquement les progrès individuels. Au lieu de « besoin de soutien », dis « grandit à son propre rythme ». Sois particulièrement bienveillant et encourageant.',
+  'finance_content_turkey_note_11': 'Cartable, fournitures, uniforme',
+  'pdf_age_years': '{years} ans',
+  'pdf_age_years_months': '{years} ans, {months} mois',
+  'pdf_ai_report_title': 'Rapport de développement IA',
+  'pdf_compare_with': 'Comparaison avec {date}',
+  'pdf_created_on': 'Créé le {date}',
+  'pdf_default_child_name': 'Enfant',
+  'pdf_disclaimer':
+      'Remarque : ce rapport repose sur les observations des parents et ne constitue pas un diagnostic médical. En cas d\'inquiétude concernant le développement de ton enfant, adresse-toi à ton pédiatre ou à un centre d\'intervention précoce.',
+  'pdf_filename_prefix': 'Rapport de développement',
+  'pdf_footer': 'Créé avec Parentpeak — parentpeak.de',
+  'pdf_legend_current': 'Actuel',
+  'pdf_legend_previous': 'Bilan précédent',
+  'pdf_page_of': 'Page {page} sur {total}',
+  'pdf_progress_title': 'Évolution du développement',
+  'pdf_report_title': 'Rapport de développement',
+  'pdf_trend_down': 'en pause',
+  'pdf_trend_stable': 'stable',
+  'pdf_trend_up': 'progresse',
   'account_suspended_message':
       'Votre compte a été temporairement restreint. Pour toute question, contactez notre support – nous sommes là pour vous aider.',
   'account_suspended_title': 'Compte temporairement restreint',

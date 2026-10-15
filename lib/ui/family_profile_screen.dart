@@ -94,7 +94,11 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     '#Health'
   ];
   late final Set<String> _selectedInterests;
+  // Full list: used to resolve the label/flag of the currently active language
+  // (which may be one that is no longer offered in the picker).
   late final List<AppLanguage> _languages;
+  // Picker list: only fully translated languages are offered for selection.
+  late final List<AppLanguage> _pickerLanguages;
 
   @override
   void initState() {
@@ -108,6 +112,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     _loadProfilePreferences();
 
     _languages = AppLanguages.supported;
+    _pickerLanguages = AppLanguages.launchReady;
   }
 
   @override
@@ -1427,9 +1432,9 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
             Divider(height: 1, color: Colors.grey[300]),
             Expanded(
               child: ListView.builder(
-                itemCount: _languages.length,
+                itemCount: _pickerLanguages.length,
                 itemBuilder: (context, index) {
-                  final lang = _languages[index];
+                  final lang = _pickerLanguages[index];
                   final code = lang.code;
                   final isSelected = code == _currentLanguage;
 
@@ -1612,8 +1617,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(_t('family_delete_account_error')
-                        .replaceAll('{error}', '$e'))),
+                        content: Text(_t('family_delete_account_error')
+                            .replaceAll('{error}', '$e'))),
                   );
                 }
                 return;
@@ -2442,7 +2447,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 leading: Builder(
                   builder: (context) {
                     final currentLang = _languages.firstWhere(
-                        (language) => language.code == _currentLanguage);
+                        (language) => language.code == _currentLanguage,
+                        orElse: () => _languages.first);
                     final code = currentLang.code;
                     if (code == 'ku' || code == 'ckb') {
                       return const AlaRenginFlag(width: 24, height: 15);
@@ -2455,7 +2461,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 title: _t('language'),
                 subtitle: 'Aktive Sprache im Familienbereich wechseln',
                 status: _languages
-                    .firstWhere((language) => language.code == _currentLanguage)
+                    .firstWhere((language) => language.code == _currentLanguage,
+                        orElse: () => _languages.first)
                     .nativeName,
                 onTap: _showLanguageSelector,
               ),
