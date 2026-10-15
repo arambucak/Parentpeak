@@ -49,6 +49,27 @@ dev_dependencies:
   mocktail: ^1.0.5
   flutter_lints: ^2.0.0
   build_runner: ^2.3.3
+  flutter_launcher_icons: ^0.14.4
+
+# App launcher / store icons. Source art lives in assets/images/AppIcons.
+# Regenerate after changing the art: `dart run flutter_launcher_icons`.
+flutter_launcher_icons:
+  image_path: "assets/images/AppIcons/appstore.png"
+  # iOS: App Store rejects alpha; flatten onto the icon's warm background.
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#FBEAD2"
+  # Android: adaptive icon (foreground art already has a safe margin baked in).
+  android: "ic_launcher"
+  adaptive_icon_background: "#FBEAD2"
+  adaptive_icon_foreground: "assets/images/AppIcons/android/adaptive-foreground.png"
+  min_sdk_android: 21
+  # Web: favicon + PWA icons (incl. maskable).
+  web:
+    generate: true
+    image_path: "assets/images/AppIcons/appstore.png"
+    background_color: "#FBEAD2"
+    theme_color: "#1E5CD7"
 
 flutter:
   uses-material-design: true
