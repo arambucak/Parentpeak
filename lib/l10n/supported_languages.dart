@@ -8,11 +8,18 @@ class AppLanguage {
   final String nativeName;
   final String flag;
 
+  /// Whether this language is fully translated and ready to show in the
+  /// language picker. Languages with [complete] == false still exist for
+  /// locale resolution and backwards compatibility, but are hidden from the
+  /// picker until their translations are finished ("coming soon").
+  final bool complete;
+
   const AppLanguage({
     required this.code,
     required this.name,
     required this.nativeName,
     required this.flag,
+    this.complete = false,
   });
 
   Locale get locale => Locale(code);
@@ -27,18 +34,21 @@ class AppLanguages {
       name: 'Deutsch',
       nativeName: 'Deutsch',
       flag: '\u{1F1E9}\u{1F1EA}',
+      complete: true,
     ),
     AppLanguage(
       code: 'en',
       name: 'English',
       nativeName: 'English',
       flag: '\u{1F1EC}\u{1F1E7}',
+      complete: true,
     ),
     AppLanguage(
       code: 'ar',
       name: 'Arabisch',
       nativeName: '\u{0627}\u{0644}\u{0639}\u{0631}\u{0628}\u{064A}\u{0629}',
       flag: '\u{1F1F8}\u{1F1E6}',
+      complete: true,
     ),
     AppLanguage(
       code: 'fa',
@@ -51,6 +61,7 @@ class AppLanguages {
       name: 'Kurmanc\u{00EE}',
       nativeName: 'Kurd\u{00EE}',
       flag: 'ala_rengin',
+      complete: true,
     ),
     AppLanguage(
       code: 'ckb',
@@ -63,18 +74,21 @@ class AppLanguages {
       name: 'Franz\u{00F6}sisch',
       nativeName: 'Fran\u{00E7}ais',
       flag: '\u{1F1EB}\u{1F1F7}',
+      complete: true,
     ),
     AppLanguage(
       code: 'es',
       name: 'Spanisch',
       nativeName: 'Espa\u{00F1}ol',
       flag: '\u{1F1EA}\u{1F1F8}',
+      complete: true,
     ),
     AppLanguage(
       code: 'it',
       name: 'Italienisch',
       nativeName: 'Italiano',
       flag: '\u{1F1EE}\u{1F1F9}',
+      complete: true,
     ),
     AppLanguage(
       code: 'pt',
@@ -99,6 +113,7 @@ class AppLanguages {
       name: 'T\u{00FC}rkisch',
       nativeName: 'T\u{00FC}rk\u{00E7}e',
       flag: '\u{1F1F9}\u{1F1F7}',
+      complete: true,
     ),
     AppLanguage(
       code: 'ja',
@@ -119,6 +134,12 @@ class AppLanguages {
       flag: '\u{1F1EE}\u{1F1F3}',
     ),
   ];
+
+  /// Languages that are fully translated and shown in the language picker.
+  /// The remaining [supported] languages stay available for locale resolution
+  /// but are hidden ("coming soon") until their translations are complete.
+  static final launchReady =
+      supported.where((language) => language.complete).toList(growable: false);
 
   static const rtlCodes = {'ar', 'fa', 'ckb'};
 

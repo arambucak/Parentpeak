@@ -47,16 +47,46 @@ void main() {
     expect(AppLanguages.isRtl('ku'), isFalse);
   });
 
-  test('launch languages contain every source translation key', () {
+  test('launch picker offers only the fully translated languages', () {
+    const expectedLaunchCodes = {
+      'de',
+      'en',
+      'ar',
+      'ku',
+      'fr',
+      'es',
+      'it',
+      'tr',
+    };
+
+    final launchCodes =
+        AppLanguages.launchReady.map((language) => language.code).toSet();
+
+    expect(launchCodes, expectedLaunchCodes);
+    // launchReady must be a subset of the full supported list.
+    final supportedCodes =
+        AppLanguages.supported.map((language) => language.code).toSet();
+    expect(launchCodes.difference(supportedCodes), isEmpty);
+    // Every supported language flagged complete must appear in the picker.
+    final completeCodes = AppLanguages.supported
+        .where((language) => language.complete)
+        .map((language) => language.code)
+        .toSet();
+    expect(launchCodes, completeCodes);
+  });
+
+  test('every launch-ready language carries every source translation key', () {
     final sourceKeys = AppStringsManager.allStrings['de']!.keys.toSet();
 
-    for (final languageCode in const ['en', 'tr', 'ku']) {
+    for (final language in AppLanguages.launchReady) {
       final translatedKeys =
-          AppStringsManager.allStrings[languageCode]!.keys.toSet();
+          AppStringsManager.allStrings[language.code]!.keys.toSet();
+      final missing = sourceKeys.difference(translatedKeys);
       expect(
-        translatedKeys,
-        sourceKeys,
-        reason: '$languageCode must not rely on fallback or expose raw keys',
+        missing,
+        isEmpty,
+        reason: '${language.code} is offered in the picker but is missing '
+            '${missing.length} keys and would fall back to English',
       );
     }
   });

@@ -80,9 +80,23 @@ void main() {
         financeContent('Uniform, bag, shoes, stationery', 'tr'),
         'Üniforma, çanta, ayakkabı, kırtasiye',
       );
+      // fr/es/it/ar now carry a native translation instead of the English
+      // fallback (previously fr == en here).
       expect(
         financeContent('Canta, kirtasiye, forma', 'fr'),
-        financeContent('Canta, kirtasiye, forma', 'en'),
+        'Cartable, fournitures, uniforme',
+      );
+      expect(
+        financeContent('Canta, kirtasiye, forma', 'es'),
+        'Mochila, material escolar, uniforme',
+      );
+      expect(
+        financeContent('Canta, kirtasiye, forma', 'it'),
+        'Zaino, cancelleria, uniforme',
+      );
+      expect(
+        financeContent('Canta, kirtasiye, forma', 'ar'),
+        'حقيبة مدرسية، أدوات كتابية، زيّ موحّد',
       );
     },
   );
@@ -181,16 +195,17 @@ void main() {
   GeminiAIService ai(
     Map<String, dynamic> response, {
     void Function(Map<String, dynamic>)? capture,
-  }) => GeminiAIService(
-    apiClient: BackendApiClient(
-      baseUrl: 'https://example.invalid',
-      authToken: 'audit-token',
-      httpClient: MockClient((request) async {
-        capture?.call(jsonDecode(request.body) as Map<String, dynamic>);
-        return http.Response(jsonEncode(response), 200);
-      }),
-    ),
-  );
+  }) =>
+      GeminiAIService(
+        apiClient: BackendApiClient(
+          baseUrl: 'https://example.invalid',
+          authToken: 'audit-token',
+          httpClient: MockClient((request) async {
+            capture?.call(jsonDecode(request.body) as Map<String, dynamic>);
+            return http.Response(jsonEncode(response), 200);
+          }),
+        ),
+      );
 
   for (final entry in {
     'de': 'German',
@@ -203,18 +218,17 @@ void main() {
       () async {
         await consent.grant('guest');
         Map<String, dynamic>? body;
-        final result =
-            await BenefitGuideAgent(
-              consent: consent,
-              aiService: ai({
-                'text': 'invalid JSON',
-              }, capture: (value) => body = value),
-            ).guide(
-              country: CountryFinanceData.austria,
-              situation: 'Example',
-              expectedScope: 'guest',
-              languageCode: entry.key,
-            );
+        final result = await BenefitGuideAgent(
+          consent: consent,
+          aiService: ai({
+            'text': 'invalid JSON',
+          }, capture: (value) => body = value),
+        ).guide(
+          country: CountryFinanceData.austria,
+          situation: 'Example',
+          expectedScope: 'guest',
+          languageCode: entry.key,
+        );
         expect(body!['language'], entry.key);
         expect(
           body!['systemInstruction'],
@@ -244,31 +258,41 @@ void main() {
     () async {
       await consent.grant('guest');
       final official = CountryFinanceData.germany.benefits.first.url!;
-      final result =
-          await BenefitGuideAgent(
-            consent: consent,
-            aiService: ai({
-              'text':
-                  '```json\n${jsonEncode({
-                    'matched': [
-                      {'benefitId': 'kindergeld', 'name': '', 'url': 'https://evil.invalid'},
-                      {'benefitId': 'unknown', 'name': 'Invented benefit', 'url': official},
-                      {'benefitId': 'child_benefit', 'name': 'Wrong country', 'url': 'https://www.gov.uk/'},
-                    ],
-                  })}\n```',
-              'groundingUrls': [
-                official,
-                official,
-                '$official?redirect=evil',
-                'https://evil.invalid',
-              ],
-            }),
-          ).guide(
-            country: CountryFinanceData.germany,
-            situation: 'Example',
-            expectedScope: 'guest',
-            languageCode: 'en',
-          );
+      final result = await BenefitGuideAgent(
+        consent: consent,
+        aiService: ai({
+          'text': '```json\n${jsonEncode({
+                'matched': [
+                  {
+                    'benefitId': 'kindergeld',
+                    'name': '',
+                    'url': 'https://evil.invalid'
+                  },
+                  {
+                    'benefitId': 'unknown',
+                    'name': 'Invented benefit',
+                    'url': official
+                  },
+                  {
+                    'benefitId': 'child_benefit',
+                    'name': 'Wrong country',
+                    'url': 'https://www.gov.uk/'
+                  },
+                ],
+              })}\n```',
+          'groundingUrls': [
+            official,
+            official,
+            '$official?redirect=evil',
+            'https://evil.invalid',
+          ],
+        }),
+      ).guide(
+        country: CountryFinanceData.germany,
+        situation: 'Example',
+        expectedScope: 'guest',
+        languageCode: 'en',
+      );
       expect(result.isFallback, isFalse);
       expect(result.matched, hasLength(1));
       expect(result.matched.single.name, 'Child Benefit');
@@ -281,26 +305,25 @@ void main() {
     'a known benefit without a curated URL never inherits an AI URL',
     () async {
       await consent.grant('guest');
-      final result =
-          await BenefitGuideAgent(
-            consent: consent,
-            aiService: ai({
-              'text': jsonEncode({
-                'matched': [
-                  {
-                    'benefitId': 'cocuk_parasi',
-                    'name': 'Cocuk Parasi',
-                    'url': 'https://evil.invalid',
-                  },
-                ],
-              }),
-            }),
-          ).guide(
-            country: CountryFinanceData.turkey,
-            situation: 'Example',
-            expectedScope: 'guest',
-            languageCode: 'en',
-          );
+      final result = await BenefitGuideAgent(
+        consent: consent,
+        aiService: ai({
+          'text': jsonEncode({
+            'matched': [
+              {
+                'benefitId': 'cocuk_parasi',
+                'name': 'Cocuk Parasi',
+                'url': 'https://evil.invalid',
+              },
+            ],
+          }),
+        }),
+      ).guide(
+        country: CountryFinanceData.turkey,
+        situation: 'Example',
+        expectedScope: 'guest',
+        languageCode: 'en',
+      );
       expect(result.isFallback, isFalse);
       expect(result.matched.single.benefitId, 'cocuk_parasi');
       expect(result.matched.single.url, isEmpty);
@@ -311,26 +334,25 @@ void main() {
     'an unusable unknown-only answer returns general country guidance',
     () async {
       await consent.grant('guest');
-      final result =
-          await BenefitGuideAgent(
-            consent: consent,
-            aiService: ai({
-              'text': jsonEncode({
-                'matched': [
-                  {
-                    'benefitId': 'unknown',
-                    'name': 'Invented',
-                    'url': 'https://evil.invalid',
-                  },
-                ],
-              }),
-            }),
-          ).guide(
-            country: CountryFinanceData.uk,
-            situation: 'Example',
-            expectedScope: 'guest',
-            languageCode: 'en',
-          );
+      final result = await BenefitGuideAgent(
+        consent: consent,
+        aiService: ai({
+          'text': jsonEncode({
+            'matched': [
+              {
+                'benefitId': 'unknown',
+                'name': 'Invented',
+                'url': 'https://evil.invalid',
+              },
+            ],
+          }),
+        }),
+      ).guide(
+        country: CountryFinanceData.uk,
+        situation: 'Example',
+        expectedScope: 'guest',
+        languageCode: 'en',
+      );
       expect(result.isFallback, isTrue);
       expect(
         result.matched.map((b) => b.benefitId),

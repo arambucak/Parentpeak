@@ -42,16 +42,21 @@ void main() {
       }
     });
 
-    test('Bericht-Consent nennt Google Gemini auch im Englisch-Fallback', () {
-      final english = AppStringsManager.getString(
-        'en',
-        'development_consent_body',
-      );
-      expect(
-        AppStringsManager.getString('fr', 'development_consent_body'),
-        english,
-      );
-      expect(english, contains('Google Gemini'));
+    test('Bericht-Consent benennt Google Gemini in allen fertigen Sprachen',
+        () {
+      // fr/es/it/ar haben jetzt eine eigene Übersetzung (statt EN-Fallback);
+      // der KI-Empfänger muss in jeder davon offengelegt bleiben.
+      for (final lang in ['de', 'en', 'tr', 'ku', 'fr', 'es', 'it', 'ar']) {
+        final body = AppStringsManager.getString(
+          lang,
+          'development_consent_body',
+        );
+        expect(
+          body,
+          contains('Google Gemini'),
+          reason: '$lang muss den KI-Empfaenger offenlegen',
+        );
+      }
     });
 
     test('Deutsch definiert alle neuen Keys nicht-leer', () {
@@ -79,13 +84,25 @@ void main() {
       }
     });
 
-    test('Nicht abgedeckte Sprachen fallen sauber auf Englisch zurück', () {
-      // z.B. Französisch definiert diese Keys nicht -> muss EN liefern,
-      // niemals den rohen Key.
-      for (final key in requiredKeys) {
-        final value = AppStringsManager.getString('fr', key);
-        final en = AppStringsManager.getString('en', key);
-        expect(value, en, reason: 'fr sollte für $key auf EN zurückfallen');
+    test('Alle fertigen Sprachen definieren jeden PDF-Key eigenständig', () {
+      // fr/es/it/ar sind jetzt vollständig übersetzt und dürfen für diese
+      // Keys nicht mehr auf den englischen Fallback (oder den rohen Key)
+      // zurückfallen.
+      for (final lang in ['fr', 'es', 'it', 'ar']) {
+        for (final key in requiredKeys) {
+          final value = AppStringsManager.allStrings[lang]![key];
+          expect(
+            value,
+            isNotNull,
+            reason: '$lang fehlt eigener Wert für: $key',
+          );
+          expect(
+            value,
+            isNot(key),
+            reason: '$lang hat keinen echten Wert für: $key',
+          );
+          expect(value!.trim(), isNotEmpty, reason: '$lang/$key ist leer');
+        }
       }
     });
 

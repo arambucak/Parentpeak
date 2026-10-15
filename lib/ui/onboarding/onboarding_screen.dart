@@ -32,7 +32,8 @@ class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
   final ProfileAccountStore? accountStore;
 
-  const OnboardingScreen({super.key, required this.onComplete, this.accountStore});
+  const OnboardingScreen(
+      {super.key, required this.onComplete, this.accountStore});
 
   /// Prüft ob Onboarding bereits abgeschlossen wurde.
   static Future<bool> isCompleted() async {
@@ -80,7 +81,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     _loadAccount();
     // Der Anzeigename kommt aus der Registrierung — Feld vorbelegen, damit der
     // Nutzer nicht erneut tippen muss (nur bestaetigen).
-    final existingName = Firebase.apps.isEmpty ? null
+    final existingName = Firebase.apps.isEmpty
+        ? null
         : FirebaseAuth.instance.currentUser?.displayName?.trim();
     if (existingName != null && existingName.isNotEmpty) {
       _familyNameController.text = existingName;
@@ -122,9 +124,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final request = ++_loadRequest;
     try {
       final data = await _accounts.read(_session);
-      if (!mounted || request != _loadRequest || !_accounts.isCurrent(_session)) return;
+      if (!mounted ||
+          request != _loadRequest ||
+          !_accounts.isCurrent(_session)) {
+        return;
+      }
       final signature = jsonEncode({
-        for (final key in ProfileAccountStore.domains[ProfileLegacyDomain.onboarding]!)
+        for (final key
+            in ProfileAccountStore.domains[ProfileLegacyDomain.onboarding]!)
           if (data.containsKey(key)) key: data[key],
       });
       if (signature == _loadedOnboarding) {
@@ -146,16 +153,21 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ..addAll(List<String>.from(data[ProfileAccountStore.agesKey] ?? []));
         _selectedPriorities
           ..clear()
-          ..addAll(List<String>.from(data[ProfileAccountStore.prioritiesKey] ?? []));
-        _selectedCountry = data[ProfileAccountStore.countryKey] as String? ?? 'DE';
-        _selectedRegion = data[ProfileAccountStore.regionKey] as String? ?? 'NRW';
+          ..addAll(
+              List<String>.from(data[ProfileAccountStore.prioritiesKey] ?? []));
+        _selectedCountry =
+            data[ProfileAccountStore.countryKey] as String? ?? 'DE';
+        _selectedRegion =
+            data[ProfileAccountStore.regionKey] as String? ?? 'NRW';
       });
     } on ProfileAccountChanged {
       // AuthGate replaces the old wizard.
       if (mounted) setState(() => _saving = false);
     } catch (error) {
       debugPrint('Account onboarding load failed: $error');
-      if (mounted && _accounts.isCurrent(_session)) setState(() => _failed = true);
+      if (mounted && _accounts.isCurrent(_session)) {
+        setState(() => _failed = true);
+      }
     }
   }
 
@@ -210,43 +222,49 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ProfileAccountStore.countryKey: _selectedCountry,
       ProfileAccountStore.regionKey: _selectedRegion,
       ProfileAccountStore.tileOrderKey: _buildTileOrder(),
-      if (_selectedRoles.isNotEmpty) ProfileAccountStore.roleKey: _selectedRoles.first,
+      if (_selectedRoles.isNotEmpty)
+        ProfileAccountStore.roleKey: _selectedRoles.first,
     };
     try {
-    if (!LocationService.instance.hasLocation) {
-      if (mounted) await _showLocationDialog();
-    }
-    _accounts.require(_session);
-    if (familyName.isNotEmpty && _session.scope != 'guest') {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null && user.displayName?.trim() != familyName) {
-        await user.updateDisplayName(familyName);
+      if (!LocationService.instance.hasLocation) {
+        if (mounted) await _showLocationDialog();
       }
       _accounts.require(_session);
-      await UserProfileService.instance.setDisplayName(familyName, ticket: _session);
-    }
-    await _accounts.write(_session, values);
-    try {
-      if (_session.scope != 'guest') {
-        await OnboardingSyncService.instance.pushCompleted(_session);
+      if (familyName.isNotEmpty && _session.scope != 'guest') {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null && user.displayName?.trim() != familyName) {
+          await user.updateDisplayName(familyName);
+        }
+        _accounts.require(_session);
+        await UserProfileService.instance
+            .setDisplayName(familyName, ticket: _session);
       }
-    } on ProfileAccountChanged {
-      rethrow;
-    } catch (error) {
-      debugPrint('Onboarding saved locally; remote sync failed: $error');
-      if (mounted && _accounts.isCurrent(_session)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('profile_sync_failed'))));
+      await _accounts.write(_session, values);
+      try {
+        if (_session.scope != 'guest') {
+          await OnboardingSyncService.instance.pushCompleted(_session);
+        }
+      } on ProfileAccountChanged {
+        rethrow;
+      } catch (error) {
+        debugPrint('Onboarding saved locally; remote sync failed: $error');
+        if (mounted && _accounts.isCurrent(_session)) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(_t('profile_sync_failed'))));
+        }
       }
-    }
-    if (mounted && _accounts.isCurrent(_session)) widget.onComplete();
+      if (mounted && _accounts.isCurrent(_session)) widget.onComplete();
     } on ProfileAccountChanged {
       // No completion callback for an obsolete wizard.
     } catch (error) {
       debugPrint('Account onboarding save failed: $error');
-      if (mounted && _accounts.isCurrent(_session)) setState(() => _failed = true);
+      if (mounted && _accounts.isCurrent(_session)) {
+        setState(() => _failed = true);
+      }
     } finally {
-      if (mounted && _accounts.isCurrent(_session)) setState(() => _saving = false);
+      if (mounted && _accounts.isCurrent(_session)) {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -391,14 +409,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                ProfileLegacyClaim(domain: ProfileLegacyDomain.onboarding, store: _accounts),
-                ProfileLegacyClaim(domain: ProfileLegacyDomain.location, store: _accounts),
-                if (_failed) TextButton(
-                  onPressed: _loadAccount,
-                  child: Text(_t('profile_account_failed')),
-                ),
-                if (_saving) const CircularProgressIndicator()
-                else _buildBottomNav(theme),
+                ProfileLegacyClaim(
+                    domain: ProfileLegacyDomain.onboarding, store: _accounts),
+                ProfileLegacyClaim(
+                    domain: ProfileLegacyDomain.location, store: _accounts),
+                if (_failed)
+                  TextButton(
+                    onPressed: _loadAccount,
+                    child: Text(_t('profile_account_failed')),
+                  ),
+                if (_saving)
+                  const CircularProgressIndicator()
+                else
+                  _buildBottomNav(theme),
               ]),
             ),
           ],
@@ -427,7 +450,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           const SizedBox(width: 12),
           Expanded(
             child: Text(_t('location'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           ),
         ]),
         content: Column(
@@ -453,7 +477,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 Expanded(
                   child: Text(
                     _t('location_onboarding_privacy'),
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                    style:
+                        const TextStyle(fontSize: 11, color: Color(0xFF166534)),
                   ),
                 ),
               ]),
@@ -516,7 +541,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ),
         );
         plzController.dispose();
-        if (input != null && input.isNotEmpty && mounted &&
+        if (input != null &&
+            input.isNotEmpty &&
+            mounted &&
             _accounts.isCurrent(_session)) {
           await LocationService.instance.setManualLocation(input);
         }
@@ -526,7 +553,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildLanguagePage() {
     final theme = Theme.of(context);
-    const languages = AppLanguages.supported;
+    final languages = AppLanguages.launchReady;
 
     Widget buildLanguageGrid() {
       return GridView.builder(

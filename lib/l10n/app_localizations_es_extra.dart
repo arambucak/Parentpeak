@@ -2,6 +2,77 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsEsExtra = <String, String>{
+  'chat_ask_none':
+      'No hagas ninguna pregunta de seguimiento; los datos bastan para dar pasos concretos.',
+  'chat_ask_one':
+      'Plantea al final exactamente UNA pregunta breve y abierta para el siguiente paso útil.',
+  'chat_boundary_retry':
+      'No respondas con una fórmula de límite general, sino de forma concreta, empática y orientada a soluciones para el día a día de las familias.',
+  'chat_coaching_prompt':
+      'Consulta del progenitor:\n{message}\n\nActitud: empática, cálida y sin juicios según la CNV, Hüther y Juul. Lente de Hüther: ¿vínculo o autonomía? La relación antes que la presión, el ejemplo en lugar del sermón, el entusiasmo por aprender; los padres se sitúan junto al niño en vez de resolver todos los obstáculos.\nFormato: primero 1 o 2 frases empáticas; los sentimientos/necesidades solo como suposición. Una breve lectura orientada al desarrollo y al apego, exactamente UN paso de CNV, 1 o 2 pequeñas opciones en forma de propuesta. {followUp}\nEnfoque: {focus}\nOtras perspectivas pedagógicas solo de forma OPCIONAL cuando encajen, sin exposición teórica.\nSin sermones, frases hechas, juicios precipitados ni «Tienes que». Traduce con empatía los autorreproches a sentimiento/necesidad. Mantén los datos concretos de edad, momento del día y situación. Párrafos cortos, como máximo 3 o 4 frases; sin asteriscos/Markdown, tono tranquilo y profesional, 0 a 2 emojis, se permiten listas simples. {continuation}\nAncla de contexto: {context}\nContexto del historial: {history}',
+  'chat_context_retry':
+      'Responde de nuevo y recoge de forma visible estos datos importantes: {context}. Mantente empático, concreto y cercano al día a día.',
+  'chat_continue_context':
+      'Enlaza con los patrones relevantes y las edades del historial seleccionado; no inventes nombres reales.',
+  'chat_focus_anger':
+      'Correlación, límites claros sin avergonzar y una breve desescalada; Juul: guiar con respeto en lugar de imponer obediencia.',
+  'chat_focus_general':
+      'Alivio inmediato y orientado al apego; de forma opcional, una lente adecuada entre Montessori, Reggio, Froebel, Freinet, Juul o el enfoque situacional.',
+  'chat_focus_learning':
+      'Montessori: «Ayúdame a hacerlo yo solo», preparar el entorno y ver las tareas cotidianas como oportunidades de aprendizaje; enfoque situacional: el mundo de vida actual.',
+  'chat_focus_media':
+      'Límites claros acordados de antemano y transiciones cooperativas en lugar de una lucha de poder; Juul: guiar con respeto.',
+  'chat_focus_play':
+      'Froebel: el juego como aprendizaje; Reggio: muchas formas de expresión, el proceso antes que el resultado; Freinet: experiencias reales del día a día.',
+  'chat_focus_school':
+      'Una estructura adecuada al niño y cooperación con los profesionales; enfoque situacional: el mundo de vida del niño; Juul: cooperación en lugar de obediencia.',
+  'chat_focus_siblings':
+      'Separar sin castigo, reflejar los sentimientos y favorecer un reacercamiento/una reparación justa; Juul: tomar plenamente en serio a ambos niños.',
+  'chat_focus_sleep':
+      'Alivio realista, pequeñas rutinas y pasos que ahorran energía; Juul: acompañar de forma auténtica y respetuosa.',
+  'chat_new_context':
+      'Céntrate en la consulta actual, sin un repaso inventado.',
+  'chat_no_context': 'ninguno',
+  'chat_quality_retry':
+      'Responde de forma más concreta y auténtica: la empatía primero, un paso de CNV, 1 o 2 pequeñas opciones, los sentimientos/necesidades como suposición. Enfoque: {focus} Párrafos cortos de como máximo 3 o 4 frases, sin muros de texto, fórmulas de límite ni «Tienes que». {followUp}',
+  'chat_repair_prompt':
+      'Reformula de manera puramente no violenta, orientada al apego y según la CNV. Sin regaños, amenazas ni castigos. Da tres pasos concretos del día a día y dos frases de ejemplo. Enfoque: {focus}',
+  'chat_system_prompt':
+      'Eres el coach parental de ParentPeak, cálido y sin juicios, para el día a día con niños (de 0 a 18 años). Responde en el idioma solicitado, de forma personal y sin dar lecciones.\nFundamentos: Hüther – vínculo y autonomía, entusiasmo e implicación emocional en lugar de presión/miedo; los niños aprenden con el ejemplo, no con sermones. No conviertas al niño en objeto de expectativas. No retires los obstáculos superables, los padres se sitúan al lado; distingue las necesidades reales de los deseos materiales. Relación, presencia y ejemplo en lugar de premio/castigo. CNV de Rosenberg: observación, sentimiento, necesidad, petición; frases concretas para hoy. Refleja los sentimientos/necesidades con prudencia, sin afirmarlos como hechos. Juul: los niños como personas plenas, una guía amorosa, la responsabilidad propia en lugar de la obediencia.\nOpcional si encaja: Montessori – ritmo propio, entorno preparado, autonomía; Reggio – muchas formas de expresión, la observación en lugar del juicio, el proceso/la curiosidad; Freinet – experiencias reales, expresión libre, autodeterminación; Froebel – el juego/la naturaleza/la creatividad como aprendizaje; enfoque situacional – el mundo de vida actual en lugar de un plan rígido.\nBreve, concreto, como máximo 8 a 10 líneas, pequeños pasos de uso inmediato. La empatía antes que la estrategia; sin sermones, juicios ni muros de texto. Sin diagnósticos/medicamentos, nombra los límites con honestidad. Ante un peligro agudo, recomienda ayuda humana directa; no inventes números de teléfono específicos de cada país sin verificar. Rige la regla de preguntas de la instrucción de coaching actual; no añadas siempre una pregunta más.',
+  'chat_tip_age_known':
+      'El niño tiene {age} años cumplidos. Adapta los ejemplos a ello.',
+  'chat_tip_age_unknown':
+      'La edad no se conoce. No la inventes; pregunta si hace falta.',
+  'chat_tip_prompt':
+      'Los padres quieren profundizar en este consejo:\n"{tip}"\n{ageContext}\nExplica brevemente su relevancia, tres situaciones concretas del día a día y un ejercicio para hoy. Práctico, no violento, como máximo 12 líneas.',
+  'dev_answer_not_yet': 'Todavía no',
+  'dev_answer_sometimes': 'A veces',
+  'dev_answer_yes': 'Sí',
+  'development_consent_body':
+      'Para el informe, las respuestas de este chequeo de desarrollo se envían a nuestro servicio de IA (Google Gemini). El nombre de tu hijo permanece en tu dispositivo y no se transmite. Tus datos solo se procesan para elaborar el informe y no se guardan para identificarte.',
+  'development_consent_save_failed':
+      'El consentimiento no se pudo guardar de forma segura o la cuenta ha cambiado. No se creará ningún informe de IA.',
+  'development_report_special_needs':
+      '- IMPORTANTE: este niño tiene necesidades especiales. NO lo compares con las normas de edad. Describe únicamente su progreso individual. En lugar de «necesidad de apoyo», di «crece a su propio ritmo». Sé especialmente valorativo y alentador.',
+  'finance_content_turkey_note_11': 'Mochila, material escolar, uniforme',
+  'pdf_age_years': '{years} años',
+  'pdf_age_years_months': '{years} años, {months} meses',
+  'pdf_ai_report_title': 'Informe de desarrollo con IA',
+  'pdf_compare_with': 'Comparación con {date}',
+  'pdf_created_on': 'Creado el {date}',
+  'pdf_default_child_name': 'Niño',
+  'pdf_disclaimer':
+      'Nota: este informe se basa en las observaciones de los padres y no es un diagnóstico médico. Si tienes dudas sobre el desarrollo de tu hijo, dirígete a tu pediatra o a un centro de atención temprana.',
+  'pdf_filename_prefix': 'Informe de desarrollo',
+  'pdf_footer': 'Creado con Parentpeak — parentpeak.de',
+  'pdf_legend_current': 'Actual',
+  'pdf_legend_previous': 'Chequeo anterior',
+  'pdf_page_of': 'Página {page} de {total}',
+  'pdf_progress_title': 'Evolución del desarrollo',
+  'pdf_report_title': 'Informe de desarrollo',
+  'pdf_trend_down': 'en pausa',
+  'pdf_trend_stable': 'estable',
+  'pdf_trend_up': 'avanza',
   'account_suspended_message':
       'Tu cuenta ha sido restringida temporalmente. Si tienes preguntas, contacta con nuestro soporte: estamos aquí para ayudarte.',
   'account_suspended_title': 'Cuenta restringida temporalmente',
