@@ -2011,6 +2011,7 @@ class _UnifiedFeedItem {
     this.participationMode,
     this.confirmedParticipants = 0,
     this.isRecurring = false,
+    this.locationConfirmed = true,
   });
 
   final _FeedSource source;
@@ -2031,6 +2032,9 @@ class _UnifiedFeedItem {
   final int confirmedParticipants;
   // true bei wiederkehrenden/dauerhaft offenen KI-Angeboten ohne festes Datum.
   final bool isRecurring;
+  // false, wenn die KI-Adresse nicht gegen OpenStreetMap verortet werden
+  // konnte — die Karte/Detailseite zeigt dann „Ort nicht bestätigt".
+  final bool locationConfirmed;
 
   factory _UnifiedFeedItem.fromAi(DiscoveredEvent event) {
     final price = event.price?.trim();
@@ -2054,6 +2058,7 @@ class _UnifiedFeedItem {
       isFree: isFree,
       eventId: event.id,
       isRecurring: event.isRecurring,
+      locationConfirmed: event.locationConfirmed,
     );
   }
 
@@ -2314,7 +2319,8 @@ class _UnifiedEventCard extends StatelessWidget {
               ],
               // Vertrauens-Transparenz: KI-Vorschläge sind nicht verifiziert.
               // Der Hinweis steht direkt auf der Karte (nicht nur im Detail),
-              // damit niemand ungeprüft hinfährt.
+              // damit niemand ungeprüft hinfährt. Ließ sich die Adresse nicht
+              // verorten, wird zusätzlich „Ort nicht bestätigt" angezeigt.
               if (isAi) ...[
                 const SizedBox(height: 8),
                 Row(
@@ -2334,6 +2340,27 @@ class _UnifiedEventCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (!item.locationConfirmed) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.location_off_rounded,
+                          size: 13, color: Color(0xFFB91C1C)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          context.tr('events_location_unconfirmed'),
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: const Color(0xFFB91C1C),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ],
           ),

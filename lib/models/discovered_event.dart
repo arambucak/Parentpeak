@@ -16,8 +16,8 @@ enum DiscoveredEventCategory {
 }
 
 enum DiscoveredEventSource {
-  kiAgent,    // Vom KI-Agent generiert/zusammengeführt
-  manual,     // Manuell von Eltern erstellt
+  kiAgent, // Vom KI-Agent generiert/zusammengeführt
+  manual, // Manuell von Eltern erstellt
 }
 
 class DiscoveredEvent {
@@ -34,13 +34,17 @@ class DiscoveredEvent {
   final bool isRecurring;
   final String? recurringNote; // z.B. "Jeden Samstag 10–12 Uhr"
   final String? eventTimeRange; // z.B. "10:00 – 12:30 Uhr"
-  final String? price;         // z.B. "kostenlos", "5 €"
-  final String? url;           // Link zur Original-Quelle
-  final String? organizer;     // Veranstalter/Institution
+  final String? price; // z.B. "kostenlos", "5 €"
+  final String? url; // Link zur Original-Quelle
+  final String? organizer; // Veranstalter/Institution
   final String? imageUrl;
   final DiscoveredEventSource source;
   final DateTime discoveredAt;
-  final int interestCount;     // Wer ist interessiert (lokal gezählt)
+  final int interestCount; // Wer ist interessiert (lokal gezählt)
+  /// Ob die Adresse gegen OpenStreetMap verortet werden konnte. false, wenn
+  /// das Geocoding fehlschlug — dann wird der Ort in der UI als „nicht
+  /// bestätigt" gekennzeichnet, statt ihn ungeprüft als gesichert darzustellen.
+  final bool locationConfirmed;
 
   const DiscoveredEvent({
     required this.id,
@@ -63,9 +67,16 @@ class DiscoveredEvent {
     this.source = DiscoveredEventSource.kiAgent,
     required this.discoveredAt,
     this.interestCount = 0,
+    this.locationConfirmed = true,
   });
 
-  DiscoveredEvent copyWith({int? interestCount}) => DiscoveredEvent(
+  DiscoveredEvent copyWith({
+    int? interestCount,
+    double? latitude,
+    double? longitude,
+    bool? locationConfirmed,
+  }) =>
+      DiscoveredEvent(
         id: id,
         title: title,
         description: description,
@@ -73,8 +84,8 @@ class DiscoveredEvent {
         ageLabels: ageLabels,
         location: location,
         cityHint: cityHint,
-        latitude: latitude,
-        longitude: longitude,
+        latitude: latitude ?? this.latitude,
+        longitude: longitude ?? this.longitude,
         eventDate: eventDate,
         isRecurring: isRecurring,
         recurringNote: recurringNote,
@@ -86,6 +97,7 @@ class DiscoveredEvent {
         source: source,
         discoveredAt: discoveredAt,
         interestCount: interestCount ?? this.interestCount,
+        locationConfirmed: locationConfirmed ?? this.locationConfirmed,
       );
 
   String get categoryLabel {

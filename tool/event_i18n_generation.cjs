@@ -162,6 +162,7 @@ events_add_event|Ajouter un événement|Añadir evento|Aggiungi evento|Adicionar
 events_no_nearby|Aucun événement près de vous pour le moment|Aún no hay eventos cerca|Ancora nessun evento vicino a te|Ainda sem eventos perto de si|Nog geen evenementen in de buurt|Jeszcze brak wydarzeń w pobliżu|لا توجد فعاليات قريبة بعد|هنوز رویدادی نزدیک شما نیست|هێشتا بۆنەیەک لە نزیکت نییە|近くのイベントはまだありません|附近暂无活动|अभी आसपास कोई कार्यक्रम नहीं
 events_be_first|Soyez le premier ! Ajoutez un événement pour aider d'autres familles.|¡Sé el primero! Añade un evento y ayuda a otras familias.|Sii il primo! Aggiungi un evento e aiuta altre famiglie.|Seja o primeiro! Adicione um evento e ajude outras famílias.|Wees de eerste! Voeg een evenement toe en help andere gezinnen.|Bądź pierwszy! Dodaj wydarzenie i pomóż innym rodzinom.|كن الأول! أضف فعالية وساعد العائلات الأخرى.|اولین نفر باشید! رویدادی اضافه کنید و به خانواده‌های دیگر کمک کنید.|یەکەم کەس بە! بۆنەیەک زیاد بکە و یارمەتی خێزانەکانی تر بدە.|最初の一人に！イベントを追加して他の家族を助けましょう。|成为第一位！添加活动，帮助其他家庭。|पहले बनें! कार्यक्रम जोड़कर अन्य परिवारों की मदद करें।
 events_ai_unverified_hint|Suggestion IA — à confirmer auprès de l'organisateur|Sugerencia IA — confirma con el organizador|Suggerimento IA — conferma con l'organizzatore|Sugestão IA — confirme com o organizador|AI-suggestie — bevestig bij de organisator|Sugestia SI — potwierdź u organizatora|اقتراح بالذكاء الاصطناعي — أكّده مع المنظم|پیشنهاد هوش مصنوعی — با برگزارکننده تأیید کنید|پێشنیاری زیرەکی دەستکرد — لەگەڵ ڕێکخەر پشتڕاستی بکەرەوە|AIの提案 — 主催者にご確認ください|人工智能建议 — 请向组织者确认|एआई सुझाव — आयोजक से पुष्टि करें
+events_location_unconfirmed|Adresse non confirmée sur la carte — à vérifier avant de vous déplacer|Dirección no confirmada en el mapa — compruébala antes de ir|Indirizzo non confermato sulla mappa — verifica prima di andarci|Morada não confirmada no mapa — verifique antes de ir|Adres niet bevestigd op de kaart — controleer dit voordat je gaat|Adres niepotwierdzony na mapie — sprawdź przed wyjazdem|العنوان غير مؤكد على الخريطة — تحقّق منه قبل الذهاب|نشانی روی نقشه تأیید نشده است — پیش از رفتن بررسی کنید|ناونیشان لەسەر نەخشە پشتڕاست نەکراوەتەوە — پێش ڕۆیشتن بیپشکنە|住所は地図で確認できていません — お出かけ前にご確認ください|地址未在地图上确认 — 出发前请核实|पता मानचित्र पर पुष्ट नहीं — जाने से पहले जाँचें
 `;
 const aliases = {
   event_detail_join_sign_in_required: 'event_detail_sign_in_required',
@@ -174,10 +175,10 @@ const aliases = {
   events_add_event_short: 'events_add_event',
 };
 const additions = {
-  de: {event_host: 'Gastgeber', event_shared_by: 'Geteilt von', events_ai_unverified_hint: 'KI-Vorschlag — bitte beim Veranstalter bestätigen'},
-  en: {event_host: 'Host', event_shared_by: 'Shared by', events_ai_unverified_hint: 'AI suggestion — please confirm with the organizer'},
-  tr: {event_host: 'Ev sahibi', event_shared_by: 'Paylaşan', events_ai_unverified_hint: 'Yapay zekâ önerisi — lütfen düzenleyenle doğrula'},
-  ku: {event_host: 'Mêvandar', event_shared_by: 'Ji aliyê ve hat parvekirin', events_ai_unverified_hint: 'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike'},
+  de: {event_host: 'Gastgeber', event_shared_by: 'Geteilt von', events_ai_unverified_hint: 'KI-Vorschlag — bitte beim Veranstalter bestätigen', events_location_unconfirmed: 'Adresse nicht auf der Karte bestätigt — bitte vor dem Hinfahren prüfen'},
+  en: {event_host: 'Host', event_shared_by: 'Shared by', events_ai_unverified_hint: 'AI suggestion — please confirm with the organizer', events_location_unconfirmed: 'Address not confirmed on the map — please check before you go'},
+  tr: {event_host: 'Ev sahibi', event_shared_by: 'Paylaşan', events_ai_unverified_hint: 'Yapay zekâ önerisi — lütfen düzenleyenle doğrula', events_location_unconfirmed: 'Adres haritada doğrulanmadı — gitmeden önce lütfen kontrol et'},
+  ku: {event_host: 'Mêvandar', event_shared_by: 'Ji aliyê ve hat parvekirin', events_ai_unverified_hint: 'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike', events_location_unconfirmed: 'Navnîşan li ser nexşeyê nehat piştrastkirin — berî çûyînê kontrol bike'},
 };
 for (const code of codes) additions[code] = {};
 for (const row of rows.trim().split('\n')) {
