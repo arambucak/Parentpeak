@@ -161,6 +161,7 @@ events_free|Gratuit|Gratis|Gratuito|Gratuito|Gratis|Bezpłatne|مجاني|رای
 events_add_event|Ajouter un événement|Añadir evento|Aggiungi evento|Adicionar evento|Evenement toevoegen|Dodaj wydarzenie|إضافة فعالية|افزودن رویداد|بۆنە زیاد بکە|イベントを追加|添加活动|कार्यक्रम जोड़ें
 events_no_nearby|Aucun événement près de vous pour le moment|Aún no hay eventos cerca|Ancora nessun evento vicino a te|Ainda sem eventos perto de si|Nog geen evenementen in de buurt|Jeszcze brak wydarzeń w pobliżu|لا توجد فعاليات قريبة بعد|هنوز رویدادی نزدیک شما نیست|هێشتا بۆنەیەک لە نزیکت نییە|近くのイベントはまだありません|附近暂无活动|अभी आसपास कोई कार्यक्रम नहीं
 events_be_first|Soyez le premier ! Ajoutez un événement pour aider d'autres familles.|¡Sé el primero! Añade un evento y ayuda a otras familias.|Sii il primo! Aggiungi un evento e aiuta altre famiglie.|Seja o primeiro! Adicione um evento e ajude outras famílias.|Wees de eerste! Voeg een evenement toe en help andere gezinnen.|Bądź pierwszy! Dodaj wydarzenie i pomóż innym rodzinom.|كن الأول! أضف فعالية وساعد العائلات الأخرى.|اولین نفر باشید! رویدادی اضافه کنید و به خانواده‌های دیگر کمک کنید.|یەکەم کەس بە! بۆنەیەک زیاد بکە و یارمەتی خێزانەکانی تر بدە.|最初の一人に！イベントを追加して他の家族を助けましょう。|成为第一位！添加活动，帮助其他家庭。|पहले बनें! कार्यक्रम जोड़कर अन्य परिवारों की मदद करें।
+events_ai_unverified_hint|Suggestion IA — à confirmer auprès de l'organisateur|Sugerencia IA — confirma con el organizador|Suggerimento IA — conferma con l'organizzatore|Sugestão IA — confirme com o organizador|AI-suggestie — bevestig bij de organisator|Sugestia SI — potwierdź u organizatora|اقتراح بالذكاء الاصطناعي — أكّده مع المنظم|پیشنهاد هوش مصنوعی — با برگزارکننده تأیید کنید|پێشنیاری زیرەکی دەستکرد — لەگەڵ ڕێکخەر پشتڕاستی بکەرەوە|AIの提案 — 主催者にご確認ください|人工智能建议 — 请向组织者确认|एआई सुझाव — आयोजक से पुष्टि करें
 `;
 const aliases = {
   event_detail_join_sign_in_required: 'event_detail_sign_in_required',
@@ -173,10 +174,10 @@ const aliases = {
   events_add_event_short: 'events_add_event',
 };
 const additions = {
-  de: {event_host: 'Gastgeber', event_shared_by: 'Geteilt von'},
-  en: {event_host: 'Host', event_shared_by: 'Shared by'},
-  tr: {event_host: 'Ev sahibi', event_shared_by: 'Paylaşan'},
-  ku: {event_host: 'Mêvandar', event_shared_by: 'Ji aliyê ve hat parvekirin'},
+  de: {event_host: 'Gastgeber', event_shared_by: 'Geteilt von', events_ai_unverified_hint: 'KI-Vorschlag — bitte beim Veranstalter bestätigen'},
+  en: {event_host: 'Host', event_shared_by: 'Shared by', events_ai_unverified_hint: 'AI suggestion — please confirm with the organizer'},
+  tr: {event_host: 'Ev sahibi', event_shared_by: 'Paylaşan', events_ai_unverified_hint: 'Yapay zekâ önerisi — lütfen düzenleyenle doğrula'},
+  ku: {event_host: 'Mêvandar', event_shared_by: 'Ji aliyê ve hat parvekirin', events_ai_unverified_hint: 'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike'},
 };
 for (const code of codes) additions[code] = {};
 for (const row of rows.trim().split('\n')) {

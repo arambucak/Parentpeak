@@ -223,4 +223,49 @@ void main() {
     expect(byId[events[2].id]!.title, 'Bibliothek Mitte');
     expect(byId[events[3].id]!.title, 'Zoo-Führung');
   });
+
+  test('past dated single events are dropped; future and recurring survive',
+      () async {
+    // Vertrauensschutz: Ein datiertes Einzel-Event in der Vergangenheit darf
+    // nicht in den Feed — sonst sähen Eltern ein Event, das es nicht mehr gibt.
+    // Zukünftige Events und wiederkehrende/offene Angebote bleiben erhalten.
+    final now = DateTime.now();
+    final past = now.subtract(const Duration(days: 3));
+    final future = now.add(const Duration(days: 5));
+    final payload = jsonEncode([
+      {
+        'title': 'Vergangenes Konzert',
+        'location': 'Altstadt, Berlin',
+        'category': 'musik',
+        'eventDate':
+            DateTime(past.year, past.month, past.day, 10).toIso8601String(),
+      },
+      {
+        'title': 'Kommendes Theater',
+        'location': 'Marktplatz, Berlin',
+        'category': 'theater',
+        'eventDate': DateTime(future.year, future.month, future.day, 15)
+            .toIso8601String(),
+      },
+      {
+        'title': 'Offener Familientreff',
+        'location': 'Kreuzberg, Berlin',
+        'category': 'familienzentrum',
+        'eventDate': null,
+        'recurringNote': 'jeden Samstag 10-13 Uhr',
+      },
+    ]);
+    final agent = EventDiscoveryAgent(
+        aiService: GeminiAIService(
+      apiClient:
+          _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
+    ));
+
+    final events = await agent.discoverEvents(city: 'Berlin');
+    final titles = events.map((e) => e.title).toList();
+    expect(titles, isNot(contains('Vergangenes Konzert')));
+    expect(titles, contains('Kommendes Theater'));
+    expect(titles, contains('Offener Familientreff'));
+    expect(events, hasLength(2));
+  });
 }

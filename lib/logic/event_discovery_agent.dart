@@ -133,6 +133,9 @@ class EventDiscoveryAgent {
       // diese Absicherung öffnete die Detailansicht (id-basierte Auflösung per
       // `firstOrNull`) für verschiedene Karten dasselbe Event.
       final usedIds = <String>{};
+      final nowLocal = DateTime.now().toLocal();
+      final startOfToday =
+          DateTime(nowLocal.year, nowLocal.month, nowLocal.day);
 
       for (var i = 0; i < list.length; i++) {
         // Einzelne nicht-objektartige Einträge überspringen statt den ganzen
@@ -174,6 +177,18 @@ class EventDiscoveryAgent {
         final recurringNote = (map['recurringNote'] as String?)?.trim();
         final hasRecurringNote =
             recurringNote != null && recurringNote.isNotEmpty;
+        final isRecurring =
+            (map['isRecurring'] as bool? ?? false) || hasRecurringNote;
+
+        // Vertrauensschutz: Ein datiertes Einzel-Event, dessen Tag bereits
+        // vorbei ist, darf gar nicht erst in den Feed. Sonst sähen Eltern ein
+        // Event, das es nicht mehr gibt. Wiederkehrende/offene Angebote (ohne
+        // festes Datum) sind davon ausgenommen — sie finden weiterhin statt.
+        if (!isRecurring && eventDate != null) {
+          final day = eventDate.toLocal();
+          final startOfDay = DateTime(day.year, day.month, day.day);
+          if (startOfDay.isBefore(startOfToday)) continue;
+        }
 
         // Eindeutige ID erzwingen: fehlende oder bereits vergebene IDs (auch
         // von Gemini doppelt gelieferte) werden durch eine frische ersetzt.
@@ -196,8 +211,7 @@ class EventDiscoveryAgent {
           // Ein wiederkehrendes/dauerhaft offenes Angebot (recurringNote
           // gesetzt) gilt als laufend — auch ohne festes eventDate. Das
           // schützt solche echten Treffer vor dem Zeitfenster-Filter.
-          isRecurring:
-              (map['isRecurring'] as bool? ?? false) || hasRecurringNote,
+          isRecurring: isRecurring,
           recurringNote: hasRecurringNote ? recurringNote : null,
           eventTimeRange: map['eventTimeRange'] as String?,
           price: map['price'] as String?,
