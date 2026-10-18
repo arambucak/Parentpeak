@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
+import 'package:parentpeak/logic/event_geocoder.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/models/meetup_event.dart';
@@ -16,30 +17,47 @@ BackendApiClient _client(http.Response Function(http.Request) respond) =>
         authToken: 'test-only',
         httpClient: MockClient((request) async => respond(request)));
 
+/// Geocoder, der ohne echte Netzwerk-Calls antwortet. Standardmäßig löst jede
+/// Adresse auf gültige Berliner Koordinaten auf; mit [resolvable] = false
+/// liefert er leere Ergebnisse (Adresse nicht verortbar).
+EventGeocoder _fakeGeocoder({bool resolvable = true}) => EventGeocoder(
+      minimumInterval: Duration.zero,
+      client: MockClient((_) async => http.Response(
+            resolvable
+                ? jsonEncode([
+                    {'lat': '52.5200', 'lon': '13.4050'}
+                  ])
+                : jsonEncode([]),
+            200,
+          )),
+    );
+
 void main() {
   test('AI discovery requests a small grounded batch without invented dates',
       () async {
-    final agent = EventDiscoveryAgent(aiService: GeminiAIService(
-      apiClient: _client((request) {
-        final body = jsonDecode(request.body) as Map<String, dynamic>;
-        final prompt = body['prompt'] as String;
-        expect(body['useGoogleSearch'], isTrue);
-        expect(prompt, contains('bis zu 5'));
-        expect(prompt, contains('höchstens ein kurzer Satz'));
-        expect(prompt, contains('eventDate=null'));
-        expect(prompt, contains('ohne Treffer []'));
-        // Der gelockerte Prompt erlaubt neben Einzel-Events auch
-        // wiederkehrende/dauerhaft offene Familienorte und fordert dafür einen
-        // Rhythmus-Hinweis statt eines erfundenen Datums.
-        expect(prompt, contains('recurringNote'));
-        expect(prompt, contains('wiederkehrende'));
-        // Weiterhin keine erfundenen Platzhalter-Daten/-Mengen.
-        expect(prompt, contains('Nichts erfinden'));
-        expect(prompt, isNot(contains('genau 10')));
-        expect(prompt, isNot(contains('T10:00:00')));
-        return http.Response(jsonEncode({'text': '[]'}), 200);
-      }),
-    ));
+    final agent = EventDiscoveryAgent(
+        geocoder: _fakeGeocoder(),
+        aiService: GeminiAIService(
+          apiClient: _client((request) {
+            final body = jsonDecode(request.body) as Map<String, dynamic>;
+            final prompt = body['prompt'] as String;
+            expect(body['useGoogleSearch'], isTrue);
+            expect(prompt, contains('bis zu 5'));
+            expect(prompt, contains('höchstens ein kurzer Satz'));
+            expect(prompt, contains('eventDate=null'));
+            expect(prompt, contains('ohne Treffer []'));
+            // Der gelockerte Prompt erlaubt neben Einzel-Events auch
+            // wiederkehrende/dauerhaft offene Familienorte und fordert dafür einen
+            // Rhythmus-Hinweis statt eines erfundenen Datums.
+            expect(prompt, contains('recurringNote'));
+            expect(prompt, contains('wiederkehrende'));
+            // Weiterhin keine erfundenen Platzhalter-Daten/-Mengen.
+            expect(prompt, contains('Nichts erfinden'));
+            expect(prompt, isNot(contains('genau 10')));
+            expect(prompt, isNot(contains('T10:00:00')));
+            return http.Response(jsonEncode({'text': '[]'}), 200);
+          }),
+        ));
 
     expect(await agent.discoverEvents(city: 'Berlin'), isEmpty);
   });
@@ -64,10 +82,11 @@ void main() {
       },
     ]);
     final agent = EventDiscoveryAgent(
+        geocoder: _fakeGeocoder(),
         aiService: GeminiAIService(
-      apiClient:
-          _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
-    ));
+          apiClient:
+              _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
+        ));
     final events = await agent.discoverEvents(city: 'Berlin');
     expect(events, hasLength(1));
     expect(events.first.eventDate, isNull);
@@ -78,13 +97,15 @@ void main() {
   test('AI failure makes one request and never invents replacement events',
       () async {
     var requests = 0;
-    final agent = EventDiscoveryAgent(aiService: GeminiAIService(
-      apiClient: _client((request) {
-        requests++;
-        expect(jsonDecode(request.body)['useGoogleSearch'], isTrue);
-        return http.Response('{}', 503);
-      }),
-    ));
+    final agent = EventDiscoveryAgent(
+        geocoder: _fakeGeocoder(),
+        aiService: GeminiAIService(
+          apiClient: _client((request) {
+            requests++;
+            expect(jsonDecode(request.body)['useGoogleSearch'], isTrue);
+            return http.Response('{}', 503);
+          }),
+        ));
     await expectLater(agent.discoverEvents(city: 'Berlin'), throwsException);
     expect(requests, 1);
   });
@@ -93,9 +114,11 @@ void main() {
       () async {
     var text = '[]';
     final agent = EventDiscoveryAgent(
+        geocoder: _fakeGeocoder(),
         aiService: GeminiAIService(
-      apiClient: _client((_) => http.Response(jsonEncode({'text': text}), 200)),
-    ));
+          apiClient:
+              _client((_) => http.Response(jsonEncode({'text': text}), 200)),
+        ));
     expect(await agent.discoverEvents(city: 'Berlin'), isEmpty);
     text = 'not a result';
     await expectLater(
@@ -160,10 +183,11 @@ void main() {
       'kein-objekt',
     ]);
     final agent = EventDiscoveryAgent(
+        geocoder: _fakeGeocoder(),
         aiService: GeminiAIService(
-      apiClient:
-          _client((_) => http.Response(jsonEncode({'text': mixed}), 200)),
-    ));
+          apiClient:
+              _client((_) => http.Response(jsonEncode({'text': mixed}), 200)),
+        ));
     final events = await agent.discoverEvents(city: 'Berlin');
     expect(events, hasLength(1));
     expect(events.first.title, 'Laternenfest');
@@ -201,10 +225,11 @@ void main() {
       },
     ]);
     final agent = EventDiscoveryAgent(
+        geocoder: _fakeGeocoder(),
         aiService: GeminiAIService(
-      apiClient:
-          _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
-    ));
+          apiClient:
+              _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
+        ));
 
     final events = await agent.discoverEvents(city: 'Berlin');
     expect(events, hasLength(4));
@@ -256,10 +281,11 @@ void main() {
       },
     ]);
     final agent = EventDiscoveryAgent(
+        geocoder: _fakeGeocoder(),
         aiService: GeminiAIService(
-      apiClient:
-          _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
-    ));
+          apiClient:
+              _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
+        ));
 
     final events = await agent.discoverEvents(city: 'Berlin');
     final titles = events.map((e) => e.title).toList();
@@ -267,5 +293,53 @@ void main() {
     expect(titles, contains('Kommendes Theater'));
     expect(titles, contains('Offener Familientreff'));
     expect(events, hasLength(2));
+  });
+
+  test('resolvable address gets coordinates and stays confirmed', () async {
+    final payload = jsonEncode([
+      {
+        'title': 'Theater am Markt',
+        'location': 'Marktplatz 1, Berlin',
+        'category': 'theater',
+        'recurringNote': 'täglich',
+      },
+    ]);
+    final agent = EventDiscoveryAgent(
+      geocoder: _fakeGeocoder(resolvable: true),
+      aiService: GeminiAIService(
+        apiClient:
+            _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
+      ),
+    );
+    final events = await agent.discoverEvents(city: 'Berlin');
+    expect(events, hasLength(1));
+    expect(events.first.locationConfirmed, isTrue);
+    // Echte Koordinaten vom Geocoder gesetzt → richtige Entfernungsanzeige.
+    expect(events.first.latitude, 52.52);
+    expect(events.first.longitude, 13.405);
+  });
+
+  test('unresolvable address is kept but flagged as unconfirmed', () async {
+    // Vertrauensschutz Stufe 2 (Option B): Eine vage/nicht verortbare Adresse
+    // verwirft das Event NICHT (könnte echt sein), markiert es aber als
+    // nicht bestätigt, damit die UI ehrlich warnen kann.
+    final payload = jsonEncode([
+      {
+        'title': 'Familienzentrum irgendwo',
+        'location': 'Erfundene Gasse 999, Nirgendwo',
+        'category': 'familienzentrum',
+        'recurringNote': 'täglich',
+      },
+    ]);
+    final agent = EventDiscoveryAgent(
+      geocoder: _fakeGeocoder(resolvable: false),
+      aiService: GeminiAIService(
+        apiClient:
+            _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
+      ),
+    );
+    final events = await agent.discoverEvents(city: 'Berlin');
+    expect(events, hasLength(1), reason: 'event must not be dropped');
+    expect(events.first.locationConfirmed, isFalse);
   });
 }

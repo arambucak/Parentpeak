@@ -66,6 +66,25 @@ class EventDetailPage extends StatelessWidget {
           ],
           _infoCard(theme, '\u{1F4CD}', context.tr('event_owner_location'),
               event.location),
+          // Ort konnte nicht gegen die Karte verortet werden — ehrlich
+          // kennzeichnen, statt eine unbestätigte Adresse als gesichert zu
+          // zeigen. Nur relevant für KI-Vorschläge.
+          if (event.source == DiscoveredEventSource.kiAgent &&
+              !event.locationConfirmed) ...[
+            const SizedBox(height: 6),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(Icons.location_off_rounded,
+                  size: 14, color: Color(0xFFB91C1C)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  context.tr('events_location_unconfirmed'),
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: const Color(0xFFB91C1C), height: 1.3),
+                ),
+              ),
+            ]),
+          ],
           const SizedBox(height: 10),
           _infoCard(theme, '\u{1F476}', context.tr('event_detail_age_groups'),
               event.ageLabels.join(', ')),

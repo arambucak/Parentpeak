@@ -21,10 +21,12 @@ import 'package:parentpeak/logic/privacy_sanitizer.dart';
 class EventDiscoveryAgent {
   static final EventDiscoveryAgent instance = EventDiscoveryAgent();
 
-  EventDiscoveryAgent({GeminiAIService? aiService})
-      : _aiService = aiService ?? GeminiAIService(modelName: _groundingModel);
+  EventDiscoveryAgent({GeminiAIService? aiService, EventGeocoder? geocoder})
+      : _aiService = aiService ?? GeminiAIService(modelName: _groundingModel),
+        _geocoder = geocoder ?? EventGeocoder.instance;
 
   final GeminiAIService _aiService;
+  final EventGeocoder _geocoder;
 
   // ─── Haupt-Methode ─────────────────────────────────────────────────────────
 
@@ -102,11 +104,49 @@ class EventDiscoveryAgent {
     final response = await _aiService
         .generate(prompt, useGoogleSearch: true)
         .timeout(const Duration(seconds: 45));
-    return _parseAgentResponse(
+    final parsed = _parseAgentResponse(
       response.text,
       city,
       groundingUrls: response.groundingUrls,
     );
+    return _confirmLocations(parsed);
+  }
+
+  /// Vertrauensschutz (Stufe 2): Jede KI-Adresse gegen OpenStreetMap auflösen.
+  /// - Erfolg  → echte Koordinaten setzen (richtige Entfernungsanzeige),
+  ///             locationConfirmed = true.
+  /// - Fehlschlag → Event bleibt erhalten (vage, aber evtl. echte Adresse),
+  ///             wird jedoch als locationConfirmed = false markiert, damit die
+  ///             UI „Ort nicht bestätigt" anzeigen kann.
+  /// Fehler beim Geocoding dürfen den Feed nicht sprengen — im Zweifel bleibt
+  /// das Event unverändert (confirmed = true), statt es fälschlich abzuwerten.
+  Future<List<DiscoveredEvent>> _confirmLocations(
+      List<DiscoveredEvent> events) async {
+    final confirmed = <DiscoveredEvent>[];
+    for (final event in events) {
+      final address = event.location.trim();
+      if (address.isEmpty) {
+        confirmed.add(event.copyWith(locationConfirmed: false));
+        continue;
+      }
+      try {
+        final coords = await _geocoder.resolve(address);
+        if (coords != null && reliableEventCoordinates(coords.$1, coords.$2)) {
+          confirmed.add(event.copyWith(
+            latitude: coords.$1,
+            longitude: coords.$2,
+            locationConfirmed: true,
+          ));
+        } else {
+          confirmed.add(event.copyWith(locationConfirmed: false));
+        }
+      } catch (_) {
+        // Geocoder-Ausfall ist kein Beleg für eine falsche Adresse — Event
+        // unverändert durchlassen, nicht abwerten.
+        confirmed.add(event);
+      }
+    }
+    return confirmed;
   }
 
   // ─── Parser ────────────────────────────────────────────────────────────────

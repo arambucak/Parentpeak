@@ -12,6 +12,7 @@ class AppStringsManager {
   static const Map<String, Map<String, String>> allStrings = {
     // Deutsch
     'de': {
+      'events_location_unconfirmed': 'Adresse nicht auf der Karte bestätigt — bitte vor dem Hinfahren prüfen',
       'events_ai_unverified_hint': 'KI-Vorschlag — bitte beim Veranstalter bestätigen',
       ...profileAccountDe,
       'events_attendees_count': '{count} dabei',
@@ -3347,6 +3348,7 @@ class AppStringsManager {
     },
     // English
     'en': {
+      'events_location_unconfirmed': 'Address not confirmed on the map — please check before you go',
       'events_ai_unverified_hint': 'AI suggestion — please confirm with the organizer',
       ...profileAccountEn,
       'events_attendees_count': '{count} going',
@@ -6612,6 +6614,7 @@ class AppStringsManager {
     },
     // Français
     'fr': {
+      'events_location_unconfirmed': 'Adresse non confirmée sur la carte — à vérifier avant de vous déplacer',
       'events_ai_unverified_hint': 'Suggestion IA — à confirmer auprès de l\'organisateur',
       ...appLocalizationsFrExtra,
       'events_attendees_count': '{count} going',
@@ -7437,6 +7440,7 @@ class AppStringsManager {
     },
     // Español
     'es': {
+      'events_location_unconfirmed': 'Dirección no confirmada en el mapa — compruébala antes de ir',
       'events_ai_unverified_hint': 'Sugerencia IA — confirma con el organizador',
       ...appLocalizationsEsExtra,
       'events_attendees_count': '{count} going',
@@ -8249,6 +8253,7 @@ class AppStringsManager {
     },
     // Italiano
     'it': {
+      'events_location_unconfirmed': 'Indirizzo non confermato sulla mappa — verifica prima di andarci',
       'events_ai_unverified_hint': 'Suggerimento IA — conferma con l\'organizzatore',
       ...appLocalizationsItExtra,
       'events_attendees_count': '{count} going',
@@ -9061,6 +9066,7 @@ class AppStringsManager {
     },
     // Português
     'pt': {
+      'events_location_unconfirmed': 'Morada não confirmada no mapa — verifique antes de ir',
       'events_ai_unverified_hint': 'Sugestão IA — confirme com o organizador',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -9874,6 +9880,7 @@ class AppStringsManager {
     },
     // Nederlands
     'nl': {
+      'events_location_unconfirmed': 'Adres niet bevestigd op de kaart — controleer dit voordat je gaat',
       'events_ai_unverified_hint': 'AI-suggestie — bevestig bij de organisator',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -10688,6 +10695,7 @@ class AppStringsManager {
     },
     // العربية (Arabic)
     'ar': {
+      'events_location_unconfirmed': 'العنوان غير مؤكد على الخريطة — تحقّق منه قبل الذهاب',
       'events_ai_unverified_hint': 'اقتراح بالذكاء الاصطناعي — أكّده مع المنظم',
       ...appLocalizationsArExtra,
       'events_attendees_count': '{count} going',
@@ -11481,6 +11489,7 @@ class AppStringsManager {
     },
     // فارسی (Persian/Farsi)
     'fa': {
+      'events_location_unconfirmed': 'نشانی روی نقشه تأیید نشده است — پیش از رفتن بررسی کنید',
       'events_ai_unverified_hint': 'پیشنهاد هوش مصنوعی — با برگزارکننده تأیید کنید',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -12289,6 +12298,7 @@ class AppStringsManager {
     },
     // کوردی Kurmancî (ku)
     'ku': {
+      'events_location_unconfirmed': 'Navnîşan li ser nexşeyê nehat piştrastkirin — berî çûyînê kontrol bike',
       'events_ai_unverified_hint': 'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike',
       ...profileAccountKu,
       'events_attendees_count': '{count} beşdar in',
@@ -15579,6 +15589,7 @@ class AppStringsManager {
     },
     // کوردی سۆرانی (ckb)
     'ckb': {
+      'events_location_unconfirmed': 'ناونیشان لەسەر نەخشە پشتڕاست نەکراوەتەوە — پێش ڕۆیشتن بیپشکنە',
       'events_ai_unverified_hint': 'پێشنیاری زیرەکی دەستکرد — لەگەڵ ڕێکخەر پشتڕاستی بکەرەوە',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -16387,6 +16398,7 @@ class AppStringsManager {
     },
     // 中文 (Chinese Simplified)
     'zh': {
+      'events_location_unconfirmed': '地址未在地图上确认 — 出发前请核实',
       'events_ai_unverified_hint': '人工智能建议 — 请向组织者确认',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -17164,6 +17176,7 @@ class AppStringsManager {
     },
     // 日本語 (Japanese)
     'ja': {
+      'events_location_unconfirmed': '住所は地図で確認できていません — お出かけ前にご確認ください',
       'events_ai_unverified_hint': 'AIの提案 — 主催者にご確認ください',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -17943,6 +17956,7 @@ class AppStringsManager {
     },
     // हिन्दी (Hindi)
     'hi': {
+      'events_location_unconfirmed': 'पता मानचित्र पर पुष्ट नहीं — जाने से पहले जाँचें',
       'events_ai_unverified_hint': 'एआई सुझाव — आयोजक से पुष्टि करें',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -18754,6 +18768,7 @@ class AppStringsManager {
     },
     // Türkçe (Turkish)
     'tr': {
+      'events_location_unconfirmed': 'Adres haritada doğrulanmadı — gitmeden önce lütfen kontrol et',
       'events_ai_unverified_hint': 'Yapay zekâ önerisi — lütfen düzenleyenle doğrula',
       ...profileAccountTr,
       'events_attendees_count': '{count} katılıyor',
@@ -23084,6 +23099,7 @@ class AppStringsManager {
     },
     // Polski (Polish)
     'pl': {
+      'events_location_unconfirmed': 'Adres niepotwierdzony na mapie — sprawdź przed wyjazdem',
       'events_ai_unverified_hint': 'Sugestia SI — potwierdź u organizatora',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
