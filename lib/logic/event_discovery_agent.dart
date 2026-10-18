@@ -115,35 +115,31 @@ class EventDiscoveryAgent {
   /// Vertrauensschutz (Stufe 2): Jede KI-Adresse gegen OpenStreetMap auflösen.
   /// - Erfolg  → echte Koordinaten setzen (richtige Entfernungsanzeige),
   ///             locationConfirmed = true.
-  /// - Fehlschlag → Event bleibt erhalten (vage, aber evtl. echte Adresse),
-  ///             wird jedoch als locationConfirmed = false markiert, damit die
-  ///             UI „Ort nicht bestätigt" anzeigen kann.
-  /// Fehler beim Geocoding dürfen den Feed nicht sprengen — im Zweifel bleibt
-  /// das Event unverändert (confirmed = true), statt es fälschlich abzuwerten.
+  /// - Sonst → Event bleibt IMMER erhalten (die Adresse ist vielleicht echt,
+  ///             nur vage, oder der Geocoder war nicht erreichbar), wird aber
+  ///             als locationConfirmed = false markiert, damit die UI ehrlich
+  ///             „Ort nicht bestätigt" anzeigt. Konservativ und sicher: lieber
+  ///             ein zu vorsichtiger Hinweis als ein ungeprüft als gesichert
+  ///             dargestellter Ort. Ein Event wird hier NIE verworfen.
+  ///
+  /// Hinweis: EventGeocoder.resolve fängt Netzwerk-/Serverfehler intern ab und
+  /// liefert dann null — ein Ausfall ist damit gleichbedeutend mit „nicht
+  /// verortbar" und führt (nur) zu locationConfirmed = false, nicht zum Verlust
+  /// des Events.
   Future<List<DiscoveredEvent>> _confirmLocations(
       List<DiscoveredEvent> events) async {
     final confirmed = <DiscoveredEvent>[];
     for (final event in events) {
       final address = event.location.trim();
-      if (address.isEmpty) {
+      final coords = address.isEmpty ? null : await _geocoder.resolve(address);
+      if (coords != null && reliableEventCoordinates(coords.$1, coords.$2)) {
+        confirmed.add(event.copyWith(
+          latitude: coords.$1,
+          longitude: coords.$2,
+          locationConfirmed: true,
+        ));
+      } else {
         confirmed.add(event.copyWith(locationConfirmed: false));
-        continue;
-      }
-      try {
-        final coords = await _geocoder.resolve(address);
-        if (coords != null && reliableEventCoordinates(coords.$1, coords.$2)) {
-          confirmed.add(event.copyWith(
-            latitude: coords.$1,
-            longitude: coords.$2,
-            locationConfirmed: true,
-          ));
-        } else {
-          confirmed.add(event.copyWith(locationConfirmed: false));
-        }
-      } catch (_) {
-        // Geocoder-Ausfall ist kein Beleg für eine falsche Adresse — Event
-        // unverändert durchlassen, nicht abwerten.
-        confirmed.add(event);
       }
     }
     return confirmed;
