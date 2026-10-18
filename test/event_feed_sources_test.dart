@@ -168,4 +168,59 @@ void main() {
     expect(events, hasLength(1));
     expect(events.first.title, 'Laternenfest');
   });
+
+  test('discovered events always get unique ids even on duplicate/missing ids',
+      () async {
+    // Regression (Tester-Feedback): Gemini liefert mitunter für mehrere Events
+    // dieselbe oder gar keine `id`. Die Detailansicht löst Events per id auf
+    // (firstOrNull) — ohne eindeutige ids zeigte jede Karte dasselbe Event.
+    final payload = jsonEncode([
+      {
+        'id': 'dup',
+        'title': 'Theater am Markt',
+        'location': 'Marktplatz 1, Berlin',
+        'category': 'theater',
+      },
+      {
+        'id': 'dup', // gleiche id wie oben
+        'title': 'Schwimmbad Nord',
+        'location': 'Seestraße 9, Berlin',
+        'category': 'sport',
+      },
+      {
+        // gar keine id
+        'title': 'Bibliothek Mitte',
+        'location': 'Leseweg 4, Berlin',
+        'category': 'sonstiges',
+      },
+      {
+        // ebenfalls keine id
+        'title': 'Zoo-Führung',
+        'location': 'Tierparkallee 2, Berlin',
+        'category': 'natur',
+      },
+    ]);
+    final agent = EventDiscoveryAgent(
+        aiService: GeminiAIService(
+      apiClient:
+          _client((_) => http.Response(jsonEncode({'text': payload}), 200)),
+    ));
+
+    final events = await agent.discoverEvents(city: 'Berlin');
+    expect(events, hasLength(4));
+
+    // Jede id ist eindeutig — Grundvoraussetzung dafür, dass die
+    // Detailansicht pro Karte das richtige Event auflöst.
+    final ids = events.map((e) => e.id).toList();
+    expect(ids.toSet(), hasLength(4), reason: 'ids must be unique: $ids');
+    expect(ids.every((id) => id.trim().isNotEmpty), isTrue);
+
+    // Und jede id gehört weiterhin zum korrekten Event (Titel/Adresse intakt).
+    final byId = {for (final e in events) e.id: e};
+    expect(byId[events[0].id]!.title, 'Theater am Markt');
+    expect(byId[events[1].id]!.title, 'Schwimmbad Nord');
+    expect(byId[events[1].id]!.location, 'Seestraße 9, Berlin');
+    expect(byId[events[2].id]!.title, 'Bibliothek Mitte');
+    expect(byId[events[3].id]!.title, 'Zoo-Führung');
+  });
 }
