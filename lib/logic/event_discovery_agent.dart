@@ -128,6 +128,11 @@ class EventDiscoveryAgent {
       }
       final list = decoded;
       final results = <DiscoveredEvent>[];
+      // Garantiert eindeutige IDs über den gesamten Feed. Gemini liefert
+      // mitunter fehlende oder für mehrere Events identische `id`-Werte; ohne
+      // diese Absicherung öffnete die Detailansicht (id-basierte Auflösung per
+      // `firstOrNull`) für verschiedene Karten dasselbe Event.
+      final usedIds = <String>{};
 
       for (var i = 0; i < list.length; i++) {
         // Einzelne nicht-objektartige Einträge überspringen statt den ganzen
@@ -170,8 +175,17 @@ class EventDiscoveryAgent {
         final hasRecurringNote =
             recurringNote != null && recurringNote.isNotEmpty;
 
+        // Eindeutige ID erzwingen: fehlende oder bereits vergebene IDs (auch
+        // von Gemini doppelt gelieferte) werden durch eine frische ersetzt.
+        final rawId = map['id']?.toString().trim();
+        var eventId = (rawId == null || rawId.isEmpty) ? _generateId() : rawId;
+        if (!usedIds.add(eventId)) {
+          eventId = _generateId();
+          usedIds.add(eventId);
+        }
+
         results.add(DiscoveredEvent(
-          id: map['id']?.toString() ?? _generateId(),
+          id: eventId,
           title: map['title'] as String? ?? 'Event',
           description: map['description'] as String? ?? '',
           category: _parseCategory(categoryStr),
@@ -292,6 +306,12 @@ class EventDiscoveryAgent {
   String _sanitize(String input) =>
       input.replaceAll(RegExp(r'[<>{}\[\]\\]'), '').trim();
 
+  // Monotoner Zähler als Teil der ID. `DateTime.now().microsecond` ist auf Web
+  // immer 0 und mehrere in derselben Millisekunde erzeugte Events bekamen so
+  // identische IDs — dadurch löste die Detailansicht per `firstOrNull` immer
+  // dasselbe Event auf. Der Zähler garantiert Eindeutigkeit pro Prozesslauf.
+  int _idCounter = 0;
+
   String _generateId() =>
-      'ev_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond % 9000}';
+      'ev_${DateTime.now().millisecondsSinceEpoch}_${_idCounter++}';
 }
