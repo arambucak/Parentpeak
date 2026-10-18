@@ -12,6 +12,7 @@ class AppStringsManager {
   static const Map<String, Map<String, String>> allStrings = {
     // Deutsch
     'de': {
+      'events_ai_unverified_hint': 'KI-Vorschlag — bitte beim Veranstalter bestätigen',
       ...profileAccountDe,
       'events_attendees_count': '{count} dabei',
       'events_attendees_none': 'Noch niemand dabei',
@@ -3346,6 +3347,7 @@ class AppStringsManager {
     },
     // English
     'en': {
+      'events_ai_unverified_hint': 'AI suggestion — please confirm with the organizer',
       ...profileAccountEn,
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -6610,6 +6612,7 @@ class AppStringsManager {
     },
     // Français
     'fr': {
+      'events_ai_unverified_hint': 'Suggestion IA — à confirmer auprès de l\'organisateur',
       ...appLocalizationsFrExtra,
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -7434,6 +7437,7 @@ class AppStringsManager {
     },
     // Español
     'es': {
+      'events_ai_unverified_hint': 'Sugerencia IA — confirma con el organizador',
       ...appLocalizationsEsExtra,
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -8245,6 +8249,7 @@ class AppStringsManager {
     },
     // Italiano
     'it': {
+      'events_ai_unverified_hint': 'Suggerimento IA — conferma con l\'organizzatore',
       ...appLocalizationsItExtra,
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -9056,6 +9061,7 @@ class AppStringsManager {
     },
     // Português
     'pt': {
+      'events_ai_unverified_hint': 'Sugestão IA — confirme com o organizador',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -9868,6 +9874,7 @@ class AppStringsManager {
     },
     // Nederlands
     'nl': {
+      'events_ai_unverified_hint': 'AI-suggestie — bevestig bij de organisator',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -10681,6 +10688,7 @@ class AppStringsManager {
     },
     // العربية (Arabic)
     'ar': {
+      'events_ai_unverified_hint': 'اقتراح بالذكاء الاصطناعي — أكّده مع المنظم',
       ...appLocalizationsArExtra,
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -11473,6 +11481,7 @@ class AppStringsManager {
     },
     // فارسی (Persian/Farsi)
     'fa': {
+      'events_ai_unverified_hint': 'پیشنهاد هوش مصنوعی — با برگزارکننده تأیید کنید',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -12280,6 +12289,7 @@ class AppStringsManager {
     },
     // کوردی Kurmancî (ku)
     'ku': {
+      'events_ai_unverified_hint': 'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike',
       ...profileAccountKu,
       'events_attendees_count': '{count} beşdar in',
       'events_attendees_none': 'Hêj kes tune',
@@ -15569,6 +15579,7 @@ class AppStringsManager {
     },
     // کوردی سۆرانی (ckb)
     'ckb': {
+      'events_ai_unverified_hint': 'پێشنیاری زیرەکی دەستکرد — لەگەڵ ڕێکخەر پشتڕاستی بکەرەوە',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -16376,6 +16387,7 @@ class AppStringsManager {
     },
     // 中文 (Chinese Simplified)
     'zh': {
+      'events_ai_unverified_hint': '人工智能建议 — 请向组织者确认',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -17152,6 +17164,7 @@ class AppStringsManager {
     },
     // 日本語 (Japanese)
     'ja': {
+      'events_ai_unverified_hint': 'AIの提案 — 主催者にご確認ください',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -17930,6 +17943,7 @@ class AppStringsManager {
     },
     // हिन्दी (Hindi)
     'hi': {
+      'events_ai_unverified_hint': 'एआई सुझाव — आयोजक से पुष्टि करें',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -18740,6 +18754,7 @@ class AppStringsManager {
     },
     // Türkçe (Turkish)
     'tr': {
+      'events_ai_unverified_hint': 'Yapay zekâ önerisi — lütfen düzenleyenle doğrula',
       ...profileAccountTr,
       'events_attendees_count': '{count} katılıyor',
       'events_attendees_none': 'Henüz kimse yok',
@@ -23069,6 +23084,7 @@ class AppStringsManager {
     },
     // Polski (Polish)
     'pl': {
+      'events_ai_unverified_hint': 'Sugestia SI — potwierdź u organizatora',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',

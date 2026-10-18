@@ -190,7 +190,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       debugPrint('Event account location load failed: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.tr('profile_account_failed'))));
+            SnackBar(content: Text(context.tr('profile_account_failed'))));
       }
       return;
     }
@@ -262,7 +262,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
           _refreshFeed();
         }
       } finally {
-        if (mounted && _locationAccounts.isCurrent(ticket)) setState(() => _gpsDetecting = false);
+        if (mounted && _locationAccounts.isCurrent(ticket)) {
+          setState(() => _gpsDetecting = false);
+        }
       }
       if (mounted && _locationAccounts.isCurrent(ticket)) _refreshFeed();
       return;
@@ -391,7 +393,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       }
     } catch (e) {
       debugPrint('EventsActivitiesScreen: GPS fehlgeschlagen: $e');
-      if (mounted && _locationAccounts.isCurrent(ticket)) setState(() => _gpsDetecting = false);
+      if (mounted && _locationAccounts.isCurrent(ticket)) {
+        setState(() => _gpsDetecting = false);
+      }
     }
     if (mounted && _locationAccounts.isCurrent(ticket)) _refreshFeed();
   }
@@ -1412,22 +1416,24 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       children: [
         Expanded(
           child: LocationPickerWidget(
-            key: ValueKey('events.location.${ticket.scope}.${ticket.generation}'),
+            key: ValueKey(
+                'events.location.${ticket.scope}.${ticket.generation}'),
             hint: context.tr('events_choose_location'),
             initialLocation: _activeLocation,
             onLocationPicked: (loc) async {
               if (!mounted || !_locationAccounts.isCurrent(ticket)) return;
               try {
                 await _locationAccounts.write(ticket, {
-                  _savedCityKey: loc.city.isNotEmpty ? loc.city : loc.displayName,
+                  _savedCityKey:
+                      loc.city.isNotEmpty ? loc.city : loc.displayName,
                 });
               } on ProfileAccountChanged {
                 return;
               } catch (error) {
                 debugPrint('Event account location save failed: $error');
                 if (mounted && _locationAccounts.isCurrent(ticket)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.tr('profile_account_failed'))));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(context.tr('profile_account_failed'))));
                 }
                 return;
               }
@@ -2304,6 +2310,29 @@ class _UnifiedEventCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
+                ),
+              ],
+              // Vertrauens-Transparenz: KI-Vorschläge sind nicht verifiziert.
+              // Der Hinweis steht direkt auf der Karte (nicht nur im Detail),
+              // damit niemand ungeprüft hinfährt.
+              if (isAi) ...[
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline_rounded,
+                        size: 13, color: Color(0xFF92400E)),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        context.tr('events_ai_unverified_hint'),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: const Color(0xFF92400E),
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ],
