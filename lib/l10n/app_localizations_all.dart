@@ -12,6 +12,11 @@ class AppStringsManager {
   static const Map<String, Map<String, String>> allStrings = {
     // Deutsch
     'de': {
+      'ritual_ai_consent_title': 'KI für Rituale und Geschichten?',
+      'ritual_ai_consent_body': 'Für optionale Ritualvorschläge und Gute-Nacht-Geschichten werden das Alter in ganzen Jahren, die gewählte Tageszeit und die App-Sprache über unser Backend an Google Gemini gesendet. Namen, Geburtsdatum und deine lokalen Einträge werden nicht mitgesendet. Die Zustimmung gilt nur für dieses Konto und diese Ritual-KI-Funktionen. Die lokalen Rituale bleiben auch ohne KI nutzbar.',
+      'ritual_ai_consent_accept': 'Zustimmen und KI nutzen',
+      'ritual_ai_consent_declined': 'Ohne Zustimmung wird keine KI-Anfrage gestartet. Deine lokalen Rituale bleiben verfügbar.',
+      'ritual_ai_consent_failed': 'Die KI-Funktion konnte nicht freigegeben werden. Bitte versuche es erneut.',
       'report_delivery_success': 'Danke für deine Meldung. Wir prüfen den Inhalt.',
       'weekly_ai_consent_title': 'KI-Feedback zum Wochenrückblick?',
       'weekly_ai_consent_body': 'Nur wenn du zustimmst, werden Stimmung und Antworten dieses Rückblicks über unser Backend an Google Gemini gesendet. Bitte keine Namen oder sensiblen Details eingeben. Die Zustimmung gilt nur für Wochenrückblicke dieses Kontos und kann hier widerrufen werden. Bereits gesendete Daten lassen sich dadurch nicht zurückholen. Dein Rückblick bleibt auch ohne KI lokal nutzbar.',
@@ -3350,6 +3355,11 @@ class AppStringsManager {
     },
     // English
     'en': {
+      'ritual_ai_consent_title': 'AI for rituals and stories?',
+      'ritual_ai_consent_body': 'For optional ritual suggestions and bedtime stories, age in completed years, the selected time of day and the app language are sent through our backend to Google Gemini. Names, birth dates and your local entries are not included. Approval applies only to this account and these ritual AI features. Local rituals remain available without AI.',
+      'ritual_ai_consent_accept': 'Agree and use AI',
+      'ritual_ai_consent_declined': 'Without approval, no AI request is started. Your local rituals remain available.',
+      'ritual_ai_consent_failed': 'The AI feature could not be authorized. Please try again.',
       'report_delivery_success': 'Thank you for your report. We will review the content.',
       'weekly_ai_consent_title': 'AI feedback on your weekly reflection?',
       'weekly_ai_consent_body': 'Only with your consent will the mood and answers in this reflection be sent through our backend to Google Gemini. Please do not enter names or sensitive details. Consent applies only to weekly reflections for this account and can be withdrawn here. Withdrawal cannot retrieve data already sent. Your reflection remains available locally without AI.',
@@ -6619,6 +6629,11 @@ class AppStringsManager {
     },
     // Français
     'fr': {
+      'ritual_ai_consent_title': 'L’IA pour les rituels et les histoires ?',
+      'ritual_ai_consent_body': 'Pour les suggestions facultatives de rituels et les histoires du soir, l’âge en années révolues, le moment de la journée choisi et la langue de l’application sont transmis via notre serveur à Google Gemini. Les noms, dates de naissance et vos notes locales ne sont pas inclus. Votre accord vaut uniquement pour ce compte et ces fonctions IA des rituels. Les rituels locaux restent disponibles sans IA.',
+      'ritual_ai_consent_accept': 'Accepter et utiliser l’IA',
+      'ritual_ai_consent_declined': 'Sans votre accord, aucune requête IA n’est lancée. Vos rituels locaux restent disponibles.',
+      'ritual_ai_consent_failed': 'Impossible d’autoriser cette fonction IA. Veuillez réessayer.',
       'report_delivery_success': 'Merci pour votre signalement. Nous examinerons le contenu.',
       'weekly_ai_consent_title': 'Un retour IA sur votre bilan de la semaine ?',
       'weekly_ai_consent_body': 'Uniquement avec votre accord, votre humeur et les réponses de ce bilan seront envoyées via notre serveur à Google Gemini. Ne saisissez pas de noms ni de détails sensibles. Cet accord ne concerne que les bilans de ce compte et peut être retiré ici. Le retrait ne permet pas de récupérer les données déjà envoyées. Votre bilan reste disponible localement sans IA.',
@@ -7458,6 +7473,11 @@ class AppStringsManager {
     },
     // Español
     'es': {
+      'ritual_ai_consent_title': '¿IA para rutinas e historias?',
+      'ritual_ai_consent_body': 'Para las sugerencias opcionales de rutinas y los cuentos para dormir, se envían la edad en años cumplidos, el momento del día elegido y el idioma de la aplicación a Google Gemini a través de nuestro servidor. No se incluyen nombres, fechas de nacimiento ni tus notas locales. La autorización solo se aplica a esta cuenta y a estas funciones de IA de rutinas. Las rutinas locales siguen disponibles sin IA.',
+      'ritual_ai_consent_accept': 'Aceptar y usar la IA',
+      'ritual_ai_consent_declined': 'Sin tu autorización no se inicia ninguna solicitud de IA. Tus rutinas locales siguen disponibles.',
+      'ritual_ai_consent_failed': 'No se pudo autorizar la función de IA. Inténtalo de nuevo.',
       'report_delivery_success': 'Gracias por tu denuncia. Revisaremos el contenido.',
       'weekly_ai_consent_title': '¿Comentarios de IA sobre tu semana?',
       'weekly_ai_consent_body': 'Solo con tu consentimiento se enviarán el estado de ánimo y las respuestas de este resumen a Google Gemini a través de nuestro servidor. No introduzcas nombres ni detalles sensibles. El consentimiento solo se aplica a los resúmenes de esta cuenta y puedes retirarlo aquí. Retirarlo no permite recuperar datos ya enviados. Tu resumen sigue disponible localmente sin IA.',
@@ -8284,6 +8304,11 @@ class AppStringsManager {
     },
     // Italiano
     'it': {
+      'ritual_ai_consent_title': 'IA per rituali e storie?',
+      'ritual_ai_consent_body': 'Per i suggerimenti facoltativi sui rituali e le storie della buonanotte, l’età in anni compiuti, il momento della giornata scelto e la lingua dell’app vengono inviati a Google Gemini tramite il nostro server. Nomi, date di nascita e annotazioni locali non vengono inclusi. Il consenso vale solo per questo account e per queste funzioni IA dei rituali. I rituali locali restano disponibili senza IA.',
+      'ritual_ai_consent_accept': 'Acconsenti e usa l’IA',
+      'ritual_ai_consent_declined': 'Senza consenso non viene avviata alcuna richiesta IA. I tuoi rituali locali restano disponibili.',
+      'ritual_ai_consent_failed': 'Impossibile autorizzare la funzione IA. Riprova.',
       'report_delivery_success': 'Grazie per la segnalazione. Esamineremo il contenuto.',
       'weekly_ai_consent_title': 'Un riscontro IA sulla tua settimana?',
       'weekly_ai_consent_body': 'Solo con il tuo consenso, l’umore e le risposte di questo riepilogo verranno inviati tramite il nostro server a Google Gemini. Non inserire nomi o dettagli sensibili. Il consenso vale solo per i riepiloghi di questo account e può essere revocato qui. La revoca non recupera i dati già inviati. Il riepilogo resta disponibile localmente senza IA.',
@@ -10739,6 +10764,11 @@ class AppStringsManager {
     },
     // العربية (Arabic)
     'ar': {
+      'ritual_ai_consent_title': 'استخدام الذكاء الاصطناعي للروتين والقصص؟',
+      'ritual_ai_consent_body': 'للحصول على اقتراحات اختيارية للروتين وقصص ما قبل النوم، يُرسل العمر بالسنوات المكتملة ووقت اليوم المختار ولغة التطبيق عبر خادمنا إلى Google Gemini. لا تُرسل الأسماء أو تواريخ الميلاد أو ملاحظاتك المحلية. تسري الموافقة على هذا الحساب وهذه الميزات فقط. يظل الروتين المحلي متاحًا دون الذكاء الاصطناعي.',
+      'ritual_ai_consent_accept': 'الموافقة واستخدام الذكاء الاصطناعي',
+      'ritual_ai_consent_declined': 'لن يبدأ أي طلب للذكاء الاصطناعي دون موافقتك. يظل الروتين المحلي متاحًا.',
+      'ritual_ai_consent_failed': 'تعذّر السماح باستخدام ميزة الذكاء الاصطناعي. يُرجى المحاولة مجددًا.',
       'report_delivery_success': 'شكرًا على بلاغك. سنراجع المحتوى.',
       'weekly_ai_consent_title': 'هل تريد ملاحظات الذكاء الاصطناعي عن أسبوعك؟',
       'weekly_ai_consent_body': 'بموافقتك فقط، تُرسل حالتك المزاجية وإجابات هذه المراجعة عبر خادمنا إلى Google Gemini. يُرجى عدم إدخال أسماء أو تفاصيل حساسة. تقتصر الموافقة على مراجعات هذا الحساب ويمكن سحبها هنا. السحب لا يسترجع البيانات المرسلة سابقًا. تبقى مراجعتك متاحة محليًا دون ذكاء اصطناعي.',
@@ -12355,6 +12385,11 @@ class AppStringsManager {
     },
     // کوردی Kurmancî (ku)
     'ku': {
+      'ritual_ai_consent_title': 'Zîrekiya çêkirî ji bo rîtuel û çîrokan?',
+      'ritual_ai_consent_body': 'Ji bo pêşniyarên bijartî yên rîtuelan û çîrokên berî xewê, temen bi salên temam, dema rojê ya hilbijartî û zimanê sepanê bi rêya servera me ji Google Gemini re tên şandin. Nav, dîroka jidayikbûnê û nivîsên te yên herêmî nayên şandin. Erêkirin tenê ji bo vê hesabê û van taybetmendiyên rîtuelê ye. Rîtuelên herêmî bê zîrekiya çêkirî jî berdest in.',
+      'ritual_ai_consent_accept': 'Erê bike û zîrekiya çêkirî bi kar bîne',
+      'ritual_ai_consent_declined': 'Bê erêkirina te daxwazek ji zîrekiya çêkirî re nayê şandin. Rîtuelên te yên herêmî berdest dimînin.',
+      'ritual_ai_consent_failed': 'Destûra taybetmendiya zîrekiya çêkirî nehat dayîn. Ji kerema xwe dîsa biceribîne.',
       'report_delivery_success': 'Spas ji bo ragihandina te. Em ê naverokê kontrol bikin.',
       'weekly_ai_consent_title': 'Tu şîroveya AI li ser heftaya xwe dixwazî?',
       'weekly_ai_consent_body': 'Tenê bi razîbûna te, hest û bersivên vê nirxandinê bi rêya servera me ji Google Gemini re tên şandin. Nav û hûrguliyên hestiyar nenivîse. Ev razîbûn tenê ji bo nirxandinên vê hesabê ye û tu dikarî li vir paşde bikêşî. Paşvekişandin daneyên berê şandî venagerîne. Nirxandina te bê AI jî li ser cîhazê dimîne.',
@@ -18828,6 +18863,11 @@ class AppStringsManager {
     },
     // Türkçe (Turkish)
     'tr': {
+      'ritual_ai_consent_title': 'Rutinler ve hikâyeler için yapay zekâ?',
+      'ritual_ai_consent_body': 'İsteğe bağlı rutin önerileri ve uyku hikâyeleri için tamamlanmış yıl olarak yaş, seçilen gün bölümü ve uygulama dili sunucumuz üzerinden Google Gemini’ye gönderilir. İsimler, doğum tarihleri ve yerel notların gönderilmez. Onay yalnızca bu hesap ve bu rutin yapay zekâ özellikleri için geçerlidir. Yerel rutinler yapay zekâ olmadan da kullanılabilir.',
+      'ritual_ai_consent_accept': 'Onayla ve yapay zekâyı kullan',
+      'ritual_ai_consent_declined': 'Onay olmadan yapay zekâ isteği başlatılmaz. Yerel rutinlerin kullanılabilir kalır.',
+      'ritual_ai_consent_failed': 'Yapay zekâ özelliğine izin verilemedi. Lütfen yeniden dene.',
       'report_delivery_success': 'Bildirimin için teşekkürler. İçeriği inceleyeceğiz.',
       'weekly_ai_consent_title': 'Haftalık değerlendirmen için yapay zekâ geri bildirimi?',
       'weekly_ai_consent_body': 'Yalnızca onayınla bu değerlendirmedeki ruh hâlin ve yanıtların sunucumuz üzerinden Google Gemini’ye gönderilir. Lütfen ad veya hassas ayrıntı girme. Onay yalnızca bu hesabın haftalık değerlendirmeleri için geçerlidir ve buradan geri alınabilir. Geri almak, daha önce gönderilen verileri geri getirmez. Değerlendirmen yapay zekâ olmadan da cihazında kullanılabilir.',

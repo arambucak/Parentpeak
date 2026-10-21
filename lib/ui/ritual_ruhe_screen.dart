@@ -4,12 +4,14 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/logic/account_ai_consent.dart';
+import 'package:parentpeak/logic/ritual_ai_service.dart';
 import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
+import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 
 /// Extrahiert ein JSON-Objekt aus einer KI-Antwort. Preview-Modelle liefern
 /// die JSON oft in ```json … ``` Codefences oder mit umgebendem Text — ein
@@ -82,16 +84,20 @@ String ritualStepCopy(String language, String text) {
 }
 
 class RitualRuheScreen extends StatelessWidget {
-  const RitualRuheScreen({super.key});
+  const RitualRuheScreen({super.key, this.aiService});
+
+  final RitualAiService? aiService;
 
   @override
   Widget build(BuildContext context) => FamilyHubAccountBoundary(
-        builder: (_) => const _ScopedRitualRuheScreen(),
+        builder: (_) => _ScopedRitualRuheScreen(aiService: aiService),
       );
 }
 
 class _ScopedRitualRuheScreen extends StatefulWidget {
-  const _ScopedRitualRuheScreen();
+  const _ScopedRitualRuheScreen({this.aiService});
+
+  final RitualAiService? aiService;
 
   @override
   State<_ScopedRitualRuheScreen> createState() => _RitualRuheScreenState();
@@ -117,6 +123,44 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
   String _selectedSection = 'morning';
   Map<String, Map<String, _RitualPlan>> _plans = {};
   bool _planLoading = false;
+  bool _consentPending = false;
+  late final _aiService = widget.aiService ?? RitualAiService();
+
+  Future<bool> _ensureAiConsent() async {
+    _consentPending = true;
+    try {
+      final accepted = await ensureAccountAiConsent(
+        context,
+        consent: _aiService.consent,
+        titleKey: 'ritual_ai_consent_title',
+        bodyKey: 'ritual_ai_consent_body',
+        acceptKey: 'ritual_ai_consent_accept',
+        failedKey: 'ritual_ai_consent_failed',
+      );
+      if (!mounted) return false;
+      if (!accepted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('ritual_ai_consent_declined'))),
+        );
+      }
+      return accepted;
+    } finally {
+      _consentPending = false;
+    }
+  }
+
+  void _guardAiContext(KindDossier child, String section) {
+    if (!mounted || !identical(_child, child) || _selectedSection != section) {
+      throw const AccountAiConsentRequiredException();
+    }
+  }
+
+  void _showAiConsentFailure() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_t('ritual_ai_consent_failed'))),
+    );
+  }
 
   bool get _isEvening {
     final hour = DateTime.now().hour;
@@ -417,25 +461,50 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
 
   Future<void> _suggestPlan() async {
     final child = _child;
-    if (child == null || _planLoading || _selectedSection == 'night') return;
+    if (child == null || _planLoading || _storyLoading || _consentPending ||
+        _selectedSection == 'night') {
+      return;
+    }
+    final owner = _aiService.consent.scope;
+    final section = _selectedSection;
+    if (!await _ensureAiConsent() || !mounted) return;
+    if (!identical(_child, child) || _selectedSection != section) return;
+    final revision = _aiService.consent.revision(owner);
     setState(() => _planLoading = true);
-    _RitualPlan plan;
     try {
-      final response = await GeminiAIService().generateText(
+      _RitualPlan plan;
+      try {
+      final response = await _aiService.generate(
         'Erstelle eine kurze Ritualvorlage für ein Kind im Alter von $_ageYears Jahren. Tageszeit: $_sectionTitle. Liefere ausschließlich JSON mit name, time, weekdays und steps. steps ist eine Liste aus title, subtitle, icon und timerSeconds. Maximal 6 Schritte. Keine Namen und keine persönlichen Daten.',
         systemInstruction:
             'Du bist eine pädagogische, inklusive Familienbegleitung. Erstelle sanfte, realistische und druckfreie Rituale. Nutze nur JSON, keine Markdown-Zeichen. Keine Punkte, Streaks, Strafen oder Leistungsdruck.',
-        appLanguage: _localeCode,
+        languageCode: _localeCode,
+        expectedScope: owner,
+        requestGuard: () => _guardAiContext(child, section),
       );
       final jsonStr = extractRitualJsonObject(response);
       if (jsonStr == null) throw const FormatException('Kein JSON im KI-Text');
       plan = _RitualPlan.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);
-    } catch (_) {
+      } on AccountAiConsentRequiredException {
+        rethrow;
+      } catch (error) {
+      debugPrint('Ritual plan generation failed: ${error.runtimeType}');
       plan = _fallbackPlan(_selectedSection, _ageYears);
+      }
+      if (!mounted) return;
+      _guardAiContext(child, section);
+      await _aiService.consent.require(owner);
+      if (!mounted) return;
+      _guardAiContext(child, section);
+      await _editPlan(plan, requestGuard: () {
+        _guardAiContext(child, section);
+        _aiService.consent.requireRevision(owner, revision);
+      });
+    } on AccountAiConsentRequiredException {
+      _showAiConsentFailure();
+    } finally {
+      if (mounted) setState(() => _planLoading = false);
     }
-    if (!mounted) return;
-    await _editPlan(plan);
-    if (mounted) setState(() => _planLoading = false);
   }
 
   _RitualPlan _fallbackPlan(String section, int ageYears) => _RitualPlan(
@@ -464,14 +533,15 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
               ],
       );
 
-  Future<void> _editPlan(_RitualPlan initial) async {
+  Future<void> _editPlan(_RitualPlan initial, {void Function()? requestGuard}) async {
     final edited = await showModalBottomSheet<_RitualPlan>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => _RitualPlanEditor(initial: initial, title: _sectionTitle),
     );
-    if (edited == null || _child == null) return;
+    if (!mounted || edited == null || _child == null) return;
+    requestGuard?.call();
     setState(() {
       _plans[_child!.childName] ??= {};
       _plans[_child!.childName]![_selectedSection] = edited;
@@ -547,18 +617,37 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
 
   Future<void> _generateStory() async {
     final child = _child;
-    if (child == null || _storyLoading) return;
+    if (child == null || _storyLoading || _planLoading || _consentPending) return;
+    final owner = _aiService.consent.scope;
+    final section = _selectedSection;
+    if (!await _ensureAiConsent() || !mounted) return;
+    if (!identical(_child, child) || _selectedSection != section) return;
     setState(() => _storyLoading = true);
     try {
-      final story = await GeminiAIService().generateText(
+      String story;
+      try {
+      story = await _aiService.generate(
         'Schreibe eine kurze Gute-Nacht-Geschichte für ein Kind, etwa $_ageYears Jahre alt. Thema: Mut, Geborgenheit und ein kleiner freundlicher Moment. 350 bis 500 Wörter. Verwende keine Namen und keine persönlichen Daten.',
         systemInstruction:
             'Du bist eine ruhige, inklusive Kinderbuchautorin. Schreibe warm, beruhigend und altersgerecht in der angefragten App-Sprache. Keine Angst, Gewalt, Diagnosen oder Leistungsdruck. Gib nur die Geschichte zurück, ohne Überschrift oder Erklärung.',
-        appLanguage: _localeCode,
+        languageCode: _localeCode,
+        expectedScope: owner,
+        requestGuard: () => _guardAiContext(child, section),
       );
-      if (mounted) setState(() => _story = story.trim());
-    } catch (_) {
-      if (mounted) setState(() => _story = _fallbackStory(child.childName));
+      } on AccountAiConsentRequiredException {
+        rethrow;
+      } catch (error) {
+        debugPrint('Ritual story generation failed: ${error.runtimeType}');
+        story = _fallbackStory(child.childName);
+      }
+      if (!mounted) return;
+      _guardAiContext(child, section);
+      await _aiService.consent.require(owner);
+      if (!mounted) return;
+      _guardAiContext(child, section);
+      setState(() => _story = story.trim());
+    } on AccountAiConsentRequiredException {
+      _showAiConsentFailure();
     } finally {
       if (mounted) {
         setState(() => _storyLoading = false);
