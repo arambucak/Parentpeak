@@ -361,10 +361,31 @@ und Dialog-/Button-Layout in allen acht Launch-Sprachen einschließlich RTL.
 Juristische Textprüfung und Anbieter-/Netzwerkprüfung sind dadurch nicht ersetzt.
 
 **Abgrenzung:** Dies schließt ausschließlich den aktiven Wochenrückblick-Pfad.
-Rituale, Antragshelfer, Event-Discovery/Flyer und Community-KI sowie
+Antragshelfer, Event-Discovery/Flyer und Community-KI sowie
 eine allgemeine serverseitige Consent-Durchsetzung für `/ai/generate` bleiben
 separat zu prüfen/härten. Die bestehende serverseitige Memory-Einwilligung bleibt
 unverändert; dieser Client-Guard ist kein manipulationssicherer Backend-Nachweis.
+
+### Ruhe & Rituale: optionale KI
+
+- Ritualvorschlag und Gute-Nacht-Geschichte benötigen eine separate, versionierte
+  Zustimmung pro Konto (`ritual.ai_consent.v1`). Rezept-, Foto- oder
+  Wochenrückblick-Zustimmung gilt hier nicht. Ablehnen/Schließen startet keine
+  Anfrage und zeigt einen lokalisierten Hinweis; lokale Rituale bleiben nutzbar.
+- An Google Gemini gehen über das eigene Backend nur Alter in ganzen Jahren,
+  Ritualart/Tageszeit und App-Sprache, keine Namen, Geburtsdaten oder lokalen
+  Dankbarkeits-/Ritualeinträge. Im Screen sind genau diese zwei KI-Pfade vorhanden.
+- Guards prüfen Zustimmung/Konto vor und nach Tokenabruf, beim 401-Retry und
+  vor Verwendung einer Antwort. Verlassen des Screens oder Wechsel von Kind/
+  Tagesabschnitt verwirft verspätete Ergebnisse. Bereits versendete Daten lassen
+  sich damit nicht zurückholen. Es wird keine neue Widerrufs-Oberfläche ergänzt.
+- [ ] Beide Buttons: Ablehnen, Schließen, Zustimmen und erneut Aufrufen auf
+      echten Geräten sowie in Safari prüfen; nach Kontowechsel erneut zustimmen.
+- [ ] Dialog und Hinweis in allen acht Launch-Sprachen, besonders AR/RTL und
+      bei großer Schrift, sprachlich und visuell prüfen.
+
+Die Absicherung betrifft ausschließlich die Ritual-KI im Client. Die allgemeine
+serverseitige Consent-Durchsetzung und andere KI-Features sind nicht geändert.
 
 **Launch-Scope:** Das bisher nur per Debug-Einstieg erreichbare Rezept-Experiment
 wurde einschließlich Feed, KI-/Backend-Clients und exklusiven Hilfsmodellen
