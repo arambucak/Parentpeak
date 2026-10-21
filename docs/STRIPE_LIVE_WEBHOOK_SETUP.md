@@ -1,9 +1,40 @@
 # Stripe Live Webhook Setup Guide
 
-**Status:** Ready for Live Mode Transition  
+**Status:** Credential review and rotation required before Live Mode transition
 **Created:** 2026-06-18  
-**Last Updated:** 2026-06-18  
+**Last Updated:** 2026-10-21
 **Environment:** Render Production (parentpeak.onrender.com)
+
+---
+
+## Security: exposed signing secrets require operator action
+
+All `whsec_YOUR_WEBHOOK_SIGNING_SECRET` values below are non-functional
+placeholders. Store the real value only in the deployment secret configuration
+(Render environment variable `STRIPE_WEBHOOK_SECRET`), never in repository files,
+commits, pull requests, logs, screenshots or shell history. Prefer the Render
+Dashboard over typing credentials into CLI commands.
+
+Earlier revisions of this document contained secret-like values, including a
+value labelled as a test signing secret. Their authenticity, current validity
+and Live/Test mode have not been verified; the `whsec_` prefix does not identify
+the mode. Treat any genuine value from those revisions as compromised.
+Removing it here does **not** remove it from Git history or revoke it.
+
+**Required action by aram in the Stripe Dashboard:**
+
+1. Privately identify the affected webhook endpoints in both Test and Live mode.
+2. For any genuine exposed secret, roll/rotate the endpoint signing secret.
+   Configure the replacement in Render through its secret/environment settings.
+3. Coordinate the deployment and old-secret expiry to avoid missed deliveries;
+   ensure the exposed secret is expired, not left valid during a grace period.
+4. Verify a legitimate webhook delivery for each affected endpoint using
+   Stripe's delivery tools. Never paste credentials into this guide or a PR.
+5. Review deliveries during the exposure window for unexpected events. Do not
+   restore an exposed secret as a rollback. Record completion without its value.
+
+These steps require access to Stripe/Render and have **not** been performed by
+the documentation cleanup. No Git history rewrite is part of this change.
 
 ---
 
@@ -49,7 +80,7 @@ curl -X POST https://parentpeak.onrender.com/payments/stripe/webhook \
 
 **Example Secret Format:**
 ```
-whsec_1AbCdEfGhIjKlMnOpQrStUvWxYz2AbCdEfGhIjKlMnOpQrStUvWxYz3...
+whsec_YOUR_WEBHOOK_SIGNING_SECRET
 ```
 
 ### Step 2: Update Render Environment Variables
@@ -60,10 +91,10 @@ whsec_1AbCdEfGhIjKlMnOpQrStUvWxYz2AbCdEfGhIjKlMnOpQrStUvWxYz3...
 3. Update its value with the Live secret from Step 1
 4. Click **Save** → Render auto-deploys
 
-**Method B: CLI (if available)**
+**Method B: CLI (placeholder syntax only)**
 ```bash
-# Using Render CLI (if configured)
-render env set STRIPE_WEBHOOK_SECRET=whsec_<YOUR_LIVE_SECRET>
+# Illustration only; use the Dashboard for real secrets to avoid shell history.
+render env set STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SIGNING_SECRET
 ```
 
 ### Step 3: Verify Live Secret Propagation
@@ -87,8 +118,8 @@ curl -sS -w "\nHTTP %{http_code}\n" \
 
 Run smoke tests with Live credentials:
 ```bash
-# Set Live environment variables
-export STRIPE_WEBHOOK_SECRET="whsec_<YOUR_LIVE_SECRET>"
+# Placeholder only. Inject the real value securely; do not type it into history.
+export STRIPE_WEBHOOK_SECRET="whsec_YOUR_WEBHOOK_SIGNING_SECRET"
 export BACKEND_BASE_URL="https://parentpeak.onrender.com"
 
 # Run full test suite
@@ -118,14 +149,14 @@ bash scripts/release_smoke_suite.sh
 
 **Test Mode (Current):**
 ```env
-STRIPE_WEBHOOK_SECRET=whsec_3Lp3U0gA2dseCCtKuSArnMqow75b9rqP  # TEST
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SIGNING_SECRET  # TEST
 BACKEND_BASE_URL=https://parentpeak.onrender.com
 STRIPE_WEBHOOK_TOLERANCE_SEC=300
 ```
 
 **Live Mode (To Be Updated):**
 ```env
-STRIPE_WEBHOOK_SECRET=whsec_<LIVE_SECRET_FROM_STEP_1>        # LIVE
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SIGNING_SECRET        # LIVE
 BACKEND_BASE_URL=https://parentpeak.onrender.com              # UNCHANGED
 STRIPE_WEBHOOK_TOLERANCE_SEC=300                               # UNCHANGED
 ```
@@ -156,10 +187,10 @@ The backend is ready to handle:
 
 If Live webhooks have issues:
 
-1. **Revert to Test Secret:**
+1. **Configure a valid, non-exposed secret for the intended endpoint/mode:**
    ```bash
-   # In Render Dashboard, restore test secret
-   STRIPE_WEBHOOK_SECRET=whsec_3Lp3U0gA2dseCCtKuSArnMqow75b9rqP
+   # Placeholder only: set the appropriate rotated secret in Render Dashboard.
+   STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SIGNING_SECRET
    ```
 
 2. **Verify Rollback:**
