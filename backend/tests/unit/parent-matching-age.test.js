@@ -17,7 +17,8 @@ function fixture(routePath, persistenceFails = false) {
   const writes = [];
   const fallbackWrites = [];
   vm.runInNewContext(`${parser}\n${coordinateParser}\n${route}`, {
-    app: { post: (_path, callback) => { handler = callback; } },
+    app: { post: (_path, ...callbacks) => { handler = callbacks.at(-1); } },
+    requireVerifiedUser: () => {},
     prisma: {
       parentMatchingProfile: {
         upsert: async options => {

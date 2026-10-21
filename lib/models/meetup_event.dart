@@ -31,7 +31,7 @@ class MeetupEvent {
   final int currentParticipants;
   final String photoUrl;
   final EventStatus status;
-  final double? price; // Preis für die Veröffentlichung
+  final double? price; // Optionaler Teilnehmerpreis, nicht die Veröffentlichungsgebühr.
   final EventVisibility visibility;
   final double? shareRadiusKm;
   final List<String> invitedUserIds;

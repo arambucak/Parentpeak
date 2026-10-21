@@ -8,7 +8,7 @@ import 'package:parentpeak/models/payment_transaction.dart';
 
 class PaymentService {
   PaymentService({BackendApiClient? apiClient})
-      : _apiClient = apiClient ?? BackendServiceFactory.createApiClient();
+    : _apiClient = apiClient ?? BackendServiceFactory.createVerifiedApiClient();
 
   static final List<PaymentTransaction> _transactions = [];
 
@@ -42,18 +42,37 @@ class PaymentService {
       amount: raw['amount'] is num
           ? (raw['amount'] as num).toDouble()
           : double.tryParse(raw['amount']?.toString() ?? '') ?? 0,
-      status: (raw['status'] ?? 'completed').toString(),
+      status: (raw['status'] ?? 'pending').toString(),
       paymentMethod: (raw['paymentMethod'] ?? 'unknown').toString(),
       stripePaymentIntentId: raw['stripePaymentIntentId']?.toString(),
-      createdAt: DateTime.tryParse((raw['createdAt'] ?? '').toString()) ??
+      createdAt:
+          DateTime.tryParse((raw['createdAt'] ?? '').toString()) ??
           DateTime.now(),
       completedAt: DateTime.tryParse((raw['completedAt'] ?? '').toString()),
     );
   }
 
-  /// Presents the Stripe PaymentSheet and returns the clientSecret on success.
-  /// In non-release builds without a backend the function falls back to a mock
-  /// clientSecret so the flow can still be exercised in testing.
+  Future<void> _presentStripeOrder(String? clientSecret) async {
+    if (kIsWeb || !APIConfig.isStripePaymentSheetSupportedPlatform()) {
+      throw StateError(
+        'Stripe PaymentSheet wird auf dieser Plattform nicht unterstuetzt.',
+      );
+    }
+    if (clientSecret == null || clientSecret.isEmpty) {
+      _throwBackendRequired('Stripe-Initialisierung');
+    }
+    await Stripe.instance.initPaymentSheet(
+      paymentSheetParameters: SetupPaymentSheetParameters(
+        paymentIntentClientSecret: clientSecret,
+        merchantDisplayName: 'Parentpeak',
+        style: ThemeMode.system,
+      ),
+    );
+    await Stripe.instance.presentPaymentSheet();
+  }
+
+  /// Pays a stored, server-priced event order using Stripe PaymentSheet.
+  /// Completion is determined by the backend's provider verification.
   Future<Map<String, dynamic>> initiateStripePayment({
     required String eventId,
     required String hosterId,
@@ -68,25 +87,25 @@ class PaymentService {
     }
 
     String? clientSecret;
+    Map<String, dynamic> order = {};
 
     if (_apiClient != null) {
       try {
-        final payload = await _apiClient!.postJsonAny(
-          APIConfig.getBackendPaymentsStripeInitPath(),
-          {
-            'eventId': eventId,
-            'hosterId': hosterId,
-            'amount': amount,
-            'schemaVersion': APIConfig.getBackendApiVersion(),
-          },
-        );
+        final payload = await _apiClient!
+            .postJsonAny(APIConfig.getBackendPaymentsStripeInitPath(), {
+              'eventId': eventId,
+              'hosterId': hosterId,
+              'amount': amount,
+              'schemaVersion': APIConfig.getBackendApiVersion(),
+            });
 
         final data = payload is Map<String, dynamic>
             ? (payload['item'] is Map<String, dynamic>
-                ? Map<String, dynamic>.from(payload['item'] as Map)
-                : payload)
+                  ? Map<String, dynamic>.from(payload['item'] as Map)
+                  : payload)
             : <String, dynamic>{};
         clientSecret = data['clientSecret']?.toString();
+        order = data;
       } catch (e) {
         lastSyncError = 'Stripe-Initialisierung fehlgeschlagen: $e';
         _throwBackendRequired('Stripe-Initialisierung');
@@ -98,23 +117,14 @@ class PaymentService {
     }
 
     try {
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: 'Parentpeak',
-          style: ThemeMode.system,
-        ),
-      );
-      await Stripe.instance.presentPaymentSheet();
+      await _presentStripeOrder(clientSecret);
     } on StripeException catch (e) {
-      lastSyncError = 'Stripe-Zahlung fehlgeschlagen: ${e.error.localizedMessage ?? e.toString()}';
+      lastSyncError =
+          'Stripe-Zahlung fehlgeschlagen: ${e.error.localizedMessage ?? e.toString()}';
       rethrow;
     }
 
-    return {
-      'clientSecret': clientSecret,
-      'status': 'succeeded',
-    };
+    return {...order, 'status': 'pending'};
   }
 
   Future<Map<String, dynamic>> initiatePayPalPayment({
@@ -126,15 +136,13 @@ class PaymentService {
 
     if (_apiClient != null) {
       try {
-        final payload = await _apiClient!.postJsonAny(
-          APIConfig.getBackendPaymentsPayPalInitPath(),
-          {
-            'eventId': eventId,
-            'hosterId': hosterId,
-            'amount': amount,
-            'schemaVersion': APIConfig.getBackendApiVersion(),
-          },
-        );
+        final payload = await _apiClient!
+            .postJsonAny(APIConfig.getBackendPaymentsPayPalInitPath(), {
+              'eventId': eventId,
+              'hosterId': hosterId,
+              'amount': amount,
+              'schemaVersion': APIConfig.getBackendApiVersion(),
+            });
 
         if (payload is Map<String, dynamic>) {
           return payload['item'] is Map<String, dynamic>
@@ -164,25 +172,21 @@ class PaymentService {
 
     if (_apiClient != null) {
       try {
-        final payload = await _apiClient!.postJsonAny(
-          APIConfig.getBackendPaymentsConfirmPath(),
-          {
-            'eventId': eventId,
-            'hosterId': hosterId,
-            'amount': amount,
-            'paymentMethod': paymentMethod,
-            'stripePaymentIntentId': stripePaymentIntentId,
-            'providerTransactionRef': providerTransactionRef,
-            'status': initialStatus,
-            'providerVerified': providerVerified,
-            'schemaVersion': APIConfig.getBackendApiVersion(),
-          },
-        );
+        final payload = await _apiClient!
+            .postJsonAny(APIConfig.getBackendPaymentsConfirmPath(), {
+              'eventId': eventId,
+              'hosterId': hosterId,
+              'amount': amount,
+              'paymentMethod': paymentMethod,
+              'stripePaymentIntentId': stripePaymentIntentId,
+              'providerTransactionRef': providerTransactionRef,
+              'schemaVersion': APIConfig.getBackendApiVersion(),
+            });
 
         final raw = payload is Map<String, dynamic>
             ? (payload['item'] is Map<String, dynamic>
-                ? Map<String, dynamic>.from(payload['item'] as Map)
-                : payload)
+                  ? Map<String, dynamic>.from(payload['item'] as Map)
+                  : payload)
             : <String, dynamic>{};
         if (raw.isNotEmpty) {
           return _storeLocalTransaction(_parseTransaction(raw));
@@ -207,22 +211,20 @@ class PaymentService {
 
     if (_apiClient != null) {
       try {
-        final payload = await _apiClient!.postJsonAny(
-          APIConfig.getBackendPaymentsProviderEventsPath(),
-          {
-            'transactionId': transactionId,
-            'provider': provider,
-            'providerTransactionRef': providerTransactionRef,
-            'status': status,
-            'verified': verified,
-            'schemaVersion': APIConfig.getBackendApiVersion(),
-          },
-        );
+        final payload = await _apiClient!
+            .postJsonAny(APIConfig.getBackendPaymentsProviderEventsPath(), {
+              'transactionId': transactionId,
+              'provider': provider,
+              'providerTransactionRef': providerTransactionRef,
+              'status': status,
+              'verified': verified,
+              'schemaVersion': APIConfig.getBackendApiVersion(),
+            });
 
         final raw = payload is Map<String, dynamic>
             ? (payload['item'] is Map<String, dynamic>
-                ? Map<String, dynamic>.from(payload['item'] as Map)
-                : payload)
+                  ? Map<String, dynamic>.from(payload['item'] as Map)
+                  : payload)
             : <String, dynamic>{};
         if (raw.isNotEmpty) {
           return _storeLocalTransaction(_parseTransaction(raw));
@@ -247,8 +249,8 @@ class PaymentService {
         );
         final raw = payload is Map<String, dynamic>
             ? (payload['item'] is Map<String, dynamic>
-                ? Map<String, dynamic>.from(payload['item'] as Map)
-                : payload)
+                  ? Map<String, dynamic>.from(payload['item'] as Map)
+                  : payload)
             : <String, dynamic>{};
         if (raw.isNotEmpty) {
           return _storeLocalTransaction(_parseTransaction(raw));
@@ -258,15 +260,7 @@ class PaymentService {
       }
     }
 
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    try {
-      return _transactions
-          .firstWhere((transaction) => transaction.id == transactionId);
-    } catch (e) {
-      debugPrint('PaymentService.getTransaction(): local lookup failed: $e');
-      return null;
-    }
+    _throwBackendRequired('Transaktion laden');
   }
 
   Future<List<PaymentTransaction>> getHostTransactions(String hosterId) async {
@@ -292,8 +286,7 @@ class PaymentService {
       }
     }
 
-    await Future.delayed(const Duration(milliseconds: 300));
-    return _transactions.where((transaction) => transaction.hosterId == hosterId).toList();
+    _throwBackendRequired('Host-Transaktionen laden');
   }
 
   Future<bool> refundPayment(String transactionId) async {
@@ -301,18 +294,21 @@ class PaymentService {
 
     if (_apiClient != null) {
       try {
-        await _apiClient!.postJsonAny(
+        final payload = await _apiClient!.postJsonAny(
           '${APIConfig.getBackendPaymentsTransactionsPath()}/$transactionId/refund',
           {'schemaVersion': APIConfig.getBackendApiVersion()},
         );
-        return true;
+        if (payload is Map<String, dynamic> &&
+            payload['item'] is Map &&
+            (payload['item'] as Map)['status'] == 'refunded') {
+          return true;
+        }
+        lastSyncError = 'Provider hat die Rueckerstattung nicht bestaetigt.';
       } catch (e) {
         lastSyncError = 'Rueckerstattung fehlgeschlagen: $e';
       }
     }
 
-    await Future.delayed(const Duration(milliseconds: 1000));
-    final index = _transactions.indexWhere((transaction) => transaction.id == transactionId);
-    return index != -1;
+    return false;
   }
 }
