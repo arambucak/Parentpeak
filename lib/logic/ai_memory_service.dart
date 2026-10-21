@@ -190,6 +190,9 @@ class AiMemoryService {
       (client) => client.postJson('/ai/children', {
         'name': '[CHILD_1]',
         'memoryConsentVersion': ChatMemoryConsent.version,
+        // Variante A: birthDate nur ans eigene Backend, nicht an Gemini.
+        // Gemini bekommt volle Lebensjahre (ChatContextPolicy.completedAge;
+        // Backend: ai_memory_policy.js completedYears/buildMemoryContext).
         if (birthDate != null) 'birthDate': birthDate.toIso8601String(),
         if (gender != null && gender.trim().isNotEmpty) 'gender': gender.trim(),
       }),
@@ -221,6 +224,8 @@ class AiMemoryService {
     final response = await _write(
       (client) => client.putJson('/ai/children/$childId', {
         'memoryConsentVersion': ChatMemoryConsent.version,
+        // Wie createChild: birthDate nur ans eigene Backend; Gemini bekommt
+        // nur das Alter (completedAge bzw. serverseitig completedYears).
         if (birthDate != null) 'birthDate': birthDate.toIso8601String(),
         if (gender != null) 'gender': gender.trim(),
       }),
