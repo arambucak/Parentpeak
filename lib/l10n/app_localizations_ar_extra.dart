@@ -2,6 +2,8 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsArExtra = <String, String>{
+  'no_items': 'لا توجد عناصر',
+  'retry': 'المحاولة مجددًا',
   'chat_ask_none': 'لا تطرح سؤال متابعة؛ فالمعطيات تكفي لاتخاذ خطوات ملموسة.',
   'chat_ask_one':
       'اطرح في النهاية سؤالاً واحداً فقط قصيراً ومفتوحاً من أجل الخطوة المفيدة التالية.',
@@ -2246,7 +2248,7 @@ const appLocalizationsArExtra = <String, String>{
   'treasureConditionLabel': 'الحالة',
   'treasureConditionLikeNew': 'كالجديد',
   'treasureConditionLikeNewHint': 'محافظ عليه جيدًا، يكاد يكون كالجديد.',
-  'treasureConditionLine': '',
+  'treasureConditionLine': 'الحالة: {condition}',
   'treasureConditionRaider': 'عليه آثار استخدام',
   'treasureConditionRaiderHint':
       'عليه آثار استخدام، لكنه جاهز للمغامرة القادمة.',
@@ -2341,16 +2343,16 @@ const appLocalizationsArExtra = <String, String>{
   'treasurePhotoMissing': 'أضف صورة أولًا كي ترى العائلات على الفور ما تشاركه.',
   'treasurePhotoReady': 'الصورة جاهزة',
   'treasurePhotoSectionHint': 'اعرض الغرض كما هو الآن تمامًا.',
-  'treasurePickupAreaLine': '',
+  'treasurePickupAreaLine': 'منطقة الاستلام: {area}',
   'treasurePickupLocationHint': 'موقعك يحدد العائلات التي سترى عرضك.',
   'treasurePickupLocationTitle': 'منطقة الاستلام',
   'treasurePreviewNoteLabel': 'ملاحظة العائلة',
   'treasurePreviewTitle': 'معاينة الملخص',
   'treasurePublishNow': 'المشاركة الآن',
-  'treasureRatingLine': '',
+  'treasureRatingLine': 'التقييم: {rating} ({count})',
   'treasureReportAction': 'إبلاغ',
   'treasureReportLocalOnly':
-      'تم تسجيل البلاغ محليًا. ستتم المزامنة مع الخادم بمجرد توفرها.',
+      'تعذّر إرسال البلاغ. يُرجى المحاولة مجددًا لاحقًا.',
   'treasureReportNoteHint': 'اختياري: ملاحظة قصيرة للمراجعة',
   'treasureReportReason_false_info': 'بيانات خاطئة',
   'treasureReportReason_hostile': 'سلوك غير ودّي',
@@ -2380,7 +2382,7 @@ const appLocalizationsArExtra = <String, String>{
   'treasureShareRadiusKm': 'ضمن مدى نحو {radius} كم',
   'treasureShareRadiusLabel': 'نصف قطر النشر',
   'treasureSizeAgeLabel': 'المقاس أو العمر',
-  'treasureSizeAgeLine': '',
+  'treasureSizeAgeLine': 'المقاس / العمر: {sizeAge}',
   'treasureSizeAgePlaceholder': 'مثل: مقاس 92 أو من سنتين إلى 3 سنوات',
   'treasureSlotMonday': 'الإثنين، 17:30 - 18:15',
   'treasureSlotSunday': 'الأحد، 10:00 - 11:30 صباحًا',
@@ -2398,7 +2400,7 @@ const appLocalizationsArExtra = <String, String>{
   'treasureUploadSubtitle': 'صورة واحدة تكفي للبدء',
   'treasureUploadSuccess': 'أصبح كنزك مرئيًا الآن.',
   'treasureUploadTitle': 'مشاركة كنز',
-  'treasureViewsLine': '',
+  'treasureViewsLine': 'عدد المشاهدات: {count}',
   'treasure_account_changed': 'تم تغيير الحساب. يُرجى إغلاق هذا العرض.',
   'treasure_cancel_local_failed':
       'أكّد الخادم الإلغاء، لكن تعذّرت إزالة العلامة المحلية. وقد تظهر مؤقتًا بشكل قديم.',

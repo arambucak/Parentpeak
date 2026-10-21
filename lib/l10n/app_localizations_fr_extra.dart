@@ -2,6 +2,8 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsFrExtra = <String, String>{
+  'no_items': 'Aucun article',
+  'retry': 'Réessayer',
   'chat_ask_none':
       'Ne pose pas de question de suivi ; les informations suffisent pour des étapes concrètes.',
   'chat_ask_one':
@@ -2374,7 +2376,7 @@ const appLocalizationsFrExtra = <String, String>{
   'treasureConditionLabel': 'État',
   'treasureConditionLikeNew': 'Comme neuf',
   'treasureConditionLikeNewHint': 'Très bien entretenu, presque comme neuf.',
-  'treasureConditionLine': '',
+  'treasureConditionLine': 'État : {condition}',
   'treasureConditionRaider': 'Avec des traces',
   'treasureConditionRaiderHint':
       'Avec des traces d\'usage, mais prêt pour la prochaine aventure.',
@@ -2484,17 +2486,17 @@ const appLocalizationsFrExtra = <String, String>{
   'treasurePhotoReady': 'Photo prête',
   'treasurePhotoSectionHint':
       'Montre l\'objet simplement tel qu\'il est en ce moment.',
-  'treasurePickupAreaLine': '',
+  'treasurePickupAreaLine': 'Zone de retrait : {area}',
   'treasurePickupLocationHint':
       'Ton emplacement détermine quelles familles voient ton annonce.',
   'treasurePickupLocationTitle': 'Zone de récupération',
   'treasurePreviewNoteLabel': 'Mot de la famille',
   'treasurePreviewTitle': 'Aperçu du fil',
   'treasurePublishNow': 'Partager maintenant',
-  'treasureRatingLine': '',
+  'treasureRatingLine': 'Évaluation : {rating} ({count})',
   'treasureReportAction': 'Signaler',
   'treasureReportLocalOnly':
-      'Signalement marqué localement. La synchronisation serveur suivra dès que possible.',
+      'Impossible d’envoyer le signalement. Veuillez réessayer plus tard.',
   'treasureReportNoteHint': 'Facultatif : petite note pour la modération',
   'treasureReportReason_false_info': 'Informations erronées',
   'treasureReportReason_hostile': 'Comportement hostile',
@@ -2525,7 +2527,7 @@ const appLocalizationsFrExtra = <String, String>{
   'treasureShareRadiusKm': 'Rayon d\'environ {radius} km',
   'treasureShareRadiusLabel': 'Rayon de publication',
   'treasureSizeAgeLabel': 'Taille ou âge',
-  'treasureSizeAgeLine': '',
+  'treasureSizeAgeLine': 'Taille / âge : {sizeAge}',
   'treasureSizeAgePlaceholder': 'p. ex. taille 92 ou âge 2 à 3 ans',
   'treasureSlotMonday': 'Lundi, 17h30 – 18h15',
   'treasureSlotSunday': 'Dimanche, 10h00 – 11h30',
@@ -2544,7 +2546,7 @@ const appLocalizationsFrExtra = <String, String>{
   'treasureUploadSubtitle': 'Une photo suffit pour commencer',
   'treasureUploadSuccess': 'Votre trésor est maintenant visible.',
   'treasureUploadTitle': 'Partager un trésor',
-  'treasureViewsLine': '',
+  'treasureViewsLine': '{count} vues',
   'treasure_account_changed': 'Le compte a changé. Veuillez fermer cette vue.',
   'treasure_cancel_local_failed':
       'Le serveur a confirmé l\'annulation, mais la marque locale n\'a pas pu être retirée. Elle peut encore s\'afficher de façon obsolète.',

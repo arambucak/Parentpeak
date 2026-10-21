@@ -2,6 +2,8 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsEsExtra = <String, String>{
+  'no_items': 'No hay artículos',
+  'retry': 'Reintentar',
   'chat_ask_none':
       'No hagas ninguna pregunta de seguimiento; los datos bastan para dar pasos concretos.',
   'chat_ask_one':
@@ -2348,7 +2350,7 @@ const appLocalizationsEsExtra = <String, String>{
   'treasureConditionLabel': 'Estado',
   'treasureConditionLikeNew': 'Como nuevo',
   'treasureConditionLikeNewHint': 'Muy bien cuidado, casi como nuevo.',
-  'treasureConditionLine': '',
+  'treasureConditionLine': 'Estado: {condition}',
   'treasureConditionRaider': 'Con marcas de uso',
   'treasureConditionRaiderHint':
       'Con marcas de uso, pero listo para la próxima aventura.',
@@ -2453,17 +2455,17 @@ const appLocalizationsEsExtra = <String, String>{
       'Añade primero una foto para que las familias vean al instante lo que compartes.',
   'treasurePhotoReady': 'Foto lista',
   'treasurePhotoSectionHint': 'Muestra el objeto tal y como está ahora mismo.',
-  'treasurePickupAreaLine': '',
+  'treasurePickupAreaLine': 'Zona de recogida: {area}',
   'treasurePickupLocationHint':
       'Tu ubicación determina qué familias ven tu oferta.',
   'treasurePickupLocationTitle': 'Zona de recogida',
   'treasurePreviewNoteLabel': 'Nota de la familia',
   'treasurePreviewTitle': 'Vista previa del feed',
   'treasurePublishNow': 'Compartir ahora',
-  'treasureRatingLine': '',
+  'treasureRatingLine': 'Valoración: {rating} ({count})',
   'treasureReportAction': 'Denunciar',
   'treasureReportLocalOnly':
-      'Denuncia marcada localmente. La sincronización con el servidor llegará en cuanto esté disponible.',
+      'No se pudo enviar la denuncia. Inténtalo de nuevo más tarde.',
   'treasureReportNoteHint': 'Opcional: una nota breve para la moderación',
   'treasureReportReason_false_info': 'Datos falsos',
   'treasureReportReason_hostile': 'Comportamiento poco amable',
@@ -2493,7 +2495,7 @@ const appLocalizationsEsExtra = <String, String>{
   'treasureShareRadiusKm': 'Radio de aprox. {radius} km',
   'treasureShareRadiusLabel': 'Radio de publicación',
   'treasureSizeAgeLabel': 'Talla o edad',
-  'treasureSizeAgeLine': '',
+  'treasureSizeAgeLine': 'Talla / edad: {sizeAge}',
   'treasureSizeAgePlaceholder': 'p. ej. talla 92 o de 2 a 3 años',
   'treasureSlotMonday': 'Lunes, de 17:30 a 18:15 h',
   'treasureSlotSunday': 'Domingo, de 10:00 a 11:30 h',
@@ -2511,7 +2513,7 @@ const appLocalizationsEsExtra = <String, String>{
   'treasureUploadSubtitle': 'Con una foto basta para empezar',
   'treasureUploadSuccess': 'Tu tesoro ya está visible.',
   'treasureUploadTitle': 'Compartir un tesoro',
-  'treasureViewsLine': '',
+  'treasureViewsLine': '{count} visualizaciones',
   'treasure_account_changed': 'La cuenta ha cambiado. Cierra esta vista.',
   'treasure_cancel_local_failed':
       'El servidor confirmó la cancelación, pero no se pudo quitar la marca local. Puede que aún aparezca desactualizada.',
