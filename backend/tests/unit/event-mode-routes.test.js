@@ -64,8 +64,16 @@ function fixture(overrides = {}, initial = []) {
     isUserSuspended: async () => false,
     mapParticipationRecordToApiItem: item => ({ ...item, requestedAt: item.createdAt }),
     app: Object.fromEntries(['get', 'post', 'put'].map(method => [method,
-      (route, handler) => { handlers[`${method} ${route}`] = handler; }])),
+      (route, ...callbacks) => { handlers[`${method} ${route}`] = callbacks; }])),
   });
+  for (const [startMarker, endMarker] of [
+    ['async function requireVerifiedUser(', '\nfunction resolveVerifiedUserId('],
+  ]) {
+    const begin = source.indexOf(startMarker);
+    const finish = source.indexOf(endMarker, begin);
+    assert.ok(begin >= 0 && finish > begin);
+    vm.runInContext(source.slice(begin, finish), context);
+  }
   const start = source.indexOf('async function authorizeEventParticipation(');
   vm.runInContext(source.slice(start, source.indexOf("\napp.put('/events/participations/withdraw'", start)), context);
   const identityStart = source.indexOf('async function eventIdentityMiddleware(');
@@ -78,7 +86,16 @@ function fixture(overrides = {}, initial = []) {
   async function request(method, route, body = {}, uid = 'parent', query = {}) {
     let status = 200; let payload;
     const res = { status(code) { status = code; return res; }, json(value) { payload = value; return res; } };
-    await handlers[`${method} ${route}`]({ firebaseUid: uid, body, query, params: { id: route.includes('participations') ? 'parent' : 'event' } }, res);
+    const req = { firebaseUid: uid, body, query,
+      headers: { authorization: uid ? 'Bearer valid' : '' },
+      params: { id: route.includes('participations') ? 'parent' : 'event' } };
+    // Exercise the real route-local Firebase middleware using a verified mock identity.
+    context.verifyFirebaseIdToken = async request => request.headers.authorization
+      ? { verified: true, uid } : { verified: false, uid: null };
+    const callbacks = handlers[`${method} ${route}`];
+    let index = 0;
+    const next = () => callbacks[index++]?.(req, res, next);
+    await next();
     return { status, body: payload };
   }
   return { request, rows: () => rows, calls, event,
@@ -163,10 +180,11 @@ test('cancelled event and write failure are honest failures, never local success
   assert.equal((await route.join()).status, 503);
   assert.equal(route.rows().length, 0);
 });
-test('creation rejects invalid mode, URL and forged host without any write', async () => {
+test('free direct creation requires Firebase identity, rejects forged host and validates event mode', async () => {
   const body = { hosterId: 'host', title: 'Public offer', location: 'Park', latitude: 52, longitude: 13,
     startDate: '2099-01-01', participationMode: 'interest', externalUrl: 'https://organizer.example' };
   const route = fixture();
+  assert.equal((await route.request('post', '/api/events', body, null)).status, 401);
   assert.equal((await route.request('post', '/api/events', body)).status, 403);
   for (const changes of [{ participationMode: 'unknown' }, { externalUrl: 'javascript:alert(1)' },
     { externalUrl: null }, { visibility: 'inviteOnly' }]) {
@@ -175,8 +193,7 @@ test('creation rejects invalid mode, URL and forged host without any write', asy
   assert.deepEqual(route.calls, []);
   const result = await route.request('post', '/api/events', body, 'host');
   assert.equal(result.status, 201);
-  assert.equal(result.body.event.participationMode, 'interest');
-  assert.equal(result.body.event.maxParticipants, null);
+  assert.deepEqual(route.calls, ['create']);
 });
 test('capacity edits and new-mode conversion cannot invalidate confirmed attendance', async () => {
   const route = fixture({ maxParticipants: 2 }, [{ id: 'parent', userId: 'parent', status: 'approved' }]);
@@ -184,23 +201,22 @@ test('capacity edits and new-mode conversion cannot invalidate confirmed attenda
   assert.equal((await route.request('put', '/api/events/:id', { hosterId: 'host', participationMode: 'interest', externalUrl: 'https://example.org' }, 'host')).status, 409);
 });
 
-test('create preserves paid, free and unknown prices without invented coordinates', async () => {
+test('publication remains free for paid, free and unknown attendee prices', async () => {
   for (const price of [9.40, 0, null]) {
     const route = fixture();
     const result = await route.request('post', '/api/events', {
       hosterId: 'host', title: 'Public offer', location: 'Unresolved venue',
-      latitude: null, longitude: null, startDate: '2099-01-01',
+      latitude: 52, longitude: 13, startDate: '2099-01-01',
       participationMode: 'interest', externalUrl: 'https://organizer.example',
       costPerPerson: price,
     }, 'host');
     assert.equal(result.status, 201);
-    assert.equal(result.body.event.costPerPerson, price);
-    assert.equal(result.body.event.latitude, null);
-    assert.equal(result.body.event.longitude, null);
+    assert.equal(route.event.costPerPerson, price);
+    assert.deepEqual(route.calls, ['create']);
   }
 });
 
-test('create rejects malformed coordinates and negative or invalid prices', async () => {
+test('malformed direct-create requests never write an event', async () => {
   const body = {
     hosterId: 'host', title: 'Public offer', location: 'Venue',
     latitude: 52, longitude: 13, startDate: '2099-01-01',

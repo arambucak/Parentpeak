@@ -3977,6 +3977,10 @@ function isNoTokenWritePath(reqPath) {
 }
 
 async function firebaseAuthMiddleware(req, res, next) {
+  // Stripe authenticates this one public callback using its raw-body signature.
+  if (req.method === 'POST' && req.path === '/payments/stripe/webhook') {
+    return next();
+  }
   if (!firebaseRequireAuth || !firebaseAdmin || !WRITE_METHODS.has(req.method)) {
     return next();
   }
@@ -5081,7 +5085,7 @@ const parentProfiles = [
 const parentMatchingActions = [];
 const parentMatchingMessages = [];
 const friendChatMessages = new Map(); // roomId → [{ id, roomId, authorUserId, authorName, content, createdAt }]
-const parentMatchingAllowedActions = new Set(['like', 'report', 'block']);
+const parentMatchingAllowedActions = new Set(['like', 'report', 'block', 'contact', 'pass', 'favorite']);
 const parentMatchingMessageSubscribers = new Map();
 const parentMatchingOtpStore = new Map();
 const parentMatchingOtpRateLimit = new Map();
@@ -5804,10 +5808,13 @@ async function getMutualConnectionProfileIds(familyId, userId) {
     return [];
   }
 
+  // Each parent's consent is recorded in that parent's own family context.
   const reverseActions = await prisma.parentMatchingAction.findMany({
     where: {
-      familyId,
-      actorUserId: { in: targetOwnerIds },
+      OR: targetOwnerIds.map(ownerId => ({
+        familyId: ownFamilyId(ownerId),
+        actorUserId: ownerId,
+      })),
       profileId: { in: myOwnedProfileIds },
     },
     orderBy: { createdAt: 'desc' },
@@ -5872,7 +5879,7 @@ function getMutualConnectionProfileIdsInMemory(familyId, userId) {
   ));
 
   const reverseActions = parentMatchingActions
-    .filter(item => item.familyId === familyId)
+    .filter(item => item.familyId === ownFamilyId(item.userId))
     .filter(item => targetOwnerIds.includes(item.userId))
     .filter(item => myOwnedProfileIds.includes(item.profileId))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -6409,28 +6416,150 @@ async function exportOwnFamilyItems(firebaseUid) {
   }, { isolationLevel: 'Serializable' });
 }
 
-async function ensurePaymentContext(eventId, hosterId) {
-  const trimmedEventId = (eventId || '').toString().trim();
-  const trimmedHosterId = (hosterId || '').toString().trim();
+function paymentError(status, message) {
+  return Object.assign(new Error(message), { paymentHttpStatus: status, httpStatus: status });
+}
 
-  if (!trimmedEventId || !trimmedHosterId) {
-    throw new Error('eventId und hosterId sind erforderlich');
+function assertPaymentActor(req) {
+  for (const claimed of [
+    req.body?.payerId, req.body?.payerUid, req.body?.firebaseUid,
+    req.query?.payerId, req.query?.payerUid, req.query?.firebaseUid,
+  ]) {
+    if (claimed !== undefined && claimed !== req.firebaseUid) {
+      throw paymentError(403, 'Nur fuer das eigene Zahlerkonto erlaubt');
+    }
   }
+}
 
-  const [eventRecord, userRecord] = await Promise.all([
-    prisma.event.findUnique({ where: { id: trimmedEventId } }),
-    prisma.user.findUnique({ where: { id: trimmedHosterId } }),
-  ]);
-
-  if (!eventRecord) {
-    throw new Error('Event nicht gefunden');
+function respondPaymentError(res, error) {
+  if (!error.paymentHttpStatus) {
+    console.error('Payment operation unavailable:', error?.code || error?.name || 'Error');
   }
+  return res.status(error.paymentHttpStatus || 503).json({
+    error: error.paymentHttpStatus ? error.message : 'Zahlungsdienst derzeit nicht verfuegbar',
+  });
+}
 
-  if (!userRecord) {
-    throw new Error('Hoster nicht gefunden');
+async function ensurePaymentContext(eventId, hosterId, payerUid, body = {}) {
+  if (typeof eventId !== 'string' || !eventId.trim()) {
+    throw paymentError(400, 'eventId erforderlich');
   }
+  const eventRecord = await prisma.event.findUnique({ where: { id: eventId.trim() } });
+  if (!eventRecord) throw paymentError(404, 'Gespeichertes Event nicht gefunden');
+  if (hosterId !== undefined && hosterId !== eventRecord.hosterId) {
+    throw paymentError(403, 'Hoster stimmt nicht mit dem Event ueberein');
+  }
+  if (['cancelled', 'completed'].includes(eventRecord.status)) {
+    throw paymentError(409, 'Event nicht zahlbar');
+  }
+  const amount = Number(eventRecord.costPerPerson);
+  const amountMinor = Math.round(amount * 100);
+  const currency = String(eventRecord.currency || '').toLowerCase();
+  // This checkout supports two-decimal EUR prices only, not arbitrary currency exponents.
+  if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0 ||
+      Math.abs(amount * 100 - amountMinor) > 0.00001 || currency !== 'eur') {
+    throw paymentError(409, 'Kein unterstuetzter gespeicherter Eventpreis');
+  }
+  if ((body.amount !== undefined && Number(body.amount) !== amount) ||
+      (body.currency !== undefined && String(body.currency).toLowerCase() !== currency)) {
+    throw paymentError(409, 'Preis stimmt nicht mit dem gespeicherten Event ueberein');
+  }
+  const payer = await prisma.user.findUnique({ where: { id: payerUid } });
+  if (!payer) throw paymentError(409, 'Zahlerkonto muss zuerst synchronisiert werden');
+  return { eventId: eventRecord.id, hosterId: eventRecord.hosterId, payerUid, amount, amountMinor, currency };
+}
 
-  return { eventId: trimmedEventId, hosterId: trimmedHosterId };
+function paymentPayer(record) {
+  const audit = getPaymentAuditDetails(record);
+  // Legacy rows stored the host as userId and cannot establish a payer.
+  return audit.bindingVersion === 1 && audit.payerUid === record.userId ? record.userId : null;
+}
+
+function paymentHost(record) {
+  return getPaymentAuditDetails(record).hosterId || record.userId;
+}
+
+function assertPaymentOwner(record, uid, { payerOnly = false, hostOnly = false } = {}) {
+  if (!record) throw paymentError(404, 'Transaktion nicht gefunden');
+  if (hostOnly ? paymentHost(record) !== uid
+    : payerOnly ? paymentPayer(record) !== uid
+      : paymentPayer(record) !== uid && paymentHost(record) !== uid) {
+    throw paymentError(403, 'Kein Zugriff auf diese Transaktion');
+  }
+}
+
+async function verifyStripePaymentRecord(record) {
+  if (!stripe) throw paymentError(503, 'Stripe ist nicht konfiguriert');
+  const audit = getPaymentAuditDetails(record);
+  if (!paymentPayer(record) || audit.paymentMethod !== 'stripe') {
+    throw paymentError(409, 'Zahlung ohne sichere Provider-/Zahlerbindung nicht unterstuetzt');
+  }
+  const intent = await stripe.paymentIntents.retrieve(record.stripePaymentIntentId, {
+    expand: ['latest_charge'],
+  });
+  const expectedAmount = Math.round(Number(record.amount) * 100);
+  if (intent.id !== record.stripePaymentIntentId ||
+      intent.metadata?.orderId !== record.id ||
+      intent.metadata?.payerUid !== paymentPayer(record) ||
+      intent.metadata?.eventId !== record.eventId ||
+      intent.metadata?.hosterId !== paymentHost(record) ||
+      intent.amount !== expectedAmount ||
+      intent.currency !== String(record.currency).toLowerCase() ||
+      (intent.status === 'succeeded' && intent.amount_received !== expectedAmount)) {
+    throw paymentError(409, 'Stripe-Nachweis stimmt nicht mit dem gespeicherten Auftrag ueberein');
+  }
+  let status = 'pending';
+  if (intent.status === 'succeeded') status = 'completed';
+  // A declined PaymentIntent can still be retried; only cancellation is terminal.
+  if (intent.status === 'canceled') status = 'failed';
+  const charge = intent.latest_charge;
+  if (charge && typeof charge === 'object' && charge.refunded === true &&
+      charge.amount_refunded === expectedAmount && charge.payment_intent === intent.id &&
+      charge.currency === intent.currency) status = 'refunded';
+  return { intent, status };
+}
+
+async function syncStripePaymentRecord(record, verifiedByType = 'stripe_api') {
+  const { intent, status } = await verifyStripePaymentRecord(record);
+  const result = await persistVerifiedPaymentStatus(record, status, verifiedByType);
+  return { ...result, intent };
+}
+
+async function persistVerifiedPaymentStatus(record, status, verifiedByType) {
+  const currentStatus = normalizeStoredPaymentStatus(record.status);
+  if (!canTransitionPaymentStatus(currentStatus, status)) {
+    throw paymentError(409, 'Providerstatus kann den gespeicherten Status nicht ersetzen');
+  }
+  const now = new Date();
+  const audit = getPaymentAuditDetails(record);
+  await prisma.paymentTransaction.updateMany({
+    where: { id: record.id, status: record.status },
+    data: {
+      status,
+      verifiedAt: now,
+      verifiedByType,
+      ...(status === 'refunded' ? { refundedAt: now, refundedAmount: record.amount } : {}),
+      auditDetails: {
+        ...audit,
+        providerVerified: true,
+        ...(status === 'completed' ? { completedAt: audit.completedAt || now.toISOString() } : {}),
+        ...(status === 'failed' ? { failedAt: now.toISOString() } : {}),
+        ...(status === 'refunded' ? { refundedAt: now.toISOString() } : {}),
+      },
+    },
+  });
+  const updated = await prisma.paymentTransaction.findUnique({ where: { id: record.id } });
+  const item = mapPaymentRecordToApiItem(updated);
+  await updateEventPaymentDateIfCompleted(item);
+  return { item };
+}
+
+async function findPaymentRecord(where) {
+  return prisma.paymentTransaction.findUnique({ where });
+}
+
+async function findPaymentRecords(args) {
+  return prisma.paymentTransaction.findMany(args);
 }
 
 function normalizeStoredPaymentStatus(value) {
@@ -6453,11 +6582,13 @@ function mapPaymentRecordToApiItem(record) {
     mode: audit.mode || 'prisma',
     eventId: record.eventId,
     hosterId: audit.hosterId || record.userId,
+    payerUid: paymentPayer(record),
     amount: Number(record.amount),
+    currency: record.currency,
     status,
     paymentMethod: audit.paymentMethod || 'stripe',
     providerTransactionRef: audit.providerTransactionRef || record.stripePaymentIntentId || null,
-    providerVerified: Boolean(record.verifiedAt) || audit.providerVerified === true,
+    providerVerified: Boolean(paymentPayer(record) && record.verifiedAt),
     stripePaymentIntentId: record.stripePaymentIntentId || null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -6820,115 +6951,24 @@ async function applyProviderTransactionStatusUpdate({
   verified,
   transactionId,
 }) {
-  if (!provider || !providerTransactionRef) {
-    return {
-      ok: false,
-      code: 'invalid_payload',
-      httpStatus: 400,
-      error: 'provider und providerTransactionRef sind erforderlich',
-    };
-  }
-
-  if ((targetStatus === 'completed' || targetStatus === 'refunded') && !verified) {
-    return {
-      ok: false,
-      code: 'verification_required',
-      httpStatus: 409,
-      error: `${targetStatus} nur mit verified=true erlaubt`,
-    };
-  }
-
   try {
-    let record = null;
-
-    if (transactionId) {
-      record = await prisma.paymentTransaction.findUnique({ where: { id: transactionId } });
+    if (provider !== 'stripe' || !providerTransactionRef || verified !== true || transactionId) {
+      throw paymentError(400, 'Nur signierte Stripe-Webhook-Referenzen erlaubt');
     }
-
-    if (!record && provider === 'stripe' && providerTransactionRef) {
-      record = await prisma.paymentTransaction.findFirst({
-        where: { stripePaymentIntentId: providerTransactionRef },
-      });
-    }
-
-    if (!record && providerTransactionRef) {
-      record = await prisma.paymentTransaction.findFirst({
-        where: { idempotencyKey: `${provider}:${providerTransactionRef}` },
-      });
-    }
-
+    const record = await findPaymentRecord({ stripePaymentIntentId: providerTransactionRef });
     if (!record) {
-      return {
-        ok: false,
-        code: 'not_found',
-        httpStatus: 404,
-        error: 'Transaktion nicht gefunden',
-      };
+      return { ok: false, code: 'not_found', httpStatus: 404, error: 'Transaktion nicht gefunden' };
     }
-
-    const statusUpdate = await applyTransactionStatusUpdateByRecord(record, targetStatus);
-    if (!statusUpdate.ok) {
-      return statusUpdate;
-    }
-
-    const currentRecord = await prisma.paymentTransaction.findUnique({ where: { id: record.id } });
-    const currentAudit = getPaymentAuditDetails(currentRecord);
-    const nowIso = new Date().toISOString();
-    const enhanced = await prisma.paymentTransaction.update({
-      where: { id: record.id },
-      data: {
-        verifiedAt: verified ? new Date(nowIso) : currentRecord.verifiedAt,
-        verifiedByType: verified ? 'webhook' : currentRecord.verifiedByType,
-        auditDetails: {
-          ...currentAudit,
-          providerVerified: currentAudit.providerVerified === true || verified,
-          providerEventStatus: targetStatus,
-          providerEventReceivedAt: nowIso,
-          providerTransactionRef: currentAudit.providerTransactionRef || providerTransactionRef,
-          paymentMethod: currentAudit.paymentMethod || provider,
-        },
-      },
-    });
-
-    return { ok: true, item: mapPaymentRecordToApiItem(enhanced) };
+    // Re-read current Stripe state: signed but delayed events must not roll an order back.
+    const result = await syncStripePaymentRecord(record, 'webhook');
+    return { ok: true, item: result.item };
   } catch (error) {
-    console.error('Prisma payment provider update fallback:', error?.message || error);
-  }
-
-  const index = paymentTransactions.findIndex(item => {
-    if (transactionId && item.id === transactionId) {
-      return true;
-    }
-    return (
-      item.paymentMethod === provider &&
-      (item.providerTransactionRef || '') === providerTransactionRef
-    );
-  });
-
-  if (index === -1) {
     return {
       ok: false,
-      code: 'not_found',
-      httpStatus: 404,
-      error: 'Transaktion nicht gefunden',
+      httpStatus: error.paymentHttpStatus || 503,
+      error: error.paymentHttpStatus ? error.message : 'Providerpruefung derzeit nicht verfuegbar',
     };
   }
-
-  const statusUpdate = await applyTransactionStatusUpdateByIndex(index, targetStatus);
-  if (!statusUpdate.ok) {
-    return statusUpdate;
-  }
-
-  const nowIso = new Date().toISOString();
-  const enhanced = {
-    ...statusUpdate.item,
-    providerVerified: paymentTransactions[index].providerVerified || verified,
-    providerEventStatus: targetStatus,
-    providerEventReceivedAt: nowIso,
-  };
-  paymentTransactions[index] = enhanced;
-
-  return { ok: true, item: enhanced };
 }
 
 function ensureEntitlement(userId, options = {}) {
@@ -8849,51 +8889,27 @@ app.delete('/parent-matching/my-profile', async (req, res) => {
   }
 });
 
-app.get('/parent-matching/profiles', async (req, res) => {
-  const userId = (req.query.userId || '').toString().trim();
-  if (!userId) {
-    return res.status(400).json({ error: 'userId fehlt' });
-  }
-
+app.get('/parent-matching/profiles', requireVerifiedUser, async (req, res) => {
+  const userId = req.firebaseUid;
   try {
-    const ownProfile = await getMyParentMatchingProfile(userId);
-    if (!ownProfile) {
+    const result = await discoverParentMatchingProfiles({
+      userId,
+      limit: req.query.limit || '100',
+      maxDistanceKm: req.query.maxDistanceKm || '25',
+    });
+    if (result === null) {
       return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
     }
-
-    const profiles = await prisma.parentMatchingProfile.findMany({
-      where: {
-        isActive: true,
-        ownerUserId: { not: userId },
-      },
-      orderBy: [{ verificationLevel: 'desc' }, { createdAt: 'desc' }],
-    });
-
-    return res.json({
-      profiles: profiles.map(mapParentMatchingProfileForClient),
-    });
+    return res.json({ profiles: result.matches.map(match => match.profile) });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/profiles', error)) {
-      return;
-    }
-    const ownProfile = getMyParentMatchingProfileInMemory(userId);
-    if (!ownProfile) {
-      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
-    }
-    const profiles = parentProfiles
-      .filter(item => item.isActive !== false && item.ownerUserId !== userId)
-      .map(mapParentMatchingProfileForClient);
-    return res.json({ profiles });
+    console.error('Parent matching profiles unavailable:', error);
+    return res.status(503).json({ error: 'Matching discovery unavailable' });
   }
 });
 
-app.get('/parent-matching/connections', async (req, res) => {
-  const familyId = (req.query.familyId || DEMO_FAMILY_ID).toString().trim();
-  const userId = (req.query.userId || '').toString().trim();
-
-  if (!userId) {
-    return res.status(400).json({ error: 'userId fehlt' });
-  }
+app.get('/parent-matching/connections', requireVerifiedUser, requireOwnFamily, async (req, res) => {
+  const familyId = req.ownFamily.id;
+  const userId = req.firebaseUid;
 
   try {
     const ownProfile = await getMyParentMatchingProfile(userId);
@@ -8917,12 +8933,11 @@ app.get('/parent-matching/connections', async (req, res) => {
   }
 });
 
-app.post('/parent-matching/actions', async (req, res) => {
-  const familyId = (req.body.familyId || 'demo-family-001').toString().trim();
-  const profileIdInput = (req.body.profileId || '').toString().trim();
+async function recordParentMatchingAction(req, res) {
+  const familyId = req.ownFamily.id;
+  const profileIdInput = (req.body.profileId || req.body.matchedProfileId || '').toString().trim();
   const actionValue = (req.body.action || 'unknown').toString().trim().toLowerCase();
-  const actorUserId = (req.body.userId || '').toString().trim();
-  const createdAtInput = (req.body.createdAt || '').toString().trim();
+  const actorUserId = req.firebaseUid;
 
   if (!profileIdInput) {
     return res.status(400).json({ error: 'profileId fehlt' });
@@ -8944,28 +8959,30 @@ app.post('/parent-matching/actions', async (req, res) => {
 
     let targetProfile = await prisma.parentMatchingProfile.findUnique({
       where: { id: profileIdInput },
-      select: { id: true, ownerUserId: true },
+      select: { id: true, ownerUserId: true, isActive: true },
     });
 
     if (!targetProfile) {
       targetProfile = await prisma.parentMatchingProfile.findUnique({
         where: { externalId: profileIdInput },
-        select: { id: true, ownerUserId: true },
+        select: { id: true, ownerUserId: true, isActive: true },
       });
     }
 
-    if (!targetProfile) {
+    if (!targetProfile || targetProfile.isActive === false || !targetProfile.ownerUserId) {
       return res.status(404).json({ error: 'Profil nicht gefunden' });
     }
+    if (targetProfile.ownerUserId === actorUserId) {
+      return res.status(403).json({ error: 'Eigenes Profil kann nicht kontaktiert werden' });
+    }
 
-    const createdAt = createdAtInput ? new Date(createdAtInput) : new Date();
     const createdAction = await prisma.parentMatchingAction.create({
       data: {
         familyId,
         profileId: targetProfile.id,
         action: actionValue,
-        createdAt: Number.isNaN(createdAt.getTime()) ? new Date() : createdAt,
-        actorUserId: actorUserId || null,
+        createdAt: new Date(),
+        actorUserId,
       },
     });
 
@@ -8974,6 +8991,7 @@ app.post('/parent-matching/actions', async (req, res) => {
 
     return res.status(201).json({
       item: createdAction,
+      action: createdAction,
       connected,
       matchState: connected
         ? 'matched'
@@ -8983,32 +9001,40 @@ app.post('/parent-matching/actions', async (req, res) => {
     if (respondWithStrictPersistenceError(res, 'POST /parent-matching/actions', error)) {
       return;
     }
-    ensureParentMatchingProfileForUserInMemory(actorUserId);
-    const targetProfile = parentProfiles.find(item => item.id === profileIdInput);
-    if (!targetProfile) {
+    if (!getMyParentMatchingProfileInMemory(actorUserId)) {
+      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
+    }
+    const targetProfile = parentProfiles.find(item =>
+      item.id === profileIdInput || item.externalId === profileIdInput);
+    if (!targetProfile || targetProfile.isActive === false || !targetProfile.ownerUserId) {
       return res.status(404).json({ error: 'Profil nicht gefunden' });
     }
-    const createdAt = createdAtInput ? new Date(createdAtInput) : new Date();
+    if (targetProfile.ownerUserId === actorUserId) {
+      return res.status(403).json({ error: 'Eigenes Profil kann nicht kontaktiert werden' });
+    }
     const createdAction = {
       id: generateId('pm-action'),
       familyId,
       profileId: targetProfile.id,
       action: actionValue,
       userId: actorUserId,
-      createdAt: Number.isNaN(createdAt.getTime()) ? new Date().toISOString() : createdAt.toISOString(),
+      createdAt: new Date().toISOString(),
     };
     parentMatchingActions.unshift(createdAction);
     const mutualProfileIds = getMutualConnectionProfileIdsInMemory(familyId, actorUserId);
     const connected = actionValue === 'like' && mutualProfileIds.includes(targetProfile.id);
     return res.status(201).json({
       item: createdAction,
+      action: createdAction,
       connected,
       matchState: connected
         ? 'matched'
         : (actionValue === 'like' ? 'pending' : 'none'),
     });
   }
-});
+}
+
+app.post('/parent-matching/actions', requireVerifiedUser, requireOwnFamily, recordParentMatchingAction);
 
 app.get('/parent-matching/messages/stream', requireVerifiedUser, async (req, res) => {
   const familyId = (req.query.familyId || DEMO_FAMILY_ID).toString().trim();
@@ -11103,18 +11129,21 @@ app.delete('/chat-groups/:id/members/:userId', requireVerifiedUser, async (req, 
   }
 });
 
-app.get('/family/requests', async (req, res) => {
+app.get('/family/requests', requireVerifiedUser, async (req, res) => {
   const userId = (req.query.userId || '').toString().trim();
   const toUserId = (req.query.toUserId || userId || '').toString().trim();
   const fromUserId = (req.query.fromUserId || '').toString().trim();
   const status = (req.query.status || '').toString().trim();
   const allowedStatuses = new Set(['pending', 'accepted', 'declined']);
+  if ((toUserId || fromUserId) && toUserId !== req.firebaseUid && fromUserId !== req.firebaseUid) {
+    return res.status(403).json({ error: 'Own family requests only' });
+  }
 
   if (status && !allowedStatuses.has(status)) {
     return res.status(400).json({ error: 'Ungültiger Status' });
   }
 
-  const where = {};
+  const where = { OR: [{ fromUserId: req.firebaseUid }, { toUserId: req.firebaseUid }] };
   if (toUserId) {
     where.toUserId = toUserId;
   }
@@ -11136,6 +11165,7 @@ app.get('/family/requests', async (req, res) => {
       return;
     }
     const requests = familyRequests.filter(item => {
+      if (item.fromUserId !== req.firebaseUid && item.toUserId !== req.firebaseUid) return false;
       if (toUserId && item.toUserId !== toUserId) return false;
       if (fromUserId && item.fromUserId !== fromUserId) return false;
       if (status && item.status !== status) return false;
@@ -11145,8 +11175,9 @@ app.get('/family/requests', async (req, res) => {
   }
 });
 
-app.post('/family/requests', async (req, res) => {
-  const fromUserId = (req.body.fromUserId || '').toString().trim();
+app.post('/family/requests', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.fromUserId, req.body.actingUserId])) return;
+  const fromUserId = req.firebaseUid;
   const toUserId = (req.body.toUserId || '').toString().trim();
   const actingUserId = (req.body.actingUserId || '').toString().trim();
   const status = (req.body.status || 'pending').toString().trim();
@@ -11157,8 +11188,8 @@ app.post('/family/requests', async (req, res) => {
   if (fromUserId === toUserId) {
     return res.status(400).json({ error: 'fromUserId und toUserId dürfen nicht identisch sein' });
   }
-  if (!['pending', 'accepted', 'declined'].includes(status)) {
-    return res.status(400).json({ error: 'Ungültiger Status' });
+  if (status !== 'pending') {
+    return res.status(403).json({ error: 'New family requests must be pending' });
   }
   if (actingUserId && actingUserId !== fromUserId) {
     return res.status(403).json({ error: 'actingUserId muss mit fromUserId übereinstimmen' });
@@ -11243,11 +11274,12 @@ app.post('/family/requests', async (req, res) => {
   }
 });
 
-app.put('/family/requests/:id', async (req, res) => {
+app.put('/family/requests/:id', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.actingUserId])) return;
   const status = req.body.status;
-  const actingUserId = (req.body.actingUserId || '').toString().trim();
+  const actingUserId = req.firebaseUid;
 
-  if (!['pending', 'accepted', 'declined'].includes(status)) {
+  if (!['accepted', 'declined'].includes(status)) {
     return res.status(400).json({ error: 'Ungültiger Status' });
   }
 
@@ -11319,8 +11351,9 @@ app.put('/family/requests/:id', async (req, res) => {
   }
 });
 
-app.delete('/family/requests/:id', async (req, res) => {
-  const actingUserId = (req.body?.actingUserId || req.query.actingUserId || '').toString().trim();
+app.delete('/family/requests/:id', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body?.actingUserId, req.query.actingUserId])) return;
+  const actingUserId = req.firebaseUid;
 
   try {
     const current = await prisma.familyRequest.findUnique({ where: { id: req.params.id } });
@@ -11639,7 +11672,7 @@ app.get('/events/item/:id', async (req, res) => {
   }
 });
 
-app.post('/events', async (req, res) => {
+app.post('/events', requireVerifiedUser, async (req, res) => {
   const body = req.body || {};
   if (!req.firebaseUid) return res.status(401).json({ error: 'Firebase sign-in required' });
   if (req.firebaseUid !== body.hosterId) return res.status(403).json({ error: 'Own account only' });
@@ -11776,8 +11809,9 @@ app.post('/events', async (req, res) => {
   }
 });
 
-app.delete('/events/item/:id', async (req, res) => {
-  const requestingUserId = (req.query.requestingUserId || req.body?.requestingUserId || '').toString().trim();
+app.delete('/events/item/:id', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.query.requestingUserId, req.body?.requestingUserId])) return;
+  const requestingUserId = req.firebaseUid;
 
   try {
     const record = await prisma.event.findUnique({
@@ -11944,8 +11978,9 @@ app.post('/events/invitations/join', async (req, res) => {
   }
 });
 
-app.get('/events/hosted-invite-only', async (req, res) => {
-  const hostUserId = (req.query.hostUserId || '').toString();
+app.get('/events/hosted-invite-only', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.query.hostUserId])) return;
+  const hostUserId = req.firebaseUid;
 
   try {
     const records = await resilientEventFindMany({
@@ -11976,8 +12011,13 @@ app.get('/events/hosted-invite-only', async (req, res) => {
   }
 });
 
-app.get('/events/:id/invitations/accepted', async (req, res) => {
+app.get('/events/:id/invitations/accepted', requireVerifiedUser, async (req, res) => {
   try {
+    const event = await prisma.event.findUnique({
+      where: { id: req.params.id }, select: { hosterId: true },
+    });
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (event.hosterId !== req.firebaseUid) return res.status(403).json({ error: 'Host only' });
     const items = await prisma.eventParticipation.findMany({
       where: { eventId: req.params.id, status: 'accepted' },
       orderBy: { createdAt: 'desc' },
@@ -11987,6 +12027,9 @@ app.get('/events/:id/invitations/accepted', async (req, res) => {
     if (respondWithStrictPersistenceError(res, 'GET /events/:id/invitations/accepted', error)) {
       return;
     }
+    const event = events.find(item => item.id === req.params.id);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (event.hosterId !== req.firebaseUid) return res.status(403).json({ error: 'Host only' });
     const items = eventInvitations.filter(
       item => item.eventId === req.params.id && item.status === 'accepted',
     );
@@ -12167,8 +12210,36 @@ app.get('/events/:id/participations/approved', async (req, res) => {
   }
 });
 
-// 17. Event chat (Prisma-first with in-memory fallback)
-app.get('/events/:id/chat/messages', async (req, res) => {
+// 17. Event chat: authorization and private messages fail closed on database errors.
+async function authorizeEventChat(req, res, eventId, { moderatorOnly = false, accessProbe = false } = {}) {
+  try {
+    const event = await prisma.event.findUnique({ where: { id: eventId } });
+    if (!event) {
+      res.status(404).json({ error: 'Event not found' });
+      return null;
+    }
+    const isModerator = event.hosterId === req.firebaseUid || adminUserIds.has(req.firebaseUid);
+    if (moderatorOnly && !isModerator) {
+      res.status(403).json({ error: 'Event moderator required' });
+      return null;
+    }
+    const participation = isModerator ? null : await prisma.eventParticipation.findFirst({
+      where: { eventId, userId: req.firebaseUid, status: { in: CONFIRMED } },
+    });
+    const hasAccess = isModerator || Boolean(participation);
+    if (!hasAccess && !accessProbe) {
+      res.status(403).json({ error: 'Confirmed event participation required' });
+      return null;
+    }
+    return { event, isModerator, hasAccess };
+  } catch (error) {
+    respondChatPersistenceError(res, 'Event chat authorization', error);
+    return null;
+  }
+}
+
+app.get('/events/:id/chat/messages', requireVerifiedUser, async (req, res) => {
+  if (!await authorizeEventChat(req, res, req.params.id)) return;
   try {
     const chat = await prisma.eventChat.findUnique({
       where: { eventId: req.params.id },
@@ -12198,24 +12269,17 @@ app.get('/events/:id/chat/messages', async (req, res) => {
 
     return res.json({ items });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /events/:id/chat/messages', error)) {
-      return;
-    }
-    const items = eventChatMessages[req.params.id] || [];
-    return res.json({ items });
+    return respondChatPersistenceError(res, 'GET /events/:id/chat/messages', error);
   }
 });
 
-app.post('/events/:id/chat/messages', async (req, res) => {
+app.post('/events/:id/chat/messages', requireVerifiedUser, async (req, res) => {
   const eventId = req.params.id;
+  const access = await authorizeEventChat(req, res, eventId);
+  if (!access) return;
 
   try {
-    const event = await prisma.event.findUnique({ where: { id: eventId } });
-    if (!event) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-
-    const authorId = await ensureBackendUser(req.body.userId || DEMO_USER_ID, req.body.userName || 'Unbekannt');
+    const authorId = await ensureAuthenticatedEventUser(req, req.firebaseUid);
     const chat = await ensureEventChatRecord(eventId);
     if (!chat) {
       return res.status(404).json({ error: 'Event nicht gefunden' });
@@ -12241,39 +12305,18 @@ app.post('/events/:id/chat/messages', async (req, res) => {
       userAvatarUrl: message.author.avatar || req.body.userAvatarUrl || '',
       content: message.content,
       timestamp: message.createdAt,
-      isHost: message.authorId === event.hosterId,
+      isHost: message.authorId === access.event.hosterId,
     };
 
     return res.status(201).json({ item });
   } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /events/:id/chat/messages', error)) {
-      return;
-    }
-    const event = events.find(item => item.id === eventId);
-    if (!event) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-
-    const item = {
-      id: generateId('msg'),
-      eventId,
-      userId: req.body.userId || '',
-      userName: req.body.userName || 'Unbekannt',
-      userAvatarUrl: req.body.userAvatarUrl || '',
-      content: req.body.content || '',
-      timestamp: new Date().toISOString(),
-      isHost: Boolean(req.body.isHost),
-    };
-
-    if (!eventChatMessages[eventId]) {
-      eventChatMessages[eventId] = [];
-    }
-    eventChatMessages[eventId].push(item);
-    return res.status(201).json({ item });
+    return respondChatPersistenceError(res, 'POST /events/:id/chat/messages', error);
   }
 });
 
-app.delete('/events/:eventId/chat/messages/:messageId', async (req, res) => {
+app.delete('/events/:eventId/chat/messages/:messageId', requireVerifiedUser, async (req, res) => {
+  const access = await authorizeEventChat(req, res, req.params.eventId);
+  if (!access) return;
   try {
     const message = await prisma.message.findUnique({
       where: { id: req.params.messageId },
@@ -12282,24 +12325,20 @@ app.delete('/events/:eventId/chat/messages/:messageId', async (req, res) => {
     if (!message || message.chat.eventId !== req.params.eventId) {
       return res.status(404).json({ error: 'Nachricht nicht gefunden' });
     }
+    if (!access.isModerator && message.authorId !== req.firebaseUid) {
+      return res.status(403).json({ error: 'Only the author or event moderator may delete a message' });
+    }
 
     await prisma.message.delete({ where: { id: req.params.messageId } });
     return res.status(204).send();
   } catch (error) {
-    console.error('DELETE /events/:eventId/chat/messages/:messageId fallback (in-memory):', error?.message || error);
-    const items = eventChatMessages[req.params.eventId] || [];
-    const before = items.length;
-    eventChatMessages[req.params.eventId] = items.filter(
-      item => item.id !== req.params.messageId,
-    );
-    if (before === eventChatMessages[req.params.eventId].length) {
-      return res.status(404).json({ error: 'Nachricht nicht gefunden' });
-    }
-    return res.status(204).send();
+    return respondChatPersistenceError(res, 'DELETE /events/:eventId/chat/messages/:messageId', error);
   }
 });
 
-app.post('/events/:id/chat/reports', async (req, res) => {
+app.post('/events/:id/chat/reports', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [req.body.reporterId])) return;
+  if (!await authorizeEventChat(req, res, req.params.id)) return;
   try {
     const chat = await ensureEventChatRecord(req.params.id);
     if (!chat) {
@@ -12312,10 +12351,7 @@ app.post('/events/:id/chat/reports', async (req, res) => {
       return res.status(404).json({ error: 'Nachricht nicht gefunden' });
     }
 
-    const reporterId = await ensureBackendUser(
-      req.body.reporterId || DEMO_USER_ID,
-      req.body.reporterName || req.body.reporterId || 'Reporter',
-    );
+    const reporterId = await ensureAuthenticatedEventUser(req, req.firebaseUid);
 
     const report = await prisma.chatReport.create({
       data: {
@@ -12339,22 +12375,12 @@ app.post('/events/:id/chat/reports', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('POST /events/:id/chat/reports fallback (in-memory):', error?.message || error);
-    const item = {
-      id: generateId('report'),
-      eventId: req.params.id,
-      reportedMessageId: req.body.reportedMessageId || '',
-      reporterId: req.body.reporterId || '',
-      reason: req.body.reason || 'other',
-      description: req.body.description || null,
-      reportedAt: new Date().toISOString(),
-    };
-    eventChatReports.unshift(item);
-    return res.status(201).json({ item });
+    return respondChatPersistenceError(res, 'POST /events/:id/chat/reports', error);
   }
 });
 
-app.get('/events/:id/chat/reports', async (req, res) => {
+app.get('/events/:id/chat/reports', requireVerifiedUser, async (req, res) => {
+  if (!await authorizeEventChat(req, res, req.params.id, { moderatorOnly: true })) return;
   try {
     const chat = await prisma.eventChat.findUnique({ where: { eventId: req.params.id } });
     if (!chat) {
@@ -12377,339 +12403,183 @@ app.get('/events/:id/chat/reports', async (req, res) => {
     }));
     return res.json({ items });
   } catch (error) {
-    console.error('GET /events/:id/chat/reports fallback (in-memory):', error?.message || error);
-    const items = eventChatReports.filter(item => item.eventId === req.params.id);
-    return res.json({ items });
+    return respondChatPersistenceError(res, 'GET /events/:id/chat/reports', error);
   }
 });
 
-app.get('/events/:id/chat/access', async (req, res) => {
-  const userId = (req.query.userId || '').toString();
-
-  try {
-    const event = await prisma.event.findUnique({ where: { id: req.params.id } });
-    if (!event) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-
-    const hosterId = (req.query.hosterId || event.hosterId || '').toString();
-    const participation = await prisma.eventParticipation.findFirst({
-      where: {
-        eventId: event.id,
-        userId,
-        status: { in: ['approved', 'accepted', 'attended'] },
-      },
-    });
-
-    const acceptedInvite = eventInvitations.some(
-      item =>
-        item.eventId === event.id &&
-        item.invitedUserId === userId &&
-        item.status === 'accepted',
-    );
-
-    const hasAccess = userId === hosterId || Boolean(participation) || acceptedInvite;
-    return res.json({ hasAccess });
-  } catch (error) {
-    console.error('GET /events/:id/chat/access fallback (in-memory):', error?.message || error);
-    const event = events.find(item => item.id === req.params.id);
-    if (!event) {
-      return res.status(404).json({ error: 'Event nicht gefunden' });
-    }
-
-    const hosterId = (req.query.hosterId || event.hosterId || '').toString();
-    const approvedParticipation = eventParticipations.some(
-      item =>
-        item.eventId === event.id &&
-        item.userId === userId &&
-        item.status === 'approved',
-    );
-    const acceptedInvite = eventInvitations.some(
-      item =>
-        item.eventId === event.id &&
-        item.invitedUserId === userId &&
-        item.status === 'accepted',
-    );
-
-    const hasAccess = userId === hosterId || approvedParticipation || acceptedInvite;
-    return res.json({ hasAccess });
+app.get('/events/:id/chat/access', requireVerifiedUser, async (req, res) => {
+  const access = await authorizeEventChat(req, res, req.params.id, { accessProbe: true });
+  if (!access) return;
+  if (req.query.hosterId && req.query.hosterId !== access.event.hosterId) {
+    return res.status(403).json({ error: 'Host identity does not match the event' });
   }
+  return res.json({ hasAccess: access.hasAccess });
 });
 
 // 18. Payments
-app.post('/payments/stripe/initiate', async (req, res) => {
-  const body = req.body || {};
-  const amount = parsePositiveNumber(body.amount);
-  const eventId = (body.eventId || '').toString();
-  const hosterId = (body.hosterId || '').toString();
-
-  if (!eventId || !hosterId || amount == null) {
-    return res.status(400).json({
-      error: 'eventId, hosterId und amount > 0 sind erforderlich',
-    });
-  }
-
+app.post('/payments/stripe/initiate', requireVerifiedUser, async (req, res) => {
   try {
-    // Real Stripe: create PaymentIntent if secret key is available.
-    if (stripe) {
-      const intent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Stripe expects cents
-        currency: 'eur',
-        description: `Parentpeak Event ${eventId}`,
-        metadata: {
-          eventId,
-          hosterId,
-        },
-      });
-
-      return res.status(201).json({
-        item: {
-          provider: 'stripe',
+    assertPaymentActor(req);
+    if (!stripe) throw paymentError(503, 'Stripe ist nicht konfiguriert');
+    const body = req.body || {};
+    const context = await ensurePaymentContext(body.eventId, body.hosterId, req.firebaseUid, body);
+    // Persist payer and immutable price before exposing any payable provider intent.
+    const order = await prisma.paymentTransaction.create({
+      data: {
+        eventId: context.eventId,
+        userId: req.firebaseUid,
+        amount: context.amount,
+        currency: context.currency.toUpperCase(),
+        stripePaymentIntentId: `uninitialized_${crypto.randomUUID()}`,
+        idempotencyKey: `stripe-order:${crypto.randomUUID()}`,
+        status: 'pending',
+        auditDetails: {
+          bindingVersion: 1,
+          payerUid: req.firebaseUid,
+          hosterId: context.hosterId,
+          paymentMethod: 'stripe',
           mode: 'real_stripe',
-          eventId,
-          hosterId,
-          amount,
-          stripePaymentIntentId: intent.id,
-          clientSecret: intent.client_secret,
-          status: intent.status,
         },
-      });
-    }
-
-    return res.status(503).json({
-      error: 'Stripe ist nicht konfiguriert.',
+      },
+    });
+    const intent = await stripe.paymentIntents.create({
+      amount: context.amountMinor,
+      currency: context.currency,
+      description: `Parentpeak Event ${context.eventId}`,
+      metadata: {
+        orderId: order.id,
+        payerUid: req.firebaseUid,
+        eventId: context.eventId,
+        hosterId: context.hosterId,
+      },
+    }, { idempotencyKey: order.idempotencyKey });
+    const stored = await prisma.paymentTransaction.update({
+      where: { id: order.id },
+      data: { stripePaymentIntentId: intent.id },
+    });
+    return res.status(201).json({
+      item: {
+        ...mapPaymentRecordToApiItem(stored),
+        provider: 'stripe',
+        clientSecret: intent.client_secret,
+      },
     });
   } catch (error) {
-    logSafeError('POST /payments/stripe/initiate failed', error, {
-      eventId,
-      hosterId,
-      amount,
-    });
-    return res.status(500).json({
-      error: `Stripe-Initialisierung fehlgeschlagen: ${error?.message || 'Unknown error'}`,
-    });
+    return respondPaymentError(res, error);
   }
 });
 
 // Get Stripe PaymentIntent status (for payment confirmation)
-app.get('/payments/stripe/confirm/:intentId', async (req, res) => {
-  const { intentId } = req.params;
-
-  if (!intentId) {
-    return res.status(400).json({ error: 'intentId erforderlich' });
-  }
-
+app.get('/payments/stripe/confirm/:intentId', requireVerifiedUser, async (req, res) => {
   try {
-    if (stripe) {
-      const intent = await stripe.paymentIntents.retrieve(intentId);
-      return res.json({
-        item: {
-          id: intent.id,
-          amount: intent.amount / 100, // Convert back from cents
-          status: intent.status,
-          clientSecret: intent.client_secret,
-        },
-      });
-    }
-
-    return res.status(503).json({
-      error: 'Stripe ist nicht konfiguriert.',
-    });
+    assertPaymentActor(req);
+    const record = await findPaymentRecord({ stripePaymentIntentId: req.params.intentId });
+    assertPaymentOwner(record, req.firebaseUid, { payerOnly: true });
+    const { item } = await syncStripePaymentRecord(record);
+    return res.json({ item });
   } catch (error) {
-    logSafeError('GET /payments/stripe/confirm/:intentId failed', error, {
-      intentId,
-    });
-    return res.status(500).json({
-      error: `Stripe Abruf fehlgeschlagen: ${error?.message || 'Unknown error'}`,
-    });
+    return respondPaymentError(res, error);
   }
 });
 
-app.post('/payments/paypal/initiate', (req, res) => {
-  const body = req.body || {};
-  const amount = parsePositiveNumber(body.amount);
-  const eventId = (body.eventId || '').toString();
-  const hosterId = (body.hosterId || '').toString();
-
-  if (!eventId || !hosterId || amount == null) {
-    return res.status(400).json({
-      error: 'eventId, hosterId und amount > 0 sind erforderlich',
-    });
-  }
-
-  return res.status(503).json({
-    error: 'PayPal ist nicht konfiguriert.',
-  });
-});
-
-app.post('/payments/confirm', async (req, res) => {
-  const body = req.body || {};
-  const amount = parsePositiveNumber(body.amount);
-  const eventId = (body.eventId || '').toString();
-  const hosterId = (body.hosterId || '').toString();
-  const paymentMethod = (body.paymentMethod || 'stripe').toString();
-  const allowedMethods = new Set(['stripe', 'paypal', 'apple_iap', 'google_play']);
-  const normalizedStatus = normalizePaymentStatus(body.status || 'pending');
-  const providerVerified = body.providerVerified === true;
-  const providerTransactionRef = (body.providerTransactionRef || '').toString().trim();
-
-  if (!eventId || !hosterId || amount == null) {
-    return res.status(400).json({
-      error: 'eventId, hosterId und amount > 0 sind erforderlich',
-    });
-  }
-
-  if (!allowedMethods.has(paymentMethod)) {
-    return res.status(400).json({ error: 'Unbekannte paymentMethod' });
-  }
-
-  if (normalizedStatus == null) {
-    return res.status(400).json({ error: 'Ungueltiger payment status' });
-  }
-
-  if (normalizedStatus === 'completed' && !providerVerified) {
-    return res.status(409).json({
-      error: 'completed ist nur mit verifiziertem Provider-Event erlaubt',
-    });
-  }
-
-  if ((paymentMethod === 'stripe' || paymentMethod === 'paypal') && !providerTransactionRef) {
-    return res.status(400).json({
-      error: 'providerTransactionRef ist für Stripe/PayPal erforderlich',
-    });
-  }
-
-  const nowIso = new Date().toISOString();
-
+app.post('/payments/paypal/initiate', requireVerifiedUser, (req, res) => {
   try {
-    const context = await ensurePaymentContext(eventId, hosterId);
-    const stripePaymentIntentId = paymentMethod === 'stripe'
-      ? ((body.stripePaymentIntentId || providerTransactionRef || '').toString())
-      : `alt_${paymentMethod}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-
-    if (paymentMethod === 'stripe' && !stripePaymentIntentId) {
-      return res.status(400).json({
-        error: 'stripePaymentIntentId oder providerTransactionRef ist erforderlich',
-      });
-    }
-
-    const created = await prisma.paymentTransaction.create({
-      data: {
-        eventId: context.eventId,
-        userId: context.hosterId,
-        amount,
-        currency: (body.currency || 'EUR').toString(),
-        stripePaymentIntentId,
-        idempotencyKey: (body.idempotencyKey || `${paymentMethod}:${providerTransactionRef || stripePaymentIntentId}`).toString(),
-        status: normalizedStatus,
-        verifiedAt: providerVerified ? new Date(nowIso) : null,
-        verifiedByType: providerVerified ? 'api' : null,
-        auditDetails: {
-          mode: 'backend_record',
-          hosterId: context.hosterId,
-          paymentMethod,
-          providerTransactionRef: providerTransactionRef || null,
-          providerVerified,
-          completedAt: normalizedStatus === 'completed' ? nowIso : null,
-          failedAt: normalizedStatus === 'failed' ? nowIso : null,
-        },
-      },
-    });
-
-    const item = mapPaymentRecordToApiItem(created);
-    await updateEventPaymentDateIfCompleted(item);
-    return res.status(201).json({ item });
+    assertPaymentActor(req);
+    return res.status(503).json({ error: 'PayPal-Providerpruefung ist nicht konfiguriert' });
   } catch (error) {
-    console.error('POST /payments/confirm fallback (in-memory):', error?.message || error);
-    if (respondWithStrictPersistenceError(res, 'POST /payments/confirm', error)) {
-      return;
-    }
-
-    return res.status(503).json({
-      error: 'Zahlungs-Persistenz fehlgeschlagen.',
-    });
+    return respondPaymentError(res, error);
   }
 });
 
-app.post('/payments/provider-events', async (req, res) => {
-  if (!allowClientProviderEvents) {
-    return res.status(403).json({
-      error: 'Client Provider-Events sind deaktiviert',
-    });
-  }
-
-  const body = req.body || {};
-  const targetStatus = normalizePaymentStatus(body.status);
-  const provider = (body.provider || '').toString().trim().toLowerCase();
-  const providerTransactionRef = (body.providerTransactionRef || '').toString().trim();
-  const transactionId = (body.transactionId || '').toString().trim();
-  const verified = body.verified === true;
-
-  if (targetStatus == null) {
-    return res.status(400).json({ error: 'Ungueltiger payment status' });
-  }
-
-  const result = await applyProviderTransactionStatusUpdate({
-    provider,
-    providerTransactionRef,
-    targetStatus,
-    verified,
-    transactionId,
-  });
-
-  if (!result.ok) {
-    return res.status(result.httpStatus).json({ error: result.error });
-  }
-
-  return res.json({ item: result.item });
-});
-
-app.get('/payments/transactions', async (req, res) => {
+app.post('/payments/confirm', requireVerifiedUser, async (req, res) => {
   try {
+    assertPaymentActor(req);
+    const body = req.body || {};
+    if (body.paymentMethod && body.paymentMethod !== 'stripe') {
+      throw paymentError(503, 'Providerpruefung fuer diese Zahlungsart nicht unterstuetzt');
+    }
+    const reference = body.stripePaymentIntentId || body.providerTransactionRef;
+    if (typeof reference !== 'string' || !/^pi_[A-Za-z0-9]+$/.test(reference)) {
+      throw paymentError(400, 'Stripe PaymentIntent-ID erforderlich, kein Client-Secret');
+    }
+    if (body.providerTransactionRef && body.providerTransactionRef !== reference) {
+      throw paymentError(409, 'Widerspruechliche Providerreferenzen');
+    }
+    const record = await findPaymentRecord({ stripePaymentIntentId: reference });
+    assertPaymentOwner(record, req.firebaseUid, { payerOnly: true });
+    if ((body.eventId !== undefined && body.eventId !== record.eventId) ||
+        (body.hosterId !== undefined && body.hosterId !== paymentHost(record))) {
+      throw paymentError(403, 'Auftragskontext stimmt nicht ueberein');
+    }
+    if ((body.amount !== undefined && Number(body.amount) !== Number(record.amount)) ||
+        (body.currency !== undefined && String(body.currency).toUpperCase() !== record.currency.toUpperCase())) {
+      throw paymentError(409, 'Auftragspreis stimmt nicht ueberein');
+    }
+    const { item } = await syncStripePaymentRecord(record);
+    return res.json({ item });
+  } catch (error) {
+    return respondPaymentError(res, error);
+  }
+});
+
+app.post('/payments/provider-events', requireVerifiedUser, async (req, res) => {
+  try {
+    assertPaymentActor(req);
+    return res.status(403).json({ error: 'Client Provider-Events sind deaktiviert; signierten Webhook verwenden' });
+  } catch (error) {
+    return respondPaymentError(res, error);
+  }
+});
+
+app.get('/payments/transactions', requireVerifiedUser, async (req, res) => {
+  try {
+    assertPaymentActor(req);
     const hosterId = (req.query.hosterId || '').toString().trim();
-    const items = await prisma.paymentTransaction.findMany({
-      where: hosterId
-        ? {
-            OR: [
-              { userId: hosterId },
-              { auditDetails: { path: ['hosterId'], equals: hosterId } },
-            ],
-          }
-        : undefined,
+    if (hosterId && hosterId !== req.firebaseUid) {
+      throw paymentError(403, 'Nur eigene Host-Transaktionen erlaubt');
+    }
+    const items = await findPaymentRecords({
+      where: hosterId ? {
+        OR: [
+          { auditDetails: { path: ['hosterId'], equals: req.firebaseUid } },
+          { userId: req.firebaseUid },
+        ],
+      } : { OR: [
+        { userId: req.firebaseUid },
+        { auditDetails: { path: ['hosterId'], equals: req.firebaseUid } },
+      ] },
       orderBy: { createdAt: 'desc' },
     });
-    return res.json({ items: items.map(mapPaymentRecordToApiItem) });
+    return res.json({ items: items.filter(item =>
+      hosterId ? paymentHost(item) === req.firebaseUid :
+        paymentPayer(item) === req.firebaseUid || paymentHost(item) === req.firebaseUid,
+    ).map(mapPaymentRecordToApiItem) });
   } catch (error) {
-    console.error('GET /payments/transactions fallback (in-memory):', error?.message || error);
-    let items = [...paymentTransactions];
-    if (req.query.hosterId) {
-      items = items.filter(item => item.hosterId === req.query.hosterId);
-    }
-    return res.json({ items });
+    return respondPaymentError(res, error);
   }
 });
 
-app.get('/payments/transactions/:id', async (req, res) => {
+app.get('/payments/transactions/:id', requireVerifiedUser, async (req, res) => {
   try {
-    const item = await prisma.paymentTransaction.findUnique({ where: { id: req.params.id } });
-    if (!item) {
-      return res.status(404).json({ error: 'Transaktion nicht gefunden' });
+    assertPaymentActor(req);
+    const item = await findPaymentRecord({ id: req.params.id });
+    assertPaymentOwner(item, req.firebaseUid);
+    if (paymentPayer(item) && ['pending', 'initiated'].includes(normalizeStoredPaymentStatus(item.status))) {
+      const result = await syncStripePaymentRecord(item);
+      return res.json({ item: result.item });
     }
     return res.json({ item: mapPaymentRecordToApiItem(item) });
   } catch (error) {
-    console.error('GET /payments/transactions/:id fallback (in-memory):', error?.message || error);
-    const item = paymentTransactions.find(transaction => transaction.id === req.params.id);
-    if (!item) {
-      return res.status(404).json({ error: 'Transaktion nicht gefunden' });
-    }
-    return res.json({ item });
+    return respondPaymentError(res, error);
   }
 });
 
-app.get('/payments/host/:hosterId', async (req, res) => {
+app.get('/payments/host/:hosterId', requireVerifiedUser, async (req, res) => {
   try {
+    assertPaymentActor(req);
     const hosterId = (req.params.hosterId || '').toString().trim();
-    const items = await prisma.paymentTransaction.findMany({
+    if (hosterId !== req.firebaseUid) throw paymentError(403, 'Nur eigene Host-Transaktionen erlaubt');
+    const items = await findPaymentRecords({
       where: {
         OR: [
           { userId: hosterId },
@@ -12718,109 +12588,53 @@ app.get('/payments/host/:hosterId', async (req, res) => {
       },
       orderBy: { createdAt: 'desc' },
     });
-    return res.json({ items: items.map(mapPaymentRecordToApiItem) });
+    return res.json({ items: items.filter(item => paymentHost(item) === req.firebaseUid).map(mapPaymentRecordToApiItem) });
   } catch (error) {
-    console.error('GET /payments/host/:hosterId fallback (in-memory):', error?.message || error);
-    const items = paymentTransactions.filter(
-      transaction => transaction.hosterId === req.params.hosterId,
-    );
-    return res.json({ items });
+    return respondPaymentError(res, error);
   }
 });
 
-app.post('/payments/transactions/:id/refund', async (req, res) => {
+app.post('/payments/transactions/:id/refund', requireVerifiedUser, async (req, res) => {
   try {
-    const current = await prisma.paymentTransaction.findUnique({ where: { id: req.params.id } });
-    if (!current) {
-      return res.status(404).json({ error: 'Transaktion nicht gefunden' });
+    assertPaymentActor(req);
+    const current = await findPaymentRecord({ id: req.params.id });
+    assertPaymentOwner(current, req.firebaseUid, { hostOnly: true });
+    const { status } = await verifyStripePaymentRecord(current);
+    if (status === 'refunded') {
+      const { item } = await persistVerifiedPaymentStatus(current, status, 'stripe_api');
+      return res.json({ item });
     }
-
-    const mapped = mapPaymentRecordToApiItem(current);
-    if (mapped.status !== 'completed') {
-      return res.status(409).json({
-        error: 'Rueckerstattung nur für completed-Transaktionen erlaubt',
-      });
+    if (status !== 'completed' || normalizeStoredPaymentStatus(current.status) !== 'completed') {
+      throw paymentError(409, 'Rueckerstattung nur fuer verifiziert abgeschlossene Zahlungen erlaubt');
     }
-
-    const updated = await prisma.paymentTransaction.update({
-      where: { id: req.params.id },
-      data: {
-        status: 'refunded',
-        refundedAt: new Date(),
-        auditDetails: {
-          ...getPaymentAuditDetails(current),
-          refundedAt: new Date().toISOString(),
-        },
-      },
-    });
-    return res.json({ item: mapPaymentRecordToApiItem(updated) });
+    const refund = await stripe.refunds.create({
+      payment_intent: current.stripePaymentIntentId,
+      amount: Math.round(Number(current.amount) * 100),
+    }, { idempotencyKey: `payment-refund:${current.id}` });
+    if (refund.payment_intent !== current.stripePaymentIntentId ||
+        refund.amount !== Math.round(Number(current.amount) * 100) ||
+        refund.currency !== String(current.currency).toLowerCase()) {
+      throw paymentError(409, 'Rueckerstattungsnachweis stimmt nicht mit dem Auftrag ueberein');
+    }
+    if (refund.status !== 'succeeded') {
+      throw paymentError(409, 'Rueckerstattung vom Provider noch nicht erfolgreich bestaetigt');
+    }
+    const { item } = await persistVerifiedPaymentStatus(current, 'refunded', 'stripe_refund_api');
+    return res.json({ item });
   } catch (error) {
-    console.error('POST /payments/transactions/:id/refund fallback (in-memory):', error?.message || error);
-    const index = paymentTransactions.findIndex(item => item.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Transaktion nicht gefunden' });
-    }
-
-    if (paymentTransactions[index].status !== 'completed') {
-      return res.status(409).json({
-        error: 'Rueckerstattung nur für completed-Transaktionen erlaubt',
-      });
-    }
-
-    paymentTransactions[index] = {
-      ...paymentTransactions[index],
-      status: 'refunded',
-      refundedAt: new Date().toISOString(),
-    };
-
-    return res.json({ item: paymentTransactions[index] });
+    return respondPaymentError(res, error);
   }
 });
 
-app.post('/payments/transactions/:id/status', async (req, res) => {
-  const targetStatus = normalizePaymentStatus(req.body.status);
-  if (targetStatus == null) {
-    return res.status(400).json({ error: 'Ungueltiger Zielstatus' });
-  }
-
+app.post('/payments/transactions/:id/status', requireVerifiedUser, async (req, res) => {
   try {
-    const current = await prisma.paymentTransaction.findUnique({ where: { id: req.params.id } });
-    if (!current) {
-      return res.status(404).json({ error: 'Transaktion nicht gefunden' });
-    }
-
-    const result = await applyTransactionStatusUpdateByRecord(current, targetStatus);
-    if (!result.ok) {
-      return res.status(result.httpStatus).json({ error: result.error });
-    }
-
-    return res.json({ item: result.item });
+    assertPaymentActor(req);
+    const current = await findPaymentRecord({ id: req.params.id });
+    assertPaymentOwner(current, req.firebaseUid);
+    const { item } = await syncStripePaymentRecord(current);
+    return res.json({ item });
   } catch (error) {
-    console.error('POST /payments/transactions/:id/status fallback (in-memory):', error?.message || error);
-    const index = paymentTransactions.findIndex(item => item.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Transaktion nicht gefunden' });
-    }
-
-    const current = paymentTransactions[index];
-    if (!canTransitionPaymentStatus(current.status, targetStatus)) {
-      return res.status(409).json({
-        error: `Statuswechsel ${current.status} -> ${targetStatus} nicht erlaubt`,
-      });
-    }
-
-    const nowIso = new Date().toISOString();
-    const updated = {
-      ...current,
-      status: targetStatus,
-      updatedAt: nowIso,
-      completedAt: targetStatus === 'completed' ? (current.completedAt || nowIso) : current.completedAt,
-      failedAt: targetStatus === 'failed' ? nowIso : current.failedAt,
-      refundedAt: targetStatus === 'refunded' ? nowIso : current.refundedAt,
-    };
-
-    paymentTransactions[index] = updated;
-    return res.json({ item: updated });
+    return respondPaymentError(res, error);
   }
 });
 
@@ -13618,8 +13432,9 @@ function jaccardSimilarity(arr1, arr2) {
  * POST /api/parent-matching/profiles
  * Create or update user's matching profile
  */
-app.post('/api/parent-matching/profiles', async (req, res) => {
-  const { userId, name, city, interests, languages, valuesFocus, childAges, familyForm, bio } = req.body;
+app.post('/api/parent-matching/profiles', requireVerifiedUser, async (req, res) => {
+  const userId = req.firebaseUid;
+  const { name, city, interests, languages, valuesFocus, childAges, familyForm, bio } = req.body;
   const age = parseOptionalParentAge(req.body.age, 18, 120);
   const latitude = parseOptionalParentCoordinate(req.body.latitude, 90);
   const longitude = parseOptionalParentCoordinate(req.body.longitude, 180);
@@ -13641,8 +13456,9 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
   try {
     await ensureParentMatchingSchemaReady();
     const profile = await prisma.parentMatchingProfile.upsert({
-      where: { ownerUserId: userId },
+      where: { externalId: `self-${userId}` },
       update: {
+        ownerUserId: userId,
         name: String(name).slice(0, 100),
         age,
         city: String(city).slice(0, 50),
@@ -13657,6 +13473,7 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
         updatedAt: new Date(),
       },
       create: {
+        externalId: `self-${userId}`,
         ownerUserId: userId,
         name: String(name).slice(0, 100),
         age,
@@ -13672,7 +13489,7 @@ app.post('/api/parent-matching/profiles', async (req, res) => {
       },
     });
 
-    res.json({ profile });
+    res.json({ profile: mapParentMatchingProfileForClient(profile) });
   } catch (err) {
     console.error('❌ Fehler beim Speichern des Matching-Profils:', err);
     res.status(500).json({ error: 'Profil konnte nicht gespeichert werden' });
@@ -13806,34 +13623,7 @@ app.get('/api/parent-matching/find', respondWithParentMatchingDiscovery);
  * POST /api/parent-matching/record-action
  * Record user action (like, contact, pass)
  */
-app.post('/api/parent-matching/record-action', async (req, res) => {
-  const { userId, matchedProfileId, action, familyId } = req.body;
-
-  if (!userId || !matchedProfileId || !action) {
-    return res.status(400).json({ error: 'userId, matchedProfileId, action erforderlich' });
-  }
-
-  const validActions = ['like', 'contact', 'pass', 'favorite'];
-  if (!validActions.includes(action)) {
-    return res.status(400).json({ error: `Ungültige Aktion. Erlaubt: ${validActions.join(', ')}` });
-  }
-
-  try {
-    const record = await prisma.parentMatchingAction.create({
-      data: {
-        familyId: familyId || userId,
-        profileId: matchedProfileId,
-        action,
-        actorUserId: userId,
-      },
-    });
-
-    res.status(201).json({ action: record });
-  } catch (err) {
-    console.error('❌ Fehler beim Speichern der Aktion:', err);
-    res.status(500).json({ error: 'Aktion konnte nicht gespeichert werden' });
-  }
-});
+app.post('/api/parent-matching/record-action', requireVerifiedUser, requireOwnFamily, recordParentMatchingAction);
 
 // ============================================================================
 // GEMEINSAM SATT - Shared Recipes (Modern & Secure)
@@ -14611,7 +14401,7 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
  * POST /api/events
  * Create a new community event
  */
-app.post('/api/events', async (req, res) => {
+app.post('/api/events', requireVerifiedUser, async (req, res) => {
   const {
     hosterId, title, description, location, latitude, longitude,
     startDate, endDate, eventType, visibility, shareRadiusKm, maxParticipants,

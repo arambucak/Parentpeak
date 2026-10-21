@@ -1,6 +1,7 @@
 /// Smart Parent Matching Service with intelligent algorithm
 /// Uses geographic proximity + interests + child compatibility scoring
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:parentpeak/config/api_config.dart';
@@ -148,6 +149,7 @@ class ParentMatchingDiscoveryResult {
 class ParentMatchingBackendService {
   final String? _apiUrl = APIConfig.getBackendBaseUrl();
   final http.Client _httpClient;
+  final Future<String?> Function()? _firebaseTokenProvider;
   String? lastSyncError;
 
   // Backward compatibility: accept old apiClient parameter
@@ -156,10 +158,23 @@ class ParentMatchingBackendService {
   ParentMatchingBackendService({
     http.Client? httpClient,
     this.apiClient,
-  }) : _httpClient = httpClient ?? http.Client();
+    Future<String?> Function()? firebaseTokenProvider,
+  }) : _httpClient = httpClient ?? http.Client(),
+       _firebaseTokenProvider = firebaseTokenProvider;
 
   BackendApiClient? get _typedApiClient =>
       apiClient is BackendApiClient ? apiClient as BackendApiClient : null;
+
+  Future<String> _firebaseToken() async {
+    final provider = _firebaseTokenProvider;
+    final token = provider != null
+        ? await provider()
+        : await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (token == null || token.trim().isEmpty) {
+      throw StateError('Firebase-Anmeldung erforderlich');
+    }
+    return token;
+  }
 
   Future<Map<String, dynamic>?> requestVerificationOtp({
     required String userId,
@@ -184,12 +199,12 @@ class ParentMatchingBackendService {
         return decoded is Map<String, dynamic> ? decoded : null;
       }
 
-      final fallbackToken = APIConfig.getBackendApiToken();
+      final fallbackToken = await _firebaseToken();
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl$endpoint'),
         headers: {
           'Content-Type': 'application/json',
-          if (fallbackToken != null && fallbackToken.trim().isNotEmpty)
+          if (fallbackToken.trim().isNotEmpty)
             'Authorization': 'Bearer ${fallbackToken.trim()}',
         },
         body: jsonEncode(payload),
@@ -234,12 +249,12 @@ class ParentMatchingBackendService {
         return false;
       }
 
-      final fallbackToken = APIConfig.getBackendApiToken();
+      final fallbackToken = await _firebaseToken();
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl$endpoint'),
         headers: {
           'Content-Type': 'application/json',
-          if (fallbackToken != null && fallbackToken.trim().isNotEmpty)
+          if (fallbackToken.trim().isNotEmpty)
             'Authorization': 'Bearer ${fallbackToken.trim()}',
         },
         body: jsonEncode(payload),
@@ -316,12 +331,12 @@ class ParentMatchingBackendService {
         return ParentMatchingProfile.fromJson(data);
       }
 
-      final fallbackToken = APIConfig.getBackendApiToken();
+      final fallbackToken = await _firebaseToken();
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl$myProfilePath'),
         headers: {
           'Content-Type': 'application/json',
-          if (fallbackToken != null && fallbackToken.trim().isNotEmpty)
+          if (fallbackToken.trim().isNotEmpty)
             'Authorization': 'Bearer ${fallbackToken.trim()}',
         },
         body: jsonEncode(payload),
@@ -647,15 +662,25 @@ class ParentMatchingBackendService {
     }
 
     try {
+      final payload = {
+        'userId': userId,
+        'matchedProfileId': matchedProfileId,
+        'action': action,
+        if (familyId != null) 'familyId': familyId,
+      };
+      final client = _typedApiClient;
+      if (client != null) {
+        await client.postJsonAny('/api/parent-matching/record-action', payload);
+        return true;
+      }
+      final token = await _firebaseToken();
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl/api/parent-matching/record-action'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': userId,
-          'matchedProfileId': matchedProfileId,
-          'action': action,
-          'familyId': familyId,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
       );
 
       if (response.statusCode != 201) {

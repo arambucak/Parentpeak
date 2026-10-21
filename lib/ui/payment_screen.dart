@@ -4,7 +4,6 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/models/payment_transaction.dart';
 import 'package:parentpeak/logic/payment_service.dart';
-import 'package:parentpeak/logic/event_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
@@ -12,11 +11,13 @@ import 'package:parentpeak/main.dart';
 class PaymentScreen extends StatefulWidget {
   final MeetupEvent event;
   final double amount;
+  final PaymentService? paymentService;
 
   const PaymentScreen({
     super.key,
     required this.event,
     required this.amount,
+    this.paymentService,
   });
 
   @override
@@ -24,8 +25,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  final _paymentService = PaymentService();
-  final _eventService = EventService();
+  late final _paymentService = widget.paymentService ?? PaymentService();
 
   String _t(String key) =>
       AppStringsManager.getString(languageService.currentLanguage, key);
@@ -39,9 +39,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (uri == null) return;
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_t('payment_link_failed'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('payment_link_failed'))));
     }
   }
 
@@ -51,9 +51,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<void> _processPayment() async {
     if (!_agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_t('payment_accept_terms'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('payment_accept_terms'))));
       return;
     }
 
@@ -61,7 +61,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Stripe ist aktuell nicht konfiguriert. Bitte wähle PayPal oder kontaktiere den Support.',
+            'Stripe ist auf dieser Plattform nicht verfügbar oder nicht konfiguriert. Bitte kontaktiere den Support.',
           ),
         ),
       );
@@ -87,19 +87,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
 
       final providerTransactionRef = _selectedPaymentMethod == 'stripe'
-          ? (initResponse['clientSecret']?.toString() ?? '').trim()
+          ? (initResponse['stripePaymentIntentId']?.toString() ?? '').trim()
           : (initResponse['token']?.toString() ?? '').trim();
 
       if (providerTransactionRef.isEmpty) {
         throw StateError(
-            'Provider-Referenz fehlt. Zahlung kann nicht fortgesetzt werden.');
+          'Provider-Referenz fehlt. Zahlung kann nicht fortgesetzt werden.',
+        );
       }
 
-      // Lege Zahlung als pending an und warte auf verifiziertes Provider-Ergebnis.
+      // Verify the existing server order; never use a client secret as proof.
       final pendingTransaction = await _paymentService.confirmPayment(
-        eventId: widget.event.id,
-        hosterId: widget.event.hosterId,
-        amount: widget.amount,
+        eventId: initResponse['eventId']?.toString() ?? widget.event.id,
+        hosterId: initResponse['hosterId']?.toString() ?? widget.event.hosterId,
+        amount: (initResponse['amount'] as num?)?.toDouble() ?? widget.amount,
         paymentMethod: _selectedPaymentMethod,
         providerTransactionRef: providerTransactionRef,
         initialStatus: 'pending',
@@ -109,33 +110,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       if (transaction == null || transaction.status != 'completed') {
         throw StateError(
-            'Zahlung ist noch nicht abgeschlossen (Status: ${transaction?.status ?? 'unknown'}).');
+          'Zahlung ist noch nicht abgeschlossen (Status: ${transaction?.status ?? 'unknown'}).',
+        );
       }
-
-      // Erstelle das Event
-      final eventWithPayment = MeetupEvent(
-        id: widget.event.id,
-        hosterId: widget.event.hosterId,
-        title: widget.event.title,
-        description: widget.event.description,
-        category: widget.event.category,
-        ageGroups: widget.event.ageGroups,
-        location: widget.event.location,
-        latitude: widget.event.latitude,
-        longitude: widget.event.longitude,
-        eventDate: widget.event.eventDate,
-        createdAt: widget.event.createdAt,
-        paymentDate: DateTime.now(),
-        maxParticipants: widget.event.maxParticipants,
-        photoUrl: widget.event.photoUrl,
-        status: EventStatus.active,
-        price: widget.event.price,
-        visibility: widget.event.visibility,
-        shareRadiusKm: widget.event.shareRadiusKm,
-        invitedUserIds: widget.event.invitedUserIds,
-      );
-
-      await _eventService.createEvent(eventWithPayment);
 
       setState(() => _isProcessing = false);
 
@@ -151,7 +128,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Deine Aktivität "${widget.event.title}" ist nun live!',
+                  'Deine Zahlung für "${widget.event.title}" wurde bestätigt!',
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -193,18 +170,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
     } on StripeException catch (e) {
       setState(() => _isProcessing = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_mapStripeError(e)),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_mapStripeError(e))));
       }
     } catch (e) {
       setState(() => _isProcessing = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Zahlungsfehler: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Zahlungsfehler: $e')));
       }
     }
   }
@@ -226,7 +201,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<PaymentTransaction?> _awaitFinalPaymentState(
-      String transactionId) async {
+    String transactionId,
+  ) async {
     const maxAttempts = 15;
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       final transaction = await _paymentService.getTransaction(transactionId);
@@ -248,8 +224,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final contentMaxWidth = viewportWidth >= 1200
         ? 920.0
         : viewportWidth >= 900
-            ? 820.0
-            : double.infinity;
+        ? 820.0
+        : double.infinity;
     final horizontalPadding = viewportWidth >= 900 ? 24.0 : 16.0;
 
     return PopScope(
@@ -302,12 +278,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         children: [
                           Text(
                             'Bestellübersicht',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 12),
                           Row(
@@ -317,14 +289,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 child: Text(
                                   widget.event.title,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w600),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                               if (widget.event.visibility ==
                                   EventVisibility.privateOnly)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.grey.shade200,
                                     borderRadius: BorderRadius.circular(999),
@@ -332,15 +307,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   child: const Text(
                                     'PRIVAT',
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 )
                               else if (widget.event.visibility ==
                                   EventVisibility.familyCircle)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE0E7FF),
                                     borderRadius: BorderRadius.circular(999),
@@ -348,15 +326,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   child: const Text(
                                     'FAMILIENKREIS',
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 )
                               else if (widget.event.visibility ==
                                   EventVisibility.inviteOnly)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFFFEDD5),
                                     borderRadius: BorderRadius.circular(999),
@@ -364,14 +345,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   child: Text(
                                     'NUR EINGELADEN (${widget.event.invitedUserIds.length})',
                                     style: const TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 )
                               else
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFDBEAFE),
                                     borderRadius: BorderRadius.circular(999),
@@ -379,8 +363,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   child: const Text(
                                     'ÖFFENTLICH',
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                             ],
@@ -393,7 +378,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               Text(
                                 '${widget.amount.toStringAsFixed(2)} €',
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.w600),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -406,8 +392,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     Text(
                       'Zahlungsmethode',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 12),
 
@@ -426,10 +412,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     // PayPal Option
                     _PaymentMethodOptionTile(
                       title: 'PayPal',
-                      subtitle: 'Bezahl mit deinem PayPal-Konto',
+                      subtitle: 'Derzeit nicht verfügbar',
                       icon: Icons.payment,
                       selected: _selectedPaymentMethod == 'paypal',
-                      enabled: !_isProcessing,
+                      enabled: false,
                       onTap: () =>
                           setState(() => _selectedPaymentMethod = 'paypal'),
                     ),
@@ -448,8 +434,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         padding: EdgeInsets.all(12),
                         child: Row(
                           children: [
-                            Icon(Icons.lock,
-                                color: Color(0xFF1D4ED8), size: 20),
+                            Icon(
+                              Icons.lock,
+                              color: Color(0xFF1D4ED8),
+                              size: 20,
+                            ),
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -495,15 +484,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             if (termsUrl != null && termsUrl.isNotEmpty)
                               TextButton.icon(
                                 onPressed: () => _openLegalUrl(termsUrl),
-                                icon: const Icon(Icons.description_outlined,
-                                    size: 16),
+                                icon: const Icon(
+                                  Icons.description_outlined,
+                                  size: 16,
+                                ),
                                 label: Text(_t('payment_view_agb')),
                               ),
                             if (privacyUrl != null && privacyUrl.isNotEmpty)
                               TextButton.icon(
                                 onPressed: () => _openLegalUrl(privacyUrl),
-                                icon: const Icon(Icons.privacy_tip_outlined,
-                                    size: 16),
+                                icon: const Icon(
+                                  Icons.privacy_tip_outlined,
+                                  size: 16,
+                                ),
                                 label: Text(_t('payment_view_privacy')),
                               ),
                           ],
@@ -532,7 +525,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Icon(Icons.payment),
@@ -574,8 +568,9 @@ class _PaymentMethodOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final borderColor =
-        selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant;
+    final borderColor = selected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.outlineVariant;
 
     return Card(
       child: InkWell(
@@ -609,10 +604,7 @@ class _PaymentMethodOptionTile extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    Text(subtitle, style: theme.textTheme.bodySmall),
                   ],
                 ),
               ),

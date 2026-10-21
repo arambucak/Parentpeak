@@ -4,10 +4,11 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 
-// Den POST /api/events Handler aus server.js extrahieren und isoliert testen.
+// Test the free canonical event creation handler without a live database.
 const source = fs.readFileSync(path.join(__dirname, '../../server.js'), 'utf8');
 const start = source.indexOf("app.post('/api/events',");
-const route = source.slice(start, source.indexOf('\n});', start) + 4);
+const end = source.indexOf('\n});', start) + 4;
+assert.ok(start >= 0 && end > start);
 
 // Arrays aus dem vm-Realm haben einen anderen Array.prototype als der
 // Test-Realm. Vor dem Vergleich daher in ein lokales Array kopieren, damit
@@ -15,18 +16,15 @@ const route = source.slice(start, source.indexOf('\n});', start) + 4);
 const local = value => (Array.isArray(value) ? [...value] : value);
 
 function fixture() {
-  let handler;
   const created = [];
-  vm.runInNewContext(route, {
-    app: { post: (_path, callback) => { handler = callback; } },
-    prisma: {
-      event: {
-        create: async options => {
-          created.push(options);
-          return { id: 'evt-1', ...options.data, participants: [] };
-        },
-      },
-    },
+  let handlers;
+  const context = vm.createContext({
+    app: { post: (_path, ...callbacks) => { handlers = callbacks; } },
+    requireVerifiedUser: async (req, _res, next) => { req.firebaseUid = 'viewer'; return next(); },
+    prisma: { event: { create: async options => {
+      created.push(options);
+      return { id: 'evt-1', ...options.data, participants: [] };
+    } } },
     validateEventMode: () => {},
     isUserSuspended: async () => false,
     respondSuspended: res => res.status(403).json({ error: 'suspended' }),
@@ -34,15 +32,17 @@ function fixture() {
     notifyFollowersOfNewSeriesEvent: async () => {},
     console,
   });
+  vm.runInContext(source.slice(start, end), context);
   return {
     created,
     request: async body => {
       let code = 200; let payload;
-      const res = {
-        status(value) { code = value; return res; },
-        json(value) { payload = value; return res; },
-      };
-      await handler({ body, firebaseUid: body.hosterId }, res);
+      const res = { status(value) { code = value; return res; },
+        json(value) { payload = value; return res; } };
+      const req = { body };
+      let index = 0;
+      const next = () => handlers[index++]?.(req, res, next);
+      await next();
       return { code, body: payload };
     },
   };
@@ -64,7 +64,7 @@ function baseEvent(overrides = {}) {
   };
 }
 
-test('ageGroups werden persistiert und zurückgegeben', async () => {
+test('ageGroups werden kostenlos persistiert und zurückgegeben', async () => {
   const app = fixture();
   const res = await app.request(baseEvent({ ageGroups: ['toddler', 'preschool'] }));
   assert.equal(res.code, 201);

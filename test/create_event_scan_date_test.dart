@@ -195,6 +195,41 @@ void main() {
   );
 
   testWidgets(
+    'valid form publishes without requesting a payment or publication fee',
+    (tester) async {
+      final backend = _CapturingBackend();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CreateEventScreen(
+            flyerScanner: _Scanner([
+              ScannedEventDraft(
+                title: 'Family picnic',
+                description: 'Bring snacks',
+                location: 'Berlin park',
+                date: DateTime.now().add(const Duration(days: 2)),
+                time: const TimeOfDayLite(10, 0),
+                ageGroups: const [AgeGroup.mixed],
+              ),
+            ]),
+            eventBackendService: backend,
+            eventService: EventService(backend: backend),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await scan(tester);
+      await confirmDate(tester);
+      await confirmTime(tester);
+      await publish(tester);
+      expect(backend.events, hasLength(1));
+      expect(backend.events.single.title, 'Family picnic');
+      expect(backend.events.single.price, isNull);
+      expect(backend.events.single.paymentDate, isNull);
+      expect(find.textContaining('Zahlungsfehler:'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'manual submit error appears only on submit and clears after both pickers',
     (tester) async {
       await tester.pumpWidget(const MaterialApp(home: CreateEventScreen()));

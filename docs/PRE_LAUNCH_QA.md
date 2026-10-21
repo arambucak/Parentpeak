@@ -31,6 +31,67 @@ Mindestens je ein Gerät pro Zeile testen. Trage die konkreten Geräte ein.
 - [ ] Backend zeigt auf Produktion (`parentpeak.onrender.com`), nicht lokal.
 - [ ] Mit einem **frischen Konto** getestet (kein Entwickler-Altzustand).
 
+### Backend-Rechte: zusätzlicher Mehrkonto-Test
+
+Die verbleibende Backend-Härtung wird in getrennten Risikogruppen umgesetzt.
+Automatisierte Handler-Tests ersetzen weder reale Firebase-Token noch einen
+Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
+
+- [ ] Familien-Anfragen: Konto A sieht nur eigene ein- und ausgehende Anfragen;
+      A kann keine bereits angenommene Beziehung erzeugen. Nur Empfänger B
+      nimmt an; ein unbeteiligtes Konto C kann weder ändern noch löschen.
+- [ ] Private Events: Nur der gespeicherte Veranstalter kann ein Event löschen,
+      eigene Einladungs-Codes laden oder die angenommenen Einladungen einsehen.
+- [ ] Event-Chat: Veranstalter und bestätigte Teilnehmer können lesen/senden.
+      Offene, abgelehnte und zurückgezogene Teilnahmen gewähren keinen Zugang;
+      manipulierte Nutzer-/Veranstalter-IDs ändern daran nichts.
+- [ ] Nachrichten löschen: eigener Autor oder Veranstalter bzw. konfigurierter
+      UID-Admin. Meldungen erstellen: berechtigter Chat-Teilnehmer; Meldungen
+      einsehen: Veranstalter bzw. UID-Admin.
+- [ ] Datenbankausfall: Event-Chat meldet Nichtverfügbarkeit, keine privaten
+      Cache-Daten und keine nur scheinbar gespeicherten Nachrichten/Meldungen.
+- [ ] Matching: kein Zugriff auf fremden Familienkontext; Like/Profil gehören
+      dem Token-Konto. Ein gegenseitiger Kontakt benötigt die Aktionen beider
+      Konten; alte Client-Fallbacks übertragen ebenfalls den Firebase-Token.
+- [ ] Bestehende Matching-Kontakte: Alt-Likes mit fremdem oder nicht
+      verifizierbar zugeordnetem Familienkontext werden nicht als gegenseitige
+      Einwilligung übernommen. Betroffene Konten müssen erneut selbst zustimmen;
+      keine automatische Migration fremder Zustimmung.
+- [ ] Zahlungen ausschließlich im Provider-Testmodus prüfen: zahlendes Konto
+      und Veranstalter dürfen verschieden sein. Preis/Währung stammen vom
+      gespeicherten Server-Auftrag; manipulierte Beträge und clientseitige
+      Erfolgsmeldungen dürfen keine bezahlte Transaktion erzeugen.
+- [ ] Produktentscheidung: Events veröffentlichen bleibt kostenlos, ohne
+      Veröffentlichungsgebühr oder Zahlungszwang für kostenlose Angebote.
+      Provider-Checkout betrifft nur gespeicherte kostenpflichtige Events;
+      Teilnehmerpreis und Veröffentlichungsgebühr nicht verwechseln.
+- [ ] Dieselbe Event-Zahlung mehrfach bestätigen bzw. denselben signierten
+      Webhook erneut zustellen: keine doppelte Transaktion oder Erstattung.
+- [ ] Zahlung fremden Kontos lesen/bestätigen und Veranstalter-Filter
+      manipulieren: Zugriff verweigert. Erstattung nur mit berechtigtem
+      Veranstalterkonto und tatsächlich vom Provider bestätigter Erstattung.
+- [ ] Historische Transaktionen ohne verifizierbare Konto-/Auftragsbindung
+      nicht durch geratenes Eigentum freischalten. Support-Abgleich und
+      gegebenenfalls Erstattung im Provider-Dashboard separat organisieren.
+- [ ] Signierter Stripe-Webhook funktioniert auch bei erzwungener Firebase-
+      Authentifizierung; fehlende/falsche Signaturen und benachbarte
+      Payment-Pfade ohne Firebase-Token werden abgewiesen.
+- [ ] Event-Zahlung auf echtem Android/iPhone mit Stripe-Testdaten prüfen.
+      Der bestehende native PaymentSheet bietet auf Web/Desktop keinen
+      Zahlungsablauf; PayPal bleibt ausdrücklich nicht verfügbar. Diese
+      Plattformen nicht als zahlungsfähig freigeben.
+- [ ] Deployment-Secrets anhand [backend/.env.example](../backend/.env.example)
+      konfigurieren: echte Schlüssel ausschließlich im Secret-Store, Firebase
+      Admin verfügbar, UID-Adminliste geprüft, produktive In-Memory-Fallbacks
+      deaktiviert, Mail-Zustellung und DB-TLS mit echtem Zertifikat verifiziert.
+
+**Noch nicht durch diese Risikogruppen geschlossen:** separate mittlere
+Findings zu FoodFeed, Community-Erstellung/-Interesse, Referral, Foto-Metadaten
+und Serien-Follows. Sie benötigen eigene Freigabe/Fixes; dies ist ausdrücklich
+keine pauschale Sicherheitsfreigabe für sämtliche Backend-Routen. Öffentliche
+Listings, Login-/Recovery-Endpunkte und der signierte Stripe-Webhook dürfen
+nicht durch eine pauschale Nutzer-Authentifizierung unbrauchbar werden.
+
 ---
 
 ## 1. Erststart, Onboarding & Konto
