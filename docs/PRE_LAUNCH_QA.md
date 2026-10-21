@@ -183,6 +183,12 @@ Ablehnung im Review.
       erscheint ein Fehlerhinweis; keine Erfolgsanzeige oder lokale Erfolgsänderung.
 - [ ] Nutzer **blockieren / Inhalt verbergen** ist möglich.
 - [ ] Admin kann anstößige Inhalte/Nutzer entfernen (Moderations-Flow testen).
+- [ ] Wochenimpuls-Community: Normales Konto darf trotz mitgeschickter interner
+      `moderatorEmail`/`reviewerEmail` weder Meldungen/Verifizierungsanfragen
+      lesen noch freigeben oder Beiträge global ausblenden. Ein interner Moderator
+      mit bestätigter Firebase-E-Mail darf dies; ohne gültigen ID-Token wird
+      abgelehnt. Fachstimmen-Badge und eigener Verifizierungsstatus lassen sich
+      nicht über fremde Nutzer-IDs/E-Mail-Adressen übernehmen.
 - [ ] Nach dem Melden/Blocken verschwindet der Inhalt für den meldenden Nutzer
       zeitnah.
 - [ ] Es gibt einen sichtbaren Kontakt-/Support-Weg (E-Mail) für Beschwerden.
