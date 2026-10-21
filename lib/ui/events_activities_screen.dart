@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -694,6 +695,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       items.addAll(_communityEvents.map(_UnifiedFeedItem.fromCommunity));
     }
     final filtered = items
+        .where((item) =>
+            item.hosterId == null ||
+            !BlockReportService.instance.isBlocked(item.hosterId!))
         .where((item) => _withinRadius(item, coords.$1, coords.$2, _radiusKm))
         .where((item) => _matchesNearbyQuickFilter(item, coords.$1, coords.$2))
         .where((item) => _matchesSelectedAges(item))

@@ -109,6 +109,17 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
     ]);
   }
 
+  /// Wiederkehrende Angebote zeigen ihre Beschreibung statt eines Datums,
+  /// damit nie ein erfundener Termin erscheint.
+  String _dateAndPlaceLine(CommunityEvent event) {
+    final place = event.safeLocation;
+    if (event.isRecurring) {
+      final note = event.recurringNote?.trim() ?? '';
+      return note.isEmpty ? place : '$note \u{2022} $place';
+    }
+    return '${event.eventDate.day}.${event.eventDate.month}. \u{2022} $place';
+  }
+
   Widget _eventCard(ThemeData theme, CommunityEvent event) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -185,7 +196,8 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF16A34A))),
               ),
-            if (!event.isFree)
+            // Unbekannter Preis (leer) wird nicht angezeigt statt "kostenlos".
+            if (!event.isFree && event.price.trim().isNotEmpty)
               Text(event.price,
                   style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
@@ -202,7 +214,7 @@ class _EventsCarouselWidgetState extends State<EventsCarouselWidget> {
           const SizedBox(height: 4),
           // Datum + Ort
           Text(
-            '${event.eventDate.day}.${event.eventDate.month}. \u{2022} ${event.safeLocation}',
+            _dateAndPlaceLine(event),
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: theme.colorScheme.outline),
             maxLines: 1,

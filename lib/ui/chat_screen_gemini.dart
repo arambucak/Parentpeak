@@ -105,7 +105,7 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
         setState(() {
           if (_messages.length > aiMessageIndex) {
             _messages[aiMessageIndex]['text'] =
-                'Fehler: Konnte die Antwort nicht verarbeiten. Fehler: $e';
+                'Die Antwort konnte gerade nicht geladen werden. Bitte versuche es später erneut.';
             _messages[aiMessageIndex]['isStreaming'] = false;
           }
           _isStreaming = false;

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'widgets/treasure_handover_text.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/treasure_listing_service.dart';
 import 'package:parentpeak/l10n/app_localizations.dart';
@@ -577,9 +578,17 @@ class _TreasureHandoverScreenState
     return l10n.tFormat('treasureDistanceApproximate', {'distance': distance});
   }
 
+  bool _isListingHidden(TreasureListing listing) {
+    if (_blockedListingIds.contains(listing.id)) return true;
+    final owner = listing.ownerUserId;
+    return owner != null &&
+        owner.isNotEmpty &&
+        BlockReportService.instance.isBlocked(owner);
+  }
+
   List<TreasureListing> get _filteredListings {
     return _listings.where((listing) {
-      if (_blockedListingIds.contains(listing.id)) {
+      if (_isListingHidden(listing)) {
         return false;
       }
       final matchesCategory =
@@ -1224,7 +1233,7 @@ class _TreasureHandoverScreenState
     }
     final listings = discovery.listings;
     final visibleListings = listings
-        .where((item) => !_blockedListingIds.contains(item.id))
+        .where((item) => !_isListingHidden(item))
         .toList();
     if (!mounted) return;
     setState(() {
@@ -1299,7 +1308,7 @@ class _TreasureHandoverScreenState
     if (!mounted || listings == null) return;
     setState(() {
       _listings = listings
-          .where((item) => !_blockedListingIds.contains(item.id))
+          .where((item) => !_isListingHidden(item))
           .toList();
       _syncError = _listingService.lastSyncError;
       _selectedListing =
@@ -1537,7 +1546,7 @@ class _TreasureHandoverScreenState
         data[TreasureAccountStore.reservedKey] as List? ?? [],
       );
       _listings = _listings
-          .where((item) => !_blockedListingIds.contains(item.id))
+          .where((item) => !_isListingHidden(item))
           .toList();
     });
   }
@@ -1793,7 +1802,11 @@ class _TreasureHandoverScreenState
 
   Future<void> _blockListing(TreasureListing listing) async {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await _accountDialog<bool>(
+    final ownerId = listing.ownerUserId;
+    final canBlockOwner = ownerId != null &&
+        ownerId.isNotEmpty &&
+        ownerId != AuthService.instance.currentUser?.uid;
+    final choice = await _accountDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
@@ -1808,18 +1821,28 @@ class _TreasureHandoverScreenState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(l10n.cancel),
           ),
+          if (canBlockOwner)
+            TextButton(
+              key: const Key('treasure-block-owner'),
+              onPressed: () => Navigator.of(dialogContext).pop('owner'),
+              child: Text(l10n.t('block_profile', fallback: 'Profil blockieren')),
+            ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop('listing'),
             child: Text(l10n.t('treasureBlockAction', fallback: 'Ausblenden')),
           ),
         ],
       ),
     );
 
-    if (confirmed != true || !mounted) return;
+    if (choice == null || !mounted) return;
+    if (choice == 'owner' && canBlockOwner) {
+      await BlockReportService.instance.blockUser(ownerId, '');
+      if (!mounted) return;
+    }
 
     final blocked = {..._blockedListingIds, listing.id};
     if (!await _persistSafetyState(

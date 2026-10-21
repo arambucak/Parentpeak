@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/models/discovered_event.dart';
 import 'package:parentpeak/ui/widgets/event_attendees_widget.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/ui/widgets/event_safety_widgets.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/ui/widgets/event_photo.dart';
@@ -285,6 +286,13 @@ class EventDetailPage extends StatelessWidget {
       builder: (_) => ReportEventSheet(
         eventId: event.id,
         eventTitle: event.title,
+        // KI-Events existieren nicht als Community-Event in der DB; ein Flag
+        // wuerde immer mit 404 scheitern. Meldung geht in die Moderation.
+        onSubmit: (reason) => BlockReportService.instance.reportEvent(
+          eventId: event.id,
+          eventTitle: event.title,
+          reason: reason,
+        ),
       ),
     );
   }

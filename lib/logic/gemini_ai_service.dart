@@ -136,8 +136,8 @@ class GeminiAIService {
         systemInstruction: APIConfig.parentAssistantSystemPrompt,
       );
     } catch (error) {
-      debugPrint('GeminiAIService.chatWithStreaming(): $error');
-      yield 'Fehler: $error';
+      debugPrint('GeminiAIService.chatWithStreaming(): ${error.runtimeType}');
+      rethrow;
     }
   }
 
@@ -183,15 +183,13 @@ class GeminiAIService {
     }
   }
 
-  Future<String> chat(String userMessage) async {
-    try {
-      return await generateText(
-        userMessage,
-        systemInstruction: APIConfig.parentAssistantSystemPrompt,
-      );
-    } catch (error) {
-      return 'Fehler: $error';
-    }
+  /// Wirft bei Fehlern; Aufrufer muessen einen Fallback anzeigen, damit nie
+  /// ein roher Fehlertext als Antwort erscheint oder gespeichert wird.
+  Future<String> chat(String userMessage) {
+    return generateText(
+      userMessage,
+      systemInstruction: APIConfig.parentAssistantSystemPrompt,
+    );
   }
 
   Stream<String> chatWithHistoryStreaming(

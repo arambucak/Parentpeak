@@ -118,7 +118,8 @@ class EventCacheService {
 
       // Konvertiere und validiere
       final events = discovered
-          .map(_convertToUnifiedModel)
+          .map(toCommunityEvent)
+          .whereType<CommunityEvent>()
           .where(_validateQuality)
           .toList();
 
@@ -149,7 +150,25 @@ class EventCacheService {
   }
 
   /// Konvertiert ein DiscoveredEvent in das einheitliche CommunityEvent.
-  CommunityEvent _convertToUnifiedModel(DiscoveredEvent d) {
+  ///
+  /// Vertrauensregeln (siehe event_trust_contract_test): Es wird nichts
+  /// erfunden. Ein einmaliges Event ohne Datum wird verworfen, ein
+  /// unbekannter Preis wird nicht als "kostenlos" dargestellt und ein nicht
+  /// bestaetigter Ort wird nur als Stadt gezeigt (ohne Koordinaten).
+  @visibleForTesting
+  static CommunityEvent? toCommunityEvent(DiscoveredEvent d) {
+    final eventDate = d.eventDate;
+    if (eventDate == null && !d.isRecurring) return null;
+
+    final price = d.price?.trim();
+    final hasPrice = price != null && price.isNotEmpty;
+    final isFree = hasPrice &&
+        (price.toLowerCase().contains('kostenlos') ||
+            price.toLowerCase().contains('free') ||
+            price == '0' ||
+            price == '0 €' ||
+            price == '0€');
+
     return CommunityEvent(
       id: d.id,
       title: d.title,
@@ -157,17 +176,17 @@ class EventCacheService {
       category: _mapCategory(d.category),
       ageGroups: _mapAgeLabels(d.ageLabels),
       venue: _guessVenue(d.category),
-      location: d.location,
+      location: d.locationConfirmed ? d.location : d.cityHint,
       city: d.cityHint,
-      lat: d.latitude,
-      lon: d.longitude,
-      eventDate: d.eventDate ?? _nextWeekend(),
+      lat: d.locationConfirmed ? d.latitude : null,
+      lon: d.locationConfirmed ? d.longitude : null,
+      // Wiederkehrende Angebote ohne festes Datum: der Wert dient nur der
+      // Sortierung und wird in der UI nicht als Termin angezeigt.
+      eventDate: eventDate ?? d.discoveredAt,
       isRecurring: d.isRecurring,
       recurringNote: d.recurringNote,
-      price: d.price ?? 'kostenlos',
-      isFree: d.price == null ||
-          d.price!.toLowerCase().contains('kostenlos') ||
-          d.price == '0',
+      price: hasPrice ? price : '',
+      isFree: isFree,
       url: d.url,
       organizer: d.organizer ?? 'Lokal',
       creatorType: CreatorType.institution,
@@ -207,7 +226,7 @@ class EventCacheService {
 
   // ─── Mapping Helpers ──────────────────────────────────────────────────────
 
-  EventCategory _mapCategory(DiscoveredEventCategory cat) {
+  static EventCategory _mapCategory(DiscoveredEventCategory cat) {
     switch (cat) {
       case DiscoveredEventCategory.theater:
         return EventCategory.theater;
@@ -234,7 +253,7 @@ class EventCacheService {
     }
   }
 
-  List<EventAgeGroup> _mapAgeLabels(List<String> labels) {
+  static List<EventAgeGroup> _mapAgeLabels(List<String> labels) {
     final groups = <EventAgeGroup>{};
     for (final label in labels) {
       final lower = label.toLowerCase();
@@ -260,7 +279,7 @@ class EventCacheService {
     return groups.isEmpty ? [EventAgeGroup.alle] : groups.toList();
   }
 
-  EventVenue _guessVenue(DiscoveredEventCategory cat) {
+  static EventVenue _guessVenue(DiscoveredEventCategory cat) {
     switch (cat) {
       case DiscoveredEventCategory.natur:
       case DiscoveredEventCategory.spielplatz:
@@ -273,12 +292,5 @@ class EventCacheService {
       default:
         return EventVenue.beides;
     }
-  }
-
-  DateTime _nextWeekend() {
-    final now = DateTime.now();
-    final daysUntilSaturday = (6 - now.weekday) % 7;
-    final saturday = now.add(Duration(days: daysUntilSaturday == 0 ? 7 : daysUntilSaturday));
-    return DateTime(saturday.year, saturday.month, saturday.day, 10, 0);
   }
 }

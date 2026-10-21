@@ -53,10 +53,15 @@ class ReportEventSheet extends StatefulWidget {
   final String eventId;
   final String eventTitle;
 
+  /// Overrides the default community-event flag, e.g. for AI-discovered or
+  /// user-hosted events that are not stored as community events.
+  final Future<bool> Function(String reason)? onSubmit;
+
   const ReportEventSheet({
     super.key,
     required this.eventId,
     required this.eventTitle,
+    this.onSubmit,
   });
 
   @override
@@ -170,10 +175,12 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
 
   Future<void> _submit() async {
     setState(() => _sending = true);
-    final success = await CommunityEventService.instance.flagEvent(
-      widget.eventId,
-      _selectedReason!,
-    );
+    final reason = _selectedReason!;
+    final submit = widget.onSubmit;
+    final success = submit != null
+        ? await submit(reason)
+        : await CommunityEventService.instance
+            .flagEvent(widget.eventId, reason);
     if (mounted) {
       final messenger = ScaffoldMessenger.of(context);
       final message = context.tr(success

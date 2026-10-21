@@ -43,8 +43,12 @@ Regeln:
 - Keine Markdown-Formatierung
 ''';
 
-    final response = await _geminiService!.chat(prompt);
-    if (response.trim().isEmpty) return null;
-    return response;
+    try {
+      final response = await _geminiService!.chat(prompt);
+      if (response.trim().isEmpty) return null;
+      return response;
+    } catch (_) {
+      return null;
+    }
   }
 }

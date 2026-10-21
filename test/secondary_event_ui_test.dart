@@ -84,6 +84,51 @@ void main() {
     });
   }
 
+  for (final delivered in [true, false]) {
+    testWidgets(
+        'report sheet uses custom onSubmit and shows ${delivered ? 'thanks' : 'failure'}',
+        (tester) async {
+      String? submittedReason;
+      await tester.pumpWidget(_app(
+        'en',
+        Builder(
+          builder: (context) => Center(
+            child: TextButton(
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => ReportEventSheet(
+                  eventId: 'ev_ai_1',
+                  eventTitle: 'Picnic',
+                  onSubmit: (reason) async {
+                    submittedReason = reason;
+                    return delivered;
+                  },
+                ),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      final strings = AppStringsManager.allStrings['en']!;
+      final reason =
+          find.widgetWithText(RadioListTile<String>, strings['event_report_fake']!);
+      await tester.ensureVisible(reason);
+      await tester.tap(reason);
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, strings['event_report_send']!));
+      await tester.pumpAndSettle();
+      expect(submittedReason, 'fake');
+      expect(
+        find.text(strings[delivered ? 'event_report_thanks' : 'event_report_failed']!),
+        findsOneWidget,
+      );
+    });
+  }
+
   testWidgets('creator RadioGroup changes the organizer hint', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       locale: Locale('en'),
