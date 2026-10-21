@@ -63,6 +63,23 @@ stichprobenartig ansehen.
 > Hinweis: Für AR vor breiter Vermarktung zusätzlich einen Muttersprachler
 > drüberschauen lassen (RTL-Feinheiten, Tonfall).
 
+Automatischer H3-Regressionsschutz: Die acht Launch-Kataloge werden auf leere
+Werte, fehlende Quellschlüssel und unveränderte Platzhalter geprüft. Ein
+AST-basierter Quellscan prüft Übersetzungsaufrufe (einschließlich bedingter
+Schlüssel) und im Code referenzierte Katalogschlüssel gegen DE und EN, inklusive
+Legacy-Katalog und CamelCase-Aliassen. Für FR/ES/IT/AR sind englisch-identische
+Werte nur nach einzeln geprüfter Ausnahmeliste erlaubt (z.B. „Sport“, „Photos“,
+Einheiten und offizielle Leistungsnamen wie „Child Benefit“).
+
+- [ ] FR/ES/IT/AR: Kalender, Event-Teilnahme/Ortswahl, Wissen und Premium sowie
+      italienische Familien-/Küchen-/Finanz-Texte muttersprachlich gegenlesen.
+- [ ] Verschenkmarkt-Detail: Zustand, Abholgebiet, Bewertung, Größe/Alter und
+      Aufrufe sind in allen acht Sprachen sichtbar, mit eingesetzten Werten.
+- [ ] Einkaufslisten-Leerzustand und Wiederholen-Buttons zeigen übersetzten Text.
+- [ ] AR: diese Texte zusätzlich bei großer Schrift und schmalem Display prüfen.
+
+Die automatischen Prüfungen ersetzen weder sprachliche Freigabe noch Geräte-QA.
+
 ---
 
 ## 3. Events & Aktivitäten (GESCHÄFTSKRITISCH — hier besonders gründlich)

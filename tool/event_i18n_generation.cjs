@@ -180,11 +180,36 @@ const additions = {
   tr: {event_host: 'Ev sahibi', event_shared_by: 'Paylaşan', events_ai_unverified_hint: 'Yapay zekâ önerisi — lütfen düzenleyenle doğrula', events_location_unconfirmed: 'Adres haritada doğrulanmadı — gitmeden önce lütfen kontrol et'},
   ku: {event_host: 'Mêvandar', event_shared_by: 'Ji aliyê ve hat parvekirin', events_ai_unverified_hint: 'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike', events_location_unconfirmed: 'Navnîşan li ser nexşeyê nehat piştrastkirin — berî çûyînê kontrol bike'},
 };
+const launchCodes = ['fr', 'es', 'it', 'ar'];
+const launchRows = `
+events_attendees_count|{count} participants|{count} asistentes|{count} partecipanti|عدد المشاركين: {count}
+events_attendees_none|Personne pour le moment|Aún no hay asistentes|Ancora nessun partecipante|لا يوجد مشاركون بعد
+events_attendees_one_family|1 famille participe|Asiste 1 familia|Partecipa 1 famiglia|عائلة واحدة ستشارك
+events_attendees_many_families|{count} familles participent|Asisten {count} familias|Partecipano {count} famiglie|عدد العائلات المشاركة: {count}
+events_attendees_more|+ {count} autres familles|+ {count} familias más|+ altre {count} famiglie|عائلات أخرى: {count}
+events_attendees_join|Nous aussi !|¡Nos apuntamos también!|Ci siamo anche noi!|سنشارك أيضًا!
+events_attendees_joined|Vous participez !|¡Vas a asistir!|Ci sarai!|ستشارك!
+events_badge_network|Réseau|Red|Rete|الشبكة
+events_join_title|Je participe !|¡Me apunto!|Partecipo!|سأشارك!
+events_join_privacy|Les autres familles voient votre prénom.|Las demás familias ven tu nombre de pila.|Le altre famiglie vedono il tuo nome.|ترى العائلات الأخرى اسمك الأول.
+events_join_message_hint|Facultatif : un petit mot (ex. « Nous arrivons à 10 h ! »)|Opcional: una nota breve (p. ej., «¡Llegaremos a las 10!»)|Facoltativo: un breve messaggio (es. «Arriviamo alle 10!»)|اختياري: رسالة قصيرة (مثل «سنصل الساعة 10!»)
+events_join_confirm|Confirmer|Confirmar|Conferma|تأكيد
+events_loc_choose|Choisir un lieu|Elegir una ubicación|Scegli un luogo|اختيار موقع
+events_loc_confirm|Confirmer|Confirmar|Conferma|تأكيد
+events_loc_search_hint|Rechercher une ville, un quartier ou un code postal…|Buscar ciudad, barrio o código postal…|Cerca città, quartiere o CAP…|ابحث عن مدينة أو حي أو رمز بريدي…
+events_loc_tap_hint|Touchez la carte ou déplacez le repère|Toca el mapa o arrastra el marcador|Tocca la mappa o trascina il segnaposto|اضغط على الخريطة أو اسحب العلامة
+events_loc_gps_error|Erreur de localisation. Veuillez réessayer.|Error de ubicación. Inténtalo de nuevo.|Errore di posizione. Riprova.|تعذّر تحديد الموقع. يُرجى المحاولة مجددًا.
+events_loc_pick_hint|Choisir le lieu|Elegir ubicación|Scegli la posizione|اختيار الموقع
+`.trim().split('\n').map(row => row.split('|'));
 for (const code of codes) additions[code] = {};
 for (const row of rows.trim().split('\n')) {
   const [key, ...values] = row.split('|');
   if (values.length !== codes.length) throw new Error(`${key}: ${values.length} values`);
   codes.forEach((code, index) => { additions[code][key] = values[index]; });
+}
+for (const [key, ...values] of launchRows) {
+  if (values.length !== launchCodes.length) throw new Error(`Invalid launch row: ${key}`);
+  launchCodes.forEach((code, index) => { additions[code][key] = values[index]; });
 }
 for (const code of codes) {
   for (const [alias, key] of Object.entries(aliases)) {
@@ -196,11 +221,25 @@ const original = fs.readFileSync(file, 'utf8').replace(/^    '([a-z]+)': \{\n\n/
   (header, code) => additions[code] ? header : header.slice(0, -1));
 const quote = value => "'" + value.replaceAll('\\', '\\\\').replaceAll("'", "\\'").replaceAll('\n', '\\n') + "'";
 let count = 0;
+let replaced = 0;
+const escapeRegex = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const englishBlock = original.match(/^    'en': \{([\s\S]*?)(?=^    '[a-z]+': \{)/m)[1];
 const updated = original.replace(/^    '([a-z]+)': \{([\s\S]*?)(?=^    '[a-z]+': \{|^  };)/gm, (block, code, body) => {
+  if (launchCodes.includes(code)) {
+    for (const [key] of launchRows) {
+      const entry = new RegExp(`${escapeRegex(quote(key))}:\\s*('(?:\\\\.|[^'\\\\])*'),`);
+      const english = englishBlock.match(entry);
+      const current = block.match(entry);
+      if (english && current && current[1] === english[1]) {
+        block = block.replace(entry, () => `${quote(key)}: ${quote(additions[code][key])},`);
+        replaced++;
+      }
+    }
+  }
   const entries = Object.entries(additions[code] ?? {}).filter(([key]) => !body.includes(quote(key) + ':'));
   if (entries.length === 0) return block;
   count += entries.length;
   return block.replace(`    '${code}': {`, `    '${code}': {\n` + entries.map(([key, value]) => `      ${quote(key)}: ${quote(value)},`).join('\n'));
 });
 fs.writeFileSync(file, updated);
-console.log(`Added ${count} missing event translations only.`);
+console.log(`Added ${count} missing event translations; replaced ${replaced} English launch placeholders.`);
