@@ -231,7 +231,7 @@ def build_pdf():
              'Privacy-Modus schützt sensible Familieninformationen.', ''),
         (11, 'Fotos & Kontakte', 'Familien-Fotoalbum und Vertrauenskontakte direkt in der App '
              'sicher verwahren.', ''),
-        (12, 'Kettenbrecher / Küchen-Impulse', 'KI-generierte Rezeptideen für den Familienalltag '
+        (12, 'Familien-Küche / Küchen-Impulse', 'KI-generierte Rezeptideen für den Familienalltag '
              'mit direkter Einkaufslisten-Integration.', ''),
     ]
 

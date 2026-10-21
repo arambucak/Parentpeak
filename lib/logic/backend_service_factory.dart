@@ -4,8 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'backend_api_client.dart';
 import 'calendar_backend_service.dart';
 import 'finance_storage_service.dart';
-import 'kettenbrecher_backend_service.dart';
-import 'next_gen_food_feed_backend_service.dart';
 import 'parent_matching_backend_service.dart';
 import 'photo_backend_service.dart';
 import 'shopping_backend_service.dart';
@@ -130,11 +128,4 @@ class BackendServiceFactory {
     return FinanceStorageService(apiClient: createApiClient());
   }
 
-  static KettenbrecherBackendService createKettenbrecherBackendService() {
-    return KettenbrecherBackendService(apiClient: createApiClient());
-  }
-
-  static NextGenFoodFeedBackendService createNextGenFoodFeedBackendService() {
-    return NextGenFoodFeedBackendService(apiClient: createApiClient());
-  }
 }
