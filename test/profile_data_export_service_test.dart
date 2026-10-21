@@ -90,6 +90,13 @@ void main() {
         await prefs.setBool('chat.memory_consent.v1.$scope', true);
         await prefs.setBool('chat.memory_consent.v1.$otherScope', false);
         await prefs.setBool('chat.memory_consent.v1', true);
+        await prefs.setBool('weekly_reflection.ai_consent.v1.$scope', true);
+        await prefs.setBool('weekly_reflection.ai_consent.v1.$otherScope', true);
+        await prefs.setString('weekly_reflections.v2.$scope',
+            jsonEncode([{'whatWentWell': 'Own weekly reflection'}]));
+        await prefs.setString('weekly_reflections.v2.$otherScope',
+            jsonEncode([{'whatWentWell': 'Foreign weekly reflection'}]));
+        await prefs.setString('weekly_reflections.v1', 'Unassigned weekly reflection');
         await prefs.setString('unrelated.global.setting', 'not exportable');
         await prefs.setString('auth.id_token', 'not exportable');
         await prefs.setString('profile.children', 'unassigned child data');
@@ -104,6 +111,11 @@ void main() {
         final encoded = jsonEncode(exported);
 
         expect(exported['owner'], scope);
+        expect(exported['accountPreferences']['weekly_reflection.ai_consent.v1.$scope'], isTrue);
+        expect(exported['accountPreferences']['weekly_reflections.v2.$scope'],
+            [{'whatWentWell': 'Own weekly reflection'}]);
+        expect(encoded, isNot(contains('Foreign weekly reflection')));
+        expect(encoded, isNot(contains('Unassigned weekly reflection')));
         expect(
           exported['accountData']['profile'][ProfileAccountStore.familyNameKey],
           'Own family',

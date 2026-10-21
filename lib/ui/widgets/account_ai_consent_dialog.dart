@@ -30,8 +30,9 @@ Future<bool> ensureAccountAiConsent(
               ],
             )
           : AlertDialog(
+          scrollable: true,
           title: Text(context.tr(titleKey)),
-          content: SingleChildScrollView(child: Text(context.tr(bodyKey))),
+          content: Text(context.tr(bodyKey)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
