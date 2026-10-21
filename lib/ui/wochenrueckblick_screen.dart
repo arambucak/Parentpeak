@@ -247,7 +247,8 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
     try {
       final ai = GeminiAIService(modelName: APIConfig.getGeminiModelName());
       final prompt = _buildAIPrompt(reflection);
-      final response = await ai.chat(prompt);
+      final response = (await ai.chat(prompt)).trim();
+      if (response.isEmpty) throw const FormatException('empty AI feedback');
       final updated = reflection.copyWith(aiFeedback: response);
       await WeeklyReflectionService.save(updated);
       if (mounted) {
@@ -262,13 +263,17 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
   }
 
   String _buildAIPrompt(WeeklyReflection r) {
-    final responseLanguage = languageService.currentLanguage == 'tr'
-        ? 'Türkçe'
-        : languageService.currentLanguage == 'ku'
-            ? 'Kurmancî'
-            : languageService.currentLanguage == 'en'
-                ? 'English'
-                : 'Deutsch';
+    const languageNames = {
+      'tr': 'Türkçe',
+      'ku': 'Kurmancî',
+      'en': 'English',
+      'fr': 'Français',
+      'es': 'Español',
+      'it': 'Italiano',
+      'ar': 'العربية',
+    };
+    final responseLanguage =
+        languageNames[languageService.currentLanguage] ?? 'Deutsch';
     return '''Du bist ein empathischer Eltern-Coach. Ein Elternteil hat gerade seinen Wochenrückblick geschrieben.
 
 Gesamtstimmung: ${r.overallMood}
