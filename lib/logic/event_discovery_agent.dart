@@ -104,17 +104,13 @@ class EventDiscoveryAgent {
     final response = await _aiService
         .generate(prompt, useGoogleSearch: true)
         .timeout(const Duration(seconds: 45));
-    final parsed = _parseAgentResponse(
-      response.text,
-      city,
-      groundingUrls: response.groundingUrls,
-    );
+    final parsed = _parseAgentResponse(response.text, city);
     return _confirmLocations(parsed);
   }
 
   /// Vertrauensschutz (Stufe 2): Jede KI-Adresse gegen OpenStreetMap auflösen.
-  /// - Erfolg  → echte Koordinaten setzen (richtige Entfernungsanzeige),
-  ///             locationConfirmed = true.
+  /// - Konkreter Veranstaltungsort → echte Koordinaten setzen,
+  ///             locationConfirmed = true (kein Existenznachweis des Events).
   /// - Sonst → Event bleibt IMMER erhalten (die Adresse ist vielleicht echt,
   ///             nur vage, oder der Geocoder war nicht erreichbar), wird aber
   ///             als locationConfirmed = false markiert, damit die UI ehrlich
@@ -131,7 +127,8 @@ class EventDiscoveryAgent {
     final confirmed = <DiscoveredEvent>[];
     for (final event in events) {
       final address = event.location.trim();
-      final coords = address.isEmpty ? null : await _geocoder.resolve(address);
+      final coords =
+          address.isEmpty ? null : await _geocoder.resolveVenue(address);
       if (coords != null && reliableEventCoordinates(coords.$1, coords.$2)) {
         confirmed.add(event.copyWith(
           latitude: coords.$1,
@@ -147,8 +144,7 @@ class EventDiscoveryAgent {
 
   // ─── Parser ────────────────────────────────────────────────────────────────
 
-  List<DiscoveredEvent> _parseAgentResponse(String raw, String city,
-      {List<String> groundingUrls = const []}) {
+  List<DiscoveredEvent> _parseAgentResponse(String raw, String city) {
     try {
       final repairedJson = _extractAndRepairJsonArray(raw);
       // Fehlt ein Array komplett (reiner Fließtext/Müll), bleibt das ein echter
@@ -169,6 +165,7 @@ class EventDiscoveryAgent {
       // diese Absicherung öffnete die Detailansicht (id-basierte Auflösung per
       // `firstOrNull`) für verschiedene Karten dasselbe Event.
       final usedIds = <String>{};
+      var malformedItems = 0;
       final nowLocal = DateTime.now().toLocal();
       final startOfToday =
           DateTime(nowLocal.year, nowLocal.month, nowLocal.day);
@@ -177,50 +174,77 @@ class EventDiscoveryAgent {
         // Einzelne nicht-objektartige Einträge überspringen statt den ganzen
         // Feed zu verwerfen.
         final rawItem = list[i];
-        if (rawItem is! Map<String, dynamic>) continue;
+        if (rawItem is! Map<String, dynamic>) {
+          malformedItems++;
+          debugPrint('EventDiscoveryAgent: skipping non-object event at $i');
+          continue;
+        }
         final map = rawItem;
+        final title = map['title'];
+        final rawAges = map['ageLabels'];
+        if (title is! String ||
+            title.trim().isEmpty ||
+            [
+              'description', 'category', 'location', 'cityHint', 'eventDate',
+              'recurringNote', 'eventTimeRange', 'price', 'url', 'organizer',
+            ].any((key) => map[key] != null && map[key] is! String) ||
+            (rawAges != null &&
+                (rawAges is! List || rawAges.any((age) => age is! String))) ||
+            (map['isRecurring'] != null && map['isRecurring'] is! bool)) {
+          malformedItems++;
+          debugPrint('EventDiscoveryAgent: skipping malformed event at $i');
+          continue;
+        }
         final categoryStr =
             (map['category'] as String? ?? 'sonstiges').toLowerCase();
-        final ageLabels = (map['ageLabels'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
+        final ageLabels =
+            (rawAges as List<dynamic>?)?.whereType<String>().toList() ??
             ['Alle Altersgruppen'];
 
         DateTime? eventDate;
-        final rawDate = map['eventDate'];
+        final rawDate = (map['eventDate'] as String?)?.trim();
         if (rawDate != null &&
-            rawDate.toString().isNotEmpty &&
-            rawDate.toString() != 'null') {
-          try {
-            eventDate = DateTime.parse(rawDate.toString());
-          } catch (_) {}
-        }
-
-        // Take URL from event JSON; fall back to any available grounding URL pool entry
-        String? url = _validateUrl(map['url'] as String?);
-        if (url == null) {
-          // Try index-matched URL first, then scan pool for any valid URL
-          for (var j = i; j < i + groundingUrls.length; j++) {
-            final candidate =
-                _validateUrl(groundingUrls[j % groundingUrls.length]);
-            if (candidate != null) {
-              url = candidate;
-              break;
-            }
+            rawDate.isNotEmpty &&
+            rawDate != 'null') {
+          eventDate = DateTime.tryParse(rawDate);
+          final dateParts = RegExp(
+            r'^(\d{4})-(\d{2})-(\d{2})'
+            r'(?:[Tt ](?:[01]\d|2[0-3]):[0-5]\d'
+            r'(?::[0-5]\d(?:[.,]\d+)?)?'
+            r'(?:[zZ]|[+-](?:[01]\d|2[0-3])(?::?[0-5]\d)?)?)?$',
+          ).firstMatch(rawDate);
+          final calendarDay = dateParts == null
+              ? null
+              : DateTime(
+                  int.parse(dateParts[1]!),
+                  int.parse(dateParts[2]!),
+                  int.parse(dateParts[3]!),
+                );
+          if (eventDate == null ||
+              dateParts == null ||
+              calendarDay!.year != int.parse(dateParts[1]!) ||
+              calendarDay.month != int.parse(dateParts[2]!) ||
+              calendarDay.day != int.parse(dateParts[3]!)) {
+            malformedItems++;
+            debugPrint('EventDiscoveryAgent: skipping invalid event date at $i');
+            continue;
           }
         }
+
+        // Grounding URLs have no per-event association; never borrow one.
+        final url = _validateUrl(map['url'] as String?);
 
         final recurringNote = (map['recurringNote'] as String?)?.trim();
         final hasRecurringNote =
             recurringNote != null && recurringNote.isNotEmpty;
-        final isRecurring =
-            (map['isRecurring'] as bool? ?? false) || hasRecurringNote;
+        final isRecurring = eventDate == null &&
+            ((map['isRecurring'] as bool? ?? false) || hasRecurringNote);
 
-        // Vertrauensschutz: Ein datiertes Einzel-Event, dessen Tag bereits
+        // Vertrauensschutz: Ein datiertes Event, dessen Tag bereits
         // vorbei ist, darf gar nicht erst in den Feed. Sonst sähen Eltern ein
-        // Event, das es nicht mehr gibt. Wiederkehrende/offene Angebote (ohne
-        // festes Datum) sind davon ausgenommen — sie finden weiterhin statt.
-        if (!isRecurring && eventDate != null) {
+        // Event, das es nicht mehr gibt. Ein Wiederholungs-Hinweis hebt ein
+        // abgelaufenes Datum nicht auf; undatierte Angebote bleiben erhalten.
+        if (eventDate != null) {
           final day = eventDate.toLocal();
           final startOfDay = DateTime(day.year, day.month, day.day);
           if (startOfDay.isBefore(startOfToday)) continue;
@@ -230,23 +254,21 @@ class EventDiscoveryAgent {
         // von Gemini doppelt gelieferte) werden durch eine frische ersetzt.
         final rawId = map['id']?.toString().trim();
         var eventId = (rawId == null || rawId.isEmpty) ? _generateId() : rawId;
-        if (!usedIds.add(eventId)) {
+        while (!usedIds.add(eventId)) {
           eventId = _generateId();
-          usedIds.add(eventId);
         }
 
         results.add(DiscoveredEvent(
           id: eventId,
-          title: map['title'] as String? ?? 'Event',
+          title: title.trim(),
           description: map['description'] as String? ?? '',
           category: _parseCategory(categoryStr),
           ageLabels: ageLabels,
-          location: map['location'] as String? ?? city,
+          location: map['location'] as String? ?? '',
           cityHint: map['cityHint'] as String? ?? city,
           eventDate: eventDate,
-          // Ein wiederkehrendes/dauerhaft offenes Angebot (recurringNote
-          // gesetzt) gilt als laufend — auch ohne festes eventDate. Das
-          // schützt solche echten Treffer vor dem Zeitfenster-Filter.
+          // Nur undatierte Angebote sind zeitlich offen. Ein expliziter
+          // Termin muss auch nach Cache-Speicherung weiterhin ablaufen.
           isRecurring: isRecurring,
           recurringNote: hasRecurringNote ? recurringNote : null,
           eventTimeRange: map['eventTimeRange'] as String?,
@@ -258,6 +280,9 @@ class EventDiscoveryAgent {
         ));
       }
 
+      if (list.isNotEmpty && malformedItems == list.length) {
+        throw const FormatException('No valid event objects in AI response');
+      }
       debugPrint('EventDiscoveryAgent: ${results.length} Events gefunden, '
           '${results.where((e) => e.url != null).length} mit Quell-URL.');
       return results;
@@ -309,7 +334,14 @@ class EventDiscoveryAgent {
       return null;
     }
     final uri = Uri.tryParse(trimmed);
-    if (uri == null || !uri.hasAuthority || uri.host.isEmpty) return null;
+    if (uri == null ||
+        !uri.hasAuthority ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        !uri.host.contains('.') ||
+        uri.host.split('.').any((part) => part.isEmpty)) {
+      return null;
+    }
     return trimmed;
   }
 

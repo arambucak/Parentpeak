@@ -25,7 +25,7 @@ EventGeocoder _fakeGeocoder({bool resolvable = true}) => EventGeocoder(
       client: MockClient((_) async => http.Response(
             resolvable
                 ? jsonEncode([
-                    {'lat': '52.5200', 'lon': '13.4050'}
+                    {'lat': '52.5200', 'lon': '13.4050', 'place_rank': 30}
                   ])
                 : jsonEncode([]),
             200,

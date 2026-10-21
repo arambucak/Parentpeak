@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/logic/event_cache_service.dart';
 import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/models/discovered_event.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 DiscoveredEvent _event({
   DateTime? eventDate,
@@ -29,7 +30,32 @@ DiscoveredEvent _event({
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('EventCacheService trust rules', () {
+    test('dated recurrence remains expirable after conversion and persistence', () {
+      final converted = EventCacheService.toCommunityEvent(_event(
+        eventDate: DateTime.now().add(const Duration(days: 1)),
+        isRecurring: true,
+      ))!;
+      expect(converted.isRecurring, isFalse);
+      final reloaded = CommunityEvent.fromJson(converted.toJson());
+      expect(reloaded.isRecurring, isFalse);
+    });
+    test('AI caches from before the trust hardening are not considered valid', () async {
+      SharedPreferences.setMockInitialValues({
+        'events.ai_cache': '[]',
+        'events.ai_cache_city': 'berlin',
+        'events.ai_cache_timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+      expect(await EventCacheService.instance.isCacheValid('Berlin'), isFalse);
+      await EventCacheService.instance.clearCache();
+    });
+    test('an explicitly past recurring date is rejected at cache conversion', () {
+      expect(EventCacheService.toCommunityEvent(_event(
+        eventDate: DateTime.now().subtract(const Duration(days: 2)),
+        isRecurring: true,
+      )), isNull);
+    });
     test('one-off event without a date is dropped, never given a made-up date',
         () {
       expect(EventCacheService.toCommunityEvent(_event()), isNull);
