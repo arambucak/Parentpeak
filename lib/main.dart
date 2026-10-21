@@ -18,7 +18,6 @@ import 'package:parentpeak/ui/profile_safety_screen.dart';
 import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/treasure_upload_screen.dart';
 import 'package:parentpeak/ui/finance_budget_screen.dart';
-import 'package:parentpeak/ui/kettenbrecher_dashboard.dart';
 import 'package:parentpeak/ui/auth/login_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_screen.dart';
@@ -708,8 +707,6 @@ class _AuthGateState extends State<AuthGate> {
             return const TreasureUploadScreen();
           case 'finance':
             return const FinanceBudgetScreen();
-          case 'kettenbrecher':
-            return const KettenbrecherDashboard();
           case 'home':
             break;
           default:

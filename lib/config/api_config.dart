@@ -204,45 +204,6 @@ class APIConfig {
     return _getEnvOrDefault('BACKEND_FINANCE_PATH', '/finance');
   }
 
-  static String getBackendKettenbrecherHubPath() {
-    return _getEnvOrDefault(
-        'BACKEND_KETTENBRECHER_HUB_PATH', '/kettenbrecher/hub');
-  }
-
-  static String getBackendKettenbrecherLocalHelpProfilesPath() {
-    return _getEnvOrDefault(
-      'BACKEND_KETTENBRECHER_LOCAL_HELP_PROFILES_PATH',
-      '/kettenbrecher/local-help/profiles',
-    );
-  }
-
-  static String getBackendKettenbrecherSosPath() {
-    return _getEnvOrDefault(
-        'BACKEND_KETTENBRECHER_SOS_PATH', '/kettenbrecher/sos');
-  }
-
-  static String getBackendKettenbrecherSosResponderActionPath() {
-    return _getEnvOrDefault(
-      'BACKEND_KETTENBRECHER_SOS_RESPONDER_ACTION_PATH',
-      '/kettenbrecher/sos/responder-action',
-    );
-  }
-
-  static String getBackendCommunitySnacksPath() {
-    return _getEnvOrDefault(
-        'BACKEND_COMMUNITY_SNACKS_PATH', '/community/snacks');
-  }
-
-  static String getBackendAudioHacksPath() {
-    return _getEnvOrDefault(
-        'BACKEND_AUDIO_HACKS_PATH', '/community/audio-hacks');
-  }
-
-  static String getBackendIngredientSharesPath() {
-    return _getEnvOrDefault(
-        'BACKEND_INGREDIENT_SHARES_PATH', '/community/ingredient-shares');
-  }
-
   static String getBackendHealthPath() {
     return _getEnvOrDefault('BACKEND_HEALTH_PATH', '/health');
   }

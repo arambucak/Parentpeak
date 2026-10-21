@@ -344,10 +344,16 @@ und Dialog-/Button-Layout in allen acht Launch-Sprachen einschließlich RTL.
 Juristische Textprüfung und Anbieter-/Netzwerkprüfung sind dadurch nicht ersetzt.
 
 **Abgrenzung:** Dies schließt ausschließlich den aktiven Wochenrückblick-Pfad.
-Rituale, Antragshelfer, Event-Discovery/Flyer, Community-KI und Kettenbrecher sowie
+Rituale, Antragshelfer, Event-Discovery/Flyer und Community-KI sowie
 eine allgemeine serverseitige Consent-Durchsetzung für `/ai/generate` bleiben
 separat zu prüfen/härten. Die bestehende serverseitige Memory-Einwilligung bleibt
 unverändert; dieser Client-Guard ist kein manipulationssicherer Backend-Nachweis.
+
+**Launch-Scope:** Das bisher nur per Debug-Einstieg erreichbare Rezept-Experiment
+wurde einschließlich Feed, KI-/Backend-Clients und exklusiven Hilfsmodellen
+entfernt. Dafür ist kein Consent-Ausbau mehr vorgesehen. Die aktive
+Familien-Küche mit ihren eigenen Rezept-, Planer- und Einkaufsfunktionen bleibt
+erhalten. Es wurden keine Backend-Routen oder gespeicherten Nutzerdaten gelöscht.
 
 ---
 

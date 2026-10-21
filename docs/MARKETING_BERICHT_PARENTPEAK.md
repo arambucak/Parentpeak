@@ -129,7 +129,7 @@ Erinnerungen bewahren und Kontakte organisieren.
 
 ---
 
-### 💡 12. Kettenbrecher — Rezepte & Küchen-Impulse
+### 💡 12. Familien-Küche — Rezepte & Küchen-Impulse
 Für den Familienalltag in der Küche.
 
 - Schnelle Rezeptideen für Eltern
