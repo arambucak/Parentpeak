@@ -111,7 +111,7 @@ class BackendServiceFactory {
   }
 
   static WeeklyImpulseService createWeeklyImpulseService() {
-    return WeeklyImpulseService(apiClient: createApiClient());
+    return WeeklyImpulseService(apiClient: createVerifiedApiClient());
   }
 
   static PhotoBackendService createPhotoService() {

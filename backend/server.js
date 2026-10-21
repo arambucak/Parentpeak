@@ -327,20 +327,12 @@ function isInternalModeratorEmail(email) {
   return internalModeratorDomains.some(domain => normalized.endsWith(`@${domain}`));
 }
 
-function ensureInternalModeratorAccess({ email, displayName }) {
-  if (isInternalModeratorEmail(email)) {
-    return {
-      allowed: true,
-      normalizedEmail: String(email || '').trim().toLowerCase(),
-      normalizedDisplayName: String(displayName || '').trim(),
-    };
+function requireInternalModerator(req, res, next) {
+  const identity = req.firebaseIdentity;
+  if (!identity?.emailVerified || !isInternalModeratorEmail(identity.email)) {
+    return res.status(403).json({ error: 'Moderationszugriff nicht erlaubt' });
   }
-
-  return {
-    allowed: false,
-    normalizedEmail: String(email || '').trim().toLowerCase(),
-    normalizedDisplayName: String(displayName || '').trim(),
-  };
+  return next();
 }
 
 function storeVerifiedExpertRecord(record) {
@@ -3865,7 +3857,12 @@ async function verifyFirebaseIdToken(req, { strictAvailability = false } = {}) {
   const idToken = authHeader.slice(7);
   try {
     const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
-    return { uid: decoded.uid, verified: true };
+    return {
+      uid: decoded.uid,
+      verified: true,
+      email: typeof decoded.email === 'string' ? decoded.email.trim().toLowerCase() : '',
+      emailVerified: decoded.email_verified === true,
+    };
   } catch (error) {
     if (strictAvailability && [
       'app/network-error', 'app/network-timeout', 'auth/internal-error',
@@ -3879,7 +3876,8 @@ async function verifyFirebaseIdToken(req, { strictAvailability = false } = {}) {
 }
 
 async function requireVerifiedUser(req, res, next) {
-  const { uid, verified, unavailable } = await verifyFirebaseIdToken(req, { strictAvailability: true });
+  const { uid, verified, unavailable, email, emailVerified } =
+    await verifyFirebaseIdToken(req, { strictAvailability: true });
   if (unavailable) {
     return res.status(503).json({ error: 'Kontopruefung derzeit nicht verfuegbar', code: 'identity_unavailable' });
   }
@@ -3887,6 +3885,7 @@ async function requireVerifiedUser(req, res, next) {
     return res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
   }
   req.firebaseUid = uid;
+  req.firebaseIdentity = { uid, email, emailVerified };
   for (const claimedUid of [req.body?.userId, req.query?.userId]) {
     if (claimedUid !== undefined &&
         (typeof claimedUid !== 'string' || claimedUid.trim() !== uid)) {
@@ -7717,7 +7716,7 @@ app.get('/api/weekly-impulse', (req, res) => {
   res.json(buildWeeklyImpulseResponse({ schema, viewerUserId, language }));
 });
 
-app.post('/api/weekly-impulse/community/posts', (req, res) => {
+app.post('/api/weekly-impulse/community/posts', requireVerifiedUser, (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -7729,10 +7728,8 @@ app.post('/api/weekly-impulse/community/posts', (req, res) => {
   const authorName =
     typeof req.body?.authorName === 'string' ? req.body.authorName.trim() : '';
   const role = typeof req.body?.role === 'string' ? req.body.role.trim() : '';
-  const authorUserId =
-    typeof req.body?.authorUserId === 'string' ? req.body.authorUserId.trim() : '';
-  const authorEmail =
-    typeof req.body?.authorEmail === 'string' ? req.body.authorEmail.trim() : '';
+  const authorUserId = req.firebaseUid;
+  const authorEmail = req.firebaseIdentity.emailVerified ? req.firebaseIdentity.email : '';
 
   if (!impulseId || !title || !body || !authorName || !role) {
     return res.status(400).json({ error: 'impulseId, title, body, authorName und role sind erforderlich' });
@@ -7763,11 +7760,9 @@ app.post('/api/weekly-impulse/community/posts', (req, res) => {
   return res.status(201).json({ item });
 });
 
-app.get('/api/weekly-impulse/community/verification-status', (req, res) => {
-  const userId =
-    typeof req.query.userId === 'string' ? req.query.userId.trim() : '';
-  const email =
-    typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : '';
+app.get('/api/weekly-impulse/community/verification-status', requireVerifiedUser, (req, res) => {
+  const userId = req.firebaseUid;
+  const email = req.firebaseIdentity.emailVerified ? req.firebaseIdentity.email : '';
 
   const verifiedRecord = getVerifiedExpertRecord({ userId, email });
   const latestRequest = weeklyImpulseVerificationRequests
@@ -7796,17 +7791,23 @@ app.get('/api/weekly-impulse/community/verification-status', (req, res) => {
   });
 });
 
-app.post('/api/weekly-impulse/community/verification-requests', (req, res) => {
-  const userId = typeof req.body?.userId === 'string' ? req.body.userId.trim() : '';
-  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+app.post('/api/weekly-impulse/community/verification-requests', requireVerifiedUser, (req, res) => {
+  const userId = req.firebaseUid;
+  const email = req.firebaseIdentity.email;
+  if (!email || !req.firebaseIdentity.emailVerified) {
+    return res.status(403).json({
+      error: 'Bestaetigte E-Mail-Adresse erforderlich',
+      code: 'verified_email_required',
+    });
+  }
   const displayName = typeof req.body?.displayName === 'string' ? req.body.displayName.trim() : '';
   const roleTitle = typeof req.body?.roleTitle === 'string' ? req.body.roleTitle.trim() : '';
   const organization = typeof req.body?.organization === 'string' ? req.body.organization.trim() : '';
   const note = typeof req.body?.note === 'string' ? req.body.note.trim() : '';
 
-  if (!userId || !email || !displayName || !roleTitle) {
+  if (!displayName || !roleTitle) {
     return res.status(400).json({
-      error: 'userId, email, displayName und roleTitle sind erforderlich',
+      error: 'displayName und roleTitle sind erforderlich',
     });
   }
 
@@ -7836,14 +7837,7 @@ app.post('/api/weekly-impulse/community/verification-requests', (req, res) => {
   return res.status(201).json({ item });
 });
 
-app.get('/api/weekly-impulse/community/verification-requests', (req, res) => {
-  const reviewerEmail =
-    typeof req.query.reviewerEmail === 'string' ? req.query.reviewerEmail.trim() : '';
-  const access = ensureInternalModeratorAccess({ email: reviewerEmail, displayName: '' });
-  if (!access.allowed) {
-    return res.status(403).json({ error: 'Verifizierungszugriff nicht erlaubt' });
-  }
-
+app.get('/api/weekly-impulse/community/verification-requests', requireVerifiedUser, requireInternalModerator, (req, res) => {
   const status =
     typeof req.query.status === 'string' ? req.query.status.trim().toLowerCase() : '';
   const items = weeklyImpulseVerificationRequests.filter(item =>
@@ -7852,30 +7846,15 @@ app.get('/api/weekly-impulse/community/verification-requests', (req, res) => {
   return res.json({ items });
 });
 
-app.post('/api/weekly-impulse/community/verification-requests/:requestId/approve', (req, res) => {
+app.post('/api/weekly-impulse/community/verification-requests/:requestId/approve', requireVerifiedUser, requireInternalModerator, (req, res) => {
   const { requestId } = req.params;
-  const reviewerName =
-    typeof req.body?.reviewerName === 'string' ? req.body.reviewerName.trim() : '';
-  const reviewerEmail =
-    typeof req.body?.reviewerEmail === 'string' ? req.body.reviewerEmail.trim() : '';
+  const reviewerName = req.firebaseIdentity.email;
   const reviewNote =
     typeof req.body?.reviewNote === 'string' ? req.body.reviewNote.trim() : '';
   const verificationLabel =
     typeof req.body?.verificationLabel === 'string' && req.body.verificationLabel.trim()
       ? req.body.verificationLabel.trim()
       : 'Verifizierte Fachstimme';
-
-  const access = ensureInternalModeratorAccess({
-    email: reviewerEmail,
-    displayName: reviewerName,
-  });
-  if (!access.allowed) {
-    return res.status(403).json({ error: 'Verifizierungszugriff nicht erlaubt' });
-  }
-
-  if (!reviewerName) {
-    return res.status(400).json({ error: 'reviewerName ist erforderlich' });
-  }
 
   const request = weeklyImpulseVerificationRequests.find(item => item.id === requestId);
   if (!request) {
@@ -7903,7 +7882,7 @@ app.post('/api/weekly-impulse/community/verification-requests/:requestId/approve
   return res.json({ item: request });
 });
 
-app.post('/api/weekly-impulse/community/posts/:postId/like', (req, res) => {
+app.post('/api/weekly-impulse/community/posts/:postId/like', requireVerifiedUser, (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -7911,7 +7890,7 @@ app.post('/api/weekly-impulse/community/posts/:postId/like', (req, res) => {
 
   const { postId } = req.params;
   const impulseId = typeof req.body?.impulseId === 'string' ? req.body.impulseId.trim() : '';
-  const userId = typeof req.body?.userId === 'string' ? req.body.userId.trim() : '';
+  const userId = req.firebaseUid;
   const isLiked = req.body?.isLiked === true;
 
   if (!impulseId || !postId || !userId) {
@@ -7939,7 +7918,7 @@ app.post('/api/weekly-impulse/community/posts/:postId/like', (req, res) => {
   });
 });
 
-app.post('/api/weekly-impulse/community/posts/:postId/comments', (req, res) => {
+app.post('/api/weekly-impulse/community/posts/:postId/comments', requireVerifiedUser, (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -7979,7 +7958,7 @@ app.post('/api/weekly-impulse/community/posts/:postId/comments', (req, res) => {
   });
 });
 
-app.post('/api/weekly-impulse/community/posts/:postId/report', (req, res) => {
+app.post('/api/weekly-impulse/community/posts/:postId/report', requireVerifiedUser, (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -7987,8 +7966,7 @@ app.post('/api/weekly-impulse/community/posts/:postId/report', (req, res) => {
 
   const { postId } = req.params;
   const impulseId = typeof req.body?.impulseId === 'string' ? req.body.impulseId.trim() : '';
-  const reporterUserId =
-    typeof req.body?.reporterUserId === 'string' ? req.body.reporterUserId.trim() : '';
+  const reporterUserId = req.firebaseUid;
   const reporterName =
     typeof req.body?.reporterName === 'string' ? req.body.reporterName.trim() : '';
   const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
@@ -8019,17 +7997,10 @@ app.post('/api/weekly-impulse/community/posts/:postId/report', (req, res) => {
   return res.status(201).json({ item, reportCount: reports.length });
 });
 
-app.get('/api/weekly-impulse/community/reports', (req, res) => {
+app.get('/api/weekly-impulse/community/reports', requireVerifiedUser, requireInternalModerator, (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
-  }
-
-  const moderatorEmail =
-    typeof req.query.moderatorEmail === 'string' ? req.query.moderatorEmail.trim() : '';
-  const access = ensureInternalModeratorAccess({ email: moderatorEmail, displayName: '' });
-  if (!access.allowed) {
-    return res.status(403).json({ error: 'Moderationszugriff nicht erlaubt' });
   }
 
   const impulseId =
@@ -8044,7 +8015,7 @@ app.get('/api/weekly-impulse/community/reports', (req, res) => {
   return res.json({ items });
 });
 
-app.post('/api/weekly-impulse/community/reports/:reportId/resolve', (req, res) => {
+app.post('/api/weekly-impulse/community/reports/:reportId/resolve', requireVerifiedUser, requireInternalModerator, (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -8052,23 +8023,12 @@ app.post('/api/weekly-impulse/community/reports/:reportId/resolve', (req, res) =
 
   const { reportId } = req.params;
   const impulseId = typeof req.body?.impulseId === 'string' ? req.body.impulseId.trim() : '';
-  const moderatorName =
-    typeof req.body?.moderatorName === 'string' ? req.body.moderatorName.trim() : '';
-  const moderatorEmail =
-    typeof req.body?.moderatorEmail === 'string' ? req.body.moderatorEmail.trim() : '';
+  const moderatorName = req.firebaseIdentity.email;
   const moderatorNote =
     typeof req.body?.moderatorNote === 'string' ? req.body.moderatorNote.trim() : '';
 
-  const access = ensureInternalModeratorAccess({
-    email: moderatorEmail,
-    displayName: moderatorName,
-  });
-  if (!access.allowed) {
-    return res.status(403).json({ error: 'Moderationszugriff nicht erlaubt' });
-  }
-
-  if (!impulseId || !reportId || !moderatorName) {
-    return res.status(400).json({ error: 'impulseId, reportId und moderatorName sind erforderlich' });
+  if (!impulseId || !reportId) {
+    return res.status(400).json({ error: 'impulseId und reportId sind erforderlich' });
   }
 
   const state = getWeeklyImpulseCommunityEntry(impulseId);
@@ -8087,7 +8047,7 @@ app.post('/api/weekly-impulse/community/reports/:reportId/resolve', (req, res) =
   return res.status(404).json({ error: 'Report nicht gefunden' });
 });
 
-app.post('/api/weekly-impulse/community/posts/:postId/moderation-visibility', (req, res) => {
+app.post('/api/weekly-impulse/community/posts/:postId/moderation-visibility', requireVerifiedUser, requireInternalModerator, (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -8095,25 +8055,14 @@ app.post('/api/weekly-impulse/community/posts/:postId/moderation-visibility', (r
 
   const { postId } = req.params;
   const impulseId = typeof req.body?.impulseId === 'string' ? req.body.impulseId.trim() : '';
-  const moderatorName =
-    typeof req.body?.moderatorName === 'string' ? req.body.moderatorName.trim() : '';
-  const moderatorEmail =
-    typeof req.body?.moderatorEmail === 'string' ? req.body.moderatorEmail.trim() : '';
+  const moderatorName = req.firebaseIdentity.email;
   const moderatorNote =
     typeof req.body?.moderatorNote === 'string' ? req.body.moderatorNote.trim() : '';
   const reportId = typeof req.body?.reportId === 'string' ? req.body.reportId.trim() : '';
   const hidden = req.body?.hidden === true;
 
-  const access = ensureInternalModeratorAccess({
-    email: moderatorEmail,
-    displayName: moderatorName,
-  });
-  if (!access.allowed) {
-    return res.status(403).json({ error: 'Moderationszugriff nicht erlaubt' });
-  }
-
-  if (!impulseId || !postId || !moderatorName) {
-    return res.status(400).json({ error: 'impulseId, postId und moderatorName sind erforderlich' });
+  if (!impulseId || !postId) {
+    return res.status(400).json({ error: 'impulseId und postId sind erforderlich' });
   }
 
   const post = findWeeklyImpulseCommunityPost({ schema, impulseId, postId });
