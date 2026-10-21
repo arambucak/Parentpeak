@@ -123,11 +123,43 @@ void main() {
       await tester.pumpAndSettle();
       expect(submittedReason, 'fake');
       expect(
-        find.text(strings[delivered ? 'event_report_thanks' : 'event_report_failed']!),
+        find.text(strings[delivered ? 'event_report_thanks' : 'report_delivery_failed']!),
         findsOneWidget,
       );
     });
   }
+
+  testWidgets('report callback token error shows retry instead of thanks',
+      (tester) async {
+    await tester.pumpWidget(_app('en', Builder(
+      builder: (context) => TextButton(
+        onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => ReportEventSheet(
+            eventId: 'event',
+            eventTitle: 'Picnic',
+            onSubmit: (_) async => throw StateError('token unavailable'),
+          ),
+        ),
+        child: const Text('open'),
+      ),
+    )));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    final strings = AppStringsManager.allStrings['en']!;
+    final reason =
+        find.widgetWithText(RadioListTile<String>, strings['event_report_fake']!);
+    await tester.ensureVisible(reason);
+    await tester.tap(reason);
+    await tester.pump();
+    await tester.tap(
+        find.widgetWithText(FilledButton, strings['event_report_send']!));
+    await tester.pumpAndSettle();
+    expect(find.text(strings['report_delivery_failed']!), findsOneWidget);
+    expect(find.text(strings['event_report_thanks']!), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('creator RadioGroup changes the organizer hint', (tester) async {
     await tester.pumpWidget(const MaterialApp(

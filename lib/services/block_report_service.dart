@@ -3,15 +3,20 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:parentpeak/services/chat_moderation_service.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 
 /// Manages blocked users and content reports across the entire app.
 /// Used in: Chat, Verschenkmarkt, Events, Netzwerk.
 class BlockReportService {
-  static final BlockReportService instance = BlockReportService._();
-  BlockReportService._();
+  static final BlockReportService instance = BlockReportService();
+  BlockReportService({
+    BackendApiClient? api,
+    String? Function()? userIdProvider,
+  }) : _api = api ?? BackendServiceFactory.createVerifiedApiClient(),
+       _userIdProvider = userIdProvider ??
+           (() => FirebaseAuth.instance.currentUser?.uid);
 
   static const String _blockedKey = 'safety.blocked_users';
   static const String _reportsKey = 'safety.reports';
@@ -19,13 +24,13 @@ class BlockReportService {
   List<BlockedUser> _blockedUsers = [];
   List<ContentReport> _reports = [];
 
-  final BackendApiClient? _api = BackendServiceFactory.createApiClient();
+  final BackendApiClient? _api;
+  final String? Function() _userIdProvider;
 
   List<BlockedUser> get blockedUsers => List.unmodifiable(_blockedUsers);
 
   /// Current signed-in user id, used as the server-side owner of blocks/reports.
-  String get _currentUserId =>
-      FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+  String get _currentUserId => _userIdProvider() ?? 'anonymous';
 
   /// Initialize — load from SharedPreferences, then merge server-side blocks.
   Future<void> initialize() async {
@@ -130,8 +135,8 @@ class BlockReportService {
   }
 
   /// Report content (message, listing, event, profile)
-  /// Returns a moderation result from the AI.
-  Future<ReportResult> reportContent({
+  /// Returns true only after the server accepted the report.
+  Future<bool> reportContent({
     required String reporterUserId,
     required String reportedUserId,
     required String contentType, // 'message', 'listing', 'event', 'profile'
@@ -139,7 +144,16 @@ class BlockReportService {
     required String
         reason, // 'insult', 'spam', 'inappropriate', 'fraud', 'other'
   }) async {
-    final report = ContentReport(
+    final delivered = await _postReport(
+      reporterUserId: reporterUserId,
+      reportedUserId: reportedUserId,
+      contentType: contentType,
+      content: content,
+      reason: reason,
+    );
+    if (!delivered) return false;
+
+    _reports.add(ContentReport(
       id: 'report_${DateTime.now().millisecondsSinceEpoch}',
       reporterUserId: reporterUserId,
       reportedUserId: reportedUserId,
@@ -147,47 +161,16 @@ class BlockReportService {
       content: content,
       reason: reason,
       createdAt: DateTime.now(),
-    );
-    _reports.add(report);
-    await _save();
-
-    // Prio 4: persist the report on the server for the moderation trail.
-    await _postReport(
-      reporterUserId: reporterUserId,
-      reportedUserId: reportedUserId,
-      contentType: contentType,
-      content: content,
-      reason: reason,
-    );
-
-    // AI auto-moderation check
-    final moderationResult =
-        ChatModerationService.instance.checkMessage(content);
-    if (moderationResult != null) {
-      // Content is clearly harmful → auto-action
-      debugPrint('BlockReportService: Auto-moderated: $moderationResult');
-      return const ReportResult(
-        action: ReportAction.autoRemoved,
-        message:
-            'Der Inhalt wurde automatisch entfernt. Danke für deine Meldung.',
+    ));
+    try {
+      await _save();
+    } catch (error) {
+      // Delivery already succeeded; local history must not change that result.
+      debugPrint(
+        'BlockReportService delivered report history save failed: $error',
       );
     }
-
-    // Check if user has multiple reports
-    final userReportCount =
-        _reports.where((r) => r.reportedUserId == reportedUserId).length;
-    if (userReportCount >= 3) {
-      return const ReportResult(
-        action: ReportAction.userWarned,
-        message:
-            'Dieser Nutzer wurde bereits mehrfach gemeldet. Wir prüfen den Fall.',
-      );
-    }
-
-    return const ReportResult(
-      action: ReportAction.reviewPending,
-      message: 'Danke für deine Meldung. Wir prüfen den Inhalt.',
-    );
+    return true;
   }
 
   /// Reports an event (AI-discovered or user-hosted) to the moderation queue.
@@ -207,17 +190,7 @@ class BlockReportService {
         ? hostUserId.trim()
         : 'ai_event:$eventId';
     final content = '[$eventId] $eventTitle';
-    _reports.add(ContentReport(
-      id: 'report_${DateTime.now().millisecondsSinceEpoch}',
-      reporterUserId: reporterUserId,
-      reportedUserId: reportedUserId,
-      contentType: 'event',
-      content: content,
-      reason: reason,
-      createdAt: DateTime.now(),
-    ));
-    await _save();
-    return _postReport(
+    return reportContent(
       reporterUserId: reporterUserId,
       reportedUserId: reportedUserId,
       contentType: 'event',
@@ -234,7 +207,10 @@ class BlockReportService {
     required String reason,
   }) async {
     final api = _api;
-    if (api == null) return false;
+    if (api == null) {
+      debugPrint('BlockReportService report failed: backend unavailable');
+      return false;
+    }
     try {
       await api.postJsonAny('/api/safety/report', {
         'reporterUserId': reporterUserId,
@@ -336,15 +312,6 @@ class ContentReport {
       );
 }
 
-enum ReportAction { autoRemoved, userWarned, reviewPending }
-
-class ReportResult {
-  final ReportAction action;
-  final String message;
-
-  const ReportResult({required this.action, required this.message});
-}
-
 /// Global helper to show a report bottom sheet from any screen.
 /// Usage: showReportSheet(context, userId: '...', userName: '...', contentType: 'event');
 Future<void> showReportSheet(
@@ -353,7 +320,9 @@ Future<void> showReportSheet(
   required String userName,
   required String contentType,
   String content = '',
+  BlockReportService? reportService,
 }) async {
+  final service = reportService ?? BlockReportService.instance;
   final reasons = [
     {'label': 'Beleidigung / Hassrede', 'key': 'insult'},
     {'label': 'Spam / Werbung', 'key': 'spam'},
@@ -364,6 +333,7 @@ Future<void> showReportSheet(
 
   await showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -392,10 +362,8 @@ Future<void> showReportSheet(
                     borderRadius: BorderRadius.circular(10)),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  final result =
-                      await BlockReportService.instance.reportContent(
-                    reporterUserId:
-                        FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
+                  final delivered = await service.reportContent(
+                    reporterUserId: service._currentUserId,
                     reportedUserId: userId,
                     contentType: contentType,
                     content: content.isNotEmpty ? content : userName,
@@ -404,15 +372,22 @@ Future<void> showReportSheet(
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Row(children: [
-                        const Icon(Icons.check_circle_rounded,
+                        Icon(
+                            delivered
+                                ? Icons.check_circle_rounded
+                                : Icons.info_outline_rounded,
                             color: Colors.white, size: 18),
                         const SizedBox(width: 8),
                         Expanded(
-                            child: Text(result.message,
+                            child: Text(context.tr(delivered
+                                ? 'report_delivery_success'
+                                : 'report_delivery_failed'),
                                 style: const TextStyle(fontSize: 13))),
                       ]),
                       behavior: SnackBarBehavior.floating,
-                      backgroundColor: const Color(0xFF16A34A),
+                      backgroundColor: delivered
+                          ? const Color(0xFF16A34A)
+                          : null,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ));

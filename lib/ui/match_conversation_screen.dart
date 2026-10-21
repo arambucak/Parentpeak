@@ -517,7 +517,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       onTap: () async {
         Navigator.pop(ctx);
-        final result = await BlockReportService.instance.reportContent(
+        final delivered = await BlockReportService.instance.reportContent(
           reporterUserId: _currentUserId,
           reportedUserId: _otherPartyId,
           contentType: 'profile',
@@ -529,22 +529,26 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(
-                    Icons.check_circle_rounded,
+                  Icon(
+                    delivered
+                        ? Icons.check_circle_rounded
+                        : Icons.info_outline_rounded,
                     color: Colors.white,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      result.message,
+                      _t(delivered
+                          ? 'report_delivery_success'
+                          : 'report_delivery_failed'),
                       style: const TextStyle(fontSize: 13),
                     ),
                   ),
                 ],
               ),
               behavior: SnackBarBehavior.floating,
-              backgroundColor: const Color(0xFF16A34A),
+              backgroundColor: delivered ? const Color(0xFF16A34A) : null,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

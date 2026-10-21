@@ -41,6 +41,7 @@ Mindestens je ein Gerät pro Zeile testen. Trage die konkreten Geräte ein.
 - [ ] Registrierung mit E-Mail/Passwort funktioniert.
 - [ ] Google Sign-In funktioniert (iOS + Android + Web).
 - [ ] Abmelden und erneut anmelden funktioniert; Daten sind wieder da.
+- [ ] Ohne Anmeldung und nach Logout erscheint der Login-Screen, nicht die Haupt-App.
 - [ ] Kind-Profil anlegen (Alter) → Tipps/Impulse passen danach zum Alter.
 - [ ] App killen und neu öffnen → bleibt angemeldet, Zustand erhalten.
 
@@ -152,6 +153,12 @@ Ablehnung im Review.
 
 - [ ] Inhalt **melden** (Event, Verschenk-Artikel, Profil) funktioniert und
       landet nachweislich beim Admin (Admin-Moderation-Screen zeigt den Report).
+- [ ] Bei Netzwerk-/Tokenfehlern erscheint in allen 8 Launch-Sprachen ein
+      neutraler Wiederholen-Hinweis statt einer Meldebestätigung. Nach erneutem
+      Senden mit Serverbestätigung erscheint die Danke-Meldung. Fehlgeschlagene
+      Verschenkmarkt-Meldungen werden nicht als „gemeldet“ markiert.
+- [ ] Rezept posten, löschen und darauf reagieren: Bei Netzwerk-/Tokenfehlern
+      erscheint ein Fehlerhinweis; keine Erfolgsanzeige oder lokale Erfolgsänderung.
 - [ ] Nutzer **blockieren / Inhalt verbergen** ist möglich.
 - [ ] Admin kann anstößige Inhalte/Nutzer entfernen (Moderations-Flow testen).
 - [ ] Nach dem Melden/Blocken verschwindet der Inhalt für den meldenden Nutzer
