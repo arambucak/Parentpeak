@@ -49,6 +49,7 @@ dev_dependencies:
   build_runner: ^2.3.3
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.4
+  analyzer: ^13.0.0
 
 # Startup splash screen. Regenerate after art/colour changes with:
 #   dart run flutter_native_splash:create

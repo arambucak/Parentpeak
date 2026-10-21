@@ -2,6 +2,8 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsItExtra = <String, String>{
+  'no_items': 'Nessun articolo',
+  'retry': 'Riprova',
   'chat_ask_none':
       'Non porre domande di approfondimento; le informazioni bastano per passi concreti.',
   'chat_ask_one':
@@ -2363,7 +2365,7 @@ const appLocalizationsItExtra = <String, String>{
   'treasureConditionLabel': 'Condizione',
   'treasureConditionLikeNew': 'Come nuovo',
   'treasureConditionLikeNewHint': 'Molto curato, quasi come nuovo.',
-  'treasureConditionLine': '',
+  'treasureConditionLine': 'Condizioni: {condition}',
   'treasureConditionRaider': 'Con qualche segno',
   'treasureConditionRaiderHint':
       'Qualche segno d\'uso, ma pronto per la prossima avventura.',
@@ -2469,17 +2471,17 @@ const appLocalizationsItExtra = <String, String>{
       'Aggiungi prima una foto, così le famiglie vedono subito di cosa si tratta.',
   'treasurePhotoReady': 'Foto pronta',
   'treasurePhotoSectionHint': 'Mostra l\'oggetto semplicemente com\'è adesso.',
-  'treasurePickupAreaLine': '',
+  'treasurePickupAreaLine': 'Zona di ritiro: {area}',
   'treasurePickupLocationHint':
       'La tua posizione determina quali famiglie vedono la tua offerta.',
   'treasurePickupLocationTitle': 'Zona di ritiro',
   'treasurePreviewNoteLabel': 'Nota della famiglia',
   'treasurePreviewTitle': 'Anteprima del feed',
   'treasurePublishNow': 'Condividi ora',
-  'treasureRatingLine': '',
+  'treasureRatingLine': 'Valutazione: {rating} ({count})',
   'treasureReportAction': 'Segnala',
   'treasureReportLocalOnly':
-      'Segnalazione contrassegnata in locale. La sincronizzazione con il server seguirà appena disponibile.',
+      'Impossibile inviare la segnalazione. Riprova più tardi.',
   'treasureReportNoteHint': 'Facoltativo: breve nota per la moderazione',
   'treasureReportReason_false_info': 'Informazioni false',
   'treasureReportReason_hostile': 'Comportamento scortese',
@@ -2510,7 +2512,7 @@ const appLocalizationsItExtra = <String, String>{
   'treasureShareRadiusKm': 'Raggio circa {radius} km',
   'treasureShareRadiusLabel': 'Raggio di pubblicazione',
   'treasureSizeAgeLabel': 'Taglia o età',
-  'treasureSizeAgeLine': '',
+  'treasureSizeAgeLine': 'Taglia / età: {sizeAge}',
   'treasureSizeAgePlaceholder': 'es. taglia 92 o età da 2 a 3 anni',
   'treasureSlotMonday': 'Lunedì, 17:30 - 18:15',
   'treasureSlotSunday': 'Domenica, 10:00 - 11:30',
@@ -2528,7 +2530,7 @@ const appLocalizationsItExtra = <String, String>{
   'treasureUploadSubtitle': 'Una foto basta per iniziare',
   'treasureUploadSuccess': 'Il tuo tesoro ora è visibile.',
   'treasureUploadTitle': 'Condividi un tesoro',
-  'treasureViewsLine': '',
+  'treasureViewsLine': '{count} visualizzazioni',
   'treasure_account_changed':
       'L\'account è stato cambiato. Chiudi questa schermata.',
   'treasure_cancel_local_failed':
