@@ -49,17 +49,27 @@ class EventGeocoder {
   DateTime? _lastRequest;
 
   Future<(double, double)?> resolve(String address) {
+    return _resolve(address, requireVenue: false);
+  }
+
+  /// A city, district or road centroid is not a confirmed event venue.
+  Future<(double, double)?> resolveVenue(String address) {
+    return _resolve(address, requireVenue: true);
+  }
+
+  Future<(double, double)?> _resolve(String address, {required bool requireVenue}) {
     final query = address.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (query.length < 2) return Future.value(null);
-    final key = query.toLowerCase();
+    final key = '${requireVenue ? 'venue:' : 'area:'}${query.toLowerCase()}';
     final cached = _cache[key];
     if (cached != null && DateTime.now().difference(cached.$1) < cacheTtl) {
       return Future.value(cached.$2);
     }
-    return _inflight[key] ??= _resolveQueued(key, query);
+    return _inflight[key] ??= _resolveQueued(key, query, requireVenue: requireVenue);
   }
 
-  Future<(double, double)?> _resolveQueued(String key, String query) async {
+  Future<(double, double)?> _resolveQueued(String key, String query,
+      {required bool requireVenue}) async {
     final previous = _queue;
     final done = Completer<void>();
     _queue = done.future;
@@ -75,7 +85,7 @@ class EventGeocoder {
           .get(
             Uri.https('nominatim.openstreetmap.org', '/search', {
               'q': query,
-              'format': 'json',
+              'format': requireVenue ? 'jsonv2' : 'json',
               'limit': '1',
             }),
             headers: kIsWeb ? const {} : {'User-Agent': 'ParentPeak-App/1.0'},
@@ -85,9 +95,11 @@ class EventGeocoder {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is List && data.isNotEmpty && data.first is Map) {
-          final latitude = double.tryParse(data.first['lat'].toString());
-          final longitude = double.tryParse(data.first['lon'].toString());
-          if (reliableEventCoordinates(latitude, longitude)) {
+          final match = data.first as Map;
+          final latitude = double.tryParse(match['lat'].toString());
+          final longitude = double.tryParse(match['lon'].toString());
+          if (reliableEventCoordinates(latitude, longitude) &&
+              (!requireVenue || _isVenue(match))) {
             result = (latitude!, longitude!);
           }
         }
@@ -101,6 +113,24 @@ class EventGeocoder {
       _inflight.remove(key);
       done.complete();
     }
+  }
+
+  bool _isVenue(Map match) {
+    final category = match['category'] ?? match['class'];
+    if (const {
+      'country', 'state', 'region', 'county', 'municipality', 'city', 'town',
+      'village', 'hamlet', 'suburb', 'quarter', 'neighbourhood', 'road',
+    }.contains(match['addresstype']) || category == 'boundary') {
+      return false;
+    }
+    final rawRank = match['place_rank'];
+    if (rawRank != null) {
+      final rank = num.tryParse('$rawRank');
+      return rank != null && rank.isFinite && rank >= 28 && rank <= 30;
+    }
+    return const {
+      'amenity', 'tourism', 'leisure', 'shop', 'building', 'historic',
+    }.contains(category);
   }
 
   void _remember(String key, (double, double)? result) {

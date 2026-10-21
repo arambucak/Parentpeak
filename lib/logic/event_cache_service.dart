@@ -17,9 +17,10 @@ class EventCacheService {
   static final EventCacheService instance = EventCacheService._();
   EventCacheService._();
 
-  static const _cacheKey = 'events.ai_cache';
-  static const _cacheTimestampKey = 'events.ai_cache_timestamp';
-  static const _cacheCityKey = 'events.ai_cache_city';
+  // Older payloads may contain borrowed source URLs or city-level coordinates.
+  static const _cacheKey = 'events.ai_cache.v2';
+  static const _cacheTimestampKey = 'events.ai_cache_timestamp.v2';
+  static const _cacheCityKey = 'events.ai_cache_city.v2';
   static const Duration _cacheDuration = Duration(hours: 24);
 
   List<CommunityEvent>? _memoryCache;
@@ -159,6 +160,11 @@ class EventCacheService {
   static CommunityEvent? toCommunityEvent(DiscoveredEvent d) {
     final eventDate = d.eventDate;
     if (eventDate == null && !d.isRecurring) return null;
+    final now = DateTime.now();
+    if (eventDate != null &&
+        eventDate.toLocal().isBefore(DateTime(now.year, now.month, now.day))) {
+      return null;
+    }
 
     final price = d.price?.trim();
     final hasPrice = price != null && price.isNotEmpty;
@@ -183,7 +189,7 @@ class EventCacheService {
       // Wiederkehrende Angebote ohne festes Datum: der Wert dient nur der
       // Sortierung und wird in der UI nicht als Termin angezeigt.
       eventDate: eventDate ?? d.discoveredAt,
-      isRecurring: d.isRecurring,
+      isRecurring: d.isRecurring && eventDate == null,
       recurringNote: d.recurringNote,
       price: hasPrice ? price : '',
       isFree: isFree,

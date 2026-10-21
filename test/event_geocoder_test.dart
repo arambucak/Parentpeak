@@ -1,10 +1,68 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:parentpeak/logic/event_geocoder.dart';
 
 void main() {
+  for (final metadata in [
+    {'place_rank': 30, 'addresstype': 'house'},
+    {'place_rank': '30', 'category': 'amenity'},
+    {'category': 'tourism', 'type': 'museum'},
+    {'category': 'leisure', 'type': 'park'},
+  ]) {
+    test('venue lookup accepts concrete POI metadata: $metadata', () async {
+      final geocoder = EventGeocoder(client: MockClient((request) async {
+        expect(request.url.queryParameters['format'], 'jsonv2');
+        return http.Response(jsonEncode([{
+            'lat': '52.52', 'lon': '13.4', ...metadata,
+          }]), 200);
+      }));
+      expect(await geocoder.resolveVenue('Venue, Berlin'), (52.52, 13.4));
+    });
+  }
+  for (final metadata in [
+    <String, dynamic>{},
+    {'place_rank': 16, 'addresstype': 'city'},
+    {'place_rank': 20, 'addresstype': 'suburb'},
+    {'place_rank': 26, 'addresstype': 'road'},
+    {'place_rank': 30, 'class': 'boundary'},
+    {'place_rank': 30, 'addresstype': 'city'},
+    {'place_rank': 99},
+    {'place_rank': 'NaN'},
+    {'place_rank': 16, 'category': 'tourism'},
+    {'place_rank': 'NaN', 'category': 'amenity'},
+  ]) {
+    test('venue lookup rejects coarse or unknown precision: $metadata', () async {
+      final geocoder = EventGeocoder(
+        minimumInterval: Duration.zero,
+        client: MockClient((_) async => http.Response(jsonEncode([{
+          'lat': '52.52', 'lon': '13.4', ...metadata,
+        }]), 200)),
+      );
+      expect(await geocoder.resolve('Berlin'), (52.52, 13.4));
+      expect(await geocoder.resolveVenue('Berlin'), isNull);
+      expect(await geocoder.resolve('Berlin'), (52.52, 13.4));
+    });
+  }
+  test('area and venue inflight/cache entries are independent', () async {
+    var calls = 0;
+    final geocoder = EventGeocoder(
+      minimumInterval: Duration.zero,
+      client: MockClient((_) async {
+        calls++;
+        return http.Response('[{"lat":"52.52","lon":"13.4","place_rank":16}]', 200);
+      }),
+    );
+    final results = await Future.wait([
+      geocoder.resolve('Berlin'), geocoder.resolveVenue('Berlin'),
+      geocoder.resolveVenue('Berlin'),
+    ]);
+    expect(results, [(52.52, 13.4), null, null]);
+    expect(calls, 2);
+  });
   test(
     'only the entered address is requested; cache and inflight deduplicate',
     () async {
@@ -14,7 +72,9 @@ void main() {
           calls++;
           expect(request.url.host, 'nominatim.openstreetmap.org');
           expect(request.url.queryParameters['q'], 'Grunewald, Berlin');
-          expect(request.headers['User-Agent'], 'ParentPeak-App/1.0');
+          expect(request.url.queryParameters['format'], 'json');
+          expect(request.headers['User-Agent'],
+              kIsWeb ? isNull : 'ParentPeak-App/1.0');
           return http.Response('[{"lat":"52.46","lon":"13.26"}]', 200);
         }),
       );

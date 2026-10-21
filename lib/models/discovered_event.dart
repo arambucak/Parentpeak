@@ -41,9 +41,10 @@ class DiscoveredEvent {
   final DiscoveredEventSource source;
   final DateTime discoveredAt;
   final int interestCount; // Wer ist interessiert (lokal gezählt)
-  /// Ob die Adresse gegen OpenStreetMap verortet werden konnte. false, wenn
-  /// das Geocoding fehlschlug — dann wird der Ort in der UI als „nicht
-  /// bestätigt" gekennzeichnet, statt ihn ungeprüft als gesichert darzustellen.
+  /// Ob ein konkreter Veranstaltungsort gegen OpenStreetMap verortet wurde.
+  /// false bei fehlender Prüfung oder nur grober Verortung (Stadt/Stadtteil).
+  /// Dann wird der Ort in der UI als „nicht bestätigt" gekennzeichnet, statt
+  /// ihn ungeprüft als gesichert darzustellen.
   final bool locationConfirmed;
 
   const DiscoveredEvent({
@@ -67,7 +68,7 @@ class DiscoveredEvent {
     this.source = DiscoveredEventSource.kiAgent,
     required this.discoveredAt,
     this.interestCount = 0,
-    this.locationConfirmed = true,
+    this.locationConfirmed = false,
   });
 
   DiscoveredEvent copyWith({

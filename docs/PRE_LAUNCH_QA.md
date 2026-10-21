@@ -77,8 +77,16 @@ Standort testen (GPS erlauben) und mit einer manuell eingegebenen Stadt.
 - [ ] **Verschiedene** Events antippen → jede Detailseite zeigt **andere**
       Infos/Adresse (nicht immer dieselbe). *(War der gemeldete Bug.)*
 - [ ] Kein Event mit einem Datum **in der Vergangenheit** erscheint.
+- [ ] Auch ein Wiederholungs-Hinweis darf ein ausdrücklich vergangenes Datum
+      nicht retten. Undatierte Dauerangebote bleiben ohne erfundenen Folgetermin.
 - [ ] Bei einem Event mit **unklarer Adresse**: Hinweis „Adresse nicht auf der
       Karte bestätigt" ist sichtbar.
+- [ ] Eine reine Stadt-/Stadtteil-Verortung gilt nicht als bestätigter
+      Veranstaltungsort. Fehlende Ortsangaben werden nicht durch die Suchstadt
+      als scheinbar bestätigte Adresse ersetzt.
+- [ ] Fehlende Event-Quellen werden nicht durch beliebige andere Suchtreffer
+      ersetzt. Vorhandene Veranstalterlinks stichprobenartig auf Zugehörigkeit
+      und Aktualität prüfen: Geocoding beweist nicht, dass das Event stattfindet.
 - [ ] „In Maps öffnen" öffnet die **richtige** Adresse des jeweiligen Events.
 - [ ] „Website öffnen" / „Online suchen" führt zu etwas Sinnvollem.
 - [ ] Entfernungsanzeige (km) ist plausibel für Events mit bestätigter Adresse.
