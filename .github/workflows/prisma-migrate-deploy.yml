@@ -43,7 +43,7 @@ jobs:
           echo "DATABASE_URL ist gesetzt (Wert wird maskiert)."
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node einrichten
         uses: actions/setup-node@v4
