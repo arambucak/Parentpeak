@@ -247,6 +247,52 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('failed report shows retry without success or reported marker',
+      (tester) async {
+    await signIn(tester);
+    final listing = TreasureListing(
+      id: 'undelivered-report',
+      title: 'Report delivery test offer',
+      category: 'Vehicles',
+      sizeAge: '',
+      conditionKey: 'good',
+      distanceMeters: 120,
+      colorLabel: '',
+      note: '',
+      createdAt: DateTime(2026),
+    );
+    await store.update(
+      (data) => data[TreasureAccountStore.feedKey] = [listing.toMap()],
+      expectedScope: store.scope,
+    );
+    await open(tester, TreasureHandoverScreen(listingService: service));
+    final title = find.textContaining(listing.title);
+    await tester.scrollUntilVisible(title, 350,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(title.first);
+    await tester.pumpAndSettle();
+    final l10n = AppLocalizations(const Locale('en'));
+    expect(find.byType(DraggableScrollableSheet), findsOneWidget);
+    final report =
+        find.text(l10n.t('treasureReportAction', fallback: 'Melden'));
+    await tester.scrollUntilVisible(report, 300,
+        scrollable: find.byType(Scrollable).last);
+    await Scrollable.ensureVisible(tester.element(report), alignment: 0.5);
+    await tester.pumpAndSettle();
+    await tester.tap(report);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(
+        FilledButton, l10n.t('treasureReportSubmit', fallback: 'Melden')));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.t('report_delivery_failed')), findsOneWidget);
+    expect(find.text(l10n.t('treasureReportSuccess',
+        fallback: 'Danke, wir prüfen diese Meldung.')), findsNothing);
+    expect(find.text(l10n.t('treasureReportLocalOnly')), findsNothing);
+    final data = await store.read(expectedScope: store.scope);
+    expect(data[TreasureAccountStore.reportedKey] ?? [], isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('logout cancels pending draft autosave instead of writing into guest', (tester) async {
     await signIn(tester);
     final owner = store.scope;

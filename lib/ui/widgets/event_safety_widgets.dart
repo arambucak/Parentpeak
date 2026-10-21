@@ -177,15 +177,21 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
     setState(() => _sending = true);
     final reason = _selectedReason!;
     final submit = widget.onSubmit;
-    final success = submit != null
-        ? await submit(reason)
-        : await CommunityEventService.instance
-            .flagEvent(widget.eventId, reason);
+    bool success;
+    try {
+      success = submit != null
+          ? await submit(reason)
+          : await CommunityEventService.instance
+              .flagEvent(widget.eventId, reason);
+    } catch (error) {
+      debugPrint('Event report delivery failed: $error');
+      success = false;
+    }
     if (mounted) {
       final messenger = ScaffoldMessenger.of(context);
       final message = context.tr(success
           ? 'event_report_thanks'
-          : 'event_report_failed');
+          : 'report_delivery_failed');
       Navigator.pop(context);
       messenger.showSnackBar(SnackBar(
         content: Text(message),

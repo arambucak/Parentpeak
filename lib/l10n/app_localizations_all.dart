@@ -12,6 +12,9 @@ class AppStringsManager {
   static const Map<String, Map<String, String>> allStrings = {
     // Deutsch
     'de': {
+      'report_delivery_success': 'Danke für deine Meldung. Wir prüfen den Inhalt.',
+      'report_delivery_failed': 'Die Meldung konnte nicht gesendet werden. Bitte versuche es erneut.',
+      'request_failed_retry': 'Die Aktion konnte nicht abgeschlossen werden. Bitte versuche es erneut.',
       'events_location_unconfirmed': 'Adresse nicht auf der Karte bestätigt — bitte vor dem Hinfahren prüfen',
       'events_ai_unverified_hint': 'KI-Vorschlag — bitte beim Veranstalter bestätigen',
       ...profileAccountDe,
@@ -3348,6 +3351,9 @@ class AppStringsManager {
     },
     // English
     'en': {
+      'report_delivery_success': 'Thank you for your report. We will review the content.',
+      'report_delivery_failed': 'The report could not be sent. Please try again.',
+      'request_failed_retry': 'The action could not be completed. Please try again.',
       'events_location_unconfirmed': 'Address not confirmed on the map — please check before you go',
       'events_ai_unverified_hint': 'AI suggestion — please confirm with the organizer',
       ...profileAccountEn,
@@ -6614,6 +6620,9 @@ class AppStringsManager {
     },
     // Français
     'fr': {
+      'report_delivery_success': 'Merci pour votre signalement. Nous examinerons le contenu.',
+      'report_delivery_failed': 'Le signalement n’a pas pu être envoyé. Veuillez réessayer.',
+      'request_failed_retry': 'L’action n’a pas pu être effectuée. Veuillez réessayer.',
       'events_location_unconfirmed': 'Adresse non confirmée sur la carte — à vérifier avant de vous déplacer',
       'events_ai_unverified_hint': 'Suggestion IA — à confirmer auprès de l\'organisateur',
       ...appLocalizationsFrExtra,
@@ -7440,6 +7449,9 @@ class AppStringsManager {
     },
     // Español
     'es': {
+      'report_delivery_success': 'Gracias por tu denuncia. Revisaremos el contenido.',
+      'report_delivery_failed': 'No se pudo enviar la denuncia. Inténtalo de nuevo.',
+      'request_failed_retry': 'No se pudo completar la acción. Inténtalo de nuevo.',
       'events_location_unconfirmed': 'Dirección no confirmada en el mapa — compruébala antes de ir',
       'events_ai_unverified_hint': 'Sugerencia IA — confirma con el organizador',
       ...appLocalizationsEsExtra,
@@ -8253,6 +8265,9 @@ class AppStringsManager {
     },
     // Italiano
     'it': {
+      'report_delivery_success': 'Grazie per la segnalazione. Esamineremo il contenuto.',
+      'report_delivery_failed': 'Non è stato possibile inviare la segnalazione. Riprova.',
+      'request_failed_retry': 'Non è stato possibile completare l’azione. Riprova.',
       'events_location_unconfirmed': 'Indirizzo non confermato sulla mappa — verifica prima di andarci',
       'events_ai_unverified_hint': 'Suggerimento IA — conferma con l\'organizzatore',
       ...appLocalizationsItExtra,
@@ -10695,6 +10710,9 @@ class AppStringsManager {
     },
     // العربية (Arabic)
     'ar': {
+      'report_delivery_success': 'شكرًا على بلاغك. سنراجع المحتوى.',
+      'report_delivery_failed': 'تعذر إرسال البلاغ. يرجى المحاولة مرة أخرى.',
+      'request_failed_retry': 'تعذر إكمال الإجراء. يرجى المحاولة مرة أخرى.',
       'events_location_unconfirmed': 'العنوان غير مؤكد على الخريطة — تحقّق منه قبل الذهاب',
       'events_ai_unverified_hint': 'اقتراح بالذكاء الاصطناعي — أكّده مع المنظم',
       ...appLocalizationsArExtra,
@@ -12298,6 +12316,9 @@ class AppStringsManager {
     },
     // کوردی Kurmancî (ku)
     'ku': {
+      'report_delivery_success': 'Spas ji bo ragihandina te. Em ê naverokê kontrol bikin.',
+      'report_delivery_failed': 'Ragihandin nehat şandin. Ji kerema xwe dîsa biceribîne.',
+      'request_failed_retry': 'Kar nehat temamkirin. Ji kerema xwe dîsa biceribîne.',
       'events_location_unconfirmed': 'Navnîşan li ser nexşeyê nehat piştrastkirin — berî çûyînê kontrol bike',
       'events_ai_unverified_hint': 'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike',
       ...profileAccountKu,
@@ -18768,6 +18789,9 @@ class AppStringsManager {
     },
     // Türkçe (Turkish)
     'tr': {
+      'report_delivery_success': 'Bildirimin için teşekkürler. İçeriği inceleyeceğiz.',
+      'report_delivery_failed': 'Bildirim gönderilemedi. Lütfen tekrar dene.',
+      'request_failed_retry': 'İşlem tamamlanamadı. Lütfen tekrar dene.',
       'events_location_unconfirmed': 'Adres haritada doğrulanmadı — gitmeden önce lütfen kontrol et',
       'events_ai_unverified_hint': 'Yapay zekâ önerisi — lütfen düzenleyenle doğrula',
       ...profileAccountTr,

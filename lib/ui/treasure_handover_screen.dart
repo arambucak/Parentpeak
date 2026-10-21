@@ -1706,6 +1706,15 @@ class _TreasureHandoverScreenState
     );
     noteController.dispose();
     if (!mounted || sent == null) return;
+    if (!sent) {
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(SnackBar(
+        content: Text(l10n.t('report_delivery_failed')),
+        behavior: SnackBarBehavior.fixed,
+      ));
+      return;
+    }
     final reported = {..._reportedListingIds, listing.id};
     if (!await _persistSafetyState(
           blocked: _blockedListingIds,
@@ -1725,16 +1734,10 @@ class _TreasureHandoverScreenState
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          sent
-              ? l10n.t(
-                  'treasureReportSuccess',
-                  fallback: 'Danke, wir prüfen diese Meldung.',
-                )
-              : l10n.t(
-                  'treasureReportLocalOnly',
-                  fallback:
-                      'Meldung lokal markiert. Server-Sync folgt, sobald verfügbar.',
-                ),
+          l10n.t(
+            'treasureReportSuccess',
+            fallback: 'Danke, wir prüfen diese Meldung.',
+          ),
         ),
         behavior: SnackBarBehavior.fixed,
       ),

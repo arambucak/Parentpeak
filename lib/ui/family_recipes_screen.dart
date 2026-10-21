@@ -239,15 +239,28 @@ class _FamilyRecipesScreenState extends State<_ScopedFamilyRecipesScreen> {
           ),
         );
         _load();
+      } else {
+        _showActionFailed();
       }
     } on SuspendedAccountException {
       if (mounted) {
         setState(() => _generatingAi = false);
         await showAccountSuspendedNotice(context);
       }
-    } catch (_) {
-      if (mounted) setState(() => _generatingAi = false);
+    } catch (error) {
+      debugPrint('Family recipe sharing failed: $error');
+      if (mounted) {
+        setState(() => _generatingAi = false);
+        _showActionFailed();
+      }
     }
+  }
+
+  void _showActionFailed() {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(_t('request_failed_retry')),
+      behavior: SnackBarBehavior.floating,
+    ));
   }
 
   void _onSearchChanged(String value) {
@@ -272,9 +285,14 @@ class _FamilyRecipesScreenState extends State<_ScopedFamilyRecipesScreen> {
           final i = _recipes.indexWhere((r) => r.id == recipe.id);
           if (i != -1) _recipes[i] = updated;
         });
+      } else if (mounted) {
+        _showActionFailed();
       }
     } on SuspendedAccountException {
       if (mounted) await showAccountSuspendedNotice(context);
+    } catch (error) {
+      debugPrint('Family recipe reaction failed: $error');
+      if (mounted) _showActionFailed();
     }
   }
 
@@ -312,6 +330,8 @@ class _FamilyRecipesScreenState extends State<_ScopedFamilyRecipesScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else if (mounted) {
+      _showActionFailed();
     }
   }
 
