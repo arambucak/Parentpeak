@@ -4160,7 +4160,7 @@ app.use(async (req, res, next) => {
 
   // Legacy exceptions; hardened routes such as calendar enforce Firebase
   // identity locally even when these global guards continue.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships', '/api/recipes'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
@@ -7679,6 +7679,16 @@ app.post('/entitlements/:userId/activate-premium', requireVerifiedUser, (req, re
     return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt', code: 'not_owner' });
   }
 
+  // Premium darf nie ohne Zahlungsnachweis selbst vergeben werden. Solange
+  // kein verifizierter Zahlungsweg (Webhook/Admin -> Entitlement) existiert,
+  // bleibt dieser Pfad ausser fuer lokale Tests gesperrt.
+  if (`${process.env.ALLOW_SELF_SERVICE_PREMIUM || '0'}` !== '1') {
+    return res.status(403).json({
+      error: 'Premium kann nur nach verifizierter Zahlung aktiviert werden',
+      code: 'payment_required',
+    });
+  }
+
   const record = ensureEntitlement(userId, {
     registeredAt: req.body.registeredAt,
     isPremium: true,
@@ -9541,7 +9551,7 @@ async function resolveDisplayName(uid) {
   return '';
 }
 
-app.get('/api/profile/:userId', async (req, res) => {
+app.get('/api/profile/:userId', requireVerifiedUser, async (req, res) => {
   const userId = (req.params.userId || '').toString().trim();
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
   try {
@@ -9984,10 +9994,14 @@ async function buildRecipeForClient(row, requesterUid) {
 }
 
 // Rezept erstellen. Foto-URL kommt vom bereits vorhandenen /uploads/image.
-app.post('/api/recipes', async (req, res) => {
-  const authorUserId = (req.body.authorUserId || '').toString().trim();
+app.post('/api/recipes', requireVerifiedUser, async (req, res) => {
+  // Identitaet kommt ausschliesslich aus dem verifizierten Token.
+  const authorUserId = req.firebaseUid;
+  const claimedAuthor = (req.body.authorUserId || '').toString().trim();
+  if (claimedAuthor && claimedAuthor !== authorUserId) {
+    return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt' });
+  }
   const title = (req.body.title || '').toString().trim().slice(0, 120);
-  if (!authorUserId) return res.status(400).json({ error: 'authorUserId erforderlich' });
   if (!title) return res.status(400).json({ error: 'Titel erforderlich' });
   // Echter Bann: gesperrte Nutzer koennen keine Rezepte mehr teilen.
   if (await isUserSuspended(authorUserId)) return respondSuspended(res);
@@ -10110,10 +10124,10 @@ app.get('/api/recipes/:id', requireVerifiedUser, async (req, res) => {
 });
 
 // Rezept loeschen (nur der Autor).
-app.delete('/api/recipes/:id', async (req, res) => {
+app.delete('/api/recipes/:id', requireVerifiedUser, async (req, res) => {
   const id = (req.params.id || '').toString().trim();
-  const uid = (req.query.userId || req.body?.userId || '').toString().trim();
-  if (!id || !uid) return res.status(400).json({ error: 'id und userId erforderlich' });
+  const uid = req.firebaseUid;
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
   try {
     await ensureSocialSchemaReady();
     const rows = await prisma.$queryRawUnsafe(
@@ -10137,11 +10151,11 @@ app.delete('/api/recipes/:id', async (req, res) => {
 // Reaktion toggeln: 'cook' ("Das kochen wir nach!") oder 'tasty'
 // ("Hat geschmeckt!"). Nur erlaubt, wenn das Rezept fuer den Nutzer sichtbar
 // ist. Gesperrte Nutzer koennen nicht reagieren.
-app.post('/api/recipes/:id/react', async (req, res) => {
+app.post('/api/recipes/:id/react', requireVerifiedUser, async (req, res) => {
   const id = (req.params.id || '').toString().trim();
-  const uid = (req.body.userId || '').toString().trim();
+  const uid = req.firebaseUid;
   const type = (req.body.type || '').toString().trim();
-  if (!id || !uid) return res.status(400).json({ error: 'id und userId erforderlich' });
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
   if (type !== 'cook' && type !== 'tasty') {
     return res.status(400).json({ error: 'type muss cook oder tasty sein' });
   }
@@ -10340,8 +10354,12 @@ app.get('/api/safety/blocks/:userId', requireVerifiedUser, async (req, res) => {
   }
 });
 
-app.post('/api/safety/report', async (req, res) => {
-  const reporterUserId = (req.body.reporterUserId || '').toString().trim();
+app.post('/api/safety/report', requireVerifiedUser, async (req, res) => {
+  const reporterUserId = req.firebaseUid;
+  const claimedReporter = (req.body.reporterUserId || '').toString().trim();
+  if (claimedReporter && claimedReporter !== reporterUserId) {
+    return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt' });
+  }
   const reportedUserId = (req.body.reportedUserId || '').toString().trim();
   const contentType = (req.body.contentType || 'profile').toString().trim().slice(0, 30);
   const content = (req.body.content || '').toString().trim().slice(0, 1000);
@@ -12875,11 +12893,7 @@ app.get('/health', (req, res) => {
 });
 
 // ── Admin: Database Migrations ───────────────────────────────────────────────
-app.post('/admin/migrate-db', async (req, res) => {
-  const token = req.get('Authorization')?.replace('Bearer ', '');
-  if (token !== process.env.BACKEND_API_TOKEN) {
-    return res.status(403).json({ error: 'Unauthorized' });
-  }
+app.post('/admin/migrate-db', requireAdmin, async (req, res) => {
 
   try {
     // Drop foreign key constraint for Event if it exists
@@ -15319,12 +15333,13 @@ app.delete('/api/community-events/:id', async (req, res) => {
  * POST /api/community-events/:id/flag
  * Report a community event. Auto-hides after 3 flags.
  */
-app.post('/api/community-events/:id/flag', async (req, res) => {
+app.post('/api/community-events/:id/flag', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const { userId, reason } = req.body;
+  const userId = req.firebaseUid;
+  const { reason } = req.body;
 
-  if (!userId || !reason) {
-    return res.status(400).json({ error: 'userId und reason erforderlich' });
+  if (!reason) {
+    return res.status(400).json({ error: 'reason erforderlich' });
   }
   const validReasons = ['spam', 'fake', 'unsafe', 'inappropriate', 'expired'];
   if (!validReasons.includes(String(reason))) {
@@ -15807,12 +15822,17 @@ async function buildAuthorTrustMapForRecipes(recipes) {
  * POST /api/treasures/:id/report
  * Report a treasure listing for moderation
  */
-app.post('/api/treasures/:id/report', async (req, res) => {
+app.post('/api/treasures/:id/report', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const { reporterUserId, reason, note } = req.body;
+  const reporterUserId = req.firebaseUid;
+  const { reason, note } = req.body;
+  const claimedReporter = String(req.body.reporterUserId || '').trim();
+  if (claimedReporter && claimedReporter !== reporterUserId) {
+    return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt' });
+  }
 
-  if (!reporterUserId || !reason) {
-    return res.status(400).json({ error: 'reporterUserId und reason erforderlich' });
+  if (!reason) {
+    return res.status(400).json({ error: 'reason erforderlich' });
   }
 
   const normalizedReason = String(reason).trim();

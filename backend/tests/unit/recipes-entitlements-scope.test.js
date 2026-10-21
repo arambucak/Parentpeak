@@ -12,11 +12,11 @@ function slice(start, end) {
   return source.slice(a, b);
 }
 
-function baseContext({ app, configured = true, extra = {} } = {}) {
+function baseContext({ app, configured = true, extra = {}, env = {} } = {}) {
   const handlers = new Map();
   const ctx = {
     console: { error: () => {}, log: () => {} },
-    process: { env: { NODE_ENV: 'production', FIREBASE_REQUIRE_AUTH: '1' } },
+    process: { env: { NODE_ENV: 'production', FIREBASE_REQUIRE_AUTH: '1', ...env } },
     firebaseAdmin: configured ? { auth: () => ({
       verifyIdToken: async token => {
         if (!['a', 'b'].includes(token)) throw new Error('Invalid');
@@ -134,10 +134,10 @@ test('GET /api/recipes/:id forbids foreign private even with valid token', async
 });
 
 // ========== MEDIUM 2: Entitlements ==========
-function entitlementFixture({ app, configured = true } = {}) {
+function entitlementFixture({ app, configured = true, env = {} } = {}) {
   const userEntitlements = new Map();
   const { context, handlers } = baseContext({
-    app, configured,
+    app, configured, env,
     extra: {
       userEntitlements,
       ensureEntitlement: undefined, // wird aus Quelle geladen
@@ -168,7 +168,7 @@ for (const [method, route] of [
     assert.equal(result.status, 403);
   });
   test(`${method} ${route} allows own path userId`, async () => {
-    const { handlers } = entitlementFixture();
+    const { handlers } = entitlementFixture({ env: { ALLOW_SELF_SERVICE_PREMIUM: '1' } });
     const result = await callRoute(handlers, method, route, { token: 'a', params: { userId: 'a' } });
     assert.ok(result.status === 200 || result.status === 201);
   });
@@ -183,8 +183,18 @@ test('GET entitlement status does NOT set premium from query hint', async () => 
   assert.equal(record.isPremium, false); // Query-Hint wird ignoriert
 });
 
-test('POST activate-premium sets premium only for own account', async () => {
+test('POST activate-premium is refused without payment verification by default', async () => {
   const { handlers, userEntitlements } = entitlementFixture();
+  const result = await callRoute(handlers, 'POST', '/entitlements/:userId/activate-premium', {
+    token: 'a', params: { userId: 'a' },
+  });
+  assert.equal(result.status, 403);
+  assert.equal(result.body?.code, 'payment_required');
+  assert.notEqual(userEntitlements.get('a')?.isPremium, true);
+});
+
+test('POST activate-premium sets premium only for own account', async () => {
+  const { handlers, userEntitlements } = entitlementFixture({ env: { ALLOW_SELF_SERVICE_PREMIUM: '1' } });
   const result = await callRoute(handlers, 'POST', '/entitlements/:userId/activate-premium', {
     token: 'a', params: { userId: 'a' },
   });
@@ -205,4 +215,85 @@ test('real Express chain protects recipes and entitlements', async t => {
   assert.equal((await fetch(`${base}/entitlements/a/status`)).status, 401);
   assert.equal((await fetch(`${base}/entitlements/a/status`,
     { headers: { Authorization: 'Bearer b' } })).status, 403);
+});
+
+// ========== Rezept-Schreibrouten: Identitaet nur aus dem Token ==========
+function recipeWriteFixture() {
+  const rows = new Map([['r-a', { id: 'r-a', authorUserId: 'a', visibility: 'public' }]]);
+  const executed = [];
+  const { context, handlers } = baseContext({
+    extra: {
+      prisma: {
+        $queryRawUnsafe: async (sql, arg) => {
+          if (sql.includes('"authorUserId" FROM "Recipe"') || sql.includes('FROM "Recipe" WHERE "id"')) {
+            return rows.has(arg) ? [rows.get(arg)] : [];
+          }
+          return [];
+        },
+        $executeRawUnsafe: async (sql, ...args) => { executed.push({ sql, args }); },
+      },
+      ensureSocialSchemaReady: async () => {},
+      isUserSuspended: async () => false,
+      respondSuspended: res => res.status(403).json({ error: 'suspended' }),
+      generateId: prefix => `${prefix}_1`,
+      RECIPE_VISIBILITIES: new Set(['private', 'friends', 'public']),
+      buildRecipeForClient: async r => ({ id: r.id, authorUserId: r.authorUserId }),
+      areFriends: async () => false,
+      respondWithStrictPersistenceError: () => false,
+      recipes: new Map(),
+      recipeReactions: new Map(),
+    },
+  });
+  vm.runInContext(
+    slice("app.post('/api/recipes', requireVerifiedUser", "app.get('/api/recipes', requireVerifiedUser"),
+    context);
+  vm.runInContext(
+    slice("app.delete('/api/recipes/:id'", '// ─── DSGVO: Konto-Loeschung'), context);
+  return { handlers, executed };
+}
+
+test('recipe write routes reject missing or invalid tokens', async () => {
+  const { handlers } = recipeWriteFixture();
+  for (const [method, route] of [
+    ['POST', '/api/recipes'], ['DELETE', '/api/recipes/:id'], ['POST', '/api/recipes/:id/react'],
+  ]) {
+    for (const token of [null, 'invalid', 'shared']) {
+      const result = await callRoute(handlers, method, route, {
+        token, params: { id: 'r-a' }, body: { title: 'x', authorUserId: 'a', type: 'cook' },
+      });
+      assert.equal(result.status, 401, `${method} ${route} ${token}`);
+    }
+  }
+});
+
+test('POST /api/recipes ignores spoofed author and rejects mismatching claim', async () => {
+  const { handlers } = recipeWriteFixture();
+  const spoof = await callRoute(handlers, 'POST', '/api/recipes', {
+    token: 'a', body: { title: 'Kuchen', authorUserId: 'b' },
+  });
+  assert.equal(spoof.status, 403);
+  const own = await callRoute(handlers, 'POST', '/api/recipes', {
+    token: 'a', body: { title: 'Kuchen' },
+  });
+  assert.equal(own.status, 201);
+  assert.equal(own.body.recipe.authorUserId, 'a');
+});
+
+test('DELETE /api/recipes/:id only deletes own recipes', async () => {
+  const { handlers, executed } = recipeWriteFixture();
+  const foreign = await callRoute(handlers, 'DELETE', '/api/recipes/:id', {
+    token: 'b', params: { id: 'r-a' },
+  });
+  assert.equal(foreign.status, 403);
+  assert.equal(executed.length, 0);
+  const spoofedQuery = await callRoute(handlers, 'DELETE', '/api/recipes/:id', {
+    token: 'b', params: { id: 'r-a' }, query: { userId: 'a' },
+  });
+  assert.equal(spoofedQuery.status, 403);
+  assert.equal(executed.length, 0);
+  const own = await callRoute(handlers, 'DELETE', '/api/recipes/:id', {
+    token: 'a', params: { id: 'r-a' },
+  });
+  assert.equal(own.status, 200);
+  assert.ok(executed.length > 0);
 });

@@ -9,15 +9,17 @@ const helperStart = source.indexOf('async function authorizeProfileOwner(');
 const helperEnd = source.indexOf('\n}', helperStart) + 2;
 const start = source.indexOf('const onboardingProfiles = new Map()');
 const end = source.indexOf('// ─── Freundschaft (UID-zu-UID', start);
-assert.ok(helperStart >= 0 && start >= 0 && end > start);
+const verifiedStart = source.indexOf('async function requireVerifiedUser(');
+const verifiedEnd = source.indexOf('function resolveVerifiedUserId(', verifiedStart);
+assert.ok(helperStart >= 0 && start >= 0 && end > start && verifiedEnd > verifiedStart);
 
 function fixture({ fails = false, strict = false } = {}) {
   const routes = new Map();
   const calls = [];
   const context = {
     app: {
-      get: (url, fn) => routes.set(`GET ${url}`, fn),
-      post: (url, fn) => routes.set(`POST ${url}`, fn),
+      get: (url, ...chain) => routes.set(`GET ${url}`, chain),
+      post: (url, ...chain) => routes.set(`POST ${url}`, chain),
     },
     verifyFirebaseIdToken: async req => ({
       verified: ['a', 'b'].includes(req.tokenUid), uid: req.tokenUid,
@@ -45,19 +47,22 @@ function fixture({ fails = false, strict = false } = {}) {
   };
   vm.createContext(context);
   vm.runInContext(source.slice(helperStart, helperEnd), context);
+  vm.runInContext(source.slice(verifiedStart, verifiedEnd), context);
   vm.runInContext(source.slice(start, end), context);
   return {
     calls,
     async request(route, tokenUid, fields = {}) {
       let status = 200, body;
       const req = { tokenUid, params: { userId: fields.userId ?? 'a' },
-        body: { userId: 'a', ...fields },
+        body: route.startsWith('GET') ? {} : { userId: 'a', ...fields },
         headers: { authorization: 'Bearer test-backend-token' } };
       const res = {
         status(code) { status = code; return res; },
         json(value) { body = value; return res; },
       };
-      await routes.get(route)(req, res);
+      const chain = routes.get(route);
+      const run = async i => { if (chain[i]) await chain[i](req, res, () => run(i + 1)); };
+      await run(0);
       return { status, body, firebaseUid: req.firebaseUid };
     },
   };
@@ -97,9 +102,18 @@ for (const fields of [
   });
 }
 
-test('name/avatar reads for another account remain available', async () => {
+test('profile reads require a verified token', async () => {
+  for (const uid of [undefined, 'invalid']) {
+    const app = fixture();
+    const result = await app.request('GET /api/profile/:userId', uid, { userId: 'b' });
+    assert.equal(result.status, 401);
+    assert.deepEqual(app.calls, []);
+  }
+});
+
+test('name/avatar reads for another account remain available to signed-in users', async () => {
   const app = fixture();
-  const result = await app.request('GET /api/profile/:userId', undefined, { userId: 'b' });
+  const result = await app.request('GET /api/profile/:userId', 'a', { userId: 'b' });
   assert.equal(result.status, 200);
   assert.equal(result.body.displayName, 'Public name');
   assert.equal(result.body.avatarUrl, 'https://images.example/avatar');
