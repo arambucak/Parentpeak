@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:parentpeak/logic/weekly_planner_controller.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/day_plan.dart';
 import 'package:parentpeak/models/recipe.dart';
 
 enum PlannerTone { warm, clear, premium }
 
-String _toneCopy(
+String _plannerCopy(
+  BuildContext context,
   PlannerTone tone,
-  String warm,
-  String clear, {
-  String? premium,
+  String key, {
+  Map<String, String> values = const {},
 }) {
-  switch (tone) {
-    case PlannerTone.warm:
-      return warm;
-    case PlannerTone.clear:
-      return clear;
-    case PlannerTone.premium:
-      return premium ?? clear;
+  var value = AppStringsManager.getString(
+    languageService.currentLanguage,
+    'package3_planner_$key',
+  );
+  for (final entry in values.entries) {
+    value = value.replaceAll('{${entry.key}}', entry.value);
   }
+  return value;
 }
 
 class WeeklyPlannerView extends StatelessWidget {
@@ -111,12 +113,7 @@ class _PlannerHero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _toneCopy(
-                        tone,
-                        'Was kochen wir heute? Geklaert.',
-                        'Wochenplanung mit klarem Fokus',
-                        premium: 'Essensplanung, ruhig organisiert.',
-                      ),
+                      _plannerCopy(context, tone, 'hero_title'),
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
@@ -124,12 +121,7 @@ class _PlannerHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _toneCopy(
-                        tone,
-                        'Planen, tauschen, entspannt durch die Woche.',
-                        'Schnell entscheiden, weniger Mental Load.',
-                        premium: 'Strukturiert planen. Flexibel reagieren.',
-                      ),
+                      _plannerCopy(context, tone, 'hero_subtitle'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: Colors.white.withValues(alpha: 0.92),
                       ),
@@ -165,39 +157,23 @@ class _PlannerHero extends StatelessWidget {
             children: [
               _HeroStatChip(
                 icon: Icons.restaurant_rounded,
-                label: _toneCopy(
-                  tone,
-                  '${controller.plannedDinnerCount} Abende geplant',
-                  '${controller.plannedDinnerCount} Dinner fixiert',
-                  premium: '${controller.plannedDinnerCount} Menues gesetzt',
-                ),
+                label: _plannerCopy(context, tone, 'planned_dinners',
+                    values: {'count': '${controller.plannedDinnerCount}'}),
               ),
               _HeroStatChip(
                 icon: Icons.flash_on_rounded,
-                label: _toneCopy(
-                  tone,
-                  '${controller.chaosDayCount} Stress-Swap',
-                  '${controller.chaosDayCount} Notfallwechsel',
-                  premium: '${controller.chaosDayCount} flexible Anpassung',
-                ),
+                label: _plannerCopy(context, tone, 'chaos_swaps',
+                    values: {'count': '${controller.chaosDayCount}'}),
               ),
               _HeroStatChip(
                 icon: Icons.warning_amber_rounded,
-                label: _toneCopy(
-                  tone,
-                  '${controller.weekConflictCount()} Doppel-Check',
-                  '${controller.weekConflictCount()} Konflikte',
-                  premium: '${controller.weekConflictCount()} Abgleichhinweise',
-                ),
+                label: _plannerCopy(context, tone, 'conflicts',
+                    values: {'count': '${controller.weekConflictCount()}'}),
               ),
               _HeroStatChip(
                 icon: Icons.ac_unit_rounded,
-                label: _toneCopy(
-                  tone,
-                  '${controller.freezerItemsCount} Reste gerettet',
-                  '${controller.freezerItemsCount} Gefrier-Posten',
-                  premium: '${controller.freezerItemsCount} Vorratserinnerungen',
-                ),
+                label: _plannerCopy(context, tone, 'freezer_items',
+                    values: {'count': '${controller.freezerItemsCount}'}),
               ),
             ],
           ),
@@ -209,10 +185,10 @@ class _PlannerHero extends StatelessWidget {
               selectedBackgroundColor: Colors.white,
               side: BorderSide(color: Colors.white.withValues(alpha: 0.55)),
             ),
-            segments: const [
-              ButtonSegment(value: ChildStage.baby, label: Text('Baby')),
-              ButtonSegment(value: ChildStage.toddler, label: Text('Kleinkind')),
-              ButtonSegment(value: ChildStage.school, label: Text('Schulkind')),
+            segments: [
+              ButtonSegment(value: ChildStage.baby, label: Text(_plannerCopy(context, tone, 'stage_baby'))),
+              ButtonSegment(value: ChildStage.toddler, label: Text(_plannerCopy(context, tone, 'stage_toddler'))),
+              ButtonSegment(value: ChildStage.school, label: Text(_plannerCopy(context, tone, 'stage_school'))),
             ],
             selected: {controller.childStage},
             onSelectionChanged: (value) => controller.setChildStage(value.first),
@@ -279,7 +255,7 @@ class _SmartActions extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _toneCopy(tone, 'Heute schnell entlasten', 'Schnellaktionen', premium: 'Priorisierte Aktionen'),
+              _plannerCopy(context, tone, 'quick_actions'),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -291,7 +267,7 @@ class _SmartActions extends StatelessWidget {
               children: [
                 ActionChip(
                   avatar: const Icon(Icons.bolt_rounded, size: 18),
-                  label: Text(_toneCopy(tone, 'Notfalltausch', 'Express-Tausch', premium: 'Adaptiver Tausch')),
+                  label: Text(_plannerCopy(context, tone, 'emergency_swap')),
                   onPressed: () {
                     final monday = controller.weekStart;
                     final ok = controller.activateChaosAndSwap(monday);
@@ -299,8 +275,8 @@ class _SmartActions extends StatelessWidget {
                       SnackBar(
                         content: Text(
                           ok
-                              ? _toneCopy(tone, 'Fertig. Ein Express-Gericht ist jetzt eingeplant.', 'Express-Gericht übernommen.', premium: 'Alternative wurde übernommen.')
-                              : 'Kein Express-Gericht verfügbar.',
+                              ? _plannerCopy(context, tone, 'swap_success')
+                              : _plannerCopy(context, tone, 'swap_unavailable'),
                         ),
                       ),
                     );
@@ -308,12 +284,12 @@ class _SmartActions extends StatelessWidget {
                 ),
                 ActionChip(
                   avatar: const Icon(Icons.document_scanner_rounded, size: 18),
-                  label: Text(_toneCopy(tone, 'Kita-Plan importieren', 'Lunch-Import', premium: 'Kita-Abgleich')),
+                  label: Text(_plannerCopy(context, tone, 'import_lunch_plan')),
                   onPressed: onImportKitaPlan,
                 ),
                 ActionChip(
                   avatar: const Icon(Icons.kitchen_rounded, size: 18),
-                  label: Text(_toneCopy(tone, 'Vorrat pflegen', 'Pantry-Editor', premium: 'Vorrat abstimmen')),
+                  label: Text(_plannerCopy(context, tone, 'edit_pantry')),
                   onPressed: onEditPantry,
                 ),
               ],
@@ -361,7 +337,7 @@ class _DayPlanCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${_capitalize(DateFormat('EEEE', 'de_DE').format(plan.date))} · ${DateFormat('dd.MM.').format(plan.date)}',
+              '${_capitalize(DateFormat('EEEE', languageService.currentLanguage).format(plan.date))} · ${DateFormat('dd.MM.').format(plan.date)}',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
@@ -370,8 +346,8 @@ class _DayPlanCard extends StatelessWidget {
             TextFormField(
               initialValue: plan.kitaLunch,
               decoration: InputDecoration(
-                labelText: 'Kita-/Schul-Mittagessen',
-                hintText: _toneCopy(tone, 'z. B. Milchreis mit Apfelmus', 'z. B. Nudeln, Suppe, Milchreis', premium: 'z. B. Wochenspeise hier eintragen'),
+                labelText: _plannerCopy(context, tone, 'lunch_label'),
+                hintText: _plannerCopy(context, tone, 'lunch_hint'),
                 prefixIcon: const Icon(Icons.school_rounded),
               ),
               onFieldSubmitted: (value) => controller.setKitaLunch(plan.date, value),
@@ -380,12 +356,7 @@ class _DayPlanCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  _toneCopy(
-                    tone,
-                    'Mittag und Abend sind sehr ähnlich. Vorschlag: heute etwas Leichtes am Abend.',
-                    'Mittag und Abend sind sehr ähnlich. Empfehlung: leichtes Dinner.',
-                    premium: 'Hinweis: Mittags- und Abendgericht überschneiden sich deutlich.',
-                  ),
+                  _plannerCopy(context, tone, 'meal_conflict'),
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -393,7 +364,10 @@ class _DayPlanCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  '${_toneCopy(tone, 'Plan B steht bereit', 'Alternative verfügbar', premium: 'Alternative bereit')}: ${chaosSuggestion.title} (${chaosSuggestion.durationMinutes} Min)',
+                  _plannerCopy(context, tone, 'plan_b', values: {
+                    'recipe': chaosSuggestion.title,
+                    'minutes': '${chaosSuggestion.durationMinutes}',
+                  }),
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -410,7 +384,8 @@ class _DayPlanCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  _toneCopy(tone, 'Baby-Modus Tipp: ${blwTips.first}', 'BLW-Hinweis: ${blwTips.first}', premium: 'Baby-Notiz: ${blwTips.first}'),
+                    _plannerCopy(context, tone, 'baby_tip',
+                      values: {'tip': blwTips.first}),
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -422,20 +397,20 @@ class _DayPlanCard extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: onSaveFamilyMoment == null ? null : () => onSaveFamilyMoment!(plan.date, recipe?.id),
                   icon: const Icon(Icons.favorite_rounded),
-                  label: Text(_toneCopy(tone, 'Familienmoment speichern', 'Moment erfassen', premium: 'Moment dokumentieren')),
+                  label: Text(_plannerCopy(context, tone, 'save_family_moment')),
                 ),
                 OutlinedButton.icon(
                   onPressed: () {
                     final code = controller.freezeLeftover(plan.date);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${_toneCopy(tone, 'Code erstellt', 'Gefriercode', premium: 'Code')}: $code')),
+                      SnackBar(content: Text(_plannerCopy(context, tone, 'code_created', values: {'code': code}))),
                     );
                   },
                   icon: const Icon(Icons.ac_unit_rounded),
-                  label: const Text('Reste einfrieren'),
+                  label: Text(_plannerCopy(context, tone, 'freeze_leftovers')),
                 ),
                 if ((plan.leftoverCode ?? '').isNotEmpty)
-                  Chip(label: Text('Code: ${plan.leftoverCode}'), onDeleted: () => controller.clearLeftover(plan.date)),
+                  Chip(label: Text(_plannerCopy(context, tone, 'leftover_code', values: {'code': '${plan.leftoverCode}'})), onDeleted: () => controller.clearLeftover(plan.date)),
               ],
             ),
             if (freezerHint != null)
@@ -478,20 +453,23 @@ class _RecipeRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_toneCopy(tone, 'Heute Abend', 'Dinner-Slot', premium: 'Abendmenue'), style: theme.textTheme.labelMedium),
+              Text(_plannerCopy(context, tone, 'dinner_label'), style: theme.textTheme.labelMedium),
               const SizedBox(height: 2),
               Text(
-                recipe?.title ?? _toneCopy(tone, 'Noch offen - bitte ein Gericht auswählen', 'Noch kein Dinner gesetzt', premium: 'Menue noch offen'),
+                recipe?.title ?? _plannerCopy(context, tone, 'no_dinner'),
                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               if (recipe != null)
-                Text('${recipe!.durationMinutes} Min · ${recipe!.isOnePot ? 'One-Pot' : 'Standard'}', style: theme.textTheme.bodySmall),
+                Text(_plannerCopy(context, tone, 'recipe_meta', values: {
+                  'minutes': '${recipe!.durationMinutes}',
+                  'type': _plannerCopy(context, tone, recipe!.isOnePot ? 'one_pot' : 'standard'),
+                }), style: theme.textTheme.bodySmall),
             ],
           ),
         ),
         PopupMenuButton<String>(
           icon: const Icon(Icons.swap_horiz_rounded),
-          tooltip: _toneCopy(tone, 'Gericht wechseln', 'Dinner ersetzen', premium: 'Menue wechseln'),
+          tooltip: _plannerCopy(context, tone, 'change_dinner'),
           onSelected: (recipeId) => controller.setDinnerRecipe(date, recipeId),
           itemBuilder: (context) => controller.recipes
               .map((item) => PopupMenuItem<String>(value: item.id, child: Text(item.title)))

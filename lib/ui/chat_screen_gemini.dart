@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 class ChatScreenGemini extends StatefulWidget {
   const ChatScreenGemini({super.key});
@@ -15,6 +16,11 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
   final ScrollController _scrollController = ScrollController();
   bool _isStreaming = false;
 
+  String _t(String key) => AppStringsManager.getString(
+        Localizations.localeOf(context).languageCode,
+        'package2_$key',
+      );
+
   @override
   void initState() {
     super.initState();
@@ -25,7 +31,7 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
     try {
       _geminiService = GeminiAIService();
     } catch (e) {
-      _showError('Fehler bei Initialisierung', e.toString());
+      _showError(_t('gemini_init_error'), e.toString());
     }
   }
 
@@ -105,7 +111,7 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
         setState(() {
           if (_messages.length > aiMessageIndex) {
             _messages[aiMessageIndex]['text'] =
-                'Fehler: Konnte die Antwort nicht verarbeiten. Fehler: $e';
+                _t('gemini_response_error').replaceAll('{error}', '$e');
             _messages[aiMessageIndex]['isStreaming'] = false;
           }
           _isStreaming = false;
@@ -123,7 +129,7 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(_t('gemini_ok')),
           ),
         ],
       ),
@@ -137,7 +143,7 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Eltern-Assistent (Gemini AI)'),
+        title: Text(_t('gemini_title')),
         elevation: 0,
         centerTitle: true,
       ),
@@ -171,7 +177,7 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
                   child: TextField(
                     controller: _controller,
                     decoration: InputDecoration(
-                      hintText: 'Stelle eine Frage...',
+                      hintText: _t('gemini_hint'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide(color: Colors.grey[300]!),
@@ -240,14 +246,14 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Eltern-Assistent (Gemini AI)',
+            _t('gemini_title'),
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Fragen zu Erziehung, Freizeitgestaltung & Sicherheit',
+            _t('gemini_subtitle'),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.grey[600],
             ),
@@ -262,33 +268,33 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
               runSpacing: 8,
               children: [
                 _buildSuggestionChip(
-                  'Tipps für Trotzphase',
+                  _t('gemini_chip_defiance'),
                   () {
-                    _controller.text = 'Wie gehe ich mit der Trotzphase um?';
+                    _controller.text = _t('gemini_question_defiance');
                     _sendMessage();
                   },
                 ),
                 _buildSuggestionChip(
-                  'Schlafenszeit-Routine',
+                  _t('gemini_chip_sleep'),
                   () {
                     _controller.text =
-                        'Wie etabliere ich eine gute Schlafenszeit-Routine?';
+                        _t('gemini_question_sleep');
                     _sendMessage();
                   },
                 ),
                 _buildSuggestionChip(
-                  'Sicherheits-Tipps',
+                  _t('gemini_chip_safety'),
                   () {
                     _controller.text =
-                        'Welche Sicherheits-Tipps gibt es für Treffen?';
+                        _t('gemini_question_safety');
                     _sendMessage();
                   },
                 ),
                 _buildSuggestionChip(
-                  'Freizeitaktivitäten',
+                  _t('gemini_chip_activities'),
                   () {
                     _controller.text =
-                        'Welche Aktivitäten sind für 5-jährige geeignet?';
+                        _t('gemini_question_activities');
                     _sendMessage();
                   },
                 ),
@@ -354,7 +360,7 @@ class _ChatScreenGeminiState extends State<ChatScreenGemini> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    text.isEmpty && isStreaming ? 'Denke...' : text,
+                    text.isEmpty && isStreaming ? _t('gemini_thinking') : text,
                     style: TextStyle(
                       color: isUser ? Colors.white : Colors.black87,
                       fontSize: 14,

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
+import 'package:parentpeak/models/meetup_event.dart';
 
 http.Client _mockClient(int statusCode, Map<String, dynamic> body) {
   return MockClient((_) async {
@@ -23,6 +24,45 @@ BackendApiClient _client(http.Client httpClient) {
 }
 
 void main() {
+  group('EventBackendService backend statuses', () {
+    for (final entry in {
+      'upcoming': EventStatus.active,
+      'ongoing': EventStatus.active,
+      'active': EventStatus.active,
+      'completed': EventStatus.completed,
+      'cancelled': EventStatus.cancelled,
+    }.entries) {
+      test('parses ${entry.key} in a successful create response', () async {
+        final event = MeetupEvent(
+          id: 'ev1',
+          hosterId: 'user1',
+          title: 'Test Event',
+          description: '',
+          category: EventCategory.other,
+          ageGroups: const [AgeGroup.mixed],
+          location: 'Berlin',
+          latitude: 52.52,
+          longitude: 13.4,
+          eventDate: DateTime(2026, 10, 10),
+          createdAt: DateTime(2026, 10, 2),
+          maxParticipants: 10,
+          photoUrl: '',
+        );
+        final service = EventBackendService(
+          apiClient: _client(_mockClient(201, {
+            'event': {...event.toJson(), 'status': entry.key},
+          })),
+        );
+
+        final created = await service.createEvent(event);
+
+        expect(created, isNotNull);
+        expect(created!.status, entry.value);
+        expect(service.lastSyncError, isNull);
+      });
+    }
+  });
+
   group('BackendApiClient uploads', () {
     test('byte upload uses dynamic auth token and multipart payload', () async {
       const imageBytes = <int>[1, 2, 3, 4];

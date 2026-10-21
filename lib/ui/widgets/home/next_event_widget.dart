@@ -80,10 +80,14 @@ class _NextEventWidgetState extends State<NextEventWidget> {
     final eventDay = DateTime(date.year, date.month, date.day);
     final diff = eventDay.difference(today).inDays;
 
-    if (diff == 0) return 'Heute';
-    if (diff == 1) return 'Morgen';
-    if (diff < 7) return 'In $diff Tagen';
-    return 'Am ${date.day}.${date.month}.';
+    if (diff == 0) return context.tr('package3_next_event_today');
+    if (diff == 1) return context.tr('package3_next_event_tomorrow');
+    if (diff < 7) {
+      return context.tr('package3_next_event_in_days',
+        values: {'count': '$diff'});
+    }
+    return context.tr('package3_next_event_on_date',
+      values: {'date': '${date.day}.${date.month}.'});
   }
 
   String _formatTime(DateTime date) {
@@ -202,7 +206,10 @@ class _NextEventWidgetState extends State<NextEventWidget> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    time.isEmpty ? relative : '$relative um $time',
+                    time.isEmpty
+                      ? relative
+                      : context.tr('package3_next_event_at_time',
+                        values: {'relative': relative, 'time': time}),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -218,21 +225,5 @@ class _NextEventWidgetState extends State<NextEventWidget> {
     );
   }
 
-  String _monthShort(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mär',
-      'Apr',
-      'Mai',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Dez'
-    ];
-    return months[month - 1];
-  }
+  String _monthShort(int month) => month.toString().padLeft(2, '0');
 }

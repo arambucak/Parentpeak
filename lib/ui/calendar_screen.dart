@@ -165,8 +165,8 @@ class _CalendarScreenState extends State<CalendarScreen>
           controller: ctrl,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            hintText: 'z.B. Lena, Oma, Sportverein',
+          decoration: InputDecoration(
+            hintText: _t('package3_calendar_person_hint'),
           ),
           onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
         ),
@@ -227,11 +227,12 @@ class _CalendarScreenState extends State<CalendarScreen>
           }
         } catch (_) {}
       } else {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _events.clear();
             _syncError = syncError;
           });
+        }
       }
       await _scheduleRemindersFor(_events);
       return;
@@ -692,30 +693,35 @@ class _CalendarScreenState extends State<CalendarScreen>
                           children: [
                             TextField(
                               controller: _titleController,
-                              decoration: const InputDecoration(
-                                labelText: 'Titel',
-                                hintText: 'z.B. Elternabend',
+                              decoration: InputDecoration(
+                                labelText: _t('package3_calendar_title'),
+                                hintText: _t('package3_calendar_title_hint'),
                               ),
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
                               key: ValueKey(person),
-                              value: person,
-                              decoration: const InputDecoration(
-                                  labelText: 'F\u00fcr wen?'),
+                              initialValue: person,
+                              decoration: InputDecoration(
+                                  labelText: _t('package3_calendar_for_whom')),
                               isExpanded: true,
                               items: [
                                 ..._personColors.keys.map((p) =>
-                                    DropdownMenuItem(value: p, child: Text(_displayCalendarPersonLabel(p, context)))),
+                                    DropdownMenuItem(
+                                        value: p,
+                                        child: Text(_displayCalendarPersonLabel(
+                                            p, context)))),
                                 DropdownMenuItem(
                                   value: '__add__',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.add_circle_outline_rounded,
-                                          size: 16, color: Color(0xFF4CAF50)),
-                                      SizedBox(width: 6),
+                                      const Icon(
+                                          Icons.add_circle_outline_rounded,
+                                          size: 16,
+                                          color: Color(0xFF4CAF50)),
+                                      const SizedBox(width: 6),
                                       Text(_t('calendar_new_person'),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                               color: Color(0xFF4CAF50),
                                               fontWeight: FontWeight.w600)),
                                     ],
@@ -743,7 +749,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                               children: [
                                 Expanded(
                                   child: _TimeButton(
-                                    label: 'Start',
+                                    label: _t('package3_calendar_start'),
                                     initial: start,
                                     onPicked: (t) => start = t,
                                   ),
@@ -751,7 +757,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: _TimeButton(
-                                    label: 'Ende',
+                                    label: _t('package3_calendar_end'),
                                     initial: end,
                                     onPicked: (t) => end = t,
                                   ),
@@ -764,9 +770,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    value: bringer.isEmpty ? '' : bringer,
-                                    decoration: const InputDecoration(
-                                        labelText: '\u{1F697} Bringt'),
+                                    initialValue:
+                                        bringer.isEmpty ? '' : bringer,
+                                    decoration: InputDecoration(
+                                      labelText: '\u{1F697} ${_t('package3_calendar_bring')}'),
                                     isExpanded: true,
                                     items: [
                                       '',
@@ -787,9 +794,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    value: abholer.isEmpty ? '' : abholer,
-                                    decoration: const InputDecoration(
-                                        labelText: '\u{1F3E0} Holt'),
+                                    initialValue:
+                                        abholer.isEmpty ? '' : abholer,
+                                    decoration: InputDecoration(
+                                      labelText: '\u{1F3E0} ${_t('package3_calendar_collect')}'),
                                     isExpanded: true,
                                     items: [
                                       '',
@@ -813,18 +821,18 @@ class _CalendarScreenState extends State<CalendarScreen>
                             // Feature 2: Pack-Reminder
                             TextField(
                               controller: packReminderCtrl,
-                              decoration: const InputDecoration(
-                                labelText: '\u{1F392} Vorbereitung (optional)',
-                                hintText:
-                                    'z.B. Schwimmsachen, Turnzeug einpacken',
+                              decoration: InputDecoration(
+                                labelText: '\u{1F392} ${_t('package3_calendar_preparation')}',
+                                hintText: _t('package3_calendar_preparation_hint'),
                               ),
                               onChanged: (v) => packReminderText = v,
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
-                              value: recurrence,
-                              decoration: const InputDecoration(
-                                  labelText: 'Wiederholung'),
+                              initialValue: recurrence,
+                              decoration: InputDecoration(
+                                  labelText:
+                                      _t('package3_calendar_recurrence')),
                               isExpanded: true,
                               items: _recurrenceOptions
                                   .map((p) => DropdownMenuItem(
@@ -836,19 +844,19 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<int>(
-                              value: reminder,
-                              decoration: const InputDecoration(
-                                  labelText: 'Erinnerung'),
+                              initialValue: reminder,
+                              decoration: InputDecoration(
+                                  labelText: _t('package3_calendar_reminder')),
                               isExpanded: true,
                               items: _reminderOptions
                                   .map((m) => DropdownMenuItem(
                                         value: m,
                                         child: Text(
                                           m == _smartReminderValue
-                                              ? 'Smart (1W, 1T, am Tag)'
+                                              ? _t('package3_calendar_smart_reminder')
                                               : m == 0
                                                   ? 'Keine'
-                                                  : '$m Min vorher',
+                                                  : _t('package3_calendar_reminder_before').replaceAll('{minutes}', '$m'),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ))
@@ -859,21 +867,22 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
-                              value: endMode,
-                              decoration:
-                                  const InputDecoration(labelText: 'Endet'),
+                              initialValue: endMode,
+                              decoration: InputDecoration(
+                                  labelText: _t('package3_calendar_ends')),
                               isExpanded: true,
                               items: _recurrenceEndOptions
                                   .map((p) => DropdownMenuItem(
                                       value: p, child: Text(p)))
                                   .toList(),
                               onChanged: (v) {
-                                if (v != null)
+                                if (v != null) {
                                   setSheetState(() {
                                     endMode = v;
                                     if (endMode == '5 Termine') endCount = 5;
                                     if (endMode == '10 Termine') endCount = 10;
                                   });
+                                }
                               },
                             ),
                             if (endMode == 'Datum w\u00e4hlen') ...[
@@ -1011,12 +1020,12 @@ class _CalendarScreenState extends State<CalendarScreen>
           IconButton(
             icon: const Icon(Icons.tune_rounded, size: 20),
             onPressed: _showHolidaySettings,
-            tooltip: 'Feiertage & Region',
+            tooltip: _t('package3_calendar_holiday_region_tooltip'),
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
             onPressed: _loadEvents,
-            tooltip: 'Sync',
+            tooltip: _t('package3_calendar_sync_tooltip'),
           ),
         ],
       ),
@@ -1106,11 +1115,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_rounded,
+                          const Icon(Icons.add_rounded,
                               size: 13, color: Color(0xFF4CAF50)),
-                          SizedBox(width: 3),
+                          const SizedBox(width: 3),
                           Text(_t('calendar_person'),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 11,
                                   color: Color(0xFF4CAF50),
                                   fontWeight: FontWeight.w600)),
@@ -1406,7 +1415,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFDC2626))),
                   Text(_t('calendar_public_holiday'),
-                      style: TextStyle(fontSize: 11, color: Color(0xFFEF4444))),
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFFEF4444))),
                 ],
               ),
             ),
@@ -1439,7 +1449,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFEA580C))),
-                  Text('${schoolHoliday.region} • Schulferien',
+                  Text('${schoolHoliday.region} • ${_t('package3_calendar_school_holidays')}',
                       style: const TextStyle(
                           fontSize: 11, color: Color(0xFFF97316))),
                 ],
@@ -1484,15 +1494,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(_t('calendar_holidays_title'),
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
                 Text(_t('calendar_choose_region'),
                     style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                 const SizedBox(height: 20),
                 Text(_t('calendar_country'),
-                    style:
-                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -1546,8 +1556,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
                 const SizedBox(height: 20),
                 Text(_t('calendar_region'),
-                    style:
-                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
@@ -1601,7 +1611,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(_t('finance_save'),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 ),
@@ -1667,7 +1677,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Neuer Name'),
+          decoration: InputDecoration(hintText: _t('package3_calendar_new_name')),
         ),
         actions: [
           TextButton(
@@ -1707,9 +1717,8 @@ class _CalendarScreenState extends State<CalendarScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('"$name" löschen?'),
-        content: const Text(
-            'Die Person wird aus dem Kalender entfernt. Zugehörige Termine werden zu "Eltern" verschoben.'),
+        title: Text(_t('package3_calendar_delete_person_title').replaceAll('{name}', name)),
+        content: Text(_t('package3_calendar_delete_person_description')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -1913,8 +1922,9 @@ class _MonthGrid extends StatelessWidget {
 
               Color textColor = const Color(0xFF2D3748);
               if (!isCurrentMonth) textColor = Colors.grey[350]!;
-              if (isHoliday && isCurrentMonth)
+              if (isHoliday && isCurrentMonth) {
                 textColor = const Color(0xFFDC2626);
+              }
               if (isToday && !isSelected) textColor = Colors.white;
               if (isSelected) textColor = const Color(0xFF8B5CF6);
 
@@ -2068,7 +2078,8 @@ class _EventCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                _displayCalendarPersonLabel(event.person, context),
+                                _displayCalendarPersonLabel(
+                                    event.person, context),
                                 style: TextStyle(
                                   color: color,
                                   fontWeight: FontWeight.w700,
@@ -2124,14 +2135,14 @@ class _EventCard extends StatelessWidget {
                               ),
                             if (event.reminderMinutes ==
                                 _CalendarScreenState._smartReminderValue)
-                              const _Badge(
-                                label: 'Smart: 1W • 1T • Heute',
-                                color: Color(0xFF5B7FFF),
+                              _Badge(
+                                label: AppStringsManager.getString(languageService.currentLanguage, 'package3_calendar_smart_reminder'),
+                                color: const Color(0xFF5B7FFF),
                                 icon: Icons.auto_awesome_rounded,
                               ),
                             if (event.reminderMinutes > 0)
                               _Badge(
-                                label: '${event.reminderMinutes} Min vorher',
+                                label: AppStringsManager.getString(languageService.currentLanguage, 'package3_calendar_reminder_before').replaceAll('{minutes}', '${event.reminderMinutes}'),
                                 color: const Color(0xFF718096),
                                 icon: Icons.alarm_rounded,
                               ),
@@ -2186,14 +2197,14 @@ class _EventCard extends StatelessWidget {
                               if (event.bringer != null &&
                                   event.bringer!.isNotEmpty)
                                 _Badge(
-                                  label: '${event.bringer!} bringt',
+                                  label: AppStringsManager.getString(languageService.currentLanguage, 'package3_calendar_bringer_template').replaceAll('{name}', event.bringer!),
                                   color: const Color(0xFF4A90E2),
                                   icon: Icons.directions_car_rounded,
                                 ),
                               if (event.abholer != null &&
                                   event.abholer!.isNotEmpty)
                                 _Badge(
-                                  label: '${event.abholer!} holt',
+                                  label: AppStringsManager.getString(languageService.currentLanguage, 'package3_calendar_collector_template').replaceAll('{name}', event.abholer!),
                                   color: const Color(0xFF7B68EE),
                                   icon: Icons.home_rounded,
                                 ),
@@ -2470,7 +2481,7 @@ extension on _CalendarScreenState {
           await NotificationService.instance.scheduleEventReminder(
             eventId: '${event.id}_pack',
             when: evening,
-            title: 'Morgen: ${event.title}',
+            title: AppStringsManager.getString(languageService.currentLanguage, 'package3_calendar_tomorrow_event_title').replaceAll('{title}', event.title),
             body: 'Nicht vergessen: ${event.packReminder}',
             reminderKey: 'pack_reminder',
           );
@@ -2552,6 +2563,7 @@ class _TimeButtonState extends State<_TimeButton> {
 // ═══════════════════════════════════════════════════════════════════════════
 // FEATURE 1: Wochenstreifen — 7-Tage Quick-Selector
 // ═══════════════════════════════════════════════════════════════════════════
+// ignore: unused_element
 class _WeekStrip extends StatelessWidget {
   const _WeekStrip({
     required this.selectedDay,

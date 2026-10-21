@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/logic/auth_service.dart';
@@ -13,13 +12,10 @@ import 'package:parentpeak/logic/entitlement_service.dart';
 import 'package:parentpeak/ui/calendar_screen.dart';
 import 'package:parentpeak/ui/events_activities_screen.dart';
 import 'package:parentpeak/ui/event_invitations_screen.dart';
-import 'package:parentpeak/ui/organization_screen.dart';
 import 'package:parentpeak/ui/familien_zentrale_screen.dart';
 import 'package:parentpeak/ui/entwicklung_impulse_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
-import 'package:parentpeak/ui/finance_budget_screen.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
-import 'package:parentpeak/ui/gemeinsam_satt_screen.dart';
 import 'package:parentpeak/ui/familien_kueche_screen.dart';
 import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
@@ -27,12 +23,9 @@ import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/parent_coin_service.dart';
 import 'package:parentpeak/ui/widgets/home/context_home_card.dart';
-import 'package:parentpeak/ui/widgets/home/quick_actions_row.dart';
-import 'package:parentpeak/ui/widgets/home/events_carousel_widget.dart';
 import 'package:parentpeak/services/mood_history_service.dart';
 import 'package:parentpeak/ui/wochenrueckblick_screen.dart';
 import 'package:parentpeak/ui/ritual_ruhe_screen.dart';
-import 'package:parentpeak/l10n/app_localizations.dart';
 
 class _FeatureAction {
   final String id;
@@ -280,8 +273,9 @@ class _HomeScreenState extends State<HomeScreen>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              '"${action.label}" ${AppStringsManager.getString(languageService.currentLanguage, 'tile_moved_up')}'),
+            content: Text(AppStringsManager.getString(
+              languageService.currentLanguage, 'core_tile_moved_up')
+              .replaceAll('{label}', action.label)),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -291,6 +285,7 @@ class _HomeScreenState extends State<HomeScreen>
     await prefs.setStringList(_tileOrderStorageKey, updated);
   }
 
+  // ignore: unused_element
   Future<void> _resetTileOrder() async {
     if (_customTileOrderIds.isEmpty) return;
 
@@ -520,7 +515,9 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 10),
             Text(
-              '${action.label} ${AppStringsManager.getString(languageService.currentLanguage, 'premium_feature_desc')}',
+              AppStringsManager.getString(languageService.currentLanguage,
+                      'core_premium_feature_template')
+                  .replaceAll('{label}', action.label),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.4,
@@ -576,6 +573,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  // ignore: unused_element
   String _getTimeGreeting(String lang) {
     final hour = DateTime.now().hour;
     if (hour < 12) {
@@ -590,7 +588,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final contentMaxWidth = viewportWidth >= 1400
         ? 1260.0
@@ -641,9 +638,8 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       _FeatureAction(
         id: 'verschenkmarkt',
-        label: l10n.t('treasureTileTitle', fallback: 'Verschenkmarkt'),
-        description: l10n.t('treasureTileSubtitle',
-            fallback: 'Verschenken, austauschen, Eltern verbinden'),
+        label: AppStringsManager.treasureTileString(lang, 'title'),
+        description: AppStringsManager.treasureTileString(lang, 'subtitle'),
         icon: Icons.inventory_2_rounded,
         color: const Color(0xFF1E5CD7),
         builder: (_) => const TreasureHandoverScreen(),
@@ -678,11 +674,9 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       _FeatureAction(
         id: 'ritual_ruhe',
-        label: l10n.t('ritualRuheTitle', fallback: 'Ritual & Ruhe'),
-        description: l10n.t(
-          'ritualRuheTileSubtitle',
-          fallback: 'Ein ruhiger Moment für euren Familienalltag',
-        ),
+        label: AppStringsManager.getString(lang, 'ritualRuheTitle'),
+        description:
+            AppStringsManager.getString(lang, 'ritualRuheTileSubtitle'),
         icon: DateTime.now().hour >= 18 || DateTime.now().hour < 6
             ? Icons.nightlight_round
             : Icons.wb_sunny_rounded,
@@ -717,7 +711,7 @@ class _HomeScreenState extends State<HomeScreen>
     }).toList();
 
     // Features already accessible via Quick-Actions or Smart-Card
-    const _quickAccessIds = {
+    const quickAccessIds = {
       'kalender',
       'ki_elternberatung',
       'gemeinsam_satt',
@@ -725,12 +719,9 @@ class _HomeScreenState extends State<HomeScreen>
       'events_aktivitaeten'
     };
     final gridActions = visibleGridActions
-        .where((a) =>
-            a.featureId == null || !_quickAccessIds.contains(a.featureId))
+        .where(
+            (a) => a.featureId == null || !quickAccessIds.contains(a.featureId))
         .toList();
-
-    final displayName =
-        AuthService.instance.currentUser?.displayName.trim() ?? '';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -932,6 +923,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildHeroCard(
     ThemeData theme,
     String familyGreeting, {
@@ -1100,8 +1092,8 @@ class _HomeScreenState extends State<HomeScreen>
               Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.1)),
         ),
         child: Row(children: [
-          Icon(Icons.calendar_today_rounded,
-              color: const Color(0xFF2563EB), size: 20),
+          const Icon(Icons.calendar_today_rounded,
+              color: Color(0xFF2563EB), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1149,8 +1141,8 @@ class _HomeScreenState extends State<HomeScreen>
                 color: const Color(0xFF8B5CF6).withValues(alpha: 0.12)),
           ),
           child: Row(children: [
-            Icon(Icons.self_improvement_rounded,
-                color: const Color(0xFF7C3AED), size: 20),
+            const Icon(Icons.self_improvement_rounded,
+                color: Color(0xFF7C3AED), size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1200,7 +1192,7 @@ class _HomeScreenState extends State<HomeScreen>
               Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.1)),
         ),
         child: Row(children: [
-          Icon(Icons.explore_rounded, color: const Color(0xFF8B5CF6), size: 20),
+          const Icon(Icons.explore_rounded, color: Color(0xFF8B5CF6), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -1385,7 +1377,10 @@ class _HomeScreenState extends State<HomeScreen>
                       size: 11, color: Colors.white),
                   const SizedBox(width: 3),
                   Text(
-                    'PRO',
+                    AppStringsManager.getString(
+                      languageService.currentLanguage,
+                      'core_premium_badge',
+                    ),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,

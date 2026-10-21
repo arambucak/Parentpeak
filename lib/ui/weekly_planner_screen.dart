@@ -12,7 +12,7 @@ import 'package:parentpeak/models/recipe.dart';
 import 'package:parentpeak/ui/weekly_planner_view.dart';
 
 String _t(String key) =>
-    AppStringsManager.getString(languageService.currentLanguage, key);
+  AppStringsManager.phase1String(languageService.currentLanguage, key);
 
 
 class WeeklyPlannerScreen extends StatefulWidget {
@@ -58,7 +58,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
     _controller.setDinnerRecipe(monday.add(const Duration(days: 1)), 'r-3');
     _controller.setDinnerRecipe(monday.add(const Duration(days: 2)), 'r-5');
     _controller.setKitaLunch(
-        monday.add(const Duration(days: 2)), 'Gemuesesuppe');
+      monday.add(const Duration(days: 2)), _t('planner_demo_kita_lunch'));
 
     _controller.addListener(_onPlannerChanged);
     _loadInitialWeek();
@@ -243,8 +243,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
           content: TextField(
             controller: temp,
             maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: 'z. B. reis, pasta, kokosmilch, tomatensosse',
+            decoration: InputDecoration(
+              hintText: _t('planner_pantry_hint'),
             ),
           ),
           actions: [
@@ -293,23 +293,20 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Kita-/Schulplan importieren',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              Text(
+                _t('planner_import_title'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'OCR-ready: Erkannten Text einfuegen, wir ordnen automatisch den Wochentagen zu.',
-              ),
+              Text(_t('planner_import_body')),
               const SizedBox(height: 10),
               TextField(
                 controller: textController,
                 minLines: 5,
                 maxLines: 8,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText:
-                      'Montag: Milchreis\nDienstag: Nudeln\nMittwoch: Suppe',
+                  hintText: _t('planner_import_hint'),
                 ),
               ),
               const SizedBox(height: 12),
@@ -337,9 +334,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
     final extracted = _extractKitaLunchByWeekday(textController.text);
     if (extracted.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Kein gueltiger Wochentag erkannt. Bitte Format pruefen.')),
+        SnackBar(content: Text(_t('planner_import_invalid'))),
       );
       return;
     }
@@ -407,8 +402,8 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
             controller: noteController,
             minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: 'z. B. Mia hat heute zum ersten Mal Brokkoli gegessen!',
+            decoration: InputDecoration(
+              hintText: _t('planner_moment_hint'),
             ),
           ),
           actions: [
@@ -495,7 +490,7 @@ class _YearRecapCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Jahresrueckblick ${DateTime.now().year}: Eure Top 5 Gerichte',
+            _t('planner_year_recap').replaceAll('{year}', '${DateTime.now().year}'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
@@ -507,13 +502,17 @@ class _YearRecapCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text(
-                  '• ${recipeById[entry.key] ?? 'Unbekanntes Rezept'} (${entry.value}x)',
+                    _t('planner_recap_item')
+                      .replaceAll('{recipe}', recipeById[entry.key] ?? _t('planner_unknown_recipe'))
+                      .replaceAll('{count}', '${entry.value}'),
                 ),
               ),
           if (memories.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              'Neuester Moment: ${DateFormat('dd.MM.yyyy').format(memories.first.date)} - ${memories.first.note}',
+                _t('planner_latest_moment')
+                  .replaceAll('{date}', DateFormat('dd.MM.yyyy').format(memories.first.date))
+                  .replaceAll('{note}', memories.first.note),
               style: theme.textTheme.bodySmall,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -525,101 +524,101 @@ class _YearRecapCard extends StatelessWidget {
   }
 }
 
-const List<Recipe> _demoRecipes = [
+List<Recipe> get _demoRecipes => [
   Recipe(
     id: 'r-1',
-    title: 'One-Pot Pasta mit Brokkoli',
+    title: _t('planner_recipe_1_title'),
     durationMinutes: 14,
     isPickEaterFriendly: true,
     isOnePot: true,
     hideVegetables: true,
     ingredients: [
+        RecipeIngredient(
+          name: _t('planner_demo_ingredient_pasta'), amount: _t('planner_demo_amount_300_g'), babyOption: _t('planner_demo_baby_soft_cook')),
       RecipeIngredient(
-          name: 'Pasta', amount: '300 g', babyOption: 'Sehr weich kochen'),
+          name: _t('planner_demo_ingredient_broccoli'),
+          amount: _t('planner_demo_amount_200_g'),
+          babyOption: _t('planner_demo_baby_small_florets')),
       RecipeIngredient(
-          name: 'Brokkoli',
-          amount: '200 g',
-          babyOption: 'In kleine Roeschen dämpfen'),
-      RecipeIngredient(
-          name: 'Frischkaese',
-          amount: '150 g',
-          babyOption: 'Ohne Salz für Baby-Portion'),
+          name: _t('planner_demo_ingredient_cream_cheese'),
+          amount: _t('planner_demo_amount_150_g'),
+          babyOption: _t('planner_demo_baby_no_salt')),
     ],
   ),
   Recipe(
     id: 'r-2',
-    title: 'Express Reispfanne Vorrat',
+    title: _t('planner_recipe_2_title'),
     durationMinutes: 12,
     isPickEaterFriendly: true,
     isOnePot: true,
     hideVegetables: false,
     ingredients: [
       RecipeIngredient(
-          name: 'Reis (vorgekocht)',
-          amount: '400 g',
-          babyOption: 'Mit Gemuesebrei mischen'),
+          name: _t('planner_demo_ingredient_precooked_rice'),
+          amount: _t('planner_demo_amount_400_g'),
+          babyOption: _t('planner_demo_baby_mix_puree')),
       RecipeIngredient(
-          name: 'Erbsen', amount: '120 g', babyOption: 'Gut zerdruecken'),
+          name: _t('planner_demo_ingredient_peas'), amount: _t('planner_demo_amount_120_g'), babyOption: _t('planner_demo_baby_mash_well')),
       RecipeIngredient(
-          name: 'Ei', amount: '2 Stk', babyOption: 'Komplett durchgaren'),
+          name: _t('planner_demo_ingredient_egg'), amount: _t('planner_demo_amount_2_pieces'), babyOption: _t('planner_demo_baby_cook_thoroughly')),
     ],
   ),
   Recipe(
     id: 'r-3',
-    title: 'Ofen-Lasagne Familie',
+    title: _t('planner_recipe_3_title'),
     durationMinutes: 45,
     isPickEaterFriendly: false,
     isOnePot: false,
     hideVegetables: true,
     ingredients: [
       RecipeIngredient(
-          name: 'Lasagneplatten',
-          amount: '12 Stk',
-          babyOption: 'Sehr weich backen'),
+          name: _t('planner_demo_ingredient_lasagne_sheets'),
+          amount: _t('planner_demo_amount_12_pieces'),
+          babyOption: _t('planner_demo_baby_bake_soft')),
       RecipeIngredient(
-          name: 'Hack oder Linsen',
+          name: _t('planner_demo_ingredient_minced_or_lentils'),
           amount: '400 g',
-          babyOption: 'Sehr fein zerkleinern'),
+          babyOption: _t('planner_demo_baby_chop_finely')),
       RecipeIngredient(
-          name: 'Tomatensosse',
-          amount: '500 ml',
-          babyOption: 'Ohne Salz entnehmen'),
+          name: _t('planner_demo_ingredient_tomato_sauce'),
+          amount: _t('planner_demo_amount_500_ml'),
+          babyOption: _t('planner_demo_baby_remove_before_salt')),
     ],
   ),
   Recipe(
     id: 'r-4',
-    title: 'Kartoffel-Suppe schnell',
+    title: _t('planner_recipe_4_title'),
     durationMinutes: 13,
     isPickEaterFriendly: true,
     isOnePot: true,
     hideVegetables: false,
     ingredients: [
       RecipeIngredient(
-          name: 'Kartoffeln', amount: '600 g', babyOption: 'Fein stampfen'),
+          name: _t('planner_demo_ingredient_potatoes'), amount: _t('planner_demo_amount_600_g'), babyOption: _t('planner_demo_baby_mash_finely')),
       RecipeIngredient(
-          name: 'Karotten', amount: '2 Stk', babyOption: 'Sehr weich kochen'),
+          name: _t('planner_demo_ingredient_carrots'), amount: _t('planner_demo_amount_2_pieces'), babyOption: _t('planner_demo_baby_soft_cook')),
       RecipeIngredient(
-          name: 'Gemuesebruehe',
-          amount: '750 ml',
-          babyOption: 'Fuer Baby nur Wasser verwenden'),
+          name: _t('planner_demo_ingredient_vegetable_stock'),
+          amount: _t('planner_demo_amount_750_ml'),
+          babyOption: _t('planner_demo_baby_water_only')),
     ],
   ),
   Recipe(
     id: 'r-5',
-    title: 'Gemuese-Reis-Pfanne',
+    title: _t('planner_recipe_5_title'),
     durationMinutes: 25,
     isPickEaterFriendly: true,
     isOnePot: false,
     hideVegetables: false,
     ingredients: [
       RecipeIngredient(
-          name: 'Reis', amount: '300 g', babyOption: 'Etwas laenger garen'),
+          name: _t('planner_demo_ingredient_rice'), amount: _t('planner_demo_amount_300_g'), babyOption: _t('planner_demo_baby_cook_longer')),
       RecipeIngredient(
-          name: 'Paprika',
-          amount: '2 Stk',
-          babyOption: 'Geschält und fein gewuerfelt'),
+          name: _t('planner_demo_ingredient_pepper'),
+          amount: _t('planner_demo_amount_2_pieces'),
+          babyOption: _t('planner_demo_baby_peeled_diced')),
       RecipeIngredient(
-          name: 'Zucchini', amount: '1 Stk', babyOption: 'Weich dünsten'),
+          name: _t('planner_demo_ingredient_zucchini'), amount: _t('planner_demo_amount_1_piece'), babyOption: _t('planner_demo_baby_steam_soft')),
     ],
   ),
 ];

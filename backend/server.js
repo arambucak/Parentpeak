@@ -2273,6 +2273,24 @@ async function verifyFirebaseIdToken(req) {
   }
 }
 
+function resolveVerifiedUserId(req, fallbackUserId) {
+  if (req.firebaseUid && req.firebaseUid.trim()) {
+    return String(req.firebaseUid).trim();
+  }
+  const normalizedFallback = typeof fallbackUserId === 'string'
+    ? fallbackUserId.trim()
+    : String(fallbackUserId ?? '').trim();
+  return normalizedFallback || null;
+}
+
+function hasExplicitUserMismatch(req, requestedUserId) {
+  if (!req.firebaseUid) return false;
+  if (requestedUserId === undefined || requestedUserId === null) return false;
+  const normalized = String(requestedUserId).trim();
+  if (!normalized) return false;
+  return normalized !== req.firebaseUid;
+}
+
 async function authorizeAccountOwner(req, res, userId) {
   const authHeader = req.headers.authorization || '';
   if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
@@ -2563,6 +2581,260 @@ function buildLanguageInstruction(language) {
   return `Respond exclusively in ${supportedAppLanguageNames.get(language)}. Do not mix languages.`;
 }
 
+const AI_MEMORY_MAX_CONTEXT_CHARS = 2800;
+const AI_MEMORY_CATEGORIES = new Set([
+  'topic',
+  'medical',
+  'medical_clarification',
+  'tried_strategy',
+  'helpful_strategy',
+  'preference',
+  'note',
+]);
+const AI_MEMORY_STATUSES = new Set(['confirmed', 'archived']);
+
+async function requireAiMemoryUser(req, res) {
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (!verified || !uid) {
+    res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
+    return null;
+  }
+  req.firebaseUid = uid;
+  return uid;
+}
+
+function parseOptionalDate(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function validateAiChildPayload(body, { partial = false } = {}) {
+  const result = {};
+  if (!partial || body.name !== undefined) {
+    const name = String(body.name || '').trim();
+    if (!name || name.length > 100) return { error: 'name ist erforderlich und darf maximal 100 Zeichen haben' };
+    result.name = name;
+  }
+  if (body.birthDate !== undefined) {
+    const birthDate = parseOptionalDate(body.birthDate);
+    if (birthDate === undefined) return { error: 'birthDate ist ungueltig' };
+    result.birthDate = birthDate;
+  }
+  if (body.gender !== undefined) {
+    const gender = String(body.gender || '').trim();
+    if (gender.length > 50) return { error: 'gender darf maximal 50 Zeichen haben' };
+    result.gender = gender || null;
+  }
+  return { data: result };
+}
+
+function validateAiMemoryPayload(body, { partial = false } = {}) {
+  const result = {};
+  if (!partial || body.category !== undefined) {
+    const category = String(body.category || '').trim();
+    if (!AI_MEMORY_CATEGORIES.has(category)) return { error: 'category ist ungueltig' };
+    result.category = category;
+  }
+  if (!partial || body.key !== undefined) {
+    const key = String(body.key || '').trim();
+    if (!key || key.length > 100) return { error: 'key ist erforderlich und darf maximal 100 Zeichen haben' };
+    result.key = key;
+  }
+  if (!partial || body.value !== undefined) {
+    const value = String(body.value || '').trim();
+    if (!value || value.length > 1000) return { error: 'value ist erforderlich und darf maximal 1000 Zeichen haben' };
+    result.value = value;
+  }
+  if (body.status !== undefined) {
+    const status = String(body.status || '').trim();
+    if (!AI_MEMORY_STATUSES.has(status)) return { error: 'status ist ungueltig' };
+    result.status = status;
+  }
+  return { data: result };
+}
+
+async function getAiMemoryContext(userId, childProfileId) {
+  const settings = await prisma.aiMemorySettings.findUnique({ where: { userId } });
+  if (!settings?.enabled) return '';
+
+  const children = await prisma.aiChildProfile.findMany({
+    where: {
+      userId,
+      ...(childProfileId ? { id: childProfileId } : {}),
+    },
+    include: {
+      memoryItems: {
+        where: { status: 'confirmed' },
+        orderBy: { updatedAt: 'desc' },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+  if (!children.length) return '';
+
+  const lines = ['BESTAETIGTER FAMILIENKONTEXT (nur passend zur Frage verwenden):'];
+  for (const child of children) {
+    const birthDate = child.birthDate
+      ? `, Geburtsdatum: ${child.birthDate.toISOString().slice(0, 10)}`
+      : '';
+    lines.push(`Kind: ${child.name}${birthDate}${child.gender ? `, Geschlecht: ${child.gender}` : ''}`);
+    for (const item of child.memoryItems) {
+      lines.push(`- ${item.category}/${item.key}: ${item.value}`);
+    }
+  }
+  lines.push('Regeln: Nichts aus diesem Kontext als Diagnose behandeln. Bei Widerspruechen nachfragen.');
+  return lines.join('\n').slice(0, AI_MEMORY_MAX_CONTEXT_CHARS);
+}
+
+app.get('/ai/settings', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const settings = await prisma.aiMemorySettings.findUnique({ where: { userId } });
+  return res.json({ enabled: settings?.enabled === true });
+});
+
+app.put('/ai/settings', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  if (typeof req.body?.enabled !== 'boolean') {
+    return res.status(400).json({ error: 'enabled muss boolean sein' });
+  }
+  const settings = await prisma.aiMemorySettings.upsert({
+    where: { userId },
+    create: { userId, enabled: req.body.enabled },
+    update: { enabled: req.body.enabled },
+  });
+  return res.json({ enabled: settings.enabled });
+});
+
+app.get('/ai/children', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const children = await prisma.aiChildProfile.findMany({
+    where: { userId },
+    include: { memoryItems: { orderBy: { updatedAt: 'desc' } } },
+    orderBy: { updatedAt: 'desc' },
+  });
+  return res.json({ items: children });
+});
+
+app.post('/ai/children', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const validated = validateAiChildPayload(req.body || {});
+  if (validated.error) return res.status(400).json({ error: validated.error });
+  const child = await prisma.aiChildProfile.create({
+    data: { userId, ...validated.data },
+  });
+  return res.status(201).json({ item: child });
+});
+
+app.put('/ai/children/:id', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const validated = validateAiChildPayload(req.body || {}, { partial: true });
+  if (validated.error) return res.status(400).json({ error: validated.error });
+  const existing = await prisma.aiChildProfile.findFirst({
+    where: { id: req.params.id, userId },
+  });
+  if (!existing) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  const child = await prisma.aiChildProfile.update({
+    where: { id: existing.id },
+    data: validated.data,
+  });
+  return res.json({ item: child });
+});
+
+app.delete('/ai/children/:id', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const result = await prisma.aiChildProfile.deleteMany({
+    where: { id: req.params.id, userId },
+  });
+  if (result.count === 0) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  return res.json({ deleted: true });
+});
+
+app.get('/ai/children/:id/memory', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const child = await prisma.aiChildProfile.findFirst({
+    where: { id: req.params.id, userId },
+    include: { memoryItems: { orderBy: { updatedAt: 'desc' } } },
+  });
+  if (!child) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  return res.json({ items: child.memoryItems });
+});
+
+app.post('/ai/children/:id/memory', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const validated = validateAiMemoryPayload(req.body || {});
+  if (validated.error) return res.status(400).json({ error: validated.error });
+  const child = await prisma.aiChildProfile.findFirst({
+    where: { id: req.params.id, userId },
+    select: { id: true },
+  });
+  if (!child) return res.status(404).json({ error: 'Kinderprofil nicht gefunden' });
+  const item = await prisma.aiMemoryItem.upsert({
+    where: {
+      childId_category_key: {
+        childId: child.id,
+        category: validated.data.category,
+        key: validated.data.key,
+      },
+    },
+    create: {
+      childId: child.id,
+      ...validated.data,
+      userConfirmedAt: new Date(),
+    },
+    update: {
+      value: validated.data.value,
+      status: validated.data.status || 'confirmed',
+      userConfirmedAt: new Date(),
+    },
+  });
+  return res.status(201).json({ item });
+});
+
+app.put('/ai/children/:id/memory/:itemId', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const validated = validateAiMemoryPayload(req.body || {}, { partial: true });
+  if (validated.error) return res.status(400).json({ error: validated.error });
+  const item = await prisma.aiMemoryItem.findFirst({
+    where: { id: req.params.itemId, child: { id: req.params.id, userId } },
+  });
+  if (!item) return res.status(404).json({ error: 'Memory-Eintrag nicht gefunden' });
+  const updated = await prisma.aiMemoryItem.update({
+    where: { id: item.id },
+    data: {
+      ...validated.data,
+      ...(validated.data.status === 'confirmed' ? { userConfirmedAt: new Date() } : {}),
+    },
+  });
+  return res.json({ item: updated });
+});
+
+app.delete('/ai/children/:id/memory/:itemId', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const result = await prisma.aiMemoryItem.deleteMany({
+    where: { id: req.params.itemId, child: { id: req.params.id, userId } },
+  });
+  if (result.count === 0) return res.status(404).json({ error: 'Memory-Eintrag nicht gefunden' });
+  return res.json({ deleted: true });
+});
+
+app.get('/ai/context', async (req, res) => {
+  const userId = await requireAiMemoryUser(req, res);
+  if (!userId) return;
+  const context = await getAiMemoryContext(userId, String(req.query.childId || '').trim() || null);
+  return res.json({ context, characterCount: context.length });
+});
+
 /**
  * GET /ai/health
  * Öffentlicher Selbsttest: prüft ob der Gemini-Key funktioniert
@@ -2617,6 +2889,7 @@ app.post('/ai/generate', async (req, res) => {
   const systemInstruction = String(req.body?.systemInstruction || '').trim();
   const appLanguage = normalizeAppLanguage(req.body?.language);
   const useGoogleSearch = req.body?.useGoogleSearch === true;
+  const childProfileId = String(req.body?.childProfileId || '').trim();
   const imageBase64 = String(req.body?.imageBase64 || '').trim();
   const imageMimeType = String(req.body?.imageMimeType || '').trim();
   const allowedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -2637,8 +2910,17 @@ app.post('/ai/generate', async (req, res) => {
     }
   }
 
+  let aiMemoryContext = '';
+  if (childProfileId) {
+    const { uid, verified } = await verifyFirebaseIdToken(req);
+    if (verified && uid) {
+      req.firebaseUid = uid;
+      aiMemoryContext = await getAiMemoryContext(uid, childProfileId);
+    }
+  }
   const finalSystemInstruction = [
     systemInstruction,
+    aiMemoryContext,
     buildLanguageInstruction(appLanguage),
   ].filter(Boolean).join('\n\n');
 
@@ -3251,32 +3533,6 @@ async function ensureSocialSchemaReady() {
     );
   `);
   await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "ParentChatGroup" (
-      "id" TEXT PRIMARY KEY,
-      "ownerUserId" TEXT NOT NULL,
-      "name" TEXT NOT NULL,
-      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS "ParentChatGroupMember" (
-      "groupId" TEXT NOT NULL,
-      "userId" TEXT NOT NULL,
-      "role" TEXT NOT NULL DEFAULT 'member',
-      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY ("groupId", "userId")
-    );
-    CREATE TABLE IF NOT EXISTS "ParentChatGroupMessage" (
-      "id" TEXT PRIMARY KEY,
-      "groupId" TEXT NOT NULL,
-      "authorUserId" TEXT NOT NULL,
-      "authorName" TEXT NOT NULL,
-      "content" TEXT NOT NULL,
-      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE INDEX IF NOT EXISTS "idx_parentchat_member_user" ON "ParentChatGroupMember"("userId");
-    CREATE INDEX IF NOT EXISTS "idx_parentchat_message_group" ON "ParentChatGroupMessage"("groupId", "createdAt");
-  `);
-  await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "PendingReferral" (
       "id" TEXT PRIMARY KEY,
       "referralCode" TEXT NOT NULL,
@@ -3380,7 +3636,9 @@ async function ensureSocialSchemaReady() {
       "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
-  await prisma.$executeRawUnsafe(`ALTER TABLE "UserProfile" ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT;`);
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "UserProfile" ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT;`,
+  );
   await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "idx_userprofile_username" ON "UserProfile"(LOWER("username")) WHERE "username" IS NOT NULL;`);
   // Freundschaft als UID-zu-UID-Beziehung. userLow/userHigh sind die beiden
   // UIDs kanonisch sortiert (userLow < userHigh) -> genau EINE Zeile pro Paar.
@@ -4824,7 +5082,8 @@ async function getRemainingMediaReferences() {
      UNION ALL SELECT unnest("photoUrls") FROM "TreasureItem"
      UNION ALL SELECT "imageUrl" FROM "SharedRecipe" WHERE "imageUrl" IS NOT NULL
      UNION ALL SELECT "imageUrl" FROM "CommunityEvent" WHERE "imageUrl" IS NOT NULL
-     UNION ALL SELECT "avatar" FROM "User" WHERE "avatar" IS NOT NULL`,
+    UNION ALL SELECT "avatar" FROM "User" WHERE "avatar" IS NOT NULL
+    UNION ALL SELECT "avatarUrl" FROM "UserProfile" WHERE "avatarUrl" IS NOT NULL`,
   );
   return rows.map(row => row.url).filter(Boolean);
 }
@@ -4879,12 +5138,15 @@ async function deleteUnreferencedAccountMedia(mediaUrls) {
 }
 
 async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
-  const [userMedia, hostedEvents, ownedTreasures, ownedRecipes, ownedCommunityEvents] =
+  const [userMedia, profileMedia, hostedEvents, ownedTreasures, ownedRecipes, ownedCommunityEvents] =
     await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { avatar: true },
       }),
+      prisma.$queryRawUnsafe(
+        `SELECT "avatarUrl" FROM "UserProfile" WHERE "userId" = $1`, userId,
+      ),
       prisma.event.findMany({
         where: { hosterId: userId },
         select: { id: true, imageUrl: true },
@@ -4905,6 +5167,7 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
 
   const mediaUrls = [
     userMedia?.avatar,
+    ...profileMedia.map(item => item.avatarUrl),
     ...hostedEvents.map(item => item.imageUrl),
     ...ownedTreasures.flatMap(item => [item.photoUrl, ...item.photoUrls]),
     ...ownedRecipes.map(item => item.imageUrl),
@@ -4912,6 +5175,9 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
   ].filter(Boolean);
 
   const directlyOwnedCounts = await Promise.all([
+    prisma.aiChildProfile.count({ where: { userId } }),
+    prisma.aiMemoryItem.count({ where: { child: { userId } } }),
+    prisma.aiMemorySettings.count({ where: { userId } }),
     prisma.treasureReport.count({ where: { reporterUserId: userId } }),
     prisma.treasureItem.count({ where: { userId } }),
     prisma.parentMatchingProfile.count({ where: { ownerUserId: userId } }),
@@ -5019,6 +5285,10 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
     })).count;
   }
 
+  removed += (await prisma.aiMemorySettings.deleteMany({ where: { userId } })).count;
+  removed += (await prisma.aiChildProfile.deleteMany({ where: { userId } })).count;
+  await prisma.$executeRawUnsafe(`DELETE FROM "UserProfile" WHERE "userId" = $1`, userId);
+
   removed += (await prisma.user.deleteMany({ where: { id: userId } })).count;
 
   return {
@@ -5052,6 +5322,9 @@ async function exportAccountDataByUserIdPrisma(userId) {
     communityEvents,
     communityEventFlags,
     communityEventInterests,
+    aiMemorySettings,
+    aiChildProfiles,
+    aiMemoryItems,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -5089,6 +5362,12 @@ async function exportAccountDataByUserIdPrisma(userId) {
     prisma.communityEvent.findMany({ where: { creatorId: userId } }),
     prisma.communityEventFlag.findMany({ where: { userId } }),
     prisma.communityEventInterest.findMany({ where: { userId } }),
+    prisma.aiMemorySettings.findMany({ where: { userId } }),
+    prisma.aiChildProfile.findMany({
+      where: { userId },
+      include: { memoryItems: true },
+    }),
+    prisma.aiMemoryItem.findMany({ where: { child: { userId } } }),
   ]);
 
   return {
@@ -5114,6 +5393,9 @@ async function exportAccountDataByUserIdPrisma(userId) {
     communityEvents,
     communityEventFlags,
     communityEventInterests,
+    aiMemorySettings,
+    aiChildProfiles,
+    aiMemoryItems,
   };
 }
 
@@ -7106,7 +7388,7 @@ app.post('/api/profile', async (req, res) => {
   const displayName = (req.body.displayName || '').toString().trim().slice(0, 100);
   const hasAvatarUrl = Object.prototype.hasOwnProperty.call(req.body, 'avatarUrl');
   const avatarUrl = hasAvatarUrl
-      ? (req.body.avatarUrl || '').toString().trim().slice(0, 500)
+      ? (req.body.avatarUrl || '').toString().trim().slice(0, 2000)
       : undefined;
   const hasUsername = Object.prototype.hasOwnProperty.call(req.body, 'username');
   const username = hasUsername
@@ -7316,8 +7598,7 @@ app.get('/api/friendships/:uid', async (req, res) => {
     await ensureSocialSchemaReady();
     const rows = await prisma.$queryRawUnsafe(
       `SELECT f."userLow", f."userHigh", f."status", f."requestedBy",
-              pl."displayName" AS "lowName", ph."displayName" AS "highName",
-              pl."avatarUrl" AS "lowAvatarUrl", ph."avatarUrl" AS "highAvatarUrl"
+              pl."displayName" AS "lowName", ph."displayName" AS "highName"
        FROM "Friendship" f
        LEFT JOIN "UserProfile" pl ON pl."userId" = f."userLow"
        LEFT JOIN "UserProfile" ph ON ph."userId" = f."userHigh"
@@ -7331,13 +7612,7 @@ app.get('/api/friendships/:uid', async (req, res) => {
       const otherUid = r.userLow === uid ? r.userHigh : r.userLow;
       const otherName =
           (r.userLow === uid ? r.highName : r.lowName) || 'Familie';
-      const avatarUrl = r.userLow === uid ? r.highAvatarUrl : r.lowAvatarUrl;
-      const entry = {
-        uid: otherUid,
-        name: otherName,
-        avatarUrl: avatarUrl || null,
-        roomId: friendRoomId(uid, otherUid),
-      };
+      const entry = { uid: otherUid, name: otherName, roomId: friendRoomId(uid, otherUid) };
       if (r.status === 'accepted') friends.push(entry);
       else if (r.requestedBy === uid) outgoing.push(entry);
       else incoming.push(entry);
@@ -7700,11 +7975,6 @@ app.delete('/api/account/:userId', async (req, res) => {
     await run('recipes', `DELETE FROM "Recipe" WHERE "authorUserId" = $1`, userId);
     // UID-basierte Chat-Raeume (roomId enthaelt die UID)
     await run('chatRoomsUid', `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${userId}%`);
-    // Private Elterngruppen: eigene Nachrichten, Mitgliedschaften und Gruppen
-    // des Nutzers müssen ebenfalls vollständig entfernt werden.
-    await run('parentGroupMessages', `DELETE FROM "ParentChatGroupMessage" WHERE "authorUserId" = $1 OR "groupId" IN (SELECT "id" FROM "ParentChatGroup" WHERE "ownerUserId" = $1)`, userId);
-    await run('parentGroupMemberships', `DELETE FROM "ParentChatGroupMember" WHERE "userId" = $1 OR "groupId" IN (SELECT "id" FROM "ParentChatGroup" WHERE "ownerUserId" = $1)`, userId);
-    await run('parentGroups', `DELETE FROM "ParentChatGroup" WHERE "ownerUserId" = $1`, userId);
     // Freundschafts-Registry + Kanten (per userId-Code)
     await run('friendEdges', `DELETE FROM "FriendEdge" WHERE "ownerCode" = ANY($1::text[]) OR "friendCode" = ANY($1::text[])`, idList);
     await run('friendRegistry', `DELETE FROM "FriendRegistry" WHERE "userId" = $1 OR "code" = ANY($2::text[])`, userId, idList);
@@ -7865,6 +8135,79 @@ async function requireAdmin(req, res, next) {
   req.firebaseUid = uid;
   return next();
 }
+
+const treasureTestOwnerIds = Object.freeze([
+  'host_demo_001',
+  'user-berlin-1',
+  'user-munich-1',
+  'user-safe-check',
+]);
+
+async function findTreasureTestFixtures() {
+  return prisma.treasureItem.findMany({
+    where: { userId: { in: treasureTestOwnerIds } },
+    select: {
+      id: true,
+      userId: true,
+      title: true,
+      status: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+// Preview-only endpoint for integration-test marketplace fixtures.
+app.get('/admin/treasures/test-cleanup-preview', requireAdmin,
+    async (req, res) => {
+  try {
+    const fixtures = await findTreasureTestFixtures();
+    return res.json({
+      dryRun: true,
+      testOwnerIds: treasureTestOwnerIds,
+      count: fixtures.length,
+      fixtures,
+      note: 'Nur Vorschau. Zum Loeschen POST mit {"confirm":true} senden.',
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(
+        res, 'GET /admin/treasures/test-cleanup-preview', error)) {
+      return;
+    }
+    return res.status(500).json({error: 'Testanzeigen konnten nicht geladen werden'});
+  }
+});
+
+// Deletes only fixtures for the fixed integration-test owner allowlist.
+app.post('/admin/treasures/test-cleanup', requireAdmin, async (req, res) => {
+  try {
+    const fixtures = await findTreasureTestFixtures();
+    if (req.body?.confirm !== true) {
+      return res.json({
+        dryRun: true,
+        testOwnerIds: treasureTestOwnerIds,
+        count: fixtures.length,
+        fixtures,
+        note: 'Kein confirm:true. Es wurden keine Testanzeigen geloescht.',
+      });
+    }
+
+    const deleted = await prisma.treasureItem.deleteMany({
+      where: {userId: {in: treasureTestOwnerIds}},
+    });
+    return res.json({
+      ok: true,
+      deleted: deleted.count,
+      testOwnerIds: treasureTestOwnerIds,
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(
+        res, 'POST /admin/treasures/test-cleanup', error)) {
+      return;
+    }
+    return res.status(500).json({error: 'Testanzeigen konnten nicht geloescht werden'});
+  }
+});
 
 // Liste aller Meldungen, gruppiert pro gemeldetem User.
 app.get('/admin/reports', requireAdmin, async (req, res) => {
@@ -8265,119 +8608,6 @@ app.post('/friend-chat/messages', async (req, res) => {
     friendChatMessages.get(roomId).push(item);
     await pushToRecipient();
     return res.status(201).json({ item });
-  }
-});
-
-// Private friend groups: only confirmed friends can be invited or message.
-app.get('/api/chat/groups', async (req, res) => {
-  const userId = String(req.query.userId || '').trim();
-  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
-  if (!(await authorizeAccountOwner(req, res, userId))) return;
-  try {
-    await ensureSocialSchemaReady();
-    const groups = await prisma.$queryRawUnsafe(
-      `SELECT g."id", g."name", g."ownerUserId", g."createdAt",
-              COUNT(m2."userId")::int AS "memberCount"
-       FROM "ParentChatGroup" g
-       JOIN "ParentChatGroupMember" m ON m."groupId" = g."id" AND m."userId" = $1
-       JOIN "ParentChatGroupMember" m2 ON m2."groupId" = g."id"
-       GROUP BY g."id" ORDER BY g."updatedAt" DESC`,
-      userId
-    );
-    return res.json({ groups });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /api/chat/groups', error)) return;
-    return res.json({ groups: [] });
-  }
-});
-
-app.post('/api/chat/groups', async (req, res) => {
-  const userId = String(req.body.userId || '').trim();
-  const name = String(req.body.name || '').trim().slice(0, 80);
-  const requestedMembers = Array.isArray(req.body.memberIds)
-    ? req.body.memberIds.map(value => String(value).trim()).filter(Boolean)
-    : [];
-  if (!userId || !name) {
-    return res.status(400).json({ error: 'userId und name erforderlich' });
-  }
-  if (!(await authorizeAccountOwner(req, res, userId))) return;
-  const memberIds = [...new Set([userId, ...requestedMembers])];
-  if (memberIds.length > 30) {
-    return res.status(400).json({ error: 'Eine Gruppe kann maximal 30 Mitglieder haben' });
-  }
-  for (const memberId of memberIds) {
-    if (memberId !== userId && !(await areFriends(userId, memberId))) {
-      return res.status(403).json({ error: 'Nur bestätigte Freunde können eingeladen werden' });
-    }
-  }
-  try {
-    await ensureSocialSchemaReady();
-    const groupId = generateId('pg');
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "ParentChatGroup" ("id", "ownerUserId", "name") VALUES ($1, $2, $3)`,
-      groupId, userId, name
-    );
-    for (const memberId of memberIds) {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "ParentChatGroupMember" ("groupId", "userId", "role") VALUES ($1, $2, $3)`,
-        groupId, memberId, memberId === userId ? 'owner' : 'member'
-      );
-    }
-    return res.status(201).json({ group: { id: groupId, name, ownerUserId: userId, memberCount: memberIds.length } });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/chat/groups', error)) return;
-    return res.status(500).json({ error: 'Gruppe konnte nicht erstellt werden' });
-  }
-});
-
-app.get('/api/chat/groups/:groupId/messages', async (req, res) => {
-  const groupId = String(req.params.groupId || '').trim();
-  const userId = String(req.query.userId || '').trim();
-  if (!groupId || !userId) return res.status(400).json({ error: 'groupId und userId erforderlich' });
-  if (!(await authorizeAccountOwner(req, res, userId))) return;
-  try {
-    await ensureSocialSchemaReady();
-    const member = await prisma.$queryRawUnsafe(
-      `SELECT 1 FROM "ParentChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2`,
-      groupId, userId
-    );
-    if (member.length === 0) return res.status(403).json({ error: 'Keine Gruppenmitgliedschaft' });
-    const messages = await prisma.$queryRawUnsafe(
-      `SELECT "id", "groupId", "authorUserId", "authorName", "content", "createdAt"
-       FROM "ParentChatGroupMessage" WHERE "groupId" = $1 ORDER BY "createdAt" ASC LIMIT 500`,
-      groupId
-    );
-    return res.json({ messages });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /api/chat/groups/messages', error)) return;
-    return res.json({ messages: [] });
-  }
-});
-
-app.post('/api/chat/groups/:groupId/messages', async (req, res) => {
-  const groupId = String(req.params.groupId || '').trim();
-  const userId = String(req.body.userId || '').trim();
-  const userName = String(req.body.userName || 'Elternteil').trim().slice(0, 100);
-  const content = String(req.body.content || '').trim().slice(0, 2000);
-  if (!groupId || !userId || !content) return res.status(400).json({ error: 'groupId, userId und content erforderlich' });
-  if (!(await authorizeAccountOwner(req, res, userId))) return;
-  if (await isUserSuspended(userId)) return respondSuspended(res);
-  try {
-    await ensureSocialSchemaReady();
-    const member = await prisma.$queryRawUnsafe(
-      `SELECT 1 FROM "ParentChatGroupMember" WHERE "groupId" = $1 AND "userId" = $2`,
-      groupId, userId
-    );
-    if (member.length === 0) return res.status(403).json({ error: 'Keine Gruppenmitgliedschaft' });
-    const item = { id: generateId('pgm'), groupId, authorUserId: userId, authorName: userName, content, createdAt: new Date().toISOString() };
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "ParentChatGroupMessage" ("id", "groupId", "authorUserId", "authorName", "content") VALUES ($1, $2, $3, $4, $5)`,
-      item.id, groupId, userId, userName, content
-    );
-    return res.status(201).json({ item });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /api/chat/groups/messages', error)) return;
-    return res.status(500).json({ error: 'Nachricht konnte nicht gesendet werden' });
   }
 });
 
@@ -12464,7 +12694,7 @@ app.post('/api/treasures', async (req, res) => {
     userId: requestedUserId, title, description, location, latitude, longitude,
     category, condition, isFree, price, visibility, shareRadiusKm, photoUrl, photoUrls
   } = req.body;
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
 
   // Validate required fields
   if (!userId || !title || !location || latitude === undefined || longitude === undefined) {
@@ -12472,7 +12702,7 @@ app.post('/api/treasures', async (req, res) => {
       error: 'userId, title, location, latitude, longitude erforderlich'
     });
   }
-  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Anzeige kann nur fuer das eigene Konto erstellt werden' });
   }
   // Echter Bann: gesperrte Nutzer koennen nichts mehr im Verschenkmarkt einstellen.
@@ -12491,7 +12721,7 @@ app.post('/api/treasures', async (req, res) => {
   try {
     // Calculate expiry: 30 days from now
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    expiresAt.setDate(expiresAt.getDate() + treasureArchiveAfterDays);
     const severeContent = isTreasureContentSevere({ title, description });
 
     const treasure = await prisma.treasureItem.create({
@@ -12541,6 +12771,36 @@ app.post('/api/treasures', async (req, res) => {
  * GET /api/treasures
  * List/discover treasures with filtering and pagination
  */
+const treasureArchiveAfterDays = 30;
+const treasurePurgeAfterArchiveDays = 60;
+const activeTreasureHandoverStatuses = ['pending', 'reserved', 'confirmed'];
+
+async function runTreasureLifecycleCleanup() {
+  const now = new Date();
+  const purgeBefore = new Date(
+    now.getTime() - treasurePurgeAfterArchiveDays * 24 * 60 * 60 * 1000,
+  );
+
+  const archived = await prisma.treasureItem.updateMany({
+    where: {
+      status: 'available',
+      expiresAt: { lte: now },
+    },
+    data: { status: 'archived' },
+  });
+  const deleted = await prisma.treasureItem.deleteMany({
+    where: {
+      status: 'archived',
+      expiresAt: { lte: purgeBefore },
+      handovers: {
+        none: { status: { in: activeTreasureHandoverStatuses } },
+      },
+    },
+  });
+
+  return { archived: archived.count, deleted: deleted.count };
+}
+
 app.get('/api/treasures', async (req, res) => {
   const {
     status = 'available',
@@ -12555,6 +12815,7 @@ app.get('/api/treasures', async (req, res) => {
   } = req.query;
 
   try {
+    await runTreasureLifecycleCleanup();
     let treasures = await prisma.treasureItem.findMany({
       where: {
         status: status,
@@ -12595,6 +12856,7 @@ app.get('/api/treasures', async (req, res) => {
     const formattedTreasures = treasures.map(t => ({
       id: t.id,
       userId: t.userId,
+      ownerUserId: t.userId,
       title: t.title,
       description: t.description,
       location: t.location,
@@ -12971,12 +13233,12 @@ app.post('/api/treasures/:id/report', async (req, res) => {
 app.post('/api/treasures/:id/reserve', async (req, res) => {
   const { id } = req.params;
   const { requesterUserId: requestedRequesterUserId, preferredSlot, handoverMode, message } = req.body;
-  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
+  const requesterUserId = resolveVerifiedUserId(req, requestedRequesterUserId);
 
   if (!requesterUserId) {
     return res.status(400).json({ error: 'requesterUserId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedRequesterUserId)) {
     return res.status(403).json({ error: 'Reservierung nur fuer das eigene Konto erlaubt' });
   }
 
@@ -13075,11 +13337,11 @@ app.post('/api/treasures/:id/reserve', async (req, res) => {
 app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
   const { id } = req.params;
   const { requesterUserId: requestedRequesterUserId } = req.body;
-  const requesterUserId = req.firebaseUid || requestedRequesterUserId;
+  const requesterUserId = resolveVerifiedUserId(req, requestedRequesterUserId);
   if (!requesterUserId) {
     return res.status(400).json({ error: 'requesterUserId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedRequesterUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedRequesterUserId)) {
     return res.status(403).json({ error: 'Stornierung nur fuer das eigene Konto erlaubt' });
   }
   try {
@@ -13115,11 +13377,11 @@ app.post('/api/treasures/:id/cancel-reservation', async (req, res) => {
 app.post('/api/treasures/:id/handovers/:handoverId/confirm', async (req, res) => {
   const { id, handoverId } = req.params;
   const requestedUserId = req.body.userId;
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Bestaetigung nur fuer das eigene Konto erlaubt' });
   }
 
@@ -13173,11 +13435,11 @@ app.post('/api/treasures/:id/handovers/:handoverId/confirm', async (req, res) =>
 app.post('/api/treasures/:id/handovers/:handoverId/complete', async (req, res) => {
   const { id, handoverId } = req.params;
   const requestedUserId = req.body.userId;
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Abschluss nur fuer das eigene Konto erlaubt' });
   }
 
@@ -13233,6 +13495,7 @@ app.get('/api/treasures/mine', async (req, res) => {
   if (!(await authorizeAccountOwner(req, res, userId))) return;
 
   try {
+    await runTreasureLifecycleCleanup();
     // Eigene Angebote + wer sie reserviert hat
     const myOffers = await prisma.treasureItem.findMany({
       where: { userId },
@@ -13428,12 +13691,12 @@ app.get('/api/treasures/:id', async (req, res) => {
 app.put('/api/treasures/:id', async (req, res) => {
   const { id } = req.params;
   const { userId: requestedUserId, title, description, location, latitude, longitude, condition, status } = req.body;
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
-  if (req.firebaseUid && String(requestedUserId || '') !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Bearbeitung nur fuer das eigene Konto erlaubt' });
   }
 
@@ -13487,12 +13750,12 @@ app.delete('/api/treasures/:id', async (req, res) => {
   const requestedUserId = typeof req.query.userId === 'string'
     ? req.query.userId
     : '';
-  const userId = req.firebaseUid || requestedUserId;
+  const userId = resolveVerifiedUserId(req, requestedUserId);
 
   if (!userId) {
     return res.status(400).json({ error: 'userId erforderlich' });
   }
-  if (req.firebaseUid && requestedUserId !== req.firebaseUid) {
+  if (hasExplicitUserMismatch(req, requestedUserId)) {
     return res.status(403).json({ error: 'Loeschung nur fuer das eigene Konto erlaubt' });
   }
 
@@ -13518,6 +13781,12 @@ app.delete('/api/treasures/:id', async (req, res) => {
 // Server starten mit Prisma Initialization
 (async () => {
   await initializePrisma();
+  // Marketplace reads also invoke this, covering idle Render wake-ups.
+  setInterval(() => {
+    runTreasureLifecycleCleanup().catch((error) => {
+      console.error('Treasure lifecycle cleanup failed:', error.message);
+    });
+  }, 6 * 60 * 60 * 1000).unref();
   app.listen(PORT, '0.0.0.0', () => {
     if (allowedOrigins.length > 0) {
       console.log(`🌐 CORS allowlist aktiv (${allowedOrigins.length} Origin(s))`);

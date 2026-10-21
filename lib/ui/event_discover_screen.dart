@@ -52,7 +52,7 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Suche fehlgeschlagen. Bitte noch einmal versuchen.';
+        _errorMessage = context.tr('package3_discover_search_failed');
         _isLoading = false;
       });
     }
@@ -124,7 +124,7 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Passende Angebote in deiner Stadt',
+            context.tr('package3_discover_header'),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.9),
               fontWeight: FontWeight.w600,
@@ -150,7 +150,7 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
         decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white.withValues(alpha: 0.15),
-          hintText: 'Stadt eingeben...',
+          hintText: context.tr('package3_discover_city_hint'),
           hintStyle: TextStyle(
               color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
           prefixIcon:
@@ -194,7 +194,9 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
         itemCount: categories.length,
         itemBuilder: (context, i) {
           final cat = categories[i];
-          final label = cat == null ? 'Alle' : _categoryEvent(cat).categoryLabel;
+            final label = cat == null
+              ? context.tr('package3_all')
+              : _categoryEvent(cat).categoryLabel;
           final isSelected = _selectedCategory == cat;
 
           return Padding(
@@ -232,7 +234,8 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
             Text(
-              'Suche Events in ${_cityCtrl.text}...',
+                context.tr('package3_discover_searching',
+                  values: {'city': _cityCtrl.text}),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -257,7 +260,7 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
             FilledButton.icon(
               onPressed: _search,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Erneut versuchen'),
+              label: Text(context.tr('package3_discover_retry')),
             ),
           ],
         ),
@@ -274,13 +277,13 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
           children: [
             const Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey),
             const SizedBox(height: 12),
-            const Text('Keine Events gefunden.',
-                style: TextStyle(color: Colors.grey)),
+            Text(context.tr('package3_discover_empty'),
+              style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _search,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Neu suchen'),
+              label: Text(context.tr('package3_discover_new_search')),
             ),
           ],
         ),
@@ -318,7 +321,8 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Diese Events wurden automatisch für ${_cityCtrl.text} zusammengestellt. Zum Aktualisieren nach unten ziehen.',
+                context.tr('package3_discover_ai_summary',
+                  values: {'city': _cityCtrl.text}),
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: const Color(0xFF0EA5A4)),
             ),
@@ -420,7 +424,7 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
                       Icons.location_on_outlined, event.location, theme),
                   if (event.eventDate != null)
                     _buildMeta(Icons.calendar_today_outlined,
-                        _formatDate(event.eventDate!), theme),
+                        _formatDate(context, event.eventDate!), theme),
                   if (event.isRecurring && event.recurringNote != null)
                     _buildMeta(
                         Icons.repeat_rounded, event.recurringNote!, theme),
@@ -462,7 +466,9 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
                                 : theme.colorScheme.onSurfaceVariant,
                           ),
                           label: Text(
-                            isInterested ? 'Interessiert' : 'Interessiert?',
+                            context.tr(isInterested
+                              ? 'package3_discover_interested'
+                              : 'package3_discover_interested_question'),
                             style: TextStyle(
                               fontSize: 13,
                               color: isInterested
@@ -485,7 +491,8 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
-                        child: const Text('Details', style: TextStyle(fontSize: 13)),
+                        child: Text(context.tr('package3_discover_details'),
+                          style: const TextStyle(fontSize: 13)),
                       ),
                     ],
                   ),
@@ -572,7 +579,7 @@ class _EventDiscoverScreenState extends State<EventDiscoverScreen> {
         discoveredAt: DateTime.now(),
       );
 
-  String _formatDate(DateTime d) {
+  String _formatDate(BuildContext context, DateTime d) {
     final weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
     return '${weekdays[d.weekday - 1]}, ${d.day}.${d.month}.${d.year} · ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')} Uhr';
   }
@@ -642,7 +649,7 @@ class _EventDetailSheet extends StatelessWidget {
                       const Icon(Icons.auto_awesome_rounded,
                           size: 16, color: Color(0xFF0EA5A4)),
                       const SizedBox(width: 4),
-                      Text('KI-Agent',
+                      Text(context.tr('package3_discover_ai_agent'),
                           style: theme.textTheme.labelSmall?.copyWith(
                               color: const Color(0xFF0EA5A4))),
                     ],
@@ -662,19 +669,24 @@ class _EventDetailSheet extends StatelessWidget {
                   const SizedBox(height: 20),
                   const Divider(),
                   const SizedBox(height: 14),
-                  _detailRow(Icons.location_on_rounded, 'Ort',
+                    _detailRow(Icons.location_on_rounded,
+                      context.tr('package3_discover_location'),
                       event.location, theme),
                   if (event.organizer != null)
-                    _detailRow(Icons.business_rounded, 'Veranstalter',
+                    _detailRow(Icons.business_rounded,
+                      context.tr('package3_discover_organizer'),
                         event.organizer!, theme),
                   if (event.eventDate != null)
-                    _detailRow(Icons.calendar_today_rounded, 'Datum',
-                        _formatDate(event.eventDate!), theme),
+                    _detailRow(Icons.calendar_today_rounded,
+                      context.tr('package3_discover_date_label'),
+                        _formatDate(context, event.eventDate!), theme),
                   if (event.isRecurring && event.recurringNote != null)
-                    _detailRow(Icons.repeat_rounded, 'Wiederholung',
+                    _detailRow(Icons.repeat_rounded,
+                      context.tr('package3_discover_repeat'),
                         event.recurringNote!, theme),
                   if (event.price != null)
-                    _detailRow(Icons.payments_outlined, 'Preis',
+                    _detailRow(Icons.payments_outlined,
+                      context.tr('package3_discover_price'),
                         event.price!, theme),
                   const SizedBox(height: 12),
                   Wrap(
@@ -699,8 +711,8 @@ class _EventDetailSheet extends StatelessWidget {
                           ? Icons.star_rounded
                           : Icons.star_border_rounded),
                       label: Text(isInterested
-                          ? 'Nicht mehr interessiert'
-                          : 'Ich bin interessiert'),
+                          ? context.tr('package3_discover_not_interested')
+                          : context.tr('package3_discover_interested_action')),
                       style: FilledButton.styleFrom(
                         backgroundColor: isInterested
                             ? Colors.amber
@@ -746,8 +758,10 @@ class _EventDetailSheet extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime d) {
-    final weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-    return '${weekdays[d.weekday - 1]}, ${d.day}.${d.month}.${d.year} · ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')} Uhr';
+  String _formatDate(BuildContext context, DateTime d) {
+    return context.tr('package3_discover_date', values: {
+      'date': '${d.day}.${d.month}.${d.year}',
+      'time': '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}',
+    });
   }
 }

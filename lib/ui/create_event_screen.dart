@@ -1,5 +1,6 @@
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:parentpeak/config/feature_flags.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/family_circle_service.dart';
+import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/models/family_contact.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/logic/auth_service.dart';
@@ -45,6 +47,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final Set<String> _selectedInvitees = {};
 
   bool _isSubmitting = false;
+  bool _scanningFlyer = false;
   File? _selectedPhotoFile;
   String? _uploadedPhotoUrl;
   final _imagePicker = ImagePicker();
@@ -154,12 +157,210 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     return _uploadedPhotoUrl!;
   }
 
+  // ─── Flyer-Scan (Kamera → KI → Auto-Fill) ──────────────────────────────────
+
+  Future<void> _scanFlyer() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 12),
+          Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Text(_t('community_event_scan_flyer'),
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(_t('community_event_ai_recognizes'),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          ListTile(
+            leading:
+                const Icon(Icons.camera_alt_rounded, color: Color(0xFF8B5CF6)),
+            title: Text(_t('community_event_take_photo')),
+            onTap: () => Navigator.pop(ctx, ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_rounded,
+                color: Color(0xFF8B5CF6)),
+            title: Text(_t('community_event_from_gallery')),
+            onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+          ),
+          const SizedBox(height: 16),
+        ]),
+      ),
+    );
+    if (source == null) return;
+
+    final picked = await _imagePicker.pickImage(
+      source: source,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    setState(() => _scanningFlyer = true);
+
+    try {
+      final bytes = await picked.readAsBytes();
+      final text = await GeminiAIService()
+          .generateText(
+            'Analysiere diesen Flyer/Poster für ein Familien-Event. '
+            'Extrahiere folgende Informationen als JSON:\n'
+            '{"title":"...","description":"kurze Beschreibung in 1-2 Sätzen",'
+            '"date":"YYYY-MM-DD oder null","time":"HH:MM oder null",'
+            '"location":"Adresse/Ort oder null"}\n'
+            'Antworte NUR mit dem JSON, kein Markdown.',
+            imageBytes: bytes,
+          )
+          .timeout(const Duration(seconds: 20));
+      final jsonStr = text.replaceAll(RegExp(r'^```json\s*|\s*```$'), '');
+
+      if (jsonStr.startsWith('{')) {
+        final data = _parseFlyer(jsonStr);
+        if (!mounted) return;
+        setState(() {
+          // Auch als Event-Foto übernehmen, falls noch kein Foto gewählt wurde
+          _selectedPhotoFile ??= File(picked.path);
+          _uploadedPhotoUrl = null;
+
+          if (data['title'] != null && data['title'].toString().isNotEmpty) {
+            _titleController.text = data['title'];
+          }
+          if (data['description'] != null &&
+              data['description'].toString().isNotEmpty) {
+            _descriptionController.text = data['description'];
+          }
+          if (data['location'] != null &&
+              data['location'].toString().isNotEmpty) {
+            _locationController.text = data['location'];
+          }
+          if (data['date'] != null) {
+            final parsed = DateTime.tryParse(data['date'].toString());
+            if (parsed != null) _selectedDate = parsed;
+          }
+          if (data['time'] != null) {
+            final parts = data['time'].toString().split(':');
+            if (parts.length == 2) {
+              _selectedTime = TimeOfDay(
+                hour: int.tryParse(parts[0]) ?? _selectedTime.hour,
+                minute: int.tryParse(parts[1]) ?? _selectedTime.minute,
+              );
+            }
+          }
+          _scanningFlyer = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('community_flyer_detected')),
+          backgroundColor: const Color(0xFF16A34A),
+        ));
+      } else {
+        throw Exception(_t('package3_flyer_read_failed'));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _scanningFlyer = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_t('package3_flyer_recognition_failed')
+              .replaceAll('{error}', '$e')),
+        ));
+      }
+    }
+  }
+
+  Map<String, dynamic> _parseFlyer(String raw) {
+    try {
+      final start = raw.indexOf('{');
+      final end = raw.lastIndexOf('}');
+      if (start == -1 || end == -1) return {};
+      final chunk = raw.substring(start, end + 1);
+      final decoded = jsonDecode(chunk);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  // ─── Duplikat-Erkennung ────────────────────────────────────────────────────
+
+  Future<MeetupEvent?> _checkDuplicateEvent() async {
+    final title = _titleController.text.trim().toLowerCase();
+    if (title.isEmpty) return null;
+
+    final eventDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    try {
+      final existing = await _eventService.getEvents();
+      for (final event in existing) {
+        final existingTitle = event.title.toLowerCase();
+        final similar = existingTitle.contains(title) ||
+            title.contains(existingTitle) ||
+            _levenshteinSimilarity(title, existingTitle) > 0.7;
+        final samePeriod =
+            (event.eventDate.difference(eventDateTime).inHours).abs() <= 24;
+        final sameLocation = _locationController.text.trim().isEmpty ||
+            event.location
+                .toLowerCase()
+                .contains(_locationController.text.trim().toLowerCase()) ||
+            _locationController.text
+                .trim()
+                .toLowerCase()
+                .contains(event.location.toLowerCase());
+
+        if (similar && samePeriod && sameLocation) return event;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  double _levenshteinSimilarity(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return 0;
+    final maxLen = a.length > b.length ? a.length : b.length;
+    final dist = _levenshteinDistance(a, b);
+    return 1.0 - (dist / maxLen);
+  }
+
+  int _levenshteinDistance(String a, String b) {
+    final m = a.length;
+    final n = b.length;
+    final d = List.generate(m + 1, (_) => List.filled(n + 1, 0));
+    for (var i = 0; i <= m; i++) {
+      d[i][0] = i;
+    }
+    for (var j = 0; j <= n; j++) {
+      d[0][j] = j;
+    }
+    for (var i = 1; i <= m; i++) {
+      for (var j = 1; j <= n; j++) {
+        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
+        d[i][j] = [d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost]
+            .reduce((x, y) => x < y ? x : y);
+      }
+    }
+    return d[m][n];
+  }
+
   Future<void> _submitForm() async {
     final currentUserId = AuthService.instance.currentUser?.uid;
     if (currentUserId == null || currentUserId.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(_t('event_login_required'))),
+        SnackBar(content: Text(_t('event_login_required'))),
       );
       return;
     }
@@ -167,8 +368,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedAgeGroups.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(_t('event_select_age_group'))),
+        SnackBar(content: Text(_t('event_select_age_group'))),
       );
       return;
     }
@@ -181,6 +381,47 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         ),
       );
       return;
+    }
+
+    // Duplikat-Erkennung: warne vor ähnlichen Events anderer Nutzer
+    final duplicate = await _checkDuplicateEvent();
+    if (duplicate != null && mounted) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(children: [
+            const Text('⚠️', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text(_t('community_event_similar_found')),
+          ]),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              '"${duplicate.title}" – '
+              '${duplicate.eventDate.day}.${duplicate.eventDate.month}.${duplicate.eventDate.year}, '
+              '${duplicate.location}',
+              style: const TextStyle(height: 1.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _t('package3_duplicate_proceed'),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ]),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(_t('cancel')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(_t('community_event_create_anyway')),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) return;
     }
 
     setState(() => _isSubmitting = true);
@@ -259,13 +500,17 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   ],
                   if (expiresAt != null)
                     Text(
-                      'Gültig bis: ${expiresAt.day.toString().padLeft(2, '0')}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.year}',
+                      _t('package3_valid_until').replaceAll(
+                        '{date}',
+                        '${expiresAt.day.toString().padLeft(2, '0')}.${expiresAt.month.toString().padLeft(2, '0')}.${expiresAt.year}',
+                      ),
                     ),
                   if (expiresAt != null) const SizedBox(height: 8),
                   if (expiresAt != null)
-                    const Text(
-                      'Bereits akzeptierte Einladungen bleiben aktiv.',
-                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                    Text(
+                      _t('package3_accepted_invites_remain_active'),
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.black54),
                     ),
                 ],
               ),
@@ -307,7 +552,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       setState(() => _isSubmitting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Konnte nicht speichern: $e')),
+          SnackBar(
+              content:
+                  Text(_t('package3_save_failed').replaceAll('{error}', '$e'))),
         );
       }
     }
@@ -350,7 +597,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                   child: Text(
-                    'Erstelle ein Event in wenigen Schritten und entscheide, ob es privat oder öffentlich geteilt wird.',
+                    _t('package3_event_create_intro'),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       height: 1.35,
@@ -360,23 +607,54 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 16),
                 // Titel
                 Text(
-                  'Grundinformationen',
+                  _t('package3_basic_information'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
+                ),
+                const SizedBox(height: 12),
+
+                // Flyer-Scan: Foto von Flyer/Poster aufnehmen und Felder per KI ausfüllen
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _scanningFlyer ? null : _scanFlyer,
+                    icon: _scanningFlyer
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.document_scanner_rounded, size: 18),
+                    label: Text(_scanningFlyer
+                        ? _t('package3_flyer_reading')
+                        : _t('package3_scan_flyer')),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF8B5CF6),
+                      side: const BorderSide(color: Color(0xFF8B5CF6)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(_t('community_event_ai_recognizes'),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline)),
                 ),
                 const SizedBox(height: 16),
 
                 TextFormField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Event-Titel',
-                    hintText: 'z. B. Spielplatz-Treffen',
-                    prefixIcon: Icon(Icons.title),
+                  decoration: InputDecoration(
+                    labelText: _t('package3_event_title'),
+                    hintText: _t('package3_event_title_hint'),
+                    prefixIcon: const Icon(Icons.title),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Bitte einen Titel eingeben';
+                      return _t('package3_title_required');
                     }
                     return null;
                   },
@@ -385,15 +663,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Beschreibung',
-                    hintText: 'Was macht euer Event besonders?',
-                    prefixIcon: Icon(Icons.description),
+                  decoration: InputDecoration(
+                    labelText: _t('package3_description'),
+                    hintText: _t('package3_event_description_hint'),
+                    prefixIcon: const Icon(Icons.description),
                   ),
                   maxLines: 4,
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Bitte eine Beschreibung eingeben';
+                      return _t('package3_description_required');
                     }
                     return null;
                   },
@@ -402,7 +680,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 // Sichtbarkeit & Standortverteilung
                 Text(
-                  'Sichtbarkeit',
+                  _t('package3_visibility'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -410,8 +688,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 8),
                 _VisibilityOptionTile(
                   title: _t('event_visibility_public'),
-                  subtitle:
-                      'Andere Eltern sehen dein Event im Standort-Radius.',
+                  subtitle: _t('package3_visibility_public_description'),
                   selected: _visibility == EventVisibility.publicNearby,
                   onTap: () => setState(
                     () => _visibility = EventVisibility.publicNearby,
@@ -420,25 +697,23 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 if (FeatureFlags.enableFamilyCircle)
                   _VisibilityOptionTile(
                     title: _t('event_visibility_circle'),
-                    subtitle:
-                        'Nur verbundene Eltern aus deinem Familienkreis sehen das Event.',
+                    subtitle: _t('package3_visibility_circle_description'),
                     selected: _visibility == EventVisibility.familyCircle,
                     onTap: () => setState(
                       () => _visibility = EventVisibility.familyCircle,
                     ),
                   ),
                 _VisibilityOptionTile(
-                  title: 'Nur eingeladen (individuelle Einladungen)',
-                  subtitle:
-                      'Nur ausgewählte Kontakte sehen und erhalten die Einladung.',
+                  title: _t('package3_visibility_invite_only'),
+                  subtitle: _t('package3_visibility_invite_only_description'),
                   selected: _visibility == EventVisibility.inviteOnly,
                   onTap: () => setState(
                     () => _visibility = EventVisibility.inviteOnly,
                   ),
                 ),
                 _VisibilityOptionTile(
-                  title: 'Nur ich (nicht geteilt)',
-                  subtitle: 'Das Event bleibt nur in deinem Bereich sichtbar.',
+                  title: _t('package3_visibility_private_only'),
+                  subtitle: _t('package3_visibility_private_only_description'),
                   selected: _visibility == EventVisibility.privateOnly,
                   onTap: () => setState(
                     () => _visibility = EventVisibility.privateOnly,
@@ -451,7 +726,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Öffentlich teilen im Umkreis',
+                        _t('package3_share_publicly_within_radius'),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       Text(
@@ -468,7 +743,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     min: 5,
                     max: 100,
                     divisions: 19,
-                    label: '${_shareRadiusKm.toStringAsFixed(0)} km',
+                    label: _t('package3_radius').replaceAll(
+                        '{count}', _shareRadiusKm.toStringAsFixed(0)),
                     onChanged: (v) => setState(() => _shareRadiusKm = v),
                   ),
                 ],
@@ -476,16 +752,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 if (_visibility == EventVisibility.inviteOnly) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Kontakte auswählen',
+                    _t('package3_select_contacts'),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                   ),
                   const SizedBox(height: 8),
                   if (_familyContacts.isEmpty)
-                    const Text(
-                      'Noch keine Kontakte verfügbar. Diese Funktion wird bald wieder freigeschaltet.',
-                    )
+                    Text(_t('package3_no_contacts_available'))
                   else
                     ..._familyContacts.map(
                       (contact) => CheckboxListTile(
@@ -501,16 +775,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
                     initialValue: _inviteCodeExpiryDays,
-                    decoration: const InputDecoration(
-                      labelText: 'Einladungscode gültig für',
-                      prefixIcon: Icon(Icons.timelapse_rounded),
+                    decoration: InputDecoration(
+                      labelText: _t('package3_invite_expiry'),
+                      prefixIcon: const Icon(Icons.timelapse_rounded),
                     ),
                     isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(value: 3, child: Text('3 Tage')),
-                      DropdownMenuItem(value: 7, child: Text('7 Tage')),
-                      DropdownMenuItem(value: 14, child: Text('14 Tage')),
-                      DropdownMenuItem(value: 30, child: Text('30 Tage')),
+                    items: [
+                      for (final days in [3, 7, 14, 30])
+                        DropdownMenuItem(
+                          value: days,
+                          child: Text(_t('package3_days')
+                              .replaceAll('{count}', '$days')),
+                        ),
                     ],
                     onChanged: (value) {
                       if (value == null) return;
@@ -524,9 +800,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 // Kategorie
                 DropdownButtonFormField<EventCategory>(
                   initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategorie',
-                    prefixIcon: Icon(Icons.category),
+                  decoration: InputDecoration(
+                    labelText: _t('package3_category'),
+                    prefixIcon: const Icon(Icons.category),
                   ),
                   isExpanded: true,
                   items: EventCategory.values
@@ -547,7 +823,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 // Altersgruppen
                 Text(
-                  'Zielgruppe (Altersgruppen)',
+                  _t('package3_age_groups'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -570,7 +846,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 // Datum & Zeit
                 Text(
-                  'Termin',
+                  _t('package3_date_time'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -603,14 +879,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 // Ort
                 TextFormField(
                   controller: _locationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Treffpunkt',
-                    prefixIcon: Icon(Icons.location_on),
-                    hintText: 'z.B. Zentralpark, Berlin',
+                  decoration: InputDecoration(
+                    labelText: _t('package3_meeting_point'),
+                    prefixIcon: const Icon(Icons.location_on),
+                    hintText: _t('package3_meeting_point_hint'),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Bitte einen Ort eingeben';
+                      return _t('package3_location_required');
                     }
                     return null;
                   },
@@ -620,18 +896,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 // Max Teilnehmer
                 TextFormField(
                   controller: _maxParticipantsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Maximale Teilnehmerzahl',
-                    prefixIcon: Icon(Icons.people),
+                  decoration: InputDecoration(
+                    labelText: _t('package3_max_participants'),
+                    prefixIcon: const Icon(Icons.people),
                     hintText: '10',
                   ),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Bitte eine Zahl eingeben';
+                      return _t('package3_number_required');
                     }
                     if (int.tryParse(value!) == null) {
-                      return 'Bitte nur Zahlen eingeben';
+                      return _t('package3_number_required');
                     }
                     return null;
                   },
@@ -639,7 +915,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 24),
 
                 Text(
-                  'Event-Foto (optional)',
+                  _t('package3_event_photo_optional'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -650,8 +926,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   icon: const Icon(Icons.photo_library_outlined),
                   label: Text(
                     _selectedPhotoFile == null
-                        ? 'Foto auswählen'
-                        : 'Foto ändern',
+                        ? _t('package3_select_photo')
+                        : _t('package3_change_photo'),
                   ),
                 ),
                 if (_selectedPhotoFile != null) ...[
@@ -671,8 +947,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       Expanded(
                         child: Text(
                           _uploadedPhotoUrl == null
-                              ? 'Das Foto wird beim Veröffentlichen hochgeladen.'
-                              : 'Foto bereits hochgeladen.',
+                              ? _t('package3_photo_upload_on_publish')
+                              : _t('package3_photo_already_uploaded'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -701,14 +977,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFA7F3D0)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.verified_rounded, color: Color(0xFF047857)),
-                      SizedBox(width: 12),
+                      const Icon(Icons.verified_rounded,
+                          color: Color(0xFF047857)),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Event-Veröffentlichung ist in deinem App-Abo enthalten.',
-                          style: TextStyle(color: Color(0xFF047857)),
+                          _t('package3_event_included_in_subscription'),
+                          style: const TextStyle(color: Color(0xFF047857)),
                         ),
                       ),
                     ],

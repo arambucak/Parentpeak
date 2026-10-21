@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/models/community_event.dart';
 
@@ -26,7 +26,7 @@ class EventDisclaimerBanner extends StatelessWidget {
           const Text('\u{26A0}\u{FE0F}', style: TextStyle(fontSize: 16)),
           const SizedBox(width: 8),
           Expanded(
-              child: Text('Hinweis zur Sicherheit',
+              child: Text(context.tr('package3_safety_note'),
                   style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF92400E)))),
@@ -39,9 +39,7 @@ class EventDisclaimerBanner extends StatelessWidget {
         ]),
         const SizedBox(height: 6),
         Text(
-          'ParentPeak vermittelt nur Informationen zu Events. '
-          'Die Verantwortung liegt beim Veranstalter und den begleitenden Eltern. '
-          'Bitte begleite dein Kind immer persoenlich zu Treffen.',
+          context.tr('package3_safety_disclaimer'),
           style: theme.textTheme.bodySmall
               ?.copyWith(color: const Color(0xFF92400E), height: 1.4),
         ),
@@ -69,33 +67,7 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
   String? _selectedReason;
   bool _sending = false;
 
-  static const _reasons = [
-    {
-      'id': 'spam',
-      'label': '\u{1F6AB} Spam oder Werbung',
-      'desc': 'Keine echte Veranstaltung'
-    },
-    {
-      'id': 'fake',
-      'label': '\u{26A0}\u{FE0F} Falsche Informationen',
-      'desc': 'Ort, Datum oder Inhalt stimmen nicht'
-    },
-    {
-      'id': 'unsafe',
-      'label': '\u{1F6A8} Unsicher für Kinder',
-      'desc': 'Kein sicherer Ort oder Betreuer'
-    },
-    {
-      'id': 'inappropriate',
-      'label': '\u{1F645} Unangemessener Inhalt',
-      'desc': 'Beleidigend oder nicht für Familien geeignet'
-    },
-    {
-      'id': 'expired',
-      'label': '\u{1F4C5} Veraltet / abgesagt',
-      'desc': 'Event findet nicht mehr statt'
-    },
-  ];
+  static const _reasonIds = ['spam', 'fake', 'unsafe', 'inappropriate', 'expired'];
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +86,7 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
                 color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2))),
         const SizedBox(height: 16),
-        Text('Event melden',
+        Text(context.tr('package3_report_event'),
             style: theme.textTheme.titleMedium
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
@@ -124,27 +96,33 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
         const SizedBox(height: 16),
-        ..._reasons.map((r) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: RadioListTile<String>(
-                value: r['id']!,
-                groupValue: _selectedReason,
-                onChanged: (v) => setState(() => _selectedReason = v),
-                title: Text(r['label']!,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                subtitle: Text(r['desc']!,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline)),
+        RadioGroup<String>(
+          groupValue: _selectedReason,
+          onChanged: (value) => setState(() => _selectedReason = value),
+          child: Column(
+          children: _reasonIds
+            .map((reasonId) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: RadioListTile<String>(
+                value: reasonId,
+                title: Text(context.tr('package3_report_reason_$reasonId'),
+                  style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: Text(context.tr('package3_report_reason_${reasonId}_description'),
+                  style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                tileColor: _selectedReason == r['id']
-                    ? theme.colorScheme.error.withValues(alpha: 0.05)
-                    : null,
+                  borderRadius: BorderRadius.circular(12)),
+                tileColor: _selectedReason == reasonId
+                  ? theme.colorScheme.error.withValues(alpha: 0.05)
+                  : null,
                 activeColor: theme.colorScheme.error,
                 dense: true,
-              ),
-            )),
+                ),
+              ))
+            .toList(),
+          ),
+        ),
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
@@ -162,7 +140,7 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
                     height: 18,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Text('Meldung senden'),
+                : Text(context.tr('package3_send_report')),
           ),
         ),
       ]),
@@ -178,9 +156,9 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
     if (mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(success
-            ? 'Danke für deine Meldung. Wir pruefen das Event.'
-            : 'Meldung konnte nicht gesendet werden.'),
+        content: Text(context.tr(success
+          ? 'package3_report_sent'
+          : 'package3_report_failed')),
       ));
     }
   }
@@ -241,7 +219,12 @@ class _EventInterestButtonState extends State<EventInterestButton> {
           ),
           const SizedBox(width: 4),
           Text(
-            _count > 0 ? '$_count Familien interessiert' : 'Interesse zeigen',
+            context.tr(
+              _count > 0
+                  ? 'package3_interest_count'
+                  : 'package3_show_interest',
+              values: {'count': '$_count'},
+            ),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -274,25 +257,27 @@ class EventSourceBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color color;
     final String label;
-    final IconData? icon;
+    final IconData icon;
 
     switch (event.source) {
       case EventSource.kiAgent:
         color = const Color(0xFF8B5CF6);
-        label = 'KI-Vorschlag';
+        label = context.tr('package3_source_ai');
         icon = Icons.auto_awesome_rounded;
         break;
       case EventSource.partner:
         color = event.isVerified
             ? const Color(0xFF16A34A)
             : const Color(0xFF2563EB);
-        label = event.isVerified ? 'Verifiziert' : 'Partner';
+        label = context.tr(event.isVerified
+          ? 'package3_source_verified'
+          : 'package3_source_partner');
         icon =
             event.isVerified ? Icons.verified_rounded : Icons.business_rounded;
         break;
       case EventSource.community:
         color = const Color(0xFFF97316);
-        label = 'Eltern-Tipp';
+        label = context.tr('package3_source_community');
         icon = Icons.people_rounded;
         break;
     }
@@ -304,8 +289,8 @@ class EventSourceBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (icon != null) Icon(icon, size: 12, color: color),
-        if (icon != null) const SizedBox(width: 3),
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 3),
         Text(label,
             style: TextStyle(
                 fontSize: 10, fontWeight: FontWeight.w700, color: color)),
@@ -331,7 +316,7 @@ class PrivateAddressHint extends StatelessWidget {
         const Icon(Icons.lock_outline_rounded,
             size: 12, color: Color(0xFF92400E)),
         const SizedBox(width: 4),
-        Text('Privater Ort — Adresse erst nach Kontakt sichtbar',
+        Text(context.tr('package3_private_address_note'),
             style: theme.textTheme.labelSmall?.copyWith(
                 color: const Color(0xFF92400E), fontWeight: FontWeight.w500)),
       ]),

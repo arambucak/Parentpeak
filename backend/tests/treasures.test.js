@@ -590,6 +590,30 @@ async function runTests() {
     failed++;
   }
 
+  // Test fixtures must never remain visible in the marketplace after a run.
+  try {
+    console.log('\n🧹 Test 13: Clean up remaining treasure fixtures');
+    for (const treasureId of [treasureId2, treasureId3]) {
+      if (!treasureId) continue;
+      const cleanupRes = await makeRequest(
+        'DELETE',
+        `/api/treasures/${treasureId}?userId=${encodeURIComponent(OWNER_USER_ID)}`,
+        null,
+        BEARER_TOKEN,
+      );
+      if (cleanupRes.status !== 200 && cleanupRes.status !== 204) {
+        throw new Error(
+          `Expected cleanup delete 200/204 for ${treasureId}, got ${cleanupRes.status}`,
+        );
+      }
+    }
+    console.log('  ✓ Remaining treasure fixtures deleted');
+    passed++;
+  } catch (e) {
+    console.error(`  ✗ Failed: ${e.message}`);
+    failed++;
+  }
+
   // Summary
   console.log('\n==================================================');
   console.log(`Tests passed: ${passed}`);

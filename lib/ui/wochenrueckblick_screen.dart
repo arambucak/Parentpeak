@@ -21,108 +21,10 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
   String _t(String key) =>
       AppStringsManager.getString(languageService.currentLanguage, key);
 
-  String _reviewCopy(String key, String fallback) {
-    final language = languageService.currentLanguage;
-    if (language == 'tr' || language == 'en' || language == 'ku') {
-      const localized = {
-        'en': {
-          'well_subtitle': 'Celebrate your successes, even the small ones.',
-          'well_hint': 'e.g. A lovely family evening, my child laughed...',
-          'challenge_subtitle': 'Difficult moments deserve acknowledgment.',
-          'challenge_hint':
-              'e.g. Lack of sleep, an argument, feeling overwhelmed...',
-          'learned_subtitle':
-              'Every week brings new insights. What did you learn?',
-          'learned_hint':
-              'e.g. More patience with myself, setting boundaries...',
-          'looking_subtitle':
-              'Looking ahead gives you strength and anticipation.',
-          'looking_hint':
-              'e.g. A trip to the playground, an evening for two...',
-          'optional': 'Optional - take your time.',
-          'mood_subtitle':
-              'Your overall impression - there is no right or wrong.',
-          'summary_week': 'Your week: ',
-          'well_label': 'What went well',
-          'challenge_label': 'Challenge',
-          'learned_label': 'Insight',
-          'forward_label': 'Looking forward to',
-          'ai_feedback': 'Your AI feedback',
-          'ai_loading': 'The AI is reflecting on your week...',
-        },
-        'ku': {
-          'well_subtitle':
-              'Serkeftinên xwe pîroz bike, her çiqas biçûk bin jî.',
-          'well_hint': 'Mînak: Êvareke xweş a malbatê, zarokê min kenî...',
-          'challenge_subtitle': 'Demên dijwar jî hewceyê nasînê ne.',
-          'challenge_hint': 'Mînak: Bêxewî, nakokî, hestkirina westiyayî...',
-          'learned_subtitle': 'Her hefte têgihiştinên nû tîne. Tu çi hîn bûyî?',
-          'learned_hint': 'Mînak: Sebirê zêdetir ji xwe re, danîna sînor...',
-          'looking_subtitle': 'Nêrîna li pêş hêz û hêvî dide.',
-          'looking_hint':
-              'Mînak: Serdaneke parka lîstikê, êvarek ji bo du kesan...',
-          'optional': 'Vebijarkî - bi aramî dema xwe bistîne.',
-          'mood_subtitle': 'Hesta te ya giştî - rast an şaş tune ye.',
-          'summary_week': 'Heftaya te: ',
-          'well_label': 'Çi baş çû',
-          'challenge_label': 'Dijwarî',
-          'learned_label': 'Têgihiştin',
-          'forward_label': 'Li benda çi yî',
-          'ai_feedback': 'Ramanên AI yên te',
-          'ai_loading': 'AI li ser heftaya te difikire...',
-        },
-        'tr': {
-          'well_subtitle': 'Başarılarını kutla — küçük olanları bile.',
-          'well_hint': 'Örn. Güzel bir aile akşamı, çocuğum güldü...',
-          'challenge_subtitle': 'Zor anların da takdir edilmeye ihtiyacı var.',
-          'challenge_hint': 'Örn. uykusuzluk, tartışma, bunalmışlık...',
-          'learned_subtitle':
-              'Her hafta yeni şeyler öğretir — sen ne öğrendin?',
-          'learned_hint': 'Örn. kendime daha sabırlı olmak, sınır koymak...',
-          'looking_subtitle': 'Geleceğe bakmak güç ve mutluluk verir.',
-          'looking_hint': 'Örn. parka gitmek, baş başa bir akşam...',
-          'optional': 'İsteğe bağlı — acele etme.',
-          'mood_subtitle': 'Genel değerlendirmen — doğru ya da yanlış yok.',
-          'summary_week': 'Haftan: ',
-          'well_label': 'İyi gidenler',
-          'challenge_label': 'Zorluk',
-          'learned_label': 'Çıkarım',
-          'forward_label': 'Gelecekten beklenti',
-          'ai_feedback': 'Yapay zekâ geri bildirimin',
-          'ai_loading': 'Yapay zekâ haftanı değerlendiriyor...',
-        },
-      };
-      return localized[language]?[key] ?? fallback;
-    }
-    return fallback;
-  }
-
-  String _moodLabel(String key, String fallback) {
-    const labels = {
-      'en': {
-        'Super': 'Great',
-        'Gut': 'Good',
-        'Gemischt': 'Mixed',
-        'Anstrengend': 'Challenging',
-        'Dankbar': 'Grateful',
-      },
-      'ku': {
-        'Super': 'Pir baş',
-        'Gut': 'Baş',
-        'Gemischt': 'Tevlihev',
-        'Anstrengend': 'Dijwar',
-        'Dankbar': 'Spasdar',
-      },
-      'tr': {
-        'Super': 'Harika',
-        'Gut': 'İyi',
-        'Gemischt': 'Karışık',
-        'Anstrengend': 'Zorlayıcı',
-        'Dankbar': 'Minnettar',
-      },
-    };
-    return labels[languageService.currentLanguage]?[key] ?? fallback;
-  }
+  String _phase1(String key) => AppStringsManager.phase1String(
+        languageService.currentLanguage,
+        'review_$key',
+      );
 
   bool _loading = true;
   bool _aiLoading = false;
@@ -137,7 +39,6 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
 
   // Archive
   List<WeeklyReflection> _archive = [];
-  WeeklyReflection? _currentWeekReflection;
   bool _showArchive = false;
 
   late AnimationController _fadeCtrl;
@@ -197,7 +98,6 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
     if (mounted) {
       setState(() {
         _archive = all;
-        _currentWeekReflection = current;
         if (current != null) {
           _selectedMood = current.overallMood;
           _wellCtrl.text = current.whatWentWell;
@@ -243,7 +143,6 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
       lookingForwardTo: _lookingForwardCtrl.text.trim(),
     );
     await WeeklyReflectionService.save(reflection);
-    setState(() => _currentWeekReflection = reflection);
 
     // Generate AI feedback
     setState(() => _aiLoading = true);
@@ -257,7 +156,6 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
         setState(() {
           _aiFeedback = response;
           _aiLoading = false;
-          _currentWeekReflection = updated;
         });
       }
     } catch (e) {
@@ -299,7 +197,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
         title: Text(
             AppStringsManager.getString(
                 languageService.currentLanguage, 'weekly_review'),
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
         centerTitle: false,
         actions: [
           if (_archive.isNotEmpty)
@@ -376,40 +274,32 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
         return _buildTextStep(
           emoji: '\u{2728}',
           title: _t('what_went_well'),
-          subtitle: _reviewCopy(
-              'well_subtitle', 'Feiere deine Erfolge — auch die kleinen.'),
-          hint: _reviewCopy(
-              'well_hint', 'z.B. Schöner Familienabend, Kind hat gelacht...'),
+            subtitle: _phase1('well_subtitle'),
+            hint: _phase1('well_hint'),
           controller: _wellCtrl,
         );
       case 2:
         return _buildTextStep(
           emoji: '\u{1F4AA}',
           title: _t('what_was_challenging'),
-          subtitle: _reviewCopy('challenge_subtitle',
-              'Schwierige Momente verdienen Anerkennung.'),
-          hint: _reviewCopy(
-              'challenge_hint', 'z.B. Schlafmangel, Streit, Überforderung...'),
+            subtitle: _phase1('challenge_subtitle'),
+            hint: _phase1('challenge_hint'),
           controller: _challengeCtrl,
         );
       case 3:
         return _buildTextStep(
           emoji: '\u{1F4A1}',
           title: _t('what_did_you_learn'),
-          subtitle: _reviewCopy('learned_subtitle',
-              'Jede Woche bringt Erkenntnisse — welche sind deine?'),
-          hint: _reviewCopy('learned_hint',
-              'z.B. Mehr Geduld mit mir selbst, Grenzen setzen...'),
+            subtitle: _phase1('learned_subtitle'),
+            hint: _phase1('learned_hint'),
           controller: _learnedCtrl,
         );
       case 4:
         return _buildTextStep(
           emoji: '\u{1F31F}',
           title: _t('review_next_week'),
-          subtitle: _reviewCopy(
-              'looking_subtitle', 'Ein Ausblick gibt Kraft und Vorfreude.'),
-          hint: _reviewCopy(
-              'looking_hint', 'z.B. Spielplatz-Besuch, Abend zu zweit...'),
+            subtitle: _phase1('looking_subtitle'),
+            hint: _phase1('looking_hint'),
           controller: _lookingForwardCtrl,
         );
       default:
@@ -422,17 +312,17 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        Center(
-          child: Text('\u{1F49C}', style: const TextStyle(fontSize: 48)),
+        const Center(
+          child: Text('\u{1F49C}', style: TextStyle(fontSize: 48)),
         ),
         const SizedBox(height: 20),
         Center(
           child: Text(
             _t('how_was_week'),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF1F2937),
+              color: Color(0xFF1F2937),
             ),
             textAlign: TextAlign.center,
           ),
@@ -440,11 +330,10 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
         const SizedBox(height: 8),
         Center(
           child: Text(
-            _reviewCopy('mood_subtitle',
-                'Dein Gesamteindruck — es gibt kein Richtig oder Falsch.'),
-            style: TextStyle(
+            _phase1('mood_subtitle'),
+            style: const TextStyle(
               fontSize: 14,
-              color: const Color(0xFF6B7280),
+              color: Color(0xFF6B7280),
             ),
             textAlign: TextAlign.center,
           ),
@@ -567,7 +456,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
         ),
         const SizedBox(height: 12),
         Text(
-          _reviewCopy('optional', 'Optional — lass dir ruhig Zeit.'),
+          _phase1('optional'),
           style: TextStyle(fontSize: 12, color: Colors.grey[500]),
         ),
       ],
@@ -659,7 +548,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
                   style: const TextStyle(fontSize: 44)),
               const SizedBox(height: 10),
               Text(
-                '${_reviewCopy('summary_week', 'Deine Woche: ')}${_moodLabel(moodData['key'] as String, moodData['label'] as String)}',
+                _phase1('summary_week').replaceAll('{mood}', _phase1('mood_${moodData['key'] == 'Super' ? 'great' : moodData['key'] == 'Gut' ? 'good' : moodData['key'] == 'Gemischt' ? 'mixed' : moodData['key'] == 'Anstrengend' ? 'challenging' : 'grateful'}')),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -678,18 +567,18 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
 
         // Answers
         if (_wellCtrl.text.trim().isNotEmpty)
-          _summaryItem('\u{2728}', _reviewCopy('well_label', 'Was gut lief'),
+          _summaryItem('\u{2728}', _phase1('well_label'),
               _wellCtrl.text.trim()),
         if (_challengeCtrl.text.trim().isNotEmpty)
           _summaryItem(
               '\u{1F4AA}',
-              _reviewCopy('challenge_label', 'Herausforderung'),
+              _phase1('challenge_label'),
               _challengeCtrl.text.trim()),
         if (_learnedCtrl.text.trim().isNotEmpty)
-          _summaryItem('\u{1F4A1}', _reviewCopy('learned_label', 'Erkenntnis'),
+          _summaryItem('\u{1F4A1}', _phase1('learned_label'),
               _learnedCtrl.text.trim()),
         if (_lookingForwardCtrl.text.trim().isNotEmpty)
-          _summaryItem('\u{1F31F}', _reviewCopy('forward_label', 'Vorfreude'),
+          _summaryItem('\u{1F31F}', _phase1('forward_label'),
               _lookingForwardCtrl.text.trim()),
 
         const SizedBox(height: 24),
@@ -707,20 +596,19 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
             ),
             child: Row(
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: const Color(0xFF7C3AED),
+                    color: Color(0xFF7C3AED),
                   ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    _reviewCopy(
-                        'ai_loading', 'KI denkt über deine Woche nach...'),
-                    style: TextStyle(
+                    _phase1('ai_loading'),
+                    style: const TextStyle(
                         color: Color(0xFF6B21A8),
                         fontWeight: FontWeight.w500,
                         fontSize: 13),
@@ -751,11 +639,11 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
                     const Text('\u{1F916}', style: TextStyle(fontSize: 18)),
                     const SizedBox(width: 8),
                     Text(
-                      _reviewCopy('ai_feedback', 'Dein KI-Feedback'),
-                      style: TextStyle(
+                      _phase1('ai_feedback'),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF6B21A8),
+                        color: Color(0xFF6B21A8),
                       ),
                     ),
                   ],
@@ -805,7 +693,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
           child: TextButton(
             onPressed: _startNewReflection,
             child: Text(_t('review_fill_again'),
-                style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
           ),
         ),
       ],
@@ -863,7 +751,6 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
       _learnedCtrl.clear();
       _lookingForwardCtrl.clear();
       _aiFeedback = null;
-      _currentWeekReflection = null;
       _fadeCtrl.reset();
       _fadeCtrl.forward();
     });
@@ -909,7 +796,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
               leading:
                   const Icon(Icons.delete_rounded, color: Color(0xFFDC2626)),
               title: Text(_t('review_delete'),
-                  style: TextStyle(color: Color(0xFFDC2626))),
+                  style: const TextStyle(color: Color(0xFFDC2626))),
               onTap: () {
                 Navigator.pop(ctx);
                 _deleteReflection(r);
@@ -931,7 +818,6 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
       _learnedCtrl.text = r.whatILearned;
       _lookingForwardCtrl.text = r.lookingForwardTo;
       _aiFeedback = null;
-      _currentWeekReflection = null;
       _fadeCtrl.reset();
       _fadeCtrl.forward();
     });
