@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
-import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/logic/account_ai_consent.dart';
+import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/weekly_reflection_ai_service.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/services/weekly_reflection_service.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
+import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 
 class WochenrueckblickScreen extends StatefulWidget {
-  const WochenrueckblickScreen({super.key});
+  const WochenrueckblickScreen({super.key, this.reflections, this.aiService});
+  final WeeklyReflectionService? reflections;
+  final WeeklyReflectionAiService? aiService;
 
   @override
   State<WochenrueckblickScreen> createState() => _WochenrueckblickScreenState();
@@ -126,7 +130,44 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
 
   bool _loading = true;
   bool _aiLoading = false;
+  bool _aiSending = false;
   String? _aiFeedback;
+  late final _reflections =
+      widget.reflections ?? WeeklyReflectionService.instance;
+  late final _ai = widget.aiService ?? WeeklyReflectionAiService();
+  late final String _scope = _reflections.scope;
+  bool _accountChanged = false;
+  bool _saving = false;
+  bool _revoking = false;
+  bool _hasConsent = false;
+  bool _hasLegacy = false;
+  String? _errorKey;
+  WeeklyReflection? _savedReflection;
+  int _requestVersion = 0;
+
+  void _requireActive() {
+    _reflections.requireScope(_scope);
+    _ai.consent.requireScope(_scope);
+    if (!mounted || _accountChanged) {
+      throw const AccountAiConsentRequiredException();
+    }
+  }
+
+  void _accountUpdated() {
+    if (_reflections.scope == _scope && _ai.consent.scope == _scope) return;
+    if (!mounted) return;
+    setState(() {
+      _accountChanged = true;
+      _requestVersion++;
+      _archive = [];
+      _savedReflection = null;
+      _aiFeedback = null;
+      _wellCtrl.clear();
+      _challengeCtrl.clear();
+      _learnedCtrl.clear();
+      _lookingForwardCtrl.clear();
+    });
+  }
 
   // Answers
   String? _selectedMood;
@@ -177,11 +218,13 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
         vsync: this, duration: const Duration(milliseconds: 350));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
+    AuthService.instance.addListener(_accountUpdated);
     _loadData();
   }
 
   @override
   void dispose() {
+    AuthService.instance.removeListener(_accountUpdated);
     _fadeCtrl.dispose();
     _wellCtrl.dispose();
     _challengeCtrl.dispose();
@@ -191,12 +234,20 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
   }
 
   Future<void> _loadData() async {
-    final all = await WeeklyReflectionService.loadAll();
-    final current = await WeeklyReflectionService.currentWeek();
-    if (mounted) {
+    try {
+      _requireActive();
+      final all = await _reflections.loadAll(expectedScope: _scope);
+      final current = await _reflections.currentWeek(expectedScope: _scope);
+      final hasConsent = await _ai.consent.hasConsent();
+      final hasLegacy = await _reflections.hasLegacy();
+      _requireActive();
       setState(() {
         _archive = all;
+        _hasConsent = hasConsent;
+        _hasLegacy = hasLegacy;
+        _errorKey = null;
         if (current != null) {
+          _savedReflection = current;
           _selectedMood = current.overallMood;
           _wellCtrl.text = current.whatWentWell;
           _challengeCtrl.text = current.whatWasChallenging;
@@ -207,6 +258,14 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
         }
         _loading = false;
       });
+    } catch (error) {
+      debugPrint('Weekly reflection load failed: ${error.runtimeType}');
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorKey = 'request_failed_retry';
+        });
+      }
     }
   }
 
@@ -217,7 +276,7 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
       _fadeCtrl.reset();
       _fadeCtrl.forward();
     });
-    if (_step == 5) _saveAndGenerateAI();
+    if (_step == 5) _saveReflection();
   }
 
   void _prevStep() {
@@ -230,7 +289,15 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
     }
   }
 
-  Future<void> _saveAndGenerateAI() async {
+  Future<void> _saveReflection() async {
+    if (_saving) return;
+    final requestVersion = ++_requestVersion;
+    void guard() {
+      _requireActive();
+      if (_requestVersion != requestVersion) {
+        throw const AccountAiConsentRequiredException();
+      }
+    }
     final reflection = WeeklyReflection(
       weekId: WeeklyReflectionService.currentWeekId(),
       createdAt: DateTime.now(),
@@ -240,25 +307,156 @@ class _WochenrueckblickScreenState extends State<WochenrueckblickScreen>
       whatILearned: _learnedCtrl.text.trim(),
       lookingForwardTo: _lookingForwardCtrl.text.trim(),
     );
-    await WeeklyReflectionService.save(reflection);
-
-    // Generate AI feedback
-    setState(() => _aiLoading = true);
+    setState(() {
+      _saving = true;
+      _errorKey = null;
+    });
     try {
-      final ai = GeminiAIService(modelName: APIConfig.getGeminiModelName());
-      final prompt = _buildAIPrompt(reflection);
-      final response = (await ai.chat(prompt)).trim();
-      if (response.isEmpty) throw const FormatException('empty AI feedback');
+      guard();
+      await _reflections.save(
+        reflection, expectedScope: _scope, requestGuard: guard,
+      );
+      final all = await _reflections.loadAll(expectedScope: _scope);
+      guard();
+      setState(() {
+        _savedReflection = reflection;
+        _archive = all;
+        _aiFeedback = null;
+      });
+    } catch (error) {
+      debugPrint('Weekly reflection save failed: ${error.runtimeType}');
+      if (mounted && _requestVersion == requestVersion) {
+        setState(() => _errorKey = 'request_failed_retry');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _claimLegacy() async {
+    if (_saving) return;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(_t('weekly_legacy_import')),
+        content: Text(_t('weekly_legacy_confirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(_t('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(_t('weekly_legacy_import')),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      _requireActive();
+      await _reflections.claimLegacy(
+        expectedScope: _scope,
+        requestGuard: _requireActive,
+      );
+      await _loadData();
+    } catch (error) {
+      debugPrint('Weekly reflection import failed: ${error.runtimeType}');
+      if (mounted) setState(() => _errorKey = 'request_failed_retry');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _generateFeedback() async {
+    final reflection = _savedReflection;
+    if (_aiLoading || _saving || reflection == null) return;
+    final requestVersion = ++_requestVersion;
+    setState(() {
+      _aiLoading = true;
+      _errorKey = null;
+    });
+    try {
+      _requireActive();
+      if (!await ensureAccountAiConsent(
+        context,
+        consent: _ai.consent,
+        titleKey: 'weekly_ai_consent_title',
+        bodyKey: 'weekly_ai_consent_body',
+        acceptKey: 'weekly_ai_consent_accept',
+        failedKey: 'request_failed_retry',
+      )) {
+        return;
+      }
+      final revision = _ai.consent.revision(_scope);
+      void guard() {
+        _requireActive();
+        _ai.consent.requireRevision(_scope, revision);
+        if (_requestVersion != requestVersion) {
+          throw const AccountAiConsentRequiredException();
+        }
+      }
+      guard();
+      setState(() {
+        _hasConsent = true;
+        _aiSending = true;
+      });
+      final response = (await _ai.generate(
+        _buildAIPrompt(reflection),
+        expectedScope: _scope,
+        languageCode: languageService.currentLanguage,
+        requestGuard: guard,
+      )).trim();
+      guard();
+      if (response.isEmpty) throw const FormatException('Empty weekly feedback');
+      await _ai.consent.require(_scope);
+      guard();
       final updated = reflection.copyWith(aiFeedback: response);
-      await WeeklyReflectionService.save(updated);
-      if (mounted) {
+      await _reflections.save(
+        updated, expectedScope: _scope, requestGuard: guard,
+      );
+      final all = await _reflections.loadAll(expectedScope: _scope);
+      guard();
+      setState(() {
+        _savedReflection = updated;
+        _archive = all;
+        _aiFeedback = response;
+      });
+    } catch (error) {
+      debugPrint('Weekly AI feedback failed: ${error.runtimeType}');
+      if (mounted && !_accountChanged && _requestVersion == requestVersion) {
+        setState(() => _errorKey = 'weekly_ai_failed');
+      }
+    } finally {
+      if (mounted && _requestVersion == requestVersion) {
         setState(() {
-          _aiFeedback = response;
           _aiLoading = false;
+          _aiSending = false;
         });
       }
-    } catch (e) {
-      if (mounted) setState(() => _aiLoading = false);
+    }
+  }
+
+  Future<void> _revokeConsent() async {
+    if (_revoking) return;
+    setState(() {
+      _revoking = true;
+      _requestVersion++;
+      _aiLoading = false;
+      _aiSending = false;
+      _errorKey = null;
+    });
+    try {
+      _requireActive();
+      await _ai.consent.revoke(_scope);
+      _requireActive();
+      setState(() => _hasConsent = false);
+    } catch (error) {
+      debugPrint('Weekly AI consent revocation failed: ${error.runtimeType}');
+      if (mounted) setState(() => _errorKey = 'request_failed_retry');
+    } finally {
+      if (mounted) setState(() => _revoking = false);
     }
   }
 
@@ -290,6 +488,9 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
 
   @override
   Widget build(BuildContext context) {
+    if (_accountChanged) {
+      return Scaffold(body: Center(child: Text(_t('family_hub_account_changed'))));
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFFAF9FF),
       appBar: AppBar(
@@ -325,6 +526,29 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
   Widget _buildWizard() {
     return Column(
       children: [
+        if (_hasLegacy)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: [
+              Text(_t('weekly_legacy_unassigned')),
+              TextButton(
+                onPressed: _saving ? null : _claimLegacy,
+                child: Text(_t('weekly_legacy_import')),
+              ),
+            ]),
+          ),
+        if (_errorKey != null)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: [
+              Text(_t(_errorKey!)),
+              if (_step < 5)
+                TextButton(
+                  onPressed: _saving ? null : _loadData,
+                  child: Text(_t('retry')),
+                ),
+            ]),
+          ),
         // Progress indicator
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -602,6 +826,7 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
             ),
           const Spacer(),
           FilledButton(
+            key: const ValueKey('weekly-next'),
             onPressed: canProceed ? _nextStep : null,
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF7C3AED),
@@ -696,7 +921,29 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
         const SizedBox(height: 24),
 
         // AI Feedback
-        if (_aiLoading)
+        if (_saving) const LinearProgressIndicator(),
+        if (_savedReflection != null) ...[
+          Text(_t('weekly_local_saved')),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            key: const ValueKey('weekly-generate-feedback'),
+            onPressed: _aiLoading || _revoking ? null : _generateFeedback,
+            icon: const Icon(Icons.auto_awesome),
+            label: Text(_t('weekly_ai_generate')),
+          ),
+        ] else if (!_saving)
+          OutlinedButton(
+            onPressed: _saveReflection,
+            child: Text(_t('retry')),
+          ),
+        if (_hasConsent)
+          TextButton(
+            key: const ValueKey('weekly-revoke-consent'),
+            onPressed: _revoking ? null : _revokeConsent,
+            child: Text(_t('weekly_ai_revoke')),
+          ),
+        const SizedBox(height: 12),
+        if (_aiSending)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -857,6 +1104,11 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
 
   void _startNewReflection() {
     setState(() {
+      _requestVersion++;
+      _aiLoading = false;
+      _aiSending = false;
+      _savedReflection = null;
+      _errorKey = null;
       _step = 0;
       _selectedMood = null;
       _wellCtrl.clear();
@@ -923,6 +1175,11 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
 
   void _editReflection(WeeklyReflection r) {
     setState(() {
+      _requestVersion++;
+      _aiLoading = false;
+      _aiSending = false;
+      _savedReflection = null;
+      _errorKey = null;
       _showArchive = false;
       _step = 0;
       _selectedMood = r.overallMood;
@@ -959,10 +1216,28 @@ Schreibe die Rückmeldung auf $responseLanguage, duze den Elternteil. Nutze 1-2 
       ),
     );
     if (confirmed != true) return;
-    await WeeklyReflectionService.delete(r.weekId);
-    final updated = await WeeklyReflectionService.loadAll();
-    if (mounted) {
-      setState(() => _archive = updated);
+    try {
+      _requireActive();
+      await _reflections.delete(r.weekId, expectedScope: _scope);
+      final updated = await _reflections.loadAll(expectedScope: _scope);
+      _requireActive();
+      setState(() {
+        _archive = updated;
+        if (_savedReflection?.weekId == r.weekId) {
+          _requestVersion++;
+          _savedReflection = null;
+          _aiFeedback = null;
+          _aiLoading = false;
+          _aiSending = false;
+        }
+      });
+    } catch (error) {
+      debugPrint('Weekly reflection delete failed: ${error.runtimeType}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('request_failed_retry'))),
+        );
+      }
     }
   }
 

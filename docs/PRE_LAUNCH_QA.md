@@ -299,6 +299,38 @@ Eure Coding-Regeln verlangen Accessibility-Konformität.
 > Hinweis: Die inhaltlich-juristische Abnahme (Texte korrekt für den Markt)
 > gehört zusätzlich geprüft — das ist keine reine Geräte-QA.
 
+### Wochenrückblick: lokale Nutzung und optionale KI
+
+- Abschließen speichert den Rückblick nur lokal, getrennt nach Konto. Erst
+  „KI-Feedback anfordern“ und die ausdrückliche, versionierte Zustimmung für
+  Wochenrückblicke dieses Kontos erlauben den Versand von Stimmung und Antworten
+  über das eigene Backend an Google Gemini. Chat-/Foto-/Memory-Zustimmung gilt
+  dafür nicht. Die Login-Pflicht bleibt unverändert.
+- Ablehnen oder Schließen des Dialogs sendet nichts. Bei Netzwerk-, Token- oder
+  KI-Fehlern bleibt der lokale Rückblick erhalten; die UI zeigt einen neutralen
+  Hinweis und erlaubt erneutes Anfordern, ohne rohe Providerfehler anzuzeigen.
+- Widerrufen blockiert weitere Anfragen und verwirft noch ausstehende Antworten.
+  Konto-Wechsel, erneute Anmeldung desselben Kontos nach einem Wechsel und
+  Verlassen des Screens dürfen alte Ergebnisse nicht anzeigen oder speichern.
+  Bereits an den Anbieter übertragene Daten werden dadurch nicht zurückgeholt.
+- Alte, global gespeicherte Rückblicke bleiben unverändert erhalten und werden
+  keinem Konto automatisch zugeschlagen. Produktentscheidung: explizite Übernahme
+  nach Bestätigung der Eigentümerschaft. Sie erfolgt nur für ein Konto, ersetzt
+  keine neuen Einträge derselben Woche und löst keinen KI-Aufruf aus. Ein
+  unterbrochener Import bleibt nur für das bestätigte Konto wiederholbar.
+- Datenexport enthält neue Rückblicke und Zustimmung nur für das aktuelle Konto.
+
+**Vor Release manuell prüfen:** Ablehnen/Abbrechen, Wiederholen nach Offline-
+Fehler, Widerruf während einer langsamen Anfrage, Kontowechsel, Import-Bestätigung
+und Dialog-/Button-Layout in allen acht Launch-Sprachen einschließlich RTL.
+Juristische Textprüfung und Anbieter-/Netzwerkprüfung sind dadurch nicht ersetzt.
+
+**Abgrenzung:** Dies schließt ausschließlich den aktiven Wochenrückblick-Pfad.
+Rituale, Antragshelfer, Event-Discovery/Flyer, Community-KI und Kettenbrecher sowie
+eine allgemeine serverseitige Consent-Durchsetzung für `/ai/generate` bleiben
+separat zu prüfen/härten. Die bestehende serverseitige Memory-Einwilligung bleibt
+unverändert; dieser Client-Guard ist kein manipulationssicherer Backend-Nachweis.
+
 ---
 
 ## 17. Store-Vorbereitung (kein Geräte-Test, aber vor Einreichung nötig)

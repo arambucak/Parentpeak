@@ -37,6 +37,8 @@ class ProfileDataExportService {
     'familykueche.ai_recipe_consent.v1',
     'fridge.ai_photo_consent.v1',
     'treasure.ai_photo_consent.v1',
+    'weekly_reflection.ai_consent.v1',
+    'weekly_reflections.v2',
   ];
 
   Future<Map<String, dynamic>> collectLocalData(

@@ -64,13 +64,13 @@ void main() {
 
     test('loadAll returns empty list initially', () async {
       SharedPreferences.setMockInitialValues({});
-      final all = await WeeklyReflectionService.loadAll();
+      final all = await WeeklyReflectionService.instance.loadAll();
       expect(all, isEmpty);
     });
 
     test('currentWeek returns null initially', () async {
       SharedPreferences.setMockInitialValues({});
-      final current = await WeeklyReflectionService.currentWeek();
+      final current = await WeeklyReflectionService.instance.currentWeek();
       expect(current, isNull);
     });
 
@@ -85,8 +85,8 @@ void main() {
         whatILearned: 'Geduld',
         lookingForwardTo: 'Wochenende',
       );
-      await WeeklyReflectionService.save(reflection);
-      final all = await WeeklyReflectionService.loadAll();
+      await WeeklyReflectionService.instance.save(reflection);
+      final all = await WeeklyReflectionService.instance.loadAll();
       expect(all.length, equals(1));
       expect(all.first.overallMood, equals('Super'));
       expect(all.first.whatWentWell, equals('Alles gut'));
@@ -103,9 +103,9 @@ void main() {
         whatILearned: '',
         lookingForwardTo: '',
       );
-      await WeeklyReflectionService.save(reflection);
-      await WeeklyReflectionService.delete('2026-W30');
-      final all = await WeeklyReflectionService.loadAll();
+      await WeeklyReflectionService.instance.save(reflection);
+      await WeeklyReflectionService.instance.delete('2026-W30');
+      final all = await WeeklyReflectionService.instance.loadAll();
       expect(all.where((r) => r.weekId == '2026-W30'), isEmpty);
     });
   });
