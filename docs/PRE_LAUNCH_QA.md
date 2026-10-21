@@ -134,6 +134,28 @@ Die App speichert sensible Kind-Daten (Alter, Allergien, Arzt,
 U-Untersuchungen). Grundregel laut Projekt: sensible Daten bleiben lokal,
 Kind-Namen/Geburtstage gehen NICHT an die KI.
 
+**Produktentscheidung 2026-10-21 — KI-Memory, Variante A:** Das Profilfeld
+`AiMemoryService.birthDate` geht bewusst nur an das eigene Backend
+(`POST /ai/children`, `PUT /ai/children/:id`) und wird dort in
+`AiChildProfile.birthDate` gespeichert. Dies ist eine ausdrückliche Ausnahme
+von der lokalen Speicherung, damit das Backend das Alter tagesaktuell berechnen
+kann. Kein Dritt-Dienst-Leck dieses Profilfelds an Gemini; kein Code-Fix nötig.
+Verifiziert: [createChild/updateChild](../lib/logic/ai_memory_service.dart),
+[Prisma-Modell](../backend/prisma/schema.prisma) und
+[Backend-Routen](../backend/server.js).
+
+Der clientseitige Tipp-Prompt nutzt nur volle Lebensjahre aus
+[`ChatContextPolicy.completedAge`](../lib/logic/chat_context_policy.dart).
+Auch der serverseitig ergänzte Memory-Kontext berechnet nur volle Lebensjahre
+über [`completedYears`/`buildMemoryContext`](../backend/ai_memory_policy.js);
+das strukturierte Geburtsdatum wird nicht in den Gemini-Kontext übernommen.
+Diese Aussage betrifft diesen Profil-Datenweg, nicht beliebige Freitext-Eingaben.
+Variante B (nur Alter ans Backend, Geburtsdatum ausschließlich lokal) wurde
+bewusst verworfen: Die dafür vorgesehene DB-/Datenmigration ist für den Launch
+nicht erforderlich. Der Audit-Punkt „birthDate ans eigene Backend“ ist damit
+als bewusste Entscheidung abgeschlossen; Einwilligung und Löschung bleiben
+weiterhin zu prüfen.
+
 - [ ] Kind-Dossier-Daten (Allergien, Arzt, Größen) bleiben **lokal** — kein
       Upload ins Backend (ggf. mit Netzwerk-Mitschnitt stichprobenartig prüfen).
 - [ ] Beim KI-Chat / Entwicklungs-Check wird **kein Klarname und kein exaktes
