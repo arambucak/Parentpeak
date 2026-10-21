@@ -16291,11 +16291,7 @@ app.get('/api/treasures/mine', async (req, res) => {
  * GET /api/treasures/reports
  * List treasure reports (admin token required)
  */
-app.get('/api/treasures/reports', async (req, res) => {
-  if (!isAdminTokenAuthorized(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
+app.get('/api/treasures/reports', requireAdmin, async (req, res) => {
   const {
     status,
     maxResults = 50,
@@ -16334,13 +16330,14 @@ app.get('/api/treasures/reports', async (req, res) => {
  * POST /api/treasures/reports/:reportId/resolve
  * Resolve or dismiss a treasure report (admin token required)
  */
-app.post('/api/treasures/reports/:reportId/resolve', async (req, res) => {
-  if (!isAdminTokenAuthorized(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
+app.post('/api/treasures/reports/:reportId/resolve', requireAdmin, async (req, res) => {
   const { reportId } = req.params;
   const { action = 'resolved', moderatorId, moderatorNote } = req.body;
+  // resolved = Meldung berechtigt -> Angebot archivieren (ausser archiveListing=false).
+  // dismissed = Meldung unberechtigt -> Angebot nur auf ausdruecklichen Wunsch
+  // (restoreListing=true) wieder freigeben, z.B. nach einer Auto-Archivierung.
+  const archiveListing = req.body.archiveListing !== false;
+  const restoreListing = req.body.restoreListing === true;
   const normalizedAction = String(action).trim();
   const allowedActions = new Set(['resolved', 'dismissed']);
 
@@ -16354,11 +16351,14 @@ app.post('/api/treasures/reports/:reportId/resolve', async (req, res) => {
       return res.status(404).json({ error: 'Report nicht gefunden' });
     }
 
+    const moderatorIdentity = moderatorId
+      ? String(moderatorId).slice(0, 120)
+      : (req.firebaseUid || null);
     const updated = await prisma.treasureReport.update({
       where: { id: reportId },
       data: {
         status: normalizedAction,
-        moderatorId: moderatorId ? String(moderatorId).slice(0, 120) : null,
+        moderatorId: moderatorIdentity,
         moderatorNote: moderatorNote ? String(moderatorNote).slice(0, 1200) : null,
         resolvedAt: new Date(),
         updatedAt: new Date(),
@@ -16374,7 +16374,22 @@ app.post('/api/treasures/reports/:reportId/resolve', async (req, res) => {
       },
     });
 
-    res.json({ report: updated });
+    let listingAction = 'none';
+    if (normalizedAction === 'resolved' && archiveListing) {
+      await prisma.treasureItem.updateMany({
+        where: { id: existing.treasureId, status: { not: 'archived' } },
+        data: { status: 'archived', updatedAt: new Date() },
+      });
+      listingAction = 'archived';
+    } else if (normalizedAction === 'dismissed' && restoreListing) {
+      await prisma.treasureItem.updateMany({
+        where: { id: existing.treasureId, status: 'archived' },
+        data: { status: 'available', updatedAt: new Date() },
+      });
+      listingAction = 'restored';
+    }
+
+    res.json({ report: updated, listingAction });
   } catch (err) {
     console.error('❌ Treasure report resolve error:', err.message);
     res.status(500).json({ error: `Failed to resolve treasure report: ${err.message}` });

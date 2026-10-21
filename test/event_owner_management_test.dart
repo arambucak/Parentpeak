@@ -191,11 +191,19 @@ void main() {
     },
   );
 
+  testWidgets('owner cannot report or block their own event', (tester) async {
+    final fixture = _Fixture();
+    await _open(tester, fixture);
+    expect(find.byKey(const Key('event-safety-menu')), findsNothing);
+  });
+
   testWidgets('non-owner has no management tools', (tester) async {
     final fixture = _Fixture(owner: false);
     await _open(tester, fixture);
     expect(find.byKey(const Key('event-owner-edit')), findsNothing);
     expect(find.byKey(const Key('event-owner-menu')), findsNothing);
+    // UGC-Pflicht (Apple 1.2): fremde Events koennen gemeldet/blockiert werden.
+    expect(find.byKey(const Key('event-safety-menu')), findsOneWidget);
     expect(fixture.participation.reads, 1);
     await tester.scrollUntilVisible(find.text('Request to participate'), 250);
     expect(find.text('Follow offer'), findsOneWidget);

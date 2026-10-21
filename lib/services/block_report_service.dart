@@ -152,20 +152,13 @@ class BlockReportService {
     await _save();
 
     // Prio 4: persist the report on the server for the moderation trail.
-    final api = _api;
-    if (api != null) {
-      try {
-        await api.postJsonAny('/api/safety/report', {
-          'reporterUserId': reporterUserId,
-          'reportedUserId': reportedUserId,
-          'contentType': contentType,
-          'content': content,
-          'reason': reason,
-        });
-      } catch (e) {
-        debugPrint('BlockReportService.reportContent server sync failed: $e');
-      }
-    }
+    await _postReport(
+      reporterUserId: reporterUserId,
+      reportedUserId: reportedUserId,
+      contentType: contentType,
+      content: content,
+      reason: reason,
+    );
 
     // AI auto-moderation check
     final moderationResult =
@@ -195,6 +188,66 @@ class BlockReportService {
       action: ReportAction.reviewPending,
       message: 'Danke für deine Meldung. Wir prüfen den Inhalt.',
     );
+  }
+
+  /// Reports an event (AI-discovered or user-hosted) to the moderation queue.
+  /// Returns true only when the server accepted the report, so the UI never
+  /// claims success for a report that was not delivered.
+  /// AI events have no host account; they are reported under the pseudo
+  /// account `ai_event:<id>` so they show up grouped in the admin dashboard.
+  Future<bool> reportEvent({
+    required String eventId,
+    required String eventTitle,
+    required String reason,
+    String? hostUserId,
+  }) async {
+    final reporterUserId = _currentUserId;
+    if (reporterUserId == 'anonymous') return false;
+    final reportedUserId = (hostUserId != null && hostUserId.trim().isNotEmpty)
+        ? hostUserId.trim()
+        : 'ai_event:$eventId';
+    final content = '[$eventId] $eventTitle';
+    _reports.add(ContentReport(
+      id: 'report_${DateTime.now().millisecondsSinceEpoch}',
+      reporterUserId: reporterUserId,
+      reportedUserId: reportedUserId,
+      contentType: 'event',
+      content: content,
+      reason: reason,
+      createdAt: DateTime.now(),
+    ));
+    await _save();
+    return _postReport(
+      reporterUserId: reporterUserId,
+      reportedUserId: reportedUserId,
+      contentType: 'event',
+      content: content,
+      reason: reason,
+    );
+  }
+
+  Future<bool> _postReport({
+    required String reporterUserId,
+    required String reportedUserId,
+    required String contentType,
+    required String content,
+    required String reason,
+  }) async {
+    final api = _api;
+    if (api == null) return false;
+    try {
+      await api.postJsonAny('/api/safety/report', {
+        'reporterUserId': reporterUserId,
+        'reportedUserId': reportedUserId,
+        'contentType': contentType,
+        'content': content,
+        'reason': reason,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('BlockReportService report server sync failed: $e');
+      return false;
+    }
   }
 
   /// Get report count for a user (for warning system)

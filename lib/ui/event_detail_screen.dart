@@ -4,6 +4,9 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_backend_service.dart';
 import 'package:parentpeak/logic/event_service.dart';
 import 'package:parentpeak/logic/participation_service.dart';
+import 'package:parentpeak/logic/user_profile_service.dart';
+import 'package:parentpeak/services/block_report_service.dart';
+import 'package:parentpeak/ui/widgets/event_safety_widgets.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/meetup_chat_screen.dart';
 import 'package:parentpeak/ui/event_edit_sheet.dart';
@@ -387,6 +390,38 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
+  void _openReport() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => ReportEventSheet(
+        eventId: _event.id,
+        eventTitle: _event.title,
+        onSubmit: (reason) => BlockReportService.instance.reportEvent(
+          eventId: _event.id,
+          eventTitle: _event.title,
+          reason: reason,
+          hostUserId: _event.hosterId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _blockHost() async {
+    final hostId = _event.hosterId.trim();
+    if (hostId.isEmpty) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final template = context.tr('network_blocked');
+    final name = await UserProfileService.instance.displayNameFor(hostId);
+    await BlockReportService.instance.blockUser(hostId, name);
+    messenger.showSnackBar(SnackBar(
+      content: Text(template.replaceAll('{name}', name)),
+    ));
+    navigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -395,6 +430,26 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       appBar: AppBar(
         title: Text(context.tr('event_details_title')),
         elevation: 0,
+        actions: [
+          if (!_isOwner)
+            PopupMenuButton<String>(
+              key: const Key('event-safety-menu'),
+              onSelected: (value) {
+                if (value == 'report') _openReport();
+                if (value == 'block') _blockHost();
+              },
+              itemBuilder: (menuContext) => [
+                PopupMenuItem(
+                  value: 'report',
+                  child: Text(context.tr('event_report_title')),
+                ),
+                PopupMenuItem(
+                  value: 'block',
+                  child: Text(context.tr('block_profile')),
+                ),
+              ],
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
