@@ -278,6 +278,28 @@ void main() {
   });
 
   group('BackendApiClient uploads', () {
+    for (final entry in {
+      'jpg': 'image/jpeg',
+      'JPEG': 'image/jpeg',
+      'png': 'image/png',
+      'webp': 'image/webp',
+      'gif': 'image/gif',
+      'unknown': 'application/octet-stream',
+    }.entries) {
+      test('byte upload uses ${entry.value} for ${entry.key}', () async {
+        final mockHttp = MockClient((request) async {
+          expect(request.body, contains('content-type: ${entry.value}'));
+          return http.Response('{"url":"/uploads/photo"}', 201);
+        });
+        addTearDown(mockHttp.close);
+        await _client(mockHttp).uploadImageBytes(
+          '/uploads/image',
+          [1, 2, 3],
+          filename: 'photo.${entry.key}',
+        );
+      });
+    }
+
     test('byte upload uses dynamic auth token and multipart payload', () async {
       const imageBytes = <int>[1, 2, 3, 4];
       final mockHttp = MockClient((request) async {

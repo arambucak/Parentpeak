@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,7 +41,10 @@ class _Backend extends EventBackendService {
   int uploads = 0;
 
   @override
-  Future<String?> uploadImage(File file) async {
+  Future<String?> uploadImageBytes(
+    List<int> bytes, {
+    required String filename,
+  }) async {
     uploads++;
     return 'https://example.test/photo.jpg';
   }
@@ -336,7 +338,7 @@ void main() {
       backend.pending!.complete(null);
       await tester.pumpAndSettle();
       expect(find.byType(CreateEventScreen), findsOneWidget);
-      expect(find.textContaining('Konnte nicht speichern'), findsOneWidget);
+      expect(find.text(text('event_action_failed')), findsOneWidget);
       backend.pending = Completer<MeetupEvent?>();
       ScaffoldMessenger.of(
         tester.element(find.byType(CreateEventScreen)),

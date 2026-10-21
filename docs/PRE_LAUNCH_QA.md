@@ -214,6 +214,10 @@ Im Browser (Chrome Desktop **und** Safari auf iPhone) prüfen:
 - [ ] Nach einem Deploy: Hard-Refresh (Cmd+Shift+R) zeigt den neuen Stand.
 - [ ] Favicon und Titel korrekt (neues Logo).
 - [ ] Login/Logout funktioniert auch im Web.
+- [ ] Event erstellen: Foto auswählen, Vorschau sehen, ersetzen und entfernen
+      funktioniert ohne Dateisystem-/`Image.file`-Fehler. Veröffentlichen lädt
+      das ausgewählte Bild hoch und übernimmt dessen URL. Bei Uploadfehler bleibt
+      das Formular offen; erneutes Veröffentlichen versucht den Upload erneut.
 
 ---
 

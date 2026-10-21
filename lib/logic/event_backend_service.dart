@@ -217,6 +217,34 @@ class EventBackendService {
     }
   }
 
+  /// Uploads native or browser-picked photo bytes without a filesystem path.
+  Future<String?> uploadImageBytes(
+    List<int> bytes, {
+    required String filename,
+  }) async {
+    if (_apiClient == null) {
+      lastSyncError = 'Bild-Upload fehlgeschlagen: Backend nicht konfiguriert';
+      return null;
+    }
+    try {
+      final response = await _apiClient!.uploadImageBytes(
+        '/uploads/image',
+        bytes,
+        filename: filename,
+      );
+      final url = response['url'];
+      if (url is! String || url.trim().isEmpty) {
+        throw const FormatException('Missing uploaded event photo URL');
+      }
+      lastSyncError = null;
+      return url;
+    } catch (error) {
+      lastSyncError = 'Bild-Upload fehlgeschlagen: $error';
+      debugPrint(lastSyncError);
+      return null;
+    }
+  }
+
   Future<List<EventInvitation>> fetchInvitationsForUser(
     String userId, {
     bool throwOnFailure = false,

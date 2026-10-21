@@ -379,8 +379,22 @@ class BackendApiClient {
     final request = http.MultipartRequest('POST', uri);
     final uploadHeaders = await _headers(includeContentType: false);
     request.headers.addAll(uploadHeaders);
+    final imageSubtype = switch (filename.split('.').last.toLowerCase()) {
+      'jpg' || 'jpeg' => 'jpeg',
+      'png' => 'png',
+      'webp' => 'webp',
+      'gif' => 'gif',
+      _ => null,
+    };
     request.files.add(
-      http.MultipartFile.fromBytes('image', bytes, filename: filename),
+      http.MultipartFile.fromBytes(
+        'image',
+        bytes,
+        filename: filename,
+        contentType: imageSubtype == null
+            ? null
+            : http.MediaType('image', imageSubtype),
+      ),
     );
     final streamed = await _httpClient
         .send(request)

@@ -1,6 +1,5 @@
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/main.dart';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,11 +19,13 @@ class CreateEventScreen extends StatefulWidget {
     this.flyerScanner,
     this.eventService,
     this.eventBackendService,
+    this.imagePicker,
   });
 
   final EventFlyerScannerService? flyerScanner;
   final EventService? eventService;
   final EventBackendService? eventBackendService;
+  final ImagePicker? imagePicker;
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -122,9 +123,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   bool _isSubmitting = false;
   bool _showDateError = false;
-  File? _selectedPhotoFile;
+  Uint8List? _selectedPhotoBytes;
+  String? _selectedPhotoName;
+  bool _isPickingPhoto = false;
   String? _uploadedPhotoUrl;
-  final _imagePicker = ImagePicker();
+  late final _imagePicker = widget.imagePicker ?? ImagePicker();
   late final _eventBackendService =
       widget.eventBackendService ?? EventBackendService();
 
@@ -242,17 +245,34 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    final picked = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1920,
-      maxHeight: 1080,
-      imageQuality: 85,
-    );
-    if (picked == null || !mounted) return;
-    setState(() {
-      _selectedPhotoFile = File(picked.path);
-      _uploadedPhotoUrl = null;
-    });
+    if (_isPickingPhoto || _isSubmitting) return;
+    setState(() => _isPickingPhoto = true);
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      if (picked == null || !mounted) return;
+      final bytes = await picked.readAsBytes();
+      if (bytes.isEmpty) throw const FormatException('Empty event photo');
+      if (!mounted) return;
+      setState(() {
+        _selectedPhotoBytes = bytes;
+        _selectedPhotoName = picked.name.isEmpty ? 'event.jpg' : picked.name;
+        _uploadedPhotoUrl = null;
+      });
+    } catch (error) {
+      debugPrint('Event photo selection failed: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('request_failed_retry'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPickingPhoto = false);
+    }
   }
 
   // ─── Flyer-/Foto-Scan: "Magisch ausfüllen" ────────────────────────────────
@@ -490,15 +510,22 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<String> _ensurePhotoUploaded() async {
-    if (_selectedPhotoFile == null) return '';
+    final bytes = _selectedPhotoBytes;
+    if (bytes == null) return '';
     if (_uploadedPhotoUrl != null) return _uploadedPhotoUrl!;
-    final url = await _eventBackendService.uploadImage(_selectedPhotoFile!);
-    _uploadedPhotoUrl = url ?? '';
-    return _uploadedPhotoUrl!;
+    final url = await _eventBackendService.uploadImageBytes(
+      bytes,
+      filename: _selectedPhotoName!,
+    );
+    if (url == null || url.trim().isEmpty) {
+      throw StateError('Event photo upload was not acknowledged');
+    }
+    _uploadedPhotoUrl = url;
+    return url;
   }
 
   Future<void> _submitForm() async {
-    if (_isScanning || _isSubmitting) return;
+    if (_isScanning || _isSubmitting || _isPickingPhoto) return;
     if (!_dateSelection.canSubmit(DateTime.now())) {
       setState(() => _showDateError = true);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -674,11 +701,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         if (mounted) Navigator.of(context).pop();
       }
     } catch (e) {
+      debugPrint('Event creation failed: $e');
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Konnte nicht speichern: $e')));
+        ).showSnackBar(SnackBar(content: Text(_t('event_action_failed'))));
       }
     }
   }
@@ -1131,20 +1159,24 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
-                    onPressed: _isSubmitting ? null : _pickPhoto,
+                    key: const ValueKey('event-photo-picker'),
+                    onPressed: _isSubmitting || _isPickingPhoto
+                        ? null
+                        : _pickPhoto,
                     icon: const Icon(Icons.photo_library_outlined),
                     label: Text(
-                      _selectedPhotoFile == null
+                      _selectedPhotoBytes == null
                           ? 'Foto auswählen'
                           : 'Foto ändern',
                     ),
                   ),
-                  if (_selectedPhotoFile != null) ...[
+                  if (_selectedPhotoBytes != null) ...[
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        _selectedPhotoFile!,
+                      child: Image.memory(
+                        _selectedPhotoBytes!,
+                        key: const ValueKey('event-photo-preview'),
                         height: 180,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -1162,11 +1194,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           ),
                         ),
                         TextButton.icon(
-                          onPressed: _isSubmitting
+                          key: const ValueKey('event-photo-remove'),
+                          onPressed: _isSubmitting || _isPickingPhoto
                               ? null
                               : () {
                                   setState(() {
-                                    _selectedPhotoFile = null;
+                                    _selectedPhotoBytes = null;
+                                    _selectedPhotoName = null;
                                     _uploadedPhotoUrl = null;
                                   });
                                 },
