@@ -14688,8 +14688,7 @@ app.get('/api/events/:id', async (req, res) => {
       include: {
         participants: {
           include: { user: { select: { id: true, firstName: true, lastName: true, avatar: true } } }
-        },
-        chat: { include: { messages: { take: 5, orderBy: { createdAt: 'desc' } } } }
+        }
       }
     });
 

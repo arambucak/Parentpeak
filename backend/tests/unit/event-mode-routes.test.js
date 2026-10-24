@@ -19,6 +19,12 @@ function fixture(overrides = {}, initial = []) {
   let rows = initial.map(item => ({ eventId: 'event', createdAt: new Date(), updatedAt: new Date(), ...item }));
   const handlers = {};
   const calls = [];
+  const eventQueries = [];
+  let chatReads = 0;
+  const chat = { id: 'event-chat', event: { hosterId: event.hosterId }, messages: [{
+    id: 'private-message', authorId: 'host', content: 'Private meeting arrangements',
+    createdAt: new Date('2026-01-01'), author: { firstName: 'Host', lastName: 'Parent', avatar: '' },
+  }] };
   let queue = Promise.resolve();
   const participation = {
     findUnique: async ({ where }) => where.id ? rows.find(item => item.id === where.id) || null
@@ -26,6 +32,8 @@ function fixture(overrides = {}, initial = []) {
     count: async ({ where }) => rows.filter(item => where.status.in.includes(item.status)).length,
     findMany: async ({ where }) => rows.filter(item => !where?.status ||
       (typeof where.status === 'string' ? item.status === where.status : where.status.in.includes(item.status))),
+    findFirst: async ({ where }) => rows.find(item =>
+      item.userId === where.userId && where.status.in.includes(item.status)) || null,
     upsert: async ({ create, update }) => {
       calls.push('write');
       if (event.writeFailure) throw new Error('Database write failed');
@@ -38,11 +46,20 @@ function fixture(overrides = {}, initial = []) {
   };
   const prisma = {
     event: {
-      findUnique: async () => ({ ...event, participants: rows }),
+      findUnique: async args => {
+        eventQueries.push(args);
+        if (event.readFailure) throw new Error('Database read failed');
+        return { ...event, participants: rows, ...(args.include?.chat ? { chat } : {}) };
+      },
       findMany: async () => [{ ...event, participants: rows }],
       create: async ({ data }) => { calls.push('create'); Object.assign(event, data); return { ...event, participants: [] }; },
       update: async ({ data }) => { calls.push('update'); Object.assign(event, data); return { ...event, participants: rows }; },
     },
+    eventChat: { findUnique: async () => {
+      chatReads++;
+      if (event.chatReadFailure) throw new Error('Chat read failed');
+      return chat;
+    } },
     eventParticipation: participation,
     familyRequest: { findFirst: async () => null },
     $transaction: operation => {
@@ -57,6 +74,9 @@ function fixture(overrides = {}, initial = []) {
   };
   const context = vm.createContext({
     ...policy, prisma, crypto, console: { error() {} },
+    adminUserIds: new Set(['moderator']),
+    respondChatPersistenceError: (res, _route, _error) =>
+      res.status(503).json({ error: 'Chat temporarily unavailable' }),
     resilientEventFindMany: args => prisma.event.findMany(args),
     ensureAuthenticatedEventUser: async (_req, userId) => userId,
     verifyFirebaseIdToken: async req => req.headers.authorization === 'Bearer verified-token'
@@ -78,10 +98,13 @@ function fixture(overrides = {}, initial = []) {
   vm.runInContext(source.slice(start, source.indexOf("\napp.put('/events/participations/withdraw'", start)), context);
   const identityStart = source.indexOf('async function eventIdentityMiddleware(');
   vm.runInContext(source.slice(identityStart, source.indexOf('\napp.use(', identityStart)), context);
+  const chatStart = source.indexOf('async function authorizeEventChat(');
+  vm.runInContext(source.slice(chatStart, source.indexOf("\napp.get('/events/:id/chat/messages'", chatStart)), context);
   for (const [method, route] of [
     ['post', '/events/participations'], ['put', '/events/participations/withdraw'],
     ['put', '/events/participations/:id/respond'], ['post', '/api/events'],
     ['get', '/api/events'], ['get', '/api/events/:id'], ['put', '/api/events/:id'],
+    ['get', '/events/:id/chat/messages'],
   ]) vm.runInContext(routeBlock(method, route), context);
   async function request(method, route, body = {}, uid = 'parent', query = {}) {
     let status = 200; let payload;
@@ -98,7 +121,7 @@ function fixture(overrides = {}, initial = []) {
     await next();
     return { status, body: payload };
   }
-  return { request, rows: () => rows, calls, event,
+  return { request, rows: () => rows, calls, event, eventQueries, chatReads: () => chatReads,
     authenticate: async authorization => {
       const req = { method: 'GET', headers: { authorization } };
       let status = 200; let nextCalled = false;
@@ -160,13 +183,73 @@ test('only confirmed statuses count; pending, cancelled and interested do not', 
   assert.equal((await route.request('get', '/api/events')).body.events[0].currentParticipants, 3);
   assert.equal((await route.request('get', '/api/events/:id')).body.event.spotsAvailable, 7);
 });
+for (const uid of [null, 'outsider', 'pending', 'member', 'host', 'moderator']) {
+  test(`event details stay public without loading or exposing chat for ${uid || 'anonymous'}`, async () => {
+    const route = fixture({ maxParticipants: 3 }, [
+      { id: 'pending', userId: 'pending', status: 'pending' },
+      { id: 'member', userId: 'member', status: 'approved' },
+    ]);
+    const response = await route.request('get', '/api/events/:id', {}, uid);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.event.title, 'Meetup');
+    assert.equal(response.body.event.currentParticipants, 1);
+    assert.equal(response.body.event.spotsAvailable, 2);
+    assert.equal(Object.hasOwn(response.body.event, 'chat'), false);
+    assert.equal(JSON.stringify(response.body).includes('Private meeting arrangements'), false);
+    assert.equal(route.eventQueries.length, 1);
+    assert.equal(Object.hasOwn(route.eventQueries[0].include, 'chat'), false);
+    assert.equal(route.chatReads(), 0);
+  });
+}
+test('public event details do not require an available chat store', async () => {
+  const route = fixture({ chatReadFailure: true });
+  assert.equal((await route.request('get', '/api/events/:id', {}, null)).status, 200);
+  assert.equal(route.chatReads(), 0);
+});
+for (const [uid, status] of [[null, 401], ['outsider', 403], ['pending', 403],
+  ['interested', 403], ['invited', 403], ['cancelled', 403],
+  ['approved', 200], ['accepted', 200], ['attended', 200], ['host', 200], ['moderator', 200]]) {
+  test(`dedicated chat read preserves access rules for ${uid || 'anonymous'}`, async () => {
+    const route = fixture({}, ['pending', 'interested', 'invited', 'cancelled',
+      'approved', 'accepted', 'attended'].map(value => ({ id: value, userId: value, status: value })));
+    const response = await route.request('get', '/events/:id/chat/messages', {}, uid);
+    assert.equal(response.status, status);
+    assert.equal(route.chatReads(), status === 200 ? 1 : 0);
+    if (status === 200) {
+      assert.equal(response.body.items.length, 1);
+      assert.equal(response.body.items[0].content, 'Private meeting arrangements');
+      assert.equal(response.body.items[0].isHost, true);
+    } else {
+      assert.equal('items' in response.body, false);
+      assert.equal(JSON.stringify(response.body).includes('Private meeting arrangements'), false);
+    }
+  });
+}
+test('event and dedicated chat reads fail closed on database errors', async () => {
+  for (const overrides of [{ readFailure: true }, { chatReadFailure: true }]) {
+    const route = fixture(overrides);
+    const chat = await route.request('get', '/events/:id/chat/messages', {}, 'host');
+    assert.equal(chat.status, 503);
+    assert.equal('items' in chat.body, false);
+    if (overrides.readFailure) {
+      const details = await route.request('get', '/api/events/:id', {}, null);
+      assert.equal(details.status, 503);
+      assert.equal('event' in details.body, false);
+    }
+  }
+});
 for (const visibility of ['privateOnly', 'inviteOnly', 'familyCircle']) {
   test(`${visibility}: unauthorized joins, detail IDs and discovery cannot reveal event`, async () => {
     const route = fixture({ visibility });
     assert.equal((await route.join()).status, 403);
     assert.equal((await route.request('get', '/api/events/:id')).status, 403);
+    const anonymous = await route.request('get', '/api/events/:id', {}, null);
+    assert.equal(anonymous.status, 403);
+    assert.equal('event' in anonymous.body, false);
     assert.equal((await route.request('get', '/api/events', {}, 'parent', { visibility })).body.events.length, 0);
-    assert.equal((await route.request('get', '/api/events/:id', {}, 'host')).status, 200);
+    const host = await route.request('get', '/api/events/:id', {}, 'host');
+    assert.equal(host.status, 200);
+    assert.equal(Object.hasOwn(host.body.event, 'chat'), false);
   });
 }
 test('invited user can join direct meetup, but host cannot join their own', async () => {

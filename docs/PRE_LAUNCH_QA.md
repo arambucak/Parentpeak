@@ -45,6 +45,11 @@ Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
 - [ ] Event-Chat: Veranstalter und bestätigte Teilnehmer können lesen/senden.
       Offene, abgelehnte und zurückgezogene Teilnahmen gewähren keinen Zugang;
       manipulierte Nutzer-/Veranstalter-IDs ändern daran nichts.
+- [ ] Öffentliche Eventdetails (`GET /api/events/:id`) bleiben ohne Token
+      erreichbar, enthalten aber weder `chat` noch Chatnachrichten — auch nicht
+      für Veranstalter oder bestätigte Teilnehmer. Nachrichten werden nur über
+      `GET /events/:id/chat/messages` mit verifiziertem Token und bestehender
+      Chatberechtigung geladen. Private Eventdetails bleiben geschützt.
 - [ ] Nachrichten löschen: eigener Autor oder Veranstalter bzw. konfigurierter
       UID-Admin. Meldungen erstellen: berechtigter Chat-Teilnehmer; Meldungen
       einsehen: Veranstalter bzw. UID-Admin.
