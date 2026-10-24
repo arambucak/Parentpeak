@@ -455,7 +455,7 @@ test('account export includes own Todos/Shopping and never B or demo rows', asyn
     'communityEventInterest'];
   for (const name of names) f.prisma[name] = { findMany: async () => [] };
   f.context.resilientEventFindMany = async () => [];
-  vm.runInContext(slice('async function exportAccountDataByUserIdPrisma(', '// ============================================================================\n// REFERRAL'), f.context);
+  vm.runInContext(slice('async function exportAccountDataByUserIdPrisma(', 'function respondLegacyReferralRetired('), f.context);
   const result = await f.context.exportAccountDataByUserIdPrisma('a');
   assert.equal(result.todos[0].id, 'todo-a');
   assert.equal(result.shoppingItems[0].id, 'shop-a');
