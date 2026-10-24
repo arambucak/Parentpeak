@@ -204,13 +204,21 @@ class EventBackendService {
 
   /// Uploads an image file and returns the public URL, or null on failure.
   Future<String?> uploadImage(File imageFile) async {
-    if (_apiClient == null) return null;
+    if (_apiClient == null) {
+      lastSyncError = 'Bild-Upload fehlgeschlagen: Backend nicht konfiguriert';
+      return null;
+    }
     try {
-      final response = await _apiClient!.uploadImageFile(
+      final response = await _apiClient!.withRequiredAuthToken().uploadImageFile(
         '/uploads/image',
         imageFile,
       );
-      return response['url']?.toString();
+      final url = response['url'];
+      if (url is! String || url.trim().isEmpty) {
+        throw const FormatException('Missing uploaded event photo URL');
+      }
+      lastSyncError = null;
+      return url;
     } catch (e) {
       lastSyncError = 'Bild-Upload fehlgeschlagen: $e';
       return null;
@@ -227,7 +235,7 @@ class EventBackendService {
       return null;
     }
     try {
-      final response = await _apiClient!.uploadImageBytes(
+      final response = await _apiClient!.withRequiredAuthToken().uploadImageBytes(
         '/uploads/image',
         bytes,
         filename: filename,

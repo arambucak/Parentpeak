@@ -80,6 +80,15 @@ async function fixture(t, { delayFilename = false } = {}) {
       mkdirSync: fs.mkdirSync,
     },
     process: { env: { PUBLIC_BASE_URL: 'https://uploads.example' } },
+    requireVerifiedUser: (req, res, next) => next(),
+    // These tests isolate multipart parser/descriptor regressions. Actual
+    // decoding, metadata removal and auth are covered in image-sanitization.
+    publishSanitizedImage: async (file, destination) => {
+      const filename = `parser-${path.basename(file.path, '.tmp')}.png`;
+      fs.renameSync(file.path, path.join(destination, filename));
+      return { filename, size: file.size };
+    },
+    InvalidImageError: class extends Error {},
     observeUpload: (error) => errors.push(error),
     holdFilename: (callback) => { pendingFilename = callback; },
   });
@@ -123,7 +132,8 @@ async function fixture(t, { delayFilename = false } = {}) {
   });
   const port = server.address().port;
   return {
-    directory: path.join(directory, 'uploads'), errors, streams,
+    directory: path.join(directory, '.upload-tmp'),
+    publicDirectory: path.join(directory, 'uploads'), errors, streams,
     async request(body, contentType = `multipart/form-data; boundary=${boundary}`) {
       return new Promise((resolve, reject) => {
         const request = http.request({
@@ -162,7 +172,7 @@ async function fixture(t, { delayFilename = false } = {}) {
       request.write(body);
       await waitUntil(() => beforeFilename
         ? pendingFilename !== undefined
-        : fs.readdirSync(path.join(directory, 'uploads')).length === 1);
+        : fs.readdirSync(path.join(directory, '.upload-tmp')).length === 1);
       request.destroy();
       await closed;
       await waitUntil(() => errors.length === previous + 1);
@@ -172,20 +182,20 @@ async function fixture(t, { delayFilename = false } = {}) {
       }
       await waitUntil(() => (beforeFilename || streams.length > 0) &&
         streams.every((stream) => stream.closed) &&
-        fs.readdirSync(path.join(directory, 'uploads')).length === 0);
+        fs.readdirSync(path.join(directory, '.upload-tmp')).length === 0);
     },
   };
 }
 
-test('valid image preserves 201, URL, filename, size and disk bytes', async (t) => {
+test('multipart parser preserves input bytes for the separate sanitizer', async (t) => {
   const f = await fixture(t);
   const bytes = Buffer.from('valid image fixture');
   const result = await f.request(multipart({ bytes }));
   assert.equal(result.status, 201);
-  assert.match(result.body.filename, /^\d+-[a-f0-9]{12}\.png$/);
+  assert.match(result.body.filename, /^parser-[a-f0-9]{32}\.png$/);
   assert.equal(result.body.url, `https://uploads.example/uploads/${result.body.filename}`);
   assert.equal(result.body.size, bytes.length);
-  assert.deepEqual(fs.readFileSync(path.join(f.directory, result.body.filename)), bytes);
+  assert.deepEqual(fs.readFileSync(path.join(f.publicDirectory, result.body.filename)), bytes);
 });
 
 test('all four existing MIME types remain supported', async (t) => {
