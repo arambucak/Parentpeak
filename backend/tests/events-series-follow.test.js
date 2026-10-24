@@ -5,23 +5,34 @@
  * Serie aktiv folgen. Teilnahme an einem Einzelevent ist KEIN Abo.
  *
  * Läuft gegen einen deployten/laufenden Server:
- *   API_BASE=https://parentpeak.onrender.com BEARER_TOKEN=<firebase-id-token> \
+ *   API_BASE=http://127.0.0.1:3000 \
+ *     HOST_UID=<uid> HOST_TOKEN=<firebase-id-token> \
+ *     FOLLOWER_UID=<uid> FOLLOWER_TOKEN=<firebase-id-token> \
+ *     STRANGER_UID=<uid> STRANGER_TOKEN=<firebase-id-token> \
  *     node tests/events-series-follow.test.js
  *
- * Hinweis: Schreib-Endpunkte verlangen in Produktion einen gültigen
- * Firebase-ID-Token (siehe tests/README_group_chat.md). Lokal lässt sich der
- * Test mit FIREBASE_REQUIRE_AUTH=0 REQUIRE_AUTH_FOR_WRITES=0 fahren.
+ * Schreibt echte Daten; nur explizit auf freigegebener Testumgebung ausführen.
+ * Lokale Routen-Guards verlangen immer drei echte, getrennte Firebase-Konten,
+ * auch wenn globale Auth-Flags aus sind. Kein Shared-Token-/Gastmodus.
  */
 const http = require('http');
 const https = require('https');
 
-const API_BASE = process.env.API_BASE || 'https://parentpeak.onrender.com';
-const BEARER_TOKEN = process.env.BEARER_TOKEN || '';
+const API_BASE = process.env.API_BASE;
+const host = process.env.HOST_UID;
+const follower = process.env.FOLLOWER_UID;
+const stranger = process.env.STRANGER_UID;
+const hostToken = process.env.HOST_TOKEN;
+const followerToken = process.env.FOLLOWER_TOKEN;
+const strangerToken = process.env.STRANGER_TOKEN;
+if (![API_BASE, host, follower, stranger, hostToken, followerToken, strangerToken]
+  .every(value => typeof value === 'string' && value.trim()) ||
+    new Set([host, follower, stranger]).size !== 3) {
+  console.error('Explicit test API_BASE and three distinct Firebase accounts/tokens are required.');
+  process.exit(1);
+}
 
 const stamp = Date.now();
-const host = 'series-host-' + stamp;
-const follower = 'series-follower-' + stamp;
-const stranger = 'series-stranger-' + stamp;
 const seriesId = 'series-' + stamp;
 
 function makeRequest(method, path, body = null, token = null) {
@@ -82,7 +93,7 @@ async function runTests() {
   try {
     console.log('📝 Test 1: Create first series event');
     const res = await makeRequest('POST', '/api/events',
-      eventPayload(host, { seriesId }), BEARER_TOKEN);
+      eventPayload(host, { seriesId }), hostToken);
     if (res.status !== 201 && res.status !== 200) {
       throw new Error(`Expected 200/201, got ${res.status}: ${JSON.stringify(res.body)}`);
     }
@@ -101,7 +112,7 @@ async function runTests() {
   try {
     console.log('📝 Test 2: No followers initially');
     const res = await makeRequest('GET',
-      `/api/events/series/${seriesId}/follow?userId=${follower}`, null, BEARER_TOKEN);
+      `/api/events/series/${seriesId}/follow?userId=${encodeURIComponent(follower)}`, null, followerToken);
     if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);
     if (res.body.following !== false) throw new Error('Should not be following yet');
     if (res.body.followerCount !== 0) throw new Error(`Expected 0 followers, got ${res.body.followerCount}`);
@@ -116,7 +127,7 @@ async function runTests() {
   try {
     console.log('📝 Test 3: Follower opts in');
     const res = await makeRequest('POST',
-      `/api/events/series/${seriesId}/follow`, { userId: follower }, BEARER_TOKEN);
+      `/api/events/series/${seriesId}/follow`, { userId: follower }, followerToken);
     if (res.status !== 201 && res.status !== 200) {
       throw new Error(`Expected 200/201, got ${res.status}: ${JSON.stringify(res.body)}`);
     }
@@ -133,7 +144,7 @@ async function runTests() {
   try {
     console.log('📝 Test 4: Following twice is idempotent');
     const res = await makeRequest('POST',
-      `/api/events/series/${seriesId}/follow`, { userId: follower }, BEARER_TOKEN);
+      `/api/events/series/${seriesId}/follow`, { userId: follower }, followerToken);
     if (res.body.followerCount !== 1) {
       throw new Error(`Expected still 1 follower, got ${res.body.followerCount}`);
     }
@@ -147,10 +158,13 @@ async function runTests() {
   // Test 5: Teilnahme an einem Einzelevent macht NICHT zum Follower.
   try {
     console.log('📝 Test 5: Participation is not a subscription');
-    await makeRequest('POST', '/events/participations',
-      { eventId: firstEventId, userId: stranger, userName: 'Stranger' }, BEARER_TOKEN);
+    const participation = await makeRequest('POST', '/events/participations',
+      { eventId: firstEventId, userId: stranger, userName: 'Stranger' }, strangerToken);
+    if (![200, 201].includes(participation.status)) {
+      throw new Error(`Participation failed: ${participation.status}`);
+    }
     const res = await makeRequest('GET',
-      `/api/events/series/${seriesId}/follow?userId=${stranger}`, null, BEARER_TOKEN);
+      `/api/events/series/${seriesId}/follow?userId=${encodeURIComponent(stranger)}`, null, strangerToken);
     if (res.body.following !== false) {
       throw new Error('Participant must NOT be counted as follower');
     }
@@ -171,7 +185,7 @@ async function runTests() {
       eventPayload(host, {
         seriesId,
         startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      }), BEARER_TOKEN);
+      }), hostToken);
     if (res.status !== 201 && res.status !== 200) {
       throw new Error(`Expected 200/201, got ${res.status}: ${JSON.stringify(res.body)}`);
     }
@@ -186,7 +200,7 @@ async function runTests() {
   try {
     console.log('📝 Test 7: Unfollow');
     const res = await makeRequest('DELETE',
-      `/api/events/series/${seriesId}/follow?userId=${follower}`, null, BEARER_TOKEN);
+      `/api/events/series/${seriesId}/follow?userId=${encodeURIComponent(follower)}`, null, followerToken);
     if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);
     if (res.body.following !== false) throw new Error('following should be false');
     if (res.body.followerCount !== 0) throw new Error(`Expected 0 followers, got ${res.body.followerCount}`);

@@ -42,6 +42,17 @@ Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
       nimmt an; ein unbeteiligtes Konto C kann weder ändern noch löschen.
 - [ ] Private Events: Nur der gespeicherte Veranstalter kann ein Event löschen,
       eigene Einladungs-Codes laden oder die angenommenen Einladungen einsehen.
+- [ ] Serien-Follows: Folgen, Entfolgen und persönlicher Status benötigen
+      Firebase; fremde Body-/Query-`userId`-Claims werden vor Datenzugriff
+      abgewiesen. A verändert/liest nur das eigene Abo; B bleibt unverändert.
+      Ohne Token und ohne Nutzerclaim bleibt der Followerzähler öffentlich,
+      ohne individuellen Statuszugriff (`following: false`).
+- [ ] Serien-Client: Kein statischer Tokenfallback, kein Erfolg bei fehlendem
+      Token, Netz-/Serverfehler. Unverfügbarer Status bleibt `null`, nicht
+      fälschlich `false`; abgelaufener Token kann einmal erneuert werden.
+      Gesperrte Konten dürfen nicht neu folgen, aber weiterhin entfolgen;
+      Ausfall der Sperrprüfung verhindert neue Abos. Folgen bleibt idempotent,
+      Teilnahme am Einzeltermin erzeugt kein Serienabo.
 - [ ] Community-Discovery: Erstellen, Löschen und Interesse benötigen einen
       verifizierten Firebase-Token auch ohne globale Auth-Guards. Fremde
       Body-/Query-Nutzerclaims (bei Erstellen/Löschen auch `creatorId`) werden

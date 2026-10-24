@@ -616,11 +616,13 @@ class EventBackendService {
     required String seriesId,
     required String userId,
   }) async {
-    if (_apiClient == null || seriesId.isEmpty || userId.isEmpty) return false;
+    lastSyncError = null;
     try {
-      await _apiClient!.postJsonAny('$_eventsPath/series/$seriesId/follow', {
-        'userId': userId,
-      });
+      final client = _requireSeriesClient(seriesId, userId);
+      await client.postJsonAny(
+        '$_eventsPath/series/${Uri.encodeComponent(seriesId)}/follow',
+        {'userId': userId},
+      );
       return true;
     } catch (e) {
       lastSyncError = 'Angebot folgen fehlgeschlagen: $e';
@@ -633,10 +635,14 @@ class EventBackendService {
     required String seriesId,
     required String userId,
   }) async {
-    if (_apiClient == null || seriesId.isEmpty || userId.isEmpty) return false;
+    lastSyncError = null;
     try {
-      await _apiClient!.delete(
-        '$_eventsPath/series/$seriesId/follow?userId=$userId',
+      final client = _requireSeriesClient(seriesId, userId);
+      await client.delete(
+        _appendQuery(
+          '$_eventsPath/series/${Uri.encodeComponent(seriesId)}/follow',
+          {'userId': userId},
+        ),
       );
       return true;
     } catch (e) {
@@ -650,18 +656,31 @@ class EventBackendService {
     required String seriesId,
     required String userId,
   }) async {
-    if (_apiClient == null || seriesId.isEmpty) return null;
+    lastSyncError = null;
     try {
-      final payload = await _apiClient!.getJson(
-        '$_eventsPath/series/$seriesId/follow?userId=$userId',
+      final client = _requireSeriesClient(seriesId, userId);
+      final payload = await client.getJson(
+        _appendQuery(
+          '$_eventsPath/series/${Uri.encodeComponent(seriesId)}/follow',
+          {'userId': userId},
+        ),
       );
-      if (payload is Map<String, dynamic>) {
-        return payload['following'] == true;
+      if (payload is! Map<String, dynamic> || payload['following'] is! bool) {
+        throw const FormatException('Invalid series follow status response.');
       }
+      return payload['following'] as bool;
     } catch (e) {
       lastSyncError = 'Folge-Status fehlgeschlagen: $e';
     }
     return null;
+  }
+
+  BackendApiClient _requireSeriesClient(String seriesId, String userId) {
+    final client = _apiClient;
+    if (client == null || seriesId.trim().isEmpty || userId.trim().isEmpty) {
+      throw StateError('Backend, series and signed-in account required.');
+    }
+    return client.withRequiredAuthToken();
   }
 
   List<dynamic> _extractList(dynamic payload, List<String> keys) {

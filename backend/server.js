@@ -14831,14 +14831,14 @@ app.delete('/api/events/:id', async (req, res) => {
  * POST /api/events/series/:seriesId/follow
  * Opt-in: dieser Nutzer folgt der Serie. Body: { userId }
  */
-app.post('/api/events/series/:seriesId/follow', async (req, res) => {
+app.post('/api/events/series/:seriesId/follow', requireVerifiedUser, async (req, res) => {
   const seriesId = (req.params.seriesId || '').toString().trim();
-  const userId = (req.body.userId || '').toString().trim();
+  const userId = req.firebaseUid;
   if (!seriesId || !userId) {
     return res.status(400).json({ error: 'seriesId und userId erforderlich' });
   }
-  if (await isUserSuspended(userId)) return respondSuspended(res);
   try {
+    if (await isUserSuspended(userId, { strict: true })) return respondSuspended(res);
     await prisma.eventSeriesFollower.upsert({
       where: { seriesId_userId: { seriesId, userId } },
       update: {},
@@ -14848,7 +14848,7 @@ app.post('/api/events/series/:seriesId/follow', async (req, res) => {
     return res.status(201).json({ following: true, seriesId, followerCount: count });
   } catch (err) {
     console.error('❌ Series follow error:', err.message);
-    return res.status(500).json({ error: `Follow failed: ${err.message}` });
+    return res.status(500).json({ error: 'Angebot folgen fehlgeschlagen' });
   }
 });
 
@@ -14856,9 +14856,9 @@ app.post('/api/events/series/:seriesId/follow', async (req, res) => {
  * DELETE /api/events/series/:seriesId/follow?userId=...
  * Opt-out: dieser Nutzer folgt der Serie nicht mehr.
  */
-app.delete('/api/events/series/:seriesId/follow', async (req, res) => {
+app.delete('/api/events/series/:seriesId/follow', requireVerifiedUser, async (req, res) => {
   const seriesId = (req.params.seriesId || '').toString().trim();
-  const userId = (req.query.userId || '').toString().trim();
+  const userId = req.firebaseUid;
   if (!seriesId || !userId) {
     return res.status(400).json({ error: 'seriesId und userId erforderlich' });
   }
@@ -14868,17 +14868,21 @@ app.delete('/api/events/series/:seriesId/follow', async (req, res) => {
     return res.json({ following: false, seriesId, followerCount: count });
   } catch (err) {
     console.error('❌ Series unfollow error:', err.message);
-    return res.status(500).json({ error: `Unfollow failed: ${err.message}` });
+    return res.status(500).json({ error: 'Entfolgen fehlgeschlagen' });
   }
 });
 
 /**
  * GET /api/events/series/:seriesId/follow?userId=...
- * Status: folgt dieser Nutzer der Serie? + Follower-Anzahl.
+ * Public count; personal status requires a verified account.
  */
-app.get('/api/events/series/:seriesId/follow', async (req, res) => {
+app.get('/api/events/series/:seriesId/follow', (req, res, next) => {
+  if (req.query?.userId === undefined && req.body?.userId === undefined &&
+      !req.headers.authorization) return next();
+  return requireVerifiedUser(req, res, next);
+}, async (req, res) => {
   const seriesId = (req.params.seriesId || '').toString().trim();
-  const userId = (req.query.userId || '').toString().trim();
+  const userId = req.firebaseUid;
   if (!seriesId) {
     return res.status(400).json({ error: 'seriesId erforderlich' });
   }
@@ -14894,7 +14898,7 @@ app.get('/api/events/series/:seriesId/follow', async (req, res) => {
     return res.json({ following: !!mine, seriesId, followerCount: count });
   } catch (err) {
     console.error('❌ Series follow status error:', err.message);
-    return res.status(500).json({ error: `Status failed: ${err.message}` });
+    return res.status(500).json({ error: 'Folge-Status konnte nicht geladen werden' });
   }
 });
 
