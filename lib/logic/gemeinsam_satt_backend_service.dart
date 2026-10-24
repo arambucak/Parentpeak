@@ -193,17 +193,27 @@ class GemeinsamSattBackendService {
   final String? _apiUrl = APIConfig.getBackendBaseUrl();
   final String? _apiToken = APIConfig.getBackendApiToken();
   final http.Client _httpClient;
+  final Future<String?> Function() _firebaseTokenProvider;
   String? lastSyncError;
 
-  GemeinsamSattBackendService({http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+  GemeinsamSattBackendService({
+    http.Client? httpClient,
+    Future<String?> Function()? firebaseTokenProvider,
+  })  : _httpClient = httpClient ?? http.Client(),
+        _firebaseTokenProvider = firebaseTokenProvider ??
+            (() async => FirebaseAuth.instance.currentUser?.getIdToken());
 
-  Future<Map<String, String>> _jsonHeaders() async {
+  Future<Map<String, String>> _jsonHeaders(
+      {bool requireFirebase = false}) async {
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };
 
-    final firebaseToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final firebaseToken = await _firebaseTokenProvider();
+    if (requireFirebase &&
+        (firebaseToken == null || firebaseToken.trim().isEmpty)) {
+      throw StateError('Firebase session required for this request.');
+    }
     final token = (firebaseToken ?? _apiToken)?.trim();
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
@@ -312,10 +322,10 @@ class GemeinsamSattBackendService {
     try {
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl/api/food-feed/recipes'),
-        headers: await _jsonHeaders(),
+        headers: await _jsonHeaders(requireFirebase: true),
         body: jsonEncode({
           'userId': userId,
-          'familyId': familyId,
+          if (familyId != null) 'familyId': familyId,
           'title': title,
           'description': description,
           'category': category,
@@ -372,7 +382,7 @@ class GemeinsamSattBackendService {
 
       final response = await _httpClient.put(
         Uri.parse('$_apiUrl/api/food-feed/recipes/$id'),
-        headers: await _jsonHeaders(),
+        headers: await _jsonHeaders(requireFirebase: true),
         body: jsonEncode(body),
       );
 
@@ -406,7 +416,7 @@ class GemeinsamSattBackendService {
         Uri.parse(
           '$_apiUrl/api/food-feed/recipes/$id?userId=${Uri.encodeQueryComponent(userId)}',
         ),
-        headers: await _jsonHeaders(),
+        headers: await _jsonHeaders(requireFirebase: true),
         body: jsonEncode({'userId': userId}),
       );
 
