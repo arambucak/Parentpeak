@@ -42,6 +42,19 @@ Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
       nimmt an; ein unbeteiligtes Konto C kann weder ändern noch löschen.
 - [ ] Private Events: Nur der gespeicherte Veranstalter kann ein Event löschen,
       eigene Einladungs-Codes laden oder die angenommenen Einladungen einsehen.
+- [ ] FoodFeed-Rezept-CRUD: Erstellen, Bearbeiten und Löschen verlangen einen
+      verifizierten Firebase-Token, auch bei ausgeschalteten globalen Guards.
+      Token A mit Nutzer-/Creatorclaim B wird vor Rezeptzugriff abgewiesen;
+      A kann fremde oder eigentümerlose Rezepte nicht ändern/löschen.
+      Öffentliche Rezeptliste und Details bleiben ohne Token erreichbar.
+- [ ] FoodFeed-Familienclaim: Kein Claim (oder `null`) bedeutet keine
+      Familienzuordnung. Eine angegebene Familie muss dem vorhandenen
+      serverseitigen privaten Account-Familienkontext entsprechen; fremde,
+      Demo- oder widersprüchliche Claims werden abgewiesen. Der gespeicherte
+      Creator, nicht Familienmitgliedschaft, entscheidet über Bearbeiten/Löschen.
+      Alt-Rezepte werden nicht automatisch einer anderen Familie zugeordnet.
+      Aktuelle Flutter-CRUD-Aufrufe verwenden Firebase ohne statischen
+      Tokenfallback; Authfehler dürfen keinen lokalen Erfolg anzeigen.
 - [ ] Event-Chat: Veranstalter und bestätigte Teilnehmer können lesen/senden.
       Offene, abgelehnte und zurückgezogene Teilnahmen gewähren keinen Zugang;
       manipulierte Nutzer-/Veranstalter-IDs ändern daran nichts.

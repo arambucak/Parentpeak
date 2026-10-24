@@ -13709,18 +13709,25 @@ app.get('/api/food-feed/recipes/:id', async (req, res) => {
   }
 });
 
+function requireFoodFeedRecipeClaims(req, res, next) {
+  if (!requireActorClaims(req, res, [
+    req.body?.creatorUserId, req.query?.creatorUserId,
+  ])) return;
+  const familyClaims = [req.body?.familyId, req.query?.familyId];
+  if (familyClaims.every(value => value === undefined || value === null)) {
+    return next();
+  }
+  return requireOwnFamily(req, res, next);
+}
+
 /**
  * POST /api/food-feed/recipes
  * Create a new shared recipe (requires auth)
  */
-app.post('/api/food-feed/recipes', async (req, res) => {
-  const { userId, familyId, title, description, category, difficulty, prepTimeMinutes, servings, ingredients, instructions, tags, imageUrl } = req.body;
+app.post('/api/food-feed/recipes', requireVerifiedUser, requireFoodFeedRecipeClaims, async (req, res) => {
+  const { title, description, category, difficulty, prepTimeMinutes, servings, ingredients, instructions, tags, imageUrl } = req.body;
 
   // Validation
-  if (!userId) {
-    return res.status(401).json({ error: 'userId erforderlich' });
-  }
-
   if (!title || title.length < 3 || title.length > 200) {
     return res.status(400).json({ error: 'Titel muss zwischen 3 und 200 Zeichen lang sein' });
   }
@@ -13740,8 +13747,8 @@ app.post('/api/food-feed/recipes', async (req, res) => {
   try {
     const recipe = await prisma.sharedRecipe.create({
       data: {
-        creatorUserId: userId,
-        familyId: familyId || null,
+        creatorUserId: req.firebaseUid,
+        familyId: req.ownFamily?.id || null,
         title: String(title).slice(0, 200),
         description: description ? String(description).slice(0, 1000) : null,
         category: String(category || 'dinner').slice(0, 50),
@@ -13773,13 +13780,9 @@ app.post('/api/food-feed/recipes', async (req, res) => {
  * PUT /api/food-feed/recipes/:id
  * Update a recipe (owner only)
  */
-app.put('/api/food-feed/recipes/:id', async (req, res) => {
+app.put('/api/food-feed/recipes/:id', requireVerifiedUser, requireFoodFeedRecipeClaims, async (req, res) => {
   const { id } = req.params;
-  const { userId, title, description, category, difficulty, prepTimeMinutes, servings, ingredients, instructions, tags } = req.body;
-
-  if (!userId) {
-    return res.status(401).json({ error: 'userId erforderlich' });
-  }
+  const { title, description, category, difficulty, prepTimeMinutes, servings, ingredients, instructions, tags } = req.body;
 
   try {
     const recipe = await prisma.sharedRecipe.findUnique({ where: { id } });
@@ -13788,7 +13791,7 @@ app.put('/api/food-feed/recipes/:id', async (req, res) => {
       return res.status(404).json({ error: 'Rezept nicht gefunden' });
     }
 
-    if (recipe.creatorUserId !== userId) {
+    if (recipe.creatorUserId !== req.firebaseUid) {
       return res.status(403).json({ error: 'Nur der Ersteller kann dieses Rezept bearbeiten' });
     }
 
@@ -13819,13 +13822,8 @@ app.put('/api/food-feed/recipes/:id', async (req, res) => {
  * DELETE /api/food-feed/recipes/:id
  * Delete a recipe (owner only)
  */
-app.delete('/api/food-feed/recipes/:id', async (req, res) => {
+app.delete('/api/food-feed/recipes/:id', requireVerifiedUser, requireFoodFeedRecipeClaims, async (req, res) => {
   const { id } = req.params;
-  const userId = String(req.query.userId || req.body?.userId || '').trim();
-
-  if (!userId) {
-    return res.status(401).json({ error: 'userId erforderlich' });
-  }
 
   try {
     const recipe = await prisma.sharedRecipe.findUnique({ where: { id } });
@@ -13834,7 +13832,7 @@ app.delete('/api/food-feed/recipes/:id', async (req, res) => {
       return res.status(404).json({ error: 'Rezept nicht gefunden' });
     }
 
-    if (recipe.creatorUserId !== userId) {
+    if (recipe.creatorUserId !== req.firebaseUid) {
       return res.status(403).json({ error: 'Nur der Ersteller kann dieses Rezept löschen' });
     }
 
