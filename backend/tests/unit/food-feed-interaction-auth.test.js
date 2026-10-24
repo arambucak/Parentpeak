@@ -41,7 +41,8 @@ function fixture({ configured = true, failure } = {}) {
     sharedRecipe: {
       findUnique: async ({ where }) => {
         access('recipe.read', where);
-        return recipes.get(where.id) || null;
+        const row = recipes.get(where.id);
+        return row && (where.isPublished === undefined || row.isPublished === where.isPublished) ? row : null;
       },
       update: async ({ where, data }) => {
         mutate('recipe.update', { where, data });
@@ -140,6 +141,46 @@ function fixture({ configured = true, failure } = {}) {
     return { status, body: response };
   }
   return { request, handlers, accesses, mutations, recipes, reservations, ratings, comments, reports };
+}
+
+for (const suffix of ['comments', 'reservations']) {
+  for (const token of [null, 'a', 'owner']) {
+    test(`unpublished ${suffix} is not found for ${token || 'anonymous'} before related reads`, async () => {
+      const f = fixture();
+      f.recipes.get('recipe').isPublished = false;
+      const hidden = await f.request('GET', suffix, { token });
+      const missing = await f.request('GET', suffix, { token, id: 'missing' });
+      assert.equal(hidden.status, 404);
+      assert.deepEqual(hidden, missing);
+      assert.deepEqual(f.accesses.map(([kind]) => kind), ['recipe.read', 'recipe.read']);
+      assert.deepEqual(f.mutations, []);
+    });
+  }
+  test(`published ${suffix} remains public, database errors remain explicit`, async () => {
+    const f = fixture();
+    assert.equal((await f.request('GET', suffix, { token: null })).status, 200);
+    const unavailable = await fixture({ failure: 'database' }).request('GET', suffix, { token: null });
+    assert.equal(unavailable.status, 500);
+    assert.equal('comments' in unavailable.body, false);
+    assert.equal('reservedPortions' in unavailable.body, false);
+  });
+  test(`real ${suffix} route hides unpublished recipes without requiring login for published ones`, async t => {
+    const f = fixture();
+    const app = express();
+    const route = `${prefix}/${suffix}`;
+    app.get(route, ...f.handlers.get(`GET ${route}`));
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise(resolve => server.once('listening', resolve));
+    t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
+    const url = `http://127.0.0.1:${server.address().port}/api/food-feed/recipes/recipe/${suffix}`;
+    assert.equal((await fetch(url)).status, 200);
+    f.recipes.get('recipe').isPublished = false;
+    f.accesses.length = 0;
+    const hidden = await fetch(url);
+    assert.equal(hidden.status, 404);
+    assert.deepEqual(await hidden.json(), { error: 'Rezept nicht gefunden' });
+    assert.deepEqual(f.accesses.map(([kind]) => kind), ['recipe.read']);
+  });
 }
 
 for (const [method, suffix, payload] of writes) {

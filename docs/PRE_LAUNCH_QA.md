@@ -95,6 +95,12 @@ Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
       Token A mit Nutzer-/Creatorclaim B wird vor Rezeptzugriff abgewiesen;
       A kann fremde oder eigentümerlose Rezepte nicht ändern/löschen.
       Öffentliche Rezeptliste und Details bleiben ohne Token erreichbar.
+- [ ] FoodFeed-Veröffentlichung: Nach Moderations-Rücknahme liefern Details,
+      Kommentare und Reservierungsübersicht auch mit bekannter Rezept-ID 404
+      wie bei einem fehlenden Rezept, anonym ebenso wie für Creator/fremdes
+      Konto. Keine View-Erhöhung oder zugehörige Datenausgabe. Veröffentlichte
+      Rezepte, Kommentare und Reservierungszahlen bleiben öffentlich;
+      persönliche Reservierungen weiterhin nur für das verifizierte Konto.
 - [ ] FoodFeed-Familienclaim: Kein Claim (oder `null`) bedeutet keine
       Familienzuordnung. Eine angegebene Familie muss dem vorhandenen
       serverseitigen privaten Account-Familienkontext entsprechen; fremde,

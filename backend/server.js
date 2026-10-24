@@ -13636,7 +13636,7 @@ app.get('/api/food-feed/recipes/:id', async (req, res) => {
 
   try {
     const recipe = await prisma.sharedRecipe.findUnique({
-      where: { id },
+      where: { id, isPublished: true },
       include: { ratings: { take: 5 } },
     });
 
@@ -13852,7 +13852,7 @@ app.get('/api/food-feed/recipes/:id/comments', async (req, res) => {
   const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit || '40', 10)));
 
   try {
-    const recipe = await prisma.sharedRecipe.findUnique({ where: { id } });
+    const recipe = await prisma.sharedRecipe.findUnique({ where: { id, isPublished: true } });
     if (!recipe) {
       return res.status(404).json({ error: 'Rezept nicht gefunden' });
     }
@@ -13944,7 +13944,7 @@ app.get('/api/food-feed/recipes/:id/reservations', (req, res, next) => {
   const userId = req.firebaseUid;
 
   try {
-    const recipe = await prisma.sharedRecipe.findUnique({ where: { id } });
+    const recipe = await prisma.sharedRecipe.findUnique({ where: { id, isPublished: true } });
     if (!recipe) {
       return res.status(404).json({ error: 'Rezept nicht gefunden' });
     }
