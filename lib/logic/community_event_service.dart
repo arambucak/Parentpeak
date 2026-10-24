@@ -20,9 +20,24 @@ import 'package:parentpeak/logic/friendship_service.dart';
 /// Rate-Limiting: Max 3 Events pro Tag pro User (Server-seitig geprueft).
 class CommunityEventService extends ChangeNotifier {
   static final CommunityEventService instance = CommunityEventService._();
-  CommunityEventService._();
+  CommunityEventService._()
+      : _useFactory = true,
+        _displayNameProvider = null;
+
+  @visibleForTesting
+  CommunityEventService.forTesting({
+    BackendApiClient? apiClient,
+    BackendApiClient? verifiedApiClient,
+    String Function()? displayNameProvider,
+  })  : _api = apiClient,
+        _verifiedApi = verifiedApiClient,
+        _displayNameProvider = displayNameProvider,
+        _useFactory = false;
 
   BackendApiClient? _api;
+  BackendApiClient? _verifiedApi;
+  final bool _useFactory;
+  final String Function()? _displayNameProvider;
   List<CommunityEvent> _events = [];
   bool _isLoading = false;
   String? _error;
@@ -38,7 +53,20 @@ class CommunityEventService extends ChangeNotifier {
   int get remainingToday => maxEventsPerDay - _todayCreatedCount;
 
   void _ensureApi() {
-    _api ??= BackendServiceFactory.createApiClient();
+    if (_useFactory) {
+      _api ??= BackendServiceFactory.createApiClient();
+    }
+  }
+
+  BackendApiClient _requireVerifiedApi() {
+    if (_useFactory) {
+      _verifiedApi ??= BackendServiceFactory.createVerifiedApiClient();
+    }
+    final api = _verifiedApi;
+    if (api == null || !api.requireAuthToken) {
+      throw StateError('Verified backend session required for this request.');
+    }
+    return api;
   }
 
   /// Laedt alle Events für eine Stadt (Community + KI gemischt).
@@ -110,8 +138,6 @@ class CommunityEventService extends ChangeNotifier {
   /// Erstellt ein neues Community-Event.
   /// Gibt true zurück bei Erfolg, false bei Fehler.
   Future<bool> createEvent(CommunityEvent event) async {
-    _ensureApi();
-
     // Rate-Limit Check
     _updateDayCounter();
     if (!canCreateMore) {
@@ -122,13 +148,8 @@ class CommunityEventService extends ChangeNotifier {
     }
 
     try {
-      if (_api == null) {
-        _error = 'Backend nicht erreichbar';
-        notifyListeners();
-        return false;
-      }
-
-      await _api!.postJson('/api/community-events', event.toJson());
+      await _requireVerifiedApi()
+          .postJson('/api/community-events', event.toJson());
       _todayCreatedCount++;
       _error = null;
 
@@ -178,19 +199,15 @@ class CommunityEventService extends ChangeNotifier {
 
   /// Zeigt Interesse an einem Event (mit Name + optionaler Nachricht).
   Future<bool> showInterest(String eventId, {String? message}) async {
-    _ensureApi();
     try {
-      final uid = AuthService.instance.currentUser?.uid ?? 'guest';
-      final name =
-          AuthService.instance.currentUser?.displayName ?? 'Familien-Kontakt';
-
-      if (_api != null) {
-        await _api!.postJson('/api/community-events/$eventId/interest', {
-          'userId': uid,
-          'displayName': name,
-          'message': message,
-        });
-      }
+      final api = _requireVerifiedApi();
+      final name = _displayNameProvider?.call() ??
+          AuthService.instance.currentUser?.displayName ??
+          'Familien-Kontakt';
+      await api.postJson('/api/community-events/$eventId/interest', {
+        'displayName': name,
+        'message': message,
+      });
 
       // Lokal Interest-Count erhoehen
       final idx = _events.indexWhere((e) => e.id == eventId);
@@ -203,9 +220,12 @@ class CommunityEventService extends ChangeNotifier {
         notifyListeners();
       }
 
+      _error = null;
       return true;
     } catch (e) {
       debugPrint('CommunityEventService.showInterest: $e');
+      _error = 'Interesse konnte nicht gespeichert werden: $e';
+      notifyListeners();
       return false;
     }
   }
@@ -254,18 +274,16 @@ class CommunityEventService extends ChangeNotifier {
 
   /// Loescht ein eigenes Event.
   Future<bool> deleteEvent(String eventId) async {
-    _ensureApi();
     try {
-      if (_api != null) {
-        final uid = AuthService.instance.currentUser?.uid ?? '';
-        await _api!.delete(
-            '/api/community-events/$eventId?creatorId=${Uri.encodeComponent(uid)}');
-      }
+      await _requireVerifiedApi().delete('/api/community-events/$eventId');
       _events.removeWhere((e) => e.id == eventId);
+      _error = null;
       notifyListeners();
       return true;
     } catch (e) {
       debugPrint('CommunityEventService.deleteEvent: $e');
+      _error = 'Event konnte nicht gelöscht werden: $e';
+      notifyListeners();
       return false;
     }
   }

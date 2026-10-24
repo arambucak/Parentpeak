@@ -204,11 +204,13 @@ class _ReportEventSheetState extends State<ReportEventSheet> {
 class EventInterestButton extends StatefulWidget {
   final String eventId;
   final int initialCount;
+  final CommunityEventService? service;
 
   const EventInterestButton({
     super.key,
     required this.eventId,
     this.initialCount = 0,
+    this.service,
   });
 
   @override
@@ -218,6 +220,7 @@ class EventInterestButton extends StatefulWidget {
 class _EventInterestButtonState extends State<EventInterestButton> {
   late int _count;
   bool _tapped = false;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -228,7 +231,7 @@ class _EventInterestButtonState extends State<EventInterestButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(behavior: HitTestBehavior.opaque, 
-      onTap: _tapped ? null : _onTap,
+      onTap: _tapped || _loading ? null : _onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -272,11 +275,22 @@ class _EventInterestButtonState extends State<EventInterestButton> {
   }
 
   Future<void> _onTap() async {
+    setState(() => _loading = true);
+    final success = await (widget.service ?? CommunityEventService.instance)
+        .showInterest(widget.eventId);
+    if (!mounted) return;
     setState(() {
-      _tapped = true;
-      _count++;
+      _loading = false;
+      if (success) {
+        _tapped = true;
+        _count++;
+      }
     });
-    await CommunityEventService.instance.showInterest(widget.eventId);
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('event_action_failed'))),
+      );
+    }
   }
 }
 

@@ -42,6 +42,19 @@ Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
       nimmt an; ein unbeteiligtes Konto C kann weder ändern noch löschen.
 - [ ] Private Events: Nur der gespeicherte Veranstalter kann ein Event löschen,
       eigene Einladungs-Codes laden oder die angenommenen Einladungen einsehen.
+- [ ] Community-Discovery: Erstellen, Löschen und Interesse benötigen einen
+      verifizierten Firebase-Token auch ohne globale Auth-Guards. Fremde
+      Body-/Query-Nutzerclaims (bei Erstellen/Löschen auch `creatorId`) werden
+      vor Datenzugriff abgewiesen. Creator, Tageslimit und Interesse gehören
+      dem Token-Konto; nur der gespeicherte Creator darf löschen.
+- [ ] Community-Client: Ohne Firebase oder Backend kein Shared-Token-Fallback
+      und kein lokaler Scheinerfolg; fehlgeschlagenes Erstellen verbraucht
+      keinen lokalen Tageszähler. Interesse/Löschen verändern lokale Daten
+      erst nach erfolgreicher Serverantwort. Discovery und bestehende
+      öffentliche Teilnehmerdarstellung bleiben erreichbar. Keine neue
+      Aussage zur Datenschutzfreigabe dieser Teilnehmerdaten ableiten.
+      Der Interesse-Button zeigt bei 401/403/Serverfehler keinen aktiven
+      Erfolgszustand, meldet den Fehler lokalisiert und bleibt erneut bedienbar.
 - [ ] FoodFeed-Rezept-CRUD: Erstellen, Bearbeiten und Löschen verlangen einen
       verifizierten Firebase-Token, auch bei ausgeschalteten globalen Guards.
       Token A mit Nutzer-/Creatorclaim B wird vor Rezeptzugriff abgewiesen;
