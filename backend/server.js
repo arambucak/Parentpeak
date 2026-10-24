@@ -15,6 +15,7 @@ const { changeParticipation, updateOwnedEvent, validateEventMode, CONFIRMED } = 
 const { publicTreasure } = require('./treasure_public_view');
 const treasureGeometry = require('./treasure_geometry');
 const { MEMORY_CONSENT_VERSION, hasMemoryConsent, buildMemoryContext, minimizeMemoryText } = require('./ai_memory_policy');
+const { readEntitlementSnapshot } = require('./entitlement_store');
 
 // Firebase Admin — initialised lazily so the server starts without credentials
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
@@ -6075,7 +6076,6 @@ const eventInviteExpiresAt = {};
 const paymentTransactions = [];
 const eventChatMessages = {};
 const eventChatReports = [];
-const userEntitlements = new Map();
 
 function generateInviteCode(eventId) {
   const suffix = (eventId || '').slice(-4).toUpperCase() || '0000';
@@ -6971,68 +6971,6 @@ async function applyProviderTransactionStatusUpdate({
   }
 }
 
-function ensureEntitlement(userId, options = {}) {
-  const existing = userEntitlements.get(userId);
-  const nowIso = new Date().toISOString();
-  const registeredAtHint = asIsoDate(options.registeredAt);
-  const isPremiumHint = options.isPremium === true;
-
-  if (!existing) {
-    const created = {
-      userId,
-      registeredAt: registeredAtHint || nowIso,
-      isPremium: isPremiumHint,
-      updatedAt: nowIso,
-    };
-    userEntitlements.set(userId, created);
-    return created;
-  }
-
-  if (registeredAtHint) {
-    existing.registeredAt = existing.registeredAt && existing.registeredAt < registeredAtHint
-      ? existing.registeredAt
-      : registeredAtHint;
-  }
-
-  if (isPremiumHint) {
-    existing.isPremium = true;
-  }
-
-  existing.updatedAt = nowIso;
-  userEntitlements.set(userId, existing);
-  return existing;
-}
-
-function buildEntitlementStatus(record) {
-  const betaFreeAccess = `${process.env.BETA_FREE_ACCESS || '1'}`.toLowerCase() !== '0'
-    && `${process.env.BETA_FREE_ACCESS || '1'}`.toLowerCase() !== 'false';
-  const trialDays = 30;
-  const now = new Date();
-  const registeredAt = new Date(record.registeredAt);
-  const configuredLaunchDate = asIsoDate(process.env.PUBLIC_LAUNCH_DATE);
-  const publicLaunchDate = configuredLaunchDate ? new Date(configuredLaunchDate) : null;
-  const trialStartsAt = publicLaunchDate && registeredAt < publicLaunchDate
-    ? publicLaunchDate
-    : registeredAt;
-  const trialEndsAt = new Date(trialStartsAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
-  const trialMillisRemaining = trialEndsAt.getTime() - now.getTime();
-  const trialDaysRemaining = Math.max(0, Math.ceil(trialMillisRemaining / (24 * 60 * 60 * 1000)));
-  const trialActive = betaFreeAccess || trialMillisRemaining > 0;
-  const hasFullAccess = betaFreeAccess || Boolean(record.isPremium) || trialActive;
-
-  return {
-    userId: record.userId,
-    isPremium: Boolean(record.isPremium),
-    trialActive,
-    trialDaysRemaining: betaFreeAccess ? 0 : trialDaysRemaining,
-    trialEndsAt: betaFreeAccess ? null : trialEndsAt.toISOString(),
-    betaFreeAccess,
-    hasFullAccess,
-    source: 'server',
-    updatedAt: new Date().toISOString(),
-  };
-}
-
 function removeMatching(list, predicate) {
   if (!Array.isArray(list) || list.length === 0) return 0;
   const originalLength = list.length;
@@ -7049,10 +6987,6 @@ function countAccountDataByUserIdInMemory(userId) {
   const familyId = ownFamilyId(userId);
   removed += todos.filter(item => item.familyId === familyId).length;
   removed += shoppingItems.filter(item => item.familyId === familyId).length;
-
-  if (userEntitlements.has(userId)) {
-    removed += 1;
-  }
 
   removed += familyContacts.filter(item => item.userId === userId).length;
   removed += familyRequests.filter(
@@ -7103,10 +7037,6 @@ function deleteAccountDataByUserIdInMemory(userId) {
   const familyId = ownFamilyId(userId);
   removed += removeMatching(todos, item => item.familyId === familyId);
   removed += removeMatching(shoppingItems, item => item.familyId === familyId);
-
-  if (userEntitlements.delete(userId)) {
-    removed += 1;
-  }
 
   removed += removeMatching(familyContacts, item => item.userId === userId);
   removed += removeMatching(
@@ -7334,6 +7264,7 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
     prisma.communityEvent.count({ where: { creatorId: userId } }),
     prisma.communityEventFlag.count({ where: { userId } }),
     prisma.communityEventInterest.count({ where: { userId } }),
+    prisma.userEntitlement.count({ where: { userId } }),
   ]);
 
   const familyRequestCount = await prisma.familyRequest.count({
@@ -7451,6 +7382,10 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
   })).count;
   removed += ownMealCount - ownItems.mealPlans.length; // zusaetzlich entfernte Meals
 
+  removed += (await prisma.userEntitlement.deleteMany({
+    where: { userId },
+  })).count;
+
   // User -> created Family -> Todo/ShoppingItem cascades are defined in Prisma.
   const deletedUsers = (await prisma.user.deleteMany({ where: { id: userId } })).count;
   removed += deletedUsers + (deletedUsers ? familyItemCount : 0);
@@ -7487,6 +7422,7 @@ async function exportAccountDataByUserIdPrisma(userId) {
     communityEvents,
     communityEventFlags,
     communityEventInterests,
+    entitlement,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -7524,6 +7460,20 @@ async function exportAccountDataByUserIdPrisma(userId) {
     prisma.communityEvent.findMany({ where: { creatorId: userId } }),
     prisma.communityEventFlag.findMany({ where: { userId } }),
     prisma.communityEventInterest.findMany({ where: { userId } }),
+    prisma.userEntitlement.findUnique({
+      where: { userId },
+      select: {
+        tier: true,
+        access: true,
+        validFrom: true,
+        validUntil: true,
+        verifiedAt: true,
+        adsEligibleByEntitlement: true,
+        revokedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
   ]);
 
   return {
@@ -7552,6 +7502,7 @@ async function exportAccountDataByUserIdPrisma(userId) {
     communityEvents,
     communityEventFlags,
     communityEventInterests,
+    entitlement,
   };
 }
 
@@ -7694,49 +7645,29 @@ app.get('/account/export-data', requireVerifiedUser, async (req, res) => {
   }
 });
 
-app.get('/entitlements/:userId/status', requireVerifiedUser, (req, res) => {
-  // Owner-Binding: der Pfad-:userId muss die verifizierte Token-UID sein.
+app.get('/entitlements/me', requireVerifiedUser, async (req, res) => {
   const userId = req.firebaseUid;
-  if (req.params.userId && req.params.userId !== userId) {
-    return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt', code: 'not_owner' });
+  try {
+    await ensureVerifiedBackendUser(userId);
+    const item = await readEntitlementSnapshot(prisma, userId);
+    return res.json({ item });
+  } catch (error) {
+    return respondFamilyPersistenceError(res, 'GET /entitlements/me', error);
   }
-
-  // WICHTIG: Ein GET darf keinen Premium-Zustand setzen. Der frühere
-  // isPremium-Query-Hint wird bewusst ignoriert; Premium wird ausschliesslich
-  // serverseitig (Webhook/Admin) vergeben. registeredAt dient nur der
-  // Trial-Berechnung und kann den gespeicherten Wert nur nach vorne ziehen.
-  const record = ensureEntitlement(userId, {
-    registeredAt: req.query.registeredAt,
-  });
-  const item = buildEntitlementStatus(record);
-  return res.json({ item });
 });
 
 app.post('/entitlements/:userId/activate-premium', requireVerifiedUser, (req, res) => {
-  const userId = req.firebaseUid;
-  if (req.params.userId && req.params.userId !== userId) {
-    return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt', code: 'not_owner' });
-  }
-
-  // Premium darf nie ohne Zahlungsnachweis selbst vergeben werden. Solange
-  // kein verifizierter Zahlungsweg (Webhook/Admin -> Entitlement) existiert,
-  // bleibt dieser Pfad ausser fuer lokale Tests gesperrt.
-  if (`${process.env.ALLOW_SELF_SERVICE_PREMIUM || '0'}` !== '1') {
+  if (req.params.userId && req.params.userId !== req.firebaseUid) {
     return res.status(403).json({
-      error: 'Premium kann nur nach verifizierter Zahlung aktiviert werden',
-      code: 'payment_required',
+      error: 'Nur fuer das eigene Konto erlaubt',
+      code: 'not_owner',
     });
   }
 
-  const record = ensureEntitlement(userId, {
-    registeredAt: req.body.registeredAt,
-    isPremium: true,
+  return res.status(410).json({
+    error: 'Premium kann erst nach serverseitiger Store-Verifikation aktiviert werden',
+    code: 'store_verification_required',
   });
-  record.isPremium = true;
-  record.updatedAt = new Date().toISOString();
-  userEntitlements.set(userId, record);
-
-  return res.status(201).json({ item: buildEntitlementStatus(record) });
 });
 
 // 0. Weekly Impulse abrufen

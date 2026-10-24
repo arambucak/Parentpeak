@@ -24,6 +24,13 @@ function fixture({ app, configured = true, failure, production = true,
   emailConflict = false, retries = 0, retryCode = 'P2034', firebaseAccount = {} } = {}) {
   const handlers = new Map(), calls = [], logs = [];
   const users = new Map(preProvisioned ? ['a', 'b'].map(id => [id, { id }]) : []);
+  const entitlements = new Map(['a', 'b'].map(userId => [userId, {
+    userId, tier: 'free', access: 'none', validFrom: null, validUntil: null,
+    verifiedAt: new Date('2026-10-24T00:00:00.000Z'),
+    adsEligibleByEntitlement: false, revokedAt: null,
+    createdAt: new Date('2026-10-24T00:00:00.000Z'),
+    updatedAt: new Date('2026-10-24T00:00:00.000Z'),
+  }]));
   const families = new Map(preProvisioned ? [
     [familyId('a'), { id: familyId('a'), createdById: owner,
       memberUsers: members.map(id => ({ id })) }],
@@ -63,6 +70,31 @@ function fixture({ app, configured = true, failure, production = true,
         }
         return { count };
       },
+    },
+    userEntitlement: {
+      findUnique: async ({ where, select }) => {
+        assert.deepEqual(Object.keys(select).sort(), [
+          'access', 'adsEligibleByEntitlement', 'createdAt', 'revokedAt',
+          'tier', 'updatedAt', 'validFrom', 'validUntil', 'verifiedAt',
+        ]);
+        return clone(entitlements.get(where.userId) || null);
+      },
+      upsert: async ({ where, create }) => {
+        if (!entitlements.has(where.userId)) {
+          entitlements.set(where.userId, clone(create));
+        }
+        return clone(entitlements.get(where.userId));
+      },
+      update: async ({ where, data: update }) => {
+        const row = entitlements.get(where.userId);
+        if (!row) throw p2025();
+        Object.assign(row, clone(update));
+        return clone(row);
+      },
+      count: async ({ where }) => Number(entitlements.has(where.userId)),
+      deleteMany: async ({ where }) => ({
+        count: Number(entitlements.delete(where.userId)),
+      }),
     },
     family: {
       upsert: async ({ where, create, update }) => {
@@ -198,7 +230,7 @@ function fixture({ app, configured = true, failure, production = true,
     deleteUnreferencedAccountMedia: async () => ({}),
   });
   vm.runInContext(slice('async function authorizeAccountOwner(', 'async function authorizeProfileOwner('), context);
-  vm.runInContext(slice("app.post('/account/delete-data'", "app.get('/entitlements/:userId/status'"), context);
+  vm.runInContext(slice("app.post('/account/delete-data'", "app.get('/entitlements/me'"), context);
   async function request(method, route, { token = 'a', query = {}, body = {}, id } = {}) {
     let status = 200, response;
     const req = {
@@ -214,7 +246,9 @@ function fixture({ app, configured = true, failure, production = true,
     await run(0);
     return { status, body: response };
   }
-  return { context, request, calls, logs, data, memory, families, users, prisma };
+  return {
+    context, request, calls, logs, data, memory, families, users, entitlements, prisma,
+  };
 }
 
 for (const [method, route] of routes) {
@@ -372,16 +406,22 @@ test('export helper is own-scoped, non-provisioning and rejects foreign ownershi
 
 test('Prisma and migration enforce actual User-Family-Todo/Shopping cascades', () => {
   const schema = fs.readFileSync(path.join(__dirname, '../../prisma/schema.prisma'), 'utf8');
-  for (const model of ['Family', 'Todo', 'ShoppingItem']) {
+  for (const model of ['Family', 'Todo', 'ShoppingItem', 'UserEntitlement']) {
     const block = schema.slice(schema.indexOf(`model ${model} {`),
       schema.indexOf('\n}', schema.indexOf(`model ${model} {`)));
     assert.match(block, /onDelete: Cascade/);
   }
+  assert.match(schema, /userId\s+String\s+@id/);
   const migrationRoot = path.join(__dirname, '../../prisma/migrations');
   const sql = fs.readdirSync(migrationRoot).filter(name =>
     fs.existsSync(path.join(migrationRoot, name, 'migration.sql')))
     .map(name => fs.readFileSync(path.join(migrationRoot, name, 'migration.sql'), 'utf8')).join('\n');
-  for (const key of ['Family_createdById_fkey', 'Todo_familyId_fkey', 'ShoppingItem_familyId_fkey']) {
+  for (const key of [
+    'Family_createdById_fkey',
+    'Todo_familyId_fkey',
+    'ShoppingItem_familyId_fkey',
+    'UserEntitlement_userId_fkey',
+  ]) {
     assert.match(sql, new RegExp(`"${key}"[^;]+ON DELETE CASCADE`));
   }
 });
@@ -399,6 +439,8 @@ test('account export includes own Todos/Shopping and never B or demo rows', asyn
   const result = await f.context.exportAccountDataByUserIdPrisma('a');
   assert.equal(result.todos[0].id, 'todo-a');
   assert.equal(result.shoppingItems[0].id, 'shop-a');
+  assert.equal(result.entitlement.tier, 'free');
+  assert.equal(result.entitlement.adsEligibleByEntitlement, false);
 });
 
 test('account deletion cascades only own family items; dry-run preserves all data', async () => {
@@ -414,9 +456,11 @@ test('account deletion cascades only own family items; dry-run preserves all dat
   vm.runInContext(slice('async function deleteAccountDataByUserIdPrisma(', 'async function exportAccountDataByUserIdPrisma('), f.context);
   const before = clone(f.data);
   const dry = await f.context.deleteAccountDataByUserIdPrisma('a', { dryRun: true });
-  assert.equal(dry.removed, 3);
+  assert.equal(dry.removed, 4);
   assert.deepEqual(f.data, before);
   await f.context.deleteAccountDataByUserIdPrisma('a');
+  assert.equal(f.entitlements.has('a'), false);
+  assert.equal(f.entitlements.has('b'), true);
   assert.equal(f.families.has(familyId('a')), false);
   assert.equal(f.families.has(familyId('b')), true);
   for (const table of Object.values(f.data)) {
@@ -427,7 +471,7 @@ test('account deletion cascades only own family items; dry-run preserves all dat
 test('development memory deletion and counts cannot touch B or demo family', () => {
   const f = fixture();
   Object.assign(f.context, {
-    userEntitlements: new Map(), familyContacts: [], familyRequests: [], events: [],
+    familyContacts: [], familyRequests: [], events: [],
     eventInvitations: [], eventParticipations: [], paymentTransactions: [],
     eventChatReports: [], eventChatMessages: {}, parentMatchingActions: [],
   });

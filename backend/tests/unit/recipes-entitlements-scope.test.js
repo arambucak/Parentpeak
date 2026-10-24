@@ -133,88 +133,15 @@ test('GET /api/recipes/:id forbids foreign private even with valid token', async
   assert.equal(publicOk.status, 200);
 });
 
-// ========== MEDIUM 2: Entitlements ==========
-function entitlementFixture({ app, configured = true, env = {} } = {}) {
-  const userEntitlements = new Map();
-  const { context, handlers } = baseContext({
-    app, configured, env,
-    extra: {
-      userEntitlements,
-      ensureEntitlement: undefined, // wird aus Quelle geladen
-      buildEntitlementStatus: undefined,
-      asIsoDate: undefined,
-    },
-  });
-  // Reale Helfer laden (ensureEntitlement, buildEntitlementStatus, asIsoDate).
-  vm.runInContext(slice('function asIsoDate(', 'function removeMatching('), context);
-  vm.runInContext(slice("app.get('/entitlements/:userId/status'", '// 0. Weekly Impulse abrufen'), context);
-  return { handlers, userEntitlements };
-}
-
-for (const [method, route] of [
-  ['GET', '/entitlements/:userId/status'],
-  ['POST', '/entitlements/:userId/activate-premium'],
-]) {
-  for (const token of [null, 'invalid', 'shared']) {
-    test(`${method} ${route} rejects ${token ?? 'missing'} token`, async () => {
-      const { handlers } = entitlementFixture();
-      const result = await callRoute(handlers, method, route, { token, params: { userId: 'a' } });
-      assert.equal(result.status, 401);
-    });
-  }
-  test(`${method} ${route} rejects foreign path userId`, async () => {
-    const { handlers } = entitlementFixture();
-    const result = await callRoute(handlers, method, route, { token: 'a', params: { userId: 'b' } });
-    assert.equal(result.status, 403);
-  });
-  test(`${method} ${route} allows own path userId`, async () => {
-    const { handlers } = entitlementFixture({ env: { ALLOW_SELF_SERVICE_PREMIUM: '1' } });
-    const result = await callRoute(handlers, method, route, { token: 'a', params: { userId: 'a' } });
-    assert.ok(result.status === 200 || result.status === 201);
-  });
-}
-
-test('GET entitlement status does NOT set premium from query hint', async () => {
-  const { handlers, userEntitlements } = entitlementFixture();
-  await callRoute(handlers, 'GET', '/entitlements/:userId/status', {
-    token: 'a', params: { userId: 'a' }, query: { isPremium: 'true' },
-  });
-  const record = userEntitlements.get('a');
-  assert.equal(record.isPremium, false); // Query-Hint wird ignoriert
-});
-
-test('POST activate-premium is refused without payment verification by default', async () => {
-  const { handlers, userEntitlements } = entitlementFixture();
-  const result = await callRoute(handlers, 'POST', '/entitlements/:userId/activate-premium', {
-    token: 'a', params: { userId: 'a' },
-  });
-  assert.equal(result.status, 403);
-  assert.equal(result.body?.code, 'payment_required');
-  assert.notEqual(userEntitlements.get('a')?.isPremium, true);
-});
-
-test('POST activate-premium sets premium only for own account', async () => {
-  const { handlers, userEntitlements } = entitlementFixture({ env: { ALLOW_SELF_SERVICE_PREMIUM: '1' } });
-  const result = await callRoute(handlers, 'POST', '/entitlements/:userId/activate-premium', {
-    token: 'a', params: { userId: 'a' },
-  });
-  assert.equal(result.status, 201);
-  assert.equal(userEntitlements.get('a').isPremium, true);
-});
-
 // Echte Express-Kette: GET /api/recipes nicht ungeschützt.
-test('real Express chain protects recipes and entitlements', async t => {
+test('real Express chain protects recipes', async t => {
   const app = express(); app.use(express.json());
   recipeFixture({ app });
-  entitlementFixture({ app });
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
   const base = `http://127.0.0.1:${server.address().port}`;
   assert.equal((await fetch(`${base}/api/recipes`)).status, 401);
-  assert.equal((await fetch(`${base}/entitlements/a/status`)).status, 401);
-  assert.equal((await fetch(`${base}/entitlements/a/status`,
-    { headers: { Authorization: 'Bearer b' } })).status, 403);
 });
 
 // ========== Rezept-Schreibrouten: Identitaet nur aus dem Token ==========
