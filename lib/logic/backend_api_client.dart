@@ -360,21 +360,11 @@ class BackendApiClient {
   /// Uploads an image file via multipart POST to [path] (field name: 'image').
   /// Returns the decoded JSON response or throws on failure.
   Future<Map<String, dynamic>> uploadImageFile(String path, File file) async {
-    final uri = _uri(path);
-    final request = http.MultipartRequest('POST', uri);
-    final uploadHeaders = await _headers(includeContentType: false);
-    request.headers.addAll(uploadHeaders);
-    request.files.add(await http.MultipartFile.fromPath('image', file.path));
-    final streamed = await _httpClient
-        .send(request)
-        .timeout(const Duration(seconds: 30));
-    final body = await streamed.stream.bytesToString();
-    if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
-      throw Exception('POST $path (multipart) failed: ${streamed.statusCode}');
-    }
-    final decoded = jsonDecode(body);
-    if (decoded is Map<String, dynamic>) return decoded;
-    return <String, dynamic>{'raw': body};
+    return uploadImageBytes(
+      path,
+      await file.readAsBytes(),
+      filename: file.uri.pathSegments.last,
+    );
   }
 
   /// Uploads image bytes via multipart POST. Used by Flutter web, where a

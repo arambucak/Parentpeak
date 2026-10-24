@@ -42,6 +42,24 @@ Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
       nimmt an; ein unbeteiligtes Konto C kann weder ändern noch löschen.
 - [ ] Private Events: Nur der gespeicherte Veranstalter kann ein Event löschen,
       eigene Einladungs-Codes laden oder die angenommenen Einladungen einsehen.
+- [ ] Neue Bild-Uploads: Firebase ist Pflicht, Shared-/Gasttoken reicht nicht.
+      JPEG/PNG/WebP/GIF werden wirklich dekodiert, ohne EXIF/GPS/Geräteprofile
+      neu kodiert und mit serverbestimmter Endung veröffentlicht. Kamera-
+      Orientierung, Transparenz und GIF/WebP-Animation auf Geräten prüfen.
+      Originale liegen während der Verarbeitung nur im nicht öffentlichen
+      temporären Ordner; abgewiesene/abgebrochene Uploads hinterlassen dort
+      keine Dateien. 10-MiB-Eingabelimit bleibt; maximal 40 Mio. dekodierte
+      Pixel (bei Animation über alle Frames), 10 s Decoderzeit, 10 MiB Ausgabe.
+- [ ] Bildauslieferung: HTML/SVG/temporäre Dateien und Unterpfade werden nicht
+      als Uploadbilder ausgeliefert; erlaubte Bildtypen bekommen `nosniff`
+      und eine restriktive CSP. Öffentliche Eventbilder bleiben erreichbar.
+      Bestehende Altbilder sind NICHT nachträglich metadatenbereinigt.
+      Private Chat-/Familienmedienrechte und Altdateibereinigung bleiben
+      separat offen; zufällige öffentliche URLs sind kein Zugriffsschutz.
+- [ ] Native und Web-Eventfotos senden Firebase ohne statischen Fallback und
+      korrekten Bild-MIME. Rezept-/Gruppenfoto-Aufrufer behalten ihre bereits
+      verifizierten Clients. Decoder-/Speicher-/Authfehler dürfen keinen
+      erfolgreichen Foto-Upload oder stilles Publizieren ohne Foto vortäuschen.
 - [ ] Serien-Follows: Folgen, Entfolgen und persönlicher Status benötigen
       Firebase; fremde Body-/Query-`userId`-Claims werden vor Datenzugriff
       abgewiesen. A verändert/liest nur das eigene Abo; B bleibt unverändert.

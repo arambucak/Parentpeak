@@ -1,5 +1,46 @@
 # Parentpeak Marktplatz Backend
 
+## Bereinigte Bild-Uploads
+
+`POST /uploads/image` verlangt lokal einen verifizierten Firebase-Token,
+unabhaengig von globalen Auth-Flags. Multipart-Feld: `image`; akzeptierte
+MIME-Typen bleiben JPEG, PNG, WebP und GIF. Originalname und MIME sind keine
+Format-Autoritaet: Sharp dekodiert und kodiert die erkannten Bildpixel neu,
+ohne EXIF/GPS, XMP/IPTC oder originales Farbprofil. Kameraorientierung wird
+angewandt, GIF-/WebP-Animationen bleiben erhalten.
+
+Originale liegen nur in `backend/.upload-tmp/`, nicht im oeffentlichen
+`backend/uploads/`. Erst erfolgreiche Verarbeitung veroeffentlicht atomar
+`sanitized-<Zufallswert>.<erkannte Endung>`. Die Antwort bleibt
+`201 { url, filename, size }`; `size` beschreibt die bereinigte Datei.
+Parser-/Bildfehler liefern 400, Speicher-/Publikationsfehler 500; keine
+erfundene Upload-URL. Tempdateien werden auf normalen Abschluss-/Fehlerpfaden
+entfernt, einschliesslich Parserabbruch. Prozessabsturz-/Restart-Bereinigung
+ist damit nicht zugesichert.
+
+Grenzen: 10 MiB Eingabe, 40 Mio. dekodierte Pixel insgesamt (bei Animation
+ueber alle Frames), 10 s Decoderzeit und 10 MiB bereinigte Ausgabe. Das ist
+keine Lasttest-/Quotenfreigabe. Sharp ist im Lockfile gepinnt; Linux-Binaer-
+Pakete werden durch den regulaeren Render-/CI-Installationsprozess geladen.
+
+GET/HEAD unter `/uploads/` erlaubt nur einfache JPEG-/PNG-/WebP-/GIF-Dateinamen
+mit `nosniff` und restriktiver CSP. HTML/SVG, Tempdateien und Unterpfade werden
+nicht ausgeliefert. Bestehende Bilddateien bleiben erreichbar, sind aber
+NICHT rueckwirkend von Metadaten bereinigt. Private Chat-/Familienmedienrechte,
+persistenter Storage, Dateibindung an Export/Loeschung und kontrollierte
+Altdateibereinigung bleiben separate Arbeit; eine zufaellige URL ist kein
+Zugriffsschutz. Keine automatische Altdateimigration oder Loeschung.
+
+Flutter-Eventuploads verlangen Firebase ohne statischen Tokenfallback;
+native Dateien und Webbytes verwenden denselben MIME-faehigen Multipartpfad.
+Rezept-/Gruppenfoto-Aufrufer verwenden bereits verifizierte Clients.
+
+```bash
+cd backend && API_BASE=http://127.0.0.1:9 node --test tests/unit/image-sanitization.test.js tests/unit/image-upload.test.js
+# Aus dem Repository-Root:
+flutter test test/image_upload_auth_test.dart test/create_event_photo_test.dart test/event_backend_service_test.dart
+```
+
 ## Privater Familienkontext fuer Todos und Shopping
 
 Alle acht GET/POST/PUT/DELETE-Routen unter `/todos` und `/shopping` verlangen

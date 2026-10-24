@@ -11,6 +11,7 @@ const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
+const { publishSanitizedImage, allowPublicImage, InvalidImageError } = require('./image_upload');
 const { changeParticipation, updateOwnedEvent, validateEventMode, CONFIRMED } = require('./event_participation_policy');
 const { publicTreasure } = require('./treasure_public_view');
 const treasureGeometry = require('./treasure_geometry');
@@ -62,16 +63,18 @@ try {
   console.warn('⚠️  Firebase Admin SDK nicht verfügbar:', err.message);
 }
 
-// Multer for image uploads — stored under uploads/ (create if missing)
+// Multer for image uploads — originals stay outside the public directory.
 const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+const uploadTempDir = path.join(__dirname, '.upload-tmp');
+for (const directory of [uploadsDir, uploadTempDir]) {
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  }
 }
 const multerStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+  destination: (_req, _file, cb) => cb(null, uploadTempDir),
+  filename: (_req, _file, cb) => {
+    cb(null, `${crypto.randomBytes(16).toString('hex')}.tmp`);
   },
 });
 const upload = multer({
@@ -13104,10 +13107,14 @@ app.post('/auth/send-verification-email', async (req, res) => {
 });
 
 // ── Image Upload ─────────────────────────────────────────────────────────────
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', allowPublicImage, express.static(uploadsDir, {
+  dotfiles: 'deny',
+  index: false,
+  redirect: false,
+}));
 
-app.post('/uploads/image', (req, res) => {
-  upload.single('image')(req, res, err => {
+app.post('/uploads/image', requireVerifiedUser, (req, res) => {
+  upload.single('image')(req, res, async err => {
     if (err) {
       return res.status(400).json({ error: err.message || 'Bild-Upload fehlgeschlagen' });
     }
@@ -13116,11 +13123,18 @@ app.post('/uploads/image', (req, res) => {
       return res.status(400).json({ error: 'Kein Bild empfangen' });
     }
 
-    const publicBase = (process.env.PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
-    const relPath = `/uploads/${req.file.filename}`;
-    const url = publicBase ? `${publicBase}${relPath}` : relPath;
-
-    return res.status(201).json({ url, filename: req.file.filename, size: req.file.size });
+    try {
+      const image = await publishSanitizedImage(req.file, uploadsDir);
+      const publicBase = (process.env.PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
+      const relPath = `/uploads/${image.filename}`;
+      const url = publicBase ? `${publicBase}${relPath}` : relPath;
+      return res.status(201).json({ url, ...image });
+    } catch (error) {
+      console.error('Image processing failed:', error.message);
+      return res.status(error instanceof InvalidImageError ? 400 : 500).json({
+        error: error instanceof InvalidImageError ? error.message : 'Bild konnte nicht gespeichert werden',
+      });
+    }
   });
 });
 
