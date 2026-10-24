@@ -14949,13 +14949,17 @@ app.get('/api/community-events', async (req, res) => {
  * POST /api/community-events
  * Create a new community event. Max 3 per day per creator.
  */
-app.post('/api/community-events', async (req, res) => {
+app.post('/api/community-events', requireVerifiedUser, async (req, res) => {
+  if (!requireActorClaims(req, res, [
+    req.body?.creatorId, req.query?.creatorId,
+  ])) return;
+  const creatorId = req.firebaseUid;
   const {
     title, description, category, ageGroups, venue, location, city,
     lat, lon, isPrivateAddress, eventDate, eventEndDate, isRecurring, recurringNote,
     rainPlan, price, isFree, url, imageUrl, organizer, creatorType,
     contactName, contactPhone, contactEmail, accessibility, eventLanguage,
-    source, creatorId,
+    source,
   } = req.body;
 
   if (!title || !location || !city || !creatorId || !eventDate || !organizer) {
@@ -14974,16 +14978,16 @@ app.post('/api/community-events', async (req, res) => {
     return res.status(422).json({ error: 'Inhalt entspricht nicht den Community-Richtlinien' });
   }
 
-  const dayStart = new Date();
-  dayStart.setHours(0, 0, 0, 0);
-  const todayCount = await prisma.communityEvent.count({
-    where: { creatorId: String(creatorId), createdAt: { gte: dayStart } },
-  });
-  if (todayCount >= 3) {
-    return res.status(429).json({ error: 'Maximal 3 Events pro Tag erlaubt' });
-  }
-
   try {
+    const dayStart = new Date();
+    dayStart.setHours(0, 0, 0, 0);
+    const todayCount = await prisma.communityEvent.count({
+      where: { creatorId, createdAt: { gte: dayStart } },
+    });
+    if (todayCount >= 3) {
+      return res.status(429).json({ error: 'Maximal 3 Events pro Tag erlaubt' });
+    }
+
     const event = await prisma.communityEvent.create({
       data: {
         title: String(title).slice(0, 200),
@@ -15013,13 +15017,13 @@ app.post('/api/community-events', async (req, res) => {
         accessibility: Array.isArray(accessibility) ? JSON.stringify(accessibility) : '[]',
         eventLanguage: eventLanguage ? String(eventLanguage).slice(0, 10) : 'de',
         source: source ? String(source) : 'community',
-        creatorId: String(creatorId).slice(0, 100),
+        creatorId,
       },
     });
     res.status(201).json(event);
   } catch (err) {
     console.error('❌ POST /api/community-events error:', err.message);
-    res.status(500).json({ error: `Failed to create community event: ${err.message}` });
+    res.status(500).json({ error: 'Event konnte nicht gespeichert werden' });
   }
 });
 
@@ -15027,23 +15031,23 @@ app.post('/api/community-events', async (req, res) => {
  * DELETE /api/community-events/:id
  * Delete own community event. Query param: creatorId
  */
-app.delete('/api/community-events/:id', async (req, res) => {
+app.delete('/api/community-events/:id', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const { creatorId } = req.query;
-
-  if (!creatorId) return res.status(400).json({ error: 'creatorId erforderlich' });
+  if (!requireActorClaims(req, res, [
+    req.body?.creatorId, req.query?.creatorId,
+  ])) return;
 
   try {
     const event = await prisma.communityEvent.findUnique({ where: { id } });
     if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
-    if (event.creatorId !== String(creatorId)) {
+    if (event.creatorId !== req.firebaseUid) {
       return res.status(403).json({ error: 'Nur der Ersteller kann das Event löschen' });
     }
     await prisma.communityEvent.delete({ where: { id } });
     res.json({ success: true });
   } catch (err) {
     console.error('❌ DELETE /api/community-events/:id error:', err.message);
-    res.status(500).json({ error: `Failed to delete event: ${err.message}` });
+    res.status(500).json({ error: 'Event konnte nicht gelöscht werden' });
   }
 });
 
@@ -15091,11 +15095,10 @@ app.post('/api/community-events/:id/flag', requireVerifiedUser, async (req, res)
  * POST /api/community-events/:id/interest
  * Express interest ("Ich bin auch dabei!") with optional message.
  */
-app.post('/api/community-events/:id/interest', async (req, res) => {
+app.post('/api/community-events/:id/interest', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const { userId, displayName, message } = req.body;
-
-  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  const userId = req.firebaseUid;
+  const { displayName, message } = req.body;
 
   try {
     const event = await prisma.communityEvent.findUnique({ where: { id } });
@@ -15121,7 +15124,7 @@ app.post('/api/community-events/:id/interest', async (req, res) => {
     res.json({ success: true, interestCount });
   } catch (err) {
     console.error('❌ POST /api/community-events/:id/interest error:', err.message);
-    res.status(500).json({ error: `Failed to register interest: ${err.message}` });
+    res.status(500).json({ error: 'Interesse konnte nicht gespeichert werden' });
   }
 });
 
