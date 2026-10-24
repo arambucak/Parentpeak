@@ -26,6 +26,7 @@ import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/profile_data_export_service.dart';
 import 'package:parentpeak/ui/widgets/profile_legacy_claim.dart';
+import 'package:parentpeak/ui/ads_consent_screen.dart';
 
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
@@ -787,6 +788,14 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                       title: _t('privacy'),
                       subtitle: _profileCopy('gdpr_compliant', 'DSGVO-konform'),
                       onTap: () => _openUrl(APIConfig.getPrivacyPolicyUrl())),
+                  _thinDivider(theme),
+                  _buildCompactTile(theme,
+                      icon: Icons.privacy_tip_outlined,
+                      title: _t('ads_consent_title'),
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AdsConsentScreen()))),
                   _thinDivider(theme),
                   _buildCompactTile(theme,
                       icon: Icons.gavel_rounded,
