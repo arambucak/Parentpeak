@@ -98,6 +98,15 @@ class BackendApiClient {
   final void Function()? requestGuard;
   final bool requireAuthToken;
 
+  BackendApiClient withRequiredAuthToken() => BackendApiClient(
+    baseUrl: baseUrl,
+    authTokenProvider: authTokenProvider,
+    forceRefreshTokenProvider: forceRefreshTokenProvider,
+    httpClient: _httpClient,
+    requestGuard: requestGuard,
+    requireAuthToken: true,
+  );
+
   BackendApiClient withRequestGuard(void Function() guard) => BackendApiClient(
     baseUrl: baseUrl,
     authToken: authToken,
