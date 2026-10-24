@@ -37,6 +37,12 @@ Die verbleibende Backend-Härtung wird in getrennten Risikogruppen umgesetzt.
 Automatisierte Handler-Tests ersetzen weder reale Firebase-Token noch einen
 Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
 
+- [ ] Alte Referral-APIs: Record/Pending/Claim liefern nach vorgelagerten
+      Guards 410 `referral_retired`, keine Nutzerdaten, keinen Claim-Erfolg.
+      Pending ist auch ohne Token nicht mehr auslesbar; weder DB-Zugriff
+      noch Memory-Fallback. Globale Auth-/Rate-Grenzen bleiben aktiv.
+      Bestehende Freundes-/Eventeinladungslinks und Codes separat unverändert
+      testen. Historische Referral-Daten sind NICHT automatisch gelöscht.
 - [ ] Familien-Anfragen: Konto A sieht nur eigene ein- und ausgehende Anfragen;
       A kann keine bereits angenommene Beziehung erzeugen. Nur Empfänger B
       nimmt an; ein unbeteiligtes Konto C kann weder ändern noch löschen.

@@ -1,5 +1,31 @@
 # Parentpeak Marktplatz Backend
 
+## Stillgelegte Legacy-Referral-APIs
+
+Das fruehere ParentCoin-/Referral-Tracking wird nicht mehr verwendet. Nach
+expliziter Produktfreigabe liefern diese drei Routen nur noch
+`410 { error, code: "referral_retired" }` mit `Cache-Control: no-store`:
+
+- `POST /referrals/record`
+- `GET /referrals/pending/:code` (einschliesslich HEAD)
+- `DELETE /referrals/claim/:code`
+
+Keine DB-/Memory-Abfrage, kein neuer Eintrag, keine Namens-/UID-Ausgabe und
+kein Claim-Loeschen. Globale Auth-/Rate-/Parser-Middleware bleibt davor aktiv;
+sie kann unberechtigte oder ungueltige Requests bereits mit 401/403/400/429
+abweisen. Es gibt keine neue Auth-Ausnahme, um immer 410 zu erzwingen.
+
+Aktuelle Flutter-Aufrufer dieser drei APIs wurden nicht gefunden; bestehende
+Freundes-/Eventeinladungen, Codes und Linkverarbeitung bleiben unveraendert.
+Historische `PendingReferral`-DB-Daten und deren bisherige Schemaanlage werden
+nicht geloescht oder migriert. Aufbewahrung und kontrollierte Bereinigung
+bleiben separat zu klaeren; diese Stilllegung ist keine Loeschbestaetigung.
+Kein ParentCoin-Guthaben-/Belohnungssystem wird neu eingefuehrt.
+
+```bash
+cd backend && API_BASE=http://127.0.0.1:9 node --test tests/unit/legacy-referral-retirement.test.js
+```
+
 ## Bereinigte Bild-Uploads
 
 `POST /uploads/image` verlangt lokal einen verifizierten Firebase-Token,

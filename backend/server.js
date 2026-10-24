@@ -7529,79 +7529,19 @@ async function exportAccountDataByUserIdPrisma(userId) {
 }
 
 // ============================================================================
-// REFERRAL TRACKING
+// RETIRED LEGACY REFERRAL TRACKING
 // ============================================================================
-const _pendingReferrals = new Map(); // in-memory fallback
+function respondLegacyReferralRetired(_req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(410).json({
+    error: 'Legacy referral tracking is no longer available',
+    code: 'referral_retired',
+  });
+}
 
-app.post('/referrals/record', async (req, res) => {
-  const { referralCode, inviteeId, inviteeName } = req.body;
-  if (!referralCode || !inviteeId) {
-    return res.status(400).json({ error: 'referralCode und inviteeId sind erforderlich' });
-  }
-  const code = String(referralCode).toUpperCase().trim();
-  const name = String(inviteeName || 'Neues Mitglied');
-  try {
-    await ensureSocialSchemaReady();
-    const existing = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "PendingReferral" WHERE "referralCode" = $1 AND "inviteeId" = $2`,
-      code, String(inviteeId)
-    );
-    if (existing.length === 0) {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "PendingReferral" ("id", "referralCode", "inviteeId", "inviteeName", "ts") VALUES ($1, $2, $3, $4, $5)`,
-        generateId('ref'), code, String(inviteeId), name, Date.now()
-      );
-    }
-    console.log(`📬 Referral recorded (DB): ${code} ← ${inviteeId}`);
-    return res.json({ success: true });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'POST /referrals/record', error)) return;
-    if (!_pendingReferrals.has(code)) _pendingReferrals.set(code, []);
-    const existing = _pendingReferrals.get(code);
-    if (!existing.some(r => r.inviteeId === inviteeId)) {
-      existing.push({ inviteeId: String(inviteeId), inviteeName: name, ts: Date.now() });
-    }
-    console.log(`📬 Referral recorded (memory): ${code} ← ${inviteeId}`);
-    return res.json({ success: true });
-  }
-});
-
-app.get('/referrals/pending/:code', async (req, res) => {
-  const code = String(req.params.code || '').toUpperCase().trim();
-  if (!code) return res.status(400).json({ error: 'code erforderlich' });
-  try {
-    await ensureSocialSchemaReady();
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT "inviteeId", "inviteeName", "ts" FROM "PendingReferral" WHERE "referralCode" = $1`,
-      code
-    );
-    return res.json({ referrals: rows });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'GET /referrals/pending', error)) return;
-    return res.json({ referrals: _pendingReferrals.get(code) || [] });
-  }
-});
-
-app.delete('/referrals/claim/:code', async (req, res) => {
-  const code = String(req.params.code || '').toUpperCase().trim();
-  try {
-    await ensureSocialSchemaReady();
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT "id" FROM "PendingReferral" WHERE "referralCode" = $1`, code
-    );
-    await prisma.$executeRawUnsafe(
-      `DELETE FROM "PendingReferral" WHERE "referralCode" = $1`, code
-    );
-    console.log(`✅ Referral claimed (DB): ${code} (${rows.length} entries)`);
-    return res.json({ claimed: rows.length });
-  } catch (error) {
-    if (respondWithStrictPersistenceError(res, 'DELETE /referrals/claim', error)) return;
-    const claimed = (_pendingReferrals.get(code) || []).length;
-    _pendingReferrals.delete(code);
-    console.log(`✅ Referral claimed (memory): ${code} (${claimed} entries)`);
-    return res.json({ claimed });
-  }
-});
+app.post('/referrals/record', respondLegacyReferralRetired);
+app.get('/referrals/pending/:code', respondLegacyReferralRetired);
+app.delete('/referrals/claim/:code', respondLegacyReferralRetired);
 
 app.post('/account/delete-data', requireVerifiedUser, async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
