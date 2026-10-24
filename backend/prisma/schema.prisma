@@ -34,6 +34,7 @@ model User {
   familyMemberships     Family[]        @relation("FamilyMembers")
   eventParticipations   EventParticipation[]
   paymentTransactions   PaymentTransaction[]
+  entitlement           UserEntitlement?
   messages              Message[]
   chatReports           ChatReport[]
   treasureRatingsGiven  TreasureRating[]  @relation("TreasureRatingFrom")
@@ -41,6 +42,21 @@ model User {
   
   @@index([email])
   @@index([createdAt])
+}
+
+model UserEntitlement {
+  userId                   String   @id
+  tier                     String   @default("free")
+  access                   String   @default("none")
+  validFrom                DateTime?
+  validUntil               DateTime?
+  verifiedAt               DateTime @default(now())
+  adsEligibleByEntitlement Boolean  @default(false)
+  revokedAt                DateTime?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ============================================================================

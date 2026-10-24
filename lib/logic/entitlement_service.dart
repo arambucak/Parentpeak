@@ -1,22 +1,110 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/config/feature_flags.dart';
-import 'package:parentpeak/logic/auth_service.dart';
 
-/// Verwaltet Freemium-Berechtigungen und Usage-Limits.
-///
-/// Architektur:
-///   - Prüft ob ein User Premium oder Free ist (via AuthService)
-///   - Tracked tägliche Nutzung von limitierten Free-Features
-///   - Gibt klare Antworten: "darfst du" / "Limit erreicht" / "nur Premium"
-///
-/// Free-Tier Limits:
-///   - KI Elternberatung: 3 Nachrichten pro Tag
-///   - Impulse & Entwicklung: Basis-Impulse sichtbar, Detail-Inhalte Premium
-///   - Kalender: Voll nutzbar
-///   - Organisation: Voll nutzbar
-///
-/// Premium: Alles unbegrenzt + Community-Features + Marktplatz
+enum EntitlementState { loading, verified, unavailable }
+
+enum EntitlementAccess { none, trial, active, grace, expired, revoked }
+
+class EntitlementSnapshot {
+  const EntitlementSnapshot({
+    required this.state,
+    this.tier,
+    this.access = EntitlementAccess.none,
+    this.validFrom,
+    this.validUntil,
+    this.verifiedAt,
+    this.adsEligibleByEntitlement = false,
+  });
+
+  const EntitlementSnapshot.loading() : this(state: EntitlementState.loading);
+
+  const EntitlementSnapshot.unavailable()
+      : this(state: EntitlementState.unavailable);
+
+  final EntitlementState state;
+  final SubscriptionTier? tier;
+  final EntitlementAccess access;
+  final DateTime? validFrom;
+  final DateTime? validUntil;
+  final DateTime? verifiedAt;
+  final bool adsEligibleByEntitlement;
+
+  bool get isPremium =>
+      state == EntitlementState.verified && tier == SubscriptionTier.premium;
+
+  bool get isFree =>
+      state == EntitlementState.verified && tier == SubscriptionTier.free;
+
+  bool get adsEligible =>
+      state == EntitlementState.verified &&
+      tier == SubscriptionTier.free &&
+      adsEligibleByEntitlement;
+
+  factory EntitlementSnapshot.fromJson(Map<String, dynamic> json) {
+    final tier = switch (json['tier']) {
+      'free' => SubscriptionTier.free,
+      'premium' => SubscriptionTier.premium,
+      _ => null,
+    };
+    final access = switch (json['access']) {
+      'trial' => EntitlementAccess.trial,
+      'active' => EntitlementAccess.active,
+      'grace' => EntitlementAccess.grace,
+      'expired' => EntitlementAccess.expired,
+      'revoked' => EntitlementAccess.revoked,
+      'none' => EntitlementAccess.none,
+      _ => null,
+    };
+    final validFrom = _parseDate(json['validFrom']);
+    final validUntil = _parseDate(json['validUntil']);
+    final verifiedAt = _parseDate(json['verifiedAt']);
+    final now = DateTime.now().toUtc();
+    final activeAccess = access == EntitlementAccess.trial ||
+        access == EntitlementAccess.active ||
+        access == EntitlementAccess.grace;
+
+    if (json['state'] != 'verified' ||
+        tier == null ||
+        access == null ||
+        json['adsEligibleByEntitlement'] is! bool) {
+      throw const FormatException('Invalid entitlement snapshot');
+    }
+    if (tier == SubscriptionTier.premium &&
+        (!activeAccess ||
+            validFrom == null ||
+            validUntil == null ||
+            verifiedAt == null ||
+            validFrom.isAfter(now) ||
+            !validUntil.isAfter(now))) {
+      throw const FormatException('Invalid premium validity period');
+    }
+
+    return EntitlementSnapshot(
+      state: EntitlementState.verified,
+      tier: tier,
+      access: access,
+      validFrom: validFrom,
+      validUntil: validUntil,
+      verifiedAt: verifiedAt,
+      adsEligibleByEntitlement: json['adsEligibleByEntitlement'] as bool,
+    );
+  }
+
+  static DateTime? _parseDate(Object? value) {
+    if (value == null) return null;
+    if (value is! String) {
+      throw const FormatException('Invalid entitlement date');
+    }
+    return DateTime.tryParse(value)?.toUtc() ??
+        (throw const FormatException('Invalid entitlement date'));
+  }
+}
+
+/// Central server-backed entitlement facade and local usage-limit manager.
 class EntitlementService extends ChangeNotifier {
   EntitlementService._();
   static final EntitlementService instance = EntitlementService._();
@@ -31,37 +119,67 @@ class EntitlementService extends ChangeNotifier {
 
   // ─── State ─────────────────────────────────────────────────────────────────
 
-  bool _initialized = false;
-  SubscriptionTier _currentTier = SubscriptionTier.free;
-  SubscriptionTier get currentTier => _currentTier;
+  @visibleForTesting
+  static BackendApiClient? Function() apiClientFactory =
+      BackendServiceFactory.createVerifiedApiClient;
 
-  bool get isPremium => _currentTier == SubscriptionTier.premium;
-  bool get isFree => _currentTier == SubscriptionTier.free;
+  EntitlementSnapshot _snapshot = const EntitlementSnapshot.loading();
+  EntitlementSnapshot get snapshot => _snapshot;
+  EntitlementState get state => _snapshot.state;
+  SubscriptionTier? get currentTier =>
+      _snapshot.state == EntitlementState.verified ? _snapshot.tier : null;
+  bool get isPremium => _snapshot.isPremium;
+  bool get isFree => _snapshot.isFree;
+  bool get adsEligibleByEntitlement => _snapshot.adsEligible;
+
+  bool _initialized = false;
+  int _refreshGeneration = 0;
 
   // ─── Initialisierung ───────────────────────────────────────────────────────
 
   Future<void> initialize() async {
     if (_initialized) return;
-    await _refreshTierFromAuth();
-    _initialized = true;
+    await refreshEntitlements();
   }
 
-  /// Aktualisiert den Tier basierend auf dem aktuellen Auth-Status.
-  Future<void> _refreshTierFromAuth() async {
-    final user = AuthService.instance.currentUser;
-    if (user == null) {
-      _currentTier = SubscriptionTier.free;
-    } else if (user.isPremium || user.hasFullAccess) {
-      _currentTier = SubscriptionTier.premium;
-    } else {
-      _currentTier = SubscriptionTier.free;
-    }
-    notifyListeners();
-  }
-
-  /// Wird nach Login/Logout/Subscription-Änderung aufgerufen.
+  /// Loads only the authenticated backend snapshot; failures stay unavailable.
   Future<void> refreshEntitlements() async {
-    await _refreshTierFromAuth();
+    final generation = ++_refreshGeneration;
+    _snapshot = const EntitlementSnapshot.loading();
+    notifyListeners();
+
+    try {
+      final apiClient = apiClientFactory();
+      if (apiClient == null) {
+        throw StateError('Authenticated entitlement API is unavailable');
+      }
+      final payload = await apiClient.getJson(
+        '${APIConfig.getBackendEntitlementsPath()}/me',
+      );
+      if (generation != _refreshGeneration) return;
+      if (payload is! Map<String, dynamic> ||
+          payload['item'] is! Map<String, dynamic>) {
+        throw const FormatException('Invalid entitlement response');
+      }
+      _snapshot = EntitlementSnapshot.fromJson(
+        Map<String, dynamic>.from(payload['item'] as Map),
+      );
+      _initialized = true;
+      notifyListeners();
+    } catch (error) {
+      if (generation != _refreshGeneration) return;
+      _snapshot = const EntitlementSnapshot.unavailable();
+      _initialized = true;
+      debugPrint('EntitlementService.refreshEntitlements(): $error');
+      notifyListeners();
+    }
+  }
+
+  void resetForLogout() {
+    _refreshGeneration++;
+    _snapshot = const EntitlementSnapshot.unavailable();
+    _initialized = false;
+    notifyListeners();
   }
 
   // ─── Berechtigungsprüfungen ────────────────────────────────────────────────
@@ -77,6 +195,10 @@ class EntitlementService extends ChangeNotifier {
       if (featureFlags.isComingSoon(featureId)) {
         return EntitlementResult.comingSoon(featureId);
       }
+      return EntitlementResult.unavailable(featureId);
+    }
+
+    if (state != EntitlementState.verified) {
       return EntitlementResult.unavailable(featureId);
     }
 
@@ -103,6 +225,7 @@ class EntitlementService extends ChangeNotifier {
     final featureFlags = FeatureFlagService.instance;
 
     if (!featureFlags.isEnabled(featureId)) return false;
+    if (state != EntitlementState.verified) return false;
     if (isPremium) return true;
     return featureFlags.isAvailableInFreeTier(featureId);
   }
@@ -290,6 +413,5 @@ class EntitlementResult {
   }
 
   bool get isGranted => status == EntitlementStatus.granted;
-  bool get isBlocked =>
-      status != EntitlementStatus.granted;
+  bool get isBlocked => status != EntitlementStatus.granted;
 }

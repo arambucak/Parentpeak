@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/logic/entitlement_service.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
@@ -377,7 +378,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         ? user!.displayName.trim()
         : user?.friendlyName ?? 'Familien-Kontakt';
     final email = user?.email ?? '';
-    final isPremium = user?.isPremium ?? false;
+    final isPremium = EntitlementService.instance.isPremium;
     final trialDays = user?.trialDaysRemaining ?? 0;
     final hasAccess = user?.hasFullAccess ?? false;
     final initials = name.isNotEmpty ? name[0].toUpperCase() : '?';

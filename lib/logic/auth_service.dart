@@ -26,6 +26,7 @@ import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/config/access_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/logic/entitlement_service.dart';
 
 // ─── Result-Typen ────────────────────────────────────────────────────────────
 
@@ -123,7 +124,7 @@ class ParentUser {
         'email': email,
         'displayName': displayName,
         'registeredAt': registeredAt.toIso8601String(),
-        'isPremium': isPremium,
+        'isPremium': false,
         'serverHasFullAccess': serverHasFullAccess,
         'serverTrialDaysRemaining': serverTrialDaysRemaining,
       };
@@ -133,7 +134,7 @@ class ParentUser {
         email: j['email'] as String,
         displayName: j['displayName'] as String,
         registeredAt: DateTime.parse(j['registeredAt'] as String),
-        isPremium: j['isPremium'] as bool,
+        isPremium: false,
         serverHasFullAccess: j['serverHasFullAccess'] as bool?,
         serverTrialDaysRemaining: j['serverTrialDaysRemaining'] as int?,
       );
@@ -153,7 +154,6 @@ class AuthService with ChangeNotifier {
 
   bool _firebaseReady = false;
   FirebaseAuth? _firebaseAuth;
-  final BackendApiClient? _apiClient;
   StreamSubscription<User?>? _authSubscription;
   int _sessionEpoch = 0;
   final bool _injectedFirebase;
@@ -170,16 +170,11 @@ class AuthService with ChangeNotifier {
 
   // Singleton
   static final AuthService instance = AuthService._();
-  AuthService._()
-      // Entitlement-Routen sind owner-geprüft (Pfad-UID == Token-UID), daher der
-      // verifizierte Client mit erzwungenem Firebase-Token.
-      : _apiClient = BackendServiceFactory.createVerifiedApiClient(),
-        _injectedFirebase = false;
+  AuthService._() : _injectedFirebase = false;
 
   @visibleForTesting
   AuthService.withFirebaseForTesting(FirebaseAuth auth)
-      : _apiClient = null,
-        _injectedFirebase = true {
+      : _injectedFirebase = true {
     _firebaseAuth = auth;
     _firebaseReady = true;
   }
@@ -775,6 +770,7 @@ class AuthService with ChangeNotifier {
     final currentUserId = _currentUser?.uid;
     final epoch = ++_sessionEpoch;
     _currentUser = null;
+    EntitlementService.instance.resetForLogout();
     notifyListeners();
     await _authSubscription?.cancel();
     _authSubscription = null;
@@ -885,6 +881,7 @@ class AuthService with ChangeNotifier {
       debugPrint('deleteAccount: prefs.clear fehlgeschlagen: $e');
     }
     _currentUser = null;
+    EntitlementService.instance.resetForLogout();
     notifyListeners();
     return null;
   }
@@ -934,115 +931,16 @@ class AuthService with ChangeNotifier {
   // ── Abo aktivieren (Stub für In-App Purchase) ──────────────────────────────
 
   Future<bool> activatePremium() async {
-    final currentUser = _currentUser;
-    if (currentUser == null) return false;
-
-    var backendVerified = false;
-
-    if (_apiClient != null) {
-      try {
-        final payload = await _apiClient!.postJsonAny(
-          '${APIConfig.getBackendEntitlementsPath()}/${currentUser.uid}${APIConfig.getBackendEntitlementsActivatePremiumSuffix()}',
-          {
-            'registeredAt': currentUser.registeredAt.toIso8601String(),
-            'schemaVersion': APIConfig.getBackendApiVersion(),
-          },
-        );
-
-        final raw = payload is Map<String, dynamic>
-            ? (payload['item'] is Map<String, dynamic>
-                ? Map<String, dynamic>.from(payload['item'] as Map)
-                : payload)
-            : <String, dynamic>{};
-
-        final status = (raw['status'] ?? '').toString().toLowerCase();
-        backendVerified = raw['isPremium'] == true ||
-            raw['activated'] == true ||
-            status == 'active';
-      } catch (e) {
-        debugPrint('AuthService.activatePremium(): backend sync failed: $e');
-        if (kReleaseMode) {
-          return false;
-        }
-      }
-    }
-
-    // In release, never unlock premium locally without explicit backend verification.
-    if (kReleaseMode && !backendVerified) {
-      debugPrint(
-        'AuthService.activatePremium(): blocked in release because backend verification is missing.',
-      );
-      return false;
-    }
-
-    final user = ParentUser(
-      uid: currentUser.uid,
-      email: currentUser.email,
-      displayName: currentUser.displayName,
-      registeredAt: currentUser.registeredAt,
-      isPremium: true,
-      serverHasFullAccess:
-          backendVerified ? true : currentUser.serverHasFullAccess,
-      serverTrialDaysRemaining: currentUser.serverTrialDaysRemaining,
-    );
-    final prefs = await SharedPreferences.getInstance();
-    if (_firebaseReady) {
-      await _persistFirebaseProfile(prefs, user);
-    } else {
-      await _persistSession(prefs, user);
-    }
-    _currentUser = user;
     await refreshEntitlements();
-    return true;
+    return false;
   }
 
   Future<void> refreshEntitlements() async {
-    final current = _currentUser;
-    if (current == null || _apiClient == null) {
+    if (_currentUser == null) {
+      EntitlementService.instance.resetForLogout();
       return;
     }
-
-    try {
-      // Kein isPremium-Hint mehr: Premium wird ausschliesslich serverseitig
-      // vergeben; ein GET darf den Zustand nicht setzen.
-      final payload = await _apiClient!.getJson(
-        '${APIConfig.getBackendEntitlementsPath()}/${current.uid}/status?registeredAt=${Uri.encodeQueryComponent(current.registeredAt.toIso8601String())}',
-      );
-
-      final raw = payload is Map<String, dynamic>
-          ? (payload['item'] is Map<String, dynamic>
-              ? Map<String, dynamic>.from(payload['item'] as Map)
-              : payload)
-          : <String, dynamic>{};
-
-      if (raw.isEmpty) return;
-
-      final serverPremium = raw['isPremium'] == true;
-      final serverHasFullAccess = raw['hasFullAccess'] == true;
-      final serverTrialDaysRemaining = raw['trialDaysRemaining'] is num
-          ? (raw['trialDaysRemaining'] as num).toInt()
-          : null;
-
-      final updated = ParentUser(
-        uid: current.uid,
-        email: current.email,
-        displayName: current.displayName,
-        registeredAt: current.registeredAt,
-        isPremium: current.isPremium || serverPremium,
-        serverHasFullAccess: serverHasFullAccess,
-        serverTrialDaysRemaining: serverTrialDaysRemaining,
-      );
-
-      final prefs = await SharedPreferences.getInstance();
-      if (_firebaseReady) {
-        await _persistFirebaseProfile(prefs, updated);
-      } else {
-        await _persistSession(prefs, updated);
-      }
-      _currentUser = updated;
-    } catch (e) {
-      debugPrint('AuthService.refreshEntitlements(): failed: $e');
-    }
+    await EntitlementService.instance.refreshEntitlements();
   }
 
   // ── Hilfsmethoden ──────────────────────────────────────────────────────────

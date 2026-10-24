@@ -100,7 +100,7 @@ function fixture(options = {}) {
     block('async function firebaseAuthMiddleware(', '\napp.use(async (req, res, next) => {'),
     block('function paymentError(', '\nfunction mapDbEventStatusToApi('),
     block('function normalizePaymentStatus(', '\nasync function updateEventPaymentDateIfCompleted('),
-    block('async function applyProviderTransactionStatusUpdate(', '\nfunction ensureEntitlement('),
+    block('async function applyProviderTransactionStatusUpdate(', '\nfunction removeMatching('),
     block("app.post('/payments/stripe/webhook',", "\napp.use('/ai/generate'"),
     block('// 18. Payments', '\n// Health Check'),
   ].join('\n'), context);

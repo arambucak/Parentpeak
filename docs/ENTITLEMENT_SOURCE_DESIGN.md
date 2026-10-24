@@ -1,8 +1,8 @@
 # Entitlement-Quelle der Wahrheit — Design (Phase A)
 
 **Stand:** Analyse des Branches `feat/entitlement-source-of-truth` auf `7ccdada6d6e2aea331e9e549ff268daca21ee0dc`
-**Status:** Vorschlag zur Prüfung; keine Implementierungsfreigabe
-**Scope der folgenden PR:** Eine persistente, serverseitig verifizierte Quelle für Free/Premium und das Abo-Entitlement. Kein Consent, keine Ad-Integration, keine Paywall-UI und keine Aktivierung von Werbung oder Monetarisierung.
+**Status:** Phase A reviewed und freigegeben; B1-Implementierung zur PR-Prüfung vorbereitet. B2 bleibt offen.
+**Scope von B1:** Persistenter Entitlement-Snapshot und eine serverseitige Quelle für Free/Premium. Keine Store-Receipt-Verifikation, kein Consent, keine Ad-Integration, keine Paywall-UI und keine Aktivierung von Werbung oder Monetarisierung.
 
 ## 1. Client-Ist-Zustand
 
@@ -105,7 +105,7 @@ Der aktuelle Checkout enthält Flutter-Stripe und Backend-Stripe, aber keine erk
 
 Vor Implementierung muss der Nutzer den Verifikationsweg bestätigen: native Apple-/Google-Store-Abos mit serverseitiger Prüfung (einschließlich Provider-Notifications/Statusabgleich) oder ein anderer ausdrücklich gewählter Billing-Anbieter. Native Prüfungen können neue Bibliotheken und geschützte Anbieterzugänge erfordern (z. B. Apple Sign/Server-API-Schlüssel bzw. Google Play Developer API Service-Account-Konfiguration). Ob diese Abhängigkeiten/Anbieterzugänge gewünscht und verfügbar sind, ist offen. Falls erforderlich, gehören Secrets ausschließlich in den genehmigten Secret-Store/Deployment-Konfiguration, niemals in Quellcode, Client, Logs oder dieses Dokument. Es wurden keine Secrets angefragt oder hinzugefügt.
 
-## 7. Geplante Verifikation nach Freigabe (nicht in Phase A ausgeführt)
+## 7. Geplante Verifikation nach Freigabe (in Phase A nicht ausgeführt)
 
 - `flutter analyze --no-pub` — gegen die bestätigte Baseline von 9 Infos prüfen.
 - `flutter test`.
@@ -135,3 +135,37 @@ Vor Implementierung muss der Nutzer den Verifikationsweg bestätigen: native App
 - Live-Datenqualität in `User.isPremium`, `trialExpiresAt` und `premiumExpiresAt` sowie mögliche aktive Zahlungen außerhalb der sichtbaren Integration.
 - Ob Apple-/Google-Server-API-Credentials, Provider-Notifications oder zusätzliche Pakete vorhanden/verfügbar sind; es wurden weder Secrets abgerufen noch angefragt.
 - Tests/Builds wurden in Phase A nicht ausgeführt; es wurde nur dieses Design-Dokument neu angelegt.
+
+## 9. B1-Implementierungsstand und Verifikation
+
+### Implementiert
+
+- `UserEntitlement` ist als Prisma-Snapshot mit maximal einer Zeile pro User, `User.id`-FK und Cascade-Löschung ergänzt. Eine SQL-Migration ist angelegt; eine Store-Transaktions-/Receipt-Tabelle ist ausdrücklich nicht Teil von B1.
+- `GET /entitlements/me` nutzt `requireVerifiedUser` und ausschließlich `req.firebaseUid`. Persistenz-/DB-Fehler liefern Nicht-2xx. Der Legacy-Self-Service-Aktivierungspfad gibt `410 store_verification_required` zurück und kann kein Premium erzeugen.
+- `state: verified` bedeutet in B1 eine erfolgreiche, authentifizierte Backend-/Datenbankabfrage, nicht den Nachweis eines Store-Kaufs. Ohne B2 kann kein neuer Store-Kauf als Premium bestätigt werden.
+- `EntitlementService` ist die Client-Facade mit `loading | verified | unavailable`; nur der authentifizierte Backend-Snapshot kann Free/Premium setzen. `PremiumService` delegiert an diese Facade. Lokale Premium-/Promo-Präferenzen und ein früherer Premium-Wert im Client-Profil sind keine Autorität.
+- Ablauf und Revocation stufen persistierte Premium-Snapshots auf Free zurück. `adsEligibleByEntitlement` bleibt in B1 `false`; Ads-/Monetization-Flags und der bestehende Ad-Platzhalter bleiben unverändert.
+- Der Account-Export enthält die eigenen Entitlement-Metadaten ohne Belege/Secrets; die Löschung entfernt die Snapshot-Zeile und wird zusätzlich durch den User-FK abgesichert.
+- Der bestätigte Eventzähler, Montag-Reset und Limit-Flags wurden nicht geändert. Nicht bestätigte Free-Zusatzlimits wurden nicht geändert.
+- Der bereits bestehende allgemeine Beta-/Probezeit-Zugang (`AccessConfig`/`ParentUser.hasFullAccess`) bleibt als separate Zugangspolitik unverändert; er darf nicht als Premium-Tier oder Ads-Berechtigung interpretiert werden. Seine Ablösung ist keine Paywall-Änderung in B1.
+
+### Verifiziert
+
+- `cd backend && npx prisma validate` — erfolgreich.
+- `cd backend && npx prisma generate` — erfolgreich.
+- `flutter test test/entitlement_service_test.dart` — erfolgreich, 6 Tests.
+- `cd backend && API_BASE=http://127.0.0.1:9 node --test tests/unit/entitlement-source.test.js tests/unit/family-todos-shopping.test.js tests/unit/payment-ownership.test.js tests/unit/recipes-entitlements-scope.test.js` — erfolgreich, 170 Tests.
+- `scripts/sync_guard.sh check` — Exit 0; Branch `feat/entitlement-source-of-truth` ist 1 Commit vor und 0 Commits hinter `origin/main`. Der erwartete offene B1-Diff wurde angezeigt.
+- `git diff --check` — erfolgreich.
+
+### Vermutet / nicht vollständig bestätigt
+
+- `flutter test` — fehlgeschlagen: 1.471 bestanden, 12 fehlgeschlagen. Alle beobachteten Fehler liegen in der unveränderten `test/events_activities_loading_test.dart`; die Community-Feed-Anfragen erhalten den Test-Binding-Standardstatus HTTP 400. Die isolierte Ausführung derselben Datei zeigt denselben Fehler. Dass dies bereits auf der Basis bestand, wurde nicht durch einen Baseline-Lauf bewiesen.
+- `cd backend && API_BASE=http://127.0.0.1:9 node --test tests/unit/*.test.js` — fehlgeschlagen: 787 Tests, 774 bestanden, 13 fehlgeschlagen. Die Fehler betreffen bestehende Image-Upload-Regressionen mit dem Hinweis, dass sie mit dem gepatchten Multer laufen müssen, sowie Dependency-/Cloud-Storage-Regressionen außerhalb der geänderten Entitlement-Dateien. Ein Baseline-Lauf gegen `7ccdada` wurde nicht ausgeführt; daher ist die Einstufung als nicht regressionsbedingt eine Vermutung.
+- `flutter analyze --no-pub` — Exit 1 mit den bekannten 9 Infos; keine zusätzlichen Analyzer-Befunde gegenüber der dokumentierten Baseline festgestellt.
+
+### Nicht geprüft / B2
+
+- Die SQL-Migration wurde nicht gegen eine produktive oder lokale PostgreSQL-Datenbank angewendet. Der Mehrinstanz-Test verwendet einen geteilten In-Memory-Test-Store und beweist keine echte Datenbank-/Prozesspersistenz.
+- Apple-/Google-Receipt-Verifikation, Provider-Benachrichtigungen, Produktions-/Store-Daten und tatsächliche Premium-Käufe bleiben B2 und wurden nicht implementiert oder geprüft.
+- Es wurden keine Consent-Daten, Ad-Slots, Store-Secrets oder Monetarisierungsaktivierungen eingeführt.
