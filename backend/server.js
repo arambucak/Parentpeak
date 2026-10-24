@@ -13849,9 +13849,10 @@ app.delete('/api/food-feed/recipes/:id', requireVerifiedUser, requireFoodFeedRec
  * POST /api/food-feed/recipes/:id/rate
  * Rate a recipe
  */
-app.post('/api/food-feed/recipes/:id/rate', async (req, res) => {
+app.post('/api/food-feed/recipes/:id/rate', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const { userId, rating, comment } = req.body;
+  const userId = req.firebaseUid;
+  const { rating, comment } = req.body;
 
   if (!userId || !rating) {
     return res.status(400).json({ error: 'userId und rating erforderlich' });
@@ -13925,9 +13926,9 @@ app.get('/api/food-feed/recipes/:id/comments', async (req, res) => {
  * POST /api/food-feed/recipes/:id/comments
  * Create a persisted comment for a recipe-based food offer
  */
-app.post('/api/food-feed/recipes/:id/comments', async (req, res) => {
+app.post('/api/food-feed/recipes/:id/comments', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const userId = String(req.body.userId || '').trim();
+  const userId = req.firebaseUid;
   const text = String(req.body.text || '').trim();
 
   if (!userId || !text) {
@@ -13978,11 +13979,15 @@ app.post('/api/food-feed/recipes/:id/comments', async (req, res) => {
 
 /**
  * GET /api/food-feed/recipes/:id/reservations
- * Get reservation summary and optionally current user's reservation
+ * Public aggregate; personal reservations require a verified account.
  */
-app.get('/api/food-feed/recipes/:id/reservations', async (req, res) => {
+app.get('/api/food-feed/recipes/:id/reservations', (req, res, next) => {
+  if (req.query?.userId === undefined && req.body?.userId === undefined &&
+      !req.headers.authorization) return next();
+  return requireVerifiedUser(req, res, next);
+}, async (req, res) => {
   const { id } = req.params;
-  const userId = String(req.query.userId || '').trim();
+  const userId = req.firebaseUid;
 
   try {
     const recipe = await prisma.sharedRecipe.findUnique({ where: { id } });
@@ -14029,9 +14034,9 @@ app.get('/api/food-feed/recipes/:id/reservations', async (req, res) => {
  * POST /api/food-feed/recipes/:id/reserve
  * Reserve one or more portions for current user
  */
-app.post('/api/food-feed/recipes/:id/reserve', async (req, res) => {
+app.post('/api/food-feed/recipes/:id/reserve', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const userId = String(req.body.userId || '').trim();
+  const userId = req.firebaseUid;
   const portions = Math.max(1, Number.parseInt(req.body.portions || '1', 10));
 
   if (!userId) {
@@ -14082,9 +14087,9 @@ app.post('/api/food-feed/recipes/:id/reserve', async (req, res) => {
  * DELETE /api/food-feed/recipes/:id/reserve?userId=...
  * Cancel current user's reservation
  */
-app.delete('/api/food-feed/recipes/:id/reserve', async (req, res) => {
+app.delete('/api/food-feed/recipes/:id/reserve', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const userId = String(req.query.userId || req.body?.userId || '').trim();
+  const userId = req.firebaseUid;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId ist erforderlich' });
@@ -14120,9 +14125,9 @@ app.delete('/api/food-feed/recipes/:id/reserve', async (req, res) => {
  * POST /api/food-feed/recipes/:id/complete
  * Mark current user's reservation as successfully picked up/completed
  */
-app.post('/api/food-feed/recipes/:id/complete', async (req, res) => {
+app.post('/api/food-feed/recipes/:id/complete', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const userId = String(req.body.userId || '').trim();
+  const userId = req.firebaseUid;
 
   if (!userId) {
     return res.status(400).json({ error: 'userId ist erforderlich' });
@@ -14170,9 +14175,12 @@ app.post('/api/food-feed/recipes/:id/complete', async (req, res) => {
  * POST /api/food-feed/recipes/:id/report
  * Report a recipe-based food offer for moderation
  */
-app.post('/api/food-feed/recipes/:id/report', async (req, res) => {
+app.post('/api/food-feed/recipes/:id/report', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
-  const reportedById = String(req.body.reportedById || req.body.userId || '').trim();
+  if (!requireActorClaims(req, res, [
+    req.body?.reportedById, req.query?.reportedById,
+  ])) return;
+  const reportedById = req.firebaseUid;
   const reason = String(req.body.reason || '').trim();
   const details = String(req.body.details || req.body.note || '').trim();
 
@@ -14205,7 +14213,7 @@ app.post('/api/food-feed/recipes/:id/report', async (req, res) => {
     const report = await prisma.recipeReport.create({
       data: {
         recipeId: id,
-        reportedById: reportedById.slice(0, 120),
+        reportedById,
         reason: reason.slice(0, 120),
         details: details ? details.slice(0, 1200) : null,
         status: 'pending',
@@ -14267,7 +14275,7 @@ app.post('/api/food-feed/recipes/:id/report', async (req, res) => {
     });
   } catch (err) {
     console.error('❌ Food-offer report create error:', err.message);
-    return res.status(500).json({ error: `Failed to create food-offer report: ${err.message}` });
+    return res.status(500).json({ error: 'Meldung konnte nicht gespeichert werden' });
   }
 });
 

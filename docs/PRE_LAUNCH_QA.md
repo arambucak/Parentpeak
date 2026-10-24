@@ -55,6 +55,22 @@ Mehrkonto-Test gegen das tatsächlich ausgerollte Backend.
       Alt-Rezepte werden nicht automatisch einer anderen Familie zugeordnet.
       Aktuelle Flutter-CRUD-Aufrufe verwenden Firebase ohne statischen
       Tokenfallback; Authfehler dürfen keinen lokalen Erfolg anzeigen.
+- [ ] FoodFeed-Interaktionen: Bewertung, Kommentar, Reservierung, Stornierung,
+      Abholbestätigung und Meldung verlangen lokal einen verifizierten
+      Firebase-Token (kein Shared-Token-Fallback). Ohne Token: 401; Token A mit
+      Body-/Query-Nutzerclaim B: 403 ohne Datenzugriff. Bei Meldungen gilt das
+      auch für `reportedById`, selbst neben einem passenden `userId`.
+- [ ] FoodFeed-Reservierungen: A kann nur die eigene Reservierung lesen,
+      ändern, stornieren und abschließen; die Reservierung von B bleibt
+      unverändert. Ohne offene eigene Reservierung ist kein Abschluss möglich.
+      Ohne Token und ohne Nutzerclaim bleiben nur die öffentlichen Summen
+      erreichbar (`myReservation: null`); fremde Query-IDs geben keine
+      individuellen Reservierungsdaten frei. Öffentliche Kommentare und
+      Rezept-Lesezugriffe bleiben erreichbar; Report-Adminrechte unveraendert.
+- [ ] FoodFeed-Fehlerfälle: Abgelaufener Token, Verifikationsausfall,
+      Datenbankausfall oder Netzfehler werden als Fehler angezeigt, nicht als
+      lokal erfolgreiche Interaktion. Doppelte eigene Meldungen bleiben
+      gesperrt; die bestehende Auto-Moderation wird weiterhin ausgeführt.
 - [ ] Event-Chat: Veranstalter und bestätigte Teilnehmer können lesen/senden.
       Offene, abgelehnte und zurückgezogene Teilnahmen gewähren keinen Zugang;
       manipulierte Nutzer-/Veranstalter-IDs ändern daran nichts.

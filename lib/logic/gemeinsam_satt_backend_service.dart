@@ -455,7 +455,7 @@ class GemeinsamSattBackendService {
     try {
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl/api/food-feed/recipes/$recipeId/rate'),
-        headers: await _jsonHeaders(),
+        headers: await _jsonHeaders(requireFirebase: true),
         body: jsonEncode({
           'userId': userId,
           'rating': rating,
@@ -516,7 +516,7 @@ class GemeinsamSattBackendService {
     try {
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl/api/food-feed/recipes/$recipeId/comments'),
-        headers: await _jsonHeaders(),
+        headers: await _jsonHeaders(requireFirebase: true),
         body: jsonEncode({'userId': userId, 'text': text}),
       );
 
@@ -545,7 +545,7 @@ class GemeinsamSattBackendService {
     try {
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl/api/food-feed/recipes/$recipeId/reserve'),
-        headers: await _jsonHeaders(),
+        headers: await _jsonHeaders(requireFirebase: true),
         body: jsonEncode({
           'userId': userId,
           'portions': portions,
@@ -574,8 +574,10 @@ class GemeinsamSattBackendService {
 
     try {
       final response = await _httpClient.delete(
-        Uri.parse('$_apiUrl/api/food-feed/recipes/$recipeId/reserve?userId=$userId'),
-        headers: await _jsonHeaders(),
+        Uri.parse('$_apiUrl/api/food-feed/recipes/$recipeId/reserve').replace(
+          queryParameters: {'userId': userId},
+        ),
+        headers: await _jsonHeaders(requireFirebase: true),
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -600,7 +602,7 @@ class GemeinsamSattBackendService {
     try {
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl/api/food-feed/recipes/$recipeId/complete'),
-        headers: await _jsonHeaders(),
+        headers: await _jsonHeaders(requireFirebase: true),
         body: jsonEncode({'userId': userId}),
       );
 
@@ -625,9 +627,10 @@ class GemeinsamSattBackendService {
 
     try {
       final response = await _httpClient.get(
-        Uri.parse(
-          '$_apiUrl/api/food-feed/recipes/$recipeId/reservations?userId=$userId',
+        Uri.parse('$_apiUrl/api/food-feed/recipes/$recipeId/reservations').replace(
+          queryParameters: {'userId': userId},
         ),
+        headers: await _jsonHeaders(requireFirebase: true),
       );
 
       if (response.statusCode != 200) {
@@ -654,7 +657,7 @@ class GemeinsamSattBackendService {
     try {
       final response = await _httpClient.post(
         Uri.parse('$_apiUrl/api/food-feed/recipes/$recipeId/report'),
-        headers: await _jsonHeaders(),
+        headers: await _jsonHeaders(requireFirebase: true),
         body: jsonEncode({
           'reportedById': userId,
           'reason': reason,
