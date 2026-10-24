@@ -67,6 +67,8 @@ Diese Angaben sind Produktanforderungen für die spätere Umsetzung, nicht Live-
 | — | Komplett werbefrei |
 | — | Alles aus Free inklusive |
 
+> **Noch zu bestätigen:** Die Free-Limits außer dem Event-Detailansichts-Limit — KI-Beratung mit 3 Fragen/Tag, Eltern-Netzwerk mit 3 Kontakten/Monat und 1 Rezept/Tag — sind Vorschläge aus der Tarifkarte und vom Nutzer noch nicht einzeln als verbindliche Produktregeln freigegeben. Keine Umsetzungs-PR darf sie verbindlich einbauen, bevor der Nutzer sie ausdrücklich bestätigt. Davon unberührt bleibt das bestätigte Limit von 3 Event-Detailansichten pro Woche samt bestehender Zähllogik.
+
 Premium soll 30 Tage kostenlos testbar sein. Der Testzeitraum und serverseitig bestätigte aktive Kulanzzeiträume sind werbefrei. Bei abgebrochener oder verfallener Testphase richtet sich der Status nach der verifizierten Store-Information.
 
 **Limit-Verhalten:** Das bestehende Limit von 3 Event-Detailansichten pro Woche bleibt unverändert. Später wird ausschließlich der Wortlaut auf den Free-Tarifkarten an diese Definition angeglichen; Zähl- und Limit-Logik werden dafür nicht geändert. Event-Veröffentlichen bleibt kostenlos.
