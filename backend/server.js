@@ -16,6 +16,7 @@ const { publicTreasure } = require('./treasure_public_view');
 const treasureGeometry = require('./treasure_geometry');
 const { MEMORY_CONSENT_VERSION, hasMemoryConsent, buildMemoryContext, minimizeMemoryText } = require('./ai_memory_policy');
 const { readEntitlementSnapshot } = require('./entitlement_store');
+const { readAdsConsent, setAdsConsent } = require('./ads_consent_store');
 
 // Firebase Admin — initialised lazily so the server starts without credentials
 // in local dev. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_JSON.
@@ -7265,6 +7266,7 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
     prisma.communityEventFlag.count({ where: { userId } }),
     prisma.communityEventInterest.count({ where: { userId } }),
     prisma.userEntitlement.count({ where: { userId } }),
+    prisma.adsConsent.count({ where: { userId } }),
   ]);
 
   const familyRequestCount = await prisma.familyRequest.count({
@@ -7385,6 +7387,9 @@ async function deleteAccountDataByUserIdPrisma(userId, options = {}) {
   removed += (await prisma.userEntitlement.deleteMany({
     where: { userId },
   })).count;
+  removed += (await prisma.adsConsent.deleteMany({
+    where: { userId },
+  })).count;
 
   // User -> created Family -> Todo/ShoppingItem cascades are defined in Prisma.
   const deletedUsers = (await prisma.user.deleteMany({ where: { id: userId } })).count;
@@ -7423,6 +7428,7 @@ async function exportAccountDataByUserIdPrisma(userId) {
     communityEventFlags,
     communityEventInterests,
     entitlement,
+    adsConsent,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -7474,6 +7480,18 @@ async function exportAccountDataByUserIdPrisma(userId) {
         updatedAt: true,
       },
     }),
+    prisma.adsConsent.findUnique({
+      where: { userId },
+      select: {
+        decision: true,
+        consentVersion: true,
+        consentRevision: true,
+        consentedAt: true,
+        withdrawnAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
   ]);
 
   return {
@@ -7503,6 +7521,7 @@ async function exportAccountDataByUserIdPrisma(userId) {
     communityEventFlags,
     communityEventInterests,
     entitlement,
+    adsConsent,
   };
 }
 
@@ -7642,6 +7661,30 @@ app.get('/account/export-data', requireVerifiedUser, async (req, res) => {
     });
   } catch (error) {
     return respondFamilyPersistenceError(res, 'GET /account/export-data', error);
+  }
+});
+
+// Ads consent metadata only; these routes never request or deliver advertising.
+app.get('/ads/consent/me', requireVerifiedUser, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    await ensureVerifiedBackendUser(req.firebaseUid);
+    return res.json({ item: await readAdsConsent(prisma, req.firebaseUid) });
+  } catch (error) {
+    return respondFamilyPersistenceError(res, 'GET /ads/consent/me', error);
+  }
+});
+
+app.put('/ads/consent/me', requireVerifiedUser, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    await ensureVerifiedBackendUser(req.firebaseUid);
+    return res.json({ item: await setAdsConsent(prisma, req.firebaseUid, req.body) });
+  } catch (error) {
+    if (error.code === 'invalid_ads_consent' || error.code === 'ads_consent_conflict') {
+      return res.status(error.status).json({ error: error.message, code: error.code });
+    }
+    return respondFamilyPersistenceError(res, 'PUT /ads/consent/me', error);
   }
 });
 

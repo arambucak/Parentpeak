@@ -31,6 +31,12 @@ function fixture({ app, configured = true, failure, production = true,
     createdAt: new Date('2026-10-24T00:00:00.000Z'),
     updatedAt: new Date('2026-10-24T00:00:00.000Z'),
   }]));
+  const adsConsents = new Map(['a', 'b'].map(userId => [userId, {
+    decision: 'denied', consentVersion: 'ads.consent.v1',
+    consentRevision: crypto.randomUUID(), consentedAt: null,
+    withdrawnAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  }]));
   const families = new Map(preProvisioned ? [
     [familyId('a'), { id: familyId('a'), createdById: owner,
       memberUsers: members.map(id => ({ id })) }],
@@ -94,6 +100,19 @@ function fixture({ app, configured = true, failure, production = true,
       count: async ({ where }) => Number(entitlements.has(where.userId)),
       deleteMany: async ({ where }) => ({
         count: Number(entitlements.delete(where.userId)),
+      }),
+    },
+    adsConsent: {
+      findUnique: async ({ where, select }) => {
+        assert.deepEqual(Object.keys(select).sort(), [
+          'consentRevision', 'consentVersion', 'consentedAt', 'createdAt',
+          'decision', 'updatedAt', 'withdrawnAt',
+        ]);
+        return clone(adsConsents.get(where.userId) || null);
+      },
+      count: async ({ where }) => Number(adsConsents.has(where.userId)),
+      deleteMany: async ({ where }) => ({
+        count: Number(adsConsents.delete(where.userId)),
       }),
     },
     family: {
@@ -247,7 +266,7 @@ function fixture({ app, configured = true, failure, production = true,
     return { status, body: response };
   }
   return {
-    context, request, calls, logs, data, memory, families, users, entitlements, prisma,
+    context, request, calls, logs, data, memory, families, users, entitlements, adsConsents, prisma,
   };
 }
 
@@ -406,7 +425,7 @@ test('export helper is own-scoped, non-provisioning and rejects foreign ownershi
 
 test('Prisma and migration enforce actual User-Family-Todo/Shopping cascades', () => {
   const schema = fs.readFileSync(path.join(__dirname, '../../prisma/schema.prisma'), 'utf8');
-  for (const model of ['Family', 'Todo', 'ShoppingItem', 'UserEntitlement']) {
+  for (const model of ['Family', 'Todo', 'ShoppingItem', 'UserEntitlement', 'AdsConsent']) {
     const block = schema.slice(schema.indexOf(`model ${model} {`),
       schema.indexOf('\n}', schema.indexOf(`model ${model} {`)));
     assert.match(block, /onDelete: Cascade/);
@@ -421,6 +440,7 @@ test('Prisma and migration enforce actual User-Family-Todo/Shopping cascades', (
     'Todo_familyId_fkey',
     'ShoppingItem_familyId_fkey',
     'UserEntitlement_userId_fkey',
+    'AdsConsent_userId_fkey',
   ]) {
     assert.match(sql, new RegExp(`"${key}"[^;]+ON DELETE CASCADE`));
   }
@@ -441,6 +461,8 @@ test('account export includes own Todos/Shopping and never B or demo rows', asyn
   assert.equal(result.shoppingItems[0].id, 'shop-a');
   assert.equal(result.entitlement.tier, 'free');
   assert.equal(result.entitlement.adsEligibleByEntitlement, false);
+  assert.deepEqual(result.adsConsent, f.adsConsents.get('a'));
+  assert.notDeepEqual(result.adsConsent, f.adsConsents.get('b'));
 });
 
 test('account deletion cascades only own family items; dry-run preserves all data', async () => {
@@ -456,11 +478,14 @@ test('account deletion cascades only own family items; dry-run preserves all dat
   vm.runInContext(slice('async function deleteAccountDataByUserIdPrisma(', 'async function exportAccountDataByUserIdPrisma('), f.context);
   const before = clone(f.data);
   const dry = await f.context.deleteAccountDataByUserIdPrisma('a', { dryRun: true });
-  assert.equal(dry.removed, 4);
+  assert.equal(dry.removed, 5);
+  assert.equal(f.adsConsents.has('a'), true);
   assert.deepEqual(f.data, before);
   await f.context.deleteAccountDataByUserIdPrisma('a');
   assert.equal(f.entitlements.has('a'), false);
   assert.equal(f.entitlements.has('b'), true);
+  assert.equal(f.adsConsents.has('a'), false);
+  assert.equal(f.adsConsents.has('b'), true);
   assert.equal(f.families.has(familyId('a')), false);
   assert.equal(f.families.has(familyId('b')), true);
   for (const table of Object.values(f.data)) {

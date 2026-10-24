@@ -1,7 +1,7 @@
 # Werbe-Consent-Modell — Design (Phase A)
 
 **Stand:** Analyse von `feat/ads-consent-model` auf `origin/main` bei `0c6e5a590a647a10de5a368435dd803a03e9621f`
-**Status:** Design zur Prüfung; keine Implementierungsfreigabe
+**Status:** Phase A unabhängig geprüft; Phase B mit serverseitigem Snapshot (Weg A) vom Nutzer freigegeben und implementiert. Keine Rechts- oder Live-Freigabe für Werbung.
 **Scope:** Versionierte, freiwillige Einwilligung und jederzeit erreichbare Verwaltung bzw. Widerruf. Keine Ad-Slots, Ad-SDK-Aufrufe, Paywall oder Aktivierung von Werbung/Monetarisierung.
 
 ## 1. Bestehendes Consent-Muster
@@ -65,7 +65,7 @@ Geplante Platzierungen bleiben gemäß [`docs/MONETIZATION_ADS_PLAN.md:15-17,42,
 
 Alle neuen sichtbaren Texte für Dialog, Status, Ablehnung, Zustimmung, Fehler und Widerruf werden in `lib/l10n/app_localizations_all.dart` über das bestehende `AppStringsManager`-/`context.tr()`-Muster gepflegt. Die acht Launch-Sprachen sind `de`, `en`, `tr`, `ku`, `fr`, `es`, `it`, `ar` ([`lib/l10n/supported_languages.dart:28-112,141-159`](../lib/l10n/supported_languages.dart)); Arabisch muss mit RTL-Layout und langen/vergrößerten Texten geprüft werden. Als Testmuster dienen [`test/weekly_reflection_consent_test.dart:615-677`](../test/weekly_reflection_consent_test.dart): pro Sprache nicht-leere, nicht englisch-identische Texte und Widget-Tests auf kleinem Viewport, vergrößerte Textskalierung und RTL.
 
-## 7. Verifiziert / vorgeschlagen / offen
+## 7. Historischer Abschluss Phase A: verifiziert / vorgeschlagen / offen
 
 ### Verifiziert
 
@@ -86,3 +86,45 @@ Alle neuen sichtbaren Texte für Dialog, Status, Ablehnung, Zustimmung, Fehler u
 - Serverseitige Speicherung und geräteübergreifender Widerruf als gewünschte Produktentscheidung.
 
 **In Phase A wurde nur dieses Design-Dokument erstellt. Es wurden keine Codeänderungen, Builds oder Tests ausgeführt.**
+
+## 8. Umsetzung Phase B
+
+- [`AdsConsent`](../backend/prisma/schema.prisma) ist genau ein aktueller Snapshot pro User, ohne Ereignisprotokoll. Die additive [Migration](../backend/prisma/migrations/20261024010000_add_ads_consent/migration.sql) enthält PK, FK mit Cascade und die erlaubten Entscheidungen. Version und UUID-Revision sind von KI-Consent und Entitlement unabhängig.
+- [`ads_consent_store.js`](../backend/ads_consent_store.js) liefert für einen fehlenden Datensatz `unknown`. Änderungen verlangen die aktuelle Version und vorherige Revision; jede Änderung erhält eine neue Revision. Compare-and-swap verhindert, dass eine veraltete Zustimmung einen neueren Widerruf überschreibt (409 statt Erfolg).
+- `GET/PUT /ads/consent/me` in [`server.js`](../backend/server.js) verwenden `requireVerifiedUser` und ausschließlich `req.firebaseUid`. Fremde Account-Angaben werden abgewiesen. Antworten sind `no-store` und enthalten nur Consent-Metadaten; zusätzliche Schreibfelder sind unzulässig. Persistenzfehler sind Nicht-2xx, kein scheinbarer Default-Erfolg.
+- [`AdsConsentService`](../lib/logic/ads_consent_service.dart) übernimmt Versionierung, serialisierte Änderungen und Account-/Revisionsprüfungen aus dem KI-Muster, verwendet aber ausschließlich das authentifizierte Backend als positive Autorität. Kein Guest-Scope und keine lokal persistierte positive Zustimmung. Accountwechsel, Laden und Fehler sperren die Verarbeitung.
+- Ablehnen/Widerrufen sperrt sofort vor dem ersten Await. Ausschließlich eine ausstehende **negative** Entscheidung wird accountgebunden lokal vorgemerkt. Bei Offline-/Token-/Serverfehlern bleibt die Sperre bestehen; ein erneuter Abgleich synchronisiert erst den Widerruf, bevor eine spätere neue Zustimmung möglich ist. Ein paralleler Refresh darf die Vormerkung nicht verwerfen. Kontoweite Wirkung besteht nach erfolgreichem Schreiben und erneutem Lesen auf dem anderen Gerät, nicht als behauptete Offline-Push-Garantie.
+- Die direkte gleichrangige Kachel nahe Datenschutz in [`ProfileSafetyScreen`](../lib/ui/profile_safety_screen.dart) öffnet [`AdsConsentScreen`](../lib/ui/ads_consent_screen.dart) mit Status, Version, gleichrangigen Zustimmen-/Ablehnen-Aktionen, direktem Widerruf und Fehler/Retry. Kein zweites Menü in LegalInfo, keine Vermischung mit Familien-Privacy. Schließen erteilt keine Zustimmung. Ein offener Dialog darf weder nach Loginwechsel schreiben noch eine inzwischen geänderte Revision positiv bestätigen; Ablehnung bleibt beim gleichen Account auch nach einem Geräteabgleich möglich.
+- Die reine Prüffunktion `allowsSponsorProcessing` verlangt ein ausdrücklich aktiviertes Deployment-Flag (derzeit aus), verifiziertes Free-Entitlement mit `adsEligible`, aktuellen Consent und öffentliche Event-Entdeckung als UND-Bedingungen. Sie wird von keinem Werbeaufruf verwendet. Vor einer späteren Integration müssen beide Server-Snapshots unmittelbar vor Verarbeitung frisch geprüft und nach asynchronen Schritten erneut abgesichert werden.
+- Export enthält nur verständliche Consent-Metadaten. Kontolöschung zählt und löscht die Tabelle ausdrücklich zusätzlich zur FK-Cascade. Lifecycle-Tests prüfen auch die Isolation anderer Accounts.
+- Zwölf neue Textschlüssel sind in allen acht Launch-Sprachen vorhanden. Widgettests prüfen 360×800, Textskalierung 1,8, gleichrangige Dialogaktionen und insbesondere arabisches RTL. Text und Aufbewahrung bleiben ausdrücklich **vor Livegang juristisch zu bestätigen**; die technische Produktfreigabe ersetzt dies nicht.
+- Unverändert: Monetarisierungs-/Ad-Flags, B1-`adsEligibleByEntitlement: false`, Ad-Platzhalter, Eventlimits/Counter/Montag-Reset, unbestätigte Zusatzlimits, Loginpflicht sowie Alters-/Gemini-Datenfluss. Keine Ad-Slots, SDKs, Tracking-/Werbe-ID, Paywall, Provider-Tarife oder Store-Verifikation.
+
+## 9. Verifikation Phase B
+
+### Verifiziert
+
+| Befehl | Ergebnis |
+| --- | --- |
+| `flutter analyze --no-pub` | Baseline eingehalten: genau 9 bestehende Infos, keine neuen Warnungen/Fehler. Exit 1 wegen der Infos. |
+| `flutter test test/ads_consent_test.dart test/entitlement_service_test.dart` | 34 bestanden, 0 fehlgeschlagen; Consent, Versions-/Account-/Race-Schutz, Offline-Widerruf, acht Sprachen/RTL und bestehende Eventlimit-Regressionen. |
+| `cd backend && API_BASE=http://127.0.0.1:9 node --test tests/unit/ads-consent.test.js tests/unit/family-todos-shopping.test.js tests/unit/entitlement-source.test.js` | 139 bestanden, 0 fehlgeschlagen; echte extrahierte Route-/Lifecycle-Handler mit gemockter Persistenz, Auth-/Owner-Schutz, DB-Fehler, Revisionen und Export/Löschung. |
+| `cd backend && npx prisma validate` | Bestanden. |
+| `cd backend && npx prisma generate` | Bestanden; Prisma Client 7.8.0 generiert. Keine Migration ausgeführt. |
+| `flutter test` | Nicht vollständig grün: 1499 bestanden, 1 übersprungen, 12 fehlgeschlagen, alle in `events_activities_loading_test.dart`. |
+| `cd backend && API_BASE=http://127.0.0.1:9 node --test tests/unit/*.test.js` | Nicht vollständig grün: 777 bestanden, 13 fehlgeschlagen (790 gesamt); Upload-/Abhängigkeitstests, keine Consent-Fehler. |
+| `git diff --check` | Bestanden. |
+
+### Einordnung der lokalen Vollsuite-Fehler / vermutet
+
+- Die zwölf Flutter-Fehler wurden zusätzlich im eigens angelegten temporären Worktree auf dem unveränderten Ausgangscommit `e7bf7ca` mit derselben lokalen `.env` reproduziert: `flutter test test/events_activities_loading_test.dart` → 1 bestanden, 12 fehlgeschlagen. Dort werden statt der erwarteten Fakes Backend-Anfragen ausgeführt. Lokale Konfiguration als Ursache ist plausibel; keine solche Konfiguration wurde geändert.
+- Elf Backend-Uploadfehler aus `image-upload.test.js` wurden auf demselben Ausgangscommit mit denselben installierten Dependencies reproduziert: 11 fehlgeschlagen. Installiertes Multer ist 2.2.0, erwartet/gelockt 2.4.0.
+- Die zwei weiteren Vollsuite-Fehler betreffen installierte Abhängigkeiten: Nodemailer 9.0.3 statt 10.0.16 sowie die erwartete DOCTYPE-Abweisung. Ihre Testdatei, Manifeste und Lockfile sind unverändert; diese zwei Fehler wurden nicht nochmals am Ausgangscommit separat ausgeführt. Die lokale Node-Version ist 26.3.0 statt des vorgesehenen Node-24-Runtimes.
+- Der ausschließlich für den Vergleich angelegte eigene Worktree wurde wieder entfernt. Fremde Worktrees, Backup-Branch und Stash wurden nicht verändert. Die Fehler werden nicht als grüne Vollsuite ausgegeben oder durch fachfremde Änderungen verdeckt.
+
+### Nicht geprüft / vor Freigabe offen
+
+- Kein echter Datenbank-Migrationslauf, kein Produktionsdeploy, keine echte DB-Dauerhaftigkeits-/Cascade-Prüfung. Zweite Instanz und Sync sind mit gemeinsamem gemocktem Persistenzadapter getestet.
+- Kein Geräte-/Browser-E2E und kein Store-/ATT-/Families-Review. Sprachtests prüfen Vollständigkeit und Layout, keine externe muttersprachliche Abnahme.
+- Juristische Freigabe einschließlich konkreter Zwecke, Aufbewahrung und finaler Texte bleibt vor Livegang offen; ein anderer Zweck/Text erfordert vor Nutzung eine neue Consent-Version.
+- B2 (Store-Receipt-Verifikation), Werbeauslieferung und Aktivierung bleiben außerhalb dieser Änderung. Merge erst nach Kiros Review und Nutzerfreigabe.
