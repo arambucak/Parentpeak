@@ -27,6 +27,44 @@ BackendApiClient _client(http.Client httpClient) {
 }
 
 void main() {
+  test('public event details parse without embedded chat or message data',
+      () async {
+    final service = EventBackendService(
+      apiClient: _client(MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url.path, '/api/events/public-event');
+        return http.Response(
+          jsonEncode({
+            'event': {
+              'id': 'public-event',
+              'hosterId': 'host',
+              'title': 'Public meetup',
+              'startDate': '2099-01-01T10:00:00Z',
+              'maxParticipants': 3,
+              'currentParticipants': 1,
+              'spotsAvailable': 2,
+              'isFull': false,
+              'participants': [
+                {'userId': 'member', 'status': 'approved'},
+                {'userId': 'pending', 'status': 'pending'},
+              ],
+            },
+          }),
+          200,
+        );
+      })),
+    );
+
+    final event = await service.fetchEventById('public-event');
+
+    expect(event, isNotNull);
+    expect(event!.id, 'public-event');
+    expect(event.title, 'Public meetup');
+    expect(event.maxParticipants, 3);
+    expect(event.currentParticipants, 1);
+    expect(service.lastSyncError, isNull);
+  });
+
   test('create preserves the selected local time across the server round trip',
       () async {
     final selected = DateTime(2026, 10, 3, 10);
