@@ -25,7 +25,7 @@ const routes = [
 ];
 
 function fixture({ configured = true, failure } = {}) {
-  const handlers = new Map(), writes = [], reads = [], familyWrites = [];
+  const handlers = new Map(), writes = [], reads = [], familyWrites = [], trustReads = [];
   const recipes = new Map([
     ['a-recipe', { id: 'a-recipe', creatorUserId: 'a', familyId: 'legacy-family', isPublished: true, ...validRecipe }],
     ['b-recipe', { id: 'b-recipe', creatorUserId: 'b', familyId: familyId('b'), isPublished: true, ...validRecipe }],
@@ -48,7 +48,8 @@ function fixture({ configured = true, failure } = {}) {
       findUnique: async ({ where }) => {
         reads.push(where.id);
         if (failure === 'read') throw new Error('Recipe store unavailable');
-        return recipes.get(where.id) || null;
+        const row = recipes.get(where.id);
+        return row && (where.isPublished === undefined || row.isPublished === where.isPublished) ? row : null;
       },
       findMany: async ({ where }) => [...recipes.values()].filter(row => row.isPublished === where.isPublished),
       count: async () => recipes.size,
@@ -84,7 +85,10 @@ function fixture({ configured = true, failure } = {}) {
         return { uid: token };
       },
     }) } : null,
-    buildAuthorTrustMapForRecipes: async () => new Map(),
+    buildAuthorTrustMapForRecipes: async recipes => {
+      trustReads.push(recipes);
+      return new Map();
+    },
     app: Object.fromEntries(['get', 'post', 'put', 'delete'].map(method => [
       method, (route, ...chain) => handlers.set(`${method.toUpperCase()} ${route}`, chain),
     ])),
@@ -107,7 +111,7 @@ function fixture({ configured = true, failure } = {}) {
     await run(0);
     return { status, body: response };
   }
-  return { handlers, request, recipes, writes, reads, familyWrites };
+  return { handlers, request, recipes, writes, reads, familyWrites, trustReads };
 }
 
 for (const [method, route] of routes) {
@@ -252,6 +256,37 @@ test('create validation and public recipe reads remain available without new log
   assert.equal(list.status, 200);
   assert.ok(list.body.recipes.length > 0);
   assert.equal((await f.request('GET', '/api/food-feed/recipes/:id', { token: null })).status, 200);
+});
+
+for (const token of [null, 'a', 'b']) {
+  test(`unpublished recipe detail is not found for ${token || 'anonymous'} without views or trust reads`, async () => {
+    const f = fixture();
+    f.recipes.get('a-recipe').isPublished = false;
+    const hidden = await f.request('GET', '/api/food-feed/recipes/:id', { token });
+    const missing = await f.request('GET', '/api/food-feed/recipes/:id', { token, id: 'missing' });
+    assert.equal(hidden.status, 404);
+    assert.deepEqual(hidden, missing);
+    assert.deepEqual(f.writes, []);
+    assert.deepEqual(f.trustReads, []);
+  });
+}
+
+test('real public detail route hides unpublished recipes and still serves published recipes', async t => {
+  const f = fixture();
+  f.recipes.get('b-recipe').isPublished = false;
+  const app = express();
+  app.get('/api/food-feed/recipes/:id', ...f.handlers.get('GET /api/food-feed/recipes/:id'));
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise(resolve => server.once('listening', resolve));
+  t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
+  const base = `http://127.0.0.1:${server.address().port}/api/food-feed/recipes`;
+  const hidden = await fetch(`${base}/b-recipe`);
+  const missing = await fetch(`${base}/missing`);
+  assert.equal(hidden.status, 404);
+  assert.deepEqual(await hidden.json(), await missing.json());
+  assert.deepEqual(f.writes, []);
+  assert.deepEqual(f.trustReads, []);
+  assert.equal((await fetch(`${base}/a-recipe`)).status, 200);
 });
 
 test('real Express route chains reject shared tokens and forged owners', async t => {

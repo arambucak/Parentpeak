@@ -1,5 +1,22 @@
 # Parentpeak Marktplatz Backend
 
+## FoodFeed-Veroeffentlichung
+
+Oeffentliche Rezeptdetails (`GET /api/food-feed/recipes/:id`), Kommentare
+(`/:id/comments`) und Reservierungszahlen (`/:id/reservations`) verlangen
+wie die Rezeptliste `isPublished: true`. Unveroeffentlichte und fehlende
+Rezepte liefern identisch 404, bevor Views gezaehlt, Vertrauensdaten,
+Kommentare oder Reservierungen gelesen werden. Veroeffentlichte Rezepte
+bleiben ohne neue Login-Sperre erreichbar. Persoenliche Reservierungen
+bleiben auf den verifizierten Aufrufer beschraenkt.
+
+Keine neue Owner-/Familien-Ausnahme fuer unveroeffentlichte Inhalte, keine
+Aenderung an Schreib-/Moderationsrechten oder am Familienkontext.
+
+```bash
+cd backend && API_BASE=http://127.0.0.1:9 node --test tests/unit/food-feed-recipe-ownership.test.js tests/unit/food-feed-interaction-auth.test.js
+```
+
 ## Stillgelegte Legacy-Referral-APIs
 
 Das fruehere ParentCoin-/Referral-Tracking wird nicht mehr verwendet. Nach
