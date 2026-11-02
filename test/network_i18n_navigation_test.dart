@@ -128,7 +128,7 @@ void main() {
     expect(networkChildAgeLabel('en', 'custom age'), 'custom age');
     expect(networkMatchReasonLabel('en', 'nearby'), 'Nearby');
     expect(networkMatchReasonLabel('tr', 'shared_languages'), 'Ortak diller');
-    expect(networkMatchReasonLabel('en', 'future_reason'), 'future_reason');
+    expect(networkMatchReasonLabel('en', 'future_reason'), isNull);
   });
 
   testWidgets(
@@ -139,7 +139,22 @@ void main() {
       addTearDown(() => languageService.setLanguage(previous));
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: PlaymateProfileForm(onSave: (_) async {})),
+          home: Scaffold(
+            // Step 1 requires name and district before "Next".
+            body: PlaymateProfileForm(
+              initialProfile: FamilyMatchProfile(
+                displayName: 'Test family',
+                district: 'Berlin',
+                children: [ChildEntry(name: '', ageMonths: 36)],
+                languages: const ['en'],
+                familyForm: 'kernfamilie',
+                values: const [],
+                lookingFor: const [],
+                createdAt: DateTime(2024, 1, 2),
+              ),
+              onSave: (_) async {},
+            ),
+          ),
         ),
       );
       await tester.pumpAndSettle();

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -59,11 +60,20 @@ class LocationPickerWidget extends StatefulWidget {
   /// lokalisierte Standardtext („Standort wählen") in der App-Sprache genutzt.
   final String? hint;
 
+  /// Optionaler Fokus, damit ein Formular bei fehlender Auswahl direkt
+  /// hierher springen kann.
+  final FocusNode? focusNode;
+
+  /// Fehlermeldung direkt unter dem Feld; `null` zeigt keinen Fehler.
+  final String? errorText;
+
   const LocationPickerWidget({
     super.key,
     this.initialLocation,
     required this.onLocationPicked,
     this.hint,
+    this.focusNode,
+    this.errorText,
   });
 
   @override
@@ -90,8 +100,11 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final errorText = widget.errorText;
+    final hasError = errorText != null && errorText.isNotEmpty;
+    final focused = widget.focusNode?.hasFocus ?? false;
 
-    return GestureDetector(
+    final picker = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _openPicker(context),
       child: Container(
@@ -100,9 +113,15 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _picked != null
-                ? const Color(0xFF8B5CF6).withValues(alpha: 0.4)
-                : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            width: hasError || focused ? 1.5 : 1,
+            color: hasError
+                ? theme.colorScheme.error
+                : focused
+                    ? theme.colorScheme.primary
+                    : _picked != null
+                        ? const Color(0xFF8B5CF6).withValues(alpha: 0.4)
+                        : theme.colorScheme.outlineVariant
+                            .withValues(alpha: 0.5),
           ),
         ),
         child: Row(children: [
@@ -152,6 +171,40 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
               size: 14, color: theme.colorScheme.outline),
         ]),
       ),
+    );
+
+    if (widget.focusNode == null && !hasError) return picker;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Focus(
+          focusNode: widget.focusNode,
+          onFocusChange: (_) => setState(() {}),
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent &&
+                (event.logicalKey == LogicalKeyboardKey.enter ||
+                    event.logicalKey == LogicalKeyboardKey.space)) {
+              _openPicker(context);
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: picker,
+        ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 14, top: 6),
+            child: Semantics(
+              liveRegion: true,
+              child: Text(
+                errorText,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.error),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
